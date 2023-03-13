@@ -27,7 +27,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -55,7 +54,6 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -65,7 +63,6 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
-#include "src/cpp/ext/filters/census/promise_notification.h"
 
 namespace grpc {
 namespace internal {
@@ -88,11 +85,6 @@ absl::StatusOr<OpenCensusClientFilter> OpenCensusClientFilter::Create(
     const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
   bool observability_enabled =
       args.GetInt(GRPC_ARG_ENABLE_OBSERVABILITY).value_or(true);
-  // Only run the Post-Init Registry if observability is enabled to avoid
-  // running into a cyclic loop for exporter channels.
-  if (observability_enabled) {
-    OpenCensusRegistry::Get().RunFunctionsPostInit();
-  }
   return OpenCensusClientFilter(/*tracing_enabled=*/observability_enabled);
 }
 
@@ -100,34 +92,19 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 OpenCensusClientFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
-  auto continue_making_call_promise = [this,
-                                       next_promise_factory =
-                                           std::move(next_promise_factory),
-                                       call_args =
-                                           std::move(call_args)]() mutable {
-    auto* path = call_args.client_initial_metadata->get_pointer(
-        grpc_core::HttpPathMetadata());
-    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-    auto* tracer = grpc_core::GetContext<grpc_core::Arena>()
-                       ->ManagedNew<OpenCensusCallTracer>(
-                           call_context,
-                           path != nullptr ? path->Ref() : grpc_core::Slice(),
-                           grpc_core::GetContext<grpc_core::Arena>(),
-                           OpenCensusTracingEnabled() && tracing_enabled_);
-    GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
-    call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
-    return next_promise_factory(std::move(call_args));
-  };
-  // If the OpenCensus plugin is not yet ready, then wait for it to be ready.
-  if (!grpc::internal::OpenCensusRegistry::Get().Ready()) {
-    auto notification = std::make_shared<PromiseNotification>();
-    grpc::internal::OpenCensusRegistry::Get().NotifyOnReady(
-        [notification]() { notification->Notify(); });
-    return grpc_core::Seq([notification]() { return notification->Wait(); },
-                          std::move(continue_making_call_promise));
-  }
-  return continue_making_call_promise();
+  auto* path = call_args.client_initial_metadata->get_pointer(
+      grpc_core::HttpPathMetadata());
+  auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+  auto* tracer =
+      grpc_core::GetContext<grpc_core::Arena>()
+          ->ManagedNew<OpenCensusCallTracer>(
+              call_context, path != nullptr ? path->Ref() : grpc_core::Slice(),
+              grpc_core::GetContext<grpc_core::Arena>(),
+              OpenCensusTracingEnabled() && tracing_enabled_);
+  GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
+  call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
+  call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
+  return next_promise_factory(std::move(call_args));
 }
 
 //
