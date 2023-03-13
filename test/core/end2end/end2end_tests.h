@@ -53,7 +53,6 @@
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 // Feature mask supports call credentials with a minimum security level of
 // GRPC_PRIVACY_AND_INTEGRITY.
@@ -68,7 +67,6 @@
 #define FEATURE_MASK_1BYTE_AT_A_TIME 256
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
-#define FEATURE_MASK_IS_MINSTACK 4096
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -446,7 +444,6 @@ class CoreEnd2endTest
 class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
-class CoreDelayedConnectionTest : public CoreEnd2endTest {};
 class HpackSizeTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core

@@ -75,7 +75,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_closed.was_cancelled());
 }
 
-TEST_P(CoreDelayedConnectionTest, DisappearingServer) {
+TEST_P(CoreClientChannelTest, DisappearingServer) {
   OneRequestAndShutdownServer(*this);
   InitServer(grpc_core::ChannelArgs());
   OneRequestAndShutdownServer(*this);

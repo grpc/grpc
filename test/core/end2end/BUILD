@@ -122,6 +122,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "cq_verifier",
+        "http_proxy",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -151,7 +152,6 @@ grpc_cc_test(
         "end2end_test_main.cc",
         "end2end_test_utils.cc",
         "end2end_tests.cc",
-        "tests/no_op.cc",
         "tests/binary_metadata.cc",
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
@@ -159,20 +159,22 @@ grpc_cc_test(
         "tests/cancel_after_round_trip.cc",
         "tests/cancel_before_invoke.cc",
         "tests/cancel_in_a_vacuum.cc",
+        "tests/cancel_test_helpers.h",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/hpack_size.cc",
         "tests/negative_deadline.cc",
+        "tests/no_op.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
         "tests/trailing_metadata.cc",
-            "tests/cancel_test_helpers.h",
     ],
     external_deps = [
         "absl/memory",
         "absl/random",
         "gtest",
     ],
+    shard_count = 30,
     deps = [
         "cq_verifier",
         "fixture_support",
@@ -184,7 +186,6 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
-    shard_count = 30,
 )
 
 grpc_cc_test(
