@@ -61,9 +61,6 @@ using PollerHandle = EventHandle*;
 
 using AresSocket = ares_socket_t;
 
-using RegisterSocketWithPollerCallback =
-    absl::AnyInvocable<PollerHandle(AresSocket)>;
-
 // TODO(yijiem): see if we can use std::list
 // per ares-channel linked-list of FdNodes
 class FdNodeList {
@@ -147,6 +144,10 @@ class FdNodeList {
 // An inflight name service lookup request
 class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
+ protected:
+  using RegisterSocketWithPollerCallback =
+      absl::AnyInvocable<PollerHandle(AresSocket)>;
+
  public:
   explicit GrpcAresRequest(
       absl::string_view name, absl::optional<absl::string_view> default_port,
@@ -276,7 +277,7 @@ class GrpcAresSRVRequest : public GrpcAresRequest {
                         std::move(register_socket_with_poller_cb),
                         event_engine),
         on_resolve_(std::move(on_resolve)) {}
-  const char* service_name() { return service_name_.c_str(); }
+  const char* service_name() const { return service_name_.c_str(); }
   void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -288,7 +289,7 @@ class GrpcAresSRVRequest : public GrpcAresRequest {
 
 class GrpcAresTXTRequest : public GrpcAresRequest {
  private:
-  using Result = std::string;
+  using Result = std::basic_string<unsigned char>;
 
  public:
   explicit GrpcAresTXTRequest(
@@ -299,11 +300,13 @@ class GrpcAresTXTRequest : public GrpcAresRequest {
                         std::move(register_socket_with_poller_cb),
                         event_engine),
         on_resolve_(std::move(on_resolve)) {}
+  const char* config_name() const { return config_name_.c_str(); }
   void Start() ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
+  std::string config_name_;
   OnResolveCallback<Result> on_resolve_;
 };
 

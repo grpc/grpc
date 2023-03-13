@@ -320,8 +320,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     using LookupSRVCallback =
         absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback =
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
+    using LookupTXTCallback = absl::AnyInvocable<void(
+        absl::StatusOr<std::basic_string<unsigned char>>)>;
 
     virtual ~DNSResolver() = default;
 

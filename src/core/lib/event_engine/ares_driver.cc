@@ -194,7 +194,8 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
   r->OnResolve(std::move(result));
 }
 
-const char g_service_config_attribute_prefix[] = "grpc_config=";
+constexpr char g_service_config_attribute_prefix[] = "grpc_config=";
+constexpr size_t g_prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
 
 void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
                         unsigned char* buf,
@@ -202,55 +203,51 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
   GrpcAresTXTRequest* r = static_cast<GrpcAresTXTRequest*>(arg);
-  const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-  struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  grpc_error_handle error;
-  if (status != ARES_SUCCESS) goto fail;
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
-                       q->name().c_str());
-  status = ares_parse_txt_reply_ext(buf, len, &reply);
-  if (status != ARES_SUCCESS) goto fail;
+  int parse_status = ARES_SUCCESS;
+  if (status == ARES_SUCCESS) {
+    GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS",
+                         r, r->config_name());
+    parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
+  }
+  if (status != ARES_SUCCESS || parse_status != ARES_SUCCESS) {
+    grpc_error_handle error;
+    std::string error_msg = absl::StrFormat(
+        "C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+        r->config_name(), ares_strerror(status));
+    GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
+                         error_msg.c_str());
+    error = GRPC_ERROR_CREATE(error_msg);
+    // r->error = grpc_error_add_child(error, r->error);
+    r->OnResolve(error);
+    return;
+  }
   // Find service config in TXT record.
+  struct ares_txt_ext* result = nullptr;
   for (result = reply; result != nullptr; result = result->next) {
     if (result->record_start &&
-        memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
+        memcmp(result->txt, g_service_config_attribute_prefix, g_prefix_len) ==
             0) {
       break;
     }
   }
+  std::basic_string<unsigned char> service_config_json_out;
   // Found a service config record.
   if (result != nullptr) {
-    size_t service_config_len = result->length - prefix_len;
-    *r->service_config_json_out =
-        static_cast<char*>(gpr_malloc(service_config_len + 1));
-    memcpy(*r->service_config_json_out, result->txt + prefix_len,
-           service_config_len);
+    size_t service_config_len = result->length - g_prefix_len;
+    service_config_json_out.append(result->txt + g_prefix_len,
+                                   service_config_len);
     for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
-      *r->service_config_json_out = static_cast<char*>(
-          gpr_realloc(*r->service_config_json_out,
-                      service_config_len + result->length + 1));
-      memcpy(*r->service_config_json_out + service_config_len, result->txt,
-             result->length);
-      service_config_len += result->length;
+      service_config_json_out.append(result->txt, result->length);
     }
-    (*r->service_config_json_out)[service_config_len] = '\0';
+    // (*r->service_config_json_out)[service_config_len] = '\0';
     GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
-                         *r->service_config_json_out);
+                         service_config_json_out.c_str());
   }
   // Clean up.
   ares_free_data(reply);
-  grpc_ares_request_unref_locked(r);
-  return;
-fail:
-  std::string error_msg =
-      absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
-                      q->name(), ares_strerror(status));
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
-                       error_msg.c_str());
-  error = GRPC_ERROR_CREATE(error_msg);
-  r->error = grpc_error_add_child(error, r->error);
+  r->OnResolve(std::move(service_config_json_out));
 }
 
 }  // namespace
@@ -600,8 +597,8 @@ void GrpcAresTXTRequest::Start() {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   // Query the TXT record
-  std::string config_name = absl::StrCat("_grpc_config.", host_);
-  ares_search(channel_, config_name.c_str(), ns_c_in, ns_t_txt,
+  config_name_ = absl::StrCat("_grpc_config.", host_);
+  ares_search(channel_, config_name_.c_str(), ns_c_in, ns_t_txt,
               on_txt_done_locked, static_cast<void*>(this));
   Work();
 }
