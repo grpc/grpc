@@ -449,13 +449,15 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                               unique.fetch_add(1, std::memory_order_relaxed)),
               UDS);
         }},
-    CoreTestConfiguration{
-        "Chttp2FullstackNoRetry",
-        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
-        [](const ChannelArgs& /*client_args*/,
-           const ChannelArgs& /*server_args*/) {
-          return std::make_unique<NoRetryFixture>();
-        }},
+    CoreTestConfiguration{"Chttp2FullstackNoRetry",
+                          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                              FEATURE_MASK_IS_HTTP2 |
+                              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+                          nullptr,
+                          [](const ChannelArgs& /*client_args*/,
+                             const ChannelArgs& /*server_args*/) {
+                            return std::make_unique<NoRetryFixture>();
+                          }},
     CoreTestConfiguration{
         "Chttp2FullstackWithCensus",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
@@ -510,7 +512,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
           return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
         }},
     CoreTestConfiguration{
-        "Chttp2SocketPair1ByteAtATime", FEATURE_MASK_IS_HTTP2, nullptr,
+        "Chttp2SocketPair1ByteAtATime",
+        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<SockpairFixture>(
               grpc_core::ChannelArgs()
@@ -571,6 +574,12 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_HTTP2,
                                      FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                                          FEATURE_MASK_ENABLES_TRACES)),
+    NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(
+    RetryTests, RetryTest,
+    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
+                                     FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)),
     NameFromConfig);
 
 }  // namespace grpc_core

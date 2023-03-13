@@ -168,6 +168,7 @@ grpc_cc_test(
         "tests/no_op.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",
+        "tests/retry.cc",
         "tests/trailing_metadata.cc",
     ],
     external_deps = [

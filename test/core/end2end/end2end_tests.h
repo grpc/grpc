@@ -53,6 +53,7 @@
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
+#define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY 1
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 // Feature mask supports call credentials with a minimum security level of
 // GRPC_PRIVACY_AND_INTEGRITY.
@@ -356,6 +357,13 @@ class CoreEnd2endTest
     ~Call() { grpc_call_unref(call_); }
     BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
     void Cancel() { grpc_call_cancel(call_, nullptr); }
+    absl::optional<std::string> GetPeer() {
+      char* peer = grpc_call_get_peer(call_);
+      if (peer == nullptr) return absl::nullopt;
+      std::string result(peer);
+      gpr_free(peer);
+      return result;
+    }
 
     grpc_call** call_ptr() { return &call_; }
     grpc_call* c_call() const { return call_; }
@@ -380,6 +388,8 @@ class CoreEnd2endTest
 
     absl::optional<absl::string_view> GetInitialMetadata(
         absl::string_view key) const;
+
+    absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
    private:
     struct Impl {
@@ -445,6 +455,7 @@ class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
 class HpackSizeTest : public CoreEnd2endTest {};
+class RetryTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

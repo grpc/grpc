@@ -204,7 +204,7 @@ CoreEnd2endTest::BatchBuilder::SendStatusFromServer(
 CoreEnd2endTest::BatchBuilder::~BatchBuilder() {
   grpc_call_error err = grpc_call_start_batch(call_, ops_.data(), ops_.size(),
                                               CqVerifier::tag(tag_), nullptr);
-  EXPECT_EQ(err, GRPC_CALL_OK);
+  EXPECT_EQ(err, GRPC_CALL_OK) << grpc_call_error_to_string(err);
 }
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
