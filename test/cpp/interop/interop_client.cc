@@ -122,7 +122,7 @@ bool SameMaps(const std::string& path, const Map& expected, const Map& actual) {
   return true;
 }
 
-bool SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
+void SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
                          const xds::data::orca::v3::OrcaLoadReport& actual) {
   GPR_ASSERT(expected.cpu_utilization() == actual.cpu_utilization());
   GPR_ASSERT(expected.mem_utilization() == actual.mem_utilization());
@@ -130,7 +130,6 @@ bool SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
       SameMaps("request_cost", expected.request_cost(), actual.request_cost()));
   GPR_ASSERT(
       SameMaps("utilization", expected.utilization(), actual.utilization()));
-  return true;
 }
 }  // namespace
 
@@ -1007,7 +1006,7 @@ bool InteropClient::DoOrcaPerRpc() {
   auto report = load_report_tracker_.GetNextLoadReport();
   GPR_ASSERT(report.has_value());
   GPR_ASSERT(report->has_value());
-  GPR_ASSERT(SameOrcaLoadReports(report->value(), *orca_report));
+  SameOrcaLoadReports(report->value(), *orca_report);
   GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
