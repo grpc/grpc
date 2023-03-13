@@ -171,6 +171,7 @@ grpc_cc_test(
         "tests/retry.cc",
         "tests/trailing_metadata.cc",
         "tests/write_buffering.cc",
+        "tests/write_buffering_at_end.cc",
     ],
     external_deps = [
         "absl/memory",

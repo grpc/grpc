@@ -226,6 +226,7 @@ class CoreEnd2endTest
     }
 
     Slice payload() const;
+    bool is_end_of_stream() const { return payload_ == nullptr; }
 
     grpc_op MakeOp();
 
