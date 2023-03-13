@@ -2154,7 +2154,6 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       pending_send_message_(false),
       pending_send_trailing_metadata_(false),
       retry_committed_(false),
-      // retry_timer_pending_(false),
       retry_codepath_started_(false),
       sent_transparent_retry_not_seen_by_server_(false) {}
 
