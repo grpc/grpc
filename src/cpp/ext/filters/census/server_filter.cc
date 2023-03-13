@@ -25,9 +25,7 @@
 
 #include <algorithm>
 #include <functional>
-#include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -51,7 +49,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -59,7 +56,6 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
-#include "src/cpp/ext/filters/census/promise_notification.h"
 
 namespace grpc {
 namespace internal {
@@ -212,7 +208,6 @@ const grpc_channel_filter OpenCensusServerFilter::kFilter =
 absl::StatusOr<OpenCensusServerFilter> OpenCensusServerFilter::Create(
     const grpc_core::ChannelArgs& /*args*/,
     grpc_core::ChannelFilter::Args /*filter_args*/) {
-  OpenCensusRegistry::Get().RunFunctionsPostInit();
   return OpenCensusServerFilter();
 }
 
@@ -220,43 +215,29 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 OpenCensusServerFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
-  auto continue_making_call_promise = [next_promise_factory =
-                                           std::move(next_promise_factory),
-                                       call_args =
-                                           std::move(call_args)]() mutable {
-    auto* calld = grpc_core::GetContext<grpc_core::Arena>()
-                      ->ManagedNew<OpenCensusServerCallData>(
-                          call_args.client_initial_metadata.get());
-    call_args.client_to_server_messages->InterceptAndMap(
-        [calld](grpc_core::MessageHandle message) {
-          calld->OnRecvMessage();
-          return message;
-        });
-    call_args.server_to_client_messages->InterceptAndMap(
-        [calld](grpc_core::MessageHandle message) {
-          calld->OnSendMessage();
-          return message;
-        });
-    grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
-        [calld](const grpc_call_final_info* final_info) {
-          calld->Finalize(final_info);
-        });
-    return grpc_core::OnCancel(Map(next_promise_factory(std::move(call_args)),
-                                   [calld](grpc_core::ServerMetadataHandle md) {
-                                     calld->OnServerTrailingMetadata(md.get());
-                                     return md;
-                                   }),
-                               [calld]() { calld->OnCancel(); });
-  };
-  // If the OpenCensus plugin is not yet ready, then wait for it to be ready.
-  if (!grpc::internal::OpenCensusRegistry::Get().Ready()) {
-    auto notification = std::make_shared<PromiseNotification>();
-    grpc::internal::OpenCensusRegistry::Get().NotifyOnReady(
-        [notification]() { notification->Notify(); });
-    return grpc_core::Seq([notification]() { return notification->Wait(); },
-                          std::move(continue_making_call_promise));
-  }
-  return continue_making_call_promise();
+  auto* calld = grpc_core::GetContext<grpc_core::Arena>()
+                    ->ManagedNew<OpenCensusServerCallData>(
+                        call_args.client_initial_metadata.get());
+  call_args.client_to_server_messages->InterceptAndMap(
+      [calld](grpc_core::MessageHandle message) {
+        calld->OnRecvMessage();
+        return message;
+      });
+  call_args.server_to_client_messages->InterceptAndMap(
+      [calld](grpc_core::MessageHandle message) {
+        calld->OnSendMessage();
+        return message;
+      });
+  grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
+      [calld](const grpc_call_final_info* final_info) {
+        calld->Finalize(final_info);
+      });
+  return grpc_core::OnCancel(Map(next_promise_factory(std::move(call_args)),
+                                 [calld](grpc_core::ServerMetadataHandle md) {
+                                   calld->OnServerTrailingMetadata(md.get());
+                                   return md;
+                                 }),
+                             [calld]() { calld->OnCancel(); });
 }
 
 }  // namespace internal
