@@ -25,6 +25,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
+#include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
 #include "test/core/util/test_config.h"
@@ -40,6 +41,8 @@
 namespace grpc_core {
 
 namespace {
+
+std::atomic<int> unique{0};
 
 void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
@@ -320,6 +323,74 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<CompressionFixture>();
+        }},
+    CoreTestConfiguration{
+        "Chttp2FullstackLocalAbstractUdsPercentEncoded",
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& /*client_args*/,
+           const grpc_core::ChannelArgs& /*server_args*/) {
+          gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+          return std::make_unique<LocalTestFixture>(
+              absl::StrFormat(
+                  "unix-abstract:grpc_fullstack_test.%%00.%d.%" PRId64
+                  ".%" PRId32 ".%d",
+                  getpid(), now.tv_sec, now.tv_nsec,
+                  unique.fetch_add(1, std::memory_order_relaxed)),
+              UDS);
+        }},
+    CoreTestConfiguration{
+        "Chttp2FullstackLocalIpv4",
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& /*client_args*/,
+           const grpc_core::ChannelArgs& /*server_args*/) {
+          int port = grpc_pick_unused_port_or_die();
+          return std::make_unique<LocalTestFixture>(
+              grpc_core::JoinHostPort("127.0.0.1", port), LOCAL_TCP);
+        }},
+    CoreTestConfiguration{
+        "Chttp2FullstackLocalIpv6",
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& /*client_args*/,
+           const grpc_core::ChannelArgs& /*server_args*/) {
+          int port = grpc_pick_unused_port_or_die();
+          return std::make_unique<LocalTestFixture>(
+              grpc_core::JoinHostPort("[::1]", port), LOCAL_TCP);
+        }},
+    CoreTestConfiguration{
+        "Chttp2FullstackLocalUdsPercentEncoded",
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& /*client_args*/,
+           const grpc_core::ChannelArgs& /*server_args*/) {
+          gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+          return std::make_unique<LocalTestFixture>(
+              absl::StrFormat("unix:/tmp/grpc_fullstack_test.%%25.%d.%" PRId64
+                              ".%" PRId32 ".%d",
+                              getpid(), now.tv_sec, now.tv_nsec,
+                              unique.fetch_add(1, std::memory_order_relaxed)),
+              UDS);
+        }},
+    CoreTestConfiguration{
+        "Chttp2FullstackLocalUds",
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
+        nullptr,
+        [](const grpc_core::ChannelArgs& /*client_args*/,
+           const grpc_core::ChannelArgs& /*server_args*/) {
+          gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+          return std::make_unique<LocalTestFixture>(
+              absl::StrFormat("unix:/tmp/grpc_fullstack_test.%d.%" PRId64
+                              ".%" PRId32 ".%d",
+                              getpid(), now.tv_sec, now.tv_nsec,
+                              unique.fetch_add(1, std::memory_order_relaxed)),
+              UDS);
         }},
     CoreTestConfiguration{
         "Chttp2FullstackNoRetry",
