@@ -171,6 +171,7 @@ grpc_cc_test(
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
+        "tests/retry_transparent_goaway.cc",
         "tests/retry_transparent_max_concurrent_streams.cc",
         "tests/retry_transparent_not_sent_on_wire.cc",
         "tests/retry_unref_before_finish.cc",
