@@ -360,7 +360,9 @@ class CoreEnd2endTest
     Call(const Call&) = delete;
     Call& operator=(const Call&) = delete;
     Call(Call&& other) noexcept : call_(std::exchange(other.call_, nullptr)) {}
-    ~Call() { grpc_call_unref(call_); }
+    ~Call() {
+      if (call_ != nullptr) grpc_call_unref(call_);
+    }
     BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
     void Cancel() { grpc_call_cancel(call_, nullptr); }
     absl::optional<std::string> GetPeer() {
@@ -375,7 +377,7 @@ class CoreEnd2endTest
     grpc_call* c_call() const { return call_; }
 
    private:
-    grpc_call* call_;
+    grpc_call* call_ = nullptr;
   };
 
   class IncomingCall {
@@ -443,6 +445,7 @@ class CoreEnd2endTest
     initialized_ = true;
     fixture_->InitServer(args);
   }
+  void ShutdownAndDestroyClient() { fixture_->ShutdownClient(); }
   void ShutdownServerAndNotify(int tag) {
     grpc_server_shutdown_and_notify(fixture_->server(), fixture_->cq(),
                                     CqVerifier::tag(tag));
