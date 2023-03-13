@@ -141,7 +141,8 @@ grpc_op CoreEnd2endTest::IncomingCloseOnServer::MakeOp() {
 
 CoreEnd2endTest::BatchBuilder&
 CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
-    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md) {
+    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
+    uint32_t flags) {
   auto& v = Make<std::vector<grpc_metadata>>();
   for (const auto& p : md) {
     grpc_metadata m;
@@ -152,6 +153,7 @@ CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  op.flags = flags;
   op.data.send_initial_metadata.count = v.size();
   op.data.send_initial_metadata.metadata = v.data();
   ops_.push_back(op);

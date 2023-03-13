@@ -288,7 +288,8 @@ class CoreEnd2endTest
 
     BatchBuilder& SendInitialMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
-            md);
+            md,
+        uint32_t flags = 0);
 
     BatchBuilder& SendMessage(Slice payload, uint32_t flags = 0);
     BatchBuilder& SendMessage(absl::string_view payload, uint32_t flags = 0) {
