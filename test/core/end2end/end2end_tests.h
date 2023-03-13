@@ -455,6 +455,11 @@ class CoreEnd2endTest
     grpc_server_cancel_all_calls(fixture().server());
   }
 
+  grpc_channel* client() {
+    ForceInitialized();
+    return fixture().client();
+  }
+
  private:
   void ForceInitialized();
 
