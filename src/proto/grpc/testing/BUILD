@@ -191,23 +191,10 @@ grpc_proto_library(
 
 # Test that grpc_proto_library/cc_grpc_library can consume generated files
 genrule(
-    name = "orca_load_report_gen_proto_file",
-    srcs = ["//src/proto/grpc/testing/xds/v3:orca_load_report.proto"],
-    outs = ["orca_load_report_gen.proto"],
-    cmd = "cp $< $@",
-)
-
-grpc_proto_library(
-    name = "orca_load_report_gen_proto",
-    srcs = ["orca_load_report_gen_proto_file"],
-    has_services = False,
-)
-
-genrule(
     name = "messages_gen_proto_file",
     srcs = ["messages.proto"],
     outs = ["messages_gen.proto"],
-    cmd = "sed 's|xds/v3/orca_load_report.proto|orca_load_report_gen.proto|' $< > $@",
+    cmd = "sed 's|orca_load_report.proto|orca_load_report_gen.proto|' $< > $@",
 )
 
 grpc_proto_library(
@@ -215,7 +202,7 @@ grpc_proto_library(
     srcs = ["messages_gen_proto_file"],
     has_services = False,
     deps = [
-        "orca_load_report_gen_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_gen_proto",
     ],
 )
 
