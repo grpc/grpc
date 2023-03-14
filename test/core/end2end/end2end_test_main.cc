@@ -27,6 +27,7 @@
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_oauth2_common.h"
+#include "test/core/end2end/fixtures/h2_ssl_tls_common.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 #include "test/core/end2end/fixtures/inproc_fixture.h"
 #include "test/core/end2end/fixtures/local_util.h"
@@ -505,6 +506,23 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
+        }},
+    CoreTestConfiguration{
+        "Chttp2SimplSslFullstackTls12",
+        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
+        "foo.test.google.fr",
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
+        }},
+    CoreTestConfiguration{
+        "Chttp2SimplSslFullstackTls13",
+        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
+        "foo.test.google.fr",
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
         }},
     CoreTestConfiguration{
         "Chttp2SocketPair", FEATURE_MASK_IS_HTTP2, nullptr,
