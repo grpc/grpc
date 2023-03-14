@@ -37,7 +37,7 @@ namespace grpc_core {
 namespace {
 
 // Request/response with metadata which should be filtered
-void TestRquestResponseWithMetadataToBeFiltered(
+void TestRequestResponseWithMetadataToBeFiltered(
     CoreEnd2endTest& test, absl::string_view filtered_md_key,
     absl::string_view filter_md_value) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -80,7 +80,7 @@ void TestRquestResponseWithMetadataToBeFiltered(
 }
 
 TEST_P(CoreEnd2endTest, ContentLengthIsFiltered) {
-  TestRquestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
+  TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 
 }  // namespace
