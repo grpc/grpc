@@ -31,7 +31,7 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 | Operating System | Architectures | Versions | Support Level |
 |------------------|---------------|----------|---------------|
 | Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 6+, GCC 7.3+     | Officially Supported |
-| Windows 10+                    | x86, x64      | Visual Studio 2017+    | Officially Supported |
+| Windows 10+                    | x86, x64      | Visual Studio 2019+    | Officially Supported |
 | MacOS                          | x86, x64      | XCode 12+              | Officially Supported |
 | Linux - Others                 | x86, x64      | clang 6+, GCC 7.3+     | Best Effort          |
 | Linux                          | ARM           |                        | Best Effort          |
