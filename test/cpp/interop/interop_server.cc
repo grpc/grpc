@@ -26,6 +26,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -36,6 +38,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
@@ -136,6 +139,35 @@ bool CheckExpectedCompression(const ServerContext& context,
   return true;
 }
 
+void RecordMetrics(ServerContext* context,
+                   const xds::data::orca::v3::OrcaLoadReport& request_metrics) {
+  auto recorder = context->ExperimentalGetCallMetricRecorder();
+  // Do not record when zero since it indicates no test per-call report.
+  if (request_metrics.cpu_utilization() > 0) {
+    recorder->RecordCpuUtilizationMetric(request_metrics.cpu_utilization());
+  }
+  if (request_metrics.mem_utilization() > 0) {
+    recorder->RecordMemoryUtilizationMetric(request_metrics.mem_utilization());
+  }
+  if (request_metrics.rps_fractional() > 0) {
+    recorder->RecordQpsMetric(request_metrics.rps_fractional());
+  }
+  for (const auto& p : request_metrics.request_cost()) {
+    char* key = static_cast<char*>(
+        grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+    strncpy(key, p.first.data(), p.first.size());
+    key[p.first.size()] = '\0';
+    recorder->RecordRequestCostMetric(key, p.second);
+  }
+  for (const auto& p : request_metrics.utilization()) {
+    char* key = static_cast<char*>(
+        grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+    strncpy(key, p.first.data(), p.first.size());
+    key[p.first.size()] = '\0';
+    recorder->RecordUtilizationMetric(key, p.second);
+  }
+}
+
 class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context,
@@ -187,7 +219,9 @@ class TestServiceImpl : public TestService::Service {
           static_cast<grpc::StatusCode>(request->response_status().code()),
           request->response_status().message());
     }
-
+    if (request->has_orca_per_rpc_report()) {
+      RecordMetrics(context, request->orca_per_rpc_report());
+    }
     return Status::OK;
   }
 
@@ -360,6 +394,8 @@ void grpc::testing::interop::RunServer(
   if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
     builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
   }
+  grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
+      nullptr);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
 

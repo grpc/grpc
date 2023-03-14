@@ -37,11 +37,13 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
 
 namespace grpc {
@@ -78,6 +80,56 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
     // Didn't request compression -> make sure the response is uncompressed
     GPR_ASSERT(!(inspector.WasCompressed()));
   }
+}
+
+void InitializeCustomLbPolicyIfNeeded() {
+  // Load balancing policy builder is global. For now, all instances of the
+  // LB policy will store data in the same collection. All interop_clients in
+  // the same process will also share the collection
+  // Realistically, we do not yet need synchronization as only a single test is
+  // running at a time.
+  static bool initialized = false;
+  if (!initialized) {
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          RegisterBackendMetricsLbPolicy(builder);
+        });
+    initialized = true;
+  }
+}
+
+template <typename Map>
+bool SameMaps(const std::string& path, const Map& expected, const Map& actual) {
+  if (expected.size() != actual.size()) {
+    gpr_log(GPR_ERROR, "Field %s does not match: expected %lu entries, got %lu",
+            path.c_str(), expected.size(), actual.size());
+    return false;
+  }
+  for (const auto& key_value : expected) {
+    auto it = actual.find(key_value.first);
+    if (it == actual.end()) {
+      gpr_log(GPR_ERROR, "In field %s, key %s was not found", path.c_str(),
+              key_value.first.c_str());
+      return false;
+    }
+    if (key_value.second != it->second) {
+      gpr_log(
+          GPR_ERROR, "In field %s, value %s mismatch: expected %f, actual: %f",
+          path.c_str(), key_value.first.c_str(), key_value.second, it->second);
+      return false;
+    }
+  }
+  return true;
+}
+
+void SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
+                         const xds::data::orca::v3::OrcaLoadReport& actual) {
+  GPR_ASSERT(expected.cpu_utilization() == actual.cpu_utilization());
+  GPR_ASSERT(expected.mem_utilization() == actual.mem_utilization());
+  GPR_ASSERT(
+      SameMaps("request_cost", expected.request_cost(), actual.request_cost()));
+  GPR_ASSERT(
+      SameMaps("utilization", expected.utilization(), actual.utilization()));
 }
 }  // namespace
 
@@ -119,7 +171,13 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
+    : serviceStub_(
+          [&]() {
+            InitializeCustomLbPolicyIfNeeded();
+            return channel_creation_func(
+                load_report_tracker_.GetChannelArguments());
+          },
+          new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -927,6 +985,30 @@ bool InteropClient::DoPickFirstUnary() {
     }
   }
   gpr_log(GPR_DEBUG, "pick first unary successfully finished");
+  return true;
+}
+
+bool InteropClient::DoOrcaPerRpc() {
+  load_report_tracker_.ResetCollectedLoadReports();
+  gpr_log(GPR_DEBUG, "testing orca per rpc");
+  SimpleRequest request;
+  SimpleResponse response;
+  ClientContext context;
+  auto orca_report = request.mutable_orca_per_rpc_report();
+  orca_report->set_cpu_utilization(0.8210);
+  orca_report->set_mem_utilization(0.5847);
+  orca_report->mutable_request_cost()->emplace("cost", 3456.32);
+  orca_report->mutable_utilization()->emplace("util", 0.30499);
+  auto status = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  if (!AssertStatusOk(status, context.debug_error_string())) {
+    return false;
+  }
+  auto report = load_report_tracker_.GetNextLoadReport();
+  GPR_ASSERT(report.has_value());
+  GPR_ASSERT(report->has_value());
+  SameOrcaLoadReports(report->value(), *orca_report);
+  GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
+  gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
   return true;
 }
 
