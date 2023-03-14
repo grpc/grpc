@@ -35,9 +35,7 @@ python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
     --kube_context="${KUBE_CONTEXT}" \
-    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
-    --resource_prefix='required-but-does-not-matter' \
-    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com
 
 # The BASIC cluster is used by url-map tests. Only cleaning the GKE client
 # namespaces, which won't provide much value in debugging. The keep hours is
@@ -53,9 +51,7 @@ python3 -m bin.cleanup.namespace \
     --network=default-vpc \
     --keep_hours=6 \
     --kube_context="${TARGET_KUBE_CONTEXT}" \
-    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
-    --resource_prefix='required-but-does-not-matter' \
-    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com
 
 # The PSM_LB cluster is used by k8s_lb tests. Only cleaning the GKE client
 # namespaces, which won't provide much value in debugging. The keep hours is
@@ -68,6 +64,4 @@ python3 -m bin.cleanup.namespace \
     --network=default-vpc \
     --keep_hours=6 \
     --kube_context="${TARGET_KUBE_CONTEXT}" \
-    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
-    --resource_prefix='required-but-does-not-matter' \
-    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com
