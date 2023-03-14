@@ -219,6 +219,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def _handle_api_exception(self,
                               err: ApiException) -> Optional[retryers.Retrying]:
+        # TODO(sergiitk): replace returns with match/case when we use to py3.10.
+        # pylint: disable=too-many-return-statements
+
         # TODO(sergiitk): can I chain the retryers?
         logger.debug(
             'Handling k8s.ApiException: status=%s reason=%s body=%s headers=%s',
