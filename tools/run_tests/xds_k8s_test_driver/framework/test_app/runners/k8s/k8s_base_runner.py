@@ -26,6 +26,7 @@ import yaml
 import framework.helpers.datetime
 import framework.helpers.highlighter
 import framework.helpers.rand
+from framework.helpers import retryers
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.test_app.runners import base_runner
@@ -277,9 +278,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
-        except k8s.ApiException as e:
-            logger.info('Deployment %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except retryers.RetryError as e:
+            logger.info('Deployment %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -290,9 +290,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service %s', name)
         try:
             self.k8s_namespace.delete_service(name)
-        except k8s.ApiException as e:
-            logger.info('Service %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except retryers.RetryError as e:
+            logger.info('Service %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -303,9 +302,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service account %s', name)
         try:
             self.k8s_namespace.delete_service_account(name)
-        except k8s.ApiException as e:
-            logger.info('Service account %s deletion failed, error: %s %s',
-                        name, e.status, e.reason)
+        except retryers.RetryError as e:
+            logger.info('Service account %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -316,9 +314,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
-        except k8s.ApiException as e:
-            logger.info('Namespace %s deletion failed, error: %s %s',
-                        self.k8s_namespace.name, e.status, e.reason)
+        except retryers.RetryError as e:
+            logger.info('Namespace %s deletion failed: %s',
+                        self.k8s_namespace.name, e)
             return
 
         if wait_for_deletion:
