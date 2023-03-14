@@ -177,6 +177,9 @@ message StreamingOutputCallRequest {
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
+
+  // ORCA data to be returned out of band
+  xds.data.orca.v3.OrcaLoadReport orca_oob_report = 8;
 }
 
 // Server-streaming response, as configured by the request and parameters.
