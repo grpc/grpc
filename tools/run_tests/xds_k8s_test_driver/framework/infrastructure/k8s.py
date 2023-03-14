@@ -29,7 +29,6 @@ import yaml
 
 from framework.helpers import retryers
 import framework.helpers.highlighter
-from framework.helpers.highlighter import HighlighterYaml
 from framework.infrastructure.k8s_internal import k8s_log_collector
 from framework.infrastructure.k8s_internal import k8s_port_forwarder
 
@@ -176,6 +175,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             raise
 
     def _handle_exception(self, err: Exception) -> Optional[retryers.Retrying]:
+        # TODO(sergiitk): replace returns with match/case when we use to py3.10.
+        # pylint: disable=too-many-return-statements
+
         # Unwrap MaxRetryError.
         if isinstance(err, urllib3.exceptions.MaxRetryError):
             return self._handle_exception(err.reason) if err.reason else None
