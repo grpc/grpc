@@ -86,6 +86,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/cpp/util:test_config",
     ],
 )
@@ -105,6 +106,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":backend_metrics_lb_policy",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -423,5 +425,24 @@ grpc_cc_binary(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "backend_metrics_lb_policy",
+    srcs = [
+        "backend_metrics_lb_policy.cc",
+    ],
+    hdrs = [
+        "backend_metrics_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
     ],
 )
