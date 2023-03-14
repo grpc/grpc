@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -1040,11 +1041,15 @@ bool InteropClient::DoOrcaPerRpc() {
 }
 
 bool InteropClient::DoOrcaOob() {
-  gpr_log(GPR_DEBUG, "Running Orca OOB test");
+  gpr_log(GPR_DEBUG, "testing orca oob");
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
                                      StreamingOutputCallResponse>>
       stream(serviceStub_.Get()->FullDuplexCall(&context));
+  auto stream_cleanup = absl::MakeCleanup([&]() {
+    GPR_ASSERT(stream->WritesDone());
+    GPR_ASSERT(stream->Finish().ok());
+  });
   {
     StreamingOutputCallRequest request;
     request.add_response_parameters()->set_size(1);
@@ -1055,12 +1060,11 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.30499);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      gpr_log(GPR_ERROR,
-              "DoCancelAfterFirstResponse(): stream->Write() failed");
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      gpr_log(GPR_ERROR, "DoCancelAfterFirstResponse(): stream->Read failed");
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
       return TransientFailureOrAbort();
     }
     GPR_ASSERT(
@@ -1082,12 +1086,11 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.2039);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      gpr_log(GPR_ERROR,
-              "DoCancelAfterFirstResponse(): stream->Write() failed");
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      gpr_log(GPR_ERROR, "DoCancelAfterFirstResponse(): stream->Read failed");
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
       return TransientFailureOrAbort();
     }
     GPR_ASSERT(
@@ -1099,9 +1102,7 @@ bool InteropClient::DoOrcaOob() {
                 absl::Seconds(5), 10)
             .has_value());
   }
-  GPR_ASSERT(stream->WritesDone());
-  GPR_ASSERT(stream->Finish().ok());
-  gpr_log(GPR_DEBUG, "Orca OOB test complete");
+  gpr_log(GPR_DEBUG, "orca oob successfully finished");
   return true;
 }
 

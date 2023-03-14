@@ -274,10 +274,10 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
                                            poll_timeout)) {
       return absl::nullopt;
     }
-    auto report = oob_load_reports_.front();
+    auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
-      gpr_log(GPR_DEBUG, "Report #%zu matched", i + 1);
+      gpr_log(GPR_DEBUG, "Report #%" PRIuPTR " matched", i + 1);
       return report;
     }
   }

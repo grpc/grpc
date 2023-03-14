@@ -374,6 +374,7 @@ class TestServiceImpl : public TestService::Service {
     if (request_metrics.rps_fractional() > 0) {
       server_metric_recorder_->SetQps(request_metrics.rps_fractional());
     }
+    absl::MutexLock lock(&retained_utilization_names_mu_);
     std::map<grpc::string_ref, double> named_utilizations;
     for (const auto& p : request_metrics.utilization()) {
       const auto& key = *retained_utilization_names_.insert(p.first).first;
@@ -383,7 +384,9 @@ class TestServiceImpl : public TestService::Service {
   }
 
   grpc::experimental::ServerMetricRecorder* server_metric_recorder_;
-  std::set<std::string> retained_utilization_names_;
+  std::set<std::string> retained_utilization_names_
+      ABSL_GUARDED_BY(retained_utilization_names_mu_);
+  absl::Mutex retained_utilization_names_mu_;
 };
 
 void grpc::testing::interop::RunServer(
