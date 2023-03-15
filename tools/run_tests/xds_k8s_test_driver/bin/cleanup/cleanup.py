@@ -321,8 +321,8 @@ def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                     logging.info('Skipped [keep]:')
                     break  # break inner loop, continue outer loop
                 remove_fn(project=project,
-                          prefix=result.group(1),
-                          suffix=resource_prefix,
+                          prefix=resource_prefix,
+                          suffix=result.group(1),
                           network=network)
                 break
         if not matched:
