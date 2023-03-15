@@ -166,7 +166,7 @@ def exec_gcloud(project: str, *cmds: str) -> Json:
             f'creationTimestamp <= {get_expire_timestamp().isoformat()}'
         ])
     # Executing the gcloud command
-    logging.info('Executing: %s', " ".join(cmds))
+    logging.debug('Executing: %s', " ".join(cmds))
     proc = subprocess.Popen(cmds,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
