@@ -441,7 +441,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             logger.error(
                 'Timeout %s (h:mm:ss) waiting for pod count %i, got: %i. '
                 'Pod statuses:\n%s', timeout, count, len(result),
-                self._pretty_format_statuses(result))
+                self.pretty_format_statuses(result))
             raise
 
     def wait_for_deployment_deleted(
@@ -516,8 +516,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         pod_log_collector.start()
         return pod_log_collector
 
-    def _pretty_format_statuses(self,
-                                k8s_objects: List[Optional[object]]) -> str:
+    def pretty_format_statuses(self,
+                               k8s_objects: List[Optional[object]]) -> str:
         return '\n'.join(
             self._pretty_format_status(k8s_object)
             for k8s_object in k8s_objects)

@@ -85,6 +85,7 @@ cleanup::run_clean() {
   python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
+    --color_style=ansi16 \
     --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
     --kube_context="${CLEANUP_KUBE_CONTEXT:-unset}" \
     "${@:2}" \

@@ -273,8 +273,9 @@ def cleanup_client(project,
     if suffix:
         deployment_name = f'{deployment_name}-{suffix}'
 
+    ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
     client_runner = _KubernetesClientRunner(
-        k8s.KubernetesNamespace(k8s_api_manager, client_namespace),
+        ns,
         deployment_name=deployment_name,
         gcp_project=project,
         network=network,
@@ -284,7 +285,15 @@ def cleanup_client(project,
         td_bootstrap_image='')
 
     logger.info('Cleanup client')
-    client_runner.cleanup(force=True, force_namespace=True)
+    try:
+        client_runner.cleanup(force=True, force_namespace=True)
+    except retryers.RetryError as err:
+        result = err.result(default=[])
+        logger.error(
+            'Timeout waiting for namespace %s deletion. '
+            'Namespace statuses (if any):\n%s', ns.name,
+            ns.pretty_format_statuses(result))
+        raise
 
 
 def cleanup_client_alt(*args, **kwargs):
@@ -304,8 +313,8 @@ def cleanup_server(project,
     if suffix:
         deployment_name = f'{deployment_name}-{suffix}'
 
+    ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
     server_runner = _KubernetesServerRunner(
-        k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
         deployment_name=deployment_name,
         gcp_project=project,
         network=network,
@@ -315,7 +324,15 @@ def cleanup_server(project,
         td_bootstrap_image='')
 
     logger.info('Cleanup server')
-    server_runner.cleanup(force=True, force_namespace=True)
+    try:
+        server_runner.cleanup(force=True, force_namespace=True)
+    except retryers.RetryError as err:
+        result = err.result(default=[])
+        logger.error(
+            'Timeout waiting for namespace %s deletion. '
+            'Namespace statuses (if any):\n%s', ns.name,
+            ns.pretty_format_statuses(result))
+        raise
 
 
 def cleanup_server_alt(*args, **kwargs):
