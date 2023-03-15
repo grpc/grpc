@@ -98,6 +98,10 @@ CLIENT_PREFIXES = flags.DEFINE_list(
     help=
     "a comma-separated list of prefixes for which the leaked clients will be deleted",
 )
+MODE = flags.DEFINE_enum('mode',
+                         default='td',
+                         enum_values=['k8s', 'td'],
+                         help='Mode: Kubernetes or Traffic Director')
 
 # The cleanup script performs some API calls directly, so some flags normally
 # required to configure framework properly, are not needed here.
@@ -361,17 +365,17 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
         except k8s.NotFound:
             logging.warning('----- Skipped [not found]: %s', namespace_name)
         except retryers.RetryError as err:
-            logging.exception('----- Skipped [cleanup timed out]: %s',
-                              namespace_name)
             _CLEANUP_RESULT.add_error(
                 'Retries exhausted while waiting for the '
                 f'deletion of namespace {namespace_name}: '
                 f'{err}')
-        except Exception as err:  # noqa pylint: disable=broad-except
-            logging.exception('----- Skipped [cleanup unexpected error]: %s',
+            logging.exception('----- Skipped [cleanup timed out]: %s',
                               namespace_name)
+        except Exception as err:  # noqa pylint: disable=broad-except
             _CLEANUP_RESULT.add_error('Unexpected error while deleting '
                                       f'namespace {namespaces}: {err}')
+            logging.exception('----- Skipped [cleanup unexpected error]: %s',
+                              namespace_name)
 
     logger.info('-----')
 
@@ -387,7 +391,7 @@ def _rule_match_k8s_namespace(
 
 
 def find_and_remove_leaked_k8s_resources(dry_run, project, network,
-                                         gcp_service_account):
+                                         gcp_service_account, k8s_context):
     k8s_resource_rules: List[K8sResourceRule] = []
     for prefix in CLIENT_PREFIXES.value:
         k8s_resource_rules.append(
@@ -398,25 +402,13 @@ def find_and_remove_leaked_k8s_resources(dry_run, project, network,
 
     # Delete leaked k8s namespaces, those usually mean there are leaked testing
     # client/servers from the gke framework.
-    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
+    k8s_api_manager = k8s.KubernetesApiManager(k8s_context)
     nss = k8s_api_manager.core.list_namespace()
     delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
                          k8s_api_manager, gcp_service_account, nss.items)
 
 
-def main(argv):
-    if len(argv) > 1:
-        raise app.UsageError('Too many command-line arguments.')
-    load_keep_config()
-
-    # Must be called before KubernetesApiManager or GcpApiManager init.
-    xds_flags.set_socket_default_timeout_from_flag()
-
-    project: str = xds_flags.PROJECT.value
-    network: str = xds_flags.NETWORK.value
-    gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
-    dry_run: bool = DRY_RUN.value
-
+def find_and_remove_leaked_td_resources(dry_run, project, network):
     td_resource_rules = [
         # itmes in each tuple, in order
         # - regex to match
@@ -441,25 +433,46 @@ def main(argv):
     # leaked target-proxy is guaranteed to be a super set of leaked
     # forwarding-rule.
     compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
-    leakedHealthChecks = []
+    leaked_health_checks = []
     for item in compute.list_health_check()['items']:
         if dateutil.parser.isoparse(
                 item['creationTimestamp']) <= get_expire_timestamp():
-            leakedHealthChecks.append(item)
+            leaked_health_checks.append(item)
 
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
-                               leakedHealthChecks)
+                               leaked_health_checks)
 
     # Delete leaked instance templates, those usually mean there are leaked VMs
     # from the gce framework. Also note that this is only needed for the gce
     # resources.
-    leakedInstanceTemplates = exec_gcloud(project, 'compute',
-                                          'instance-templates', 'list')
+    leaked_instance_templates = exec_gcloud(project, 'compute',
+                                            'instance-templates', 'list')
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
-                               leakedInstanceTemplates)
+                               leaked_instance_templates)
 
-    find_and_remove_leaked_k8s_resources(dry_run, project, network,
-                                         gcp_service_account)
+
+def main(argv):
+    if len(argv) > 1:
+        raise app.UsageError('Too many command-line arguments.')
+    load_keep_config()
+
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
+
+    project: str = xds_flags.PROJECT.value
+    network: str = xds_flags.NETWORK.value
+    gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
+    dry_run: bool = DRY_RUN.value
+    k8s_context: str = xds_k8s_flags.KUBE_CONTEXT.value
+
+    if MODE.value == 'td':
+        find_and_remove_leaked_td_resources(dry_run, project, network)
+    elif MODE.value == 'k8s':
+        # 'unset' value is used in td-only mode to bypass the validation
+        # for the required  flag.
+        assert k8s_context != 'unset'
+        find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                             gcp_service_account, k8s_context)
 
     logger.info('##################### Done cleaning up #####################')
     if _CLEANUP_RESULT.error_count > 0:
