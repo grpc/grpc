@@ -182,6 +182,11 @@ grpc_proto_library(
     ],
 )
 
+proto_library(
+    name = "orca_load_report_proto_descriptor",
+    srcs = ["orca_load_report.proto"],
+)
+
 grpc_proto_library(
     name = "orca_service_proto",
     srcs = [

@@ -25,8 +25,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -37,11 +39,13 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
 
 namespace grpc {
@@ -78,6 +82,79 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
     // Didn't request compression -> make sure the response is uncompressed
     GPR_ASSERT(!(inspector.WasCompressed()));
   }
+}
+
+void InitializeCustomLbPolicyIfNeeded() {
+  // Load balancing policy builder is global. For now, all instances of the
+  // LB policy will store data in the same collection. All interop_clients in
+  // the same process will also share the collection
+  // Realistically, we do not yet need synchronization as only a single test is
+  // running at a time.
+  static bool initialized = false;
+  if (!initialized) {
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          RegisterBackendMetricsLbPolicy(builder);
+        });
+    initialized = true;
+  }
+}
+
+absl::optional<std::string> ValuesDiff(absl::string_view field, double expected,
+                                       double actual) {
+  if (expected != actual) {
+    return absl::StrFormat("%s: expected: %f, actual: %f", field, expected,
+                           actual);
+  }
+  return absl::nullopt;
+}
+
+template <typename Map>
+absl::optional<std::string> MapsDiff(absl::string_view path,
+                                     const Map& expected, const Map& actual) {
+  auto result = ValuesDiff(absl::StrFormat("%s size", path), expected.size(),
+                           actual.size());
+  if (result.has_value()) {
+    return result;
+  }
+  for (const auto& key_value : expected) {
+    auto it = actual.find(key_value.first);
+    if (it == actual.end()) {
+      return absl::StrFormat("In field %s, key %s was not found", path,
+                             key_value.first);
+    }
+    result = ValuesDiff(absl::StrFormat("%s/%s", path, key_value.first),
+                        key_value.second, it->second);
+    if (result.has_value()) {
+      return result;
+    }
+  }
+  return absl::nullopt;
+}
+
+absl::optional<std::string> OrcaLoadReportsDiff(
+    const xds::data::orca::v3::OrcaLoadReport& expected,
+    const xds::data::orca::v3::OrcaLoadReport& actual) {
+  auto error = ValuesDiff("cpu_utilization", expected.cpu_utilization(),
+                          actual.cpu_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error = ValuesDiff("mem_utilization", expected.mem_utilization(),
+                     actual.mem_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error =
+      MapsDiff("request_cost", expected.request_cost(), actual.request_cost());
+  if (error.has_value()) {
+    return error;
+  }
+  error = MapsDiff("utilization", expected.utilization(), actual.utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  return absl::nullopt;
 }
 }  // namespace
 
@@ -119,7 +196,13 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
+    : serviceStub_(
+          [&]() {
+            InitializeCustomLbPolicyIfNeeded();
+            return channel_creation_func(
+                load_report_tracker_.GetChannelArguments());
+          },
+          new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -927,6 +1010,99 @@ bool InteropClient::DoPickFirstUnary() {
     }
   }
   gpr_log(GPR_DEBUG, "pick first unary successfully finished");
+  return true;
+}
+
+bool InteropClient::DoOrcaPerRpc() {
+  load_report_tracker_.ResetCollectedLoadReports();
+  gpr_log(GPR_DEBUG, "testing orca per rpc");
+  SimpleRequest request;
+  SimpleResponse response;
+  ClientContext context;
+  auto orca_report = request.mutable_orca_per_rpc_report();
+  orca_report->set_cpu_utilization(0.8210);
+  orca_report->set_mem_utilization(0.5847);
+  orca_report->mutable_request_cost()->emplace("cost", 3456.32);
+  orca_report->mutable_utilization()->emplace("util", 0.30499);
+  auto status = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  if (!AssertStatusOk(status, context.debug_error_string())) {
+    return false;
+  }
+  auto report = load_report_tracker_.GetNextLoadReport();
+  GPR_ASSERT(report.has_value());
+  GPR_ASSERT(report->has_value());
+  auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
+  if (comparison_result.has_value()) {
+    gpr_assertion_failed(__FILE__, __LINE__, comparison_result->c_str());
+  }
+  GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
+  gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
+  return true;
+}
+
+bool InteropClient::DoOrcaOob() {
+  gpr_log(GPR_DEBUG, "testing orca oob");
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(serviceStub_.Get()->FullDuplexCall(&context));
+  auto stream_cleanup = absl::MakeCleanup([&]() {
+    GPR_ASSERT(stream->WritesDone());
+    GPR_ASSERT(stream->Finish().ok());
+  });
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    xds::data::orca::v3::OrcaLoadReport* orca_report =
+        request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.8210);
+    orca_report->set_mem_utilization(0.5847);
+    orca_report->mutable_utilization()->emplace("util", 0.30499);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(
+        load_report_tracker_
+            .WaitForOobLoadReport(
+                [orca_report](const auto& actual) {
+                  return !OrcaLoadReportsDiff(*orca_report, actual).has_value();
+                },
+                absl::Seconds(5), 10)
+            .has_value());
+  }
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    xds::data::orca::v3::OrcaLoadReport* orca_report =
+        request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.29309);
+    orca_report->set_mem_utilization(0.2);
+    orca_report->mutable_utilization()->emplace("util", 0.2039);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(
+        load_report_tracker_
+            .WaitForOobLoadReport(
+                [orca_report](const auto& report) {
+                  return !OrcaLoadReportsDiff(*orca_report, report).has_value();
+                },
+                absl::Seconds(5), 10)
+            .has_value());
+  }
+  gpr_log(GPR_DEBUG, "orca oob successfully finished");
   return true;
 }
 

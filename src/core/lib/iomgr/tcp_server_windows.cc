@@ -103,7 +103,7 @@ struct grpc_tcp_server {
 // Public function. Allocates the proper data structures to hold a
 // grpc_tcp_server.
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const EndpointConfig& config,
+                                           const EndpointConfig& /* config */,
                                            grpc_tcp_server_cb on_accept_cb,
                                            void* on_accept_cb_arg,
                                            grpc_tcp_server** server) {
@@ -122,7 +122,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   return absl::OkStatus();
 }
 
-static void destroy_server(void* arg, grpc_error_handle error) {
+static void destroy_server(void* arg, grpc_error_handle /* error */) {
   grpc_tcp_server* s = (grpc_tcp_server*)arg;
 
   // Now that the accepts have been aborted, we can destroy the sockets.
@@ -456,7 +456,6 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   grpc_resolved_address addr6_v4mapped;
   grpc_resolved_address wildcard;
   grpc_resolved_address* allocated_addr = NULL;
-  grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
   grpc_error_handle error;
 
@@ -468,6 +467,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   // as some previously created listener.
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
+      grpc_resolved_address sockname_temp;
       int sockname_temp_len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->socket->socket,
                            (grpc_sockaddr*)sockname_temp.addr,
@@ -533,27 +533,33 @@ static void tcp_server_start(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
-static unsigned tcp_server_port_fd_count(grpc_tcp_server* s,
-                                         unsigned port_index) {
+static unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
+                                         unsigned /* port_index */) {
   return 0;
 }
 
-static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                              unsigned fd_index) {
+static int tcp_server_port_fd(grpc_tcp_server* /* s */,
+                              unsigned /* port_index */,
+                              unsigned /* fd_index */) {
   return -1;
 }
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
-    grpc_tcp_server* s) {
+    grpc_tcp_server* /* s */) {
   return nullptr;
 }
 
-static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
+static void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
+
+static int tcp_pre_allocated_fd(grpc_tcp_server* /* s */) { return -1; }
+
+static void tcp_set_pre_allocated_fd(grpc_tcp_server* /* s */, int /* fd */) {}
 
 grpc_tcp_server_vtable grpc_windows_tcp_server_vtable = {
     tcp_server_create,        tcp_server_start,
     tcp_server_add_port,      tcp_server_create_fd_handler,
     tcp_server_port_fd_count, tcp_server_port_fd,
     tcp_server_ref,           tcp_server_shutdown_starting_add,
-    tcp_server_unref,         tcp_server_shutdown_listeners};
+    tcp_server_unref,         tcp_server_shutdown_listeners,
+    tcp_pre_allocated_fd,     tcp_set_pre_allocated_fd};
 #endif  // GRPC_WINSOCK_SOCKET

@@ -29,6 +29,8 @@ namespace internal {
 
 namespace {
 
+using grpc_core::LoggingSink;
+
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigEmpty) {
   const char* json_str = R"json({
       "cloud_logging": {

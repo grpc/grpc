@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 
@@ -72,6 +74,8 @@ class CqVerifier {
               SourceLocation location = SourceLocation());
 
   std::string ToString() const;
+
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
  private:
   struct Expectation {

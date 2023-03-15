@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <atomic>
@@ -59,6 +60,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
@@ -144,8 +146,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
 
-  gpr_atm* peer_string_atm_ptr() { return &peer_string_; }
-
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -203,7 +203,17 @@ class Call : public CppImplOf<Call, grpc_call> {
     send_deadline_ = send_deadline;
   }
 
-  void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
+  Slice GetPeerString() const {
+    MutexLock lock(&peer_mu_);
+    return peer_string_.Ref();
+  }
+
+  void SetPeerString(Slice peer_string) {
+    MutexLock lock(&peer_mu_);
+    peer_string_ = std::move(peer_string);
+  }
+
+  void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -214,8 +224,11 @@ class Call : public CppImplOf<Call, grpc_call> {
   const bool is_client_;
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
-  // A char* indicating the peer name.
-  gpr_atm peer_string_ = 0;
+  // Peer name is protected by a mutex because it can be accessed by the
+  // application at the same moment as it is being set by the completion
+  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
+  mutable Mutex peer_mu_;
+  Slice peer_string_ ABSL_GUARDED_BY(&peer_mu_);
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -337,9 +350,16 @@ void Call::PropagateCancellationToChildren() {
 }
 
 char* Call::GetPeer() {
-  char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
-  if (peer_string != nullptr) return gpr_strdup(peer_string);
-  peer_string = grpc_channel_get_target(channel_->c_ptr());
+  Slice peer_slice = GetPeerString();
+  if (!peer_slice.empty()) {
+    absl::string_view peer_string_view = peer_slice.as_string_view();
+    char* peer_string =
+        static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
+    memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
+    peer_string[peer_string_view.size()] = '\0';
+    return peer_string;
+  }
+  char* peer_string = grpc_channel_get_target(channel_->c_ptr());
   if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
@@ -348,7 +368,8 @@ void Call::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
   this->~Call();
-  channel->UpdateCallSizeEstimate(arena->Destroy());
+  channel->UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -479,6 +500,7 @@ class FilterStackCall final : public Call {
   }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
+    CallTracer* call_tracer_ = nullptr;
     grpc_transport_stream_op_batch op_;
     // Share memory for cq_completion and notify_tag as they are never needed
     // simultaneously. Each byte used in this data structure count as six bytes
@@ -508,12 +530,31 @@ class FilterStackCall final : public Call {
     }
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
+      // Acquire call tracer before ops_pending_.fetch_sub to avoid races with
+      // call_ being set to nullptr in PostCompletion method. Store the
+      // call_tracer_ and call_ variables locally as well because they could be
+      // modified by another thread after the fetch_sub operation.
+      CallTracer* call_tracer = call_tracer_;
+      FilterStackCall* call = call_;
+      bool is_call_trace_enabled = grpc_call_trace.enabled();
+      bool is_call_ops_annotate_enabled =
+          (IsTraceRecordCallopsEnabled() && call_tracer != nullptr);
+      if (is_call_ops_annotate_enabled) {
+        call->InternalRef("Call ops annotate");
+      }
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
-                PendingOpString(mask).c_str(),
-                PendingOpString(r & ~mask).c_str(),
-                completion_data_.notify_tag.tag);
+      if (is_call_trace_enabled || is_call_ops_annotate_enabled) {
+        std::string trace_string = absl::StrFormat(
+            "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
+            PendingOpString(mask).c_str(), PendingOpString(r & ~mask).c_str(),
+            completion_data_.notify_tag.tag);
+        if (is_call_trace_enabled) {
+          gpr_log(GPR_DEBUG, "%s", trace_string.c_str());
+        }
+        if (is_call_ops_annotate_enabled) {
+          call_tracer->RecordAnnotation(trace_string);
+          call->InternalUnref("Call ops annotate");
+        }
       }
       GPR_ASSERT((r & mask) != 0);
       return r == mask;
@@ -1051,11 +1092,11 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error;
       if (status_code != GRPC_STATUS_OK) {
-        char* peer = GetPeer();
+        Slice peer = GetPeerString();
         error = grpc_error_set_int(
-            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ", peer)),
+            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ",
+                                           peer.as_string_view())),
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
-        gpr_free(peer);
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
       if (grpc_message.has_value()) {
@@ -1132,6 +1173,8 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
+  bctl->call_tracer_ =
+      static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -1305,6 +1348,9 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     // TODO(ctiller): this could be moved into recv_initial_filter now
     ValidateFilteredMetadata();
 
+    Slice* peer_string = md->get_pointer(PeerString());
+    if (peer_string != nullptr) call->SetPeerString(peer_string->Ref());
+
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
       call_->set_send_deadline(*deadline);
@@ -1399,6 +1445,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   grpc_transport_stream_op_batch_payload* stream_op_payload;
   uint32_t seen_ops = 0;
   intptr_t pending_ops = 0;
+  CallTracer* call_tracer = nullptr;
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
@@ -1511,10 +1558,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
-        if (is_client()) {
-          stream_op_payload->send_initial_metadata.peer_string =
-              peer_string_atm_ptr();
-        }
         pending_ops |= PendingOpMask(PendingOp::kSends);
         break;
       }
@@ -1663,9 +1706,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         if (is_client()) {
           stream_op_payload->recv_initial_metadata.trailing_metadata_available =
               &is_trailers_only_;
-        } else {
-          stream_op_payload->recv_initial_metadata.peer_string =
-              peer_string_atm_ptr();
         }
         pending_ops |= PendingOpMask(PendingOp::kRecvInitialMetadata);
         break;
@@ -1797,13 +1837,20 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
+  call_tracer = static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
+  if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
+    call_tracer->RecordAnnotation(absl::StrFormat(
+        "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
+        PendingOpString(pending_ops).c_str(),
+        grpc_transport_stream_op_batch_string(stream_op, true).c_str(),
+        bctl->completion_data_.notify_tag.tag));
+  }
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
             PendingOpString(pending_ops).c_str(),
-            grpc_transport_stream_op_batch_string(stream_op).c_str(),
+            grpc_transport_stream_op_batch_string(stream_op, false).c_str(),
             bctl->completion_data_.notify_tag.tag);
   }
-
   ExecuteBatch(stream_op, &bctl->start_batch_);
 
 done:
@@ -1969,34 +2016,34 @@ class PromiseBasedCall : public Call,
      public:
       explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
 
-      void Wakeup() override {
-        call_->Wakeup();
+      void Wakeup(void*) override {
+        call_->Wakeup(nullptr);
         delete this;
       }
 
-      void Drop() override {
-        call_->Drop();
+      void Drop(void*) override {
+        call_->Drop(nullptr);
         delete this;
       }
 
-      std::string ActivityDebugTag() const override {
+      std::string ActivityDebugTag(void*) const override {
         return call_->DebugTag();
       }
 
      private:
       PromiseBasedCall* call_;
     };
-    return Waker(new AsanWaker(this));
+    return Waker(new AsanWaker(this), nullptr);
 #endif
 #endif
 #ifndef GRPC_CALL_USES_ASAN_WAKER
-    return Waker(this);
+    return Waker(this, nullptr);
 #endif
   }
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
 
   // Wakeable methods
-  void Wakeup() override {
+  void Wakeup(void*) override {
     channel()->event_engine()->Run([this] {
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
@@ -2008,7 +2055,7 @@ class PromiseBasedCall : public Call,
       InternalUnref("wakeup");
     });
   }
-  void Drop() override { InternalUnref("wakeup"); }
+  void Drop(void*) override { InternalUnref("wakeup"); }
 
   void RunInContext(absl::AnyInvocable<void()> fn) {
     if (Activity::current() == this) {
@@ -2178,7 +2225,7 @@ class PromiseBasedCall : public Call,
   void CToMetadata(grpc_metadata* metadata, size_t count,
                    grpc_metadata_batch* batch);
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   // At the end of the call run any finalization actions.
   void RunFinalization(grpc_status_code status, const char* status_details) {
@@ -2269,7 +2316,7 @@ class PromiseBasedCall : public Call,
 
     // Activity needs to wake up (if it still exists!) - wake it up, and drop
     // the ref that was kept for this handle.
-    void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
+    void Wakeup(void*) override ABSL_LOCKS_EXCLUDED(mu_) {
       // Drop the ref to the handle at end of scope (we have one ref = one
       // wakeup semantics).
       auto unref = absl::MakeCleanup([this]() { Unref(); });
@@ -2282,16 +2329,16 @@ class PromiseBasedCall : public Call,
         lock.Release();
         // Activity still exists and we have a reference: wake it up, which will
         // drop the ref.
-        call->Wakeup();
+        call->Wakeup(nullptr);
       }
     }
 
-    std::string ActivityDebugTag() const override {
+    std::string ActivityDebugTag(void*) const override {
       MutexLock lock(&mu_);
       return call_ == nullptr ? "<unknown>" : call_->DebugTag();
     }
 
-    void Drop() override { Unref(); }
+    void Drop(void*) override { Unref(); }
 
    private:
     // Unref the Handle (not the activity).
@@ -2401,7 +2448,7 @@ Waker PromiseBasedCall::MakeNonOwningWaker() {
   } else {
     non_owning_wakeable_->Ref();
   }
-  return Waker(non_owning_wakeable_);
+  return Waker(non_owning_wakeable_, nullptr);
 }
 
 void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
@@ -2582,7 +2629,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
 bool PromiseBasedCall::PollSendMessage() {
   if (!outstanding_send_.has_value()) return true;
   Poll<bool> r = (*outstanding_send_)();
-  if (const bool* result = absl::get_if<bool>(&r)) {
+  if (const bool* result = r.value_if_ready()) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%sPollSendMessage completes %s", DebugTag().c_str(),
               *result ? "successfully" : "with failure");
@@ -2617,7 +2664,7 @@ void PromiseBasedCall::PollRecvMessage(
     grpc_compression_algorithm incoming_compression_algorithm) {
   if (!outstanding_recv_.has_value()) return;
   Poll<NextResult<MessageHandle>> r = (*outstanding_recv_)();
-  if (auto* result = absl::get_if<NextResult<MessageHandle>>(&r)) {
+  if (auto* result = r.value_if_ready()) {
     outstanding_recv_.reset();
     if (result->has_value()) {
       MessageHandle& message = **result;
@@ -2688,10 +2735,6 @@ void CallContext::IncrementRefCount(const char* reason) {
 }
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
-
-gpr_atm* CallContext::peer_string_atm_ptr() {
-  return call_->peer_string_atm_ptr();
-}
 
 void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
@@ -2948,6 +2991,8 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
   incoming_compression_algorithm_ =
       metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  Slice* peer_string = metadata->get_pointer(PeerString());
+  if (peer_string != nullptr) SetPeerString(peer_string->Ref());
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
   PublishMetadataArray(metadata,
@@ -2970,8 +3015,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
   if (server_initial_metadata_ready_.has_value()) {
     Poll<NextResult<ServerMetadataHandle>> r =
         (*server_initial_metadata_ready_)();
-    if (auto* server_initial_metadata =
-            absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+    if (auto* server_initial_metadata = r.value_if_ready()) {
       PublishInitialMetadata(server_initial_metadata->value().get());
     } else if (completed()) {
       ServerMetadata no_metadata{GetContext<Arena>()};
@@ -2996,7 +3040,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
                 return h->DebugString();
               }).c_str());
     }
-    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+    if (auto* result = r.value_if_ready()) {
       AcceptTransportStatsFromContext();
       Finish(std::move(*result));
     }
@@ -3026,7 +3070,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   Poll<NextResult<ServerMetadataHandle>> r =
       (*server_initial_metadata_ready_)();
   server_initial_metadata_ready_.reset();
-  if (auto* result = absl::get_if<NextResult<ServerMetadataHandle>>(&r)) {
+  if (auto* result = r.value_if_ready()) {
     if (pending_initial_metadata) PublishInitialMetadata(result->value().get());
     is_trailers_only_ = false;
   } else {
@@ -3311,7 +3355,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
   if (auto* p =
           absl::get_if<typename PipeSender<ServerMetadataHandle>::PushType>(
               &send_initial_metadata_state_)) {
-    if (!absl::holds_alternative<Pending>((*p)())) {
+    if ((*p)().ready()) {
       send_initial_metadata_state_ = absl::monostate{};
     }
   }
@@ -3324,7 +3368,7 @@ void ServerPromiseBasedCall::UpdateOnce() {
                 return h->DebugString();
               }).c_str());
     }
-    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+    if (auto* result = r.value_if_ready()) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%s[call] UpdateOnce: GotResult %s result:%s",
                 DebugTag().c_str(),

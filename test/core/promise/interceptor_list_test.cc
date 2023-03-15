@@ -57,9 +57,9 @@ TEST_F(InterceptorListTest, CanRunTwoTwice) {
   InterceptorList<std::string> list;
   list.AppendMap([](std::string s) { return s + s; }, DEBUG_LOCATION);
   list.AppendMap([](std::string s) { return s + s + s; }, DEBUG_LOCATION);
-  EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run(std::string(10, 'a'))()).value(),
+  EXPECT_EQ(list.Run(std::string(10, 'a'))().value().value(),
             std::string(60, 'a'));
-  EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run(std::string(100, 'b'))()).value(),
+  EXPECT_EQ(list.Run(std::string(100, 'b'))().value().value(),
             std::string(600, 'b'));
 }
 
@@ -76,7 +76,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCaptures) {
   for (size_t i = 0; i < 1000; i++) {
     expected += "abcdefghijklmnopqrstuvwxyz";
   }
-  EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run("")()).value(), expected);
+  EXPECT_EQ(list.Run("")().value().value(), expected);
 }
 
 TEST_F(InterceptorListTest, CanRunOnePrepended) {
@@ -105,7 +105,7 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesPrepended) {
   for (size_t i = 0; i < 1000; i++) {
     expected += "zyxwvutsrqponmlkjihgfedcba";
   }
-  EXPECT_EQ(absl::get<kPollReadyIdx>(list.Run("")()).value(), expected);
+  EXPECT_EQ(list.Run("")().value().value(), expected);
 }
 
 TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
@@ -126,13 +126,13 @@ TEST_F(InterceptorListTest, CanRunManyWithCapturesThatDelay) {
   }
   auto promise = list.Run("");
   for (size_t i = 0; i < 26 * 1000; i++) {
-    EXPECT_TRUE(absl::holds_alternative<Pending>(promise())) << i;
+    EXPECT_TRUE(promise().pending()) << i;
   }
   std::string expected;
   for (size_t i = 0; i < 1000; i++) {
     expected += "abcdefghijklmnopqrstuvwxyz";
   }
-  EXPECT_EQ(absl::get<kPollReadyIdx>(promise()).value(), expected);
+  EXPECT_EQ(promise().value().value(), expected);
 }
 
 }  // namespace

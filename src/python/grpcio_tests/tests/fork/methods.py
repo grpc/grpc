@@ -19,8 +19,12 @@ import logging
 import multiprocessing
 import os
 import queue
+import subprocess
+import sys
+import tempfile
 import threading
 import time
+import traceback
 
 import grpc
 
@@ -30,7 +34,8 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
-_CHILD_FINISH_TIMEOUT_S = 60
+_CHILD_FINISH_TIMEOUT_S = 20
+_GDB_TIMEOUT_S = 60
 
 
 def _channel(args):
@@ -58,6 +63,7 @@ def _async_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
+
     response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
     response = response_future.result()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
@@ -118,27 +124,113 @@ class _ChildProcess(object):
         if args is None:
             args = ()
         self._exceptions = multiprocessing.Queue()
+        self._stdout_path = tempfile.mkstemp()[1]
+        self._stderr_path = tempfile.mkstemp()[1]
+        self._child_pid = None
+        self._rc = None
+        self._args = args
 
-        def record_exceptions():
-            try:
-                task(*args)
-            except grpc.RpcError as rpc_error:
-                self._exceptions.put('RpcError: %s' % rpc_error)
-            except Exception as e:  # pylint: disable=broad-except
-                self._exceptions.put(e)
+        self._task = task
 
-        self._process = multiprocessing.Process(target=record_exceptions)
+    def _child_main(self):
+        import faulthandler
+        faulthandler.enable(all_threads=True)
+
+        try:
+            self._task(*self._args)
+        except grpc.RpcError as rpc_error:
+            traceback.print_exc()
+            self._exceptions.put('RpcError: %s' % rpc_error)
+        except Exception as e:  # pylint: disable=broad-except
+            traceback.print_exc()
+            self._exceptions.put(e)
+        sys.exit(0)
+
+    def _orchestrate_child_gdb(self):
+        cmd = [
+            "gdb",
+            "-ex",
+            "set confirm off",
+            "-ex",
+            "attach {}".format(os.getpid()),
+            "-ex",
+            "set follow-fork-mode child",
+            "-ex",
+            "continue",
+            "-ex",
+            "bt",
+        ]
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        sys.stderr.write("Invoking gdb\n")
+        sys.stderr.flush()
+        process = subprocess.Popen(cmd, stdout=sys.stderr, stderr=sys.stderr)
+        time.sleep(5)
 
     def start(self):
-        self._process.start()
+        # NOTE: Try uncommenting the following line if the child is segfaulting.
+        # self._orchestrate_child_gdb()
+        ret = os.fork()
+        if ret == 0:
+            self._child_main()
+        else:
+            self._child_pid = ret
+
+    def wait(self, timeout):
+        total = 0.0
+        wait_interval = 1.0
+        while total < timeout:
+            ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
+            if ret == self._child_pid:
+                self._rc = termination
+                return True
+            time.sleep(wait_interval)
+            total += wait_interval
+        else:
+            return False
+
+    def _print_backtraces(self):
+        cmd = [
+            "gdb",
+            "-ex",
+            "set confirm off",
+            "-ex",
+            "echo attaching",
+            "-ex",
+            "attach {}".format(self._child_pid),
+            "-ex",
+            "echo print_backtrace",
+            "-ex",
+            "thread apply all bt",
+            "-ex",
+            "echo printed_backtrace",
+            "-ex",
+            "quit",
+        ]
+        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
+        sys.stderr.write("Invoking gdb\n")
+        sys.stderr.flush()
+        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
+        try:
+            process.wait(timeout=_GDB_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            sys.stderr.write("gdb stacktrace generation timed out.\n")
+        finally:
+            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
+                stream.seek(0)
+                sys.stderr.write("gdb {}:\n{}\n".format(
+                    stream_name,
+                    stream.read().decode("ascii")))
+                stream.close()
+            sys.stderr.flush()
 
     def finish(self):
-        self._process.join(timeout=_CHILD_FINISH_TIMEOUT_S)
-        if self._process.is_alive():
+        terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
+        sys.stderr.write("Exit code: {}\n".format(self._rc))
+        if not terminated:
+            self._print_backtraces()
             raise RuntimeError('Child process did not terminate')
-        if self._process.exitcode != 0:
-            raise ValueError('Child process failed with exitcode %d' %
-                             self._process.exitcode)
+        if self._rc != 0:
+            raise ValueError('Child process failed with exitcode %d' % self._rc)
         try:
             exception = self._exceptions.get(block=False)
             raise ValueError('Child process failed: "%s": "%s"' %
@@ -449,3 +541,12 @@ class TestCase(enum.Enum):
             raise NotImplementedError('Test case "%s" not implemented!' %
                                       self.name)
         channel.close()
+
+
+# Useful if needing to find a block of code from an address in an SO.
+def dump_object_map():
+    with open("/proc/self/maps", "r") as f:
+        sys.stderr.write("=============== /proc/self/maps ===============\n")
+        sys.stderr.write(f.read())
+        sys.stderr.write("\n")
+        sys.stderr.flush()

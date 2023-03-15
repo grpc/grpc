@@ -59,6 +59,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::ServerMetricRecorder;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
 //
@@ -251,7 +252,9 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
 
 void XdsEnd2endTest::BackendServerThread::RegisterAllServices(
     ServerBuilder* builder) {
-  experimental::EnableCallMetricRecording(builder);
+  server_metric_recorder_ = ServerMetricRecorder::Create();
+  ServerBuilder::experimental_type(builder).EnableCallMetricRecording(
+      server_metric_recorder_.get());
   builder->RegisterService(&backend_service_);
   builder->RegisterService(&backend_service1_);
   builder->RegisterService(&backend_service2_);
@@ -1036,6 +1039,16 @@ void XdsEnd2endTest::SetProtoDuration(
   gpr_timespec ts = duration.as_timespec();
   duration_proto->set_seconds(ts.tv_sec);
   duration_proto->set_nanos(ts.tv_nsec);
+}
+
+std::string XdsEnd2endTest::MakeConnectionFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "(Failed to connect to remote host: )?"
+      "(Connection refused|Connection reset by peer|"
+      "Socket closed|FD shutdown)");
 }
 
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {

@@ -23,6 +23,7 @@
 
 #include <initializer_list>
 #include <string>
+#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -55,6 +56,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -625,8 +627,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           GPR_INFO,
           "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
           "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
-          t, t->peer_string.c_str(), t->incoming_stream_id,
-          t->last_new_stream_id));
+          t, std::string(t->peer_string.as_string_view()).c_str(),
+          t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type);
     }
     t->last_new_stream_id = t->incoming_stream_id;
@@ -807,10 +809,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      s->forced_close_error = err;
-      grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
-                                               GRPC_HTTP2_PROTOCOL_ERROR,
-                                               &s->stats.outgoing);
+      grpc_chttp2_cancel_stream(t, s, std::exchange(err, absl::OkStatus()));
     }
   }
   return err;

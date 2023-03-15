@@ -37,7 +37,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -229,8 +229,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto cluster_name =
       call_state->GetCallAttribute(XdsClusterAttributeTypeName());
   auto it = cluster_map_.find(std::string(cluster_name));
@@ -328,7 +327,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  size_t num_transient_failures = 0;
   for (const auto& p : children_) {
     const auto& child_name = p.first;
     const ClusterChild* child = p.second.get();
@@ -351,7 +349,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        ++num_transient_failures;
         break;
       }
       default:

@@ -34,7 +34,7 @@
 static bool g_pre_init_called = false;
 
 % for test in tests:
-extern void ${test}(grpc_end2end_test_config config);
+extern void ${test}(const CoreTestConfiguration& config);
 extern void ${test}_pre_init(void);
 % endfor
 
@@ -48,7 +48,7 @@ void grpc_end2end_tests_pre_init(void) {
 
 // NOLINTNEXTLINE(readability-function-size)
 void grpc_end2end_tests(int argc, char **argv,
-                        grpc_end2end_test_config config) {
+                    const CoreTestConfiguration& config) {
   int i;
 
   GPR_ASSERT(g_pre_init_called);
