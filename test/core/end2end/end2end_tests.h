@@ -204,16 +204,18 @@ class CoreEnd2endTest
   class IncomingMetadata {
    public:
     IncomingMetadata() = default;
-    IncomingMetadata(const IncomingMetadata&) = delete;
-    IncomingMetadata& operator=(const IncomingMetadata&) = delete;
-    ~IncomingMetadata() { grpc_metadata_array_destroy(&metadata_); }
+    ~IncomingMetadata() {
+      if (metadata_ != nullptr) grpc_metadata_array_destroy(metadata_.get());
+    }
 
     absl::optional<absl::string_view> Get(absl::string_view key) const;
 
     grpc_op MakeOp();
 
    private:
-    grpc_metadata_array metadata_{0, 0, nullptr};
+    std::unique_ptr<grpc_metadata_array> metadata_ =
+        std::make_unique<grpc_metadata_array>(
+            grpc_metadata_array{0, 0, nullptr});
   };
 
   class IncomingMessage {
@@ -423,6 +425,7 @@ class CoreEnd2endTest
 
   using ExpectedResult = CqVerifier::ExpectedResult;
   using Maybe = CqVerifier::Maybe;
+  using PerformAction = CqVerifier::PerformAction;
   using AnyStatus = CqVerifier::AnyStatus;
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
     expectations_++;
@@ -492,6 +495,7 @@ class RetryTest : public CoreEnd2endTest {};
 class WriteBufferingTest : public CoreEnd2endTest {};
 class Http2Test : public CoreEnd2endTest {};
 class RetryHttp2Test : public CoreEnd2endTest {};
+class ResourceQuotaTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

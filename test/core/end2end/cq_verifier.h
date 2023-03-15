@@ -48,8 +48,12 @@ class CqVerifier {
   struct AnyStatus {
     bool* result = nullptr;
   };
+  // PerformAction - expect the tag, and run a function based on the result
+  struct PerformAction {
+    std::function<void(bool success)> action;
+  };
 
-  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
+  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus, PerformAction>;
 
   explicit CqVerifier(grpc_completion_queue* cq);
   ~CqVerifier();

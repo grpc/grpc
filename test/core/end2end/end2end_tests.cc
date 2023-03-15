@@ -85,14 +85,14 @@ void CoreEnd2endTest::TearDown() {
 
 absl::optional<absl::string_view> CoreEnd2endTest::IncomingMetadata::Get(
     absl::string_view key) const {
-  return FindInMetadataArray(metadata_, key);
+  return FindInMetadataArray(*metadata_, key);
 }
 
 grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata = &metadata_;
+  op.data.recv_initial_metadata.recv_initial_metadata = metadata_.get();
   return op;
 }
 

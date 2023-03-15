@@ -618,6 +618,12 @@ INSTANTIATE_TEST_SUITE_P(RetryHttp2Tests, RetryHttp2Test,
                                  FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)),
                          NameFromConfig);
 
+INSTANTIATE_TEST_SUITE_P(
+    ResourceQuotaTests, ResourceQuotaTest,
+    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                                            FEATURE_MASK_1BYTE_AT_A_TIME)),
+    NameFromConfig);
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

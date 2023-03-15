@@ -177,7 +177,8 @@ std::string CqVerifier::Expectation::ToString() const {
             return absl::StrCat("success=", success ? "true" : "false");
           },
           [](Maybe) { return std::string("maybe"); },
-          [](AnyStatus) { return std::string("any success value"); }));
+          [](AnyStatus) { return std::string("any success value"); },
+          [](PerformAction) { return std::string("perform some action"); }));
 }
 
 std::string CqVerifier::ToString() const {
@@ -222,6 +223,10 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
           [ev](AnyStatus a) {
             if (a.result != nullptr) *a.result = ev.success;
             return true;
+          },
+          [ev](const PerformAction& action) {
+            action.action(ev.success);
+            return true;
           });
       if (!expected) {
         FailUnexpectedEvent(&ev, location);
@@ -261,7 +266,7 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
 
 void CqVerifier::Expect(void* tag, ExpectedResult result,
                         SourceLocation location) {
-  expectations_.push_back(Expectation{location, tag, result});
+  expectations_.push_back(Expectation{location, tag, std::move(result)});
 }
 
 }  // namespace grpc_core
