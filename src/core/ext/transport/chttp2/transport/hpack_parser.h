@@ -124,7 +124,7 @@ class HPackParser {
   uint8_t dynamic_table_updates_allowed_;
   // Length of frame so far.
   uint32_t frame_length_;
-  std::unique_ptr<RandomEarlyDetection> metadata_early_detection_ = nullptr;
+  RandomEarlyDetection metadata_early_detection_;
   // Information for logging
   LogInfo log_info_;
 

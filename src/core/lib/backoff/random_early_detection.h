@@ -27,6 +27,7 @@ namespace grpc_core {
 // or accepted based upon their size.
 class RandomEarlyDetection {
  public:
+  RandomEarlyDetection() : soft_limit_(INT_MAX), hard_limit_(INT_MAX) {}
   RandomEarlyDetection(uint64_t soft_limit, uint64_t hard_limit)
       : soft_limit_(soft_limit), hard_limit_(hard_limit) {}
 

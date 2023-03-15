@@ -909,7 +909,7 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
   frame_length_ = 0;
-  metadata_early_detection_ = std::make_unique<RandomEarlyDetection>(
+  metadata_early_detection_ = RandomEarlyDetection(
       /*soft_limit=*/metadata_size_soft_limit,
       /*hard_limit=*/metadata_size_hard_limit);
   log_info_ = log_info;
@@ -957,8 +957,7 @@ bool HPackParser::ParseInputInner(Input* input, bool is_last) {
   while (!input->end_of_stream()) {
     if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, &table_,
                              &dynamic_table_updates_allowed_, &frame_length_,
-                             metadata_early_detection_.get(), is_last,
-                             log_info_)
+                             &metadata_early_detection_, is_last, log_info_)
                           .Parse())) {
       return false;
     }
