@@ -262,45 +262,65 @@ def cleanup_td_for_gke(*, project, prefix, suffix, network):
 
 
 # cleanup_client creates a client runner, and calls its cleanup() method.
-def cleanup_client(project, network, k8s_api_manager, client_namespace,
-                   gcp_service_account):
-    runner_kwargs = dict(
-        deployment_name=xds_flags.CLIENT_NAME.value,
-        image_name=xds_k8s_flags.CLIENT_IMAGE.value,
-        td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-        gcp_project=project,
-        gcp_api_manager=gcp.api.GcpApiManager(),
-        gcp_service_account=gcp_service_account,
-        xds_server_uri=xds_flags.XDS_SERVER_URI.value,
-        network=network,
-        stats_port=xds_flags.CLIENT_PORT.value)
+def cleanup_client(project,
+                   network,
+                   k8s_api_manager,
+                   client_namespace,
+                   gcp_service_account,
+                   *,
+                   suffix: Optional[str] = ''):
+    deployment_name = xds_flags.CLIENT_NAME.value
+    if suffix:
+        deployment_name = f'{deployment_name}-{suffix}'
 
     client_runner = _KubernetesClientRunner(
         k8s.KubernetesNamespace(k8s_api_manager, client_namespace),
-        **runner_kwargs)
+        deployment_name=deployment_name,
+        gcp_project=project,
+        network=network,
+        gcp_service_account=gcp_service_account,
+        gcp_api_manager=gcp.api.GcpApiManager(),
+        image_name='',
+        td_bootstrap_image='')
 
     logger.info('Cleanup client')
     client_runner.cleanup(force=True, force_namespace=True)
 
 
+def cleanup_client_alt(*args, **kwargs):
+    kwargs['suffix'] = 'alt'
+    cleanup_client(*args, **kwargs)
+
+
 # cleanup_server creates a server runner, and calls its cleanup() method.
-def cleanup_server(project, network, k8s_api_manager, server_namespace,
-                   gcp_service_account):
-    runner_kwargs = dict(
-        deployment_name=xds_flags.SERVER_NAME.value,
-        image_name=xds_k8s_flags.SERVER_IMAGE.value,
-        td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-        gcp_project=project,
-        gcp_api_manager=gcp.api.GcpApiManager(),
-        gcp_service_account=gcp_service_account,
-        network=network)
+def cleanup_server(project,
+                   network,
+                   k8s_api_manager,
+                   server_namespace,
+                   gcp_service_account,
+                   *,
+                   suffix: Optional[str] = ''):
+    deployment_name = xds_flags.SERVER_NAME.value
+    if suffix:
+        deployment_name = f'{deployment_name}-{suffix}'
 
     server_runner = _KubernetesServerRunner(
         k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
-        **runner_kwargs)
+        deployment_name=deployment_name,
+        gcp_project=project,
+        network=network,
+        gcp_service_account=gcp_service_account,
+        gcp_api_manager=gcp.api.GcpApiManager(),
+        image_name='',
+        td_bootstrap_image='')
 
     logger.info('Cleanup server')
     server_runner.cleanup(force=True, force_namespace=True)
+
+
+def cleanup_server_alt(*args, **kwargs):
+    kwargs['suffix'] = 'alt'
+    cleanup_client(*args, **kwargs)
 
 
 def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
@@ -395,8 +415,12 @@ def find_and_remove_leaked_k8s_resources(dry_run, project, network,
     k8s_resource_rules: List[K8sResourceRule] = []
     for prefix in CLIENT_PREFIXES.value:
         k8s_resource_rules.append(
+            K8sResourceRule(f'{prefix}-client-alt-(.*)', cleanup_client_alt))
+        k8s_resource_rules.append(
             K8sResourceRule(f'{prefix}-client-(.*)', cleanup_client))
     for prefix in SERVER_PREFIXES.value:
+        k8s_resource_rules.append(
+            K8sResourceRule(f'{prefix}-server-alt-(.*)', cleanup_server_alt))
         k8s_resource_rules.append(
             K8sResourceRule(f'{prefix}-server-(.*)', cleanup_server))
 
