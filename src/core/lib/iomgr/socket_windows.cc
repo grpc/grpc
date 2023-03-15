@@ -76,6 +76,49 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
     return;
   }
   winsocket->shutdown_called = true;
+  bool register_shutdown = false;
+  // If there is already a scheduled read closure, run it immediately. This
+  // follows the same semantics applied to posix endpoint which also runs any
+  // already registered closure immediately in the event of a shutdown.
+  if (winsocket->read_info.closure && !winsocket->read_info.has_pending_iocp) {
+    winsocket->read_info.bytes_transferred = 0;
+    winsocket->read_info.wsa_error = WSA_OPERATION_ABORTED;
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, winsocket->read_info.closure,
+                            absl::OkStatus());
+    // Note that while the read_info.closure closure is run, it is not set to
+    // NULL here. This ensures that the socket cannot get deleted yet until any
+    // pending I/O operations are flushed by the thread executing
+    // grpc_iocp_work. We set read_info.skip to true so that when the pending
+    // read I/O operations are flushed, the associated closure is not executed
+    // in the grpc_socket_became_ready function.
+    winsocket->read_info.skip = true;
+    register_shutdown = true;
+  }
+
+  // If there is already a scheduled write closure, run it immediately. This
+  // follows the same semantics applied to posix endpoint which also runs any
+  // already registered closure immediately in the event of a shutdown.
+  if (winsocket->write_info.closure &&
+      !winsocket->write_info.has_pending_iocp) {
+    winsocket->write_info.bytes_transferred = 0;
+    winsocket->write_info.wsa_error = WSA_OPERATION_ABORTED;
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, winsocket->write_info.closure,
+                            absl::OkStatus());
+    // Note that while the write_info.closure closure is run, it is not set to
+    // NULL here. This ensures that the socket cannot get deleted yet until any
+    // pending I/O operations are flushed by the thread executing
+    // grpc_iocp_work. We set write_info.closure.skip to true so that when the
+    // pending write I/O operations are flushed, the associated closure is not
+    // executed in the grpc_socket_became_ready function.
+    winsocket->write_info.skip = true;
+    register_shutdown = true;
+  }
+
+  if (register_shutdown) {
+    // Instruct gRPC to avoid completing any shutdowns until this socket is
+    // cleaned up.
+    grpc_iocp_register_socket_shutdown(winsocket);
+  }
   gpr_mu_unlock(&winsocket->state_mu);
 
   status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
@@ -91,12 +134,13 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
     gpr_free(utf8_message);
   }
   int ret = 0;
+  // Calling closesocket triggers invocation of any pending I/O operations with
+  // ABORTED status. The pending I/O operations will not re-run any associated
+  // closures twice because the read_info.skip or write_info.skip variables have
+  // been set.
   do {
     ret = closesocket(winsocket->socket);
   } while (ret != 0 && (ret == WSAEINPROGRESS || ret == WSAEINTR));
-  if (ret != 0) {
-    gpr_log(GPR_INFO, "Socket: %p, closesocket status = %d", winsocket, ret);
-  }
 }
 
 static void destroy(grpc_winsocket* winsocket) {
@@ -106,9 +150,14 @@ static void destroy(grpc_winsocket* winsocket) {
 }
 
 static bool check_destroyable(grpc_winsocket* winsocket) {
-  return winsocket->destroy_called == true &&
-         winsocket->write_info.closure == NULL &&
-         winsocket->read_info.closure == NULL;
+  return (winsocket->destroy_called == true &&
+          winsocket->write_info.closure == NULL &&
+          winsocket->read_info.closure == NULL);
+}
+
+void grpc_winsocket_finish(grpc_winsocket* winsocket) {
+  grpc_iocp_finish_socket_shutdown(winsocket);
+  destroy(winsocket);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
@@ -117,7 +166,9 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
   winsocket->destroy_called = true;
   bool should_destroy = check_destroyable(winsocket);
   gpr_mu_unlock(&winsocket->state_mu);
-  if (should_destroy) destroy(winsocket);
+  if (should_destroy) {
+    grpc_winsocket_finish(winsocket);
+  }
 }
 
 // Calling notify_on_read or write means either of two things:
@@ -146,19 +197,19 @@ void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
   socket_notify_on_iocp(socket, closure, &socket->read_info);
 }
 
-void grpc_socket_become_ready(grpc_winsocket* socket,
+bool grpc_socket_become_ready(grpc_winsocket* socket,
                               grpc_winsocket_callback_info* info) {
-  GPR_ASSERT(!info->has_pending_iocp);
-  gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, info->closure, absl::OkStatus());
+    // If skip is set, it imples the closure has already run. Don't run it
+    // again.
+    if (!info->skip) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, info->closure, absl::OkStatus());
+    }
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;
   }
-  bool should_destroy = check_destroyable(socket);
-  gpr_mu_unlock(&socket->state_mu);
-  if (should_destroy) destroy(socket);
+  return check_destroyable(socket);
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
