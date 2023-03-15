@@ -187,8 +187,10 @@ def exec_gcloud(project: str, *cmds: str) -> Json:
     return None
 
 
-def cleanup_legacy_driver_resources(project: str, suffix: str):
+def cleanup_legacy_driver_resources(*, project: str, suffix: str, **kwargs):
     """Removing GCP resources created by run_xds_tests.py."""
+    # Unused, but kept for compatibility with cleanup_td_for_gke.
+    del kwargs
     logging.info('----- Removing run_xds_tests.py resources with suffix [%s]',
                  suffix)
     exec_gcloud(project, 'compute', 'forwarding-rules', 'delete',
@@ -227,20 +229,19 @@ def cleanup_legacy_driver_resources(project: str, suffix: str):
 # Note that the varients are all based on the basic TrafficDirectorManager, so
 # their `cleanup()` might do duplicate work. But deleting an non-exist resource
 # returns 404, and is OK.
-def cleanup_td_for_gke(project, network, resource_prefix, resource_suffix):
+def cleanup_td_for_gke(*, project, prefix, suffix, network):
     gcp_api_manager = gcp.api.GcpApiManager()
-    plain_td = traffic_director.TrafficDirectorManager(
-        gcp_api_manager,
-        project=project,
-        network=network,
-        resource_prefix=resource_prefix,
-        resource_suffix=resource_suffix)
+    plain_td = traffic_director.TrafficDirectorManager(gcp_api_manager,
+                                                       project=project,
+                                                       network=network,
+                                                       resource_prefix=prefix,
+                                                       resource_suffix=suffix)
     security_td = traffic_director.TrafficDirectorSecureManager(
         gcp_api_manager,
         project=project,
         network=network,
-        resource_prefix=resource_prefix,
-        resource_suffix=resource_suffix)
+        resource_prefix=prefix,
+        resource_suffix=suffix)
     # TODO: cleanup appnet resources.
     # appnet_td = traffic_director.TrafficDirectorAppNetManager(
     #     gcp_api_manager,
@@ -250,7 +251,7 @@ def cleanup_td_for_gke(project, network, resource_prefix, resource_suffix):
     #     resource_suffix=resource_suffix)
 
     logger.info('----- Removing traffic director for gke, prefix %s, suffix %s',
-                resource_prefix, resource_suffix)
+                prefix, suffix)
     security_td.cleanup(force=True)
     # appnet_td.cleanup(force=True)
     plain_td.cleanup(force=True)
@@ -308,14 +309,17 @@ def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
             logging.info('----- Skipped [Dry Run]: %s', resource['name'])
             continue
         matched = False
-        for (regex, resource_prefix, keep, remove) in td_resource_rules:
+        for (regex, resource_prefix, keep, remove_fn) in td_resource_rules:
             result = re.search(regex, resource['name'])
             if result is not None:
                 matched = True
                 if keep(result.group(1)):
                     logging.info('Skipped [keep]:')
                     break  # break inner loop, continue outer loop
-                remove(project, network, resource_prefix, result.group(1))
+                remove_fn(project=project,
+                          prefix=result.group(1),
+                          suffix=resource_prefix,
+                          network=network)
                 break
         if not matched:
             logging.info(
