@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -41,6 +42,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/fixtures/sockpair_fixture.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_POSIX_SOCKET
