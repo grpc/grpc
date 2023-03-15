@@ -69,7 +69,7 @@ cleanup::job::clean_url_map() {
 # The SECURITY cluster is used by the security and authz test suites.
 #######################################
 cleanup::job::clean_security() {
-  cleanup::activate_cluster GKE_CLUSTER_PSM_BASIC
+  cleanup::activate_cluster GKE_CLUSTER_PSM_SECURITY
   cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
 
@@ -111,10 +111,10 @@ main() {
   declare -a clean_jobs
   clean_jobs=(
     "clean_td"
+    "clean_security"
     "clean_lb_primary"
     "clean_lb_secondary"
     "clean_url_map"
-    "clean_security"
   )
   for job_name in "${clean_jobs[@]}"; do
     "cleanup::job::${job_name} ${job_name}" || (( ++failed_jobs ))
