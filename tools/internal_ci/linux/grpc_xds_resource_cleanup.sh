@@ -22,6 +22,7 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 cleanup::activate_cluster() {
   activate_gke_cluster "$1"
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
+  export CLEANUP_KUBE_CONTEXT
 }
 
 cleanup::activate_secondary_cluster_as_primary() {
@@ -31,6 +32,7 @@ cleanup::activate_secondary_cluster_as_primary() {
   gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" \
     --zone "${GKE_CLUSTER_ZONE}"
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
+  export CLEANUP_KUBE_CONTEXT
 }
 
 cleanup::job::clean_td() {
