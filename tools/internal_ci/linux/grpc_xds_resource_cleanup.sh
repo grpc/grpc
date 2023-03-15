@@ -34,7 +34,7 @@ cleanup::activate_secondary_cluster_as_primary() {
 }
 
 cleanup::job::clean_td() {
-  cleanup::run_clean --mode=td
+  cleanup::run_clean "$1" --mode=td
 }
 
 #######################################
@@ -43,7 +43,7 @@ cleanup::job::clean_td() {
 #######################################
 cleanup::job::clean_lb_primary() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_LB
-  cleanup::run_clean --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
 
 #######################################
@@ -52,7 +52,7 @@ cleanup::job::clean_lb_primary() {
 #######################################
 cleanup::job::clean_lb_secondary() {
   cleanup::activate_secondary_cluster_as_primary GKE_CLUSTER_PSM_LB
-  cleanup::run_clean --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
 
 #######################################
@@ -62,7 +62,7 @@ cleanup::job::clean_lb_secondary() {
 #######################################
 cleanup::job::clean_url_map() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_BASIC
-  cleanup::run_clean --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
 
 #######################################
@@ -70,19 +70,23 @@ cleanup::job::clean_url_map() {
 #######################################
 cleanup::job::clean_security() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_BASIC
-  cleanup::run_clean --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
 
 #######################################
 # Set common variables for the cleanup script.
 #######################################
 cleanup::run_clean() {
+  local job_name="${1:?Usage: cleanup::run_clean job_name}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${job_name}"
+  mkdir -pv "${out_dir}"
   python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
     --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
     --kube_context="${CLEANUP_KUBE_CONTEXT:-unset}" \
-    "$@"
+    "${@:2}" \
+    |& tee "${out_dir}/sponge_log.log"
 }
 
 #######################################
@@ -93,8 +97,8 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
-  # Source the job captured from the master branch.
-  echo "Sourcing job driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+  # Source the test captured from the master branch.
+  echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
   # Valid cluster variables needed for the automatic driver setup.
@@ -112,8 +116,8 @@ main() {
     "clean_url_map"
     "clean_security"
   )
-  for job in "${clean_jobs[@]}"; do
-    "cleanup::job::${job}" || (( ++failed_jobs ))
+  for job_name in "${clean_jobs[@]}"; do
+    "cleanup::job::${job_name} ${job_name}" || (( ++failed_jobs ))
   done
   echo "Failed job suites: ${failed_jobs}"
   if (( failed_jobs > 0 )); then
