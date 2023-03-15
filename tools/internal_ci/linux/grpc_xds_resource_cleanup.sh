@@ -117,7 +117,7 @@ main() {
     "clean_url_map"
   )
   for job_name in "${clean_jobs[@]}"; do
-    "cleanup::job::${job_name} ${job_name}" || (( ++failed_jobs ))
+    "cleanup::job::${job_name}" "${job_name}" || (( ++failed_jobs ))
   done
   echo "Failed job suites: ${failed_jobs}"
   if (( failed_jobs > 0 )); then
