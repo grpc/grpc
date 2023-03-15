@@ -18,10 +18,13 @@
 
 #include <string.h>
 
+#include <functional>
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -34,88 +37,69 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-struct fullstack_fixture_data {
-  ~fullstack_fixture_data() { grpc_end2end_http_proxy_destroy(proxy); }
-  std::string server_addr;
-  grpc_end2end_http_proxy* proxy = nullptr;
+class HttpProxyFilter : public CoreTestFixture {
+ public:
+  explicit HttpProxyFilter(const grpc_core::ChannelArgs& client_args)
+      : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
+  ~HttpProxyFilter() override {
+    // Need to shut down the proxy users before closing the proxy (otherwise we
+    // become stuck).
+    ShutdownClient();
+    ShutdownServer();
+    grpc_end2end_http_proxy_destroy(proxy_);
+  }
+
+ private:
+  grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
+    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
+    grpc_server_start(server);
+    return server;
+  }
+
+  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) override {
+    // If testing for proxy auth, add credentials to proxy uri
+    absl::optional<std::string> proxy_auth_str =
+        args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
+    std::string proxy_uri;
+    if (!proxy_auth_str.has_value()) {
+      proxy_uri = absl::StrFormat(
+          "http://%s", grpc_end2end_http_proxy_get_proxy_name(proxy_));
+    } else {
+      proxy_uri =
+          absl::StrFormat("http://%s@%s", proxy_auth_str->c_str(),
+                          grpc_end2end_http_proxy_get_proxy_name(proxy_));
+    }
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    auto* client = grpc_channel_create(
+        server_addr_.c_str(), creds,
+        args.Set(GRPC_ARG_HTTP_PROXY, proxy_uri).ToC().get());
+    grpc_channel_credentials_release(creds);
+    GPR_ASSERT(client);
+    return client;
+  }
+
+  std::string server_addr_ =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+  grpc_end2end_http_proxy* proxy_;
 };
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    const grpc_channel_args* client_args,
-    const grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f;
-  memset(&f, 0, sizeof(f));
-  fullstack_fixture_data* ffd = new fullstack_fixture_data();
-  const int server_port = grpc_pick_unused_port_or_die();
-  ffd->server_addr = grpc_core::JoinHostPort("localhost", server_port);
-
-  // Passing client_args to proxy_create for the case of checking for proxy auth
-  //
-  ffd->proxy = grpc_end2end_http_proxy_create(client_args);
-
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(nullptr);
-
-  return f;
-}
-
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  const grpc_channel_args* client_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
-  // If testing for proxy auth, add credentials to proxy uri
-  const char* proxy_auth_str = grpc_channel_args_find_string(
-      client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  std::string proxy_uri;
-  if (proxy_auth_str == nullptr) {
-    proxy_uri = absl::StrFormat(
-        "http://%s", grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
-  } else {
-    proxy_uri =
-        absl::StrFormat("http://%s@%s", proxy_auth_str,
-                        grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
-  }
-  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds,
-                                  grpc_core::ChannelArgs::FromC(client_args)
-                                      .Set(GRPC_ARG_HTTP_PROXY, proxy_uri)
-                                      .ToC()
-                                      .get());
-  grpc_channel_credentials_release(creds);
-  GPR_ASSERT(f->client);
-}
-
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  const grpc_channel_args* server_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
-  if (f->server) {
-    grpc_server_destroy(f->server);
-  }
-  f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  grpc_server_credentials* server_creds =
-      grpc_insecure_server_credentials_create();
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->server_addr.c_str(),
-                                        server_creds));
-  grpc_server_credentials_release(server_creds);
-  grpc_server_start(f->server);
-}
-
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
-  delete ffd;
-}
-
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     nullptr, chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
-     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
+     nullptr,
+     [](const grpc_core::ChannelArgs& client_args,
+        const grpc_core::ChannelArgs&) {
+       return std::make_unique<HttpProxyFilter>(client_args);
+     }},
 };
 
 int main(int argc, char** argv) {
