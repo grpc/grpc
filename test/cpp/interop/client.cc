@@ -70,6 +70,7 @@ ABSL_FLAG(
     //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
     //"oauth2_auth_token: raw oauth2 access token auth;\n"
     //"orca_per_rpc: custom LB policy receives per-query metric reports;\n"
+    //"orca_oob: receives out-of-band metric reports from the backend;\n"
     //"per_rpc_creds: raw oauth2 access token on a single rpc;\n"
     //"ping_pong : full-duplex streaming;\n"
     //"response streaming;\n"
@@ -271,6 +272,8 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
   actions["orca_per_rpc"] =
       std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
+  actions["orca_oob"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
   if (absl::GetFlag(FLAGS_use_tls)) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
