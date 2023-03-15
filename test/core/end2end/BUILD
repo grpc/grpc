@@ -155,6 +155,7 @@ grpc_cc_test(
         "end2end_tests.cc",
         "tests/bad_ping.cc",
         "tests/binary_metadata.cc",
+        "tests/call_host_override.cc",
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
         "tests/cancel_after_invoke.cc",

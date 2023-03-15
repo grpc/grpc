@@ -397,6 +397,10 @@ class CoreEnd2endTest
       return StringViewFromSlice(impl_->call_details.method);
     }
 
+    absl::string_view host() const {
+      return StringViewFromSlice(impl_->call_details.host);
+    }
+
     absl::optional<absl::string_view> GetInitialMetadata(
         absl::string_view key) const;
 
