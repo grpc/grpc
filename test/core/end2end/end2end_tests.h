@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
@@ -457,6 +458,10 @@ class CoreEnd2endTest
   void CancelAllCallsOnServer() {
     grpc_server_cancel_all_calls(fixture().server());
   }
+  void PingServerFromClient(int tag) {
+    grpc_channel_ping(fixture().client(), fixture().cq(), CqVerifier::tag(tag),
+                      nullptr);
+  }
 
   grpc_channel* client() {
     ForceInitialized();
@@ -495,7 +500,7 @@ class CoreEnd2endTest
 class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
-class HpackSizeTest : public CoreEnd2endTest {};
+class Http2SingleHopTest : public CoreEnd2endTest {};
 class RetryTest : public CoreEnd2endTest {};
 class WriteBufferingTest : public CoreEnd2endTest {};
 class Http2Test : public CoreEnd2endTest {};

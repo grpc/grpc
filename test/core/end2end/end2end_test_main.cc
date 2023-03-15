@@ -588,7 +588,7 @@ INSTANTIATE_TEST_SUITE_P(
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
-    HpackSizeTests, HpackSizeTest,
+    Http2SingleHopTests, Http2SingleHopTest,
     ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_HTTP2,
                                      FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                                          FEATURE_MASK_ENABLES_TRACES)),

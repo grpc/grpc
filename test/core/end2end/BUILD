@@ -153,6 +153,7 @@ grpc_cc_test(
         "end2end_test_main.cc",
         "end2end_test_utils.cc",
         "end2end_tests.cc",
+        "tests/bad_ping.cc",
         "tests/binary_metadata.cc",
         "tests/cancel_after_accept.cc",
         "tests/cancel_after_client_done.cc",
