@@ -267,6 +267,7 @@ test_driver_pip_install() {
 test_driver_compile_protos() {
   declare -a protos
   protos=(
+    "${TEST_DRIVER_PROTOS_PATH}/xds/v3/orca_load_report.proto"
     "${TEST_DRIVER_PROTOS_PATH}/test.proto"
     "${TEST_DRIVER_PROTOS_PATH}/messages.proto"
     "${TEST_DRIVER_PROTOS_PATH}/empty.proto"

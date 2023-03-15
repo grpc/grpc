@@ -20,9 +20,16 @@ libs:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
@@ -775,6 +782,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -1558,6 +1566,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -2118,6 +2127,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -2514,6 +2524,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -3582,6 +3593,7 @@ libs:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -3858,6 +3870,7 @@ libs:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -4310,18 +4323,6 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
-- name: inproc_callback_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/local_util.h
-  src:
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/inproc_callback_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: invalid_call_argument_test
   build: test
   language: c
@@ -7396,6 +7397,7 @@ targets:
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -7655,6 +7657,7 @@ targets:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/server_call_tracer.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -8458,7 +8461,14 @@ targets:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -8710,6 +8720,7 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/interop/http2_client.cc
   deps:
   - grpc++_test_config
@@ -8955,13 +8966,16 @@ targets:
   language: c++
   headers:
   - test/core/security/oauth2_utils.h
+  - test/cpp/interop/backend_metrics_lb_policy.h
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/security/oauth2_utils.cc
+  - test/cpp/interop/backend_metrics_lb_policy.cc
   - test/cpp/interop/client.cc
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
@@ -8978,6 +8992,7 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc
@@ -10146,6 +10161,7 @@ targets:
   - src/proto/grpc/testing/report_qps_scenario_service.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -10183,6 +10199,7 @@ targets:
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
@@ -10762,6 +10779,16 @@ targets:
   - linux
   - posix
   - mac
+- name: server_call_tracer_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/server_call_tracer_factory_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: server_chttp2_test
   gtest: true
   build: test
@@ -13264,6 +13291,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/config_dump.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
@@ -13289,6 +13317,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/config_dump.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
