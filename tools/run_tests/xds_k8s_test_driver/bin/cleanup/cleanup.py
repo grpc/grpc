@@ -100,7 +100,7 @@ CLIENT_PREFIXES = flags.DEFINE_list(
 )
 MODE = flags.DEFINE_enum('mode',
                          default='td',
-                         enum_values=['k8s', 'td'],
+                         enum_values=['k8s', 'td', 'td_no_legacy'],
                          help='Mode: Kubernetes or Traffic Director')
 
 # The cleanup script performs some API calls directly, so some flags normally
@@ -409,23 +409,30 @@ def find_and_remove_leaked_k8s_resources(dry_run, project, network,
 
 
 def find_and_remove_leaked_td_resources(dry_run, project, network):
+    cleanup_legacy: bool = MODE.value != 'td_no_legacy'
     td_resource_rules = [
         # itmes in each tuple, in order
         # - regex to match
         # - prefix of the resource (only used by gke resources)
         # - function to check of the resource should be kept
         # - function to delete the resource
-        (r'test-hc(.*)', '', is_marked_as_keep_gce,
-         cleanup_legacy_driver_resources),
-        (r'test-template(.*)', '', is_marked_as_keep_gce,
-         cleanup_legacy_driver_resources),
     ]
+
+    if cleanup_legacy:
+        td_resource_rules += [
+            (r'test-hc(.*)', '', is_marked_as_keep_gce,
+             cleanup_legacy_driver_resources),
+            (r'test-template(.*)', '', is_marked_as_keep_gce,
+             cleanup_legacy_driver_resources),
+        ]
+
     for prefix in TD_RESOURCE_PREFIXES.value:
         td_resource_rules.append((f'{prefix}-health-check-(.*)', prefix,
                                   is_marked_as_keep_gke, cleanup_td_for_gke),)
 
     # List resources older than KEEP_PERIOD. We only list health-checks and
-    # instance templates because these are leaves in the resource dependency tree.
+    # instance templates because these are leaves in the resource dependency
+    # tree.
     #
     # E.g. forwarding-rule depends on the target-proxy. So leaked
     # forwarding-rule indicates there's a leaked target-proxy (because this
@@ -445,10 +452,11 @@ def find_and_remove_leaked_td_resources(dry_run, project, network):
     # Delete leaked instance templates, those usually mean there are leaked VMs
     # from the gce framework. Also note that this is only needed for the gce
     # resources.
-    leaked_instance_templates = exec_gcloud(project, 'compute',
-                                            'instance-templates', 'list')
-    delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
-                               leaked_instance_templates)
+    if cleanup_legacy:
+        leaked_instance_templates = exec_gcloud(project, 'compute',
+                                                'instance-templates', 'list')
+        delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
+                                   leaked_instance_templates)
 
 
 def main(argv):
@@ -465,7 +473,7 @@ def main(argv):
     dry_run: bool = DRY_RUN.value
     k8s_context: str = xds_k8s_flags.KUBE_CONTEXT.value
 
-    if MODE.value == 'td':
+    if MODE.value == 'td' or MODE.value == 'td_no_legacy':
         find_and_remove_leaked_td_resources(dry_run, project, network)
     elif MODE.value == 'k8s':
         # 'unset' value is used in td-only mode to bypass the validation
