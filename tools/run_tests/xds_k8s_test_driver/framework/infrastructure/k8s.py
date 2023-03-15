@@ -240,7 +240,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # 404 Not Found. Make it easier for the caller to handle 404s.
         if code == 404:
-            raise NotFound(body) from err
+            raise NotFound('Kubernetes API returned 404 Not Found: '
+                           f'{self._status_message_or_body(body)}') from err
 
         # 409 Conflict
         # "Operation cannot be fulfilled on resourcequotas "foo": the object
@@ -276,6 +277,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             return _quick_recovery_retryer()
 
         return None
+
+    @classmethod
+    def _status_message_or_body(cls, body: str) -> str:
+        try:
+            return str(json.loads(body)['message'])
+        except (KeyError, ValueError):
+            return body
 
     def create_single_resource(self, manifest):
         return self._execute(self._apply_manifest, manifest)
