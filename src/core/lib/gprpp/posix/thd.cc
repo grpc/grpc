@@ -179,7 +179,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
   void Join() override {
     int pthread_join_err = pthread_join(pthread_id_, nullptr);
     if (pthread_join_err != 0) {
-      grpc_core::Crash("pthread_join failed: " + StrError(pthread_join_err));
+      Crash("pthread_join failed: " + StrError(pthread_join_err));
     }
   }
 
