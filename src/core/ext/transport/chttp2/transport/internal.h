@@ -258,9 +258,9 @@ struct grpc_chttp2_transport
 // but this gives us some runway to do so - and given that we're actively
 // working on removing the problematic code paths, it may be that effort brings
 // the result we need.
-#ifndef GPR_WINDOWS
+// #ifndef GPR_WINDOWS
     : public grpc_core::KeepsGrpcInitialized
-#endif
+// #endif
 {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);

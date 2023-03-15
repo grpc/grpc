@@ -90,7 +90,13 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
             utf8_message);
     gpr_free(utf8_message);
   }
-  closesocket(winsocket->socket);
+  int ret = 0;
+  do {
+    ret = closesocket(winsocket->socket);
+  } while (ret != 0 && (ret == WSAEINPROGRESS || ret == WSAEINTR));
+  if (ret != 0) {
+    gpr_log(GPR_INFO, "Socket: %p, closesocket status = %d", winsocket, ret);
+  }
 }
 
 static void destroy(grpc_winsocket* winsocket) {

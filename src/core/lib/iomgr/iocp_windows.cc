@@ -90,6 +90,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   } else {
     abort();
   }
+  gpr_mu_lock(&socket->state_mu);
   if (socket->shutdown_called) {
     info->bytes_transferred = 0;
     info->wsa_error = WSA_OPERATION_ABORTED;
@@ -99,6 +100,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
     info->bytes_transferred = bytes;
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
+  gpr_mu_unlock(&socket->state_mu);
   GPR_ASSERT(overlapped == &info->overlapped);
   grpc_socket_become_ready(socket, info);
   return GRPC_IOCP_WORK_WORK;
