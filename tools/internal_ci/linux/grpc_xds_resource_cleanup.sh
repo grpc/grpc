@@ -35,7 +35,7 @@ cleanup::activate_secondary_cluster_as_primary() {
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
 }
 
-cleanup::job::clean_td() {
+cleanup::job::cleanup_td() {
   cleanup::run_clean "$1" --mode=td
 }
 
@@ -43,7 +43,7 @@ cleanup::job::clean_td() {
 # The PSM_LB cluster is used by k8s_lb tests.
 # The keep hours is reduced to 6.
 #######################################
-cleanup::job::clean_lb_primary() {
+cleanup::job::cleanup_cluster_lb_primary() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_LB
   cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
@@ -52,7 +52,7 @@ cleanup::job::clean_lb_primary() {
 # Secondary PSM_LB cluster is used by k8s_lb tests.
 # The keep hours is reduced to 6.
 #######################################
-cleanup::job::clean_lb_secondary() {
+cleanup::job::cleanup_cluster_lb_secondary() {
   cleanup::activate_secondary_cluster_as_primary GKE_CLUSTER_PSM_LB
   cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
@@ -62,7 +62,7 @@ cleanup::job::clean_lb_secondary() {
 # namespaces; the xds server namespaces are shared.
 # The keep hours is reduced to 6.
 #######################################
-cleanup::job::clean_url_map() {
+cleanup::job::cleanup_cluster_url_map() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_BASIC
   cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
@@ -70,7 +70,7 @@ cleanup::job::clean_url_map() {
 #######################################
 # The SECURITY cluster is used by the security and authz test suites.
 #######################################
-cleanup::job::clean_security() {
+cleanup::job::cleanup_cluster_security() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_SECURITY
   cleanup::run_clean "$1" --mode=k8s --keep_hours=6
 }
@@ -111,15 +111,15 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_jobs=0
-  declare -a clean_jobs
-  clean_jobs=(
-    "clean_security"
-    "clean_lb_primary"
-    "clean_lb_secondary"
-    "clean_url_map"
-    "clean_td"
+  declare -a cleanup_jobs
+  cleanup_jobs=(
+    "cleanup_td"
+    "cleanup_cluster_lb_primary"
+    "cleanup_cluster_lb_secondary"
+    "cleanup_cluster_security"
+    "cleanup_cluster_url_map"
   )
-  for job_name in "${clean_jobs[@]}"; do
+  for job_name in "${cleanup_jobs[@]}"; do
     "cleanup::job::${job_name}" "${job_name}" || (( ++failed_jobs ))
   done
   echo "Failed job suites: ${failed_jobs}"
