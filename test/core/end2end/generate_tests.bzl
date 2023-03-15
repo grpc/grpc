@@ -18,7 +18,7 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_binary",
     "grpc_cc_library",
-    "grpc_py_test",
+    "grpc_sh_test",
 )
 load("flaky.bzl", "FLAKY_TESTS")
 
@@ -485,10 +485,9 @@ def grpc_end2end_tests():
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
             name = "%s_test@%s" % (f, test_short_name)
-            grpc_py_test(
+            grpc_sh_test(
                 name = name,
-                srcs = ["run_end2end_tests.py"],
-                main = "run_end2end_tests.py",
+                srcs = ["run.sh"],
                 data = [":" + bin_name],
                 args = ["$(location %s)" % bin_name, t],
                 tags = _platform_support_tags(fopt) + fopt.tags + topt.tags + [
@@ -497,5 +496,4 @@ def grpc_end2end_tests():
                 ],
                 flaky = name in FLAKY_TESTS,
                 exclude_pollers = topt.exclude_pollers,
-                deps = ["@rules_python//python/runfiles"],
             )
