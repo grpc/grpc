@@ -78,6 +78,7 @@ class InteropClient {
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
   bool DoOrcaPerRpc();
+  bool DoOrcaOob();
 
   // The following interop test are not yet part of the interop spec, and are
   // not implemented cross-language. They are considered experimental for now,
