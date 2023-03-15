@@ -47,8 +47,8 @@ WindowsEndpoint::WindowsEndpoint(
     : peer_address_(peer_address),
       allocator_(std::move(allocator)),
       executor_(executor),
-      io_state_(std::make_shared<AsyncIOState>(this, std::move(socket))),
-      engine_(engine) {
+      io_state_(std::make_shared<AsyncIOState>(this, std::move(socket),
+                                               std::move(engine))) {
   char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
   int addr_len = sizeof(addr);
   if (getsockname(io_state_->socket->raw_socket(),
@@ -323,8 +323,9 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
 // ---- AsyncIOState ----
 
 WindowsEndpoint::AsyncIOState::AsyncIOState(WindowsEndpoint* endpoint,
-                                            std::unique_ptr<WinSocket> socket)
-    : endpoint(endpoint), socket(std::move(socket)) {}
+                                            std::unique_ptr<WinSocket> socket,
+                                            std::shared_ptr<EventEngine> engine)
+    : endpoint(endpoint), socket(std::move(socket)), engine(engine) {}
 
 WindowsEndpoint::AsyncIOState::~AsyncIOState() {
   socket->Shutdown(DEBUG_LOCATION, "~AsyncIOState");
