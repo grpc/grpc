@@ -21,18 +21,18 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 
 cleanup::activate_cluster() {
   activate_gke_cluster "$1"
+  gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" \
+    --zone "${GKE_CLUSTER_ZONE}"
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
-  export CLEANUP_KUBE_CONTEXT
 }
 
 cleanup::activate_secondary_cluster_as_primary() {
   activate_secondary_gke_cluster "$1"
-  GKE_CLUSTER_NAME="${SECONDARY_GKE_CLUSTER_ZONE}"
-  GKE_CLUSTER_ZONE="${SECONDARY_GKE_CLUSTER_NAME}"
+  GKE_CLUSTER_NAME="${SECONDARY_GKE_CLUSTER_NAME}"
+  GKE_CLUSTER_ZONE="${SECONDARY_GKE_CLUSTER_ZONE}"
   gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" \
     --zone "${GKE_CLUSTER_ZONE}"
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
-  export CLEANUP_KUBE_CONTEXT
 }
 
 cleanup::job::clean_td() {
@@ -112,11 +112,11 @@ main() {
   local failed_jobs=0
   declare -a clean_jobs
   clean_jobs=(
-    "clean_td"
     "clean_security"
     "clean_lb_primary"
     "clean_lb_secondary"
     "clean_url_map"
+    "clean_td"
   )
   for job_name in "${clean_jobs[@]}"; do
     "cleanup::job::${job_name}" "${job_name}" || (( ++failed_jobs ))
