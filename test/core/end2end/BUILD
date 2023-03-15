@@ -286,7 +286,6 @@ grpc_cc_test(
         "fixture_support",
         "ssl_test_data",
         "//:config_vars",
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
