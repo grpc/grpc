@@ -14,8 +14,8 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/resource_quota/arena.h"
 
