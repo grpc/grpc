@@ -22,11 +22,7 @@
 
 #include <limits.h>
 
-#include <condition_variable>
 #include <initializer_list>
-#include <iostream>
-#include <memory>
-#include <mutex>
 #include <string>
 #include <utility>
 
@@ -207,40 +203,17 @@ HttpRequest::~HttpRequest() {
   grpc_pollset_set_destroy(pollset_set_);
 }
 
-struct Completion {
-  bool completed = false;
-  std::mutex mu;
-  std::condition_variable cv;
-};
-void on_done(void* arg, absl::Status error) {
-  GPR_ASSERT(error.ok());
-  Completion* c = static_cast<Completion*>(arg);
-  std::lock_guard<std::mutex> l(c->mu);
-  c->completed = true;
-  c->cv.notify_one();
-}
-
 void HttpRequest::Start() {
-  // MutexLock lock(&mu_);
-  mu_.Lock();
+  MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
     test_only_generate_response_.value()();
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  {
-    Completion c;
-    std::unique_lock<std::mutex> l(c.mu);
-    dns_request_handle_ = resolver_->LookupHostname(
-        absl::bind_front(&HttpRequest::OnResolved, this,
-                         GRPC_CLOSURE_CREATE(&on_done, &c, 0)),
-        uri_.authority(), uri_.scheme(), kDefaultDNSRequestTimeout,
-        pollset_set_,
-        /*name_server=*/"");
-    mu_.Unlock();
-    c.cv.wait(l, [&c] { return c.completed; });
-  }
-  ContinueAfterResolved();
+  dns_request_handle_ = resolver_->LookupHostname(
+      absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
+      uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
+      /*name_server=*/"");
 }
 
 void HttpRequest::Orphan() {
@@ -377,7 +350,6 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
-  gpr_log(GPR_INFO, "DoHandshake: address: %s", address->c_str());
   handshake_mgr_->DoHandshake(ep, args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
@@ -402,9 +374,8 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
 }
 
 void HttpRequest::OnResolved(
-    grpc_closure* hack,
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  // RefCountedPtr<HttpRequest> unreffer(this);
+  RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
   dns_request_handle_.reset();
   if (cancelled_) {
@@ -417,13 +388,6 @@ void HttpRequest::OnResolved(
   }
   addresses_ = std::move(*addresses_or);
   next_address_ = 0;
-  hack->cb(hack->cb_arg, absl::OkStatus());
-}
-
-void HttpRequest::ContinueAfterResolved() {
-  RefCountedPtr<HttpRequest> unreffer(this);
-  MutexLock lock(&mu_);
-  std::cout << "ContinueAfterResolved" << std::endl;
   NextAddress(absl::OkStatus());
 }
 

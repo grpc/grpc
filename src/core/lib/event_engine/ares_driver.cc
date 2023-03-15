@@ -14,6 +14,7 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
+#include <arpa/nameser.h>
 #include <netdb.h>
 #include <string.h>
 
@@ -25,6 +26,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "ares.h"
+#include "ares_driver.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -39,6 +41,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
+// #include "src/core/lib/iomgr/resolved_address.h"
+// #include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef _WIN32
 #else
@@ -265,6 +269,7 @@ GrpcAresRequest::GrpcAresRequest(
       timeout_(timeout),
       register_socket_with_poller_cb_(
           std::move(register_socket_with_poller_cb)),
+      fd_node_list_(std::make_unique<FdNodeList>()),
       event_engine_(event_engine) {}
 
 GrpcAresRequest::~GrpcAresRequest() {
@@ -506,6 +511,7 @@ GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
 }
 
 void GrpcAresHostnameRequest::Start() {
+  auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   // We add up pending_queries_ here since ares_gethostbyname may directly
@@ -523,7 +529,10 @@ void GrpcAresHostnameRequest::Start() {
   // TODO(yijiem): set_request_dns_server if specified
   ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET,
                      &on_hostbyname_done_locked, static_cast<void*>(this));
-  Work();
+  // It's possible that ares_gethostbyname gets everything done inline.
+  if (!shutting_down_) {
+    Work();
+  }
 }
 
 void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
@@ -541,7 +550,9 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
     // fds.
     shutting_down_ = true;
     // TODO(yijiem): cancel timers here
-    if (error_.ok()) {
+    if (!result_.empty()) {
+      // As long as there are records, we return them. Note that there might be
+      // error_ from the other request too.
       // TODO(yijiem): sort the addresses
       event_engine_->Run([on_resolve = std::move(on_resolve_),
                           result = std::move(result_),
@@ -549,6 +560,7 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
         on_resolve(std::move(result), token);
       });
     } else {
+      GPR_ASSERT(!error_.ok());
       // The reason that we are using EventEngine::Run() here is that we are
       // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
       // the Engine to clean up some state there (which will take its own
@@ -566,7 +578,7 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
         on_resolve(std::move(error), token);
       });
     }
-    Unref(DEBUG_LOCATION, "shutting down");
+    Unref(DEBUG_LOCATION, "OnResolve");
   }
 }
 
@@ -589,7 +601,7 @@ void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
                       token = reinterpret_cast<intptr_t>(this)]() mutable {
     on_resolve(std::move(result), token);
   });
-  Unref(DEBUG_LOCATION, "shutting down");
+  Unref(DEBUG_LOCATION, "OnResolve");
 }
 
 // TODO(yijiem): Don't query for TXT records if the target is "localhost"
@@ -603,7 +615,16 @@ void GrpcAresTXTRequest::Start() {
   Work();
 }
 
-void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {}
+void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {
+  shutting_down_ = true;
+  // TODO(yijiem): cancel timers here
+  event_engine_->Run([on_resolve = std::move(on_resolve_),
+                      result = std::move(result),
+                      token = reinterpret_cast<intptr_t>(this)]() mutable {
+    on_resolve(std::move(result), token);
+  });
+  Unref(DEBUG_LOCATION, "OnResolve");
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -25,8 +25,6 @@
 
 #ifdef GRPC_HAVE_ARPA_NAMESER
 
-#include <arpa/nameser.h>
-
 #else  // GRPC_HAVE_ARPA_NAMESER
 
 typedef enum __ns_class {

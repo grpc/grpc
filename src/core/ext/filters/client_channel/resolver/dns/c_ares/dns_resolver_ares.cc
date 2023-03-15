@@ -34,7 +34,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -67,7 +66,6 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/container/flat_hash_set.h"
-#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -76,10 +74,8 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
@@ -92,18 +88,14 @@
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 
-#define USE_EVENT_ENGINE_IMPL 1
-
 namespace grpc_core {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
-
 class AresClientChannelDNSResolver : public PollingResolver {
  public:
   AresClientChannelDNSResolver(ResolverArgs args,
-                               const ChannelArgs& channel_args);
+                               Duration min_time_between_resolutions);
 
   OrphanablePtr<Orphanable> StartRequest() override;
 
@@ -213,29 +205,26 @@ class AresClientChannelDNSResolver : public PollingResolver {
 };
 
 AresClientChannelDNSResolver::AresClientChannelDNSResolver(
-    ResolverArgs args, const ChannelArgs& channel_args)
-    : PollingResolver(
-          std::move(args), channel_args,
-          std::max(Duration::Zero(),
-                   channel_args
-                       .GetDurationFromIntMillis(
-                           GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
-                       .value_or(Duration::Seconds(30))),
-          BackOff::Options()
-              .set_initial_backoff(Duration::Milliseconds(
-                  GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
-              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(Duration::Milliseconds(
-                  GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-          &grpc_trace_cares_resolver),
+    ResolverArgs args, Duration min_time_between_resolutions)
+    : PollingResolver(std::move(args), min_time_between_resolutions,
+                      BackOff::Options()
+                          .set_initial_backoff(Duration::Milliseconds(
+                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
+                          .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+                          .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+                          .set_max_backoff(Duration::Milliseconds(
+                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+                      &grpc_trace_cares_resolver),
       request_service_config_(
-          !channel_args.GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
+          !channel_args()
+               .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
                .value_or(true)),
-      enable_srv_queries_(channel_args.GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
+      enable_srv_queries_(channel_args()
+                              .GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
                               .value_or(false)),
       query_timeout_ms_(
-          std::max(0, channel_args.GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
+          std::max(0, channel_args()
+                          .GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
                           .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {}
 
 AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
@@ -468,9 +457,13 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    ChannelArgs channel_args = args.args;
-    return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args),
-                                                        channel_args);
+    Duration min_time_between_resolutions = std::max(
+        Duration::Zero(), args.args
+                              .GetDurationFromIntMillis(
+                                  GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
+                              .value_or(Duration::Seconds(30)));
+    return MakeOrphanable<AresClientChannelDNSResolver>(
+        std::move(args), min_time_between_resolutions);
   }
 };
 
@@ -734,7 +727,6 @@ class AresDNSResolver : public DNSResolver {
     const std::function<void(absl::StatusOr<std::string>)> on_resolved_;
   };
 
-#ifndef USE_EVENT_ENGINE_IMPL
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -749,42 +741,6 @@ class AresDNSResolver : public DNSResolver {
     auto handle = request->task_handle();
     open_requests_.insert(handle);
     return handle;
-  }
-#else
-  TaskHandle LookupHostname(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::string_view name, absl::string_view default_port, Duration timeout,
-      grpc_pollset_set* interested_parties,
-      absl::string_view name_server) override {
-    // TODO(yijiem): not thread-safe
-    if (!dns_resolver_) {
-      dns_resolver_ =
-          ::grpc_event_engine::experimental::GetDefaultEventEngine()
-              ->GetDNSResolver({.dns_server = std::string(name_server)});
-    }
-    return dns_resolver_->LookupHostname(
-        /*on_resolve=*/absl::bind_front(&AresDNSResolver::OnResolve, this,
-                                        on_resolved),
-        /*name=*/name,
-        /*default_port=*/default_port,
-        /*timeout=*/timeout);
-  }
-#endif
-
-  void OnResolve(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_resolved,
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-          resolved_addresses) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    if (!resolved_addresses.ok()) {
-      on_resolved(resolved_addresses.status());
-      return;
-    }
-    on_resolved(reinterpret_cast<std::vector<grpc_resolved_address>&>(
-        *resolved_addresses));
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
@@ -825,7 +781,6 @@ class AresDNSResolver : public DNSResolver {
     return handle;
   };
 
-#ifndef USE_EVENT_ENGINE_IMPL
   bool Cancel(TaskHandle handle) override {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
@@ -840,11 +795,6 @@ class AresDNSResolver : public DNSResolver {
                          request);
     return request->Cancel();
   }
-#else
-  bool Cancel(TaskHandle handle) override {
-    return dns_resolver_->CancelLookup(handle);
-  }
-#endif
 
  private:
   // Called exclusively from the AresRequest destructor.
@@ -855,7 +805,6 @@ class AresDNSResolver : public DNSResolver {
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
   Mutex mu_;
   grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
       ABSL_GUARDED_BY(mu_);

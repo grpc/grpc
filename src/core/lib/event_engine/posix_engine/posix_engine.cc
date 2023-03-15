@@ -518,7 +518,12 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
         on_resolve(std::move(result));
       },
       event_engine_);
-  if (!request->Initialize(options_.dns_server, /*check_port=*/true).ok()) {
+  absl::Status status =
+      request->Initialize(options_.dns_server, /*check_port=*/true);
+  if (!status.ok()) {
+    gpr_log(GPR_ERROR, "Initialize GrpcAresRequest failed: %s",
+            status.ToString().c_str());
+    // TODO(yijiem): what to do in this case?
     abort();
   }
   {

@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cstdint>
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -172,9 +172,8 @@ class GrpcAresRequest
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     shutting_down_ = shutting_down;
   }
-  std::unique_ptr<FdNodeList>& fd_node_list()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return fd_node_list_;
+  const FdNodeList* fd_node_list() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return fd_node_list_.get();
   }
 
   std::string ToString() const {
@@ -222,9 +221,7 @@ class GrpcAresRequest
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   absl::Status error_ = absl::OkStatus();
   RegisterSocketWithPollerCallback register_socket_with_poller_cb_;
-  std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_) =
-      std::make_unique<FdNodeList>();
-
+  std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_);
   EventEngine* event_engine_;
 };
 
