@@ -371,7 +371,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             logger.error(
                 'Timeout %s (h:mm:ss) waiting for service %s to report NEG '
                 'status. Last service status:\n%s', timeout, name,
-                self._pretty_format_status(e.result()))
+                self.pretty_format_status(e.result()))
             raise
 
     def get_service_neg(self, service_name: str,
@@ -419,7 +419,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             logger.error(
                 'Timeout %s (h:mm:ss) waiting for deployment %s to report %i '
                 'replicas available. Last status:\n%s', timeout, name, count,
-                self._pretty_format_status(e.result()))
+                self.pretty_format_status(e.result()))
             raise
 
     def wait_for_deployment_replica_count(
@@ -481,7 +481,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             logger.error(
                 'Timeout %s (h:mm:ss) waiting for pod %s to start. '
                 'Pod status:\n%s', timeout, pod_name,
-                self._pretty_format_status(e.result()))
+                self.pretty_format_status(e.result()))
             raise
 
     def port_forward_pod(
@@ -519,10 +519,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def pretty_format_statuses(self,
                                k8s_objects: List[Optional[object]]) -> str:
         return '\n'.join(
-            self._pretty_format_status(k8s_object)
-            for k8s_object in k8s_objects)
+            self.pretty_format_status(k8s_object) for k8s_object in k8s_objects)
 
-    def _pretty_format_status(self, k8s_object: Optional[object]) -> str:
+    def pretty_format_status(self, k8s_object: Optional[object]) -> str:
         if k8s_object is None:
             return 'No data'
 

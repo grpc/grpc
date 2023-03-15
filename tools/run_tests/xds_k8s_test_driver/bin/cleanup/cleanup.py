@@ -102,10 +102,9 @@ MODE = flags.DEFINE_enum('mode',
                          default='td',
                          enum_values=['k8s', 'td', 'td_no_legacy'],
                          help='Mode: Kubernetes or Traffic Director')
-SECONDARY = flags.DEFINE_bool(
-    "secondary",
-    default=False,
-    help="Cleanup secondary (alternative) resources")
+SECONDARY = flags.DEFINE_bool("secondary",
+                              default=False,
+                              help="Cleanup secondary (alternative) resources")
 
 # The cleanup script performs some API calls directly, so some flags normally
 # required to configure framework properly, are not needed here.
@@ -292,11 +291,10 @@ def cleanup_client(project,
     try:
         client_runner.cleanup(force=True, force_namespace=True)
     except retryers.RetryError as err:
-        result = err.result(default=[])
         logger.error(
             'Timeout waiting for namespace %s deletion. '
             'Namespace statuses (if any):\n%s', ns.name,
-            ns.pretty_format_statuses(result))
+            ns.pretty_format_status(err.result()))
         raise
 
 
@@ -327,11 +325,10 @@ def cleanup_server(project,
     try:
         server_runner.cleanup(force=True, force_namespace=True)
     except retryers.RetryError as err:
-        result = err.result(default=[])
         logger.error(
             'Timeout waiting for namespace %s deletion. '
             'Namespace statuses (if any):\n%s', ns.name,
-            ns.pretty_format_statuses(result))
+            ns.pretty_format_status(err.result()))
         raise
 
 
@@ -392,8 +389,11 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
 
         # Cleaning up.
         try:
-            rule.cleanup_ns_fn(project, network, k8s_api_manager,
-                               namespace_name, gcp_service_account,
+            rule.cleanup_ns_fn(project,
+                               network,
+                               k8s_api_manager,
+                               namespace_name,
+                               gcp_service_account,
                                suffix=('alt' if SECONDARY.value else None))
         except k8s.NotFound:
             logging.warning('----- Skipped [not found]: %s', namespace_name)
