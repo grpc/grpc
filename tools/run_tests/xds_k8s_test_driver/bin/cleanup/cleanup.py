@@ -102,6 +102,10 @@ MODE = flags.DEFINE_enum('mode',
                          default='td',
                          enum_values=['k8s', 'td', 'td_no_legacy'],
                          help='Mode: Kubernetes or Traffic Director')
+SECONDARY = flags.DEFINE_bool(
+    "secondary",
+    default=False,
+    help="Cleanup secondary (alternative) resources")
 
 # The cleanup script performs some API calls directly, so some flags normally
 # required to configure framework properly, are not needed here.
@@ -275,7 +279,7 @@ def cleanup_client(project,
 
     ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
     client_runner = _KubernetesClientRunner(
-        ns,
+        k8s_namespace=ns,
         deployment_name=deployment_name,
         gcp_project=project,
         network=network,
@@ -296,11 +300,6 @@ def cleanup_client(project,
         raise
 
 
-def cleanup_client_alt(*args, **kwargs):
-    kwargs['suffix'] = 'alt'
-    cleanup_client(*args, **kwargs)
-
-
 # cleanup_server creates a server runner, and calls its cleanup() method.
 def cleanup_server(project,
                    network,
@@ -315,6 +314,7 @@ def cleanup_server(project,
 
     ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
     server_runner = _KubernetesServerRunner(
+        k8s_namespace=ns,
         deployment_name=deployment_name,
         gcp_project=project,
         network=network,
@@ -333,11 +333,6 @@ def cleanup_server(project,
             'Namespace statuses (if any):\n%s', ns.name,
             ns.pretty_format_statuses(result))
         raise
-
-
-def cleanup_server_alt(*args, **kwargs):
-    kwargs['suffix'] = 'alt'
-    cleanup_client(*args, **kwargs)
 
 
 def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
@@ -398,7 +393,8 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
         # Cleaning up.
         try:
             rule.cleanup_ns_fn(project, network, k8s_api_manager,
-                               namespace_name, gcp_service_account)
+                               namespace_name, gcp_service_account,
+                               suffix=('alt' if SECONDARY.value else None))
         except k8s.NotFound:
             logging.warning('----- Skipped [not found]: %s', namespace_name)
         except retryers.RetryError as err:
@@ -410,7 +406,7 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
                               namespace_name)
         except Exception as err:  # noqa pylint: disable=broad-except
             _CLEANUP_RESULT.add_error('Unexpected error while deleting '
-                                      f'namespace {namespaces}: {err}')
+                                      f'namespace {namespace_name}: {err}')
             logging.exception('----- Skipped [cleanup unexpected error]: %s',
                               namespace_name)
 
@@ -432,12 +428,8 @@ def find_and_remove_leaked_k8s_resources(dry_run, project, network,
     k8s_resource_rules: List[K8sResourceRule] = []
     for prefix in CLIENT_PREFIXES.value:
         k8s_resource_rules.append(
-            K8sResourceRule(f'{prefix}-client-alt-(.*)', cleanup_client_alt))
-        k8s_resource_rules.append(
             K8sResourceRule(f'{prefix}-client-(.*)', cleanup_client))
     for prefix in SERVER_PREFIXES.value:
-        k8s_resource_rules.append(
-            K8sResourceRule(f'{prefix}-server-alt-(.*)', cleanup_server_alt))
         k8s_resource_rules.append(
             K8sResourceRule(f'{prefix}-server-(.*)', cleanup_server))
 

@@ -54,7 +54,7 @@ cleanup::job::cleanup_cluster_lb_primary() {
 #######################################
 cleanup::job::cleanup_cluster_lb_secondary() {
   cleanup::activate_secondary_cluster_as_primary GKE_CLUSTER_PSM_LB
-  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --secondary --keep_hours=6
 }
 
 #######################################
