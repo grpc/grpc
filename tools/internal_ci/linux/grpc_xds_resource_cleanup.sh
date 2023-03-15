@@ -96,6 +96,9 @@ main() {
   # Source the job captured from the master branch.
   echo "Sourcing job driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
+
+  # Valid cluster variables needed for the automatic driver setup.
+  activate_gke_cluster GKE_CLUSTER_PSM_BASIC
   kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
 
   # Run tests
