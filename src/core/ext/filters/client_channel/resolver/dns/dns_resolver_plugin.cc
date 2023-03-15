@@ -17,25 +17,25 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 
 namespace grpc_core {
 
-void RegisterAppropriateDnsResolver(CoreConfiguration::Builder* builder) {
+void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
   if (IsEventEngineDnsEnabled()) {
-    builder->resolver_registry()->RegisterResolverFactory(std::make_unique<EventEngineClientChannelResolver>());
+    builder->resolver_registry()->RegisterResolverFactory(
+        std::make_unique<grpc_event_engine::experimental::
+                             EventEngineClientChannelDNSResolverFactory>());
   }
   // ---- Ares resolver ----
   if (UseAresDnsResolver()) {
     RegisterAresDnsResolver(builder);
     return;
   }
-
-  // ---- EventEngine resolver ----
-  // TODO(hork): change this logic when an EE resolver is available.
-
   // ---- Native resolver ----
   static const char* const resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();
@@ -43,7 +43,6 @@ void RegisterAppropriateDnsResolver(CoreConfiguration::Builder* builder) {
       !builder->resolver_registry()->HasResolverFactory("dns")) {
     RegisterNativeDnsResolver(builder);
   }
-
   GPR_ASSERT(false &&
              "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
              "please file a bug.");

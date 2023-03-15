@@ -4862,6 +4862,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_event_engine",
+    srcs = ["ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc"],
+    hdrs = ["ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "event_engine_trace",
+        "event_engine_utils",
+        "polling_resolver",
+        "resolved_address",
+        "//:backoff",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_resolver",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_plugin",
     srcs = [
         "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc",
@@ -4871,8 +4894,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "experiments",
+        "grpc_resolver_dns_event_engine",
         "grpc_resolver_dns_native",
         "grpc_resolver_dns_selection",
+        "//:config",
         "//:gpr",
         "//:grpc_resolver_dns_ares",
     ],

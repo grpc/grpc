@@ -20,7 +20,7 @@
 namespace grpc_core {
 
 // Centralized decision logic about which client channel DNS resolver to enable.
-void RegisterAppropriateDnsResolver(CoreConfiguration::Builder* builder);
+void RegisterDnsResolver(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 

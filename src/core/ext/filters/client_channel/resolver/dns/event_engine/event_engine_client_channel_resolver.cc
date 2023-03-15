@@ -21,12 +21,12 @@
 
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 
@@ -42,7 +42,6 @@ namespace {
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 using grpc_core::BackOff;
-using grpc_core::ChannelArgs;
 using grpc_core::Duration;
 using grpc_core::InternallyRefCounted;
 using grpc_core::MakeOrphanable;
@@ -97,8 +96,9 @@ class EventEngineDNSRequestWrapper
 // EventEngineClientChannelDNSResolver
 // ----------------------------------------------------------------------------
 class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
+ public:
   EventEngineClientChannelDNSResolver(ResolverArgs args,
-                                      const ChannelArgs& channel_args);
+                                      Duration min_time_between_resolutions);
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
@@ -114,33 +114,29 @@ class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
 };
 
 EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
-    ResolverArgs args, const ChannelArgs& channel_args)
-    : PollingResolver(
-          std::move(args), channel_args,
-          /*min_time_between_resolutions=*/
-          std::max(Duration::Zero(),
-                   channel_args
-                       .GetDurationFromIntMillis(
-                           GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
-                       .value_or(Duration::Seconds(30))),
-          BackOff::Options()
-              .set_initial_backoff(Duration::Milliseconds(
-                  GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
-              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(Duration::Milliseconds(
-                  GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-          &grpc_event_engine_dns_trace),
+    ResolverArgs args, Duration min_time_between_resolutions)
+    : PollingResolver(std::move(args), min_time_between_resolutions,
+                      BackOff::Options()
+                          .set_initial_backoff(Duration::Milliseconds(
+                              GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
+                          .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+                          .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+                          .set_max_backoff(Duration::Milliseconds(
+                              GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+                      &grpc_event_engine_dns_trace),
       request_service_config_(
-          !channel_args.GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
+          !channel_args()
+               .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
                .value_or(true)),
-      enable_srv_queries_(channel_args.GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
+      enable_srv_queries_(channel_args()
+                              .GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
                               .value_or(false)),
       // TODO(yijiem): decide if the ares channel arg timeout should be reused.
       query_timeout_ms_(std::chrono::milliseconds(
-          std::max(0, channel_args.GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
+          std::max(0, channel_args()
+                          .GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
                           .value_or(GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS)))),
-      event_engine_(channel_args.GetObjectRef<EventEngine>()) {}
+      event_engine_(channel_args().GetObjectRef<EventEngine>()) {}
 
 OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
   return MakeOrphanable<EventEngineDNSRequestWrapper>(
@@ -168,12 +164,9 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
       },
       resolver_->name_to_resolve(), grpc_core::kDefaultSecurePort,
       resolver_->query_timeout_ms_);
-  if (grpc_event_engine_dns_trace.enabled()) {
-    gpr_log(
-        GPR_DEBUG,
-        "DO NOT SUBMIT: resolver::%p Started resolving hostname. Handle::%s",
-        resolver_.get(), HandleToString(hostname_handle_).c_str());
-  }
+  GRPC_EVENT_ENGINE_DNS_TRACE(
+      "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
+      HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
     Ref(DEBUG_LOCATION, "OnSRVResolved").release();
     srv_handle_ = event_engine_resolver_->LookupSRV(
@@ -183,11 +176,9 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
           grpc_core::Crash("unimplemented");
         },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    if (grpc_event_engine_dns_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "DO NOT SUBMIT: resolver::%p Started resolving SRV. Handle::%s",
-              resolver_.get(), HandleToString(srv_handle_).c_str());
-    }
+    GRPC_EVENT_ENGINE_DNS_TRACE(
+        "DNSResolver::%p Started resolving SRV. Handle::%s", resolver_.get(),
+        HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
     Ref(DEBUG_LOCATION, "OnTXTResolved").release();
@@ -197,11 +188,9 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
           grpc_core::Crash("unimplemented");
         },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    if (grpc_event_engine_dns_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "DO NOT SUBMIT: resolver::%p Started resolving TXT. Handle::%s",
-              resolver_.get(), HandleToString(txt_handle_).c_str());
-    }
+    GRPC_EVENT_ENGINE_DNS_TRACE(
+        "DNSResolver::%p Started resolving TXT. Handle::%s", resolver_.get(),
+        HandleToString(*txt_handle_).c_str());
   }
 }
 
@@ -242,9 +231,13 @@ bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
 grpc_core::OrphanablePtr<grpc_core::Resolver>
 EventEngineClientChannelDNSResolverFactory::CreateResolver(
     grpc_core::ResolverArgs args) const {
-  grpc_core::ChannelArgs channel_args = args.args;
-  return MakeOrphanable<EventEngineClientChannelDNSResolver>(std::move(args),
-                                                             channel_args);
+  Duration min_time_between_resolutions = std::max(
+      Duration::Zero(), args.args
+                            .GetDurationFromIntMillis(
+                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
+                            .value_or(Duration::Seconds(30)));
+  return MakeOrphanable<EventEngineClientChannelDNSResolver>(
+      std::move(args), min_time_between_resolutions);
 }
 
 }  // namespace experimental
