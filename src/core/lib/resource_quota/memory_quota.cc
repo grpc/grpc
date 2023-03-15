@@ -645,6 +645,8 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
+  static const double kSetPoint = 95.0;
+
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {
     max_this_round_.compare_exchange_weak(max_so_far, sample,
@@ -665,7 +667,7 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
       // Under very high memory pressure we... just max things out.
       report = controller_.Update(1e99);
     } else {
-      report = controller_.Update(current_estimate - 0.95);
+      report = controller_.Update(current_estimate - kSetPoint);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",

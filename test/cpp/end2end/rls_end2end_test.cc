@@ -159,7 +159,6 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
     grpc_core::ConfigVars::Overrides overrides;
     overrides.client_channel_backup_poll_interval_ms = 1;
     grpc_core::ConfigVars::SetOverrides(overrides);

@@ -666,8 +666,8 @@ static void test_default_ssl_roots(void) {
 
   grpc_core::ConfigVars::Overrides overrides;
 
-  // First let's get the root through the override: set the env to an invalid
-  // value.
+  // First let's get the root through the override: override the config to an
+  // invalid value.
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
@@ -678,7 +678,7 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_override_api);
   gpr_free(roots_contents);
 
-  // Now let's set the env var: We should get the contents pointed value
+  // Now let's set the config: We should get the contents pointed value
   // instead
   overrides.default_ssl_roots_file_path = roots_env_var_file_path;
   grpc_core::ConfigVars::SetOverrides(overrides);
@@ -688,7 +688,7 @@ static void test_default_ssl_roots(void) {
   ASSERT_STREQ(roots_contents, roots_for_env_var);
   gpr_free(roots_contents);
 
-  // Now reset the env var. We should fall back to the value overridden using
+  // Now reset the config. We should fall back to the value overridden using
   // the api.
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);

@@ -73,11 +73,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
 class ServerLoadReportingEnd2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    grpc_core::ConfigVars::Overrides config_overrides;
-    config_overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(config_overrides);
     server_address_ =
         "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
     server_ =
@@ -207,5 +202,10 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
   return RUN_ALL_TESTS();
 }
