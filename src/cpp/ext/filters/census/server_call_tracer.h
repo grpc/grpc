@@ -16,12 +16,12 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
-#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/server_call_tracer.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc {
@@ -37,4 +37,4 @@ class OpenCensusServerCallTracerFactory
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_SERVER_CALL_TRACER_H

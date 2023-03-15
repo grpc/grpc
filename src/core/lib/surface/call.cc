@@ -64,7 +64,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
@@ -754,12 +753,14 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       auto* server_call_tracer =
           server_call_tracer_factory->CreateNewServerCallTracer(arena);
       if (server_call_tracer != nullptr) {
-        // Note that we are setting both GRPC_CONTEXT_CALL_TRACER and
-        // GRPC_CONTEXT_RPC_TRACER as a matter of convenience. In the future
+        // Note that we are setting both
+        // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
+        // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
+        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+                         server_call_tracer, nullptr);
         call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
-        call->ContextSet(GRPC_CONTEXT_RPC_TRACER, server_call_tracer, nullptr);
       }
     }
   }
@@ -1192,8 +1193,8 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ =
-      static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
+  bctl->call_tracer_ = static_cast<CallTracer*>(
+      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -1856,8 +1857,8 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  call_tracer =
-      static_cast<CallTracerInterface*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
+  call_tracer = static_cast<CallTracerInterface*>(
+      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
   if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
     call_tracer->RecordAnnotation(absl::StrFormat(
         "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
@@ -3330,12 +3331,14 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
     auto* server_call_tracer =
         server_call_tracer_factory->CreateNewServerCallTracer(arena);
     if (server_call_tracer != nullptr) {
-      // Note that we are setting both GRPC_CONTEXT_CALL_TRACER and
-      // GRPC_CONTEXT_RPC_TRACER as a matter of convenience. In the future
+      // Note that we are setting both
+      // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
+      // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
       // promise-based world, we would just a single tracer object for each
       // stack (call, subchannel_call, server_call.)
+      ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+                 server_call_tracer, nullptr);
       ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
-      ContextSet(GRPC_CONTEXT_RPC_TRACER, server_call_tracer, nullptr);
     }
   }
   MutexLock lock(mu());

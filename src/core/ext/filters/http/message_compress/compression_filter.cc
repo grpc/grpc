@@ -115,8 +115,8 @@ MessageHandle CompressionFilter::CompressMessage(
             message->payload()->Length(), algorithm, message->flags());
   }
   auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<RpcTracerInterface*>(
-      call_context[GRPC_CONTEXT_RPC_TRACER].value);
+  auto* call_tracer = static_cast<CallTracerInterface*>(
+      call_context[GRPC_CONTEXT_CALL_TRACER].value);
   if (call_tracer != nullptr) {
     call_tracer->RecordSendMessage(*message->payload());
   }
@@ -174,8 +174,8 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
             args.max_recv_message_length.value_or(-1), args.algorithm);
   }
   auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<RpcTracerInterface*>(
-      call_context[GRPC_CONTEXT_RPC_TRACER].value);
+  auto* call_tracer = static_cast<CallTracerInterface*>(
+      call_context[GRPC_CONTEXT_CALL_TRACER].value);
   if (call_tracer != nullptr) {
     call_tracer->RecordReceivedMessage(*message->payload());
   }

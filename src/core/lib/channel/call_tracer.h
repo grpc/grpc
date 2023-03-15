@@ -26,7 +26,11 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -34,16 +38,16 @@
 namespace grpc_core {
 
 // The interface heirarchy is as follows -
-//                 CallTracerInterface
+//                 CallTracerAnnotationInterface
 //                      /          \
-//               CallTracer       RpcTracerInterface
+//               CallTracer       CallTracerInterface
 //                                /             \
 //                      CallAttemptTracer    ServerCallTracer
 
 // The base class for all tracer implementations.
-class CallTracerInterface {
+class CallTracerAnnotationInterface {
  public:
-  virtual ~CallTracerInterface() {}
+  virtual ~CallTracerAnnotationInterface() {}
   // Records an annotation on the call attempt.
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
@@ -52,9 +56,9 @@ class CallTracerInterface {
 
 // The base class for CallAttemptTracer and ServerCallTracer.
 // TODO(yashykt): What's a better name for this?
-class RpcTracerInterface : public CallTracerInterface {
+class CallTracerInterface : public CallTracerAnnotationInterface {
  public:
-  ~RpcTracerInterface() override {}
+  ~CallTracerInterface() override {}
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   virtual void RecordSendInitialMetadata(
@@ -80,13 +84,13 @@ class RpcTracerInterface : public CallTracerInterface {
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the CallTracer object.
-class CallTracer : public CallTracerInterface {
+class CallTracer : public CallTracerAnnotationInterface {
  public:
   // Interface for a tracer that records activities on a particular call
   // attempt.
   // (A single RPC can have multiple attempts due to retry/hedging policies or
   // as transparent retry attempts.)
-  class CallAttemptTracer : public RpcTracerInterface {
+  class CallAttemptTracer : public CallTracerInterface {
    public:
     ~CallAttemptTracer() override {}
     // If the call was cancelled before the recv_trailing_metadata op
@@ -111,6 +115,42 @@ class CallTracer : public CallTracerInterface {
   // the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
 };
+
+// Interface for a tracer that records activities on a server call.
+class ServerCallTracer : public CallTracerInterface {
+ public:
+  ~ServerCallTracer() override {}
+  virtual void RecordReceivedTrailingMetadata(
+      grpc_metadata_batch* recv_trailing_metadata) = 0;
+  // Should be the last API call to the object. Once invoked, the tracer
+  // library is free to destroy the object.
+  virtual void RecordEnd(const grpc_call_final_info* final_info) = 0;
+};
+
+// Interface for a factory that can create a ServerCallTracer object per
+// server call.
+class ServerCallTracerFactory {
+ public:
+  struct RawPointerChannelArgTag {};
+
+  virtual ~ServerCallTracerFactory() {}
+
+  virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+
+  // Use this method to get the server call tracer factory from channel args,
+  // instead of directly fetching it with `GetObject`.
+  static ServerCallTracerFactory* Get(const ChannelArgs& channel_args);
+
+  // Registers a global ServerCallTracerFactory that wil be used by default if
+  // no corresponding channel arg was found. It is only valid to call this
+  // before grpc_init(). It is the responsibility of the caller to maintain
+  // this for the lifetime of the process.
+  static void RegisterGlobal(ServerCallTracerFactory* factory);
+
+  static absl::string_view ChannelArgName();
+};
+
+void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 

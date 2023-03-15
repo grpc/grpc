@@ -1014,7 +1014,6 @@ src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
 src/core/ext/filters/rbac/rbac_service_config_parser.cc \
 src/core/ext/filters/rbac/rbac_service_config_parser.h \
-src/core/ext/filters/server_call_tracer/server_call_tracer_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
@@ -1769,6 +1768,7 @@ src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
 src/core/lib/channel/call_finalization.h \
+src/core/lib/channel/call_tracer.cc \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
@@ -1792,8 +1792,7 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
-src/core/lib/channel/server_call_tracer.cc \
-src/core/lib/channel/server_call_tracer.h \
+src/core/lib/channel/server_call_tracer_filter.cc \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/census/server_filter.h"
+#include "src/cpp/ext/filters/census/server_call_tracer.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -40,9 +40,9 @@
 
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"

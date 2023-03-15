@@ -101,9 +101,11 @@ OpenCensusClientFilter::MakeCallPromise(
               call_context, path != nullptr ? path->Ref() : grpc_core::Slice(),
               grpc_core::GetContext<grpc_core::Arena>(),
               OpenCensusTracingEnabled() && tracing_enabled_);
-  GPR_DEBUG_ASSERT(call_context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
-  call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
-  call_context[GRPC_CONTEXT_CALL_TRACER].destroy = nullptr;
+  GPR_DEBUG_ASSERT(
+      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
+      nullptr);
+  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
+  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy = nullptr;
   return next_promise_factory(std::move(call_args));
 }
 
