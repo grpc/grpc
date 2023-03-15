@@ -165,6 +165,7 @@ grpc_cc_test(
         "tests/client_streaming.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
+        "tests/high_initial_seqno.cc",
         "tests/hpack_size.cc",
         "tests/filtered_metadata.cc",
         "tests/negative_deadline.cc",
