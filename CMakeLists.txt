@@ -1784,6 +1784,7 @@ add_library(grpc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
+  src/core/ext/filters/server_call_tracer/server_call_tracer_filter.cc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
@@ -2794,6 +2795,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/server_call_tracer/server_call_tracer_filter.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc

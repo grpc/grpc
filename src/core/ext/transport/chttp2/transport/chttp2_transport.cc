@@ -14,15 +14,21 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <algorithm>
 #include <initializer_list>
 #include <memory>
@@ -37,16 +43,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -211,7 +207,7 @@ void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
   if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return;
   }
-  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
           s->context)[GRPC_CONTEXT_CALL_TRACER]
           .value);

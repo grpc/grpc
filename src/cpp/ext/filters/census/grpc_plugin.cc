@@ -33,6 +33,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
@@ -42,6 +43,8 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
+  grpc_core::ServerCallTracerFactory::RegisterGlobal(
+      new grpc::internal::OpenCensusServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterStage(
@@ -49,13 +52,6 @@ void RegisterOpenCensusPlugin() {
             [](grpc_core::ChannelStackBuilder* builder) {
               builder->PrependFilter(
                   &grpc::internal::OpenCensusClientFilter::kFilter);
-              return true;
-            });
-        builder->channel_init()->RegisterStage(
-            GRPC_SERVER_CHANNEL, /*priority=*/INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(
-                  &grpc::internal::OpenCensusServerFilter::kFilter);
               return true;
             });
       });

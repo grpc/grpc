@@ -2504,12 +2504,14 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
 
 namespace {
 
-CallTracer::CallAttemptTracer* GetCallAttemptTracer(
+CallTracer::CallAttemptTracer* CreateCallAttemptTracer(
     grpc_call_context_element* context, bool is_transparent_retry) {
   auto* call_tracer =
       static_cast<CallTracer*>(context[GRPC_CONTEXT_CALL_TRACER].value);
   if (call_tracer == nullptr) return nullptr;
-  return call_tracer->StartNewAttempt(is_transparent_retry);
+  auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
+  context[GRPC_CONTEXT_RPC_TRACER].value = tracer;
+  return tracer;
 }
 
 }  // namespace
@@ -2525,7 +2527,7 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       chand_(chand),
       call_dispatch_controller_(call_dispatch_controller),
       call_attempt_tracer_(
-          GetCallAttemptTracer(call_context, is_transparent_retry)) {
+          CreateCallAttemptTracer(call_context, is_transparent_retry)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
   }
@@ -2931,10 +2933,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
       call_attempt_tracer()->RecordSendInitialMetadata(
           batch->payload->send_initial_metadata.send_initial_metadata);
     }
-    if (batch->send_message) {
-      call_attempt_tracer()->RecordSendMessage(
-          *batch->payload->send_message.send_message);
-    }
     if (batch->send_trailing_metadata) {
       call_attempt_tracer()->RecordSendTrailingMetadata(
           batch->payload->send_trailing_metadata.send_trailing_metadata);
@@ -2949,13 +2947,6 @@ void ClientChannel::FilterBasedLoadBalancedCall::StartTransportStreamOpBatch(
                         this, nullptr);
       batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
           &recv_initial_metadata_ready_;
-    }
-    if (batch->recv_message) {
-      recv_message_ = batch->payload->recv_message.recv_message;
-      original_recv_message_ready_ =
-          batch->payload->recv_message.recv_message_ready;
-      GRPC_CLOSURE_INIT(&recv_message_ready_, RecvMessageReady, this, nullptr);
-      batch->payload->recv_message.recv_message_ready = &recv_message_ready_;
     }
   }
   // Intercept recv_trailing_metadata even if there is no call tracer,
@@ -3046,23 +3037,10 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
   if (error.ok()) {
     // recv_initial_metadata_flags is not populated for clients
     self->call_attempt_tracer()->RecordReceivedInitialMetadata(
-        self->recv_initial_metadata_, 0 /* recv_initial_metadata_flags */);
+        self->recv_initial_metadata_);
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                error);
-}
-
-void ClientChannel::FilterBasedLoadBalancedCall::RecvMessageReady(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
-            self->chand(), self, StatusToString(error).c_str());
-  }
-  if (self->recv_message_->has_value()) {
-    self->call_attempt_tracer()->RecordReceivedMessage(**self->recv_message_);
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_, error);
 }
 
 void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(

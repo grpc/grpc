@@ -3593,6 +3593,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_server_call_tracer_filter",
+    srcs = [
+        "ext/filters/server_call_tracer/server_call_tracer_filter.cc",
+    ],
+    hdrs = [
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    deps = [
+        "arena_promise",
+        "cancel_callback",
+        "channel_args",
+        "channel_fwd",
+        "channel_init",
+        "channel_stack_type",
+        "context",
+        "map",
+        "pipe",
+        "poll",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_stateful_session_filter",
     srcs = [
         "ext/filters/stateful_session/stateful_session_filter.cc",

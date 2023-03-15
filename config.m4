@@ -114,6 +114,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
+    src/core/ext/filters/server_call_tracer/server_call_tracer_filter.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
@@ -1299,6 +1300,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_call_tracer)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/stateful_session)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/gcp)

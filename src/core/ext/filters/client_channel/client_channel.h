@@ -18,9 +18,9 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
-
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -31,10 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
@@ -63,7 +59,6 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -567,11 +562,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-
-  // For intercepting recv_message_ready.
-  absl::optional<SliceBuffer>* recv_message_ = nullptr;
-  grpc_closure recv_message_ready_;
-  grpc_closure* original_recv_message_ready_ = nullptr;
 
   // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;

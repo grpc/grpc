@@ -21,31 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/channel/server_call_tracer.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenCensusServerFilter : public grpc_core::ChannelFilter {
+class OpenCensusServerCallTracerFactory
+    : public grpc_core::ServerCallTracerFactory {
  public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::StatusOr<OpenCensusServerFilter> Create(
-      const grpc_core::ChannelArgs& /*args*/,
-      grpc_core::ChannelFilter::Args /*filter_args*/);
-
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args,
-      grpc_core::NextPromiseFactory next_promise_factory) override;
-
- private:
-  OpenCensusServerFilter() = default;
+  grpc_core::ServerCallTracer* CreateNewServerCallTracer(
+      grpc_core::Arena* arena) override;
 };
 
 }  // namespace internal

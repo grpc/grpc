@@ -80,6 +80,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
     "src\\core\\ext\\filters\\rbac\\rbac_filter.cc " +
     "src\\core\\ext\\filters\\rbac\\rbac_service_config_parser.cc " +
+    "src\\core\\ext\\filters\\server_call_tracer\\server_call_tracer_filter.cc " +
     "src\\core\\ext\\filters\\server_config_selector\\server_config_selector_filter.cc " +
     "src\\core\\ext\\filters\\stateful_session\\stateful_session_filter.cc " +
     "src\\core\\ext\\filters\\stateful_session\\stateful_session_service_config_parser.cc " +
@@ -1297,6 +1298,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\server");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\message_size");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\rbac");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\server_call_tracer");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\server_config_selector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\stateful_session");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\gcp");

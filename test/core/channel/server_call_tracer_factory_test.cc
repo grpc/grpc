@@ -23,7 +23,7 @@ namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer() override {
+  ServerCallTracer* CreateNewServerCallTracer(Arena* /*arena*/) override {
     Crash("Not implemented");
   }
 };

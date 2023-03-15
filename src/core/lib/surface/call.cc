@@ -64,6 +64,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
@@ -743,6 +744,24 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
     call->final_op_.server.core_server = args->server;
+    // TODO(yashykt): In the future, we want to also enable stats and trace
+    // collecting from when the call is created at the transport. The idea is
+    // that the transport would create the call tracer and pass it in as part of
+    // the metadata.
+    auto* server_call_tracer_factory =
+        ServerCallTracerFactory::Get(args->server->channel_args());
+    if (server_call_tracer_factory != nullptr) {
+      auto* server_call_tracer =
+          server_call_tracer_factory->CreateNewServerCallTracer(arena);
+      if (server_call_tracer != nullptr) {
+        // Note that we are setting both GRPC_CONTEXT_CALL_TRACER and
+        // GRPC_CONTEXT_RPC_TRACER as a matter of convenience. In the future
+        // promise-based world, we would just a single tracer object for each
+        // stack (call, subchannel_call, server_call.)
+        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+        call->ContextSet(GRPC_CONTEXT_RPC_TRACER, server_call_tracer, nullptr);
+      }
+    }
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -1445,7 +1464,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   grpc_transport_stream_op_batch_payload* stream_op_payload;
   uint32_t seen_ops = 0;
   intptr_t pending_ops = 0;
-  CallTracer* call_tracer = nullptr;
+  CallTracerInterface* call_tracer = nullptr;
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
@@ -1837,7 +1856,8 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  call_tracer = static_cast<CallTracer*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
+  call_tracer =
+      static_cast<CallTracerInterface*>(ContextGet(GRPC_CONTEXT_CALL_TRACER));
   if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
     call_tracer->RecordAnnotation(absl::StrFormat(
         "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
@@ -3299,6 +3319,24 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   channelz::ServerNode* channelz_node = server_->channelz_node();
   if (channelz_node != nullptr) {
     channelz_node->RecordCallStarted();
+  }
+  // TODO(yashykt): In the future, we want to also enable stats and trace
+  // collecting from when the call is created at the transport. The idea is that
+  // the transport would create the call tracer and pass it in as part of the
+  // metadata.
+  auto* server_call_tracer_factory =
+      ServerCallTracerFactory::Get(args->server->channel_args());
+  if (server_call_tracer_factory != nullptr) {
+    auto* server_call_tracer =
+        server_call_tracer_factory->CreateNewServerCallTracer(arena);
+    if (server_call_tracer != nullptr) {
+      // Note that we are setting both GRPC_CONTEXT_CALL_TRACER and
+      // GRPC_CONTEXT_RPC_TRACER as a matter of convenience. In the future
+      // promise-based world, we would just a single tracer object for each
+      // stack (call, subchannel_call, server_call.)
+      ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+      ContextSet(GRPC_CONTEXT_RPC_TRACER, server_call_tracer, nullptr);
+    }
   }
   MutexLock lock(mu());
   ScopedContext activity_context(this);

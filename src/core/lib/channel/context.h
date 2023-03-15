@@ -36,8 +36,15 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Value is a CallTracer object.
+  /// Value is a CallTracer object. (Only valid on the client-side call, or
+  /// ServerCallTracer on the server-side.)
   GRPC_CONTEXT_CALL_TRACER,
+
+  /// Value is a RpcTracerInterface (ServerCallTracer on the server-side,
+  /// CallAttemptTracer on a subchannel call.)
+  /// TODO(yashykt): Maybe come up with a better name. This will go away in the
+  /// future anyway, so not super important.
+  GRPC_CONTEXT_RPC_TRACER,
 
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
