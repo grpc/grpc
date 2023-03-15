@@ -25,7 +25,6 @@
 
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
-#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/transport.h"
@@ -44,8 +43,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators = {},
-    ChannelArguments channel_args = ChannelArguments());
+        interceptor_creators = {});
 
 class InteropClientContextInspector {
  public:
