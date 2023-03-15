@@ -162,6 +162,7 @@ grpc_cc_test(
         "tests/cancel_in_a_vacuum.cc",
         "tests/cancel_test_helpers.h",
         "tests/channelz.cc",
+        "tests/client_streaming.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/hpack_size.cc",
