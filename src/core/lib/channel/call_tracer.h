@@ -40,7 +40,7 @@ namespace grpc_core {
 // The interface heirarchy is as follows -
 //                 CallTracerAnnotationInterface
 //                      /          \
-//               CallTracer       CallTracerInterface
+//               ClientCallTracer       CallTracerInterface
 //                                /             \
 //                      CallAttemptTracer    ServerCallTracer
 
@@ -83,8 +83,8 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
 
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
-// on the CallTracer object.
-class CallTracer : public CallTracerAnnotationInterface {
+// on the ClientCallTracer object.
+class ClientCallTracer : public CallTracerAnnotationInterface {
  public:
   // Interface for a tracer that records activities on a particular call
   // attempt.
@@ -93,6 +93,8 @@ class CallTracer : public CallTracerAnnotationInterface {
   class CallAttemptTracer : public CallTracerInterface {
    public:
     ~CallAttemptTracer() override {}
+    // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
+    // and `RecordEnd` should be moved into CallTracerInterface.
     // If the call was cancelled before the recv_trailing_metadata op
     // was started, recv_trailing_metadata and transport_stream_stats
     // will be null.
@@ -104,15 +106,15 @@ class CallTracer : public CallTracerAnnotationInterface {
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
   };
 
-  ~CallTracer() override {}
+  ~ClientCallTracer() override {}
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
   // non-transparent retry/heding attempt. (There will be at least one attempt
-  // even if the call is not being retried.) The `CallTracer` object retains
-  // ownership to the newly created `CallAttemptTracer` object. RecordEnd()
-  // serves as an indication that the call stack is done with all API calls, and
-  // the tracer library is free to destroy it after that.
+  // even if the call is not being retried.) The `ClientCallTracer` object
+  // retains ownership to the newly created `CallAttemptTracer` object.
+  // RecordEnd() serves as an indication that the call stack is done with all
+  // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
 };
 
@@ -120,6 +122,8 @@ class CallTracer : public CallTracerAnnotationInterface {
 class ServerCallTracer : public CallTracerInterface {
  public:
   ~ServerCallTracer() override {}
+  // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
+  // and `RecordEnd` should be moved into CallTracerInterface.
   virtual void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* recv_trailing_metadata) = 0;
   // Should be the last API call to the object. Once invoked, the tracer

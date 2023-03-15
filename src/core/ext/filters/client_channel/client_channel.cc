@@ -1907,7 +1907,7 @@ absl::optional<absl::Status> ClientChannel::CallData::CheckResolution(
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
-    auto* call_tracer = static_cast<CallTracer*>(
+    auto* call_tracer = static_cast<CallTracerAnnotationInterface*>(
         call_context()[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
     if (call_tracer != nullptr) {
       call_tracer->RecordAnnotation("Delayed name resolution complete.");
@@ -2504,9 +2504,9 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
 
 namespace {
 
-CallTracer::CallAttemptTracer* CreateCallAttemptTracer(
+ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
     grpc_call_context_element* context, bool is_transparent_retry) {
-  auto* call_tracer = static_cast<CallTracer*>(
+  auto* call_tracer = static_cast<ClientCallTracer*>(
       context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
   if (call_tracer == nullptr) return nullptr;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);

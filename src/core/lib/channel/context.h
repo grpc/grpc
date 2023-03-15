@@ -36,9 +36,8 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Value is a CallTracerAnnotationInterface. (CallTracer object on the
-  /// client-side call, or
-  /// ServerCallTracer on the server-side.)
+  /// Value is a CallTracerAnnotationInterface. (ClientCallTracer object on the
+  /// client-side call, or ServerCallTracer on the server-side.)
   GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
 
   /// Value is a CallTracerInterface (ServerCallTracer on the server-side,

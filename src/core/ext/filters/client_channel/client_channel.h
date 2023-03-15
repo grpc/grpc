@@ -387,8 +387,8 @@ class ClientChannel::LoadBalancedCall
   ConfigSelector::CallDispatchController* call_dispatch_controller() const {
     return call_dispatch_controller_;
   }
-  CallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return static_cast<CallTracer::CallAttemptTracer*>(
+  ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
+    return static_cast<ClientCallTracer::CallAttemptTracer*>(
         call_context()[GRPC_CONTEXT_CALL_TRACER].value);
   }
   gpr_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }

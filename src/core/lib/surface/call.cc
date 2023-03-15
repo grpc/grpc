@@ -500,7 +500,7 @@ class FilterStackCall final : public Call {
   }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
-    CallTracer* call_tracer_ = nullptr;
+    CallTracerAnnotationInterface* call_tracer_ = nullptr;
     grpc_transport_stream_op_batch op_;
     // Share memory for cq_completion and notify_tag as they are never needed
     // simultaneously. Each byte used in this data structure count as six bytes
@@ -534,7 +534,7 @@ class FilterStackCall final : public Call {
       // call_ being set to nullptr in PostCompletion method. Store the
       // call_tracer_ and call_ variables locally as well because they could be
       // modified by another thread after the fetch_sub operation.
-      CallTracer* call_tracer = call_tracer_;
+      CallTracerAnnotationInterface* call_tracer = call_tracer_;
       FilterStackCall* call = call_;
       bool is_call_trace_enabled = grpc_call_trace.enabled();
       bool is_call_ops_annotate_enabled =
@@ -1193,7 +1193,7 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = static_cast<CallTracer*>(
+  bctl->call_tracer_ = static_cast<CallTracerAnnotationInterface*>(
       ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
@@ -1465,7 +1465,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   grpc_transport_stream_op_batch_payload* stream_op_payload;
   uint32_t seen_ops = 0;
   intptr_t pending_ops = 0;
-  CallTracerInterface* call_tracer = nullptr;
+  CallTracerAnnotationInterface* call_tracer = nullptr;
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
@@ -1857,7 +1857,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  call_tracer = static_cast<CallTracerInterface*>(
+  call_tracer = static_cast<CallTracerAnnotationInterface*>(
       ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
   if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
     call_tracer->RecordAnnotation(absl::StrFormat(
