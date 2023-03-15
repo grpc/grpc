@@ -55,14 +55,9 @@ int main(int argc, char** argv) {
 
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
-<<<<<<< HEAD
   grpc_core::ConfigVars::Overrides overrides;
-  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  overrides.default_ssl_roots_file_path = SslCredReloadFixture::CaCertPath();
   grpc_core::ConfigVars::SetOverrides(overrides);
-=======
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
-                        SslCredReloadFixture::CaCertPath());
->>>>>>> acec3a697561bef6c2fb5bd61a67cc4c8c0c2970
 
   grpc_init();
 
