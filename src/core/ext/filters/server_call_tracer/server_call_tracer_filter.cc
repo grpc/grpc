@@ -104,9 +104,7 @@ void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        if (!builder->channel_args().WantMinimalStack()) {
-          builder->AppendFilter(&ServerCallTracerFilter::kFilter);
-        }
+        builder->AppendFilter(&ServerCallTracerFilter::kFilter);
         return true;
       });
 }

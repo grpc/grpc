@@ -20,10 +20,12 @@
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/time.h>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
