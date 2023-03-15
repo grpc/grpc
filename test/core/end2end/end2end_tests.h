@@ -463,6 +463,11 @@ class CoreEnd2endTest
     return fixture().client();
   }
 
+  grpc_server* server() {
+    ForceInitialized();
+    return fixture().server();
+  }
+
  private:
   void ForceInitialized();
 
