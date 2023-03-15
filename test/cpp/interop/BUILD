@@ -444,6 +444,6 @@ grpc_cc_library(
     deps = [
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "//src/proto/grpc/testing:messages_proto",
     ],
 )

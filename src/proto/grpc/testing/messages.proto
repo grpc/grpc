@@ -17,9 +17,9 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/testing/xds/v3/orca_load_report.proto";
-
 package grpc.testing;
+
+option java_package = "io.grpc.testing.integration";
 
 // TODO(dgq): Go back to using well-known types once
 // https://github.com/grpc/grpc/issues/6980 has been fixed.
@@ -101,8 +101,11 @@ message SimpleRequest {
   // Whether SimpleResponse should include grpclb_route_type.
   bool fill_grpclb_route_type = 10;
 
-  // Orca report for this RPC
-  xds.data.orca.v3.OrcaLoadReport orca_per_rpc_report = 11;
+  // If set the server should record this metrics report data for the current RPC.
+  TestOrcaReport orca_per_query_report = 11;
+
+  // If set the server should update this metrics report data at the OOB server.
+  TestOrcaReport orca_oob_report = 12;
 }
 
 // Unary response, as configured by the request.
@@ -178,8 +181,8 @@ message StreamingOutputCallRequest {
   // Whether server should return a given status
   EchoStatus response_status = 7;
 
-  // ORCA data to be returned out of band
-  xds.data.orca.v3.OrcaLoadReport orca_oob_report = 8;
+  // If set the server should update this metrics report data at the OOB server.
+  TestOrcaReport orca_oob_report = 8;
 }
 
 // Server-streaming response, as configured by the request and parameters.
@@ -277,6 +280,12 @@ message ClientConfigureRequest {
 // Response for updating a test client's configuration.
 message ClientConfigureResponse {}
 
-message MemorySize {
-  int64 rss = 1;
+// Metrics data the server will update and send to the client. It mirrors orca load report
+// https://github.com/cncf/xds/blob/eded343319d09f30032952beda9840bbd3dcf7ac/xds/data/orca/v3/orca_load_report.proto#L15,
+// but avoids orca dependency. Used by both per-query and out-of-band reporting tests.
+message TestOrcaReport {
+  double cpu_utilization = 1;
+  double memory_utilization = 2;
+  map<string, double> request_cost = 3;
+  map<string, double> utilization = 4;
 }

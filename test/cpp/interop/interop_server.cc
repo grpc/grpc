@@ -73,6 +73,18 @@ const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
+namespace {
+xds::data::orca::v3::OrcaLoadReport TestOrcaReportToXdsOrcaReport(
+    const grpc::testing::TestOrcaReport& report) {
+  xds::data::orca::v3::OrcaLoadReport result;
+  result.set_cpu_utilization(report.cpu_utilization());
+  result.set_mem_utilization(report.memory_utilization());
+  *result.mutable_request_cost() = report.request_cost();
+  *result.mutable_utilization() = report.utilization();
+  return result;
+}
+}  // namespace
+
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
   GPR_ASSERT(client_metadata.count(kEchoInitialMetadataKey) <= 1);
@@ -225,8 +237,9 @@ class TestServiceImpl : public TestService::Service {
           static_cast<grpc::StatusCode>(request->response_status().code()),
           request->response_status().message());
     }
-    if (request->has_orca_per_rpc_report()) {
-      RecordCallMetrics(context, request->orca_per_rpc_report());
+    if (request->has_orca_per_query_report()) {
+      RecordCallMetrics(context, TestOrcaReportToXdsOrcaReport(
+                                     request->orca_per_query_report()));
     }
     return Status::OK;
   }
@@ -320,7 +333,8 @@ class TestServiceImpl : public TestService::Service {
         write_success = stream->Write(response);
       }
       if (request.has_orca_oob_report()) {
-        RecordServerMetrics(request.orca_oob_report());
+        RecordServerMetrics(
+            TestOrcaReportToXdsOrcaReport(request.orca_oob_report()));
       }
     }
     if (write_success) {
