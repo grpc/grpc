@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_SERVER_H
-#define TEST_QPS_SERVER_H
+#ifndef GRPC_TEST_CPP_QPS_SERVER_H
+#define GRPC_TEST_CPP_QPS_SERVER_H
 
 #include <vector>
 
@@ -155,4 +155,4 @@ std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_SERVER_H

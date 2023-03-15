@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
-#define GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
+#define GRPC_SRC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
 
 #include <grpc/support/port_platform.h>
+
+#include <string>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -40,10 +42,14 @@ class IntraActivityWaiter {
     }
   }
 
+  std::string DebugString() const {
+    return waiting_ ? "WAITING" : "NOT_WAITING";
+  }
+
  private:
   bool waiting_ = false;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H

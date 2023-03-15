@@ -59,6 +59,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::ServerMetricRecorder;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
 //
@@ -251,6 +252,9 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
 
 void XdsEnd2endTest::BackendServerThread::RegisterAllServices(
     ServerBuilder* builder) {
+  server_metric_recorder_ = ServerMetricRecorder::Create();
+  ServerBuilder::experimental_type(builder).EnableCallMetricRecording(
+      server_metric_recorder_.get());
   builder->RegisterService(&backend_service_);
   builder->RegisterService(&backend_service1_);
   builder->RegisterService(&backend_service2_);
@@ -807,8 +811,9 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }
 
-Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
-                               EchoResponse* response) {
+Status XdsEnd2endTest::SendRpc(
+    const RpcOptions& rpc_options, EchoResponse* response,
+    std::multimap<std::string, std::string>* server_initial_metadata) {
   EchoResponse local_response;
   if (response == nullptr) response = &local_response;
   ClientContext context;
@@ -832,6 +837,15 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
       status =
           SendRpcMethod(stub2_.get(), rpc_options, &context, request, response);
       break;
+  }
+  if (server_initial_metadata != nullptr) {
+    for (const auto& it : context.GetServerInitialMetadata()) {
+      std::string header(it.first.data(), it.first.size());
+      // Guard against implementation-specific header case - RFC 2616
+      absl::AsciiStrToLower(&header);
+      server_initial_metadata->emplace(
+          header, std::string(it.second.data(), it.second.size()));
+    }
   }
   return status;
 }
@@ -1025,6 +1039,16 @@ void XdsEnd2endTest::SetProtoDuration(
   gpr_timespec ts = duration.as_timespec();
   duration_proto->set_seconds(ts.tv_sec);
   duration_proto->set_nanos(ts.tv_nsec);
+}
+
+std::string XdsEnd2endTest::MakeConnectionFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "(Failed to connect to remote host: )?"
+      "(Connection refused|Connection reset by peer|"
+      "Socket closed|FD shutdown)");
 }
 
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {

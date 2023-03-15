@@ -28,7 +28,10 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
-        restartPolicy: Never
+        startupProbe:
+          tcpSocket:
+            port: ${stats_port}
+          periodSeconds: 3
         args:
           - "--server=${server_target}"
           - "--stats_port=${stats_port}"

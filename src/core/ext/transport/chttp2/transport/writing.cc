@@ -22,11 +22,14 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -60,7 +63,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -93,7 +95,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
       gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str());
+              t->is_client ? "CLIENT" : "SERVER",
+              std::string(t->peer_string.as_string_view()).c_str());
     }
     return;
   }
@@ -105,7 +108,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
       gpr_log(GPR_INFO,
               "CLIENT: Ping delayed [%s]: too many recent pings: %d/%d",
-              t->peer_string.c_str(), t->ping_state.pings_before_data_required,
+              std::string(t->peer_string.as_string_view()).c_str(),
+              t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
     }
     return;
@@ -147,19 +151,20 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
           "%s: Ping delayed [%s]: not enough time elapsed since last "
           "ping. "
           " Last ping %" PRId64 ": Next ping %" PRId64 ": Now %" PRId64,
-          t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
+          t->is_client ? "CLIENT" : "SERVER",
+          std::string(t->peer_string.as_string_view()).c_str(),
           t->ping_state.last_ping_sent_time.milliseconds_after_process_epoch(),
           next_allowed_ping.milliseconds_after_process_epoch(),
           now.milliseconds_after_process_epoch());
     }
-    if (!t->ping_state.is_delayed_ping_timer_set) {
-      t->ping_state.is_delayed_ping_timer_set = true;
+    if (!t->ping_state.delayed_ping_timer_handle.has_value()) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");
-      GRPC_CLOSURE_INIT(&t->retry_initiate_ping_locked,
-                        grpc_chttp2_retry_initiate_ping, t,
-                        grpc_schedule_on_exec_ctx);
-      grpc_timer_init(&t->ping_state.delayed_ping_timer, next_allowed_ping,
-                      &t->retry_initiate_ping_locked);
+      t->ping_state.delayed_ping_timer_handle =
+          t->event_engine->RunAfter(next_allowed_ping - now, [t] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            grpc_chttp2_retry_initiate_ping(t);
+          });
     }
     return;
   }
@@ -178,7 +183,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
     gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
-            t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
+            t->is_client ? "CLIENT" : "SERVER",
+            std::string(t->peer_string.as_string_view()).c_str(),
             t->ping_state.pings_before_data_required,
             t->ping_policy.max_pings_without_data);
   }
@@ -216,7 +222,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         " However, if you know that there are unwanted stalls, here is some "
         "helpful data: [fc:pending=%" PRIdPTR ":flowed=%" PRId64
         ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
-        t->peer_string.c_str(), t, s->id, staller,
+        std::string(t->peer_string.as_string_view()).c_str(), t, s->id, staller,
         s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],

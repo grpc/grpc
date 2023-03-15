@@ -30,6 +30,7 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_
 
 bazel_rbe/bazel_wrapper \
   --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
+  --output_user_root=/tmpfs/bazel \
   test \
   $BAZEL_FLAGS \
   "$@" \

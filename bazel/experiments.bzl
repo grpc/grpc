@@ -20,8 +20,12 @@ EXPERIMENTS = {
     "dbg": {
     },
     "off": {
+        "census_test": [
+            "transport_supplies_client_latency",
+        ],
         "core_end2end_test": [
             "promise_based_client_call",
+            "promise_based_server_call",
         ],
         "endpoint_test": [
             "tcp_frame_size_tuning",
@@ -29,6 +33,9 @@ EXPERIMENTS = {
         ],
         "event_engine_client_test": [
             "event_engine_client",
+        ],
+        "event_engine_listener_test": [
+            "event_engine_listener",
         ],
         "flow_control_test": [
             "peer_state_based_framing",
@@ -45,14 +52,8 @@ EXPERIMENTS = {
         ],
     },
     "on": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
         "flow_control_test": [
             "flow_control_fixes",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
         ],
     },
     "opt": {

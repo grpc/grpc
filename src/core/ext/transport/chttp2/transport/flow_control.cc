@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -100,7 +101,7 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
-TransportFlowControl::TransportFlowControl(const char* name,
+TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),

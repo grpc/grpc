@@ -51,6 +51,7 @@ extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterAppropriateDnsResolver(CoreConfiguration::Builder* builder);
+extern void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
@@ -59,6 +60,8 @@ extern void RegisterOutlierDetectionLbPolicy(
 extern void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterWeightedRoundRobinLbPolicy(
+    CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
@@ -81,6 +84,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterWeightedTargetLbPolicy(builder);
   RegisterPickFirstLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
+  RegisterWeightedRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
@@ -105,6 +109,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
 #endif  // !GRPC_NO_RLS
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
+  RegisterBackendMetricFilter(builder);
   RegisterSecurityFilters(builder);
   RegisterExtraFilters(builder);
   RegisterBuiltins(builder);

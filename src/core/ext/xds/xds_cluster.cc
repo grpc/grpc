@@ -77,8 +77,8 @@ bool XdsCustomLbPolicyEnabled() {
 }
 
 // TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool XdsHostOverrideEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+bool XdsOverrideHostEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
@@ -122,10 +122,10 @@ std::string XdsClusterResource::ToString() const {
   }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
-  if (!host_override_statuses.empty()) {
+  if (!override_host_statuses.empty()) {
     std::vector<const char*> statuses;
-    statuses.reserve(host_override_statuses.size());
-    for (const auto& status : host_override_statuses) {
+    statuses.reserve(override_host_statuses.size());
+    for (const auto& status : override_host_statuses) {
       statuses.push_back(status.ToString());
     }
     contents.push_back(absl::StrCat("override_host_statuses={",
@@ -306,6 +306,10 @@ XdsClusterResource::Aggregate AggregateClusterParse(
   const upb_StringView* clusters =
       envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
           aggregate_cluster_config, &size);
+  if (size == 0) {
+    ValidationErrors::ScopedField field(errors, ".clusters");
+    errors->AddError("must be non-empty");
+  }
   for (size_t i = 0; i < size; ++i) {
     aggregate.prioritized_cluster_names.emplace_back(
         UpbStringToStdString(clusters[i]));
@@ -628,7 +632,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     cds_update.outlier_detection = outlier_detection_update;
   }
   // Validate override host status.
-  if (XdsHostOverrideEnabled()) {
+  if (XdsOverrideHostEnabled()) {
     const auto* common_lb_config =
         envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
     if (common_lb_config != nullptr) {
@@ -644,7 +648,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         for (size_t i = 0; i < size; ++i) {
           auto status = XdsHealthStatus::FromUpb(statuses[i]);
           if (status.has_value()) {
-            cds_update.host_override_statuses.insert(*status);
+            cds_update.override_host_statuses.insert(*status);
           }
         }
       }

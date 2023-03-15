@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,12 +28,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
@@ -67,7 +65,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
                                 bool arena_allocated);
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /*peer_string*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(
@@ -103,7 +100,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(const grpc_call_element_args* args,
+  explicit OpenCensusCallTracer(grpc_call_context_element* call_context,
+                                grpc_core::Slice path, grpc_core::Arena* arena,
                                 bool tracing_enabled);
   ~OpenCensusCallTracer() override;
 
@@ -121,7 +119,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   absl::string_view method_;
   experimental::CensusContext context_;
   grpc_core::Arena* arena_;
-  bool tracing_enabled_;
+  const bool tracing_enabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -136,4 +134,4 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H

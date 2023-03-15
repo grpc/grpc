@@ -131,11 +131,6 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_LoadBalancingPolicy_Pol
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.LoadBalancingPolicy.Policy");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamBindConfig_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamBindConfig");
-}
-
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");

@@ -319,7 +319,41 @@ const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msg
   UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[17] = {
+static const upb_MiniTable_Sub envoy_admin_v3_EcdsConfigDump_submsgs[1] = {
+  {.submsg = &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit},
+};
+
+static const upb_MiniTable_Field envoy_admin_v3_EcdsConfigDump__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_admin_v3_EcdsConfigDump_msginit = {
+  &envoy_admin_v3_EcdsConfigDump_submsgs[0],
+  &envoy_admin_v3_EcdsConfigDump__fields[0],
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+};
+
+static const upb_MiniTable_Sub envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_submsgs[3] = {
+  {.submsg = &google_protobuf_Any_msginit},
+  {.submsg = &google_protobuf_Timestamp_msginit},
+  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
+};
+
+static const upb_MiniTable_Field envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig__fields[5] = {
+  {1, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit = {
+  &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_submsgs[0],
+  &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig__fields[0],
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[19] = {
   &envoy_admin_v3_UpdateFailureState_msginit,
   &envoy_admin_v3_ListenersConfigDump_msginit,
   &envoy_admin_v3_ListenersConfigDump_StaticListener_msginit,
@@ -337,13 +371,15 @@ static const upb_MiniTable *messages_layout[17] = {
   &envoy_admin_v3_EndpointsConfigDump_msginit,
   &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit,
   &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit,
+  &envoy_admin_v3_EcdsConfigDump_msginit,
+  &envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_msginit,
 };
 
 const upb_MiniTable_File envoy_admin_v3_config_dump_shared_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  17,
+  19,
   0,
   0,
 };

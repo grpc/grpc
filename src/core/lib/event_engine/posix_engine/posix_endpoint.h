@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -472,12 +472,12 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
       grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options);
   ~PosixEndpointImpl() override;
-  void Read(
+  bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
           args);
-  void Write(
+  bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
@@ -564,6 +564,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
+  // Maintain a shared_ptr to mem_quota_ to ensure the underlying basic memory
+  // quota is not deleted until the endpoint is destroyed.
+  grpc_core::MemoryQuotaRefPtr mem_quota_;
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
@@ -605,20 +608,20 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
 
-  void Read(
+  bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
           args) override {
-    impl_->Read(std::move(on_read), buffer, args);
+    return impl_->Read(std::move(on_read), buffer, args);
   }
 
-  void Write(
+  bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
           args) override {
-    impl_->Write(std::move(on_writable), data, args);
+    return impl_->Write(std::move(on_writable), data, args);
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -658,14 +661,14 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
-  void Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
+  bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
             grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
             const grpc_event_engine::experimental::EventEngine::Endpoint::
                 ReadArgs* /*args*/) override {
     grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
-  void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
+  bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
              const grpc_event_engine::experimental::EventEngine::Endpoint::
                  WriteArgs* /*args*/) override {
@@ -684,14 +687,13 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   }
 
   int GetWrappedFd() override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::GetWrappedFd not supported on this platform");
+    grpc_core::Crash(
+        "PosixEndpoint::GetWrappedFd not supported on this platform");
   }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
-    GPR_ASSERT(false &&
-               "PosixEndpoint::Shutdown not supported on this platform");
+    grpc_core::Crash("PosixEndpoint::Shutdown not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;
@@ -701,7 +703,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
 // Create a PosixEndpoint.
 // A shared_ptr of the EventEngine is passed to the endpoint to ensure that
-// the event engine is alive for the lifetime of the endpoint. The ownership
+// the EventEngine is alive for the lifetime of the endpoint. The ownership
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
@@ -712,4 +714,4 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

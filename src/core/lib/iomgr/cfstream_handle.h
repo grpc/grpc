@@ -19,8 +19,8 @@
 // The CFStream handle acts as an event synchronization entity for
 // read/write/open/error/eos events happening on CFStream streams.
 
-#ifndef GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
-#define GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -87,4 +87,4 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H

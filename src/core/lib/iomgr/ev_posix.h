@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EV_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -210,4 +210,4 @@ void grpc_shutdown_background_closure();
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 
-#endif  // GRPC_CORE_LIB_IOMGR_EV_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H

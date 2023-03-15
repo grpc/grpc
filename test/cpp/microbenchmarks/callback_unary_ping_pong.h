@@ -18,8 +18,8 @@
 
 // Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
-#define TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
 
 #include <sstream>
 
@@ -97,4 +97,4 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H

@@ -52,6 +52,8 @@ namespace testing {
 //
 // ServiceA detached comment 2
 //
+// Comments may contain special characters like "^[a-z0-9-]{1,63}$" and $$
+//
 // ServiceA leading comment 1
 class ServiceA final {
  public:

@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -577,6 +578,29 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
             "field:cluster_type.typed_config.value["
             "envoy.extensions.clusters.aggregate.v3.ClusterConfig] "
             "error:can't parse aggregate cluster config]")
+      << decode_result.resource.status();
+}
+
+TEST_F(ClusterTypeTest, AggregateClusterEmptyClusterList) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
+  cluster.mutable_cluster_type()->mutable_typed_config()->PackFrom(
+      ClusterConfig());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:cluster_type.typed_config.value["
+            "envoy.extensions.clusters.aggregate.v3.ClusterConfig].clusters "
+            "error:must be non-empty]")
       << decode_result.resource.status();
 }
 
@@ -1316,12 +1340,12 @@ TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+  EXPECT_THAT(resource.override_host_statuses, ::testing::ElementsAre());
 }
 
 TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1341,7 +1365,7 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses,
+  EXPECT_THAT(resource.override_host_statuses,
               ::testing::UnorderedElementsAre(
                   XdsHealthStatus(XdsHealthStatus::kUnknown),
                   XdsHealthStatus(XdsHealthStatus::kHealthy),

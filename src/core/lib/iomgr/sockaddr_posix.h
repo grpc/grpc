@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 
 // IWYU pragma: private, include "src/core/lib/iomgr/sockaddr.h"
 
@@ -54,4 +54,4 @@ typedef struct in6_addr grpc_in6_addr;
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H

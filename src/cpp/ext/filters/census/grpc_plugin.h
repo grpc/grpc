@@ -16,17 +16,19 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <functional>
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/base/call_once.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 
 #include <grpcpp/opencensus.h>
 
@@ -133,38 +135,56 @@ void EnableOpenCensusTracing(bool enable);
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
-// Registers a function that would initialize an OpenCensus exporter. This
-// function would be run before the first time the OpenCensus plugin is run.
-class OpenCensusExporterRegistry {
+// Registers various things for the OpenCensus plugin.
+class OpenCensusRegistry {
  public:
-  static OpenCensusExporterRegistry& Get();
+  struct Label {
+    std::string key;
+    opencensus::tags::TagKey tag_key;
+    std::string value;
+  };
 
-  // Registers the functions to be run post-init.
-  void Register(std::function<void()> f) {
-    exporter_registry_.push_back(std::move(f));
-  }
+  struct Attribute {
+    std::string key;
+    std::string value;
+  };
 
-  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
-  void RunRegistryPostInit() {
-    absl::call_once(
-        once_, &OpenCensusExporterRegistry::RunRegistryPostInitHelper, this);
-  }
+  static OpenCensusRegistry& Get();
 
- private:
-  void RunRegistryPostInitHelper() {
-    for (const auto& f : exporter_registry_) {
-      f();
+  void RegisterConstantLabels(
+      const std::map<std::string, std::string>& labels) {
+    constant_labels_.reserve(labels.size());
+    for (const auto& label : labels) {
+      auto tag_key = opencensus::tags::TagKey::Register(label.first);
+      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
     }
   }
 
-  OpenCensusExporterRegistry() = default;
+  void RegisterConstantAttributes(std::vector<Attribute> attributes) {
+    constant_attributes_ = std::move(attributes);
+  }
 
-  std::vector<std::function<void()>> exporter_registry_;
-  absl::once_flag once_;
+  ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
+      const ::opencensus::tags::TagMap& tag_map);
+
+  void PopulateCensusContextWithConstantAttributes(
+      grpc::experimental::CensusContext* context);
+
+  const std::vector<Label>& ConstantLabels() { return constant_labels_; }
+
+  const std::vector<Attribute>& ConstantAttributes() {
+    return constant_attributes_;
+  }
+
+ private:
+  OpenCensusRegistry() = default;
+
+  std::vector<Label> constant_labels_;
+  std::vector<Attribute> constant_attributes_;
 };
 
 }  // namespace internal
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H

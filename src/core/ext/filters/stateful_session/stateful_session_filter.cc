@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -47,10 +46,9 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
@@ -61,13 +59,14 @@ namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 
-UniqueTypeName XdsHostOverrideTypeName() {
-  static UniqueTypeName::Factory kFactory("xds_host_override");
+UniqueTypeName XdsOverrideHostTypeName() {
+  static UniqueTypeName::Factory kFactory("xds_override_host");
   return kFactory.Create();
 }
 
 const grpc_channel_filter StatefulSessionFilter::kFilter =
-    MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient>(
+    MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>(
         "stateful_session_filter");
 
 absl::StatusOr<StatefulSessionFilter> StatefulSessionFilter::Create(
@@ -90,13 +89,14 @@ void MaybeUpdateServerInitialMetadata(
     absl::optional<absl::string_view> cookie_value,
     ServerMetadata* server_initial_metadata) {
   // Get peer string.
-  auto peer_string = server_initial_metadata->get(PeerString());
-  if (!peer_string.has_value()) return;  // Nothing we can do.
+  Slice* peer_string = server_initial_metadata->get_pointer(PeerString());
+  if (peer_string == nullptr) return;  // Nothing we can do.
   // If there was no cookie or if the address changed, set the cookie.
-  if (!cookie_value.has_value() || *peer_string != *cookie_value) {
-    std::vector<std::string> parts = {
-        absl::StrCat(*cookie_config->name, "=",
-                     absl::Base64Escape(*peer_string), "; HttpOnly")};
+  if (!cookie_value.has_value() ||
+      peer_string->as_string_view() != *cookie_value) {
+    std::vector<std::string> parts = {absl::StrCat(
+        *cookie_config->name, "=",
+        absl::Base64Escape(peer_string->as_string_view()), "; HttpOnly")};
     if (!cookie_config->path.empty()) {
       parts.emplace_back(absl::StrCat("Path=", cookie_config->path));
     }
@@ -149,7 +149,7 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
   }
   // Check to see if we have a host override cookie.
-  auto cookie_value = GetHostOverrideFromCookie(
+  auto cookie_value = GetOverrideHostFromCookie(
       call_args.client_initial_metadata, *cookie_config->name);
   if (cookie_value.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
@@ -160,40 +160,31 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
     // We have a valid cookie, so add the call attribute to be used by the
     // xds_override_host LB policy.
-    service_config_call_data->SetCallAttribute(XdsHostOverrideTypeName(),
+    service_config_call_data->SetCallAttribute(XdsOverrideHostTypeName(),
                                                *cookie_value);
   }
   // Intercept server initial metadata.
-  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
-  auto* write_latch =
-      std::exchange(call_args.server_initial_metadata, read_latch);
-  return TryConcurrently(
-             Seq(next_promise_factory(std::move(call_args)),
-                 [cookie_config, cookie_value](ServerMetadataHandle md) {
-                   // If we got a Trailers-Only response, then add the
-                   // cookie to the trailing metadata instead of the
-                   // initial metadata.
-                   if (md->get(GrpcTrailersOnly()).value_or(false)) {
-                     MaybeUpdateServerInitialMetadata(cookie_config,
-                                                      cookie_value, md.get());
-                   }
-                   return md;
-                 }))
-      .NecessaryPull(Seq(read_latch->Wait(),
-                         [write_latch, cookie_config,
-                          cookie_value](ServerMetadata** md) -> absl::Status {
-                           if (*md != nullptr) {
-                             // Add cookie to server initial metadata if needed.
-                             MaybeUpdateServerInitialMetadata(
-                                 cookie_config, cookie_value, *md);
-                           }
-                           write_latch->Set(*md);
-                           return absl::OkStatus();
-                         }));
+  call_args.server_initial_metadata->InterceptAndMap(
+      [cookie_config, cookie_value](ServerMetadataHandle md) {
+        // Add cookie to server initial metadata if needed.
+        MaybeUpdateServerInitialMetadata(cookie_config, cookie_value, md.get());
+        return md;
+      });
+  return Map(next_promise_factory(std::move(call_args)),
+             [cookie_config, cookie_value](ServerMetadataHandle md) {
+               // If we got a Trailers-Only response, then add the
+               // cookie to the trailing metadata instead of the
+               // initial metadata.
+               if (md->get(GrpcTrailersOnly()).value_or(false)) {
+                 MaybeUpdateServerInitialMetadata(cookie_config, cookie_value,
+                                                  md.get());
+               }
+               return md;
+             });
 }
 
 absl::optional<absl::string_view>
-StatefulSessionFilter::GetHostOverrideFromCookie(
+StatefulSessionFilter::GetOverrideHostFromCookie(
     const ClientMetadataHandle& client_initial_metadata,
     absl::string_view cookie_name) {
   // Check to see if the cookie header is present.

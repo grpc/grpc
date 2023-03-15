@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
-#define GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
+#define GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -68,4 +68,4 @@ class LameClientFilter : public ChannelFilter {
 };
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H

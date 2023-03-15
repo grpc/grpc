@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
@@ -513,6 +514,11 @@ static void test_pre_allocated_inet_fd() {
   struct sockaddr_in6* addr =
       reinterpret_cast<struct sockaddr_in6*>(resolved_addr.addr);
   grpc_tcp_server* s;
+  if (grpc_event_engine::experimental::UseEventEngineListener()) {
+    // TODO(vigneshbabu): Skip the test when event engine is enabled.
+    // Pre-allocated fd support will be added to event engine later.
+    return;
+  }
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);
@@ -610,6 +616,11 @@ static void test_pre_allocated_unix_fd() {
   struct sockaddr_un* addr =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr.addr);
   grpc_tcp_server* s;
+  if (grpc_event_engine::experimental::UseEventEngineListener()) {
+    // TODO(vigneshbabu): Skip the test when event engine is enabled.
+    // Pre-allocated fd support will be added to event engine later.
+    return;
+  }
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);

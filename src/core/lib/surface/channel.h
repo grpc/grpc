@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_H
-#define GRPC_CORE_LIB_SURFACE_CHANNEL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -211,4 +211,4 @@ grpc_compression_options grpc_channel_compression_options(
 void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                        void* tag, void* reserved);
 
-#endif  // GRPC_CORE_LIB_SURFACE_CHANNEL_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H

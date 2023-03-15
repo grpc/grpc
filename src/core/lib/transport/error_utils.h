@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
-#define GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -60,4 +60,4 @@ grpc_error_handle absl_status_to_grpc_error(absl::Status status);
 /// absl::OkStatus() or absl::CancelledError()
 bool grpc_error_has_clear_grpc_status(grpc_error_handle error);
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H

@@ -23,7 +23,17 @@ namespace grpc {
 namespace experimental {
 
 // Initialize GCP Observability for gRPC.
+// This should be called before any other gRPC operations like creating a
+// channel, server, credentials etc.
+// The most common usage would call this at the top (or near the top) in main().
+// As an implementation detail, this properly initializes the OpenCensus stats
+// and tracing plugin, so applications do not need to perform any additional
+// gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
 absl::Status GcpObservabilityInit();
+
+// Gracefully shuts down GCP Observability.
+// Note that graceful shutdown for stats and tracing is not yet supported.
+void GcpObservabilityClose();
 
 }  // namespace experimental
 }  // namespace grpc

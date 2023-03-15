@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
-#define GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -81,4 +81,4 @@ int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b);
 grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator);
 void grpc_socket_mutator_unref(grpc_socket_mutator* mutator);
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H

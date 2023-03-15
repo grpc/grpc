@@ -182,6 +182,11 @@ grpc_proto_library(
     ],
 )
 
+proto_library(
+    name = "orca_load_report_proto_descriptor",
+    srcs = ["orca_load_report.proto"],
+)
+
 grpc_proto_library(
     name = "orca_service_proto",
     srcs = [
@@ -383,6 +388,14 @@ grpc_proto_library(
     deps = [
         "rbac_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "client_side_weighted_round_robin_proto",
+    srcs = [
+        "client_side_weighted_round_robin.proto",
+    ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(

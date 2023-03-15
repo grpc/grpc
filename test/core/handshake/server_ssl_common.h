@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SERVER_SSL_COMMON_H
-#define GRPC_SERVER_SSL_COMMON_H
+#ifndef GRPC_TEST_CORE_HANDSHAKE_SERVER_SSL_COMMON_H
+#define GRPC_TEST_CORE_HANDSHAKE_SERVER_SSL_COMMON_H
 
 bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
                      const char* alpn_expected);
@@ -27,4 +27,4 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
 /// versions > 1.0.2.
 void CleanupSslLibrary();
 
-#endif  // GRPC_SERVER_SSL_COMMON_H
+#endif  // GRPC_TEST_CORE_HANDSHAKE_SERVER_SSL_COMMON_H

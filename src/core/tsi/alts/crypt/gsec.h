@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
-#define GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_CRYPT_GSEC_H
+#define GRPC_SRC_CORE_TSI_ALTS_CRYPT_GSEC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -456,4 +456,4 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
                                                   gsec_aead_crypter** crypter,
                                                   char** error_details);
 
-#endif  // GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_CRYPT_GSEC_H

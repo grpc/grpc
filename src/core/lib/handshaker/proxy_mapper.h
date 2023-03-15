@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H
-#define GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H
+#ifndef GRPC_SRC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H
+#define GRPC_SRC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,4 +50,4 @@ class ProxyMapperInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H
+#endif  // GRPC_SRC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_H

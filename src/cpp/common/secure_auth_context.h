@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
-#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#ifndef GRPC_SRC_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#define GRPC_SRC_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
 #include <string>
 #include <vector>
@@ -62,4 +62,4 @@ class SecureAuthContext final : public AuthContext {
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#endif  // GRPC_SRC_CPP_COMMON_SECURE_AUTH_CONTEXT_H

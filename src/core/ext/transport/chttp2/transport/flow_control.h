@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,6 +30,7 @@
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -168,7 +169,7 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // to be as performant as possible.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(const char* name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
@@ -408,4 +409,4 @@ extern TestOnlyTransportTargetWindowEstimatesMocker*
 }  // namespace chttp2
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H

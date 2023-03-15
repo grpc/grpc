@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
-#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,6 +45,10 @@ typedef enum {
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
+  /// Holds a pointer to BackendMetricProvider associated with this call on
+  /// the server.
+  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
@@ -60,4 +64,4 @@ template <>
 struct ContextType<grpc_call_context_element> {};
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H

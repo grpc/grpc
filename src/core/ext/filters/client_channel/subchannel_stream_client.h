@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -42,7 +43,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -196,7 +196,7 @@ class SubchannelStreamClient
   void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-  static void OnRetryTimer(void* arg, grpc_error_handle error);
+  void OnRetryTimer() ABSL_LOCKS_EXCLUDED(mu_);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
@@ -212,11 +212,14 @@ class SubchannelStreamClient
 
   // Call retry state.
   BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
-  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
-  grpc_closure retry_timer_callback_ ABSL_GUARDED_BY(mu_);
-  bool retry_timer_callback_pending_ ABSL_GUARDED_BY(mu_) = false;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      retry_timer_handle_ ABSL_GUARDED_BY(mu_);
+  // A raw pointer will suffice since connected_subchannel_ holds a copy of the
+  // ChannelArgs which holds an std::shared_ptr of the EventEngine.
+  grpc_event_engine::experimental::EventEngine* event_engine_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H

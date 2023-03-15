@@ -64,15 +64,23 @@ static void create_sockets(SOCKET sv[2]) {
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
-  grpc_tcp_prepare_socket(cli_sock);
-  grpc_tcp_prepare_socket(svr_sock);
+  grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
+  if (!error.ok()) {
+    gpr_log(GPR_INFO, "Prepare cli_sock failed with error: %s",
+            grpc_core::StatusToString(error).c_str());
+  }
+  error = grpc_tcp_prepare_socket(svr_sock);
+  if (!error.ok()) {
+    gpr_log(GPR_INFO, "Prepare svr_sock failed with error: %s",
+            grpc_core::StatusToString(error).c_str());
+  }
 
   sv[1] = cli_sock;
   sv[0] = svr_sock;
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char*, grpc_channel_args* channel_args) {
+    const char*, const grpc_channel_args* /* channel_args */) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);

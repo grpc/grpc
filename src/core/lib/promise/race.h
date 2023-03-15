@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_RACE_H
-#define GRPC_CORE_LIB_PROMISE_RACE_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_RACE_H
+#define GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 
 #include <grpc/support/port_platform.h>
 
 #include <type_traits>
-
-#include "absl/types/variant.h"
-
-#include "src/core/lib/promise/poll.h"
+#include <utility>
 
 namespace grpc_core {
 
@@ -42,12 +39,12 @@ class Race<Promise, Promises...> {
   Result operator()() {
     // Check our own promise.
     auto r = promise_();
-    if (absl::holds_alternative<Pending>(r)) {
+    if (r.pending()) {
       // Check the rest of them.
       return next_();
     }
     // Return the first ready result.
-    return std::move(absl::get<kPollReadyIdx>(std::move(r)));
+    return std::move(r.value());
   }
 
  private:
@@ -80,4 +77,4 @@ promise_detail::Race<Promises...> Race(Promises... promises) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_RACE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_RACE_H

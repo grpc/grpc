@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_CLIENT_H
-#define TEST_QPS_CLIENT_H
+#ifndef GRPC_TEST_CPP_QPS_CLIENT_H
+#define GRPC_TEST_CPP_QPS_CLIENT_H
 
 #include <inttypes.h>
 #include <stdint.h>
@@ -580,4 +580,4 @@ std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_CLIENT_H

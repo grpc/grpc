@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -67,4 +67,4 @@ void grpc_pollset_global_shutdown(void);
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H

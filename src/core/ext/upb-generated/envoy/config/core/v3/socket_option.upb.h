@@ -21,8 +21,11 @@ extern "C" {
 #endif
 
 struct envoy_config_core_v3_SocketOption;
+struct envoy_config_core_v3_SocketOptionsOverride;
 typedef struct envoy_config_core_v3_SocketOption envoy_config_core_v3_SocketOption;
+typedef struct envoy_config_core_v3_SocketOptionsOverride envoy_config_core_v3_SocketOptionsOverride;
 extern const upb_MiniTable envoy_config_core_v3_SocketOption_msginit;
+extern const upb_MiniTable envoy_config_core_v3_SocketOptionsOverride_msginit;
 
 typedef enum {
   envoy_config_core_v3_SocketOption_STATE_PREBIND = 0,
@@ -135,6 +138,64 @@ UPB_INLINE void envoy_config_core_v3_SocketOption_set_buf_value(envoy_config_cor
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_state(envoy_config_core_v3_SocketOption *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+}
+
+/* envoy.config.core.v3.SocketOptionsOverride */
+
+UPB_INLINE envoy_config_core_v3_SocketOptionsOverride* envoy_config_core_v3_SocketOptionsOverride_new(upb_Arena* arena) {
+  return (envoy_config_core_v3_SocketOptionsOverride*)_upb_Message_New(&envoy_config_core_v3_SocketOptionsOverride_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_SocketOptionsOverride* envoy_config_core_v3_SocketOptionsOverride_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_core_v3_SocketOptionsOverride* ret = envoy_config_core_v3_SocketOptionsOverride_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_SocketOptionsOverride_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_core_v3_SocketOptionsOverride* envoy_config_core_v3_SocketOptionsOverride_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_core_v3_SocketOptionsOverride* ret = envoy_config_core_v3_SocketOptionsOverride_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_SocketOptionsOverride_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_core_v3_SocketOptionsOverride_serialize(const envoy_config_core_v3_SocketOptionsOverride* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOptionsOverride_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_core_v3_SocketOptionsOverride_serialize_ex(const envoy_config_core_v3_SocketOptionsOverride* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOptionsOverride_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE bool envoy_config_core_v3_SocketOptionsOverride_has_socket_options(const envoy_config_core_v3_SocketOptionsOverride* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_config_core_v3_SocketOptionsOverride_clear_socket_options(const envoy_config_core_v3_SocketOptionsOverride* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_config_core_v3_SocketOption* const* envoy_config_core_v3_SocketOptionsOverride_socket_options(const envoy_config_core_v3_SocketOptionsOverride* msg, size_t* len) {
+  return (const envoy_config_core_v3_SocketOption* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+
+UPB_INLINE envoy_config_core_v3_SocketOption** envoy_config_core_v3_SocketOptionsOverride_mutable_socket_options(envoy_config_core_v3_SocketOptionsOverride* msg, size_t* len) {
+  return (envoy_config_core_v3_SocketOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE envoy_config_core_v3_SocketOption** envoy_config_core_v3_SocketOptionsOverride_resize_socket_options(envoy_config_core_v3_SocketOptionsOverride* msg, size_t len, upb_Arena* arena) {
+  return (envoy_config_core_v3_SocketOption**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOptionsOverride_add_socket_options(envoy_config_core_v3_SocketOptionsOverride* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_SocketOption* sub = (struct envoy_config_core_v3_SocketOption*)_upb_Message_New(&envoy_config_core_v3_SocketOption_msginit, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
 }
 
 extern const upb_MiniTable_File envoy_config_core_v3_socket_option_proto_upb_file_layout;

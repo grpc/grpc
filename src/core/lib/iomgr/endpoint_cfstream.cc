@@ -113,7 +113,8 @@ static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_read_cb %p %p:%p", ep,
             ep->read_cb, ep->read_cb->cb, ep->read_cb->cb_arg);
     size_t i;
@@ -225,7 +226,8 @@ static void WriteAction(void* arg, grpc_error_handle error) {
       EP_UNREF(ep, "write");
     }
 
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+        gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       grpc_slice trace_slice = grpc_slice_sub(slice, 0, write_size);
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),

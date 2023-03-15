@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -66,4 +66,4 @@ class IOCP final : public Poller {
 
 #endif
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H

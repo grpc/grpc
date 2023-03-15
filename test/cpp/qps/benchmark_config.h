@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
-#define GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
+#ifndef GRPC_TEST_CPP_QPS_BENCHMARK_CONFIG_H
+#define GRPC_TEST_CPP_QPS_BENCHMARK_CONFIG_H
 
 #include <memory>
 
@@ -36,4 +36,4 @@ std::shared_ptr<Reporter> GetReporter();
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
+#endif  // GRPC_TEST_CPP_QPS_BENCHMARK_CONFIG_H

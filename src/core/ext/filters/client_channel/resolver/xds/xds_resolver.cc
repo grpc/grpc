@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -46,6 +47,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/slice/slice.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
@@ -75,7 +77,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -84,7 +85,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -658,8 +658,10 @@ absl::optional<uint64_t> HeaderHashHelper(
 
 absl::StatusOr<ConfigSelector::CallConfig>
 XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
+  Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
+  GPR_ASSERT(path != nullptr);
   auto route_index = XdsRouting::GetRouteForRequest(
-      RouteListIterator(&route_table_), StringViewFromSlice(*args.path),
+      RouteListIterator(&route_table_), path->as_string_view(),
       args.initial_metadata);
   if (!route_index.has_value()) {
     return absl::UnavailableError(
@@ -688,11 +690,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
       [&](const std::vector<
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
-        const uint32_t key =
-            rand() %
-            entry
-                .weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
-                .range_end;
+        const uint32_t key = absl::Uniform<uint32_t>(
+            absl::BitGen(), 0, entry.weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;
@@ -777,7 +776,6 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
 //
 
 void XdsResolver::StartLocked() {
-  grpc_error_handle error;
   auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,

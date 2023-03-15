@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
-#define GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
+#ifndef GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
+#define GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -233,4 +233,4 @@ unsigned char* alts_get_output_buffer(alts_frame_reader* reader);
 ///
 void alts_destroy_frame_reader(alts_frame_reader* reader);
 
-#endif  // GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
+#endif  // GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
