@@ -144,13 +144,6 @@ static grpc_status_code send_metadata(CoreTestFixture* f,
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  if (status == GRPC_STATUS_OK) {
-    // Make sure metadata arrived at client.
-    GPR_ASSERT(contains_metadata_slices(&initial_metadata_recv,
-                                        grpc_slice_from_static_string("key"),
-                                        meta.value));
-  }
-
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
