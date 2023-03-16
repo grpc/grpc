@@ -1404,6 +1404,7 @@ LIBGRPC_SRC = \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/call_tracer.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1414,7 +1415,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/server_call_tracer.cc \
+    src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
@@ -1560,6 +1561,7 @@ LIBGRPC_SRC = \
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
     src/core/lib/resolver/resolver.cc \
@@ -1663,6 +1665,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
@@ -1946,6 +1949,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/call_tracer.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1956,7 +1960,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/server_call_tracer.cc \
+    src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
@@ -2099,6 +2103,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/load_balancing/lb_policy.cc \
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
     src/core/lib/resolver/resolver.cc \
@@ -2171,6 +2176,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \

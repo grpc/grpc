@@ -1990,6 +1990,7 @@ src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/call_finalization.h \
+src/core/lib/channel/call_tracer.cc \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
@@ -2013,8 +2014,7 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
-src/core/lib/channel/server_call_tracer.cc \
-src/core/lib/channel/server_call_tracer.h \
+src/core/lib/channel/server_call_tracer_filter.cc \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \
@@ -2390,6 +2390,7 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
+src/core/lib/promise/cancel_callback.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
@@ -2398,12 +2399,14 @@ src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/for_each.h \
 src/core/lib/promise/if.h \
 src/core/lib/promise/interceptor_list.h \
-src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/party.cc \
+src/core/lib/promise/party.h \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
@@ -2610,6 +2613,8 @@ src/core/lib/surface/server.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
+src/core/lib/transport/batch_builder.cc \
+src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/connectivity_state.cc \

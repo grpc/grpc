@@ -28,7 +28,6 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -44,19 +43,34 @@ namespace grpc_core {
 
 class AllocatorOwner {
  protected:
+  ~AllocatorOwner() { arena_->Destroy(); }
   MemoryAllocator memory_allocator_ = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  Arena* arena_ = Arena::Create(1024, &memory_allocator_);
 };
 
 class TestParty final : public AllocatorOwner, public Party {
  public:
-  TestParty() : Party(Arena::Create(1024, &memory_allocator_)) {}
+  TestParty() : Party(AllocatorOwner::arena_, 1) {}
+  ~TestParty() override {}
   std::string DebugTag() const override { return "TestParty"; }
 
-  void Run() override {
+  using Party::IncrementRefCount;
+  using Party::Unref;
+
+  bool RunParty() override {
     promise_detail::Context<grpc_event_engine::experimental::EventEngine>
         ee_ctx(ee_.get());
-    Party::Run();
+    return Party::RunParty();
+  }
+
+  void PartyOver() override {
+    {
+      promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+          ee_ctx(ee_.get());
+      CancelRemainingParticipants();
+    }
+    delete this;
   }
 
  private:
@@ -68,14 +82,17 @@ class PartyTest : public ::testing::Test {
  protected:
 };
 
-TEST_F(PartyTest, Noop) { auto party = MakeOrphanable<TestParty>(); }
+TEST_F(PartyTest, Noop) { auto party = MakeRefCounted<TestParty>(); }
 
 TEST_F(PartyTest, CanSpawnAndRun) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   party->Spawn(
+      "TestSpawn",
       [i = 10]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
+        gpr_log(GPR_DEBUG, "i=%d", i);
+        GPR_ASSERT(i > 0);
         Activity::current()->ForceImmediateRepoll();
         --i;
         if (i == 0) return 42;
@@ -89,13 +106,15 @@ TEST_F(PartyTest, CanSpawnAndRun) {
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done1 = false;
   bool done2 = false;
   party->Spawn(
-      [party = party.get(), &done2]() -> Poll<int> {
+      "TestSpawn",
+      [party, &done2]() -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         party->Spawn(
+            "TestSpawnInner",
             [i = 10]() mutable -> Poll<int> {
               EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
               Activity::current()->ForceImmediateRepoll();
@@ -118,10 +137,11 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   Waker waker;
   party->Spawn(
+      "TestSpawn",
       [i = 10, &waker]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeOwningWaker();
@@ -141,10 +161,11 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   Waker waker;
   party->Spawn(
+      "TestSpawn",
       [i = 10, &waker]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
@@ -164,10 +185,11 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   Waker waker;
   party->Spawn(
+      "TestSpawn",
       [i = 10, &waker]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
@@ -188,10 +210,11 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   std::unique_ptr<Waker> waker;
   party->Spawn(
+      "TestSpawn",
       [i = 10, &waker]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker =
@@ -211,10 +234,11 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
 }
 
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   bool done = false;
   Waker waker;
   party->Spawn(
+      "TestSpawn",
       [i = 10, &waker]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
@@ -235,15 +259,16 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
-  threads.reserve(16);
-  for (int i = 0; i < 16; i++) {
-    threads.emplace_back([party = party.get()]() {
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 100; i++) {
         ExecCtx ctx;  // needed for Sleep
         Notification promise_complete;
-        party->Spawn(Seq(Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
+        party->Spawn("TestSpawn",
+                     Seq(Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
                          []() -> Poll<int> { return 42; }),
                      [&promise_complete](int i) {
                        EXPECT_EQ(i, 42);
@@ -298,16 +323,17 @@ class PromiseNotification {
 };
 
 TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
-  threads.reserve(16);
-  for (int i = 0; i < 16; i++) {
-    threads.emplace_back([party = party.get()]() {
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 100; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification promise_start(true);
         Notification promise_complete;
-        party->Spawn(Seq(promise_start.Wait(),
+        party->Spawn("TestSpawn",
+                     Seq(promise_start.Wait(),
                          Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
                          []() -> Poll<int> { return 42; }),
                      [&promise_complete](int i) {
@@ -325,16 +351,17 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWaker) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
-  threads.reserve(16);
-  for (int i = 0; i < 16; i++) {
-    threads.emplace_back([party = party.get()]() {
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 100; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification promise_start(false);
         Notification promise_complete;
-        party->Spawn(Seq(promise_start.Wait(),
+        party->Spawn("TestSpawn",
+                     Seq(promise_start.Wait(),
                          Sleep(Timestamp::Now() + Duration::Milliseconds(10)),
                          []() -> Poll<int> { return 42; }),
                      [&promise_complete](int i) {
@@ -352,15 +379,16 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWaker) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
-  threads.reserve(16);
-  for (int i = 0; i < 16; i++) {
-    threads.emplace_back([party = party.get()]() {
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 10000; i++) {
         PromiseNotification promise_start(true);
         Notification promise_complete;
         party->Spawn(
+            "TestSpawn",
             Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
             [&promise_complete](int i) {
               EXPECT_EQ(i, 42);
@@ -377,15 +405,16 @@ TEST_F(PartyTest, ThreadStressTestWithOwningWakerNoSleep) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
-  threads.reserve(16);
-  for (int i = 0; i < 16; i++) {
-    threads.emplace_back([party = party.get()]() {
+  threads.reserve(8);
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 10000; i++) {
         PromiseNotification promise_start(false);
         Notification promise_complete;
         party->Spawn(
+            "TestSpawn",
             Seq(promise_start.Wait(), []() -> Poll<int> { return 42; }),
             [&promise_complete](int i) {
               EXPECT_EQ(i, 42);
@@ -402,20 +431,22 @@ TEST_F(PartyTest, ThreadStressTestWithNonOwningWakerNoSleep) {
 }
 
 TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
-  auto party = MakeOrphanable<TestParty>();
+  auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
   threads.reserve(8);
   for (int i = 0; i < 8; i++) {
-    threads.emplace_back([party = party.get()]() {
+    threads.emplace_back([party]() {
       for (int i = 0; i < 100; i++) {
         ExecCtx ctx;  // needed for Sleep
         PromiseNotification inner_start(true);
         PromiseNotification inner_complete(false);
         Notification promise_complete;
         party->Spawn(
+            "TestSpawn",
             Seq(
                 [party, &inner_start, &inner_complete]() -> Poll<int> {
-                  party->Spawn(Seq(inner_start.Wait(), []() { return 0; }),
+                  party->Spawn("TestSpawnInner",
+                               Seq(inner_start.Wait(), []() { return 0; }),
                                [&inner_complete](int i) {
                                  EXPECT_EQ(i, 0);
                                  inner_complete.Notify();
