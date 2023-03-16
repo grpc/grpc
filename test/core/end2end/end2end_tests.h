@@ -495,6 +495,7 @@ class CoreEnd2endTest
                                     CqVerifier::tag(tag));
   }
   void DestroyServer() { fixture().DestroyServer(); }
+  void ShutdownAndDestroyServer() { fixture().ShutdownServer(); }
   void CancelAllCallsOnServer() {
     grpc_server_cancel_all_calls(fixture().server());
   }

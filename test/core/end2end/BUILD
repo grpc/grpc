@@ -174,6 +174,7 @@ grpc_cc_test(
         "tests/high_initial_seqno.cc",
         "tests/hpack_size.cc",
         "tests/filter_causes_close.cc",
+        "tests/filter_init_fails.cc",
         "tests/filter_context.cc",
         "tests/filtered_metadata.cc",
         "tests/negative_deadline.cc",
