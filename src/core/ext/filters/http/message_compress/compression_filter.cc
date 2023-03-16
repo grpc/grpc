@@ -36,6 +36,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -113,6 +114,12 @@ MessageHandle CompressionFilter::CompressMessage(
     gpr_log(GPR_ERROR, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
             message->payload()->Length(), algorithm, message->flags());
   }
+  auto* call_context = GetContext<grpc_call_context_element>();
+  auto* call_tracer = static_cast<CallTracerInterface*>(
+      call_context[GRPC_CONTEXT_CALL_TRACER].value);
+  if (call_tracer != nullptr) {
+    call_tracer->RecordSendMessage(*message->payload());
+  }
   // Check if we're allowed to compress this message
   // (apps might want to disable compression for certain messages to avoid
   // crime/beast like vulns).
@@ -143,6 +150,9 @@ MessageHandle CompressionFilter::CompressMessage(
     }
     tmp.Swap(payload);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+    if (call_tracer != nullptr) {
+      call_tracer->RecordSendCompressedMessage(*message->payload());
+    }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
@@ -162,6 +172,12 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
     gpr_log(GPR_ERROR, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
             message->payload()->Length(),
             args.max_recv_message_length.value_or(-1), args.algorithm);
+  }
+  auto* call_context = GetContext<grpc_call_context_element>();
+  auto* call_tracer = static_cast<CallTracerInterface*>(
+      call_context[GRPC_CONTEXT_CALL_TRACER].value);
+  if (call_tracer != nullptr) {
+    call_tracer->RecordReceivedMessage(*message->payload());
   }
   // Check max message length.
   if (args.max_recv_message_length.has_value() &&
@@ -189,6 +205,9 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
   message->payload()->Swap(&decompressed_slices);
   message->mutable_flags() &= ~GRPC_WRITE_INTERNAL_COMPRESS;
   message->mutable_flags() |= GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
+  if (call_tracer != nullptr) {
+    call_tracer->RecordReceivedDecompressedMessage(*message->payload());
+  }
   return std::move(message);
 }
 
