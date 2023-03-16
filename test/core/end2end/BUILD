@@ -173,6 +173,7 @@ grpc_cc_test(
         "tests/empty_batch.cc",
         "tests/high_initial_seqno.cc",
         "tests/hpack_size.cc",
+        "tests/filter_causes_close.cc",
         "tests/filtered_metadata.cc",
         "tests/negative_deadline.cc",
         "tests/no_op.cc",

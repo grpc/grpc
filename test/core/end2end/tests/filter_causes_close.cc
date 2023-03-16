@@ -47,107 +47,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<grpc_core::CoreTestFixture> begin_test(
-    const grpc_core::CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
-
-// Simple request via a server filter that always closes the stream.
-static void test_request(const grpc_core::CoreTestConfiguration& config) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  auto f = begin_test(config, "filter_causes_close", nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f->cq());
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.metadata = nullptr;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 ==
-             grpc_slice_str_cmp(details, "Failure that's not preventable."));
-
-  f->ShutdownServer();
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-}
+namespace grpc_core {
+namespace {
 
 //******************************************************************************
 // Test filter - always closes incoming requests
@@ -215,22 +116,29 @@ static const grpc_channel_filter test_filter = {
     grpc_channel_next_get_info,
     "filter_causes_close"};
 
-//******************************************************************************
-// Registration
-//
+TEST_P(CoreEnd2endTest, FilterCausesClose) {
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(
+        GRPC_SERVER_CHANNEL, 0, [](grpc_core::ChannelStackBuilder* builder) {
+          builder->PrependFilter(&test_filter);
+          return true;
+        });
+  });
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendMessage("foo")
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  Expect(1, true);
+  Step();
 
-void filter_causes_close(const grpc_core::CoreTestConfiguration& config) {
-  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        grpc_core::BuildCoreConfiguration(builder);
-        builder->channel_init()->RegisterStage(
-            GRPC_SERVER_CHANNEL, 0,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(&test_filter);
-              return true;
-            });
-      },
-      [config] { test_request(config); });
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(server_status.message(), "Failure that's not preventable.");
 }
 
-void filter_causes_close_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core
