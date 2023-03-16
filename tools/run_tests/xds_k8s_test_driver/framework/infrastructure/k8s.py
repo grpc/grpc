@@ -28,6 +28,7 @@ import urllib3.exceptions
 import yaml
 
 from framework.helpers import retryers
+import framework.helpers.datetime
 import framework.helpers.highlighter
 from framework.infrastructure.k8s_internal import k8s_log_collector
 from framework.infrastructure.k8s_internal import k8s_port_forwarder
@@ -44,8 +45,11 @@ V1Pod = client.V1Pod
 V1PodList = client.V1PodList
 V1Service = client.V1Service
 V1Namespace = client.V1Namespace
+V1ObjectMeta = client.V1ObjectMeta
 
 _timedelta = datetime.timedelta
+_datetime = datetime.datetime
+_helper_datetime = framework.helpers.datetime
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _ApiException = client.ApiException
 _FailToCreateError = utils.FailToCreateError
@@ -143,7 +147,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def __init__(self, api: KubernetesApiManager, name: str):
         self._api = api
         self._name = name
-        self._highlighter = _HighlighterYaml()
+        self._highlighter = _HighlighterYaml(color=True, color_style='material')
 
     @property
     def name(self):
@@ -525,14 +529,33 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         if k8s_object is None:
             return 'No data'
 
-        # Parse the name if present.
-        if hasattr(k8s_object, 'metadata') and hasattr(k8s_object.metadata,
-                                                       'name'):
-            name = k8s_object.metadata.name
-        else:
-            name = 'Can\'t parse resource name'
+        result = []
+        metadata: Optional[V1ObjectMeta] = None
+        if (hasattr(k8s_object, 'metadata') and
+                isinstance(k8s_object.metadata, V1ObjectMeta)):
+            # Parse the name if present.
+            metadata: V1ObjectMeta = k8s_object.metadata
+
+        # Parse name if, present, but always indicate unsuccessful parse.
+        name = metadata.name if metadata else "Can't parse resource name"
+        result.append(f'Resource name: {name}')
+
+        # Add kubernetes kind (resource type) if present.
+        if hasattr(k8s_object, 'kind'):
+            result.append(f'Resource kind: {k8s_object.kind}')
+
+        # Add the timestamps if present.
+        if metadata and metadata.creation_timestamp:
+            result.append(
+                f'Created: {metadata.creation_timestamp};'
+                f' {_helper_datetime.ago(metadata.creation_timestamp)}')
+        if metadata and metadata.deletion_timestamp:
+            result.append(
+                f'Deletion requested: {metadata.deletion_timestamp};'
+                f' {_helper_datetime.ago(metadata.deletion_timestamp)}')
 
         # Pretty-print the status if present.
+        result.append('')
         if hasattr(k8s_object, 'status'):
             try:
                 status = self._pretty_format(k8s_object.status.to_dict())
@@ -542,9 +565,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 status = f'Can\'t parse resource status: {e}'
         else:
             status = 'Can\'t parse resource status'
+        result.append(status)
 
-        # Return the name of k8s object, and its pretty-printed status.
-        return f'{name}:\n{status}\n'
+        return '\n'.join(result) + '\n'
 
     def _pretty_format(self, data: dict) -> str:
         """Return a string with pretty-printed yaml data from a python dict."""

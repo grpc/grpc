@@ -12,6 +12,7 @@ six~=1.13
 tenacity~=6.2
 packaging~=21.3
 Pygments~=2.9
+# TODO(sergiitk): remove when upgraded to 3.11: Zulu timezone suppored natively.
 python-dateutil~=2.8
 protobuf~=3.14
 xds-protos~=0.0.8
