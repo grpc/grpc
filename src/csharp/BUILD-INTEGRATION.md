@@ -170,12 +170,21 @@ to perform code generation. Here is an overview of the available `grpc_csharp_pl
 | no_client       | off       | Don't generate the client stub                           |
 | no_server       | off       | Don't generate the server-side stub                      |
 | internal_access | off       | Generate classes with "internal" visibility              |
+| file_suffix     | Grpc.cs   | The suffix that will get appended to the name of the generated file. **Can only be used on the command line.** |
+| base_namespace | none       | *Experimental - may change or be removed.* Same as `base_namespace` for `protoc` C# options.  **Can only be used on the command line.** |
 
-Note that the protocol buffer compiler has a special commandline syntax for plugin options.
-Example:
-```
-protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin --csharp_out=OUT_DIR \
-    --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server \
+To use these options with `Grpc.Tools` specify them in the __GrpcOutputOptions__
+metadata in the `<Protobuf>` item.
+- Note: `file_suffix` and `base_namespace` should not be used with `Grpc.Tools`. Using them will break the build.
+
+To use these options on the command line specify them using the `--grpc_opt`
+command line option, e.g.:
+
+```bash
+protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin \
+    --csharp_out=OUT_DIR \
+    --grpc_out=OUT_DIR \
+    --grpc_opt=no_server,base_namespace=Example \
     -I INCLUDE_DIR foo.proto
 ```
 ## Environment Variables
