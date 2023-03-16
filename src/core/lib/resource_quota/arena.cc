@@ -54,6 +54,9 @@ Arena::~Arena() {
     gpr_free_aligned(z);
     z = prev_z;
   }
+#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+  gpr_log(GPR_ERROR, "DESTRUCT_ARENA %p", this);
+#endif
 }
 
 Arena* Arena::Create(size_t initial_size, MemoryAllocator* memory_allocator) {
@@ -71,7 +74,7 @@ std::pair<Arena*, void*> Arena::CreateWithAlloc(
   return std::make_pair(new_arena, first_alloc);
 }
 
-void Arena::Destroy() {
+void Arena::DestroyManagedNewObjects() {
   ManagedNewObject* p;
   // Outer loop: clear the managed new object list.
   // We do this repeatedly in case a destructor ends up allocating something.
@@ -82,6 +85,10 @@ void Arena::Destroy() {
       Destruct(std::exchange(p, p->next));
     }
   }
+}
+
+void Arena::Destroy() {
+  DestroyManagedNewObjects();
   memory_allocator_->Release(total_allocated_.load(std::memory_order_relaxed));
   this->~Arena();
   gpr_free_aligned(this);
@@ -114,7 +121,8 @@ void Arena::ManagedNewObject::Link(std::atomic<ManagedNewObject*>* head) {
   }
 }
 
-void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
+void* Arena::AllocPooled(size_t obj_size, size_t alloc_size,
+                         std::atomic<FreePoolNode*>* head) {
   // ABA mitigation:
   // AllocPooled may be called by multiple threads, and to remove a node from
   // the free list we need to manipulate the next pointer, which may be done
@@ -132,7 +140,11 @@ void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
   FreePoolNode* p = head->exchange(nullptr, std::memory_order_acquire);
   // If there are no nodes in the free list, then go ahead and allocate from the
   // arena.
-  if (p == nullptr) return Alloc(alloc_size);
+  if (p == nullptr) {
+    void* r = Alloc(alloc_size);
+    TracePoolAlloc(obj_size, r);
+    return r;
+  }
   // We had a non-empty free list... but we own the *entire* free list.
   // We only want one node, so if there are extras we'd better give them back.
   if (p->next != nullptr) {
@@ -151,10 +163,14 @@ void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
       extra = next;
     }
   }
+  TracePoolAlloc(obj_size, p);
   return p;
 }
 
 void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
+  // May spuriously trace a free of an already freed object - see AllocPooled
+  // ABA mitigation.
+  TracePoolFree(p);
   FreePoolNode* node = static_cast<FreePoolNode*>(p);
   node->next = head->load(std::memory_order_acquire);
   while (!head->compare_exchange_weak(

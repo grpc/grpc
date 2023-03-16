@@ -645,7 +645,7 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint = 95.0;
+  static const double kSetPoint = 0.95;
 
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {

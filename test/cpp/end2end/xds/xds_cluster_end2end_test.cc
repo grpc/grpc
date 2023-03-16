@@ -496,7 +496,13 @@ TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
       EXPECT_THAT(result.status.error_message(),
-                  ::testing::MatchesRegex(kErrorMessage));
+                  ::testing::MatchesRegex(absl::StrCat(
+                      // The error message we see here depends on whether
+                      // the client sees the EDS update before or after it
+                      // sees the backend come back up.
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "),
+                      "|", kErrorMessage)));
     }
   });
 }

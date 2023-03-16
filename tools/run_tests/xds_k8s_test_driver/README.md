@@ -185,6 +185,7 @@ pip install -r requirements.lock
 # Generate protos
 python -m grpc_tools.protoc --proto_path=../../../ \
     --python_out=. --grpc_python_out=. \
+    src/proto/grpc/testing/xds/v3/orca_load_report.proto \
     src/proto/grpc/testing/empty.proto \
     src/proto/grpc/testing/messages.proto \
     src/proto/grpc/testing/test.proto
