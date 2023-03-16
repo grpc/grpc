@@ -320,8 +320,8 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
       return;
     }
   }
-  grpc_socket_notify_on_read(tcp->socket, &tcp->on_read);
   gpr_mu_unlock(&tcp->read_mu);
+  grpc_socket_notify_on_read(tcp->socket, &tcp->on_read);
 }
 
 // Asynchronous callback from the IOCP, or the background thread.
@@ -466,10 +466,10 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       return;
     }
   }
+  gpr_mu_unlock(&tcp->write_mu);
   // As all is now setup, we can now ask for the IOCP notification. It may
   // trigger the callback immediately however, but no matter.
   grpc_socket_notify_on_write(socket, &tcp->on_write);
-  gpr_mu_unlock(&tcp->write_mu);
 }
 
 static void win_add_to_pollset(grpc_endpoint* ep, grpc_pollset* ps) {
@@ -497,8 +497,6 @@ static void win_delete_from_pollset_set(grpc_endpoint* /* ep */,
 // concurrent access of the data structure in that regard.
 static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
-  grpc_core::ApplicationCallbackExecCtx app_ctx;
-  grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(&tcp->read_mu);
   // At that point, what may happen is that we're already inside the IOCP
   // callback. See the comments in on_read and on_write.
@@ -513,7 +511,13 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   // callback. See the comments in on_read and on_write.
   tcp->write_shutting_down = 1;
   gpr_mu_unlock(&tcp->write_mu);
-  grpc_winsocket_shutdown(tcp->socket);
+  if (grpc_core::ExecCtx::Get() != nullptr) {
+    grpc_winsocket_shutdown(tcp->socket);
+  } else {
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    grpc_winsocket_shutdown(tcp->socket);
+  }
 }
 
 static void win_destroy(grpc_endpoint* ep) {
