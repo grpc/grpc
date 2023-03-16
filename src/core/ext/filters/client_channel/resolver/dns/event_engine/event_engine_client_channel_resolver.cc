@@ -15,20 +15,48 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
+#include <stdint.h>
+
+#include <algorithm>
 #include <chrono>
+#include <memory>
+#include <ratio>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/status//statusor.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/bind_front.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -77,6 +105,13 @@ class EventEngineDNSRequestWrapper
           srv_records);
   void OnTXTResolved(absl::StatusOr<std::string> service_config);
 
+  // Returns a Result if resolution is complete.
+  // callers must release the lock and call OnRequestComplete if a Result is
+  // returned. This is because OnRequestComplete may Orphan the resolver, which
+  // requires taking the lock.
+  absl::optional<grpc_core::Resolver::Result> OnResolvedLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+
  private:
   RefCountedPtr<EventEngineClientChannelDNSResolver> resolver_;
   Mutex on_resolved_mu_;
@@ -89,6 +124,8 @@ class EventEngineDNSRequestWrapper
   std::vector<EventEngine::DNSResolver::SRVRecord> balancer_addresses_
       ABSL_GUARDED_BY(on_resolved_mu_);
   std::string service_config_json_ ABSL_GUARDED_BY(on_resolved_mu_);
+  absl::Status resolution_error_ ABSL_GUARDED_BY(on_resolved_mu_);
+  bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
   std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
 };
 
@@ -155,38 +192,27 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
-  Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
   hostname_handle_ = event_engine_resolver_->LookupHostname(
-      [](absl::StatusOr<
-          std::vector<EventEngine::ResolvedAddress>> /* addresses */) {
-        // DO NOT SUBMIT(hork): implement
-        grpc_core::Crash("unimplemented");
-      },
+      absl::bind_front(&EventEngineDNSRequestWrapper::OnHostnameResolved,
+                       Ref(DEBUG_LOCATION, "OnHostnameResolved")),
       resolver_->name_to_resolve(), grpc_core::kDefaultSecurePort,
       resolver_->query_timeout_ms_);
   GRPC_EVENT_ENGINE_DNS_TRACE(
       "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
       HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
-    Ref(DEBUG_LOCATION, "OnSRVResolved").release();
     srv_handle_ = event_engine_resolver_->LookupSRV(
-        [](absl::StatusOr<
-            std::vector<EventEngine::DNSResolver::SRVRecord>> /* records */) {
-          // DO NOT SUBMIT(hork): implement
-          grpc_core::Crash("unimplemented");
-        },
+        absl::bind_front(&EventEngineDNSRequestWrapper::OnSRVResolved,
+                         Ref(DEBUG_LOCATION, "OnSRVResolved")),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_DNS_TRACE(
         "DNSResolver::%p Started resolving SRV. Handle::%s", resolver_.get(),
         HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
-    Ref(DEBUG_LOCATION, "OnTXTResolved").release();
     txt_handle_ = event_engine_resolver_->LookupTXT(
-        [](absl::StatusOr<std::string> /* service_config */) {
-          // DO NOT SUBMIT(hork): implement
-          grpc_core::Crash("unimplemented");
-        },
+        absl::bind_front(&EventEngineDNSRequestWrapper::OnTXTResolved,
+                         Ref(DEBUG_LOCATION, "OnTXTResolved")),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_DNS_TRACE(
         "DNSResolver::%p Started resolving TXT. Handle::%s", resolver_.get(),
@@ -201,20 +227,151 @@ EventEngineDNSRequestWrapper::~EventEngineDNSRequestWrapper() {
 void EventEngineDNSRequestWrapper::Orphan() {
   {
     MutexLock lock(&on_resolved_mu_);
+    orphaned_ = true;
+    // Event if cancellation fails here, OnResolvedLocked will return early, and
+    // the resolver will never see a completed request.
     if (hostname_handle_.has_value()) {
-      // DO NOT SUBMIT(hork): handle failed cancellation
       event_engine_resolver_->CancelLookup(*hostname_handle_);
     }
     if (srv_handle_.has_value()) {
-      // DO NOT SUBMIT(hork): handle failed cancellation
       event_engine_resolver_->CancelLookup(*srv_handle_);
     }
     if (txt_handle_.has_value()) {
-      // DO NOT SUBMIT(hork): handle failed cancellation
       event_engine_resolver_->CancelLookup(*txt_handle_);
     }
   }
   Unref(DEBUG_LOCATION, "Orphan");
+}
+
+void EventEngineDNSRequestWrapper::OnHostnameResolved(
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+  absl::optional<grpc_core::Resolver::Result> result;
+  {
+    MutexLock lock(&on_resolved_mu_);
+    hostname_handle_.reset();
+    if (addresses.ok()) {
+      addresses_ = std::move(*addresses);
+    } else if (resolution_error_.ok()) {
+      resolution_error_ = addresses.status();
+    } else {
+      grpc_core::StatusAddChild(&resolution_error_, addresses.status());
+    }
+    result = OnResolvedLocked();
+  }
+  if (result.has_value()) {
+    resolver_->OnRequestComplete(std::move(*result));
+  }
+}
+
+void EventEngineDNSRequestWrapper::OnSRVResolved(
+    absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+        srv_records) {
+  absl::optional<grpc_core::Resolver::Result> result;
+  {
+    // DO NOT SUBMIT(hork): handle subsequent requesting hostname records
+    MutexLock lock(&on_resolved_mu_);
+    hostname_handle_.reset();
+    if (srv_records.ok()) {
+      balancer_addresses_ = std::move(*srv_records);
+    } else if (resolution_error_.ok()) {
+      resolution_error_ = srv_records.status();
+    } else {
+      grpc_core::StatusAddChild(&resolution_error_, srv_records.status());
+    }
+    result = OnResolvedLocked();
+  }
+  if (result.has_value()) {
+    resolver_->OnRequestComplete(std::move(*result));
+  }
+}
+
+void EventEngineDNSRequestWrapper::OnTXTResolved(
+    absl::StatusOr<std::string> service_config) {
+  absl::optional<grpc_core::Resolver::Result> result;
+  {
+    MutexLock lock(&on_resolved_mu_);
+    hostname_handle_.reset();
+    if (service_config.ok()) {
+      service_config_json_ = std::move(*service_config);
+    } else if (resolution_error_.ok()) {
+      resolution_error_ = service_config.status();
+    } else {
+      grpc_core::StatusAddChild(&resolution_error_, service_config.status());
+    }
+    result = OnResolvedLocked();
+  }
+  if (result.has_value()) {
+    resolver_->OnRequestComplete(std::move(*result));
+  }
+}
+
+absl::optional<grpc_core::Resolver::Result>
+EventEngineDNSRequestWrapper::OnResolvedLocked() {
+  if (orphaned_) return absl::nullopt;
+  if (hostname_handle_.has_value() || srv_handle_.has_value() ||
+      txt_handle_.has_value()) {
+    GRPC_EVENT_ENGINE_DNS_TRACE(
+        "resolver:%p OnResolved() waiting for results (hostname: %s, srv: %s, "
+        "txt: %s)",
+        this, hostname_handle_.has_value() ? "waiting" : "done",
+        srv_handle_.has_value() ? "waiting" : "done",
+        txt_handle_.has_value() ? "waiting" : "done");
+    return absl::nullopt;
+  }
+  GRPC_EVENT_ENGINE_DNS_TRACE("resolver:%p OnResolvedLocked() proceeding",
+                              this);
+  grpc_core::Resolver::Result result;
+  result.args = resolver_->channel_args();
+  if (!resolution_error_.ok()) {
+    GRPC_EVENT_ENGINE_DNS_TRACE(
+        "resolver:%p dns resolution failed: %s", this,
+        grpc_core::StatusToString(resolution_error_).c_str());
+    auto status = grpc_core::StatusCreate(
+        absl::StatusCode::kUnavailable,
+        absl::StrCat("DNS resolution failed for ",
+                     resolver_->name_to_resolve()),
+        DEBUG_LOCATION, /*children=*/{resolution_error_});
+    result.addresses = status;
+    result.service_config = status;
+    return std::move(result);
+  }
+  // TODO(roth): Change logic to be able to report failures for addresses
+  // and service config independently of each other.
+  if (!addresses_.empty() || !balancer_addresses_.empty()) {
+    if (!addresses_.empty()) {
+      result.addresses->reserve(addresses_.size());
+      for (const auto& addr : addresses_) {
+        result.addresses->emplace_back(CreateGRPCResolvedAddress(addr),
+                                       resolver_->channel_args());
+      }
+    } else {
+      result.addresses = grpc_core::ServerAddressList();
+    }
+    if (!service_config_json_.empty()) {
+      auto service_config = ChooseServiceConfig(service_config_json_);
+      if (!service_config.ok()) {
+        result.service_config = absl::UnavailableError(
+            absl::StrCat("failed to parse service config: ",
+                         grpc_core::StatusToString(service_config.status())));
+      } else if (!service_config->empty()) {
+        GRPC_EVENT_ENGINE_DNS_TRACE(
+            "resolver:%p selected service config choice: %s", this,
+            service_config->c_str());
+        result.service_config = grpc_core::ServiceConfigImpl::Create(
+            resolver_->channel_args(), *service_config);
+        if (!result.service_config.ok()) {
+          result.service_config = absl::UnavailableError(
+              absl::StrCat("failed to parse service config: ",
+                           result.service_config.status().message()));
+        }
+      }
+    }
+    if (!balancer_addresses_.empty()) {
+      // DO NOT SUBMIT(hork): need to do a subsequent lookup
+      grpc_core::Crash("unimplemented");
+    }
+  }
+  return std::move(result);
 }
 
 }  // namespace

@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
@@ -24,4 +24,4 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_PLUGIN_H
