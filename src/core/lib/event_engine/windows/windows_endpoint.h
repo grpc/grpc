@@ -49,11 +49,21 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                absl::AnyInvocable<void(absl::Status)> cb);
     // Resets the per-request data
     void Reset();
+    // Run the callback with whatever data is available, and reset state.
+    //
+    // Returns true if the callback has been called with some data. Returns
+    // false if no data has been read.
+    bool MaybeFinishIfDataHasAlreadyBeenRead();
+    // Execute the callback and reset.
+    void ExecuteCallbackAndReset(absl::Status status);
+    // Swap any leftover slices into the provided buffer
+    void DonateSpareSlices(SliceBuffer* buffer);
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
     absl::AnyInvocable<void(absl::Status)> cb_;
     SliceBuffer* buffer_ = nullptr;
+    SliceBuffer last_read_buffer_;
   };
 
   // Permanent closure type for Write callbacks
@@ -85,6 +95,10 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     HandleReadClosure handle_read_event;
     HandleWriteClosure handle_write_event;
   };
+
+  // Perform the low-level calls and execute the HandleReadClosure
+  // asynchronously.
+  absl::Status DoTcpRead(SliceBuffer* buffer);
 
   EventEngine::ResolvedAddress peer_address_;
   std::string peer_address_string_;
