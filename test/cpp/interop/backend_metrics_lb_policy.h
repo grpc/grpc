@@ -41,8 +41,7 @@ class LoadReportTracker {
   // Returns the next per-RPC load report, or nullopt if the queue is empty.
   absl::optional<LoadReportEntry> GetNextLoadReport();
   LoadReportEntry WaitForOobLoadReport(
-      const std::function<bool(const TestOrcaReport&)>&
-          predicate,
+      const std::function<bool(const TestOrcaReport&)>& predicate,
       absl::Duration poll_timeout, size_t max_attempts);
 
  private:
