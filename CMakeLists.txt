@@ -2155,6 +2155,7 @@ add_library(grpc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
+  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -2165,7 +2166,7 @@ add_library(grpc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer.cc
+  src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -2845,6 +2846,7 @@ add_library(grpc_unsecure
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
+  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -2855,7 +2857,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer.cc
+  src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -4365,6 +4367,7 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -4375,7 +4378,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer.cc
+  src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -11419,6 +11422,7 @@ add_executable(frame_test
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -11429,7 +11433,7 @@ add_executable(frame_test
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer.cc
+  src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -14164,6 +14168,7 @@ add_executable(interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  src/cpp/server/orca/orca_service.cc
   test/cpp/interop/interop_server.cc
   test/cpp/interop/interop_server_bootstrap.cc
   test/cpp/interop/server_helper.cc

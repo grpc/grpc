@@ -485,6 +485,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/call_tracer.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -495,7 +496,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/server_call_tracer.cc \
+    src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \

@@ -83,6 +83,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":server_helper_lib",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",

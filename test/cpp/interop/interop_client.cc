@@ -25,8 +25,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -98,38 +100,61 @@ void InitializeCustomLbPolicyIfNeeded() {
   }
 }
 
+absl::optional<std::string> ValuesDiff(absl::string_view field, double expected,
+                                       double actual) {
+  if (expected != actual) {
+    return absl::StrFormat("%s: expected: %f, actual: %f", field, expected,
+                           actual);
+  }
+  return absl::nullopt;
+}
+
 template <typename Map>
-bool SameMaps(const std::string& path, const Map& expected, const Map& actual) {
-  if (expected.size() != actual.size()) {
-    gpr_log(GPR_ERROR, "Field %s does not match: expected %lu entries, got %lu",
-            path.c_str(), expected.size(), actual.size());
-    return false;
+absl::optional<std::string> MapsDiff(absl::string_view path,
+                                     const Map& expected, const Map& actual) {
+  auto result = ValuesDiff(absl::StrFormat("%s size", path), expected.size(),
+                           actual.size());
+  if (result.has_value()) {
+    return result;
   }
   for (const auto& key_value : expected) {
     auto it = actual.find(key_value.first);
     if (it == actual.end()) {
-      gpr_log(GPR_ERROR, "In field %s, key %s was not found", path.c_str(),
-              key_value.first.c_str());
-      return false;
+      return absl::StrFormat("In field %s, key %s was not found", path,
+                             key_value.first);
     }
-    if (key_value.second != it->second) {
-      gpr_log(
-          GPR_ERROR, "In field %s, value %s mismatch: expected %f, actual: %f",
-          path.c_str(), key_value.first.c_str(), key_value.second, it->second);
-      return false;
+    result = ValuesDiff(absl::StrFormat("%s/%s", path, key_value.first),
+                        key_value.second, it->second);
+    if (result.has_value()) {
+      return result;
     }
   }
-  return true;
+  return absl::nullopt;
 }
 
-void SameOrcaLoadReports(const xds::data::orca::v3::OrcaLoadReport& expected,
-                         const xds::data::orca::v3::OrcaLoadReport& actual) {
-  GPR_ASSERT(expected.cpu_utilization() == actual.cpu_utilization());
-  GPR_ASSERT(expected.mem_utilization() == actual.mem_utilization());
-  GPR_ASSERT(
-      SameMaps("request_cost", expected.request_cost(), actual.request_cost()));
-  GPR_ASSERT(
-      SameMaps("utilization", expected.utilization(), actual.utilization()));
+absl::optional<std::string> OrcaLoadReportsDiff(
+    const xds::data::orca::v3::OrcaLoadReport& expected,
+    const xds::data::orca::v3::OrcaLoadReport& actual) {
+  auto error = ValuesDiff("cpu_utilization", expected.cpu_utilization(),
+                          actual.cpu_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error = ValuesDiff("mem_utilization", expected.mem_utilization(),
+                     actual.mem_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error =
+      MapsDiff("request_cost", expected.request_cost(), actual.request_cost());
+  if (error.has_value()) {
+    return error;
+  }
+  error = MapsDiff("utilization", expected.utilization(), actual.utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  return absl::nullopt;
 }
 }  // namespace
 
@@ -1006,9 +1031,78 @@ bool InteropClient::DoOrcaPerRpc() {
   auto report = load_report_tracker_.GetNextLoadReport();
   GPR_ASSERT(report.has_value());
   GPR_ASSERT(report->has_value());
-  SameOrcaLoadReports(report->value(), *orca_report);
+  auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
+  if (comparison_result.has_value()) {
+    gpr_assertion_failed(__FILE__, __LINE__, comparison_result->c_str());
+  }
   GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
+  return true;
+}
+
+bool InteropClient::DoOrcaOob() {
+  gpr_log(GPR_DEBUG, "testing orca oob");
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(serviceStub_.Get()->FullDuplexCall(&context));
+  auto stream_cleanup = absl::MakeCleanup([&]() {
+    GPR_ASSERT(stream->WritesDone());
+    GPR_ASSERT(stream->Finish().ok());
+  });
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    xds::data::orca::v3::OrcaLoadReport* orca_report =
+        request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.8210);
+    orca_report->set_mem_utilization(0.5847);
+    orca_report->mutable_utilization()->emplace("util", 0.30499);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(
+        load_report_tracker_
+            .WaitForOobLoadReport(
+                [orca_report](const auto& actual) {
+                  return !OrcaLoadReportsDiff(*orca_report, actual).has_value();
+                },
+                absl::Seconds(5), 10)
+            .has_value());
+  }
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    xds::data::orca::v3::OrcaLoadReport* orca_report =
+        request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.29309);
+    orca_report->set_mem_utilization(0.2);
+    orca_report->mutable_utilization()->emplace("util", 0.2039);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(
+        load_report_tracker_
+            .WaitForOobLoadReport(
+                [orca_report](const auto& report) {
+                  return !OrcaLoadReportsDiff(*orca_report, report).has_value();
+                },
+                absl::Seconds(5), 10)
+            .has_value());
+  }
+  gpr_log(GPR_DEBUG, "orca oob successfully finished");
   return true;
 }
 
