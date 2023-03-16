@@ -295,8 +295,12 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
   }
   {
     internal::MutexLock lock(&mu_);
-    data.utilization = std::move(utilization_);
-    data.request_cost = std::move(request_cost_);
+    for (const auto& u : utilization_) {
+      data.utilization[u.first] = u.second;
+    }
+    for (const auto& r : request_cost_) {
+      data.request_cost[r.first] = r.second;
+    }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO,
