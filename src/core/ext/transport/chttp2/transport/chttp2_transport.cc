@@ -378,7 +378,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
 
   const int soft_limit =
       channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
-  if (soft_limit == -1) {
+  if (soft_limit <= -1) {
     // Set soft limit to 0.8 * hard limit if this is larger than
     // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
     // `GRPC_ARG_MAX_METADATA_SIZE` is not set.

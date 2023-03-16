@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
+
 #include <cstdint>
 
 #include "absl/random/random.h"
