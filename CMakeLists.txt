@@ -24,6 +24,11 @@
 
 cmake_minimum_required(VERSION 3.8)
 
+# MSVC runtime library flags are selected by an abstraction.
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.54.0-dev")
 set(gRPC_CORE_VERSION     "30.1.0")
