@@ -487,7 +487,7 @@ std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
   grpc_core::Crash("unimplemented");
 }
 
-bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
+bool PosixEventEngine::IsWorkerThread() { executor_->IsThreadPoolThread(); }
 
 bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
 #ifdef GRPC_POSIX_SOCKET_TCP
