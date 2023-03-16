@@ -16,13 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <grpcpp/opencensus.h>
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -37,9 +36,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
-
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -52,6 +48,10 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
+#include "opencensus/trace/trace_id.h"
 
 namespace grpc {
 namespace internal {
@@ -98,6 +98,14 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
       : start_time_(absl::Now()),
         recv_message_count_(0),
         sent_message_count_(0) {}
+
+  std::string TraceId() override {
+    return context_.Context().trace_id().ToHex();
+  }
+
+  std::string SpanId() override { return context_.Context().span_id().ToHex(); }
+
+  bool IsSampled() override { return context_.Span().IsSampled(); }
 
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.

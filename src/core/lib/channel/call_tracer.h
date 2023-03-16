@@ -20,12 +20,11 @@
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -52,6 +51,9 @@ class CallTracerAnnotationInterface {
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
+  virtual std::string TraceId() = 0;
+  virtual std::string SpanId() = 0;
+  virtual bool IsSampled() = 0;
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.
