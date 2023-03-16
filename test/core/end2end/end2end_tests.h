@@ -37,6 +37,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -376,6 +377,18 @@ class CoreEnd2endTest
       return result;
     }
 
+    // Takes ownership of creds
+    void SetCredentials(grpc_call_credentials* creds) {
+      EXPECT_EQ(grpc_call_set_credentials(call_, creds), GRPC_CALL_OK);
+      grpc_call_credentials_release(creds);
+    }
+
+    std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
+    GetAuthContext() {
+      return std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>(
+          grpc_call_auth_context(call_), grpc_auth_context_release);
+    }
+
     grpc_call** call_ptr() { return &call_; }
     grpc_call* c_call() const { return call_; }
 
@@ -405,6 +418,13 @@ class CoreEnd2endTest
         absl::string_view key) const;
 
     absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+
+    std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>
+    GetAuthContext() {
+      return impl_->call.GetAuthContext();
+    }
+
+    grpc_call* c_call() { return impl_->call.c_call(); }
 
    private:
     struct Impl {
@@ -510,6 +530,8 @@ class WriteBufferingTest : public CoreEnd2endTest {};
 class Http2Test : public CoreEnd2endTest {};
 class RetryHttp2Test : public CoreEnd2endTest {};
 class ResourceQuotaTest : public CoreEnd2endTest {};
+class PerCallCredsTest : public CoreEnd2endTest {};
+class PerCallCredsOnInsecureTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

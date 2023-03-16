@@ -624,6 +624,17 @@ INSTANTIATE_TEST_SUITE_P(
                                             FEATURE_MASK_1BYTE_AT_A_TIME)),
     NameFromConfig);
 
+INSTANTIATE_TEST_SUITE_P(PerCallCredsTests, PerCallCredsTest,
+                         ::testing::ValuesIn(QueryConfigs(
+                             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, 0)),
+                         NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(
+    PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
+    ::testing::ValuesIn(QueryConfigs(
+        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE, 0)),
+    NameFromConfig);
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
