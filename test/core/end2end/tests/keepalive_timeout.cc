@@ -32,16 +32,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
 
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,

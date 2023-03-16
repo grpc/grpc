@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "absl/types/optional.h"
 
@@ -28,10 +29,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h"
 #include "test/core/util/test_config.h"

@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -33,12 +31,11 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/test_config.h"
