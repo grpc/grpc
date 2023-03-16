@@ -69,6 +69,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 
 WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
+  grpc_core::MutexLock lock(&io_state_->mu);
   io_state_->listener_socket->Shutdown(DEBUG_LOCATION,
                                        "~SinglePortSocketListener");
   GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
