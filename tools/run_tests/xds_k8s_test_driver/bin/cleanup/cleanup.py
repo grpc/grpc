@@ -269,6 +269,7 @@ def cleanup_client(project,
                    network,
                    k8s_api_manager,
                    client_namespace,
+                   gcp_api_manager,
                    gcp_service_account,
                    *,
                    suffix: Optional[str] = ''):
@@ -283,7 +284,7 @@ def cleanup_client(project,
         gcp_project=project,
         network=network,
         gcp_service_account=gcp_service_account,
-        gcp_api_manager=gcp.api.GcpApiManager(),
+        gcp_api_manager=gcp_api_manager,
         image_name='',
         td_bootstrap_image='')
 
@@ -303,6 +304,7 @@ def cleanup_server(project,
                    network,
                    k8s_api_manager,
                    server_namespace,
+                   gcp_api_manager,
                    gcp_service_account,
                    *,
                    suffix: Optional[str] = ''):
@@ -317,7 +319,7 @@ def cleanup_server(project,
         gcp_project=project,
         network=network,
         gcp_service_account=gcp_service_account,
-        gcp_api_manager=gcp.api.GcpApiManager(),
+        gcp_api_manager=gcp_api_manager,
         image_name='',
         td_bootstrap_image='')
 
@@ -327,7 +329,7 @@ def cleanup_server(project,
     except retryers.RetryError as err:
         logger.error(
             'Timeout waiting for namespace %s deletion. '
-            'Namespace status:\n\n%s', ns.name,
+            'Failed resource status:\n\n%s', ns.name,
             ns.pretty_format_status(err.result()))
         raise
 
@@ -361,6 +363,7 @@ def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
 
 def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
                          k8s_api_manager, gcp_service_account, namespaces):
+    gcp_api_manager = gcp.api.GcpApiManager()
     for ns in namespaces:
         namespace_name: str = ns.metadata.name
         if namespace_name in K8S_PROTECTED_NAMESPACES:
@@ -393,6 +396,7 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
                                network,
                                k8s_api_manager,
                                namespace_name,
+                               gcp_api_manager,
                                gcp_service_account,
                                suffix=('alt' if SECONDARY.value else None))
         except k8s.NotFound:
