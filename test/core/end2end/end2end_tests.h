@@ -36,6 +36,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
@@ -50,6 +51,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
@@ -229,8 +231,12 @@ class CoreEnd2endTest
       if (payload_ != nullptr) grpc_byte_buffer_destroy(payload_);
     }
 
-    Slice payload() const;
+    std::string payload() const;
     bool is_end_of_stream() const { return payload_ == nullptr; }
+    grpc_byte_buffer_type byte_buffer_type() const { return payload_->type; }
+    grpc_compression_algorithm compression() const {
+      return payload_->data.raw.compression;
+    }
 
     grpc_op MakeOp();
 
@@ -293,7 +299,9 @@ class CoreEnd2endTest
     BatchBuilder& SendInitialMetadata(
         std::initializer_list<std::pair<absl::string_view, absl::string_view>>
             md,
-        uint32_t flags = 0);
+        uint32_t flags = 0,
+        absl::optional<grpc_compression_level> compression_level =
+            absl::nullopt);
 
     BatchBuilder& SendMessage(Slice payload, uint32_t flags = 0);
     BatchBuilder& SendMessage(absl::string_view payload, uint32_t flags = 0) {
@@ -428,6 +436,11 @@ class CoreEnd2endTest
     }
 
     grpc_call* c_call() { return impl_->call.c_call(); }
+
+    BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> GetEncodingsAcceptedByPeer() {
+      return BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>::FromInt(
+          grpc_call_test_only_get_encodings_accepted_by_peer(c_call()));
+    }
 
    private:
     struct Impl {

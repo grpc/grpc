@@ -24,8 +24,10 @@
 #include "end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -96,12 +98,29 @@ grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
   return op;
 }
 
-Slice CoreEnd2endTest::IncomingMessage::payload() const {
-  grpc_byte_buffer_reader reader;
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, payload_));
-  Slice out(grpc_byte_buffer_reader_readall(&reader));
-  grpc_byte_buffer_reader_destroy(&reader);
-  return out;
+std::string CoreEnd2endTest::IncomingMessage::payload() const {
+  Slice out;
+  if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
+    grpc_slice_buffer decompressed_buffer;
+    grpc_slice_buffer_init(&decompressed_buffer);
+    GPR_ASSERT(grpc_msg_decompress(payload_->data.raw.compression,
+                                   &payload_->data.raw.slice_buffer,
+                                   &decompressed_buffer));
+    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
+        decompressed_buffer.slices, decompressed_buffer.count);
+    grpc_byte_buffer_reader reader;
+    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, rbb));
+    out = Slice(grpc_byte_buffer_reader_readall(&reader));
+    grpc_byte_buffer_reader_destroy(&reader);
+    grpc_byte_buffer_destroy(rbb);
+    grpc_slice_buffer_destroy(&decompressed_buffer);
+  } else {
+    grpc_byte_buffer_reader reader;
+    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, payload_));
+    out = Slice(grpc_byte_buffer_reader_readall(&reader));
+    grpc_byte_buffer_reader_destroy(&reader);
+  }
+  return std::string(out.begin(), out.end());
 }
 
 grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
@@ -141,7 +160,7 @@ grpc_op CoreEnd2endTest::IncomingCloseOnServer::MakeOp() {
 CoreEnd2endTest::BatchBuilder&
 CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
-    uint32_t flags) {
+    uint32_t flags, absl::optional<grpc_compression_level> compression_level) {
   auto& v = Make<std::vector<grpc_metadata>>();
   for (const auto& p : md) {
     grpc_metadata m;
@@ -155,6 +174,11 @@ CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
   op.flags = flags;
   op.data.send_initial_metadata.count = v.size();
   op.data.send_initial_metadata.metadata = v.data();
+  if (compression_level.has_value()) {
+    op.data.send_initial_metadata.maybe_compression_level.is_set = 1;
+    op.data.send_initial_metadata.maybe_compression_level.level =
+        compression_level.value();
+  }
   ops_.push_back(op);
   return *this;
 }

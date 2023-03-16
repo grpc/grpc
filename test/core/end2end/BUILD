@@ -167,6 +167,7 @@ grpc_cc_test(
         "tests/cancel_with_status.cc",
         "tests/channelz.cc",
         "tests/client_streaming.cc",
+        "tests/compressed_payload.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/high_initial_seqno.cc",
