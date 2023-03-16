@@ -603,12 +603,10 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
                 client_call_details: ClientCallDetails,
                 request: RequestType) -> _base_call.UnaryUnaryCall:
 
-            interceptor = next(interceptors, None)
-
-            if interceptor:
-                continuation = functools.partial(_run_interceptor, interceptors)
-
-                call_or_response = await interceptor.intercept_unary_unary(
+            if len(interceptors) > 0:
+                continuation = functools.partial(_run_interceptor,
+                                                 interceptors[1:])
+                call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request)
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
@@ -627,7 +625,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
 
         client_call_details = ClientCallDetails(method, timeout, metadata,
                                                 credentials, wait_for_ready)
-        return await _run_interceptor(iter(interceptors), client_call_details,
+        return await _run_interceptor(interceptors, client_call_details,
                                       request)
 
     def time_remaining(self) -> Optional[float]:
