@@ -168,6 +168,7 @@ grpc_cc_test(
         "tests/channelz.cc",
         "tests/client_streaming.cc",
         "tests/compressed_payload.cc",
+        "tests/default_host.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
         "tests/high_initial_seqno.cc",
