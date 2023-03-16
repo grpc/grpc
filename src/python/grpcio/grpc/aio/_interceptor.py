@@ -17,8 +17,8 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
-from typing import (AsyncIterable, Awaitable, Callable, Iterator, Optional,
-                    Sequence, Union)
+from typing import (AsyncIterable, Awaitable, Callable, Iterator, List,
+                    Optional, Sequence, Union)
 
 import grpc
 from grpc._cython import cygrpc
@@ -571,7 +571,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
     _channel: cygrpc.AioChannel
 
     # pylint: disable=too-many-arguments
-    def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+    def __init__(self, interceptors: List[UnaryUnaryClientInterceptor],
                  request: RequestType, timeout: Optional[float],
                  metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
@@ -589,7 +589,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
 
     # pylint: disable=too-many-arguments
     async def _invoke(
-            self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+            self, interceptors: List[UnaryUnaryClientInterceptor],
             method: bytes, timeout: Optional[float],
             metadata: Optional[Metadata],
             credentials: Optional[grpc.CallCredentials],
@@ -599,7 +599,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-                interceptors: Iterator[UnaryUnaryClientInterceptor],
+                interceptors: List[UnaryUnaryClientInterceptor],
                 client_call_details: ClientCallDetails,
                 request: RequestType) -> _base_call.UnaryUnaryCall:
 
