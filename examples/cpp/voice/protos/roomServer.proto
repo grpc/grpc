@@ -1,0 +1,366 @@
+syntax = "proto3";
+
+package grpc;
+
+// [START csharp_declaration]
+option csharp_namespace = "Roblox.WebRTC.RoomService.Grpc";
+// [END csharp_declaration]
+
+service RoomServer {
+    // ============================================================
+    // Room management
+    // ============================================================
+
+    // Creates and joins a new room.
+    rpc CreateAndJoinRoom(CreateAndJoinRoomRequest) returns (RoomSessionMessage);
+
+    // Joins an existing room.
+    rpc JoinRoom(JoinRoomRequest) returns (JoinedRoomMessage);
+
+    // Leaves a room (also stops publishing, cancels all subscriptions, and stops any rtp forwarding)
+    rpc LeaveRoom(RoomSessionMessage) returns (SuccessResponse);
+
+    // Close the room (also closes all its connections)
+    rpc CloseRoom(RoomRequest) returns (SuccessResponse);
+
+    // ============================================================
+    // Publishing RPCs
+    // ============================================================
+
+    // Initiates a publishing connection in a joined room and returns an SDP answer.
+    rpc PublishInRoom(PublishInRoomRequest) returns (JsepMessage);
+
+    // Configure an user's publishing connection in a room
+    rpc ConfigurePublishing(ConfigurePublishingRequest) returns (SuccessResponse);
+
+    // Trickle ICE candidates for the publishing peer connection
+    // TODO: Deprecated (old version of the TrickleIcePublishing rpc)
+    rpc PublisherTrickleIce(PublisherTrickleRequest) returns (SuccessResponse);
+    // Trickle ICE candidates for the publishing peer connection
+    rpc TrickleIcePublishing(TrickleIcePublishingRequest) returns (SuccessResponse);
+
+    // List all other feeds in the room
+    rpc ListFeeds(RoomSessionMessage) returns (RoomFeedsResponse);
+	
+    // ============================================================
+    // Single stream subscriptions [to be potentially deprecated]
+    // ============================================================
+
+    // Initiates a set of subscription connections, each carrying a single user's feed(s)
+    // TODO: Deprecated (old version of StreamInitiateSubscriptions)
+    rpc StreamCreateSubscriptions(CreateSubscriptionsRequest) returns (stream CreateSubscriptionResponse);
+    // Completes the setup of a list of subscription connections 
+    // TODO: Deprecated (old version of CompleteSubscriptions)
+    rpc ConnectSubscriptions(ConnectSubscriptionsRequest) returns (SubscriptionsOperationResponse);
+
+    // Initiates a set of subscription connections, each carrying a single user's feed(s)
+    rpc StreamInitiateSubscriptions(InitiateSubscriptionsRequest) returns (stream InitiateSubscriptionsResponse);
+    // Completes the setup of a list of subscription connections 
+    rpc CompleteSubscriptions(CompleteSubscriptionsRequest) returns (SubscriptionsOperationResponse);
+
+    // Close a list of subscription connections
+    // TODO: Deprecated (old version of CancelSubscriptions)
+    rpc RemoveSubscriptions(FeedsSubscriptionMessage) returns (SubscriptionsOperationResponse);
+    // Close a list of subscription connections
+    rpc CancelSubscriptions(FeedsSubscriptionMessage) returns (SubscriptionsOperationResponse);
+
+    // ============================================================
+    // Multi-stream subscriptions
+    // ============================================================
+
+    // Initiate adding feed subscriptions to a multi-stream enabled peer connection.
+    // This could trigger PeerConnection creation and will require ICE candidates gathering!
+    // The response will contain either a full (if starting a new connection) or partial (if changing the subscribed feeds) SDP offer.
+    // However, if the update was a noop, i.e. didn't change an existing connection's feeds, there will be no SDP!
+    // The client must submit an SDP answer and all future update requests until then will result in an error!
+    rpc MultistreamInitiateSubscriptionsUpdate(MultistreamInitiateSubscriptionsUpdateRequest) returns (MultistreamInitiateSubscriptionsUpdateResponse);
+    // Completes a previous subscriptions update by submitting the client's SDP answer.
+    rpc MultistreamCompleteSubscriptionsUpdate(MultistreamCompleteSubscriptionsUpdateRequest) returns (SuccessResponse);
+    // Closes a multi-stream subscription connection. This method does not require a follow up call from client.
+    rpc MultistreamCloseSubscriptions(MultistreamCloseSubscriptionsRequest) returns (SuccessResponse);
+
+    // ============================================================
+    // Subscriptions management common for singlestream 
+    // and multistream subscriptions
+    // ============================================================
+    // Allows submitting ICE candidates for a subscription connection
+    // TODO: Deprecated (old version of TrickleIceSubscription)
+    rpc SubscriberTrickleIce(SubscriberTrickleRequest) returns (SuccessResponse);
+    // Allows submitting ICE candidates for a subscription connection
+    rpc TrickleIceSubscription(TrickleIceSubscriptionRequest) returns (SuccessResponse);
+    // Pause a list of subscribed feeds
+    rpc PauseSubscriptions(FeedsSubscriptionMessage) returns (SubscriptionsOperationResponse);
+    // Resume a list of (previously paused) subscribed feeds
+    rpc ResumeSubscriptions(FeedsSubscriptionMessage) returns (SubscriptionsOperationResponse);
+
+    // ============================================================
+    // RTP forwarding controls
+    // ============================================================
+
+    // Initiate rtp forwarding for a published stream
+    rpc RtpForward(RtpForwardRequest) returns (RtpForwardResponse);
+    // Stop rtp forwarding for a stream
+    rpc StopRtpForward(StopRtpForwardRequest) returns (StopRtpForwardResponse);
+
+    rpc SayHelloStreamReply (HelloRequest) returns (stream HelloReply) {}
+    // POC
+    rpc UserNotificationStream(UserNotificationStreamRequest) returns (stream UserNotification);
+    rpc ChangeNotificationRate(ChangeNotificationRateRequest) returns (ChangeNotificationRateResponse);
+}
+
+message RoomSessionMessage {
+    int64 roomId = 1;
+    int64 participantId = 2;
+    string sessionSecret = 3;
+}
+
+message CreateAndJoinRoomRequest {
+    RoomSessionMessage existingRoomSession = 10;
+}
+message ChangeNotificationRateRequest {
+    int64 notificationsPerSecond = 1;
+}
+
+message ChangeNotificationRateResponse {
+    bool success = 1;
+}
+
+message JoinedRoomMessage {
+    // Possible error status
+    enum JoinErrorCode {
+        // join succeeded
+        NONE = 0;
+        // the requested room id was not found on this server
+        NO_SUCH_ROOM = 1;
+        // the user has already joined this room
+        ALREADY_JOINED = 2;
+    }
+
+    RoomSessionMessage roomSession = 1;
+    repeated int64 feeds = 2;
+
+    // Error status, if any
+    JoinErrorCode errorCode = 10;
+}
+
+message FeedsSubscriptionMessage {
+    RoomSessionMessage roomSession = 1;
+    repeated int64 feedIds = 2;
+}
+
+message JoinRoomRequest {
+    int64 roomId = 1;
+    RoomSessionMessage existingRoomSession = 10;
+}
+
+message PublishInRoomRequest {
+    RoomSessionMessage roomSession = 1;
+    PublishOptionsMessage options = 2;
+    JsepMessage offer = 3;
+}
+
+message PublishOptionsMessage {
+    bool audio = 1;
+    bool video = 2;
+    bool data = 3;
+}
+
+message ConfigurePublishingRequest {
+    RoomSessionMessage roomSession = 1;
+    PublishOptionsMessage options = 2;
+}
+
+// TODO: Deprecated
+message PublisherTrickleRequest {
+    RoomSessionMessage roomSession = 1;
+    repeated IceCandidateMessage candidates = 2;
+    bool isLast = 3;
+}
+
+message TrickleIcePublishingRequest {
+    RoomSessionMessage roomSession = 1;
+    repeated IceCandidateMessage candidates = 2;
+    bool isLast = 3;
+}
+
+// Used for single stream subscriptions only
+message TrickleIceSubscriptionRequest {
+    RoomSessionMessage roomSession = 1;
+    repeated IceCandidateMessage candidates = 2;
+    bool isLast = 3;
+    int64 feedId = 10; // optional, only used for single stream subscriptions
+}
+
+message RoomFeedsResponse {
+    repeated int64 feeds = 1;
+}
+
+message SubscriptionOptionsMessage {
+    bool audio = 1;
+    bool video = 2;
+    bool data = 3;
+}
+
+// TODO: Deprecated
+message CreateSubscriptionsRequest {
+    FeedsSubscriptionMessage subscription = 1;
+    SubscriptionOptionsMessage options = 2;
+}
+
+message InitiateSubscriptionsRequest {
+    RoomSessionMessage roomSession = 1;
+	map<int64, SubscriptionOptionsMessage> feedOptions = 2;
+}
+
+// TODO: Deprecated
+message ConnectSubscriptionsRequest {
+	RoomSessionMessage roomSession = 1;
+	map<int64, ConnectSubscriptionDetails> subscriberAnswers = 2;
+}
+
+// TODO: Deprecated
+message ConnectSubscriptionDetails {
+	JsepMessage offerResponse = 1;
+	SubscriptionOptionsMessage options = 2;
+}
+
+message CompleteSubscriptionsRequest {
+	RoomSessionMessage roomSession = 1;
+	map<int64, CompleteSubscriptionDetails> subscriberAnswers = 2;
+}
+
+message CompleteSubscriptionDetails {
+	JsepMessage offerResponse = 1;
+	SubscriptionOptionsMessage options = 2;
+}
+
+// TODO: Deprecated
+message SubscriberTrickleRequest {
+    FeedsSubscriptionMessage subscription = 1;
+    repeated IceCandidateMessage candidates = 2;
+    bool isLast = 3;
+}
+
+message SubscriptionsOperationResponse {
+	map<int64, string> feedsErrorResponse = 1;
+}
+
+// TODO: Deprecated
+message CreateSubscriptionResponse {
+	int64 feedId = 1;
+	JsepMessage offerResponse = 2;
+	string failureReason = 3;
+}
+
+message InitiateSubscriptionsResponse {
+	int64 feedId = 1;
+	JsepMessage offerResponse = 2;
+	string failureReason = 3;
+}
+
+message JsepMessage {
+    enum JsepType {
+        OFFER = 0;
+        ANSWER = 1;
+    }
+    JsepType type = 1;
+    string sdp = 2;
+    bool trickle = 10;
+}
+
+message IceCandidateMessage {
+    string sdpMid = 1;
+    int32 sdpMLineIndex = 2;
+    string candidate = 3;
+}
+
+message SuccessResponse {
+}
+
+message RoomRequest {
+    int64 roomId = 1;
+}
+
+message RtpForwardRequest {
+    int64 roomId = 1;
+    int64 publisherId = 2;
+    string host = 3;
+    int32 port = 4;
+    uint32 ssrc = 5;
+    bool useTcp = 6;
+}
+
+message RtpForwardResponse {
+    int64 roomId = 1;
+    int64 publisherId = 2;
+    bool success = 3;
+}
+
+message StopRtpForwardRequest {
+    int64 roomId = 1;
+    int64 publisherId = 2;
+}
+
+message StopRtpForwardResponse {
+    int64 roomId = 1;
+    int64 publisherId = 2;
+    bool success = 3;
+}
+
+message MultistreamInitiateSubscriptionsUpdateRequest {
+    RoomSessionMessage roomSession = 1;
+    repeated int64 addFeedIds = 2;
+    repeated int64 cancelFeedIds = 3;
+    repeated string cancelSubMids = 4;
+}
+
+message MultistreamCompleteSubscriptionsUpdateRequest {
+    RoomSessionMessage roomSession = 1;
+    repeated int64 muteFeedIs = 2;
+    JsepMessage answer = 10;
+}
+
+message MultistreamInitiateSubscriptionsUpdateResponse {
+    map<int64, Mids> feedsMidMap = 1;
+    bool isNewConnection = 2;
+    map<int64, Tracks> feedTracksMap = 3;
+    JsepMessage  offer = 10;
+}
+
+message MultistreamCloseSubscriptionsRequest {
+    RoomSessionMessage roomSession = 1;
+}
+
+message Mids {
+    repeated string value = 1;
+}
+
+message Tracks {
+    repeated Track value = 1;
+}
+
+message Track {
+    string Mid = 1;
+    string Type = 2;
+}
+
+
+//  POC stuff
+message HelloRequest {
+    string msg = 1;
+}
+  
+message HelloReply {
+    string msg = 1;
+}
+// POC for UserNotification.
+message UserNotificationStreamRequest {
+    int64 place_id = 1; // unused can be anything
+  }
+  
+  message UserNotification {
+    int64 user_id = 1; // unused can be anything
+    string namespace = 2; // unused can be anything
+    string json = 3; // will be json string
+  }
+

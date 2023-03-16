@@ -156,6 +156,7 @@ bloaty-build/
 .cache/*
 .vscode/*
 .history/
+**/.vscode
 
 # Clion artifacts
 cmake-build-debug/
@@ -180,3 +181,5 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
+# voice example build
+examples/cpp/voice/build
