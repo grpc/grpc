@@ -36,6 +36,7 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<grpc_event_engine::experimental::
                              EventEngineClientChannelDNSResolverFactory>());
+    return;
   }
   // ---- Ares resolver ----
   if (UseAresDnsResolver()) {
@@ -48,6 +49,7 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
   if (gpr_stricmp(resolver, "native") == 0 ||
       !builder->resolver_registry()->HasResolverFactory("dns")) {
     RegisterNativeDnsResolver(builder);
+    return;
   }
   GPR_ASSERT(false &&
              "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
