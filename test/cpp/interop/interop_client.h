@@ -127,9 +127,9 @@ class InteropClient {
 
    private:
     ChannelCreationFunc channel_creation_func_;
-    std::unique_ptr<TestService::Stub> stub_;
+    absl::optional<std::unique_ptr<TestService::Stub>> stub_;
     std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
-    std::shared_ptr<Channel> channel_;
+    absl::optional<std::shared_ptr<Channel>> channel_;
     bool new_stub_every_call_;  // If true, a new stub is returned by every
                                 // Get() call
   };
