@@ -227,7 +227,6 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     async def test_retry_with_multiple_interceptors(self):
 
         class RetryInterceptor(aio.UnaryUnaryClientInterceptor):
-            """a Retry Interceptor which calls another interceptor"""
 
             async def intercept_unary_unary(self, continuation,
                                             client_call_details, request):
@@ -249,9 +248,9 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                 result = await call
                 return result
 
+        # Create two interceptors, the retry interceptor will call another interceptor.
         retry_interceptor = RetryInterceptor()
         another_interceptor = AnotherInterceptor()
-
         async with aio.insecure_channel(
                 self._server_target,
                 interceptors=[retry_interceptor,

@@ -571,7 +571,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
     _channel: cygrpc.AioChannel
 
     # pylint: disable=too-many-arguments
-    def __init__(self, interceptors: List[UnaryUnaryClientInterceptor],
+    def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
                  request: RequestType, timeout: Optional[float],
                  metadata: Metadata,
                  credentials: Optional[grpc.CallCredentials],
@@ -582,9 +582,9 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
         self._loop = loop
         self._channel = channel
         interceptors_task = loop.create_task(
-            self._invoke(interceptors, method, timeout, metadata, credentials,
-                         wait_for_ready, request, request_serializer,
-                         response_deserializer))
+            self._invoke(list(interceptors), method, timeout, metadata,
+                         credentials, wait_for_ready, request,
+                         request_serializer, response_deserializer))
         super().__init__(interceptors_task)
 
     # pylint: disable=too-many-arguments
@@ -603,7 +603,7 @@ class InterceptedUnaryUnaryCall(_InterceptedUnaryResponseMixin, InterceptedCall,
                 client_call_details: ClientCallDetails,
                 request: RequestType) -> _base_call.UnaryUnaryCall:
 
-            if len(interceptors) > 0:
+            if interceptors:
                 continuation = functools.partial(_run_interceptor,
                                                  interceptors[1:])
                 call_or_response = await interceptors[0].intercept_unary_unary(
