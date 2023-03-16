@@ -10,20 +10,38 @@
 #include "upb/msg_internal.h"
 #include "envoy/config/core/v3/proxy_protocol.upb.h"
 #include "udpa/annotations/status.upb.h"
+#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__fields[1] = {
+static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[2] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit = {
+  NULL,
+  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[0],
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable_Sub envoy_config_core_v3_ProxyProtocolConfig_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit},
+};
+
+static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__fields[2] = {
+  {1, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msginit = {
-  NULL,
+  &envoy_config_core_v3_ProxyProtocolConfig_submsgs[0],
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[2] = {
+  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit,
   &envoy_config_core_v3_ProxyProtocolConfig_msginit,
 };
 
@@ -31,7 +49,7 @@ const upb_MiniTable_File envoy_config_core_v3_proxy_protocol_proto_upb_file_layo
   messages_layout,
   NULL,
   NULL,
-  1,
+  2,
   0,
   0,
 };

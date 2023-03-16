@@ -53,7 +53,8 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
       "      \"oobReportingPeriod\": true,\n"
       "      \"blackoutPeriod\": [],\n"
       "      \"weightUpdatePeriod\": {},\n"
-      "      \"weightExpirationPeriod\": {}\n"
+      "      \"weightExpirationPeriod\": {},\n"
+      "      \"errorUtilizationPenalty\": []\n"
       "    }\n"
       "  }]\n"
       "}\n";
@@ -66,6 +67,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
                 "error:errors validating priority LB policy config: ["
                 "field:blackoutPeriod error:is not a string; "
                 "field:enableOobLoadReport error:is not a boolean; "
+                "field:errorUtilizationPenalty error:is not a number; "
                 "field:oobReportingPeriod error:is not a string; "
                 "field:weightExpirationPeriod error:is not a string; "
                 "field:weightUpdatePeriod error:is not a string]]"));

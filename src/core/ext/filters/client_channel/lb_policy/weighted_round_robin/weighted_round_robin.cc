@@ -99,6 +99,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration weight_expiration_period() const {
     return weight_expiration_period_;
   }
+  float error_utilization_penalty() const { return error_utilization_penalty_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -113,6 +114,9 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
                            &WeightedRoundRobinConfig::weight_update_period_)
             .OptionalField("weightExpirationPeriod",
                            &WeightedRoundRobinConfig::weight_expiration_period_)
+            .OptionalField(
+                "errorUtilizationPenalty",
+                &WeightedRoundRobinConfig::error_utilization_penalty_)
             .Finish();
     return loader;
   }
@@ -129,6 +133,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration blackout_period_ = Duration::Seconds(10);
   Duration weight_update_period_ = Duration::Seconds(1);
   Duration weight_expiration_period_ = Duration::Minutes(3);
+  float error_utilization_penalty_ = 1.0;
 };
 
 // WRR LB policy.
@@ -149,7 +154,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         : wrr_(std::move(wrr)), key_(std::move(key)) {}
     ~AddressWeight() override;
 
-    void MaybeUpdateWeight(double qps, double cpu_utilization);
+    void MaybeUpdateWeight(double qps, double eps, double cpu_utilization);
 
     float GetWeight(Timestamp now, Duration weight_expiration_period,
                     Duration blackout_period);
@@ -381,16 +386,23 @@ WeightedRoundRobin::AddressWeight::~AddressWeight() {
 }
 
 void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
-    double qps, double cpu_utilization) {
+    double qps, double eps, double cpu_utilization) {
   // Compute weight.
   float weight = 0;
-  if (qps > 0 && cpu_utilization > 0) weight = qps / cpu_utilization;
+  if (qps > 0 && cpu_utilization > 0) {
+    double penalty = 0.0;
+    if (eps > 0 && wrr_->config_->error_utilization_penalty() > 0) {
+      penalty = eps / qps * wrr_->config_->error_utilization_penalty();
+    }
+    weight = qps / (cpu_utilization + penalty);
+  }
   if (weight == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO,
-              "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: weight=%f "
-              "(not updating)",
-              wrr_.get(), key_.c_str(), qps, cpu_utilization, weight);
+              "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f: "
+              "error_util_penalty=%f, weight=%f (not updating)",
+              wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
+              wrr_->config_->error_utilization_penalty(), weight);
     }
     return;
   }
@@ -399,10 +411,12 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: setting "
-            "weight=%f weight_=%f now=%s last_update_time_=%s "
+            "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f "
+            "error_util_penalty=%f : setting "
+            "weight=%f old_weight_=%f now=%s last_update_time_=%s "
             "non_empty_since_=%s",
-            wrr_.get(), key_.c_str(), qps, cpu_utilization, weight, weight_,
+            wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
+            wrr_->config_->error_utilization_penalty(), weight, weight_,
             now.ToString().c_str(), last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
   }
@@ -456,12 +470,14 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
   auto* backend_metric_data =
       args.backend_metric_accessor->GetBackendMetricData();
   double qps = 0;
+  double eps = 0;
   double cpu_utilization = 0;
   if (backend_metric_data != nullptr) {
     qps = backend_metric_data->qps;
+    eps = backend_metric_data->eps;
     cpu_utilization = backend_metric_data->cpu_utilization;
   }
-  weight_->MaybeUpdateWeight(qps, cpu_utilization);
+  weight_->MaybeUpdateWeight(qps, eps, cpu_utilization);
 }
 
 //
@@ -824,7 +840,7 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
 
 void WeightedRoundRobin::WeightedRoundRobinSubchannelData::OobWatcher::
     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
-  weight_->MaybeUpdateWeight(backend_metric_data.qps,
+  weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
                              backend_metric_data.cpu_utilization);
 }
 

@@ -69,7 +69,8 @@ using ::xds::type::v3::TypedStruct;
 
 // Uses XdsLbPolicyRegistry to convert
 // envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
-absl::StatusOr<std::string> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
+absl::StatusOr<std::string> ConvertXdsPolicy(
+    const LoadBalancingPolicyProto& policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::SymbolTable symtab;
@@ -144,6 +145,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   wrr.mutable_blackout_period()->set_seconds(2);
   wrr.mutable_weight_expiration_period()->set_seconds(3);
   wrr.mutable_weight_update_period()->set_seconds(4);
+  wrr.mutable_error_utilization_penalty()->set_value(5.0);
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -155,6 +157,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "{\"weighted_round_robin_experimental\":{"
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
+            "\"errorUtilizationPenalty\":5.000000,"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
