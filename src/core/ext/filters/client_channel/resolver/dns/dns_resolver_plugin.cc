@@ -51,9 +51,9 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
     RegisterNativeDnsResolver(builder);
     return;
   }
-  GPR_ASSERT(false &&
-             "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
-             "please file a bug.");
+  grpc_core::Crash(
+      "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
+      "please file a bug.");
 }
 
 }  // namespace grpc_core

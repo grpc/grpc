@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
