@@ -147,7 +147,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def __init__(self, api: KubernetesApiManager, name: str):
         self._api = api
         self._name = name
-        self._highlighter = _HighlighterYaml(color=True, color_style='material')
+        self._highlighter = _HighlighterYaml()
 
     @property
     def name(self):
