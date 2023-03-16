@@ -37,7 +37,6 @@
 #ifdef GRPC_CFSTREAM_IOMGR
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -70,8 +69,7 @@ static void apple_iomgr_platform_shutdown(void) {
 static void apple_iomgr_platform_shutdown_background_closure(void) {}
 
 static bool apple_iomgr_platform_is_any_background_poller_thread(void) {
-  return grpc_event_engine::experimental::GetDefaultEventEngine()
-      ->IsWorkerThread();
+  return false;
 }
 
 static bool apple_iomgr_platform_add_closure_to_background_poller(

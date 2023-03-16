@@ -175,16 +175,12 @@ void grpc_shutdown_internal(void* /*ignored*/) {
 
 void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  // This function may call GetDefaultEventEngine which tries to acquire the
-  // g_init_mu. So we make the call here outside the lock.
-  bool is_any_background_poller_thread =
-      grpc_iomgr_is_any_background_poller_thread();
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
-    if (!is_any_background_poller_thread &&
+    if (!grpc_iomgr_is_any_background_poller_thread() &&
         !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         (acec == nullptr ||

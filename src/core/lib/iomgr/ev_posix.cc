@@ -33,7 +33,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/global_config.h"
@@ -369,9 +368,7 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
 }
 
 bool grpc_is_any_background_poller_thread(void) {
-  return g_event_engine->is_any_background_poller_thread() ||
-         grpc_event_engine::experimental::GetDefaultEventEngine()
-             ->IsWorkerThread();
+  return g_event_engine->is_any_background_poller_thread();
 }
 
 bool grpc_add_closure_to_background_poller(grpc_closure* closure,
