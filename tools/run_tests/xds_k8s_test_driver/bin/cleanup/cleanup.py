@@ -278,6 +278,9 @@ def cleanup_client(project,
         deployment_name = f'{deployment_name}-{suffix}'
 
     ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
+    # Shorten the timeout to avoid waiting for the stuck namespaces.
+    # Normal ns deletion during the cleanup takes less two minutes.
+    ns.wait_for_namespace_deleted_timeout_sec = 5 * 60
     client_runner = _KubernetesClientRunner(
         k8s_namespace=ns,
         deployment_name=deployment_name,
@@ -313,6 +316,9 @@ def cleanup_server(project,
         deployment_name = f'{deployment_name}-{suffix}'
 
     ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
+    # Shorten the timeout to avoid waiting for the stuck namespaces.
+    # Normal ns deletion during the cleanup takes less two minutes.
+    ns.wait_for_namespace_deleted_timeout_sec = 5 * 60
     server_runner = _KubernetesServerRunner(
         k8s_namespace=ns,
         deployment_name=deployment_name,

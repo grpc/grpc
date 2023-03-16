@@ -144,6 +144,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     WAIT_LONG_SLEEP_SEC: int = 30
     WAIT_POD_START_TIMEOUT_SEC: int = 3 * 60
 
+    # TODO(sergiitk): Find a better way. Maybe like in framework.rpc.grpc?
+    wait_for_namespace_deleted_timeout_sec = None
+    wait_for_namespace_deleted_sleep_sec = None
+
     def __init__(self, api: KubernetesApiManager, name: str):
         self._api = api
         self._name = name
@@ -352,8 +356,19 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer(self.get_service_account, name)
 
     def wait_for_namespace_deleted(self,
-                                   timeout_sec: int = WAIT_LONG_TIMEOUT_SEC,
-                                   wait_sec: int = WAIT_LONG_SLEEP_SEC) -> None:
+                                   timeout_sec: Optional[int] = None,
+                                   wait_sec: Optional[int] = None) -> None:
+        if timeout_sec is None:
+            if self.wait_for_namespace_deleted_timeout_sec is not None:
+                timeout_sec = self.wait_for_namespace_deleted_timeout_sec
+            else:
+                timeout_sec = self.WAIT_LONG_TIMEOUT_SEC
+        if wait_sec is None:
+            if self.wait_for_namespace_deleted_sleep_sec is not None:
+                wait_sec = self.wait_for_namespace_deleted_timeout_sec
+            else:
+                wait_sec = self.WAIT_LONG_SLEEP_SEC
+
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=_timedelta(seconds=timeout_sec),
