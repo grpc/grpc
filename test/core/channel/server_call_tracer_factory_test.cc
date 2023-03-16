@@ -14,16 +14,17 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/server_call_tracer.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer() override {
+  ServerCallTracer* CreateNewServerCallTracer(Arena* /*arena*/) override {
     Crash("Not implemented");
   }
 };
