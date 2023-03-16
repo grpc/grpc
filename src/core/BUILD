@@ -4886,6 +4886,7 @@ grpc_cc_library(
     hdrs = ["ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
@@ -4908,6 +4909,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_grpclb_balancer_addresses",
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
