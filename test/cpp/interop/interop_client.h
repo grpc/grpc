@@ -21,8 +21,6 @@
 
 #include <memory>
 
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 
@@ -127,9 +125,9 @@ class InteropClient {
 
    private:
     ChannelCreationFunc channel_creation_func_;
-    absl::optional<std::unique_ptr<TestService::Stub>> stub_;
+    std::unique_ptr<TestService::Stub> stub_;
     std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
-    absl::optional<std::shared_ptr<Channel>> channel_;
+    std::shared_ptr<Channel> channel_;
     bool new_stub_every_call_;  // If true, a new stub is returned by every
                                 // Get() call
   };

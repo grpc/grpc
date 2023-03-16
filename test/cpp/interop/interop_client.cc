@@ -29,6 +29,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -148,30 +149,29 @@ InteropClient::ServiceStub::ServiceStub(
       new_stub_every_call_(new_stub_every_call) {}
 
 TestService::Stub* InteropClient::ServiceStub::Get() {
-  if (new_stub_every_call_ || !stub_.has_value()) {
-    if (!channel_.has_value()) {
+  if (new_stub_every_call_ || stub_ == nullptr) {
+    if (channel_ == nullptr) {
       channel_ = channel_creation_func_();
     }
-    stub_ = TestService::NewStub(*channel_);
+    stub_ = TestService::NewStub(channel_);
   }
-
-  return stub_->get();
+  return stub_.get();
 }
 
 UnimplementedService::Stub*
 InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   if (unimplemented_service_stub_ == nullptr) {
-    if (!channel_.has_value()) {
+    if (channel_ == nullptr) {
       channel_ = channel_creation_func_();
     }
-    unimplemented_service_stub_ = UnimplementedService::NewStub(*channel_);
+    unimplemented_service_stub_ = UnimplementedService::NewStub(channel_);
   }
   return unimplemented_service_stub_.get();
 }
 
 void InteropClient::ServiceStub::ResetChannel() {
-  channel_ = absl::nullopt;
-  stub_ = absl::nullopt;
+  channel_.reset();
+  stub_.reset();
 }
 
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
