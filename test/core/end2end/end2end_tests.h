@@ -369,6 +369,9 @@ class CoreEnd2endTest
     }
     BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
     void Cancel() { grpc_call_cancel(call_, nullptr); }
+    void CancelWithStatus(grpc_status_code status, const char* message) {
+      grpc_call_cancel_with_status(call_, status, message, nullptr);
+    }
     absl::optional<std::string> GetPeer() {
       char* peer = grpc_call_get_peer(call_);
       if (peer == nullptr) return absl::nullopt;
