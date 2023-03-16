@@ -8724,7 +8724,6 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/interop/http2_client.cc
   deps:
   - grpc++_test_config
@@ -8977,7 +8976,6 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/security/oauth2_utils.cc
   - test/cpp/interop/backend_metrics_lb_policy.cc
   - test/cpp/interop/client.cc
@@ -8996,7 +8994,6 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
@@ -10166,7 +10163,6 @@ targets:
   - src/proto/grpc/testing/report_qps_scenario_service.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -10204,7 +10200,6 @@ targets:
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
@@ -13296,7 +13291,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/config_dump.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
@@ -13322,7 +13316,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/config_dump.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
