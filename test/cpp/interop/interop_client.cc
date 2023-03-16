@@ -132,16 +132,15 @@ absl::optional<std::string> MapsDiff(absl::string_view path,
   return absl::nullopt;
 }
 
-absl::optional<std::string> OrcaLoadReportsDiff(
-    const xds::data::orca::v3::OrcaLoadReport& expected,
-    const xds::data::orca::v3::OrcaLoadReport& actual) {
+absl::optional<std::string> OrcaLoadReportsDiff(const TestOrcaReport& expected,
+                                                const TestOrcaReport& actual) {
   auto error = ValuesDiff("cpu_utilization", expected.cpu_utilization(),
                           actual.cpu_utilization());
   if (error.has_value()) {
     return error;
   }
-  error = ValuesDiff("mem_utilization", expected.mem_utilization(),
-                     actual.mem_utilization());
+  error = ValuesDiff("mem_utilization", expected.memory_utilization(),
+                     actual.memory_utilization());
   if (error.has_value()) {
     return error;
   }
@@ -1019,9 +1018,9 @@ bool InteropClient::DoOrcaPerRpc() {
   SimpleRequest request;
   SimpleResponse response;
   ClientContext context;
-  auto orca_report = request.mutable_orca_per_rpc_report();
+  auto orca_report = request.mutable_orca_per_query_report();
   orca_report->set_cpu_utilization(0.8210);
-  orca_report->set_mem_utilization(0.5847);
+  orca_report->set_memory_utilization(0.5847);
   orca_report->mutable_request_cost()->emplace("cost", 3456.32);
   orca_report->mutable_utilization()->emplace("util", 0.30499);
   auto status = serviceStub_.Get()->UnaryCall(&context, request, &response);
@@ -1053,10 +1052,9 @@ bool InteropClient::DoOrcaOob() {
   {
     StreamingOutputCallRequest request;
     request.add_response_parameters()->set_size(1);
-    xds::data::orca::v3::OrcaLoadReport* orca_report =
-        request.mutable_orca_oob_report();
+    TestOrcaReport* orca_report = request.mutable_orca_oob_report();
     orca_report->set_cpu_utilization(0.8210);
-    orca_report->set_mem_utilization(0.5847);
+    orca_report->set_memory_utilization(0.5847);
     orca_report->mutable_utilization()->emplace("util", 0.30499);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
@@ -1067,22 +1065,26 @@ bool InteropClient::DoOrcaOob() {
       gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
       return TransientFailureOrAbort();
     }
-    GPR_ASSERT(
-        load_report_tracker_
-            .WaitForOobLoadReport(
-                [orca_report](const auto& actual) {
-                  return !OrcaLoadReportsDiff(*orca_report, actual).has_value();
-                },
-                absl::Seconds(5), 10)
-            .has_value());
+    GPR_ASSERT(load_report_tracker_
+                   .WaitForOobLoadReport(
+                       [orca_report](const auto& actual) {
+                         auto value = OrcaLoadReportsDiff(*orca_report, actual);
+                         if (value.has_value()) {
+                           gpr_log(GPR_DEBUG, "Reports mismatch: %s",
+                                   value->c_str());
+                           return false;
+                         }
+                         return true;
+                       },
+                       absl::Seconds(5), 10)
+                   .has_value());
   }
   {
     StreamingOutputCallRequest request;
     request.add_response_parameters()->set_size(1);
-    xds::data::orca::v3::OrcaLoadReport* orca_report =
-        request.mutable_orca_oob_report();
+    TestOrcaReport* orca_report = request.mutable_orca_oob_report();
     orca_report->set_cpu_utilization(0.29309);
-    orca_report->set_mem_utilization(0.2);
+    orca_report->set_memory_utilization(0.2);
     orca_report->mutable_utilization()->emplace("util", 0.2039);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
