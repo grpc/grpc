@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -77,7 +78,8 @@ static void iomgr_platform_shutdown(void) {
 static void iomgr_platform_shutdown_background_closure(void) {}
 
 static bool iomgr_platform_is_any_background_poller_thread(void) {
-  return false;
+  return grpc_event_engine::experimental::GetDefaultEventEngine()
+      ->IsWorkerThread();
 }
 
 static bool iomgr_platform_add_closure_to_background_poller(
