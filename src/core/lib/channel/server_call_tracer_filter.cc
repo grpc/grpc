@@ -60,9 +60,7 @@ class ServerCallTracerFilter : public ChannelFilter {
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata |
-                               kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>(
+                           kFilterExaminesServerInitialMetadata>(
         "server_call_tracer");
 
 absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
