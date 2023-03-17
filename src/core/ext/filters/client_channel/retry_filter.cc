@@ -269,7 +269,7 @@ class RetryFilter::CallData {
     // We allocate one struct on the arena for each attempt at starting a
     // batch on a given LB call.
     class BatchData
-        : public RefCounted<BatchData, PolymorphicRefCount, kUnrefCallDtor> {
+        : public RefCounted<BatchData, PolymorphicRefCount, UnrefCallDtor> {
      public:
       BatchData(RefCountedPtr<CallAttempt> call_attempt, int refcount,
                 bool set_on_complete);
@@ -648,7 +648,7 @@ class RetryFilter::CallData {
 // on_call_stack_destruction closure from the surface.
 class RetryFilter::CallData::CallStackDestructionBarrier
     : public RefCounted<CallStackDestructionBarrier, PolymorphicRefCount,
-                        kUnrefCallDtor> {
+                        UnrefCallDtor> {
  public:
   CallStackDestructionBarrier() {}
 
