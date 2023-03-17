@@ -30,6 +30,7 @@ powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [Sys
 set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 @rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
+@rem by applying -DgRPC_BUILD_MSVC_MP_COUNT=...
 
 @rem Install absl
 mkdir third_party\abseil-cpp\cmake\build
@@ -48,7 +49,7 @@ popd
 @rem Install protobuf
 mkdir third_party\protobuf\cmake\build
 pushd third_party\protobuf\cmake\build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
@@ -65,6 +66,9 @@ pushd third_party\zlib\cmake\build
 cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
+
+
+@rem TODO????does deleting the submodules actually work????
 
 @rem Just before installing gRPC, wipe out contents of all the submodules to simulate
 @rem a standalone build from an archive
@@ -92,15 +96,15 @@ cmake ^
   -DgRPC_SSL_PROVIDER=package ^
   -DgRPC_ZLIB_PROVIDER=package ^
   ../.. || goto :error
-cmake --build . --config Release --target install || goto :error
+cmake --build . --config Release --target plugins || goto :error
 popd
 
 @rem Build helloworld example using cmake
-mkdir examples\cpp\helloworld\cmake\build
-pushd examples\cpp\helloworld\cmake\build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DZLIB_ROOT=%INSTALL_DIR% ../.. || goto :error
-cmake --build . --config Release || goto :error
-popd
+@rem mkdir examples\cpp\helloworld\cmake\build
+@rem pushd examples\cpp\helloworld\cmake\build
+@rem cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DZLIB_ROOT=%INSTALL_DIR% ../.. || goto :error
+@rem cmake --build . --config Release || goto :error
+@rem popd
 
 goto :EOF
 
