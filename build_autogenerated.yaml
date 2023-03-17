@@ -1064,6 +1064,7 @@ libs:
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -2378,6 +2379,7 @@ libs:
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -3837,6 +3839,7 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -7618,6 +7621,7 @@ targets:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker_factory.h
   - src/core/lib/transport/handshaker_registry.h

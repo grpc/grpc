@@ -2619,6 +2619,7 @@ src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
+src/core/lib/transport/custom_metadata.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/handshaker.cc \

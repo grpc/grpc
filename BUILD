@@ -1445,6 +1445,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "config",
         "cpp_impl_of",
+        "custom_metadata",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -1531,6 +1532,13 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "custom_metadata",
+    hdrs = [
+        "//src/core:lib/transport/custom_metadata.h",
     ],
 )
 
