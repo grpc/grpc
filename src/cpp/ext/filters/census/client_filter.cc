@@ -16,17 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/filters/census/client_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/support/status.h>
+
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -46,6 +42,14 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
+
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/support/status.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -55,13 +59,13 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
-#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 namespace internal {

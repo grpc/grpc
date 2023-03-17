@@ -32,6 +32,7 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
