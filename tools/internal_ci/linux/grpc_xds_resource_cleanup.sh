@@ -120,7 +120,9 @@ main() {
     "cleanup_cluster_url_map"
   )
   for job_name in "${cleanup_jobs[@]}"; do
+    echo "-------------------- Starting job ${job_name} --------------------"
     "cleanup::job::${job_name}" "${job_name}" || (( ++failed_jobs ))
+    echo "-------------------- Finished job ${job_name} --------------------"
   done
   echo "Failed job suites: ${failed_jobs}"
   if (( failed_jobs > 0 )); then
