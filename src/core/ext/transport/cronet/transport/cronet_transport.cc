@@ -1462,7 +1462,6 @@ static void perform_op(grpc_transport* /*gt*/, grpc_transport_op* /*op*/) {}
 
 static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
-    false,
     "cronet_http",
     init_stream,
     nullptr,

@@ -17,9 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
 #include <type_traits>
-#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
@@ -164,9 +162,6 @@ class If<bool, T, F> {
   }
 
   Poll<Result> operator()() {
-#ifndef NDEBUG
-    asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
-#endif
     if (condition_) {
       return if_true_();
     } else {
@@ -180,10 +175,6 @@ class If<bool, T, F> {
     TruePromise if_true_;
     FalsePromise if_false_;
   };
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
-#endif
 };
 
 }  // namespace promise_detail

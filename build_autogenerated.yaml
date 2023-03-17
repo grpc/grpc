@@ -251,7 +251,6 @@ libs:
   deps:
   - absl/base:base
   - absl/base:core_headers
-  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -951,13 +950,12 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -1061,7 +1059,6 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -1713,7 +1710,6 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
@@ -1817,7 +1813,6 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -1869,6 +1864,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2294,13 +2290,12 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -2375,7 +2370,6 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
@@ -2669,7 +2663,6 @@ libs:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
@@ -2742,7 +2735,6 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -2770,6 +2762,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -3755,13 +3748,11 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -3835,7 +3826,6 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -4013,7 +4003,6 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -4084,7 +4073,6 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -4104,6 +4092,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -4385,6 +4374,7 @@ targets:
   - test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
   deps:
   - absl/algorithm:container
+  - absl/functional:any_invocable
   - absl/types:span
   - benchmark
   - gpr
@@ -5867,6 +5857,7 @@ targets:
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6154,6 +6145,7 @@ targets:
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: completion_queue_threading_test
@@ -6582,6 +6574,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/event_engine/endpoint_config_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -6857,6 +6850,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -7161,6 +7155,7 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7207,6 +7202,7 @@ targets:
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -7258,6 +7254,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7291,6 +7288,7 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -7559,13 +7557,11 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -7616,7 +7612,6 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker_factory.h
@@ -7800,7 +7795,6 @@ targets:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -7848,7 +7842,6 @@ targets:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker_registry.cc
@@ -7866,6 +7859,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8955,6 +8949,7 @@ targets:
   - test/core/promise/interceptor_list_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9168,6 +9163,7 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
@@ -9310,6 +9306,7 @@ targets:
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -9362,6 +9359,7 @@ targets:
   - test/core/promise/map_pipe_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9667,6 +9665,39 @@ targets:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
+- name: observable_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/observable.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/wait_set.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/observable_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -9833,8 +9864,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/promise/party.h
   src:
+  - src/core/lib/promise/party.cc
   - test/core/promise/party_test.cc
   deps:
   - grpc_unsecure
@@ -9894,6 +9927,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -10072,6 +10106,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
@@ -11054,6 +11089,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
   - gpr
@@ -11239,6 +11275,7 @@ targets:
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
   - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/types:span
   - gpr
   uses_polling: false
@@ -11643,6 +11680,7 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11662,6 +11700,7 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - test/core/event_engine/posix/timer_list_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11693,6 +11732,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -11727,6 +11767,7 @@ targets:
   - src/core/lib/gprpp/time.cc
   - test/core/gprpp/time_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11937,6 +11978,7 @@ targets:
   - test/core/event_engine/thread_pool_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: thread_quota_test
