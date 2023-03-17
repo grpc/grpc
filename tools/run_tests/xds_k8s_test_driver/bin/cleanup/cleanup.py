@@ -297,7 +297,7 @@ def cleanup_client(project,
     except retryers.RetryError as err:
         logger.error(
             'Timeout waiting for namespace %s deletion. '
-            'Failed resource status:\n%s', ns.name,
+            'Failed resource status:\n\n%s', ns.name,
             ns.pretty_format_status(err.result()))
         raise
 
