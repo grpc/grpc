@@ -59,6 +59,8 @@ class EchoServer final : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     CheckMetadata(context);
+    // Enabled for compression trace annotation tests.
+    context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
     return TestServiceImpl::Echo(context, request, response);
   }
 

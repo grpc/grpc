@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,6 +33,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -156,13 +158,31 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
-    const grpc_core::SliceBuffer& /*send_message*/) {
+    const grpc_core::SliceBuffer& send_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
   ++sent_message_count_;
 }
 
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
+    RecordSendCompressedMessage(
+        const grpc_core::SliceBuffer& send_compressed_message) {
+  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
+                                   send_compressed_message.Length()));
+}
+
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
-    const grpc_core::SliceBuffer& /*recv_message*/) {
+    const grpc_core::SliceBuffer& recv_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
   ++recv_message_count_;
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
+    RecordReceivedDecompressedMessage(
+        const grpc_core::SliceBuffer& recv_decompressed_message) {
+  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
+                                   recv_decompressed_message.Length()));
 }
 
 namespace {
@@ -298,9 +318,9 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
 
 OpenCensusCallTracer::OpenCensusCallAttemptTracer*
 OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
-  // We allocate the first attempt on the arena and all subsequent attempts on
-  // the heap, so that in the common case we don't require a heap allocation,
-  // nor do we unnecessarily grow the arena.
+  // We allocate the first attempt on the arena and all subsequent attempts
+  // on the heap, so that in the common case we don't require a heap
+  // allocation, nor do we unnecessarily grow the arena.
   bool is_first_attempt = true;
   uint64_t attempt_num;
   {

@@ -24,12 +24,14 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -107,22 +109,32 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
 
-  void RecordSendMessage(
-      const grpc_core::SliceBuffer& /*send_message*/) override {
+  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
+    RecordAnnotation(
+        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
     ++sent_message_count_;
   }
   void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& /*send_compressed_message*/) override {}
+      const grpc_core::SliceBuffer& send_compressed_message) override {
+    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
+                                     send_compressed_message.Length()));
+  }
 
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
   void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& /*recv_message*/) override {
+      const grpc_core::SliceBuffer& recv_message) override {
+    RecordAnnotation(
+        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
     ++recv_message_count_;
   }
   void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& /*recv_decompressed_message*/) override {}
+      const grpc_core::SliceBuffer& recv_decompressed_message) override {
+    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
+                                     recv_decompressed_message.Length()));
+  }
+
   void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
 
