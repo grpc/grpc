@@ -517,6 +517,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_builder",
         "config",
+        "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -588,6 +589,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_builder",
         "config",
+        "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_alts_credentials",

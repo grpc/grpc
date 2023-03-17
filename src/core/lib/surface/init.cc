@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/forkable.h"
@@ -141,6 +142,7 @@ void grpc_init(void) {
       g_shutting_down = false;
       g_shutting_down_cv->SignalAll();
     }
+    grpc_core::ConfigVars::Reset();
     grpc_iomgr_init();
     grpc_resolver_dns_ares_init();
     grpc_iomgr_start();
