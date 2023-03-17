@@ -178,6 +178,7 @@ grpc_cc_test(
         "tests/filter_init_fails.cc",
         "tests/filtered_metadata.cc",
         "tests/graceful_server_shutdown.cc",
+        "tests/max_concurrent_streams.cc",
         "tests/negative_deadline.cc",
         "tests/no_op.cc",
         "tests/payload.cc",

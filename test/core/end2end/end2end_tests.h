@@ -467,6 +467,7 @@ class CoreEnd2endTest
   using ExpectedResult = CqVerifier::ExpectedResult;
   using Maybe = CqVerifier::Maybe;
   using PerformAction = CqVerifier::PerformAction;
+  using MaybePerformAction = CqVerifier::MaybePerformAction;
   using AnyStatus = CqVerifier::AnyStatus;
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
     expectations_++;

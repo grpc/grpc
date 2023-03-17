@@ -31,6 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "cq_verifier.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -178,7 +179,10 @@ std::string CqVerifier::Expectation::ToString() const {
           },
           [](Maybe) { return std::string("maybe"); },
           [](AnyStatus) { return std::string("any success value"); },
-          [](PerformAction) { return std::string("perform some action"); }));
+          [](PerformAction) { return std::string("perform some action"); },
+          [](MaybePerformAction) {
+            return std::string("maybe perform action");
+          }));
 }
 
 std::string CqVerifier::ToString() const {
@@ -201,6 +205,17 @@ void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
           location.file(), location.line(), grpc_event_string(ev).c_str());
   Crash(absl::StrFormat("expected tags:\n%s", ToString().c_str()));
 }
+
+namespace {
+bool IsMaybe(const CqVerifier::ExpectedResult& r) {
+  return Match(
+      r, [](bool success) { return false; },
+      [](CqVerifier::Maybe m) { return true; },
+      [](CqVerifier::AnyStatus a) { return false; },
+      [](const CqVerifier::PerformAction& action) { return false; },
+      [](const CqVerifier::MaybePerformAction& action) { return true; });
+}
+}  // namespace
 
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
@@ -227,6 +242,10 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
           [ev](const PerformAction& action) {
             action.action(ev.success);
             return true;
+          },
+          [ev](const MaybePerformAction& action) {
+            action.action(ev.success);
+            return true;
           });
       if (!expected) {
         FailUnexpectedEvent(&ev, location);
@@ -240,16 +259,14 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   }
   expectations_.erase(
       std::remove_if(expectations_.begin(), expectations_.end(),
-                     [](const Expectation& e) {
-                       return absl::holds_alternative<Maybe>(e.result);
-                     }),
+                     [](const Expectation& e) { return IsMaybe(e.result); }),
       expectations_.end());
   if (!expectations_.empty()) FailNoEventReceived(location);
 }
 
 bool CqVerifier::AllMaybes() const {
   for (const auto& e : expectations_) {
-    if (!absl::holds_alternative<Maybe>(e.result)) return false;
+    if (!IsMaybe(e.result)) return false;
   }
   return true;
 }

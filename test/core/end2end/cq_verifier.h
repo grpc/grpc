@@ -52,8 +52,13 @@ class CqVerifier {
   struct PerformAction {
     std::function<void(bool success)> action;
   };
+  // MaybePerformAction - run a function if a tag is seen
+  struct MaybePerformAction {
+    std::function<void(bool success)> action;
+  };
 
-  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus, PerformAction>;
+  using ExpectedResult =
+      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
   explicit CqVerifier(grpc_completion_queue* cq);
   ~CqVerifier();
