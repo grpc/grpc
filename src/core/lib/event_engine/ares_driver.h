@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -250,6 +249,9 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
 
  private:
   ~GrpcAresHostnameRequest() override;
+  void LogResolvedAddressesList(const char* input_output_str)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void SortResolvedAddresses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::vector<EventEngine::ResolvedAddress> result_;
   /// is it a grpclb address

@@ -2224,6 +2224,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/types:optional",
+        "address_sorting",
         "cares",
     ],
     select_deps = [{
@@ -2238,6 +2239,7 @@ grpc_cc_library(
     }],
     deps = [
         "error",
+        "event_engine_tcp_socket_utils",
         "examine_stack",
         "status_helper",
         "//:debug_location",

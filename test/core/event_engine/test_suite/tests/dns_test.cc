@@ -18,9 +18,13 @@
 
 #include <chrono>
 #include <cstring>
+#include <functional>
+#include <initializer_list>
 #include <memory>
 #include <ratio>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -30,7 +34,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
@@ -164,6 +169,7 @@ using grpc_event_engine::experimental::EventEngine;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
 using grpc_event_engine::experimental::WaitForSingleOwner;
 using testing::Pointwise;
+using testing::UnorderedPointwise;
 
 MATCHER(ResolvedAddressEq, "") {
   const auto& addr0 = std::get<0>(arg);
@@ -227,13 +233,14 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
-                    Pointwise(ResolvedAddressEq(),
-                              {MakeAddr4(kExpectedAddresses[0],
-                                         sizeof(kExpectedAddresses[0]), 443),
-                               MakeAddr4(kExpectedAddresses[1],
-                                         sizeof(kExpectedAddresses[1]), 443),
-                               MakeAddr4(kExpectedAddresses[2],
-                                         sizeof(kExpectedAddresses[2]), 443)}));
+                    UnorderedPointwise(
+                        ResolvedAddressEq(),
+                        {MakeAddr4(kExpectedAddresses[0],
+                                   sizeof(kExpectedAddresses[0]), 443),
+                         MakeAddr4(kExpectedAddresses[1],
+                                   sizeof(kExpectedAddresses[1]), 443),
+                         MakeAddr4(kExpectedAddresses[2],
+                                   sizeof(kExpectedAddresses[2]), 443)}));
         verified = true;
         dns_resolver_signal.Notify();
       },
@@ -262,13 +269,14 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
-                    Pointwise(ResolvedAddressEq(),
-                              {MakeAddr6(kExpectedAddresses[0],
-                                         sizeof(kExpectedAddresses[0]), 443),
-                               MakeAddr6(kExpectedAddresses[1],
-                                         sizeof(kExpectedAddresses[1]), 443),
-                               MakeAddr6(kExpectedAddresses[2],
-                                         sizeof(kExpectedAddresses[2]), 443)}));
+                    UnorderedPointwise(
+                        ResolvedAddressEq(),
+                        {MakeAddr6(kExpectedAddresses[0],
+                                   sizeof(kExpectedAddresses[0]), 443),
+                         MakeAddr6(kExpectedAddresses[1],
+                                   sizeof(kExpectedAddresses[1]), 443),
+                         MakeAddr6(kExpectedAddresses[2],
+                                   sizeof(kExpectedAddresses[2]), 443)}));
         verified = true;
         dns_resolver_signal.Notify();
       },
@@ -278,7 +286,35 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
   EXPECT_TRUE(verified);
 }
 
-TEST_F(EventEngineDNSTest, QueryHostnameRecord) { grpc_core::ExecCtx exec_ctx; }
+TEST_F(EventEngineDNSTest, TestAddressSorting) {
+  constexpr uint8_t kExpectedAddresses[][16] = {
+      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11, 0x11}};
+
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupHostname(
+      [&verified, &dns_resolver_signal, &kExpectedAddresses](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(
+            *result,
+            Pointwise(ResolvedAddressEq(),
+                      {MakeAddr6(kExpectedAddresses[0],
+                                 sizeof(kExpectedAddresses[0]), 1234),
+                       MakeAddr6(kExpectedAddresses[1],
+                                 sizeof(kExpectedAddresses[1]), 1234)}));
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "ipv6-loopback-preferred-target.dns-test.event-engine.:1234",
+      /*default_port=*/"", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
   const SRVRecord kExpectedRecords[2] = {
@@ -364,6 +400,7 @@ TEST_F(CancelDuringActiveQuery, TestCancelActiveDNSQuery) {
             FAIL() << "This should not be reached";
           },
           name, "1234", std::chrono::minutes(1));
+  EXPECT_GT(test_ee.use_count(), 1);
   EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
   WaitForSingleOwner(std::move(test_ee));
 }

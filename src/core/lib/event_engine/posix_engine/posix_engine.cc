@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
-#include <stdlib.h>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
