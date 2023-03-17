@@ -75,6 +75,12 @@ popd
 git submodule foreach bash -c "cd $toplevel; rm -rf $name"
 
 @rem Install gRPC
+@rem NOTE(jtattermusch): The -DProtobuf_USE_STATIC_LIBS=ON is necessary on cmake3.16+
+@rem since by default "find_package(Protobuf ...)" uses the cmake's builtin
+@rem FindProtobuf.cmake module, which now requires the info whether protobuf
+@rem is to be linked statically.
+@rem See https://github.com/Kitware/CMake/commit/3bbd85d5fffe66181cf16c81b23b2ba50f5387ba
+@rem See https://gitlab.kitware.com/cmake/cmake/-/merge_requests/3555#note_660390
 mkdir cmake\build
 pushd cmake\build
 cmake ^
@@ -88,6 +94,7 @@ cmake ^
   -DgRPC_ABSL_PROVIDER=package ^
   -DgRPC_CARES_PROVIDER=package ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
+  -DProtobuf_USE_STATIC_LIBS=ON ^
   -DgRPC_RE2_PROVIDER=package ^
   -DgRPC_SSL_PROVIDER=package ^
   -DgRPC_ZLIB_PROVIDER=package ^
