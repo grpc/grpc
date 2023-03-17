@@ -20,6 +20,9 @@ echo "!TIME!: prepare_build_windows.bat started"
 @rem set path to CMake
 set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Program Files\CMake\bin;%PATH%
 
+@rem Print image ID of the windows kokoro image being used.
+cat C:\image_id.txt
+
 @rem create "python3" link that normally doesn't exist
 dir C:\Python37\
 mklink C:\Python37\python3.exe C:\Python37\python.exe
