@@ -119,11 +119,6 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based
   void Unref(const char* reason = "call_context");
 
-  RefCountedPtr<CallContext> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<CallContext>(this);
-  }
-
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
   grpc_polling_entity* polling_entity() { return &pollent_; }

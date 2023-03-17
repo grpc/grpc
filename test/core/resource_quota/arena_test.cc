@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <iosfwd>
 #include <memory>
 #include <ostream>
 #include <string>
