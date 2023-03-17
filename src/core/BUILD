@@ -413,7 +413,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -421,9 +420,15 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
+        "construct_destruct",
+        "context",
+        "promise_factory",
         "promise_trace",
+        "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -571,6 +576,7 @@ grpc_cc_library(
         "lib/promise/loop.h",
     ],
     deps = [
+        "construct_destruct",
         "poll",
         "promise_factory",
         "//:gpr_platform",
@@ -696,6 +702,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
@@ -708,6 +715,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "no_destruct",
+        "poll",
         "promise_factory",
         "promise_status",
         "//:gpr",
@@ -762,19 +770,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "intra_activity_waiter",
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/intra_activity_waiter.h",
-    ],
-    deps = [
-        "activity",
-        "poll",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "latch",
     external_deps = ["absl/strings"],
     language = "c++",
@@ -783,30 +778,10 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "intra_activity_waiter",
         "poll",
         "promise_trace",
         "//:gpr",
         "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
-    name = "observable",
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/observable.h",
-    ],
-    deps = [
-        "activity",
-        "poll",
-        "promise_like",
-        "wait_set",
-        "//:gpr",
     ],
 )
 
@@ -839,7 +814,6 @@ grpc_cc_library(
         "lib/promise/pipe.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
@@ -851,7 +825,6 @@ grpc_cc_library(
         "context",
         "if",
         "interceptor_list",
-        "intra_activity_waiter",
         "map",
         "poll",
         "promise_trace",
@@ -3493,33 +3466,38 @@ grpc_cc_library(
         "ext/filters/message_size/message_size_filter.h",
     ],
     external_deps = [
-        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "activity",
+        "arena",
+        "arena_promise",
         "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
-        "closure",
-        "error",
+        "context",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
+        "latch",
+        "poll",
+        "race",
         "service_config_parser",
+        "slice",
         "slice_buffer",
-        "status_helper",
         "validation_errors",
         "//:channel_stack_builder",
         "//:config",
-        "//:debug_location",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:grpc_trace",
     ],
 )
 

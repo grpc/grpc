@@ -23,6 +23,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
@@ -49,13 +50,12 @@ TEST_P(WrrTest, Basic) {
   ScopedExperimentalEnvVar env_var1("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   ScopedExperimentalEnvVar env_var2("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   CreateAndStartBackends(3);
-  xds::data::orca::v3::OrcaLoadReport load_report;
-  load_report.set_rps_fractional(100);
-  load_report.set_cpu_utilization(0.9);
-  backends_[0]->backend_service()->set_load_report(load_report);
-  load_report.set_cpu_utilization(0.3);
-  backends_[1]->backend_service()->set_load_report(load_report);
-  backends_[2]->backend_service()->set_load_report(load_report);
+  backends_[0]->server_metric_recorder()->SetQps(100);
+  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.9);
+  backends_[1]->server_metric_recorder()->SetQps(100);
+  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.3);
+  backends_[2]->server_metric_recorder()->SetQps(100);
+  backends_[2]->server_metric_recorder()->SetCpuUtilization(0.3);
   auto cluster = default_cluster_;
   WrrLocality wrr_locality;
   wrr_locality.mutable_endpoint_picking_policy()

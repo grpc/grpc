@@ -20,8 +20,9 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <functional>
 #include <initializer_list>
-#include <string>
+#include <memory>
 
 #include "absl/strings/str_format.h"
 
@@ -29,45 +30,31 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/test_config.h"
 
 static std::atomic<int> unique{1};
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f =
-      grpc_end2end_local_chttp2_create_fixture_fullstack();
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-  static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
-      ->localaddr = absl::StrFormat(
-      "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d", getpid(),
-      now.tv_sec, now.tv_nsec, unique++);
-  return f;
-}
-
-static void chttp2_init_client_fullstack_uds(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_client_fullstack(f, client_args, UDS);
-}
-
-static void chttp2_init_server_fullstack_uds(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
-}
-
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/fullstack_local_uds",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
-     nullptr, chttp2_create_fixture_fullstack_uds,
-     chttp2_init_client_fullstack_uds, chttp2_init_server_fullstack_uds,
-     grpc_end2end_local_chttp2_tear_down_fullstack}};
+     nullptr,
+     [](const grpc_core::ChannelArgs& /*client_args*/,
+        const grpc_core::ChannelArgs& /*server_args*/) {
+       gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+       return std::make_unique<LocalTestFixture>(
+           absl::StrFormat("unix:/tmp/grpc_fullstack_test.%d.%" PRId64
+                           ".%" PRId32 ".%d",
+                           getpid(), now.tv_sec, now.tv_nsec,
+                           unique.fetch_add(1, std::memory_order_relaxed)),
+           UDS);
+     }}};
 
 int main(int argc, char** argv) {
   size_t i;

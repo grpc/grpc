@@ -18,6 +18,7 @@
 
 #include <limits.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -29,6 +30,7 @@
 namespace grpc_core {
 
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
+  RegisterServerCallTracerFilter(builder);
   builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL,
                                          GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                          grpc_add_connected_filter);

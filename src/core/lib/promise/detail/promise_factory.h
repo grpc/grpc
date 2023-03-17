@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -106,6 +107,9 @@ class Curried {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
   GPR_NO_UNIQUE_ADDRESS Arg arg_;
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
