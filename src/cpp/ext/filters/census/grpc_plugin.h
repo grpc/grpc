@@ -20,7 +20,7 @@
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpcpp/opencensus.h>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -29,8 +29,8 @@
 
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
-
-#include <grpcpp/opencensus.h>
+#include "absl/strings/string_view.h"
+#include "opencensus/stats/stats.h"
 
 namespace grpc {
 
@@ -127,8 +127,14 @@ using experimental::ServerStartedRpcsHour;             // NOLINT
 
 namespace internal {
 
-// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
+extern const absl::string_view kRpcClientApiLatencyMeasureName;
+
+// This view is in an internal namespace since this is meant just for GCP
+// Observability purposes.
+const ::opencensus::stats::ViewDescriptor& ClientApiLatency();
+
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the
+// start of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
 void EnableOpenCensusTracing(bool enable);
 // Gets the current status of OpenCensus stats/tracing

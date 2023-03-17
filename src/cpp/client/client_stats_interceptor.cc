@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2018 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,27 +21,20 @@
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
-
 namespace internal {
+
 experimental::ClientInterceptorFactoryInterface*
-    g_global_client_interceptor_factory = nullptr;
+    g_global_client_stats_interceptor_factory = nullptr;
 
-}  // namespace internal
-
-namespace experimental {
-void RegisterGlobalClientInterceptorFactory(
-    ClientInterceptorFactoryInterface* factory) {
-  if (internal::g_global_client_interceptor_factory != nullptr) {
+void RegisterGlobalClientStatsInterceptorFactory(
+    grpc::experimental::ClientInterceptorFactoryInterface* factory) {
+  if (internal::g_global_client_stats_interceptor_factory != nullptr) {
     grpc_core::Crash(
-        "It is illegal to call RegisterGlobalClientInterceptorFactory "
+        "It is illegal to call RegisterGlobalClientStatsInterceptorFactory "
         "multiple times.");
   }
   internal::g_global_client_interceptor_factory = factory;
 }
 
-// For testing purposes only.
-void TestOnlyResetGlobalClientInterceptorFactory() {
-  internal::g_global_client_interceptor_factory = nullptr;
-}
-}  // namespace experimental
+}  // namespace internal
 }  // namespace grpc

@@ -16,13 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/filters/census/client_filter.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/support/status.h>
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -42,12 +46,6 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -63,6 +61,7 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 namespace internal {
@@ -195,8 +194,8 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
     tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
-    std::string final_status = absl::StatusCodeToString(status_code_);
-    tags.emplace_back(ClientStatusTagKey(), final_status);
+    tags.emplace_back(ClientStatusTagKey(),
+                      absl::StatusCodeToString(status_code_));
     ::opencensus::stats::Record(
         {{RpcClientSentBytesPerRpc(),
           static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
@@ -332,6 +331,20 @@ void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
   context_.AddSpanAnnotation(annotation, {});
 }
 
+void OpenCensusCallTracer::RecordApiLatency(absl::Duration api_latency,
+                                            absl::StatusCode status_code) {
+  if (OpenCensusStatsEnabled()) {
+    std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+        context_.tags().tags();
+    tags.emplace_back(ClientMethodTagKey(), std::string(method_));
+    tags.emplace_back(ClientStatusTagKey(),
+                      absl::StatusCodeToString(status_code));
+    ::opencensus::stats::Record(
+        {{RpcClientApiLatency(), absl::ToDoubleMilliseconds(api_latency)}},
+        tags);
+  }
+}
+
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   if (!tracing_enabled_) return CensusContext(context_.tags());
   GPR_DEBUG_ASSERT(context_.Context().IsValid());
@@ -340,6 +353,43 @@ CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   grpc::internal::OpenCensusRegistry::Get()
       .PopulateCensusContextWithConstantAttributes(&context);
   return context;
+}
+
+class OpenCensusClientInterceptor : public grpc::experimental::Interceptor {
+ public:
+  explicit OpenCensusClientInterceptor(grpc::experimental::ClientRpcInfo* info)
+      : info_(info), start_time_(absl::Now()) {}
+
+  void Intercept(
+      grpc::experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            grpc::experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
+      auto* tracer = static_cast<OpenCensusCallTracer*>(
+          grpc_call_context_get(info_->client_context()->c_call(),
+                                GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+      if (tracer != nullptr) {
+        tracer->RecordApiLatency(absl::Now() - start_time_,
+                                 static_cast<absl::StatusCode>(
+                                     methods->GetRecvStatus()->error_code()));
+      }
+    }
+    methods->Proceed();
+  }
+
+ private:
+  grpc::experimental::ClientRpcInfo* info_;
+  // Start time for measuring end-to-end API latency
+  absl::Time start_time_;
+};
+
+//
+// OpenCensusClientInterceptorFactory
+//
+
+grpc::experimental::Interceptor*
+OpenCensusClientInterceptorFactory::CreateClientInterceptor(
+    grpc::experimental::ClientRpcInfo* info) {
+  return new OpenCensusClientInterceptor(info);
 }
 
 }  // namespace internal

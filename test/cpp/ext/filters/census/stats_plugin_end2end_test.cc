@@ -217,6 +217,7 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   View client_server_latency_view(ClientServerLatencyCumulative());
   View server_server_latency_view(ServerServerLatencyCumulative());
   View client_transport_latency_view(experimental::ClientTransportLatency());
+  View client_api_latency_view(grpc::internal::ClientApiLatency());
 
   const absl::Time start_time = absl::Now();
   {
@@ -278,6 +279,18 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
                     &Distribution::mean,
                     ::testing::Lt(client_transport_latency))))));
   }
+
+  // client api latency should be less than max time but greater than client
+  // roundtrip (attempt) latency view.
+  EXPECT_THAT(
+      client_api_latency_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_, "OK"),
+          ::testing::AllOf(::testing::Property(&Distribution::count, 1),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Gt(client_latency)),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Lt(max_time))))));
 
   // client server elapsed time should be the same value propagated to the
   // client.
