@@ -39,13 +39,8 @@ const ConfigVars& ConfigVars::Load() {
   return *vars;
 }
 
-void ConfigVars::Reset() {
-  delete config_vars_.exchange(nullptr, std::memory_order_acq_rel);
-}
-
 void ConfigVars::SetOverrides(const Overrides& overrides) {
-  delete config_vars_.exchange(new ConfigVars(overrides),
-                               std::memory_order_acq_rel);
+  delete config_vars_.exchange(new ConfigVars(overrides));
 }
 
 }  // namespace grpc_core
