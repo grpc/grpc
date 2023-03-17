@@ -29,7 +29,7 @@ namespace grpc_csharp_generator {
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
                              const std::string& file_suffix,
                              const std::string& base_namespace,
-                             std::string& out_file, std::string *error) {
+                             std::string& out_file, std::string* error) {
   // Support for base_namespace option is **experimental**.
   //
   // If base_namespace is provided then slightly different name mangling
