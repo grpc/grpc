@@ -17,13 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <new>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -82,21 +83,17 @@ class Loop {
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
-  explicit Loop(F f) : factory_(std::move(f)) {}
-  ~Loop() {
-    if (started_) Destruct(&promise_);
-  }
+  explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Make()) {}
+  ~Loop() { promise_.~PromiseType(); }
 
-  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {}
+  Loop(Loop&& loop) noexcept
+      : factory_(std::move(loop.factory_)),
+        promise_(std::move(loop.promise_)) {}
 
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;
 
   Poll<Result> operator()() {
-    if (!started_) {
-      started_ = true;
-      Construct(&promise_, factory_.Make());
-    }
     while (true) {
       // Poll the inner promise.
       auto promise_result = promise_();
@@ -106,8 +103,8 @@ class Loop {
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
         if (absl::holds_alternative<Continue>(lc)) {
-          Destruct(&promise_);
-          Construct(&promise_, factory_.Make());
+          promise_.~PromiseType();
+          new (&promise_) PromiseType(factory_.Make());
           continue;
         }
         //  - otherwise there's our result... return it out.
@@ -124,7 +121,6 @@ class Loop {
   GPR_NO_UNIQUE_ADDRESS union {
     GPR_NO_UNIQUE_ADDRESS PromiseType promise_;
   };
-  bool started_ = false;
 };
 
 }  // namespace promise_detail
