@@ -89,6 +89,10 @@ class InterceptorList {
    public:
     RunPromise(size_t memory_required, Map* factory, absl::optional<T> value) {
       if (!value.has_value() || factory == nullptr) {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "InterceptorList::RunPromise[%p]: create immediate", this);
+        }
         is_immediately_resolved_ = true;
         Construct(&result_, std::move(value));
       } else {
@@ -96,10 +100,18 @@ class InterceptorList {
         Construct(&async_resolution_, memory_required);
         factory->MakePromise(std::move(*value), async_resolution_.space.get());
         async_resolution_.current_factory = factory;
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "InterceptorList::RunPromise[%p]: create async; mem=%p", this,
+                  async_resolution_.space.get());
+        }
       }
     }
 
     ~RunPromise() {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: destroy", this);
+      }
       if (is_immediately_resolved_) {
         Destruct(&result_);
       } else {
@@ -116,6 +128,10 @@ class InterceptorList {
 
     RunPromise(RunPromise&& other) noexcept
         : is_immediately_resolved_(other.is_immediately_resolved_) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: move from %p",
+                this, &other);
+      }
       if (is_immediately_resolved_) {
         Construct(&result_, std::move(other.result_));
       } else {
@@ -127,7 +143,7 @@ class InterceptorList {
 
     Poll<absl::optional<T>> operator()() {
       if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise: %s",
+        gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
                 DebugString().c_str());
       }
       if (is_immediately_resolved_) return std::move(result_);
@@ -139,7 +155,12 @@ class InterceptorList {
               async_resolution_.space.get());
           async_resolution_.current_factory =
               async_resolution_.current_factory->next();
-          if (async_resolution_.current_factory == nullptr || !p->has_value()) {
+          if (!p->has_value()) async_resolution_.current_factory = nullptr;
+          if (grpc_trace_promise_primitives.enabled()) {
+            gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
+                    DebugString().c_str());
+          }
+          if (async_resolution_.current_factory == nullptr) {
             return std::move(*p);
           }
           async_resolution_.current_factory->MakePromise(

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/server_call_tracer.h"
+#include "src/core/lib/channel/call_tracer.h"
 
 namespace grpc_core {
 
