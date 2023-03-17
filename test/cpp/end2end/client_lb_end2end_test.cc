@@ -2571,20 +2571,32 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.99);
+  servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.99);
+  servers_[0]->server_metric_recorder_->SetQps(0.5);
+  servers_[0]->server_metric_recorder_->SetNamedUtilization("foo", 0.99);
+  servers_[0]->server_metric_recorder_->SetNamedUtilization("bar", 0.1);
+  servers_[0]->server_metric_recorder_->SetNamedUtilization("baz", 0.2);
   xds::data::orca::v3::OrcaLoadReport load_report;
+  // Metrics recorded per-call override ones reorded per-server above.
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
-  load_report.set_rps_fractional(0.25);
   auto* request_cost = load_report.mutable_request_cost();
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;
   auto* utilization = load_report.mutable_utilization();
-  (*utilization)["baz"] = 1.0;
-  (*utilization)["quux"] = 0.9;
-  // This will be rejected.
-  (*utilization)["out_of_range_invalid"] = 1.1;
+  (*utilization)["foo"] = 1.0;
+  (*utilization)["bar"] = -1.0;
+  (*utilization)["invalid"] = 1.1;
   auto expected = load_report;
-  expected.mutable_utilization()->erase("out_of_range_invalid");
+  // Per-call utilization["bar"] and ["invalid"] are invalid and won't override
+  // per-server values (if present).
+  (*expected.mutable_utilization())["bar"] = 0.1;
+  expected.mutable_utilization()->erase("invalid");
+  // No per-call values for utilization["baz"] and QPS, so keep per-server
+  // values.
+  (*expected.mutable_utilization())["baz"] = 0.2;
+  expected.set_rps_fractional(0.5);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator);

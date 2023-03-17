@@ -56,9 +56,11 @@ grpc_cc_library(
         "observability_config",
         "observability_logging_sink",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
         "//src/core:logging_filter",
+        "//src/core:notification",
     ],
 )
 
