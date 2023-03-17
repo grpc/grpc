@@ -19,8 +19,6 @@
 #include <atomic>
 #include <string>
 
-#include "config_vars.h"
-
 #include "src/core/lib/config/config_vars.h"
 
 namespace grpc_core {
