@@ -19,6 +19,8 @@
 #include <atomic>
 #include <string>
 
+#include "config_vars.h"
+
 #include "src/core/lib/config/config_vars.h"
 
 namespace grpc_core {
@@ -39,8 +41,13 @@ const ConfigVars& ConfigVars::Load() {
   return *vars;
 }
 
+void ConfigVars::Reset() {
+  delete config_vars_.exchange(nullptr, std::memory_order_acq_rel);
+}
+
 void ConfigVars::SetOverrides(const Overrides& overrides) {
-  delete config_vars_.exchange(new ConfigVars(overrides));
+  delete config_vars_.exchange(new ConfigVars(overrides),
+                               std::memory_order_acq_rel);
 }
 
 }  // namespace grpc_core
