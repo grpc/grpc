@@ -1075,6 +1075,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx notification_test)
   add_dependencies(buildtests_cxx num_external_connectivity_watchers_test)
+  add_dependencies(buildtests_cxx observable_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx oracle_event_engine_posix_test)
   endif()
@@ -1648,7 +1649,6 @@ target_link_libraries(gpr
   absl::core_headers
   absl::flags
   absl::flags_marshalling
-  absl::any_invocable
   absl::memory
   absl::random_random
   absl::status
@@ -2321,7 +2321,6 @@ add_library(grpc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
@@ -2424,7 +2423,6 @@ add_library(grpc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -2516,6 +2514,7 @@ target_link_libraries(grpc
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
+  absl::any_invocable
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -3007,7 +3006,6 @@ add_library(grpc_unsecure
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
@@ -3080,7 +3078,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -3148,6 +3145,7 @@ target_link_libraries(grpc_unsecure
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
+  absl::any_invocable
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -4524,7 +4522,6 @@ add_library(grpc_authorization_provider
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
@@ -4595,7 +4592,6 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -4654,6 +4650,7 @@ target_link_libraries(grpc_authorization_provider
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -5405,6 +5402,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::algorithm_container
+    absl::any_invocable
     absl::span
     ${_gRPC_BENCHMARK_LIBRARIES}
     gpr
@@ -8350,6 +8348,7 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9098,6 +9097,7 @@ target_link_libraries(common_closures_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -10125,6 +10125,7 @@ target_link_libraries(endpoint_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::type_traits
   absl::statusor
   gpr
@@ -10634,6 +10635,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::hash
   absl::type_traits
   absl::statusor
@@ -11115,6 +11117,7 @@ target_link_libraries(flow_control_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11185,6 +11188,7 @@ target_link_libraries(for_each_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11269,6 +11273,7 @@ target_link_libraries(forkable_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -11578,7 +11583,6 @@ add_executable(frame_test
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
@@ -11626,7 +11630,6 @@ add_executable(frame_test
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker_registry.cc
@@ -11671,6 +11674,7 @@ target_link_libraries(frame_test
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14005,6 +14009,7 @@ target_link_libraries(interceptor_list_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14794,6 +14799,7 @@ target_link_libraries(map_pipe_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15586,6 +15592,49 @@ target_link_libraries(num_external_connectivity_watchers_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(observable_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/observable_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(observable_test PUBLIC cxx_std_14)
+target_include_directories(observable_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(observable_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(oracle_event_engine_posix_test
@@ -16031,6 +16080,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(party_test
+  src/core/lib/promise/party.cc
   test/core/promise/party_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16150,6 +16200,7 @@ target_link_libraries(periodic_update_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::function_ref
   absl::hash
   absl::statusor
@@ -18931,6 +18982,7 @@ target_link_libraries(slice_string_helpers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::hash
   absl::statusor
   gpr
@@ -19410,6 +19462,7 @@ target_link_libraries(static_stride_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::span
   gpr
 )
@@ -20239,6 +20292,7 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20281,6 +20335,7 @@ target_link_libraries(test_core_event_engine_posix_timer_list_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20329,6 +20384,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::hash
   absl::statusor
   absl::utility
@@ -20444,6 +20500,7 @@ target_link_libraries(test_core_gprpp_time_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -20935,6 +20992,7 @@ target_link_libraries(thread_pool_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::any_invocable
   absl::statusor
   gpr
 )
@@ -25880,7 +25938,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   ""
   "-lgpr"
   ""

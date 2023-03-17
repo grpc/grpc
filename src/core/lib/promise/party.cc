@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <atomic>
 #include <initializer_list>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
@@ -34,13 +36,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
-
-// #define GRPC_PARTY_MAXIMIZE_THREADS
-
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
-#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
-#include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
-#endif
 
 namespace grpc_core {
 
@@ -64,7 +59,7 @@ class Party::Handle final : public Wakeable {
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
-  void Wakeup(WakeupMask wakeup_mask) override ABSL_LOCKS_EXCLUDED(mu_) {
+  void Wakeup(void* arg) override ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -74,7 +69,7 @@ class Party::Handle final : public Wakeable {
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
-      party->Wakeup(wakeup_mask);
+      party->Wakeup(reinterpret_cast<void*>(arg));
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
@@ -84,9 +79,9 @@ class Party::Handle final : public Wakeable {
     Unref();
   }
 
-  void Drop(WakeupMask) override { Unref(); }
+  void Drop(void*) override { Unref(); }
 
-  std::string ActivityDebugTag(WakeupMask) const override {
+  std::string ActivityDebugTag(void*) const override {
     MutexLock lock(&mu_);
     return party_ == nullptr ? "<unknown>" : party_->DebugTag();
   }
@@ -121,16 +116,14 @@ Party::Participant::~Participant() {
   }
 }
 
-Party::~Party() {}
-
-void Party::IncrementRefCount(DebugLocation whence) {
-  auto prev_state = state_.fetch_add(kOneRef, std::memory_order_relaxed);
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[party] Ref: prev_state=%s from %s:%d",
-            DebugTag().c_str(), StateToString(prev_state).c_str(),
-            whence.file(), whence.line());
-  }
+Party::~Party() {
+  participants_.clear();
+  arena_->Destroy();
 }
+
+void Party::Orphan() { Unref(); }
+
+void Party::Ref() { state_.fetch_add(kOneRef, std::memory_order_relaxed); }
 
 bool Party::RefIfNonZero() {
   auto count = state_.load(std::memory_order_relaxed);
@@ -147,120 +140,56 @@ bool Party::RefIfNonZero() {
   return true;
 }
 
-void Party::Unref(DebugLocation whence) {
-  uint64_t prev_state;
-  auto do_unref = [&prev_state, this]() {
-    prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
-  };
-  if (grpc_trace_promise_primitives.enabled()) {
-    auto debug_tag = DebugTag();
-    do_unref();
-    gpr_log(GPR_DEBUG, "%s[party] Unref: prev_state=%s from %s:%d",
-            debug_tag.c_str(), StateToString(prev_state).c_str(), whence.file(),
-            whence.line());
-  } else {
-    do_unref();
+void Party::Unref() {
+  auto prev = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+  if (prev == kOneRef) {
+    delete this;
   }
-  if ((prev_state & kRefMask) == kOneRef) {
-    prev_state =
-        state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
-    if (prev_state & kLocked) {
-      // Already locked: RunParty will call PartyOver.
-    } else {
-      ScopedActivity activity(this);
-      PartyOver();
-    }
-    return;
-  }
+  GPR_DEBUG_ASSERT((prev & kRefMask) != 0);
 }
 
-void Party::CancelRemainingParticipants() {
-  ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
-  for (size_t i = 0; i < kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
-    }
-  }
-}
-
-std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
-  return absl::StrFormat("%s [parts:%x]", DebugTag(), wakeup_mask);
+std::string Party::ActivityDebugTag(void* arg) const {
+  return absl::StrFormat("%s/%p", DebugTag(), arg);
 }
 
 Waker Party::MakeOwningWaker() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-  IncrementRefCount();
-  return Waker(this, 1u << currently_polling_);
+  Ref();
+  return Waker(this, reinterpret_cast<void*>(currently_polling_));
 }
 
 Waker Party::MakeNonOwningWaker() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-  return Waker(participants_[currently_polling_]
-                   .load(std::memory_order_relaxed)
-                   ->MakeNonOwningWakeable(this),
-               1u << currently_polling_);
+  return Waker(participants_[currently_polling_]->MakeNonOwningWakeable(this),
+               reinterpret_cast<void*>(currently_polling_));
 }
 
-void Party::ForceImmediateRepoll(WakeupMask mask) {
-  GPR_DEBUG_ASSERT(is_current());
+void Party::ForceImmediateRepoll() {
+  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
   // Or in the bit for the currently polling participant.
   // Will be grabbed next round to force a repoll of this promise.
-  auto prev_state =
-      state_.fetch_or(mask & kWakeupMask, std::memory_order_relaxed);
-
-  if (grpc_trace_promise_primitives.enabled()) {
-    std::vector<int> wakeups;
-    for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
-      if (mask & (1 << i)) wakeups.push_back(i);
-    }
-    gpr_log(GPR_DEBUG, "%s[party] ForceImmediateRepoll({%s}): prev_state=%s",
-            DebugTag().c_str(), absl::StrJoin(wakeups, ",").c_str(),
-            StateToString(prev_state).c_str());
-  }
+  state_.fetch_or(1 << currently_polling_, std::memory_order_relaxed);
 }
 
-void Party::RunLocked() {
-  auto body = [this]() {
-    if (RunParty()) {
-      ScopedActivity activity(this);
-      PartyOver();
-    }
-  };
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
-  Thread thd(
-      "RunParty",
-      [body]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        body();
-      },
-      nullptr, Thread::Options().set_joinable(false));
-  thd.Start();
-#else
-  body();
-#endif
-}
-
-bool Party::RunParty() {
+void Party::Run() {
   ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
   uint64_t prev_state;
   do {
     // Grab the current state, and clear the wakeup bits & add flag.
-    prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
-                                  std::memory_order_acquire);
+    prev_state =
+        state_.fetch_and(kRefMask | kLocked, std::memory_order_acquire);
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s[party] Run prev_state=%s", DebugTag().c_str(),
+      gpr_log(GPR_DEBUG, "Party::Run(): prev_state=%s",
               StateToString(prev_state).c_str());
     }
-    GPR_ASSERT(prev_state & kLocked);
-    if (prev_state & kDestroying) return true;
     // From the previous state, extract which participants we're to wakeup.
     uint64_t wakeups = prev_state & kWakeupMask;
+    // If there were adds pending, drain them.
+    // We pass in wakeups here so that the new participants are polled
+    // immediately (draining will situate them).
+    if (prev_state & kAddsPending) DrainAdds(wakeups);
     // Now update prev_state to be what we want the CAS to see below.
-    prev_state &= kRefMask | kLocked | kAllocatedMask;
+    prev_state &= kRefMask | kLocked;
     // For each wakeup bit...
     for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
       // If the bit is not set, skip.
@@ -268,35 +197,10 @@ bool Party::RunParty() {
       // If the participant is null, skip.
       // This allows participants to complete whilst wakers still exist
       // somewhere.
-      auto* participant = participants_[i].load(std::memory_order_acquire);
-      if (participant == nullptr) {
-        if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "%s[party] wakeup %" PRIdPTR " already complete",
-                  DebugTag().c_str(), i);
-        }
-        continue;
-      }
-      absl::string_view name;
-      if (grpc_trace_promise_primitives.enabled()) {
-        name = participant->name();
-        gpr_log(GPR_DEBUG, "%s[%s] begin job %" PRIdPTR, DebugTag().c_str(),
-                std::string(name).c_str(), i);
-      }
+      if (participants_[i] == nullptr) continue;
       // Poll the participant.
       currently_polling_ = i;
-      if (participant->Poll()) {
-        if (!name.empty()) {
-          gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %" PRIdPTR,
-                  DebugTag().c_str(), std::string(name).c_str(), i);
-        }
-        participants_[i] = nullptr;
-        const uint64_t allocated_bit = (1u << i << kAllocatedShift);
-        prev_state &= ~allocated_bit;
-        state_.fetch_and(~allocated_bit, std::memory_order_release);
-      } else if (!name.empty()) {
-        gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
-                std::string(name).c_str());
-      }
+      if (participants_[i]->Poll()) participants_[i].reset();
       currently_polling_ = kNotPolling;
     }
     // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -310,100 +214,106 @@ bool Party::RunParty() {
     // TODO(ctiller): consider mitigations for the accidental wakeup on owning
     // waker creation case -- I currently expect this will be more expensive
     // than this quick loop.
-  } while (!state_.compare_exchange_weak(
-      prev_state, (prev_state & (kRefMask | kAllocatedMask)),
-      std::memory_order_acq_rel, std::memory_order_acquire));
-  return false;
+  } while (!state_.compare_exchange_weak(prev_state, (prev_state & kRefMask),
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire));
 }
 
-void Party::AddParticipant(Participant* participant) {
-  uint64_t state = state_.load(std::memory_order_acquire);
-  uint64_t allocated;
-
-  int slot;
-
-  // Find slots for each new participant, ordering them from lowest available
-  // slot upwards to ensure the same poll ordering as presentation ordering to
-  // this function.
-  do {
-    slot = -1;
-    allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    for (size_t bit = 0; bit < kMaxParticipants; bit++) {
-      if (allocated & (1 << bit)) continue;
-      slot = bit;
-      allocated |= 1 << bit;
-      break;
-    }
-    GPR_ASSERT(slot != -1);
-  } while (!state_.compare_exchange_weak(
-      state, state | (allocated << kAllocatedShift), std::memory_order_acq_rel,
-      std::memory_order_acquire));
-
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[party] Welcome %s@%d", DebugTag().c_str(),
-            std::string(participant->name()).c_str(), slot);
+void Party::DrainAdds(uint64_t& wakeups) {
+  // Grab the list of adds.
+  AddingParticipant* adding =
+      adding_.exchange(nullptr, std::memory_order_acquire);
+  // For each add, situate it and add it to the wakeup mask.
+  while (adding != nullptr) {
+    wakeups |= 1 << SituateNewParticipant(std::move(adding->participant));
+    // Don't leak the add request.
+    delete std::exchange(adding, adding->next);
   }
-
-  // We've allocated the slot, next we need to populate it.
-  // Once we do so however a spurious wakeup could occur, and that wakeup might
-  // release the last ref.
-  // We need to hold one here.
-  auto ref = Ref();
-  participants_[slot].store(participant, std::memory_order_release);
-
-  // Now we need to wake up the party.
-  state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_relaxed);
-
-  // If the party was already locked, we're done.
-  if ((state & kLocked) != 0) return;
-
-  // Otherwise, we need to run the party.
-  RunLocked();
 }
 
-void Party::ScheduleWakeup(WakeupMask mask) {
-  // Or in the wakeup bit for the participant, AND the locked bit.
-  uint64_t prev_state = state_.fetch_or((mask & kWakeupMask) | kLocked,
-                                        std::memory_order_acquire);
+void Party::AddParticipant(Arena::PoolPtr<Participant> participant) {
+  // Lock
+  auto prev_state = state_.fetch_or(kLocked, std::memory_order_acquire);
   if (grpc_trace_promise_primitives.enabled()) {
-    std::vector<int> wakeups;
-    for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
-      if (mask & (1 << i)) wakeups.push_back(i);
-    }
-    gpr_log(GPR_DEBUG, "%s[party] ScheduleWakeup({%s}): prev_state=%s",
-            DebugTag().c_str(), absl::StrJoin(wakeups, ",").c_str(),
+    gpr_log(GPR_DEBUG, "Party::AddParticipant(): prev_state=%s",
             StateToString(prev_state).c_str());
   }
-  // If the lock was not held now we hold it, so we need to run.
-  if ((prev_state & kLocked) == 0) RunLocked();
+  if ((prev_state & kLocked) == 0) {
+    // Lock acquired
+    state_.fetch_or(1 << SituateNewParticipant(std::move(participant)),
+                    std::memory_order_relaxed);
+    Run();
+    return;
+  }
+  // Already locked: add to the list of things to add
+  auto* add = new AddingParticipant{std::move(participant), nullptr};
+  while (!adding_.compare_exchange_weak(
+      add->next, add, std::memory_order_acq_rel, std::memory_order_acquire)) {
+  }
+  // And signal that there are adds waiting.
+  // This needs to happen after the add above: Run() will examine this bit
+  // first, and then decide to drain the queue - so if the ordering was reversed
+  // it might examine the adds pending bit, and then observe no add to drain.
+  prev_state =
+      state_.fetch_or(kLocked | kAddsPending, std::memory_order_release);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "Party::AddParticipant(): prev_state=%s",
+            StateToString(prev_state).c_str());
+  }
+  if ((prev_state & kLocked) == 0) {
+    // We queued the add but the lock was released before we signalled that.
+    // We acquired the lock though, so now we can run.
+    Run();
+  }
 }
 
-void Party::Wakeup(WakeupMask wakeup_mask) {
-  ScheduleWakeup(wakeup_mask);
+size_t Party::SituateNewParticipant(Arena::PoolPtr<Participant> participant) {
+  // First search for a free index in the participants array.
+  // If we find one, use it.
+  for (size_t i = 0; i < participants_.size(); i++) {
+    if (participants_[i] != nullptr) continue;
+    participants_[i] = std::move(participant);
+    return i;
+  }
+
+  // Otherwise, add it to the end.
+  GPR_ASSERT(participants_.size() < kMaxParticipants);
+  participants_.emplace_back(std::move(participant));
+  return participants_.size() - 1;
+}
+
+void Party::ScheduleWakeup(uint64_t participant_index) {
+  // Or in the wakeup bit for the participant, AND the locked bit.
+  uint64_t prev_state = state_.fetch_or((1 << participant_index) | kLocked,
+                                        std::memory_order_acquire);
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "Party::ScheduleWakeup(%" PRIu64 "): prev_state=%s",
+            participant_index, StateToString(prev_state).c_str());
+  }
+  // If the lock was not held now we hold it, so we need to run.
+  if ((prev_state & kLocked) == 0) Run();
+}
+
+void Party::Wakeup(void* arg) {
+  ScheduleWakeup(reinterpret_cast<uintptr_t>(arg));
   Unref();
 }
 
-void Party::Drop(WakeupMask) { Unref(); }
+void Party::Drop(void*) { Unref(); }
 
 std::string Party::StateToString(uint64_t state) {
   std::vector<std::string> parts;
   if (state & kLocked) parts.push_back("locked");
-  if (state & kDestroying) parts.push_back("over");
+  if (state & kAddsPending) parts.push_back("adds_pending");
   parts.push_back(
       absl::StrFormat("refs=%" PRIuPTR, (state & kRefMask) >> kRefShift));
-  std::vector<int> allocated;
   std::vector<int> participants;
   for (size_t i = 0; i < kMaxParticipants; i++) {
-    if ((state & (1ull << i)) != 0) participants.push_back(i);
-    if ((state & (1ull << (i + kAllocatedShift))) != 0) allocated.push_back(i);
-  }
-  if (!allocated.empty()) {
-    parts.push_back(
-        absl::StrFormat("allocated={%s}", absl::StrJoin(allocated, ",")));
+    if ((state & (1 << i)) != 0) participants.push_back(i);
   }
   if (!participants.empty()) {
     parts.push_back(
-        absl::StrFormat("wakeup={%s}", absl::StrJoin(participants, ",")));
+        absl::StrFormat("wakeup=%s", absl::StrJoin(participants, ",")));
   }
   return absl::StrCat("{", absl::StrJoin(parts, " "), "}");
 }
