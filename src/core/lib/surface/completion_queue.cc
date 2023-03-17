@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
