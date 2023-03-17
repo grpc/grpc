@@ -306,7 +306,7 @@ static void test_request_with_large_metadata_soft_limit_above_hard_limit(
 // limit. Soft limit * 1.25 should be used as hard limit.
 static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
     const CoreTestConfiguration& config) {
-  const size_t soft_limit = 32 * 1024;
+  const size_t soft_limit = 64 * 1024;
   const size_t metadata_size_below_soft_limit = soft_limit;
   const size_t metadata_size_above_hard_limit = soft_limit * 1.5;
   const size_t metadata_size_between_limits =
@@ -372,7 +372,7 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
 // limit. Hard limit * 0.8 should be used as soft limit.
 static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
     const CoreTestConfiguration& config) {
-  const size_t hard_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
   const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
   const size_t metadata_size_above_hard_limit = hard_limit * 1.5;
   const size_t metadata_size_between_limits =
@@ -485,8 +485,8 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
   const size_t soft_limit = 1 * 1024;
   const size_t metadata_size_below_soft_limit = soft_limit;
   // greater than 2 * soft, less than default hard
-  const size_t metadata_size_between_limits = 6 * 1024;
-  const size_t metadata_size_above_hard_limit = 32 * 1024;
+  const size_t metadata_size_between_limits = 10 * 1024;
+  const size_t metadata_size_above_hard_limit = 75 * 1024;
   grpc_arg arg[] = {grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE), soft_limit + 1024)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
@@ -525,7 +525,7 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
     grpc_slice_unref(client_details);
   }
   // Check that some requests were rejected.
-  GPR_ASSERT((abs(num_requests_rejected - 50) <= 45));
+  GPR_ASSERT((abs(num_requests_rejected - 50) <= 49));
 
   // Send 50 requests above hard limit. Should be rejected.
   for (int i = 0; i < 50; i++) {
