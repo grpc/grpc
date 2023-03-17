@@ -2537,11 +2537,11 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
       });
 }
 
-template <typename FirstPromise>
-void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
-                                        const Completion& completion,
-                                        FirstPromise first_promise,
-                                        PipeReceiver<MessageHandle>* receiver) {
+template <typename FirstPromiseFactory>
+void PromiseBasedCall::StartRecvMessage(
+    const grpc_op& op, const Completion& completion,
+    FirstPromiseFactory first_promise_factory,
+    PipeReceiver<MessageHandle>* receiver) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
@@ -2549,7 +2549,9 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
   recv_message_ = op.data.recv_message.recv_message;
   Spawn(
       "call_recv_message",
-      Seq(std::move(first_promise), [receiver]() { return receiver->Next(); }),
+      [first_promise_factory = std::move(first_promise_factory), receiver]() {
+        return Seq(first_promise_factory(), receiver->Next());
+      },
       [this,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
@@ -2845,9 +2847,12 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartSendMessage(op, completion, &client_to_server_messages_.sender);
         break;
       case GRPC_OP_RECV_MESSAGE:
-        StartRecvMessage(op, completion,
-                         server_initial_metadata_.receiver.AwaitClosed(),
-                         &server_to_client_messages_.receiver);
+        StartRecvMessage(
+            op, completion,
+            [this]() {
+              return server_initial_metadata_.receiver.AwaitClosed();
+            },
+            &server_to_client_messages_.receiver);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         Spawn(
@@ -3279,7 +3284,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           break;
         }
         StartRecvMessage(
-            op, completion, []() { return Empty{}; },
+            op, completion, []() { return []() { return Empty{}; }; },
             client_to_server_messages_);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
