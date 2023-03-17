@@ -86,7 +86,7 @@ TEST_F(PartyTest, Noop) { auto party = MakeRefCounted<TestParty>(); }
 
 TEST_F(PartyTest, CanSpawnAndRun) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification n;
   party->Spawn(
       "TestSpawn",
       [i = 10]() mutable -> Poll<int> {
@@ -98,20 +98,20 @@ TEST_F(PartyTest, CanSpawnAndRun) {
         if (i == 0) return 42;
         return Pending{};
       },
-      [&done](int x) {
+      [&n](int x) {
         EXPECT_EQ(x, 42);
-        done = true;
+        n.Notify();
       });
-  EXPECT_TRUE(done);
+  n.WaitForNotification();
 }
 
 TEST_F(PartyTest, CanSpawnFromSpawn) {
   auto party = MakeRefCounted<TestParty>();
-  bool done1 = false;
-  bool done2 = false;
+  Notification n1;
+  Notification n2;
   party->Spawn(
       "TestSpawn",
-      [party, &done2]() -> Poll<int> {
+      [party, &n2]() -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         party->Spawn(
             "TestSpawnInner",
@@ -122,139 +122,133 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
               if (i == 0) return 42;
               return Pending{};
             },
-            [&done2](int x) {
+            [&n2](int x) {
               EXPECT_EQ(x, 42);
-              done2 = true;
+              n2.Notify();
             });
         return 1234;
       },
-      [&done1](int x) {
+      [&n1](int x) {
         EXPECT_EQ(x, 1234);
-        done1 = true;
+        n1.Notify();
       });
-  EXPECT_TRUE(done1);
-  EXPECT_TRUE(done2);
+  n1.WaitForNotification();
+  n2.WaitForNotification();
 }
 
 TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification n[10];
+  Notification complete;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker]() mutable -> Poll<int> {
+      [i = 0, &waker, &n]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeOwningWaker();
-        --i;
-        if (i == 0) return 42;
+        n[i].Notify();
+        i++;
+        if (i == 10) return 42;
         return Pending{};
       },
-      [&done](int x) {
+      [&complete](int x) {
         EXPECT_EQ(x, 42);
-        done = true;
+        complete.Notify();
       });
-  for (int i = 0; i < 9; i++) {
-    EXPECT_FALSE(done) << i;
+  for (int i = 0; i < 10; i++) {
+    n[i].WaitForNotification();
     waker.Wakeup();
   }
-  EXPECT_TRUE(done);
+  complete.WaitForNotification();
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification n[10];
+  Notification complete;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker]() mutable -> Poll<int> {
+      [i = 10, &waker, &n]() mutable -> Poll<int> {
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
         --i;
+        n[9 - i].Notify();
         if (i == 0) return 42;
         return Pending{};
       },
-      [&done](int x) {
+      [&complete](int x) {
         EXPECT_EQ(x, 42);
-        done = true;
+        complete.Notify();
       });
   for (int i = 0; i < 9; i++) {
-    EXPECT_FALSE(done) << i;
+    n[i].WaitForNotification();
+    EXPECT_FALSE(n[i + 1].HasBeenNotified());
     waker.Wakeup();
   }
-  EXPECT_TRUE(done);
+  complete.WaitForNotification();
 }
 
 TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification set_waker;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker]() mutable -> Poll<int> {
+      [&waker, &set_waker]() mutable -> Poll<int> {
+        EXPECT_FALSE(set_waker.HasBeenNotified());
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
-        --i;
-        if (i == 0) return 42;
+        set_waker.Notify();
         return Pending{};
       },
-      [&done](int x) {
-        EXPECT_EQ(x, 42);
-        done = true;
-      });
+      [](int x) { Crash("unreachable"); });
+  set_waker.WaitForNotification();
   party.reset();
-  EXPECT_FALSE(done);
   EXPECT_FALSE(waker.is_unwakeable());
   waker.Wakeup();
   EXPECT_TRUE(waker.is_unwakeable());
-  EXPECT_FALSE(done);
 }
 
 TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification set_waker;
   std::unique_ptr<Waker> waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker]() mutable -> Poll<int> {
+      [&waker, &set_waker]() mutable -> Poll<int> {
+        EXPECT_FALSE(set_waker.HasBeenNotified());
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker =
             std::make_unique<Waker>(Activity::current()->MakeNonOwningWaker());
-        --i;
-        if (i == 0) return 42;
+        set_waker.Notify();
         return Pending{};
       },
-      [&done](int x) {
-        EXPECT_EQ(x, 42);
-        done = true;
-      });
+      [](int x) { Crash("unreachable"); });
+  set_waker.WaitForNotification();
   party.reset();
   EXPECT_NE(waker, nullptr);
   waker.reset();
-  EXPECT_FALSE(done);
 }
 
 TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   auto party = MakeRefCounted<TestParty>();
-  bool done = false;
+  Notification set_waker;
   Waker waker;
   party->Spawn(
       "TestSpawn",
-      [i = 10, &waker]() mutable -> Poll<int> {
+      [&waker, &set_waker]() mutable -> Poll<int> {
+        EXPECT_FALSE(set_waker.HasBeenNotified());
         EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
         waker = Activity::current()->MakeNonOwningWaker();
-        --i;
-        if (i == 0) return 42;
+        set_waker.Notify();
         return Pending{};
       },
-      [&done](int x) {
-        EXPECT_EQ(x, 42);
-        done = true;
-      });
-  EXPECT_FALSE(done);
+      [](int x) { Crash("unreachable"); });
+  set_waker.WaitForNotification();
   EXPECT_FALSE(waker.is_unwakeable());
   party.reset();
   waker.Wakeup();
-  EXPECT_FALSE(done);
   EXPECT_TRUE(waker.is_unwakeable());
 }
 

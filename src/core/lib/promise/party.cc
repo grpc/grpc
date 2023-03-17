@@ -364,7 +364,7 @@ void Party::AddParticipant(Participant* participant) {
 void Party::ScheduleWakeup(WakeupMask mask) {
   // Or in the wakeup bit for the participant, AND the locked bit.
   uint64_t prev_state = state_.fetch_or((mask & kWakeupMask) | kLocked,
-                                        std::memory_order_acquire);
+                                        std::memory_order_acq_rel);
   if (grpc_trace_promise_primitives.enabled()) {
     std::vector<int> wakeups;
     for (size_t i = 0; i < 8 * sizeof(WakeupMask); i++) {
