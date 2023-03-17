@@ -328,8 +328,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     };
     /// DNS SRV record type.
     struct SRVRecord {
-      explicit SRVRecord(const char* host, int port, int priority, int weight)
-          : host(host), port(port), priority(priority), weight(weight) {}
       std::string host;
       /// in host order
       int port = 0;
@@ -344,8 +342,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     using LookupSRVCallback =
         absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback = absl::AnyInvocable<void(
-        absl::StatusOr<std::basic_string<unsigned char>>)>;
+    using LookupTXTCallback =
+        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
     virtual ~DNSResolver() = default;
 

@@ -61,9 +61,15 @@ grpc_cc_library(
         "//test/cpp/naming/utils:dns_resolver",
         "//test/cpp/naming/utils:tcp_connect",
     ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
     deps = [
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util_base",
     ],
     alwayslink = 1,

@@ -29,6 +29,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/functional/bind_front.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -497,21 +498,28 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {}
 
-PosixEventEngine::PosixDNSResolver::LookupTaskHandle
-PosixEventEngine::PosixDNSResolver::LookupHostname(
+using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
+
+LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
-  GrpcAresRequest* request = new GrpcAresHostnameRequest(
+  GrpcAresHostnameRequest* request = new GrpcAresHostnameRequest(
       name, default_port, timeout, /*is_balancer=*/false,
-      /*register_socket_with_poller_cb=*/
-      [this](AresSocket socket) {
-        // TODO(yijiem): no locks?
-        PosixEventPoller* poller = poller_manager_->Poller();
-        GPR_DEBUG_ASSERT(poller != nullptr);
-        gpr_log(GPR_INFO, "Register socket %d with poller %p", socket, poller);
-        return poller->CreateHandle(socket, "ares", poller->CanTrackErrors());
-      },
-      /*on_resolve=*/
+      absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
+                       this),
+      event_engine_);
+  const absl::Status status =
+      request->Initialize(options_.dns_server, /*check_port=*/true);
+  if (!status.ok()) {
+    // Report back initialization failure through on_resolve.
+    on_resolve(status);
+    return LookupTaskHandle{};
+  }
+  {
+    absl::MutexLock lock(&mu_);
+    inflight_requests_.insert(request);
+  }
+  request->Start(
       [on_resolve = std::move(on_resolve), this](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result,
           intptr_t token) mutable {
@@ -522,42 +530,32 @@ PosixEventEngine::PosixDNSResolver::LookupHostname(
                          reinterpret_cast<GrpcAresRequest*>(token)) == 1);
         }
         on_resolve(std::move(result));
-      },
-      event_engine_);
-  absl::Status status =
-      request->Initialize(options_.dns_server, /*check_port=*/true);
-  if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Initialize GrpcAresRequest failed: %s",
-            status.ToString().c_str());
-    // TODO(yijiem): what to do in this case?
-    abort();
-  }
-  {
-    absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
-  }
-  request->Start();
+      });
   LookupTaskHandle handle;
   handle.keys[0] = reinterpret_cast<intptr_t>(request);
   // TODO(yijiem): aba_token at keys[1]?
   return handle;
 }
 
-PosixEventEngine::PosixDNSResolver::LookupTaskHandle
-PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
-                                              absl::string_view name,
-                                              Duration timeout) {
-  GrpcAresRequest* request = new GrpcAresSRVRequest(
+LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
+    LookupSRVCallback on_resolve, absl::string_view name, Duration timeout) {
+  GrpcAresSRVRequest* request = new GrpcAresSRVRequest(
       name, timeout,
-      /*register_socket_with_poller_cb=*/
-      [this](AresSocket socket) {
-        // TODO(yijiem): no locks?
-        PosixEventPoller* poller = poller_manager_->Poller();
-        GPR_DEBUG_ASSERT(poller != nullptr);
-        gpr_log(GPR_INFO, "Register socket %d with poller %p", socket, poller);
-        return poller->CreateHandle(socket, "ares", poller->CanTrackErrors());
-      },
-      /*on_resolve=*/
+      absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
+                       this),
+      event_engine_);
+  const absl::Status status =
+      request->Initialize(options_.dns_server, /*check_port=*/false);
+  if (!status.ok()) {
+    // Report back initialization failure through on_resolve.
+    on_resolve(status);
+    return LookupTaskHandle{};
+  }
+  {
+    absl::MutexLock lock(&mu_);
+    inflight_requests_.insert(request);
+  }
+  request->Start(
       [on_resolve = std::move(on_resolve), this](
           absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
               result,
@@ -569,31 +567,49 @@ PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
                          reinterpret_cast<GrpcAresRequest*>(token)) == 1);
         }
         on_resolve(std::move(result));
-      },
-      event_engine_);
-  if (!request->Initialize(options_.dns_server, /*check_port=*/false).ok()) {
-    abort();
-  }
-  {
-    absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
-  }
-  request->Start();
+      });
   LookupTaskHandle handle;
   handle.keys[0] = reinterpret_cast<intptr_t>(request);
   // TODO(yijiem): aba_token at keys[1]?
   return handle;
 }
 
-PosixEventEngine::PosixDNSResolver::LookupTaskHandle
-PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
-                                              absl::string_view name,
-                                              Duration timeout) {
-  grpc_core::Crash("unimplemented");
+LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
+    LookupTXTCallback on_resolve, absl::string_view name, Duration timeout) {
+  GrpcAresTXTRequest* request = new GrpcAresTXTRequest(
+      name, timeout,
+      absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
+                       this),
+      event_engine_);
+  const absl::Status status =
+      request->Initialize(options_.dns_server, /*check_port=*/false);
+  if (!status.ok()) {
+    // Report back initialization failure through on_resolve.
+    on_resolve(status);
+    return LookupTaskHandle{};
+  }
+  {
+    absl::MutexLock lock(&mu_);
+    inflight_requests_.insert(request);
+  }
+  request->Start(
+      [on_resolve = std::move(on_resolve), this](
+          absl::StatusOr<std::string> result, intptr_t token) mutable {
+        {
+          absl::MutexLock lock(&mu_);
+          // on_resolved called, no longer inflight.
+          GPR_ASSERT(inflight_requests_.erase(
+                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
+        }
+        on_resolve(std::move(result));
+      });
+  LookupTaskHandle handle;
+  handle.keys[0] = reinterpret_cast<intptr_t>(request);
+  // TODO(yijiem): aba_token at keys[1]?
+  return handle;
 }
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
-  // grpc_core::Crash("unimplemented");
   absl::MutexLock lock(&mu_);
   auto iter = inflight_requests_.find(
       reinterpret_cast<GrpcAresRequest*>(handle.keys[0]));
@@ -602,6 +618,14 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
     return true;
   }
   return false;
+}
+
+EventHandle* PosixEventEngine::PosixDNSResolver::CreateEventHandle(int fd) {
+  PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_DEBUG_ASSERT(poller != nullptr);
+  gpr_log(GPR_DEBUG, "CreateEventHandle: poller %p; fd: %d", poller, fd);
+  return poller->CreateHandle(fd, "Add c-ares socket",
+                              poller->CanTrackErrors());
 }
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(

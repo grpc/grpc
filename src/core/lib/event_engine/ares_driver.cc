@@ -99,6 +99,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", request,
                          error_msg.c_str());
+    GRPC_CARES_STACKTRACE();
     absl::Status error = GRPC_ERROR_CREATE(error_msg);
     // r->error = grpc_error_add_child(error, r->error);
     request->OnResolve(error);
@@ -188,8 +189,10 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
   if (parse_status == ARES_SUCCESS) {
     for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
          srv_it = srv_it->next) {
-      result.emplace_back(srv_it->host, srv_it->port, srv_it->priority,
-                          srv_it->weight);
+      result.push_back({.host = srv_it->host,
+                        .port = srv_it->port,
+                        .priority = srv_it->priority,
+                        .weight = srv_it->weight});
     }
   }
   if (reply != nullptr) {
@@ -235,15 +238,17 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
       break;
     }
   }
-  std::basic_string<unsigned char> service_config_json_out;
+  std::string service_config_json_out;
   // Found a service config record.
   if (result != nullptr) {
     size_t service_config_len = result->length - g_prefix_len;
-    service_config_json_out.append(result->txt + g_prefix_len,
-                                   service_config_len);
+    service_config_json_out.append(
+        reinterpret_cast<char*>(result->txt) + g_prefix_len,
+        service_config_len);
     for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
-      service_config_json_out.append(result->txt, result->length);
+      service_config_json_out.append(reinterpret_cast<char*>(result->txt),
+                                     result->length);
     }
     // (*r->service_config_json_out)[service_config_len] = '\0';
     GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
@@ -259,16 +264,14 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
 GrpcAresRequest::GrpcAresRequest(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
-    RegisterSocketWithPollerCallback register_socket_with_poller_cb,
-    EventEngine* event_engine)
+    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver) ? "GrpcAresRequest"
                                                              : nullptr),
       name_(name),
       default_port_(default_port.has_value() ? *default_port : ""),
       timeout_(timeout),
-      register_socket_with_poller_cb_(
-          std::move(register_socket_with_poller_cb)),
+      create_event_handle_cb_(std::move(create_event_handle_cb)),
       fd_node_list_(std::make_unique<FdNodeList>()),
       event_engine_(event_engine) {}
 
@@ -326,18 +329,19 @@ void GrpcAresRequest::Cancel() {
   // TODO(yijiem): really need to add locking now
   if (!shutting_down_) {
     shutting_down_ = true;
+    cancelled_ = true;
     while (!fd_node_list_->IsEmpty()) {
       FdNodeList::FdNode* fd_node = fd_node_list_->PopFdNode();
-      fd_node->handle()->ShutdownHandle(absl::OkStatus());
+      fd_node->handle()->ShutdownHandle(absl::CancelledError());
       PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
-          [self = Ref(DEBUG_LOCATION, "ares OnHandleDestroyed"),
+          [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Cancel"),
            fd_node](absl::Status status) {
             self->OnHandleDestroyed(fd_node, status);
           },
           /*is_permanent=*/false);
       int release_fd = -1;
       fd_node->handle()->OrphanHandle(on_handle_destroyed, &release_fd,
-                                      "no longer used by ares");
+                                      "GrpcAresRequest::Cancel");
       GPR_ASSERT(release_fd == fd_node->WrappedFd());
     }
   }
@@ -354,8 +358,8 @@ void GrpcAresRequest::Work() {
         ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
       FdNodeList::FdNode* fd_node = fd_node_list_->PopFdNode(socks[i]);
       if (fd_node == nullptr) {
-        fd_node = new FdNodeList::FdNode(
-            socks[i], std::move(register_socket_with_poller_cb_(socks[i])));
+        fd_node =
+            new FdNodeList::FdNode(socks[i], create_event_handle_cb_(socks[i]));
         GRPC_CARES_TRACE_LOG("request:%p new fd: %d", this,
                              fd_node->WrappedFd());
       }
@@ -367,7 +371,7 @@ void GrpcAresRequest::Work() {
         GRPC_CARES_TRACE_LOG("request:%p notify read on: %d", this,
                              fd_node->WrappedFd());
         PosixEngineClosure* on_read = new PosixEngineClosure(
-            [self = Ref(DEBUG_LOCATION, "ares OnReadable"), fd_node](
+            [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"), fd_node](
                 absl::Status status) { self->OnReadable(fd_node, status); },
             /*is_permanent=*/false);
         fd_node->handle()->NotifyOnRead(on_read);
@@ -380,7 +384,7 @@ void GrpcAresRequest::Work() {
         GRPC_CARES_TRACE_LOG("request:%p notify write on: %d", this,
                              fd_node->WrappedFd());
         PosixEngineClosure* on_write = new PosixEngineClosure(
-            [self = Ref(DEBUG_LOCATION, "ares OnWritable"), fd_node](
+            [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"), fd_node](
                 absl::Status status) { self->OnWritable(fd_node, status); },
             /*is_permanent=*/false);
         fd_node->handle()->NotifyOnWrite(on_write);
@@ -398,14 +402,14 @@ void GrpcAresRequest::Work() {
       // TODO(yijiem): other destroy steps
       fd_node->handle()->ShutdownHandle(absl::OkStatus());
       PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
-          [self = Ref(DEBUG_LOCATION, "ares OnHandleDestroyed"),
+          [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"),
            fd_node](absl::Status status) {
             self->OnHandleDestroyed(fd_node, status);
           },
           /*is_permanent=*/false);
       int release_fd = -1;
       fd_node->handle()->OrphanHandle(on_handle_destroyed, &release_fd,
-                                      "no longer used by ares");
+                                      "GrpcAresRequest::Work");
       GPR_ASSERT(release_fd == fd_node->WrappedFd());
     } else {
       new_list->PushFdNode(fd_node);
@@ -440,6 +444,8 @@ absl::Status GrpcAresRequest::SetRequestDNSServer(
       return GRPC_ERROR_CREATE(
           absl::StrCat("cannot parse authority ", dns_server));
     }
+    // Prevent an uninitialized variable.
+    dns_server_addr_.next = nullptr;
     int status = ares_set_servers_ports(channel_, &dns_server_addr_);
     if (status != ARES_SUCCESS) {
       return GRPC_ERROR_CREATE(absl::StrCat(
@@ -454,8 +460,9 @@ void GrpcAresRequest::OnReadable(FdNodeList::FdNode* fd_node,
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->readable_registered());
   fd_node->set_readable_registered(false);
-  GRPC_CARES_TRACE_LOG("request:%p %s readable on %d", this, ToString().c_str(),
-                       fd_node->WrappedFd());
+  GRPC_CARES_TRACE_LOG("OnReadable: request: %p %s; fd: %d; status: %s", this,
+                       ToString().c_str(), fd_node->WrappedFd(),
+                       status.ToString().c_str());
   GRPC_CARES_STACKTRACE();
   if (status.ok() && !shutting_down()) {
     do {
@@ -480,7 +487,8 @@ void GrpcAresRequest::OnWritable(FdNodeList::FdNode* fd_node,
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->writable_registered());
   fd_node->set_writable_registered(false);
-  GRPC_CARES_TRACE_LOG("request:%p writable on %d", this, fd_node->WrappedFd());
+  GRPC_CARES_TRACE_LOG("OnWritable: fd: %d; request:%p; status: %s",
+                       fd_node->WrappedFd(), this, status.ToString().c_str());
   if (status.ok() && !shutting_down()) {
     ares_process_fd(channel_, ARES_SOCKET_BAD,
                     static_cast<ares_socket_t>(fd_node->WrappedFd()));
@@ -500,20 +508,30 @@ void GrpcAresRequest::OnHandleDestroyed(FdNodeList::FdNode* fd_node,
                                         absl::Status status) {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(status.ok());
-  GRPC_CARES_TRACE_LOG("request: %p OnDone for fd_node: %d", this,
-                       fd_node->WrappedFd());
+  GRPC_CARES_TRACE_LOG(
+      "OnHandleDestroyed: request: %p; fd_node: %d; status: %s", this,
+      fd_node->WrappedFd(), status.ToString().c_str());
   GRPC_CARES_STACKTRACE();
   delete fd_node;
 }
+
+GrpcAresHostnameRequest::GrpcAresHostnameRequest(
+    absl::string_view name, absl::string_view default_port,
+    EventEngine::Duration timeout, bool is_balancer,
+    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, default_port, timeout,
+                      std::move(create_event_handle_cb), event_engine),
+      is_balancer_(is_balancer) {}
 
 GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
   GRPC_CARES_TRACE_LOG("request:%p destructor", this);
 }
 
-void GrpcAresHostnameRequest::Start() {
+void GrpcAresHostnameRequest::Start(OnResolveCallback<Result> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  on_resolve_ = std::move(on_resolve);
   // We add up pending_queries_ here since ares_gethostbyname may directly
   // invoke the callback inline if there is any error with the input. The
   // callback will invoke OnResolve with an error status and may destroy the
@@ -545,11 +563,30 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
     error_ = result.status();
   }
   if (pending_queries_ == 0) {
+    class ScopedClosureRunner {
+     private:
+      using Closure = absl::AnyInvocable<void()>;
+
+     public:
+      explicit ScopedClosureRunner(Closure closure)
+          : closure_(std::move(closure)) {}
+      ~ScopedClosureRunner() { closure_(); }
+
+     private:
+      Closure closure_;
+    };
+    // Always Unref when goes out of this scope.
+    ScopedClosureRunner cr([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
     // We mark the event driver as being shut down.
     // grpc_ares_notify_on_event_locked will shut down any remaining
     // fds.
     shutting_down_ = true;
     // TODO(yijiem): cancel timers here
+
+    if (cancelled_) {
+      // Cancel does not invoke on_resolve.
+      return;
+    }
     if (!result_.empty()) {
       // As long as there are records, we return them. Note that there might be
       // error_ from the other request too.
@@ -559,33 +596,39 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
                           token = reinterpret_cast<intptr_t>(this)]() mutable {
         on_resolve(std::move(result), token);
       });
-    } else {
-      GPR_ASSERT(!error_.ok());
-      // The reason that we are using EventEngine::Run() here is that we are
-      // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
-      // the Engine to clean up some state there (which will take its own
-      // mutex). The call could go further all the way back to the caller of the
-      // Lookup* call which may then take its own mutex. This mutex order is
-      // inverted from the order from which the caller calls into the
-      // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
-      // warning though it might be false positive.
-      //
-      // Another way might work is to std::move away on_resolve_, result_ or
-      // error_ under lock, then unlock and then call on_resolve.
-      event_engine_->Run([on_resolve = std::move(on_resolve_),
-                          error = std::move(error_),
-                          token = reinterpret_cast<intptr_t>(this)]() mutable {
-        on_resolve(std::move(error), token);
-      });
+      return;
     }
-    Unref(DEBUG_LOCATION, "OnResolve");
+    GPR_ASSERT(!error_.ok());
+    // The reason that we are using EventEngine::Run() here is that we are
+    // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
+    // the Engine to clean up some state there (which will take its own
+    // mutex). The call could go further all the way back to the caller of the
+    // Lookup* call which may then take its own mutex. This mutex order is
+    // inverted from the order from which the caller calls into the
+    // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
+    // warning though it might be false positive.
+    //
+    // Another way might work is to std::move away on_resolve_, result_ or
+    // error_ under lock, then unlock and then call on_resolve.
+    event_engine_->Run([on_resolve = std::move(on_resolve_),
+                        error = std::move(error_),
+                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+      on_resolve(std::move(error), token);
+    });
   }
 }
 
+GrpcAresSRVRequest::GrpcAresSRVRequest(
+    absl::string_view name, EventEngine::Duration timeout,
+    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout,
+                      std::move(create_event_handle_cb), event_engine) {}
+
 // TODO(yijiem): Don't query for SRV records if the target is "localhost"
-void GrpcAresSRVRequest::Start() {
+void GrpcAresSRVRequest::Start(OnResolveCallback<Result> on_resolve) {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  on_resolve_ = std::move(on_resolve);
   // Query the SRV record
   service_name_ = absl::StrCat("_grpclb._tcp.", host_);
   ares_query(channel_, service_name_.c_str(), ns_c_in, ns_t_srv,
@@ -604,10 +647,17 @@ void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
   Unref(DEBUG_LOCATION, "OnResolve");
 }
 
+GrpcAresTXTRequest::GrpcAresTXTRequest(
+    absl::string_view name, EventEngine::Duration timeout,
+    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout,
+                      std::move(create_event_handle_cb), event_engine) {}
+
 // TODO(yijiem): Don't query for TXT records if the target is "localhost"
-void GrpcAresTXTRequest::Start() {
+void GrpcAresTXTRequest::Start(OnResolveCallback<Result> on_resolve) {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  on_resolve_ = std::move(on_resolve);
   // Query the TXT record
   config_name_ = absl::StrCat("_grpc_config.", host_);
   ares_search(channel_, config_name_.c_str(), ns_c_in, ns_t_txt,

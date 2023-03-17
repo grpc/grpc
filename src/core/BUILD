@@ -1925,6 +1925,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
+        "absl/functional:bind_front",
         "absl/hash",
         "absl/meta:type_traits",
         "absl/status",

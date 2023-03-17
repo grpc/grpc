@@ -27,8 +27,10 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
@@ -38,7 +40,9 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
@@ -52,6 +56,7 @@ void InitDNSTests() {}
 
 namespace {
 
+// TODO(yijiem): build a portable solution for Windows
 constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
 constexpr char kPythonWrapper[] =
@@ -113,6 +118,7 @@ class EventEngineDNSTest : public EventEngineTest {
                            "-p", const_cast<const char*>(server_port_str), "-n",
                            kHealthCheckRecordName},
                           " ");
+        // TODO(yijiem): build a portable solution for Windows
         FILE* f = popen(command.c_str(), "r");
         GPR_ASSERT(f != nullptr);
         char buf[128] = {};
@@ -155,6 +161,8 @@ EventEngineDNSTest::DNSServer EventEngineDNSTest::_dns_server;
 namespace {
 
 using grpc_event_engine::experimental::EventEngine;
+using SRVRecord = EventEngine::DNSResolver::SRVRecord;
+using grpc_event_engine::experimental::WaitForSingleOwner;
 using testing::Pointwise;
 
 MATCHER(ResolvedAddressEq, "") {
@@ -164,8 +172,15 @@ MATCHER(ResolvedAddressEq, "") {
          memcmp(addr0.address(), addr1.address(), addr0.size()) == 0;
 }
 
+MATCHER(SRVRecordEq, "") {
+  const auto& arg0 = std::get<0>(arg);
+  const auto& arg1 = std::get<1>(arg);
+  return arg0.host == arg1.host && arg0.port == arg1.port &&
+         arg0.priority == arg1.priority && arg0.weight == arg1.weight;
+}
+
 // Copied from tcp_socket_utils_test.cc
-// TODO(yijiem): maybe make common test util
+// TODO(yijiem): maybe move those into common test util
 EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len,
                                        int port) {
   EventEngine::ResolvedAddress resolved_addr4;
@@ -202,13 +217,13 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
   constexpr uint8_t kExpectedAddresses[][4] = {
       {1, 2, 3, 4}, {1, 2, 3, 5}, {1, 2, 3, 6}};
 
-  grpc_core::ExecCtx exec_ctx;
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
       test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
   grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
   dns_resolver->LookupHostname(
-      [&dns_resolver_signal, kExpectedAddresses](
+      [&verified, &dns_resolver_signal, &kExpectedAddresses](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
@@ -219,14 +234,146 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
                                          sizeof(kExpectedAddresses[1]), 443),
                                MakeAddr4(kExpectedAddresses[2],
                                          sizeof(kExpectedAddresses[2]), 443)}));
-        // TODO(yijiem): unblock
+        verified = true;
         dns_resolver_signal.Notify();
       },
       "ipv4-only-multi-target.dns-test.event-engine.",
-      /*default_port=*/"443", std::chrono::seconds(1));
-  dns_resolver_signal.WaitForNotification();
+      /*default_port=*/"443", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
 }
-TEST_F(EventEngineDNSTest, QueryAAAARecord) { grpc_core::ExecCtx exec_ctx; }
+
+TEST_F(EventEngineDNSTest, QueryAAAARecord) {
+  constexpr uint8_t kExpectedAddresses[][16] = {
+      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
+       0x02},
+      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
+       0x03},
+      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
+       0x04}};
+
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupHostname(
+      [&verified, &dns_resolver_signal, &kExpectedAddresses](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {MakeAddr6(kExpectedAddresses[0],
+                                         sizeof(kExpectedAddresses[0]), 443),
+                               MakeAddr6(kExpectedAddresses[1],
+                                         sizeof(kExpectedAddresses[1]), 443),
+                               MakeAddr6(kExpectedAddresses[2],
+                                         sizeof(kExpectedAddresses[2]), 443)}));
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "ipv6-only-multi-target.dns-test.event-engine.:443",
+      /*default_port=*/"", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
 TEST_F(EventEngineDNSTest, QueryHostnameRecord) { grpc_core::ExecCtx exec_ctx; }
-TEST_F(EventEngineDNSTest, QuerySRVRecord) { grpc_core::ExecCtx exec_ctx; }
-TEST_F(EventEngineDNSTest, QueryTXTRecord) { grpc_core::ExecCtx exec_ctx; }
+
+TEST_F(EventEngineDNSTest, QuerySRVRecord) {
+  const SRVRecord kExpectedRecords[2] = {
+      {.host = "ipv4-only-multi-target.dns-test.event-engine",
+       .port = 1234,
+       .priority = 0,
+       .weight = 0},
+      {.host = "ipv6-only-multi-target.dns-test.event-engine",
+       .port = 1234,
+       .priority = 0,
+       .weight = 0}};
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupSRV(
+      [&verified, &dns_resolver_signal,
+       &kExpectedRecords](absl::StatusOr<std::vector<SRVRecord>> result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, Pointwise(SRVRecordEq(), kExpectedRecords));
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "srv-multi-target.dns-test.event-engine.", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, QueryTXTRecord) {
+  // clang-format off
+  const std::string kExpectedRecord =
+      "[{"
+        "\"serviceConfig\":{"
+          "\"loadBalancingPolicy\":\"round_robin\","
+          "\"methodConfig\":[{"
+            "\"name\":[{"
+              "\"method\":\"Foo\","
+              "\"service\":\"SimpleService\""
+            "}],"
+            "\"waitForReady\":true"
+          "}]"
+        "}"
+      "}]";
+  // clang-format on
+
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupTXT(
+      [&verified, &dns_resolver_signal,
+       &kExpectedRecord](absl::StatusOr<std::string> result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(*result, kExpectedRecord);
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "simple-service.dns-test.event-engine.", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
+// In the spirit of cancel_ares_query_test.cc:
+#define CancelDuringActiveQuery EventEngineDNSTest
+TEST_F(CancelDuringActiveQuery, TestCancelActiveDNSQuery) {
+  // Start up fake non responsive DNS server
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
+  const std::string dns_server =
+      absl::StrFormat("[::1]:%d", fake_dns_server.port());
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = dns_server});
+  EventEngine::DNSResolver::LookupTaskHandle task_handle =
+      dns_resolver->LookupHostname(
+          [test_ee](auto) {
+            // Cancel should not execute on_resolve
+            FAIL() << "This should not be reached";
+          },
+          name, "1234", std::chrono::minutes(1));
+  EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
+  WaitForSingleOwner(std::move(test_ee));
+}
+TEST_F(CancelDuringActiveQuery,
+       TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {}
+TEST_F(
+    CancelDuringActiveQuery,
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
+}
+TEST_F(
+    CancelDuringActiveQuery,
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
+}

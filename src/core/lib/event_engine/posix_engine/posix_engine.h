@@ -158,6 +158,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     bool CancelLookup(LookupTaskHandle handle) override;
 
    private:
+    EventHandle* CreateEventHandle(int fd);
+
     absl::Mutex mu_;
     absl::flat_hash_set<GrpcAresRequest*> inflight_requests_
         ABSL_GUARDED_BY(mu_);
