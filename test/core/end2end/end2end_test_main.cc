@@ -857,7 +857,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(
     CoreLargeSendTests, CoreLargeSendTest,
-    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_1BYTE_AT_A_TIME)),
+    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_1BYTE_AT_A_TIME |
+                                            FEATURE_MASK_ENABLES_TRACES)),
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
