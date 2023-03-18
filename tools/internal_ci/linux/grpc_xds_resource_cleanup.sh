@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -exo pipefail
+set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
@@ -103,6 +103,7 @@ main() {
   # Source the test captured from the master branch.
   echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
+  set +x
 
   # Valid cluster variables needed for the automatic driver setup.
   activate_gke_cluster GKE_CLUSTER_PSM_BASIC
@@ -121,7 +122,9 @@ main() {
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"
+    set -x
     "cleanup::job::${job_name}" "${job_name}" || (( ++failed_jobs ))
+    set +x
     echo "-------------------- Finished job ${job_name} --------------------"
   done
   echo "Failed job suites: ${failed_jobs}"
