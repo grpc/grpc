@@ -205,6 +205,7 @@ grpc_cc_test(
         "tests/retry_exceeds_buffer_size_in_initial_batch.cc",
         "tests/retry_exceeds_buffer_size_in_subsequent_batch.cc",
         "tests/retry_lb_drop.cc",
+        "tests/retry_lb_fail.cc",
         "tests/retry_non_retriable_status.cc",
         "tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc",
         "tests/retry_per_attempt_recv_timeout.cc",
