@@ -23,7 +23,6 @@
 #include <functional>
 #include <memory>
 
-#include "cancel_test_helpers.h"
 #include "gmock/gmock.h"
 
 #include <grpc/byte_buffer.h>
