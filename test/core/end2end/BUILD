@@ -198,6 +198,7 @@ grpc_cc_test(
         "tests/retry.cc",
         "tests/retry_cancel_after_first_attempt_starts.cc",
         "tests/retry_cancel_during_delay.cc",
+        "tests/retry_disabled.cc",
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
