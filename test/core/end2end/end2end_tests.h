@@ -474,13 +474,14 @@ class CoreEnd2endTest
     expectations_++;
     cq_verifier().Expect(CqVerifier::tag(tag), result, whence);
   }
-  void Step(SourceLocation whence = {}) {
+  void Step(absl::optional<Duration> timeout = absl::nullopt,
+            SourceLocation whence = {}) {
     if (expectations_ == 0) {
-      cq_verifier().VerifyEmpty(Duration::Seconds(1), whence);
+      cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify(Duration::Seconds(10), whence);
+    cq_verifier().Verify(timeout.value_or(Duration::Seconds(10)), whence);
   }
 
   void InitClient(const ChannelArgs& args) {
