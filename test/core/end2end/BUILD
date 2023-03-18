@@ -180,6 +180,7 @@ grpc_cc_test(
         "tests/max_concurrent_streams.cc",
         "tests/max_message_length.cc",
         "tests/negative_deadline.cc",
+        "tests/no_logging.cc",
         "tests/no_op.cc",
         "tests/payload.cc",
         "tests/ping_pong_streaming.cc",

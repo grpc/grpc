@@ -552,6 +552,7 @@ class RetryHttp2Test : public CoreEnd2endTest {};
 class ResourceQuotaTest : public CoreEnd2endTest {};
 class PerCallCredsTest : public CoreEnd2endTest {};
 class PerCallCredsOnInsecureTest : public CoreEnd2endTest {};
+class NoLoggingTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 

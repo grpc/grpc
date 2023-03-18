@@ -525,14 +525,16 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
            const ChannelArgs& /*server_args*/) {
           return std::make_unique<InsecureFixture>();
         }},
-    CoreTestConfiguration{
-        "Chttp2FullstackWithTrace",
-        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
-        [](const ChannelArgs& /*client_args*/,
-           const ChannelArgs& /*server_args*/) {
-          return std::make_unique<FixtureWithTracing>(
-              std::make_unique<InsecureFixture>());
-        }},
+    CoreTestConfiguration{"Chttp2FullstackWithTrace",
+                          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                              FEATURE_MASK_IS_HTTP2 |
+                              FEATURE_MASK_ENABLES_TRACES,
+                          nullptr,
+                          [](const ChannelArgs& /*client_args*/,
+                             const ChannelArgs& /*server_args*/) {
+                            return std::make_unique<FixtureWithTracing>(
+                                std::make_unique<InsecureFixture>());
+                          }},
     CoreTestConfiguration{
         "Chttp2FullstackCompression",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
@@ -696,7 +698,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
           return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
         }},
     CoreTestConfiguration{
-        "Chttp2SocketPairWithTrace", FEATURE_MASK_IS_HTTP2, nullptr,
+        "Chttp2SocketPairWithTrace",
+        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_ENABLES_TRACES, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<FixtureWithTracing>(
               std::make_unique<SockpairFixture>(grpc_core::ChannelArgs()));
@@ -913,6 +916,11 @@ INSTANTIATE_TEST_SUITE_P(
     PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
     ::testing::ValuesIn(QueryConfigs(
         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE, 0)),
+    NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(
+    NoLoggingTests, NoLoggingTest,
+    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_ENABLES_TRACES)),
     NameFromConfig);
 
 }  // namespace grpc_core
