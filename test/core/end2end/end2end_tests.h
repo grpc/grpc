@@ -181,10 +181,13 @@ class CoreEnd2endTest
   class ClientCallBuilder {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
-        : test_(test), method_(std::move(method)) {}
+        : test_(test),
+          call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
+    ClientCallBuilder(CoreEnd2endTest& test, void* registered_call)
+        : test_(test), call_selector_(registered_call) {}
 
     ClientCallBuilder& Host(std::string host) {
-      host_ = std::move(host);
+      absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
       return *this;
     }
     ClientCallBuilder& Timeout(Duration timeout) {
@@ -199,8 +202,11 @@ class CoreEnd2endTest
 
    private:
     CoreEnd2endTest& test_;
-    const std::string method_;
-    absl::optional<std::string> host_;
+    struct UnregisteredCall {
+      std::string method;
+      absl::optional<std::string> host;
+    };
+    absl::variant<void*, UnregisteredCall> call_selector_;
     grpc_call* parent_call_ = nullptr;
     uint32_t propagation_mask_ = GRPC_PROPAGATE_DEFAULTS;
     gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
@@ -463,6 +469,9 @@ class CoreEnd2endTest
   ClientCallBuilder NewClientCall(std::string method) {
     return ClientCallBuilder(*this, std::move(method));
   }
+  ClientCallBuilder NewClientCall(void* registered_method) {
+    return ClientCallBuilder(*this, registered_method);
+  }
   IncomingCall RequestCall(int tag) { return IncomingCall(*this, tag); }
 
   using ExpectedResult = CqVerifier::ExpectedResult;
@@ -505,6 +514,11 @@ class CoreEnd2endTest
   void PingServerFromClient(int tag) {
     grpc_channel_ping(fixture().client(), fixture().cq(), CqVerifier::tag(tag),
                       nullptr);
+  }
+  void* RegisterCallOnClient(const char* method, const char* host) {
+    ForceInitialized();
+    return grpc_channel_register_call(fixture().client(), method, host,
+                                      nullptr);
   }
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect) {

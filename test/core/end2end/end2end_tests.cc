@@ -234,13 +234,20 @@ CoreEnd2endTest::BatchBuilder::~BatchBuilder() {
 }
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
-  absl::optional<Slice> host;
-  if (host_.has_value()) host = Slice::FromCopiedString(*host_);
-  test_.ForceInitialized();
-  return Call(grpc_channel_create_call(
-      test_.fixture().client(), parent_call_, propagation_mask_,
-      test_.fixture().cq(), Slice::FromCopiedString(method_).c_slice(),
-      host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
+  if (auto* u = absl::get_if<UnregisteredCall>(&call_selector_)) {
+    absl::optional<Slice> host;
+    if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
+    test_.ForceInitialized();
+    return Call(grpc_channel_create_call(
+        test_.fixture().client(), parent_call_, propagation_mask_,
+        test_.fixture().cq(), Slice::FromCopiedString(u->method).c_slice(),
+        host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
+  } else {
+    return Call(grpc_channel_create_registered_call(
+        test_.fixture().client(), parent_call_, propagation_mask_,
+        test_.fixture().cq(), absl::get<void*>(call_selector_), deadline_,
+        nullptr));
+  }
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
