@@ -191,6 +191,7 @@ grpc_cc_test(
         "tests/ping.cc",
         "tests/ping_pong_streaming.cc",
         "tests/proxy_auth.cc",
+        "tests/request_with_flags.cc",
         "tests/request_with_payload.cc",
         "tests/resource_quota_server.cc",
         "tests/retry.cc",
