@@ -445,7 +445,6 @@
   RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
   RE2_MERGE_OBJS = $(LIBRE2_OBJS)
   RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
-  CPPFLAGS := -Ithird_party/re2 $(CPPFLAGS)
 
   # Setup upb dependency
 
