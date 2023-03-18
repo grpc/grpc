@@ -199,6 +199,7 @@ grpc_cc_test(
         "tests/retry_cancellation.cc",
         "tests/retry_cancel_after_first_attempt_starts.cc",
         "tests/retry_cancel_during_delay.cc",
+        "tests/retry_cancel_with_multiple_send_batches.cc",
         "tests/retry_disabled.cc",
         "tests/retry_exceeds_buffer_size_in_delay.cc",
         "tests/retry_exceeds_buffer_size_in_initial_batch.cc",
