@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Copied from src/core/lib/iomgr/nameser.h
 // TODO(yijiem): we are using c-ares 1.17.2, seems like c-ares provides
 // ares_nameser.h in its public interface since c-ares 1.18.0. We may be able to
 // use that if we decide to upgrade to later version.

@@ -60,96 +60,19 @@ using PollerHandle = EventHandle*;
 
 using AresSocket = ares_socket_t;
 
-// TODO(yijiem): see if we can use std::list
-// per ares-channel linked-list of FdNodes
-class FdNodeList {
- public:
-  class FdNode {
-   public:
-    FdNode() = default;
-    explicit FdNode(ares_socket_t as, PollerHandle handle)
-        : as_(as), handle_(std::move(handle)) {}
-
-    bool readable_registered() const { return readable_registered_; }
-    bool writable_registered() const { return writable_registered_; }
-    void set_readable_registered(bool rr) { readable_registered_ = rr; }
-    void set_writable_registered(bool wr) { writable_registered_ = wr; }
-
-    int WrappedFd() const { return static_cast<int>(as_); }
-    PollerHandle& handle() { return handle_; }
-
-   private:
-    friend class FdNodeList;
-
-    // ares socket
-    ares_socket_t as_;
-    // Poller event handle
-    PollerHandle handle_;
-    // next fd node
-    FdNode* next_ = nullptr;
-    /// if the readable closure has been registered
-    bool readable_registered_ = false;
-    /// if the writable closure has been registered
-    bool writable_registered_ = false;
-  };
-
-  FdNodeList() = default;
-  ~FdNodeList() {
-    for (FdNode *node = head_, *next = nullptr; node != nullptr; node = next) {
-      next = node->next_;
-      GPR_ASSERT(!node->readable_registered());
-      GPR_ASSERT(!node->writable_registered());
-      delete node;
-    }
-  }
-
-  bool IsEmpty() const { return head_ == nullptr; }
-
-  void PushFdNode(FdNode* fd_node) {
-    fd_node->next_ = head_;
-    head_ = fd_node;
-  }
-
-  FdNode* PopFdNode() {
-    GPR_ASSERT(!IsEmpty());
-    FdNode* ret = head_;
-    head_ = head_->next_;
-    return ret;
-  }
-
-  // Search for as in the FdNode list. This is an O(n) search, the max
-  // possible value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2
-  // in our tests.
-  FdNode* PopFdNode(ares_socket_t as) {
-    FdNode phony_head;
-    phony_head.next_ = head_;
-    FdNode* node = &phony_head;
-    while (node->next_ != nullptr) {
-      if (node->next_->as_ == as) {
-        FdNode* ret = node->next_;
-        node->next_ = node->next_->next_;
-        head_ = phony_head.next_;
-        return ret;
-      }
-      node = node->next_;
-    }
-    return nullptr;
-  }
-
- private:
-  FdNode* head_ = nullptr;
-};
-
 // An inflight name service lookup request
 class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
  public:
   ~GrpcAresRequest() override;
 
-  absl::Status Initialize(absl::string_view dns_server, bool check_port);
-  void Cancel();
-  absl::string_view host() const { return host_; }
-  uint16_t port() const { return port_; }
+  absl::Status Initialize(absl::string_view dns_server, bool check_port)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  void Cancel() ABSL_LOCKS_EXCLUDED(mu_);
+  absl::string_view host() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return host_;
+  }
+  uint16_t port() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return port_; }
 
  protected:
   using CreateEventHandleCallback =
@@ -163,19 +86,6 @@ class GrpcAresRequest
 
   // Cancel the lookup and start the shutdown process
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_) override;
-
-  ares_channel channel() const { return channel_; }
-  bool shutting_down() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return shutting_down_;
-  }
-  void set_shutting_down(bool shutting_down)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    shutting_down_ = shutting_down;
-  }
-  const FdNodeList* fd_node_list() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return fd_node_list_.get();
-  }
-
   std::string ToString() const {
     std::ostringstream s;
     s << "[channel: " << channel_ << "; host: " << host_
@@ -187,14 +97,16 @@ class GrpcAresRequest
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
+  struct FdNode;
+  class FdNodeList;
   absl::Status SetRequestDNSServer(absl::string_view dns_server)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void OnReadable(FdNodeList::FdNode* fd_node, absl::Status status)
+  void OnReadable(FdNode* fd_node, absl::Status status)
       ABSL_LOCKS_EXCLUDED(mu_);
-  void OnWritable(FdNodeList::FdNode* fd_node, absl::Status status)
+  void OnWritable(FdNode* fd_node, absl::Status status)
       ABSL_LOCKS_EXCLUDED(mu_);
-  void OnHandleDestroyed(FdNodeList::FdNode* fd_node, absl::Status status)
+  void OnHandleDestroyed(FdNode* fd_node, absl::Status status)
       ABSL_LOCKS_EXCLUDED(mu_);
 
  protected:
@@ -241,7 +153,6 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
   bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return is_balancer_;
   }
-  const char* qtype() const { return "Unimplemented"; }
   void Start(OnResolveCallback<Result> on_resolve) ABSL_LOCKS_EXCLUDED(mu_);
   void OnResolve(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
@@ -268,7 +179,9 @@ class GrpcAresSRVRequest : public GrpcAresRequest {
                               EventEngine::Duration timeout,
                               CreateEventHandleCallback create_event_handle_cb,
                               EventEngine* event_engine);
-  const char* service_name() const { return service_name_.c_str(); }
+  const char* service_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return service_name_.c_str();
+  }
   void Start(OnResolveCallback<Result> on_resolve) ABSL_LOCKS_EXCLUDED(mu_);
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -287,7 +200,9 @@ class GrpcAresTXTRequest : public GrpcAresRequest {
                               EventEngine::Duration timeout,
                               CreateEventHandleCallback create_event_handle_cb,
                               EventEngine* event_engine);
-  const char* config_name() const { return config_name_.c_str(); }
+  const char* config_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return config_name_.c_str();
+  }
   void Start(OnResolveCallback<Result> on_resolve) ABSL_LOCKS_EXCLUDED(mu_);
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
