@@ -181,6 +181,7 @@ grpc_cc_test(
         "tests/large_metadata.cc",
         "tests/max_concurrent_streams.cc",
         "tests/max_connection_age.cc",
+        "tests/max_connection_idle.cc",
         "tests/max_message_length.cc",
         "tests/negative_deadline.cc",
         "tests/no_logging.cc",

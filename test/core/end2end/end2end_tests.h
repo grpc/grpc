@@ -507,6 +507,19 @@ class CoreEnd2endTest
                       nullptr);
   }
 
+  grpc_connectivity_state CheckConnectivityState(bool try_to_connect) {
+    return grpc_channel_check_connectivity_state(fixture().client(),
+                                                 try_to_connect);
+  }
+
+  void WatchConnectivityState(grpc_connectivity_state last_observed_state,
+                              Duration deadline, int tag) {
+    grpc_channel_watch_connectivity_state(
+        fixture().client(), last_observed_state,
+        grpc_timeout_milliseconds_to_deadline(deadline.millis()),
+        fixture().cq(), CqVerifier::tag(tag));
+  }
+
   grpc_channel* client() {
     ForceInitialized();
     return fixture().client();
