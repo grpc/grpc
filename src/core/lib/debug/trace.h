@@ -23,11 +23,6 @@
 
 #include <atomic>
 
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
-
 // TODO(veblush): Remove this deprecated function once codes depending on this
 // function are updated in the internal repo.
 void grpc_tracer_init(const char* env_var_name);
