@@ -210,6 +210,7 @@ grpc_cc_test(
         "tests/retry_recv_message.cc",
         "tests/retry_send_initial_metadata_refs.cc",
         "tests/retry_send_recv_batch.cc",
+        "tests/retry_server_pushback_delay.cc",
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
