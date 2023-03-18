@@ -110,8 +110,6 @@ namespace {
 const grpc_transport_vtable kFakeTransportVTable = {
     // sizeof_stream
     0,
-    // hacky_disable_stream_op_batch_coalescing_in_connected_channel
-    false,
     // name
     "fake_transport",
     // init_stream
@@ -404,16 +402,16 @@ class MainLoop {
    public:
     WakeCall(MainLoop* main_loop, uint32_t id)
         : main_loop_(main_loop), id_(id) {}
-    void Wakeup(WakeupMask) override {
+    void Wakeup(void*) override {
       for (const uint32_t already : main_loop_->wakeups_) {
         if (already == id_) return;
       }
       main_loop_->wakeups_.push_back(id_);
       delete this;
     }
-    void Drop(WakeupMask) override { delete this; }
+    void Drop(void*) override { delete this; }
 
-    std::string ActivityDebugTag(WakeupMask) const override {
+    std::string ActivityDebugTag(void*) const override {
       return "WakeCall(" + std::to_string(id_) + ")";
     }
 
@@ -478,7 +476,6 @@ class MainLoop {
       auto* server_initial_metadata = arena_->New<Pipe<ServerMetadataHandle>>();
       CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
                                                  &client_initial_metadata_)),
-                         ClientInitialMetadataOutstandingToken::Empty(),
                          &server_initial_metadata->sender, nullptr, nullptr};
       if (is_client) {
         promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
@@ -527,9 +524,9 @@ class MainLoop {
     }
 
     void Orphan() override { abort(); }
-    void ForceImmediateRepoll(WakeupMask) override { context_->set_continue(); }
+    void ForceImmediateRepoll() override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
-      return Waker(new WakeCall(main_loop_, id_), 0);
+      return Waker(new WakeCall(main_loop_, id_), nullptr);
     }
     Waker MakeNonOwningWaker() override { return MakeOwningWaker(); }
 

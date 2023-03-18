@@ -195,3 +195,7 @@ def compression_algorithm_name(grpc_compression_algorithm algorithm):
     grpc_compression_algorithm_name(algorithm, &name)
   # Let Cython do the right thing with string casting
   return name
+
+
+def reset_grpc_config_vars():
+  ConfigVars.Reset()

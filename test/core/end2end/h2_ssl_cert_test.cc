@@ -25,6 +25,7 @@
 
 #include <openssl/crypto.h>
 
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -38,9 +39,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -276,7 +276,9 @@ int main(int argc, char** argv) {
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.default_ssl_roots_file_path = roots_filename;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

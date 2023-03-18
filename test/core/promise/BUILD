@@ -127,10 +127,7 @@ grpc_cc_test(
     # is.
     name = "promise_map_test",
     srcs = ["map_test.cc"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -167,6 +164,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:promise",
         "//src/core:poll",
         "//src/core:promise_factory",
     ],
@@ -310,6 +308,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "observable_test",
+    srcs = ["observable_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:promise",
+        "//src/core:observable",
+        "//src/core:seq",
+    ],
+)
+
+grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
     external_deps = ["gtest"],
@@ -368,7 +385,6 @@ grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = [
-        "absl/functional:function_ref",
         "absl/status",
         "gtest",
     ],
@@ -378,7 +394,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
@@ -417,7 +432,6 @@ grpc_proto_fuzzer(
     srcs = ["promise_fuzzer.cc"],
     corpus = "promise_fuzzer_corpus",
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/status",
         "absl/types:optional",
     ],
@@ -512,6 +526,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
+        "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:1999",
         "//src/core:context",

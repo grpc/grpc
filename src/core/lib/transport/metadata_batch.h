@@ -441,15 +441,6 @@ struct GrpcStatusFromWire {
   static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
-// Annotation to denote that this call qualifies for cancelled=1 for the
-// RECV_CLOSE_ON_SERVER op
-struct GrpcCallWasCancelled {
-  static absl::string_view DebugKey() { return "GrpcCallWasCancelled"; }
-  static constexpr bool kRepeatable = false;
-  using ValueType = bool;
-  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
-};
-
 // Annotation added by client surface code to denote wait-for-ready state
 struct WaitForReady {
   struct ValueType {
@@ -1387,8 +1378,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
-    grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly>;
+    grpc_core::WaitForReady, grpc_core::GrpcTrailersOnly>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
