@@ -807,6 +807,13 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               getpid(), now.tv_sec, now.tv_nsec,
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
+// TODO(ctiller): these got inadvertently disabled when the project
+// switched to
+// Bazel in 2016, and have not been re-enabled since and are now quite
+// broken.
+// We should re-enable them however, as they provide defense in depth
+// that enabling tracers is safe.
+#if 0
     CoreTestConfiguration{
         "Chttp2SocketPairWithTrace",
         FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_ENABLES_TRACES, nullptr,
@@ -824,6 +831,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                             return std::make_unique<FixtureWithTracing>(
                                 std::make_unique<InsecureFixture>());
                           }},
+#endif
 #ifdef GRPC_POSIX_WAKEUP_FD
     CoreTestConfiguration{
         "Chttp2FullstackWithPipeWakeup",
