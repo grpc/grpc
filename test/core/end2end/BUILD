@@ -207,6 +207,7 @@ grpc_cc_test(
         "tests/retry_per_attempt_recv_timeout_on_last_attempt.cc",
         "tests/retry_per_attempt_recv_timeout.cc",
         "tests/retry_recv_initial_metadata.cc",
+        "tests/retry_recv_message.cc",
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
