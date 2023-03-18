@@ -187,6 +187,7 @@ grpc_cc_test(
         "tests/no_logging.cc",
         "tests/no_op.cc",
         "tests/payload.cc",
+        "tests/ping.cc",
         "tests/ping_pong_streaming.cc",
         "tests/request_with_payload.cc",
         "tests/resource_quota_server.cc",

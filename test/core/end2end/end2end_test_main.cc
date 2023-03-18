@@ -457,14 +457,14 @@ class FixtureWithTracing final : public CoreTestFixture {
  public:
   explicit FixtureWithTracing(std::unique_ptr<CoreTestFixture> fixture)
       : fixture_(std::move(fixture)) {
-    g_fixture_slowdown_factor = 10;
+    // g_fixture_slowdown_factor = 10;
     EXPECT_FALSE(grpc_tracer_set_enabled("doesnt-exist", 0));
     EXPECT_TRUE(grpc_tracer_set_enabled("http", 1));
     EXPECT_TRUE(grpc_tracer_set_enabled("all", 1));
   }
   ~FixtureWithTracing() {
     saved_trace_flags_.Restore();
-    g_fixture_slowdown_factor = 1;
+    // g_fixture_slowdown_factor = 1;
   }
 
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
@@ -525,16 +525,6 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
            const ChannelArgs& /*server_args*/) {
           return std::make_unique<InsecureFixture>();
         }},
-    CoreTestConfiguration{"Chttp2FullstackWithTrace",
-                          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                              FEATURE_MASK_IS_HTTP2 |
-                              FEATURE_MASK_ENABLES_TRACES,
-                          nullptr,
-                          [](const ChannelArgs& /*client_args*/,
-                             const ChannelArgs& /*server_args*/) {
-                            return std::make_unique<FixtureWithTracing>(
-                                std::make_unique<InsecureFixture>());
-                          }},
     CoreTestConfiguration{
         "Chttp2FullstackCompression",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
@@ -698,13 +688,6 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
           return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
         }},
     CoreTestConfiguration{
-        "Chttp2SocketPairWithTrace",
-        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_ENABLES_TRACES, nullptr,
-        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
-          return std::make_unique<FixtureWithTracing>(
-              std::make_unique<SockpairFixture>(grpc_core::ChannelArgs()));
-        }},
-    CoreTestConfiguration{
         "Chttp2SocketPair1ByteAtATime",
         FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
@@ -823,6 +806,23 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               getpid(), now.tv_sec, now.tv_nsec,
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
+    CoreTestConfiguration{
+        "Chttp2SocketPairWithTrace",
+        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_ENABLES_TRACES, nullptr,
+        [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+          return std::make_unique<FixtureWithTracing>(
+              std::make_unique<SockpairFixture>(grpc_core::ChannelArgs()));
+        }},
+    CoreTestConfiguration{"Chttp2FullstackWithTrace",
+                          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                              FEATURE_MASK_IS_HTTP2 |
+                              FEATURE_MASK_ENABLES_TRACES,
+                          nullptr,
+                          [](const ChannelArgs& /*client_args*/,
+                             const ChannelArgs& /*server_args*/) {
+                            return std::make_unique<FixtureWithTracing>(
+                                std::make_unique<InsecureFixture>());
+                          }},
 #ifdef GRPC_POSIX_WAKEUP_FD
     CoreTestConfiguration{
         "Chttp2FullstackWithPipeWakeup",
