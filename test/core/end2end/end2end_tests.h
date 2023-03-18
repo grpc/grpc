@@ -125,14 +125,14 @@ class CoreTestFixture {
     client_ = nullptr;
   }
 
+  virtual grpc_server* MakeServer(const ChannelArgs& args) = 0;
+  virtual grpc_channel* MakeClient(const ChannelArgs& args) = 0;
+
  protected:
   void SetServer(grpc_server* server);
   void SetClient(grpc_channel* client);
 
  private:
-  virtual grpc_server* MakeServer(const ChannelArgs& args) = 0;
-  virtual grpc_channel* MakeClient(const ChannelArgs& args) = 0;
-
   void DrainCq() {
     grpc_event ev;
     do {
