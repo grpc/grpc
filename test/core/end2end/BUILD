@@ -204,6 +204,7 @@ grpc_cc_test(
         "tests/retry_exceeds_buffer_size_in_subsequent_batch.cc",
         "tests/retry_non_retriable_status.cc",
         "tests/retry_per_attempt_recv_timeout_on_last_attempt.cc",
+        "tests/retry_per_attempt_recv_timeout.cc",
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
