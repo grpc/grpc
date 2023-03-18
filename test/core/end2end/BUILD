@@ -213,6 +213,7 @@ grpc_cc_test(
         "tests/retry_server_pushback_delay.cc",
         "tests/retry_server_pushback_disabled.cc",
         "tests/retry_streaming.cc",
+        "tests/retry_streaming_after_commit.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
         "tests/retry_transparent_goaway.cc",
