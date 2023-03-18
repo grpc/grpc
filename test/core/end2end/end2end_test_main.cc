@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <regex>
 #include <vector>
 
 #include "end2end_tests.h"
@@ -834,95 +835,157 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
 #endif
 }};
 
-std::vector<const CoreTestConfiguration*> QueryConfigs(uint32_t enforce_flags,
-                                                       uint32_t exclude_flags) {
-  std::vector<const CoreTestConfiguration*> out;
-  for (const CoreTestConfiguration& config : *all_configs) {
-    if ((config.feature_mask & enforce_flags) == enforce_flags &&
-        (config.feature_mask & exclude_flags) == 0) {
-      out.push_back(&config);
-    }
+class ConfigQuery {
+ public:
+  ConfigQuery() = default;
+  ConfigQuery(const ConfigQuery&) = delete;
+  ConfigQuery& operator=(const ConfigQuery&) = delete;
+  ConfigQuery& EnforceFeatures(uint32_t features) {
+    enforce_features_ |= features;
+    return *this;
   }
-  return out;
-}
+  ConfigQuery& ExcludeFeatures(uint32_t features) {
+    exclude_features_ |= features;
+    return *this;
+  }
+  ConfigQuery& AllowName(const std::string& name) {
+    allowed_names_.emplace_back(
+        std::regex(name, std::regex_constants::ECMAScript));
+    return *this;
+  }
+  ConfigQuery& ExcludeName(const std::string& name) {
+    excluded_names_.emplace_back(
+        std::regex(name, std::regex_constants::ECMAScript));
+    return *this;
+  }
 
-INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest,
-                         ::testing::ValuesIn(QueryConfigs(0, 0)),
+  auto Run() const {
+    std::vector<const CoreTestConfiguration*> out;
+    for (const CoreTestConfiguration& config : *all_configs) {
+      if ((config.feature_mask & enforce_features_) == enforce_features_ &&
+          (config.feature_mask & exclude_features_) == 0) {
+        bool allowed = allowed_names_.empty();
+        for (const std::regex& re : allowed_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = true;
+            break;
+          }
+        }
+        for (const std::regex& re : excluded_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = false;
+            break;
+          }
+        }
+        if (allowed) {
+          out.push_back(&config);
+        }
+      }
+    }
+    return ::testing::ValuesIn(out);
+  }
+
+ private:
+  uint32_t enforce_features_ = 0;
+  uint32_t exclude_features_ = 0;
+  std::vector<std::regex> allowed_names_;
+  std::vector<std::regex> excluded_names_;
+};
+
+INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest, ConfigQuery().Run(),
                          NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     SecureEnd2endTests, SecureEnd2endTest,
-    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_SECURE, 0)),
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),
     NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(
-    CoreLargeSendTests, CoreLargeSendTest,
-    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_1BYTE_AT_A_TIME |
-                                            FEATURE_MASK_ENABLES_TRACES)),
-    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,
+                         ConfigQuery()
+                             .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
+                                              FEATURE_MASK_ENABLES_TRACES)
+                             .Run(),
+                         NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     CoreDeadlineTests, CoreDeadlineTest,
-    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_IS_MINSTACK)),
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(),
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     CoreClientChannelTests, CoreClientChannelTest,
-    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL, 0)),
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run(),
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     Http2SingleHopTests, Http2SingleHopTest,
-    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_HTTP2,
-                                     FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                                         FEATURE_MASK_ENABLES_TRACES)),
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_ENABLES_TRACES)
+        .Run(),
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     RetryTests, RetryTest,
-    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
-                                     FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)),
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
+        .Run(),
     NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(WriteBufferingTests, WriteBufferingTest,
-                         ::testing::ValuesIn(QueryConfigs(
-                             0, FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)),
-                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    WriteBufferingTests, WriteBufferingTest,
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
+        .Run(),
+    NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(Http2Tests, Http2Test,
-                         ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_HTTP2,
-                                                          0)),
-                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    Http2Tests, Http2Test,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(), NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(RetryHttp2Tests, RetryHttp2Test,
-                         ::testing::ValuesIn(QueryConfigs(
-                             FEATURE_MASK_IS_HTTP2 |
-                                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
-                             FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                                 FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)),
-                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    RetryHttp2Tests, RetryHttp2Test,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
+                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
+        .Run(),
+    NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaTests, ResourceQuotaTest,
-    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                                            FEATURE_MASK_1BYTE_AT_A_TIME)),
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_1BYTE_AT_A_TIME)
+        .Run(),
     NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(PerCallCredsTests, PerCallCredsTest,
-                         ::testing::ValuesIn(QueryConfigs(
-                             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, 0)),
-                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    PerCallCredsTests, PerCallCredsTest,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
+        .Run(),
+    NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
-    ::testing::ValuesIn(QueryConfigs(
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE, 0)),
+    ConfigQuery()
+        .EnforceFeatures(
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
+        .Run(),
     NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     NoLoggingTests, NoLoggingTest,
-    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_ENABLES_TRACES)),
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run(),
     NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
+                         ConfigQuery().AllowName("Chttp2HttpProxy").Run(),
+                         NameFromConfig);
 
 }  // namespace grpc_core
 
