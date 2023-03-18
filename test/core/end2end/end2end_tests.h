@@ -73,6 +73,7 @@
 #define FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING 512
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
 #define FEATURE_MASK_IS_MINSTACK 2048
+#define FEATURE_MASK_IS_SECURE 4096
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -539,6 +540,7 @@ class CoreEnd2endTest
   bool initialized_ = false;
 };
 
+class SecureEnd2endTest : public CoreEnd2endTest {};
 class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};

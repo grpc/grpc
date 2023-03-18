@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "end2end_tests.h"
-#include "fixtures/h2_tls_common.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -641,7 +640,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SslProxy",
-        FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | FEATURE_MASK_IS_HTTP2,
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs& client_args,
@@ -660,7 +659,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
     },
     CoreTestConfiguration{
         "Chttp2SimpleSslWithOauth2FullstackTls12",
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
@@ -668,7 +667,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SimpleSslWithOauth2FullstackTls13",
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
@@ -676,7 +675,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SimplSslFullstackTls12",
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
@@ -684,7 +683,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SimplSslFullstackTls13",
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
             FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
         "foo.test.google.fr",
@@ -729,7 +728,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
     },
     CoreTestConfiguration{
         "Chttp2SslCredReloadTls12",
-        FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
         "foo.test.google.fr",
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
@@ -737,7 +736,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SslCredReloadTls13",
-        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+        FEATURE_MASK_IS_SECURE | FEATURE_MASK_IS_HTTP2 |
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
             FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
         "foo.test.google.fr",
@@ -846,6 +846,11 @@ std::vector<const CoreTestConfiguration*> QueryConfigs(uint32_t enforce_flags,
 INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest,
                          ::testing::ValuesIn(QueryConfigs(0, 0)),
                          NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(
+    SecureEnd2endTests, SecureEnd2endTest,
+    ::testing::ValuesIn(QueryConfigs(FEATURE_MASK_IS_SECURE, 0)),
+    NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     CoreLargeSendTests, CoreLargeSendTest,
