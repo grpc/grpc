@@ -541,8 +541,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
     CoreTestConfiguration{
         "Chttp2SocketPairMinstack",
-        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES,
-        nullptr,
+        FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_MINSTACK, nullptr,
         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
           return std::make_unique<SockpairWithMinstackFixture>(
               grpc_core::ChannelArgs());
@@ -577,10 +576,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_1BYTE_AT_A_TIME)),
     NameFromConfig);
 
-INSTANTIATE_TEST_SUITE_P(CoreDeadlineTests, CoreDeadlineTest,
-                         ::testing::ValuesIn(QueryConfigs(
-                             0, FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES)),
-                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    CoreDeadlineTests, CoreDeadlineTest,
+    ::testing::ValuesIn(QueryConfigs(0, FEATURE_MASK_IS_MINSTACK)),
+    NameFromConfig);
 
 INSTANTIATE_TEST_SUITE_P(
     CoreClientChannelTests, CoreClientChannelTest,

@@ -72,7 +72,7 @@
 #define FEATURE_MASK_1BYTE_AT_A_TIME 256
 #define FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING 512
 #define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1024
-#define FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES 2048
+#define FEATURE_MASK_IS_MINSTACK 2048
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -552,6 +552,10 @@ class PerCallCredsTest : public CoreEnd2endTest {};
 class PerCallCredsOnInsecureTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
+
+#define SKIP_IF_MINSTACK()                                 \
+  if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
+  GTEST_SKIP() << "Skipping test for minstack"
 
 void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char** argv,
