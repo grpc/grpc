@@ -375,6 +375,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
 
+  t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
+
   static const struct {
     absl::string_view channel_arg_name;
     grpc_chttp2_setting_id setting_id;

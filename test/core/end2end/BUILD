@@ -178,6 +178,7 @@ grpc_cc_test(
         "tests/high_initial_seqno.cc",
         "tests/hpack_size.cc",
         "tests/invoke_large_request.cc",
+        "tests/keepalive_timeout.cc",
         "tests/large_metadata.cc",
         "tests/max_concurrent_streams.cc",
         "tests/max_connection_age.cc",

@@ -436,6 +436,8 @@ struct grpc_chttp2_transport
 
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
+  // True if pings should be acked
+  bool ack_pings = true;
   // next bdp ping timer handle
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_bdp_ping_timer_handle;
