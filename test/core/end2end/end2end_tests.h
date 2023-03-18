@@ -544,6 +544,11 @@ class CoreEnd2endTest
     return fixture().server();
   }
 
+  Timestamp TimestampAfterDuration(Duration duration) {
+    return Timestamp::FromTimespecRoundUp(
+        grpc_timeout_milliseconds_to_deadline(duration.millis()));
+  }
+
  private:
   void ForceInitialized();
 

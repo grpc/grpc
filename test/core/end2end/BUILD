@@ -196,6 +196,8 @@ grpc_cc_test(
         "tests/request_with_payload.cc",
         "tests/resource_quota_server.cc",
         "tests/retry.cc",
+        "tests/retry_cancel_after_first_attempt_starts.cc",
+        "tests/retry_cancel_during_delay.cc",
         "tests/retry_streaming.cc",
         "tests/retry_throttled.cc",
         "tests/retry_too_many_attempts.cc",
