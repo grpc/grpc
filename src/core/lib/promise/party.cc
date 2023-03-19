@@ -272,7 +272,7 @@ bool Party::RunParty() {
         gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
                 DebugTag().c_str(), std::string(name).c_str(), i);
       }
-      participants_[i] = nullptr;
+      participants_[i].store(nullptr, std::memory_order_relaxed);
     } else if (!name.empty()) {
       gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
               std::string(name).c_str());

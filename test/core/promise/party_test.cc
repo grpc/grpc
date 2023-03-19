@@ -101,7 +101,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
           EXPECT_FALSE(sync.RunParty([&](int slot) {
             run_any = true;
             std::atomic<bool>* participant =
-                participants[slot].load(std::memory_order_acquire);
+                participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me = true;
             if (participant == nullptr) {
               gpr_log(GPR_ERROR,
