@@ -15,6 +15,7 @@
 #include "src/core/lib/promise/party.h"
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -40,6 +41,123 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
+
+///////////////////////////////////////////////////////////////////////////////
+// PartySyncTest
+
+template <typename T>
+class PartySyncTest : public ::testing::Test {};
+
+using PartySyncTypes =
+    ::testing::Types<PartySyncUsingAtomics, PartySyncUsingMutex>;
+TYPED_TEST_SUITE(PartySyncTest, PartySyncTypes);
+
+TYPED_TEST(PartySyncTest, NoOp) { TypeParam sync(1); }
+
+TYPED_TEST(PartySyncTest, RefAndUnref) {
+  Notification half_way;
+  TypeParam sync(1);
+  std::thread thread1([&] {
+    for (int i = 0; i < 1000000; i++) {
+      sync.IncrementRefCount();
+    }
+    half_way.Notify();
+    for (int i = 0; i < 1000000; i++) {
+      sync.IncrementRefCount();
+    }
+    for (int i = 0; i < 2000000; i++) {
+      EXPECT_FALSE(sync.Unref());
+    }
+  });
+  half_way.WaitForNotification();
+  for (int i = 0; i < 2000000; i++) {
+    sync.IncrementRefCount();
+  }
+  for (int i = 0; i < 2000000; i++) {
+    EXPECT_FALSE(sync.Unref());
+  }
+  thread1.join();
+  EXPECT_TRUE(sync.Unref());
+}
+
+TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
+  TypeParam sync(1);
+  std::vector<std::thread> threads;
+  std::atomic<std::atomic<bool>*> participants[party_detail::kMaxParticipants] =
+      {};
+  for (int i = 0; i < 8; i++) {
+    threads.emplace_back([&] {
+      for (int i = 0; i < 100000; i++) {
+        std::atomic<bool> done{false};
+        bool run = sync.AddParticipantAndRef([&](int i) {
+          participants[i].store(&done, std::memory_order_release);
+        });
+        if (run) {
+          EXPECT_FALSE(sync.RunParty([&](int slot) {
+            std::atomic<bool>* participant =
+                participants[slot].load(std::memory_order_acquire);
+            if (participant == nullptr) {
+              gpr_log(GPR_ERROR,
+                      "Participant was null (spurious wakeup observed)");
+            }
+            participant->store(true, std::memory_order_relaxed);
+            return true;
+          }));
+        }
+        EXPECT_FALSE(sync.Unref());
+        while (!done.load(std::memory_order_relaxed)) {
+        }
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  EXPECT_TRUE(sync.Unref());
+}
+
+TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
+  std::vector<std::thread> trials;
+  std::atomic<int> delete_paths_taken[3] = {{0}, {0}, {0}};
+  for (int i = 0; i < 10000; i++) {
+    trials.emplace_back([&delete_paths_taken] {
+      TypeParam sync(1);
+      int delete_path = -1;
+      EXPECT_TRUE(
+          sync.AddParticipantAndRef([](int slot) { EXPECT_EQ(slot, 0); }));
+      std::thread run_party([&] {
+        if (sync.RunParty([&sync, n = 0](int slot) mutable {
+              EXPECT_EQ(slot, 0);
+              ++n;
+              if (n < 10) {
+                sync.ForceImmediateRepoll(1);
+                return false;
+              }
+              return true;
+            })) {
+          delete_path = 0;
+        }
+      });
+      std::thread unref([&] {
+        if (sync.Unref()) delete_path = 1;
+      });
+      if (sync.Unref()) delete_path = 2;
+      run_party.join();
+      unref.join();
+      EXPECT_GE(delete_path, 0);
+      delete_paths_taken[delete_path].fetch_add(1, std::memory_order_relaxed);
+    });
+  }
+  for (auto& trial : trials) {
+    trial.join();
+  }
+  fprintf(stderr, "DELETE_PATHS: RunParty:%d AsyncUnref:%d SyncUnref:%d\n",
+          delete_paths_taken[0].load(), delete_paths_taken[1].load(),
+          delete_paths_taken[2].load());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PartyTest
 
 class AllocatorOwner {
  protected:
