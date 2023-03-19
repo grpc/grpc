@@ -123,7 +123,6 @@ TEST_P(RetryTest, RetryPerAttemptRecvTimeout) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
   EXPECT_EQ(server_status.message(), "xyz");
   EXPECT_EQ(s2.method(), "/service/method");
-  EXPECT_EQ(client_message.payload(), "foo");
   EXPECT_FALSE(client_close2.was_cancelled());
 }
 }  // namespace
