@@ -174,29 +174,6 @@
       ],
     },
     {
-      'target_name': 'end2end_tests',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc_authorization_provider',
-        'grpc_test_util',
-      ],
-      'sources': [
-        'test/core/end2end/cq_verifier.cc',
-        'test/core/end2end/data/client_certs.cc',
-        'test/core/end2end/data/server1_cert.cc',
-        'test/core/end2end/data/server1_key.cc',
-        'test/core/end2end/data/test_root_cert.cc',
-        'test/core/end2end/end2end_test_utils.cc',
-        'test/core/end2end/end2end_tests.cc',
-        'test/core/end2end/fixtures/http_proxy_fixture.cc',
-        'test/core/end2end/fixtures/local_util.cc',
-        'test/core/end2end/fixtures/proxy.cc',
-        'test/core/end2end/tests/no_op.cc',
-        'test/core/end2end/tests/payload.cc',
-        'test/core/util/test_lb_policies.cc',
-      ],
-    },
-    {
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
