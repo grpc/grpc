@@ -212,6 +212,7 @@ grpc_cc_test(
         "tests/retry_per_attempt_recv_timeout_on_last_attempt.cc",
         "tests/retry_recv_initial_metadata.cc",
         "tests/retry_recv_message.cc",
+        "tests/retry_recv_message_replay.cc",
         "tests/retry_send_initial_metadata_refs.cc",
         "tests/retry_send_recv_batch.cc",
         "tests/retry_server_pushback_delay.cc",
