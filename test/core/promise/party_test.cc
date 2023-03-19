@@ -88,9 +88,9 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
   for (int i = 0; i < 8; i++) {
     threads.emplace_back([&] {
       for (int i = 0; i < 100000; i++) {
-        std::atomic<bool> done{false};
+        auto done = std::make_unique<std::atomic<bool>>(false);
         bool run = sync.AddParticipantAndRef([&](int i) {
-          participants[i].store(&done, std::memory_order_release);
+          participants[i].store(done.get(), std::memory_order_release);
         });
         if (run) {
           EXPECT_FALSE(sync.RunParty([&](int slot) {
@@ -100,12 +100,12 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
               gpr_log(GPR_ERROR,
                       "Participant was null (spurious wakeup observed)");
             }
-            participant->store(true, std::memory_order_relaxed);
+            participant->store(true, std::memory_order_release);
             return true;
           }));
         }
         EXPECT_FALSE(sync.Unref());
-        while (!done.load(std::memory_order_relaxed)) {
+        while (!done->load(std::memory_order_acquire)) {
         }
       }
     });
