@@ -152,7 +152,7 @@ class PartySyncUsingAtomics {
     store(slot);
 
     // Now we need to wake up the party.
-    state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_relaxed);
+    state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_release);
 
     // If the party was already locked, we're done.
     return ((state & kLocked) == 0);
