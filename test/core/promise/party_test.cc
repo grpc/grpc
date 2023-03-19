@@ -92,9 +92,12 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
     threads.emplace_back([&] {
       for (int i = 0; i < 100000; i++) {
         auto done = std::make_unique<std::atomic<bool>>(false);
+        int slot = -1;
         bool run = sync.AddParticipantAndRef([&](int i) {
+          slot = i;
           participants[i].store(done.get(), std::memory_order_release);
         });
+        EXPECT_NE(slot, -1);
         if (run) {
           bool run_any = false;
           bool run_me = false;
