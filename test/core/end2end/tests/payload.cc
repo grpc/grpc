@@ -18,6 +18,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 #include <grpc/status.h>
 
 #include "src/core/lib/gprpp/time.h"

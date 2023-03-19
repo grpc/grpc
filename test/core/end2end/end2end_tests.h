@@ -30,9 +30,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "cq_verifier.h"
+#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
@@ -47,6 +48,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"

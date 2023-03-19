@@ -19,7 +19,6 @@
 #ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 #define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
-#include <grpc/grpc.h>
 #include <grpc/status.h>
 
 #include "test/core/end2end/end2end_tests.h"

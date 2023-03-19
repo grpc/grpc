@@ -16,29 +16,20 @@
 //
 //
 
-#include <string.h>
-
-#include <functional>
 #include <memory>
-#include <string>
+
+#include <gtest/gtest.h>
 
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 

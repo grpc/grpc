@@ -17,32 +17,24 @@
 //
 
 #include <stdint.h>
-#include <string.h>
 
-#include <functional>
 #include <initializer_list>
-#include <memory>
 #include <string>
+#include <utility>
 
-#include "absl/strings/str_format.h"
+#include <gtest/gtest.h>
 
-#include <grpc/byte_buffer.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/call_test_only.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace {
