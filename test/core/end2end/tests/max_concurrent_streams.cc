@@ -64,6 +64,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 TEST_P(Http2SingleHopTest, MaxConcurrentStreams) {
+  SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
@@ -152,6 +153,7 @@ TEST_P(Http2SingleHopTest, MaxConcurrentStreams) {
 }
 
 TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
+  SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
@@ -196,6 +198,7 @@ TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
 }
 
 TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
+  SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
