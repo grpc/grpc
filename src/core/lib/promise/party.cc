@@ -27,7 +27,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/trace.h"
 
 // #define GRPC_PARTY_MAXIMIZE_THREADS
