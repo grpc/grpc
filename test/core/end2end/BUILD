@@ -148,6 +148,8 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "end2end_tests",
+    tags = ["core_end2end_test"],
+    shard_count = 50,
     srcs = [
         "end2end_test_main.cc",
         "end2end_test_utils.cc",
@@ -166,6 +168,7 @@ grpc_cc_test(
         "tests/channelz.cc",
         "tests/client_streaming.cc",
         "tests/compressed_payload.cc",
+        "tests/connectivity.cc",
         "tests/default_host.cc",
         "tests/disappearing_server.cc",
         "tests/empty_batch.cc",
