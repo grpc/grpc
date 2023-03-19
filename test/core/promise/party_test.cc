@@ -109,6 +109,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
             if (participant == nullptr) {
               gpr_log(GPR_ERROR,
                       "Participant was null (spurious wakeup observed)");
+              return false;
             }
             participant->store(true, std::memory_order_release);
             return true;
