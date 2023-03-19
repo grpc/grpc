@@ -202,7 +202,7 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
         set_waker.Notify();
         return Pending{};
       },
-      [](int x) { Crash("unreachable"); });
+      [](int) { Crash("unreachable"); });
   set_waker.WaitForNotification();
   party.reset();
   EXPECT_FALSE(waker.is_unwakeable());
@@ -224,7 +224,7 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
         set_waker.Notify();
         return Pending{};
       },
-      [](int x) { Crash("unreachable"); });
+      [](int) { Crash("unreachable"); });
   set_waker.WaitForNotification();
   party.reset();
   EXPECT_NE(waker, nullptr);
@@ -244,7 +244,7 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
         set_waker.Notify();
         return Pending{};
       },
-      [](int x) { Crash("unreachable"); });
+      [](int) { Crash("unreachable"); });
   set_waker.WaitForNotification();
   EXPECT_FALSE(waker.is_unwakeable());
   party.reset();
