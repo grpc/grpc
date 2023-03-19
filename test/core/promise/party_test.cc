@@ -96,9 +96,13 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
           participants[i].store(done.get(), std::memory_order_release);
         });
         if (run) {
+          bool run_any = false;
+          bool run_me = false;
           EXPECT_FALSE(sync.RunParty([&](int slot) {
+            run_any = true;
             std::atomic<bool>* participant =
                 participants[slot].load(std::memory_order_acquire);
+            if (participant == done.get()) run_me = true;
             if (participant == nullptr) {
               gpr_log(GPR_ERROR,
                       "Participant was null (spurious wakeup observed)");
@@ -106,6 +110,8 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
             participant->store(true, std::memory_order_release);
             return true;
           }));
+          EXPECT_TRUE(run_any);
+          EXPECT_TRUE(run_me);
         }
         EXPECT_FALSE(sync.Unref());
         while (!done->load(std::memory_order_acquire)) {
