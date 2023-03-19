@@ -16,25 +16,18 @@
 
 #include "src/core/lib/promise/party.h"
 
-#include <inttypes.h>
-
-#include <algorithm>
 #include <atomic>
 #include <initializer_list>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "activity.h"
-#include "party.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/trace.h"
 
 // #define GRPC_PARTY_MAXIMIZE_THREADS

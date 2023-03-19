@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <stdio.h>
+
 #include <algorithm>
 #include <atomic>
 #include <memory>
@@ -85,6 +87,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
   std::vector<std::thread> threads;
   std::atomic<std::atomic<bool>*> participants[party_detail::kMaxParticipants] =
       {};
+  threads.reserve(8);
   for (int i = 0; i < 8; i++) {
     threads.emplace_back([&] {
       for (int i = 0; i < 100000; i++) {
@@ -119,6 +122,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
 TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
   std::vector<std::thread> trials;
   std::atomic<int> delete_paths_taken[3] = {{0}, {0}, {0}};
+  trials.reserve(10000);
   for (int i = 0; i < 10000; i++) {
     trials.emplace_back([&delete_paths_taken] {
       TypeParam sync(1);
