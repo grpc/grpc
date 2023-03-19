@@ -216,6 +216,7 @@ grpc_cc_test(
         "tests/retry_recv_trailing_metadata_error.cc",
         "tests/retry_send_initial_metadata_refs.cc",
         "tests/retry_send_recv_batch.cc",
+        "tests/retry_send_op_fails.cc",
         "tests/retry_server_pushback_delay.cc",
         "tests/retry_server_pushback_disabled.cc",
         "tests/retry_streaming.cc",
