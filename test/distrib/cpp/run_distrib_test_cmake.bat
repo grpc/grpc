@@ -31,7 +31,7 @@ set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 @rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
 
-set VS_GENERATOR="Visual Studio 15 2017"
+set VS_GENERATOR="Visual Studio 16 2019"
 
 @rem Install absl
 mkdir third_party\abseil-cpp\cmake\build
