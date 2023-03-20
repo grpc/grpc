@@ -18,15 +18,13 @@
 
 #include <functional>
 #include <memory>
-#include <string>
-
-#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
@@ -48,10 +46,8 @@ int main(int argc, char** argv) {
   size_t i;
 
   // force tracing on, with a value to force many
-  // code paths in trace.cc to be taken
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.trace = "doesnt-exist,http,all";
-  grpc_core::ConfigVars::SetOverrides(overrides);
+  // code paths in trace.c to be taken
+  GPR_GLOBAL_CONFIG_SET(grpc_trace, "doesnt-exist,http,all");
 
 #ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10 : 1;
