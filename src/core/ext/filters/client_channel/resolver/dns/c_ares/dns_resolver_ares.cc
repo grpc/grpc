@@ -186,6 +186,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
     grpc_closure on_txt_resolved_;
     std::unique_ptr<grpc_ares_request> txt_request_
         ABSL_GUARDED_BY(on_resolved_mu_);
+    absl::Status txt_resolved_error_ ABSL_GUARDED_BY(on_resolved_mu_);
     // Output fields from ares request.
     std::unique_ptr<ServerAddressList> addresses_
         ABSL_GUARDED_BY(on_resolved_mu_);
@@ -365,6 +366,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->txt_request_.reset();
+    self->txt_resolved_error_ = error;
     result = self->OnResolvedLocked(error);
   }
   if (result.has_value()) {
@@ -393,6 +395,11 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
   Result result;
   result.args = resolver_->channel_args();
+  // TODO(roth): We probably should not ignore NotFound errors here, but have
+  // users of the resolver handle them appropriately.
+  if (!txt_resolved_error_.ok() && !absl::IsNotFound(txt_resolved_error_)) {
+    result.service_config = txt_resolved_error_;
+  }
   // TODO(roth): Change logic to be able to report failures for addresses
   // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
@@ -401,7 +408,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     } else {
       result.addresses = ServerAddressList();
     }
-    if (service_config_json_ != nullptr) {
+    if (txt_resolved_error_.ok() && service_config_json_ != nullptr) {
       grpc_error_handle service_config_error;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
@@ -434,7 +441,6 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
         absl::StrCat("DNS resolution failed for ", resolver_->name_to_resolve(),
                      ": ", error_message));
     result.addresses = status;
-    result.service_config = status;
   }
 
   return std::move(result);

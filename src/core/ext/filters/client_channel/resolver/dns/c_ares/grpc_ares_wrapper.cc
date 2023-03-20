@@ -818,7 +818,15 @@ fail:
                       q->name(), ares_strerror(status));
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
-  error = GRPC_ERROR_CREATE(error_msg);
+  absl::StatusCode status_type;
+  switch (status) {
+    case ARES_ENOTFOUND:
+      status_type = absl::StatusCode::kNotFound;
+      break;
+    default:
+      status_type = absl::StatusCode::kUnknown;
+  }
+  error = StatusCreate(status_type, error_msg, DEBUG_LOCATION, {});
   r->error = grpc_error_add_child(error, r->error);
 }
 
