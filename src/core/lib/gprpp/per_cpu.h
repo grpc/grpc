@@ -16,11 +16,13 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/cpu.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <memory>
+
+#include <grpc/support/cpu.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
