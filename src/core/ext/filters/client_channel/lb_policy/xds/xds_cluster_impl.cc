@@ -15,10 +15,11 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -33,11 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -66,6 +62,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 
 namespace grpc_core {
 

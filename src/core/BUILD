@@ -4238,6 +4238,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_backend_metric_data",
         "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
