@@ -337,10 +337,11 @@ class CLanguage(object):
                     continue
 
                 if self.platform == 'windows':
-                    # TODO(jtattermusch): Ninja puts binaries directly under cmake/build so currently
-                    # test tests are being skipped when built with Ninja on windows.
-                    binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
-                        self.config.build_config], target['name'])
+                    if self._cmake_generator_windows == 'Ninja':
+                        binary = 'cmake/build/%s.exe' % target['name']
+                    else:
+                        binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
+                            self.config.build_config], target['name'])
                 else:
                     binary = 'cmake/build/%s' % target['name']
 
