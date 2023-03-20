@@ -73,7 +73,7 @@ WindowsEndpoint::WindowsEndpoint(
 
 WindowsEndpoint::~WindowsEndpoint() {
   io_state_->socket->Shutdown(DEBUG_LOCATION, "~WindowsEndpoint");
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p destroyed", this);
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("~WindowsEndpoint::%p", this);
 }
 
 absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
@@ -125,7 +125,6 @@ absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", this);
   if (io_state_->socket->IsShutdown()) {
     executor_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::UnavailableError("Socket is shutting down."));
@@ -247,11 +246,13 @@ void AbortOnEvent(absl::Status) {
 }  // namespace
 
 void WindowsEndpoint::HandleReadClosure::Reset() {
+  io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
 }
 
 void WindowsEndpoint::HandleWriteClosure::Reset() {
+  io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
 }
@@ -310,6 +311,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   io_state_ = std::move(io_state);
   status = io_state_->endpoint->DoTcpRead(buffer_);
   if (!status.ok()) {
+    io_state_.reset();
     ExecuteCallbackAndReset(status);
   }
 }
@@ -362,7 +364,9 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
 WindowsEndpoint::AsyncIOState::AsyncIOState(WindowsEndpoint* endpoint,
                                             std::unique_ptr<WinSocket> socket,
                                             std::shared_ptr<EventEngine> engine)
-    : endpoint(endpoint), socket(std::move(socket)), engine(engine) {}
+    : endpoint(endpoint),
+      socket(std::move(socket)),
+      engine(std::move(engine)) {}
 
 WindowsEndpoint::AsyncIOState::~AsyncIOState() {
   socket->Shutdown(DEBUG_LOCATION, "~AsyncIOState");

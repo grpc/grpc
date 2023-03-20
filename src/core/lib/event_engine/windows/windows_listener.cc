@@ -277,9 +277,7 @@ WindowsEventEngineListener::WindowsEventEngineListener(
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
   GRPC_EVENT_ENGINE_TRACE(
-      "%s",
-      absl::StrFormat("WindowsEventEngineListener::%p shutting down", this)
-          .c_str());
+      "%s", absl::StrFormat("~WindowsEventEngineListener::%p", this).c_str());
   ShutdownListeners();
   on_shutdown_(absl::OkStatus());
 }

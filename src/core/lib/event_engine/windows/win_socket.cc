@@ -58,7 +58,6 @@ void WinSocket::Shutdown() {
                                      this);
     return;
   }
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p shutting down now.", this);
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
   GUID guid = WSAID_DISCONNECTEX;
