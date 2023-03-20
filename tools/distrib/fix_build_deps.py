@@ -136,7 +136,6 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
-    'fuzztest/fuzztest.h': ['fuzztest', 'fuzztest_main'],
     'google/api/monitored_resource.pb.h':
         'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
@@ -222,6 +221,10 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    'fuzztest/fuzztest.h': [
+        '@com_google_fuzztest//fuzztest',
+        '@com_google_fuzztest//fuzztest:fuzztest_gtest_main'
+    ],
     'google/api/expr/v1alpha1/syntax.upb.h':
         'google_type_expr_upb',
     'google/rpc/status.upb.h':
@@ -573,9 +576,13 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not ('//' in dep):
-                dep = '//:' + dep
-            deps.add(dep, hdr)
+            if isinstance(dep, list):
+                for d in dep:
+                    deps.add(d, hdr)
+            else:
+                if not ('//' in dep):
+                    dep = '//:' + dep
+                deps.add(dep, hdr)
             continue
 
         if hdr in vendors:

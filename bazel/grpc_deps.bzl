@@ -101,16 +101,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "fuzztest",
-        actual = "@com_google_fuzztest//fuzztest",
-    )
-
-    native.bind(
-        name = "fuzztest_main",
-        actual = "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
-    )
-
-    native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
     )
