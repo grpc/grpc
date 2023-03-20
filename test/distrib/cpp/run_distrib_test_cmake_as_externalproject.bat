@@ -28,11 +28,13 @@ set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 @rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
 
+set VS_GENERATOR="Visual Studio 15 2017"
+
 @rem Build helloworld example using cmake
 @rem Use non-standard build directory to avoid too long filenames
 mkdir example_build
 cd example_build
-cmake -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ../examples/cpp/helloworld/cmake_externalproject || goto :error
+cmake -G %VS_GENERATOR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ../examples/cpp/helloworld/cmake_externalproject || goto :error
 cmake --build . --config Release || goto :error
 cd ..
 
