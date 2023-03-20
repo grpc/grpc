@@ -42,10 +42,6 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // PartySyncUsingAtomics
 
-void PartySyncUsingAtomics::IncrementRefCount() {
-  state_.fetch_add(kOneRef, std::memory_order_relaxed);
-}
-
 GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::RefIfNonZero() {
   auto count = state_.load(std::memory_order_relaxed);
   do {
@@ -61,17 +57,10 @@ GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::RefIfNonZero() {
   return true;
 }
 
-GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::Unref() {
-  uint64_t prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
-  if ((prev_state & kRefMask) == kOneRef) {
-    prev_state =
-        state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
-    if ((prev_state & kLocked) == 0) {
-      // Obtained lock on unref
-      return true;
-    }
-  }
-  return false;
+bool PartySyncUsingAtomics::UnreffedLast() {
+  uint64_t prev_state =
+      state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
+  return (prev_state & kLocked) == 0;
 }
 
 bool PartySyncUsingAtomics::ScheduleWakeup(WakeupMask mask) {
@@ -173,19 +162,6 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
-void Party::IncrementRefCount(DebugLocation whence) {
-  sync_.IncrementRefCount();
-}
-
-bool Party::RefIfNonZero() { return sync_.RefIfNonZero(); }
-
-void Party::Unref(DebugLocation whence) {
-  if (sync_.Unref()) {
-    ScopedActivity activity(this);
-    PartyOver();
-  }
-}
-
 void Party::CancelRemainingParticipants() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
@@ -281,9 +257,12 @@ bool Party::RunParty() {
   });
 }
 
-void Party::AddParticipant(Participant* participant) {
-  bool run_party = sync_.AddParticipantAndRef([this, participant](int slot) {
-    participants_[slot].store(participant, std::memory_order_release);
+void Party::AddParticipants(Participant** participants, size_t count) {
+  bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
+                                                       count](size_t* slots) {
+    for (size_t i = 0; i < count; i++) {
+      participants_[slots[i]].store(participants[i], std::memory_order_release);
+    }
   });
   if (run_party) RunLocked();
   Unref();
@@ -299,5 +278,10 @@ void Party::Wakeup(WakeupMask wakeup_mask) {
 }
 
 void Party::Drop(WakeupMask) { Unref(); }
+
+void Party::PartyIsOver() {
+  ScopedActivity activity(this);
+  PartyOver();
+}
 
 }  // namespace grpc_core

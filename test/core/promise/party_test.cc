@@ -93,9 +93,9 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
       for (int i = 0; i < 100000; i++) {
         auto done = std::make_unique<std::atomic<bool>>(false);
         int slot = -1;
-        bool run = sync.AddParticipantAndRef([&](int i) {
-          slot = i;
-          participants[i].store(done.get(), std::memory_order_release);
+        bool run = sync.AddParticipantsAndRef(1, [&](size_t* idxs) {
+          slot = idxs[0];
+          participants[slot].store(done.get(), std::memory_order_release);
         });
         EXPECT_NE(slot, -1);
         if (run) {
@@ -129,6 +129,57 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
   EXPECT_TRUE(sync.Unref());
 }
 
+TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
+  TypeParam sync(1);
+  std::vector<std::thread> threads;
+  std::atomic<std::atomic<int>*> participants[party_detail::kMaxParticipants] =
+      {};
+  threads.reserve(8);
+  for (int i = 0; i < 4; i++) {
+    threads.emplace_back([&] {
+      for (int i = 0; i < 100000; i++) {
+        auto done = std::make_unique<std::atomic<int>>(2);
+        int slots[2] = {-1, -1};
+        bool run = sync.AddParticipantsAndRef(2, [&](size_t* idxs) {
+          for (int i = 0; i < 2; i++) {
+            slots[i] = idxs[i];
+            participants[slots[i]].store(done.get(), std::memory_order_release);
+          }
+        });
+        EXPECT_NE(slots[0], -1);
+        EXPECT_NE(slots[1], -1);
+        EXPECT_GT(slots[1], slots[0]);
+        if (run) {
+          bool run_any = false;
+          int run_me = 0;
+          EXPECT_FALSE(sync.RunParty([&](int slot) {
+            run_any = true;
+            std::atomic<int>* participant =
+                participants[slot].exchange(nullptr, std::memory_order_acquire);
+            if (participant == done.get()) run_me++;
+            if (participant == nullptr) {
+              gpr_log(GPR_ERROR,
+                      "Participant was null (spurious wakeup observed)");
+              return false;
+            }
+            participant->fetch_sub(1, std::memory_order_release);
+            return true;
+          }));
+          EXPECT_TRUE(run_any);
+          EXPECT_EQ(run_me, 2);
+        }
+        EXPECT_FALSE(sync.Unref());
+        while (done->load(std::memory_order_acquire) != 0) {
+        }
+      }
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  EXPECT_TRUE(sync.Unref());
+}
+
 TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
   std::vector<std::thread> trials;
   std::atomic<int> delete_paths_taken[3] = {{0}, {0}, {0}};
@@ -137,8 +188,8 @@ TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
     trials.emplace_back([&delete_paths_taken] {
       TypeParam sync(1);
       int delete_path = -1;
-      EXPECT_TRUE(
-          sync.AddParticipantAndRef([](int slot) { EXPECT_EQ(slot, 0); }));
+      EXPECT_TRUE(sync.AddParticipantsAndRef(
+          1, [](size_t* slots) { EXPECT_EQ(slots[0], 0); }));
       std::thread run_party([&] {
         if (sync.RunParty([&sync, n = 0](int slot) mutable {
               EXPECT_EQ(slot, 0);
@@ -382,6 +433,25 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
   party.reset();
   waker.Wakeup();
   EXPECT_TRUE(waker.is_unwakeable());
+}
+
+TEST_F(PartyTest, CanBulkSpawn) {
+  auto party = MakeRefCounted<TestParty>();
+  Notification n1;
+  Notification n2;
+  {
+    Party::BulkSpawner spawner(party.get());
+    spawner.Spawn(
+        "spawn1", []() { return Empty{}; }, [&n1](Empty) { n1.Notify(); });
+    spawner.Spawn(
+        "spawn2", []() { return Empty{}; }, [&n2](Empty) { n2.Notify(); });
+    for (int i = 0; i < 5000; i++) {
+      EXPECT_FALSE(n1.HasBeenNotified());
+      EXPECT_FALSE(n2.HasBeenNotified());
+    }
+  }
+  n1.WaitForNotification();
+  n2.WaitForNotification();
 }
 
 TEST_F(PartyTest, ThreadStressTest) {

@@ -26,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
+#include "activity.h"
 
 #include <grpc/support/log.h>
 
@@ -39,6 +40,16 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/resource_quota/arena.h"
+
+// Two implementations of party synchronization are provided: one using a single
+// atomic, the other using a mutex and a set of state variables.
+// Originally the atomic implementation was implemented, but we found some race
+// conditions on Arm that were not reported by our default TSAN implementation.
+// The mutex implementation was added to see if it would fix the problem, and
+// it did. Later we found the race condition, so there's no known reason to use
+// the mutex version - however we keep it around as a just in case measure.
+// There's a thought of fuzzing the two implementations against each other as
+// a correctness check of both, but that's not implemented yet.
 
 #define GRPC_PARTY_SYNC_USING_ATOMICS
 // #define GRPC_PARTY_SYNC_USING_MUTEX
@@ -64,11 +75,19 @@ class PartySyncUsingAtomics {
   explicit PartySyncUsingAtomics(size_t initial_refs)
       : state_(kOneRef * initial_refs) {}
 
-  void IncrementRefCount();
+  void IncrementRefCount() {
+    state_.fetch_add(kOneRef, std::memory_order_relaxed);
+  }
   GRPC_MUST_USE_RESULT bool RefIfNonZero();
   // Returns true if the ref count is now zero and the caller should call
   // PartyOver
-  GRPC_MUST_USE_RESULT bool Unref();
+  GRPC_MUST_USE_RESULT bool Unref() {
+    uint64_t prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+    if ((prev_state & kRefMask) == kOneRef) {
+      return UnreffedLast();
+    }
+    return false;
+  }
   void ForceImmediateRepoll(WakeupMask mask) {
     // Or in the bit for the currently polling participant.
     // Will be grabbed next round to force a repoll of this promise.
@@ -118,30 +137,33 @@ class PartySyncUsingAtomics {
     return false;
   }
 
-  // Add a participant to the party. Returns true if the caller should run the
-  // party. store is called with the index of the new participant.
-  // Adds a ref that should be dropped by the caller after RunParty has been
-  // called (if that was required).
+  // Add new participants to the party. Returns true if the caller should run
+  // the party. store is called with an array of indices of the new
+  // participants. Adds a ref that should be dropped by the caller after
+  // RunParty has been called (if that was required).
   template <typename F>
-  GRPC_MUST_USE_RESULT bool AddParticipantAndRef(F store) {
+  GRPC_MUST_USE_RESULT bool AddParticipantsAndRef(size_t count, F store) {
     uint64_t state = state_.load(std::memory_order_acquire);
     uint64_t allocated;
 
-    int slot;
+    size_t slots[party_detail::kMaxParticipants];
 
     // Find slots for each new participant, ordering them from lowest available
     // slot upwards to ensure the same poll ordering as presentation ordering to
     // this function.
+    WakeupMask wakeup_mask;
     do {
-      slot = -1;
+      wakeup_mask = 0;
       allocated = (state & kAllocatedMask) >> kAllocatedShift;
-      for (size_t bit = 0; bit < party_detail::kMaxParticipants; bit++) {
+      size_t n = 0;
+      for (size_t bit = 0; n < count && bit < party_detail::kMaxParticipants;
+           bit++) {
         if (allocated & (1 << bit)) continue;
-        slot = bit;
+        wakeup_mask |= (1 << bit);
+        slots[n++] = bit;
         allocated |= 1 << bit;
-        break;
       }
-      GPR_ASSERT(slot != -1);
+      GPR_ASSERT(n == count);
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
       // spuriously woken up and unref the party.
@@ -149,10 +171,10 @@ class PartySyncUsingAtomics {
         state, (state | (allocated << kAllocatedShift)) + kOneRef,
         std::memory_order_acq_rel, std::memory_order_acquire));
 
-    store(slot);
+    store(slots);
 
     // Now we need to wake up the party.
-    state = state_.fetch_or((1 << slot) | kLocked, std::memory_order_release);
+    state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
 
     // If the party was already locked, we're done.
     return ((state & kLocked) == 0);
@@ -163,6 +185,8 @@ class PartySyncUsingAtomics {
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
  private:
+  bool UnreffedLast();
+
   // State bits:
   // The atomic state_ field is composed of the following:
   //   - 24 bits for ref counts
@@ -233,19 +257,22 @@ class PartySyncUsingMutex {
   }
 
   template <typename F>
-  GRPC_MUST_USE_RESULT bool AddParticipantAndRef(F store) {
+  GRPC_MUST_USE_RESULT bool AddParticipantsAndRef(size_t count, F store) {
     IncrementRefCount();
     MutexLock lock(&mu_);
-    int slot = -1;
-    for (int bit = 0; bit < party_detail::kMaxParticipants; bit++) {
+    size_t slots[party_detail::kMaxParticipants];
+    WakeupMask wakeup_mask = 0;
+    size_t n = 0;
+    for (size_t bit = 0; n < count && bit < party_detail::kMaxParticipants;
+         bit++) {
       if (allocated_ & (1 << bit)) continue;
-      slot = bit;
+      slots[n++] = bit;
+      wakeup_mask |= 1 << bit;
       allocated_ |= 1 << bit;
-      break;
     }
-    GPR_ASSERT(slot != -1);
-    store(slot);
-    wakeups_ |= 1 << slot;
+    GPR_ASSERT(n == count);
+    store(slots);
+    wakeups_ |= wakeup_mask;
     return !std::exchange(locked_, true);
   }
 
@@ -261,63 +288,6 @@ class PartySyncUsingMutex {
 
 // A Party is an Activity with multiple participant promises.
 class Party : public Activity, private Wakeable {
- public:
-  Party(const Party&) = delete;
-  Party& operator=(const Party&) = delete;
-
-  // Spawn one promise into the party.
-  // The promise will be polled until it is resolved, or until the party is shut
-  // down.
-  // The on_complete callback will be called with the result of the promise if
-  // it completes.
-  // A maximum of sixteen promises can be spawned onto a party.
-  template <typename Factory, typename OnComplete>
-  void Spawn(absl::string_view name, Factory promise_factory,
-             OnComplete on_complete);
-
-  void Orphan() final { Crash("unused"); }
-
-  // Activity implementation: not allowed to be overridden by derived types.
-  void ForceImmediateRepoll(WakeupMask mask) final;
-  WakeupMask CurrentParticipant() const final {
-    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-    return 1u << currently_polling_;
-  }
-  Waker MakeOwningWaker() final;
-  Waker MakeNonOwningWaker() final;
-  std::string ActivityDebugTag(WakeupMask wakeup_mask) const final;
-
-  void IncrementRefCount(DebugLocation whence = {});
-  void Unref(DebugLocation whence = {});
-  RefCountedPtr<Party> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<Party>(this);
-  }
-
-  Arena* arena() const { return arena_; }
-
- protected:
-  explicit Party(Arena* arena, size_t initial_refs)
-      : sync_(initial_refs), arena_(arena) {}
-  ~Party() override;
-
-  // Main run loop. Must be locked.
-  // Polls participants and drains the add queue until there is no work left to
-  // be done.
-  // Derived types will likely want to override this to set up their
-  // contexts before polling.
-  // Should not be called by derived types except as a tail call to the base
-  // class RunParty when overriding this method to add custom context.
-  // Returns true if the party is over.
-  virtual bool RunParty() GRPC_MUST_USE_RESULT;
-
-  bool RefIfNonZero();
-
-  // Destroy any remaining participants.
-  // Should be called by derived types in response to PartyOver.
-  // Needs to have normal context setup before calling.
-  void CancelRemainingParticipants();
-
  private:
   // Non-owning wakeup handle.
   class Handle;
@@ -346,6 +316,83 @@ class Party : public Activity, private Wakeable {
     absl::string_view name_;
   };
 
+ public:
+  Party(const Party&) = delete;
+  Party& operator=(const Party&) = delete;
+
+  // Spawn one promise into the party.
+  // The promise will be polled until it is resolved, or until the party is shut
+  // down.
+  // The on_complete callback will be called with the result of the promise if
+  // it completes.
+  // A maximum of sixteen promises can be spawned onto a party.
+  template <typename Factory, typename OnComplete>
+  void Spawn(absl::string_view name, Factory promise_factory,
+             OnComplete on_complete);
+
+  void Orphan() final { Crash("unused"); }
+
+  // Activity implementation: not allowed to be overridden by derived types.
+  void ForceImmediateRepoll(WakeupMask mask) final;
+  WakeupMask CurrentParticipant() const final {
+    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+    return 1u << currently_polling_;
+  }
+  Waker MakeOwningWaker() final;
+  Waker MakeNonOwningWaker() final;
+  std::string ActivityDebugTag(WakeupMask wakeup_mask) const final;
+
+  void IncrementRefCount() { sync_.IncrementRefCount(); }
+  void Unref() {
+    if (sync_.Unref()) PartyIsOver();
+  }
+  RefCountedPtr<Party> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<Party>(this);
+  }
+
+  Arena* arena() const { return arena_; }
+
+  class BulkSpawner {
+   public:
+    explicit BulkSpawner(Party* party) : party_(party) {}
+    ~BulkSpawner() {
+      party_->AddParticipants(participants_, num_participants_);
+    }
+
+    template <typename Factory, typename OnComplete>
+    void Spawn(absl::string_view name, Factory promise_factory,
+               OnComplete on_complete);
+
+   private:
+    Party* const party_;
+    size_t num_participants_ = 0;
+    Participant* participants_[party_detail::kMaxParticipants];
+  };
+
+ protected:
+  explicit Party(Arena* arena, size_t initial_refs)
+      : sync_(initial_refs), arena_(arena) {}
+  ~Party() override;
+
+  // Main run loop. Must be locked.
+  // Polls participants and drains the add queue until there is no work left to
+  // be done.
+  // Derived types will likely want to override this to set up their
+  // contexts before polling.
+  // Should not be called by derived types except as a tail call to the base
+  // class RunParty when overriding this method to add custom context.
+  // Returns true if the party is over.
+  virtual bool RunParty() GRPC_MUST_USE_RESULT;
+
+  bool RefIfNonZero() { return sync_.RefIfNonZero(); }
+
+  // Destroy any remaining participants.
+  // Should be called by derived types in response to PartyOver.
+  // Needs to have normal context setup before calling.
+  void CancelRemainingParticipants();
+
+ private:
   // Concrete implementation of a participant for some promise & oncomplete
   // type.
   template <typename SuppliedFactory, typename OnComplete>
@@ -401,6 +448,10 @@ class Party : public Activity, private Wakeable {
 
   // Run the locked part of the party until it is unlocked.
   void RunLocked();
+  // Called in response to Unref() hitting zero - ultimately calls PartyOver,
+  // but needs to set some stuff up.
+  // Here so it gets compiled out of line.
+  void PartyIsOver();
 
   // Wakeable implementation
   void Wakeup(WakeupMask wakeup_mask) final;
@@ -409,7 +460,7 @@ class Party : public Activity, private Wakeable {
   // Organize to wake up some participants.
   void ScheduleWakeup(WakeupMask mask);
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipant(Participant* participant);
+  void AddParticipants(Participant** participant, size_t count);
 
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
@@ -431,10 +482,18 @@ class Party : public Activity, private Wakeable {
 };
 
 template <typename Factory, typename OnComplete>
+void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
+                               OnComplete on_complete) {
+  participants_[num_participants_++] =
+      party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
+          name, std::move(promise_factory), std::move(on_complete));
+}
+
+template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
-  AddParticipant(arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
-      name, std::move(promise_factory), std::move(on_complete)));
+  BulkSpawner(this).Spawn(name, std::move(promise_factory),
+                          std::move(on_complete));
 }
 
 }  // namespace grpc_core
