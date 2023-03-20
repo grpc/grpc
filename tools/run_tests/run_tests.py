@@ -336,15 +336,9 @@ class CLanguage(object):
                 if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
                     continue
 
-                if self.platform == 'windows' and target['name'] in (
-                        'invalid_call_argument_test',
-                        'bad_server_response_test', 'goaway_server_test'):
-                    # A few tests fail on the win2019 workers, but since they pass on Windows bazel RBE,
-                    # it seems ok to skip them in run_tests.py temporarily.
-                    # TODO(jtattermusch): Reenable the tests.
-                    continue
-
                 if self.platform == 'windows':
+                    # TODO(jtattermusch): Ninja puts binaries directly under cmake/build so currently
+                    # test tests are being skipped when built with Ninja on windows.
                     binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
                         self.config.build_config], target['name'])
                 else:
