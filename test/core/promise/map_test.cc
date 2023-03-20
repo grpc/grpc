@@ -14,7 +14,8 @@
 
 #include "src/core/lib/promise/map.h"
 
-#include "absl/functional/any_invocable.h"
+#include <functional>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/promise.h"
