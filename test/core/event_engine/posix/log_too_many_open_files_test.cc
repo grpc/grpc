@@ -15,6 +15,8 @@
 #include <errno.h>
 #include <sys/socket.h>
 
+#include <string>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
@@ -22,6 +24,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::PosixSocketWrapper;
@@ -42,8 +45,8 @@ TEST(LogTooManyOpenFilesTest, MainTest) {
       PosixSocketWrapper::CreateDualStackSocket(mock_socket_factory, *addr,
                                                 SOCK_STREAM, AF_INET, dsmode);
   EXPECT_FALSE(result.ok());
-  EXPECT_THAT(result.status().message(),
-              ::testing::HasSubstr("Too many open files"));
+  std::string emfile_message = grpc_core::StrError(EMFILE);
+  EXPECT_THAT(result.status().message(), ::testing::HasSubstr(emfile_message));
 }
 
 int main(int argc, char** argv) {

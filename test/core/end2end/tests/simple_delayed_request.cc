@@ -16,8 +16,10 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -31,58 +33,10 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-}
-
-static void simple_delayed_request_body(grpc_end2end_test_config config,
-                                        grpc_end2end_test_fixture* f,
-                                        const grpc_channel_args* client_args,
-                                        const grpc_channel_args* server_args,
-                                        long /*delay_us*/) {
+static void simple_delayed_request_body(CoreTestFixture* f) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f->cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -94,12 +48,12 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  config.init_client(f, client_args);
-  config.init_server(f, server_args);
+  f->InitClient(grpc_core::ChannelArgs());
+  f->InitServer(grpc_core::ChannelArgs());
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -131,15 +85,15 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -162,12 +116,12 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
@@ -185,8 +139,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   grpc_call_unref(s);
 }
 
-static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
+static void test_simple_delayed_request_short(
+    const CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -194,15 +148,14 @@ static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
                          .ToC();
   gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_short",
           config.name);
-  f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
 
-  simple_delayed_request_body(config, &f, client_args.get(), nullptr, 100000);
-  end_test(&f);
-  config.tear_down_data(&f);
+  simple_delayed_request_body(f.get());
 }
 
-static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
+static void test_simple_delayed_request_long(
+    const CoreTestConfiguration& config) {
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -211,14 +164,13 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_long",
           config.name);
-  f = config.create_fixture(nullptr, nullptr);
+  auto f =
+      config.create_fixture(grpc_core::ChannelArgs(), grpc_core::ChannelArgs());
   // This timeout should be longer than a single retry
-  simple_delayed_request_body(config, &f, client_args.get(), nullptr, 1500000);
-  end_test(&f);
-  config.tear_down_data(&f);
+  simple_delayed_request_body(f.get());
 }
 
-void simple_delayed_request(grpc_end2end_test_config config) {
+void simple_delayed_request(const CoreTestConfiguration& config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);

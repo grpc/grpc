@@ -26,6 +26,7 @@
 
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 
 namespace grpc {
 namespace testing {
@@ -35,14 +36,15 @@ typedef std::function<void(const InteropClientContextInspector&,
                            const SimpleRequest*, const SimpleResponse*)>
     CheckerFn;
 
-typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
+typedef std::function<std::shared_ptr<Channel>(ChannelArguments)>
+    ChannelCreationFunc;
 
 class InteropClient {
  public:
   /// If new_stub_every_test_case is true, a new TestService::Stub object is
   /// created for every test case
-  /// If do_not_abort_on_transient_failures is true, abort() is not called in
-  /// case of transient failures (like connection failures)
+  /// If do_not_abort_on_transient_failures is true, abort() is not called
+  /// in case of transient failures (like connection failures)
   explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
@@ -73,6 +75,8 @@ class InteropClient {
   bool DoUnimplementedService();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
+  bool DoOrcaPerRpc();
+  bool DoOrcaOob();
 
   // The following interop test are not yet part of the interop spec, and are
   // not implemented cross-language. They are considered experimental for now,
@@ -107,6 +111,7 @@ class InteropClient {
  private:
   class ServiceStub {
    public:
+    typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
     ServiceStub(ChannelCreationFunc channel_creation_func,
@@ -154,6 +159,8 @@ class InteropClient {
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
+  // Load Orca metrics captured by the custom LB policy.
+  LoadReportTracker load_report_tracker_;
 };
 
 }  // namespace testing
