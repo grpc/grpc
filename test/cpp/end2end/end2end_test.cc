@@ -42,7 +42,6 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -910,7 +909,8 @@ TEST_P(End2endTest, ReconnectChannel) {
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
 #ifdef GRPC_POSIX_SOCKET_EV
-  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") {
+  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
 #endif  // GRPC_POSIX_SOCKET_EV
@@ -2246,10 +2246,8 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
 
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms =
-      kClientChannelBackupPollIntervalMs;
-  grpc_core::ConfigVars::SetOverrides(overrides);
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms,
+                        kClientChannelBackupPollIntervalMs);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

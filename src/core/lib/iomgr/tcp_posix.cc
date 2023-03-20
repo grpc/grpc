@@ -20,6 +20,7 @@
 
 #include <grpc/impl/grpc_types.h>
 
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
