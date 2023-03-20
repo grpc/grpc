@@ -20,6 +20,9 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
+#include "absl/strings/str_format.h"
+
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc {
@@ -42,10 +45,9 @@ LoadReportTracker::LoadReportEntry BackendMetricDataToOrcaLoadReport(
   if (backend_metric_data == nullptr) {
     return absl::nullopt;
   }
-  xds::data::orca::v3::OrcaLoadReport load_report;
+  TestOrcaReport load_report;
   load_report.set_cpu_utilization(backend_metric_data->cpu_utilization);
-  load_report.set_mem_utilization(backend_metric_data->mem_utilization);
-  load_report.set_rps_fractional(backend_metric_data->qps);
+  load_report.set_memory_utilization(backend_metric_data->mem_utilization);
   for (const auto& p : backend_metric_data->request_cost) {
     std::string name(p.first);
     (*load_report.mutable_request_cost())[name] = p.second;
@@ -115,6 +117,20 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     LoadReportTracker* load_report_tracker_;
   };
 
+  class OobMetricWatcher : public grpc_core::OobBackendMetricWatcher {
+   public:
+    explicit OobMetricWatcher(LoadReportTracker* load_report_tracker)
+        : load_report_tracker_(load_report_tracker) {}
+
+   private:
+    void OnBackendMetricReport(
+        const grpc_core::BackendMetricData& backend_metric_data) override {
+      load_report_tracker_->RecordOobLoadReport(backend_metric_data);
+    }
+
+    LoadReportTracker* load_report_tracker_;
+  };
+
   class Helper : public ChannelControlHelper {
    public:
     explicit Helper(RefCountedPtr<BackendMetricsLbPolicy> parent)
@@ -123,8 +139,12 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
         grpc_core::ServerAddress address,
         const grpc_core::ChannelArgs& args) override {
-      return parent_->channel_control_helper()->CreateSubchannel(
+      auto subchannel = parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
+      subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
+          grpc_core::Duration::Seconds(1),
+          std::make_unique<OobMetricWatcher>(parent_->load_report_tracker_)));
+      return subchannel;
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -216,14 +236,21 @@ void RegisterBackendMetricsLbPolicy(CoreConfiguration::Builder* builder) {
 
 void LoadReportTracker::RecordPerRpcLoadReport(
     const grpc_core::BackendMetricData* backend_metric_data) {
-  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  absl::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.emplace_back(
       BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
+void LoadReportTracker::RecordOobLoadReport(
+    const grpc_core::BackendMetricData& oob_metric_data) {
+  absl::MutexLock lock(&load_reports_mu_);
+  oob_load_reports_.emplace_back(
+      *BackendMetricDataToOrcaLoadReport(&oob_metric_data));
+}
+
 absl::optional<LoadReportTracker::LoadReportEntry>
 LoadReportTracker::GetNextLoadReport() {
-  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  absl::MutexLock lock(&load_reports_mu_);
   if (per_rpc_load_reports_.empty()) {
     return absl::nullopt;
   }
@@ -232,9 +259,33 @@ LoadReportTracker::GetNextLoadReport() {
   return report;
 }
 
+LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
+    const std::function<bool(const TestOrcaReport&)>& predicate,
+    absl::Duration poll_timeout, size_t max_attempts) {
+  absl::MutexLock lock(&load_reports_mu_);
+  // This condition will be called under lock
+  auto condition = [&]() ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    return !oob_load_reports_.empty();
+  };
+  for (size_t i = 0; i < max_attempts; i++) {
+    if (!load_reports_mu_.AwaitWithTimeout(absl::Condition(&condition),
+                                           poll_timeout)) {
+      return absl::nullopt;
+    }
+    auto report = std::move(oob_load_reports_.front());
+    oob_load_reports_.pop_front();
+    if (predicate(report)) {
+      gpr_log(GPR_DEBUG, "Report #%" PRIuPTR " matched", i + 1);
+      return report;
+    }
+  }
+  return absl::nullopt;
+}
+
 void LoadReportTracker::ResetCollectedLoadReports() {
-  absl::MutexLock lock(&per_rpc_load_reports_mu_);
+  absl::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.clear();
+  oob_load_reports_.clear();
 }
 
 ChannelArguments LoadReportTracker::GetChannelArguments() {

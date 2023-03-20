@@ -82,7 +82,7 @@ bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
   grpc_core::Crash("unimplemented");
 }
 
-bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
+bool CFEventEngine::IsWorkerThread() { return executor_->IsThreadPoolThread(); }
 
 std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
     const DNSResolver::ResolverOptions& /* options */) {
