@@ -116,6 +116,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "no_destruct",
+        "//:config_vars",
         "//:gpr",
     ],
 )
@@ -1730,6 +1731,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
+        "//:config_vars",
         "//:gpr",
     ],
 )
@@ -4850,18 +4852,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_dns_selection",
-    srcs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
-    ],
-    hdrs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
-    ],
-    language = "c++",
-    deps = ["//:gpr"],
-)
-
-grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -4876,12 +4866,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_resolver_dns_selection",
         "polling_resolver",
         "resolved_address",
         "time",
         "//:backoff",
         "//:config",
+        "//:config_vars",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",

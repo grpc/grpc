@@ -1158,8 +1158,6 @@ src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
-src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
@@ -2022,8 +2020,13 @@ src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
+src/core/lib/config/config_vars.cc \
+src/core/lib/config/config_vars.h \
+src/core/lib/config/config_vars_non_generated.cc \
 src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
+src/core/lib/config/load_config.cc \
+src/core/lib/config/load_config.h \
 src/core/lib/debug/event_log.cc \
 src/core/lib/debug/event_log.h \
 src/core/lib/debug/histogram_view.cc \
@@ -2165,11 +2168,6 @@ src/core/lib/gprpp/examine_stack.cc \
 src/core/lib/gprpp/examine_stack.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
-src/core/lib/gprpp/global_config.h \
-src/core/lib/gprpp/global_config_custom.h \
-src/core/lib/gprpp/global_config_env.cc \
-src/core/lib/gprpp/global_config_env.h \
-src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/linux/env.cc \
@@ -2539,8 +2537,6 @@ src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
 src/core/lib/security/security_connector/ssl/ssl_security_connector.h \
 src/core/lib/security/security_connector/ssl_utils.cc \
 src/core/lib/security/security_connector/ssl_utils.h \
-src/core/lib/security/security_connector/ssl_utils_config.cc \
-src/core/lib/security/security_connector/ssl_utils_config.h \
 src/core/lib/security/security_connector/tls/tls_security_connector.cc \
 src/core/lib/security/security_connector/tls/tls_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
