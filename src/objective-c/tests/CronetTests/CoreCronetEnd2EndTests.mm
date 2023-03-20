@@ -38,6 +38,7 @@
 #include "src/core/lib/gprpp/crash.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -119,7 +120,9 @@ static char *roots_filename;
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = roots_filename;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
 
