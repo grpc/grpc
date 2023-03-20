@@ -395,13 +395,11 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
   Result result;
   result.args = resolver_->channel_args();
-  // TODO(roth): We probably should not ignore NotFound errors here, but have
-  // users of the resolver handle them appropriately.
+  // TODO(roth): We probably should not ignore NotFound errors here, but instead
+  // have users of the resolver handle them appropriately.
   if (!txt_resolved_error_.ok() && !absl::IsNotFound(txt_resolved_error_)) {
     result.service_config = txt_resolved_error_;
   }
-  // TODO(roth): Change logic to be able to report failures for addresses
-  // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
