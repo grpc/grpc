@@ -211,9 +211,9 @@ void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
   if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return;
   }
-  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
   if (!call_tracer) {
     return;

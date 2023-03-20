@@ -39,7 +39,6 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
@@ -140,19 +139,16 @@ bool CheckExpectedCompression(const ServerContext& context,
   return true;
 }
 
-void RecordCallMetrics(
-    ServerContext* context,
-    const xds::data::orca::v3::OrcaLoadReport& request_metrics) {
+void RecordCallMetrics(ServerContext* context,
+                       const grpc::testing::TestOrcaReport& request_metrics) {
   auto recorder = context->ExperimentalGetCallMetricRecorder();
   // Do not record when zero since it indicates no test per-call report.
   if (request_metrics.cpu_utilization() > 0) {
     recorder->RecordCpuUtilizationMetric(request_metrics.cpu_utilization());
   }
-  if (request_metrics.mem_utilization() > 0) {
-    recorder->RecordMemoryUtilizationMetric(request_metrics.mem_utilization());
-  }
-  if (request_metrics.rps_fractional() > 0) {
-    recorder->RecordQpsMetric(request_metrics.rps_fractional());
+  if (request_metrics.memory_utilization() > 0) {
+    recorder->RecordMemoryUtilizationMetric(
+        request_metrics.memory_utilization());
   }
   for (const auto& p : request_metrics.request_cost()) {
     char* key = static_cast<char*>(
@@ -225,8 +221,8 @@ class TestServiceImpl : public TestService::Service {
           static_cast<grpc::StatusCode>(request->response_status().code()),
           request->response_status().message());
     }
-    if (request->has_orca_per_rpc_report()) {
-      RecordCallMetrics(context, request->orca_per_rpc_report());
+    if (request->has_orca_per_query_report()) {
+      RecordCallMetrics(context, request->orca_per_query_report());
     }
     return Status::OK;
   }
@@ -361,18 +357,15 @@ class TestServiceImpl : public TestService::Service {
 
  private:
   void RecordServerMetrics(
-      const xds::data::orca::v3::OrcaLoadReport& request_metrics) {
+      const grpc::testing::TestOrcaReport& request_metrics) {
     // Do not record when zero since it indicates no test per-call report.
     if (request_metrics.cpu_utilization() > 0) {
       server_metric_recorder_->SetCpuUtilization(
           request_metrics.cpu_utilization());
     }
-    if (request_metrics.mem_utilization() > 0) {
+    if (request_metrics.memory_utilization() > 0) {
       server_metric_recorder_->SetMemoryUtilization(
-          request_metrics.mem_utilization());
-    }
-    if (request_metrics.rps_fractional() > 0) {
-      server_metric_recorder_->SetQps(request_metrics.rps_fractional());
+          request_metrics.memory_utilization());
     }
     absl::MutexLock lock(&retained_utilization_names_mu_);
     std::map<grpc::string_ref, double> named_utilizations;
