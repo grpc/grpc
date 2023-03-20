@@ -81,6 +81,10 @@ set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
+@rem Workaround https://github.com/NuGet/Home/issues/11099 that exhibits
+@rem on windows workers as "The repository primary signature's timestamping certificate is not trusted by the trust provider"
+set NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY=3,1000
+
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
   echo "!TIME!: invoking install_python_interpreters.ps1"
