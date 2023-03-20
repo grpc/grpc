@@ -206,7 +206,7 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace {
 grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
-  if (!s->context || !grpc_core::IsTraceRecordCallopsEnabled()) {
+  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
   return static_cast<grpc_core::CallTracerInterface*>(
@@ -1226,11 +1226,11 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state), whence.file(), whence.line());
   }
 
-  if (auto* tracer = CallTracerIfEnabled(s)) {
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
     tracer->RecordAnnotation(
-        absl::StrCat("on_complete: s=0x", absl::Hex(s, absl::kZeroPad16), " 0x",
-                     absl::Hex(closure, absl::kZeroPad16), " desc=", desc,
-                     " err=", grpc_core::StatusToString(error)));
+        absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
+                        grpc_core::StatusToString(error).c_str()));
   }
 
   if (!error.ok()) {
@@ -1305,12 +1305,12 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (auto* tracer = CallTracerIfEnabled(s)) {
-    tracer->RecordAnnotation(absl::StrCat(
-        "perform_stream_op_locked[s=0x", absl::Hex(s, absl::kZeroPad16),
-        "; op=0x", absl::Hex(op, absl::kZeroPad16),
-        "]: ", grpc_transport_stream_op_batch_string(op, true),
-        "; on_complete = 0x", absl::Hex(op->on_complete, absl::kZeroPad16)));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(absl::StrFormat(
+        "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
+        grpc_transport_stream_op_batch_string(op, true).c_str(),
+        op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;

@@ -62,10 +62,9 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_message) {
     if (op->payload->send_message.send_message != nullptr) {
-      absl::StrAppend(
-          &out, " SEND_MESSAGE:flags=0x",
-          absl::Hex(op->payload->send_message.flags, absl::kZeroPad8),
-          ":len=", op->payload->send_message.send_message->Length());
+      absl::StrAppendFormat(&out, " SEND_MESSAGE:flags=0x%08x:len=%d",
+                            op->payload->send_message.flags,
+                            op->payload->send_message.send_message->Length());
     } else {
       // This can happen when we check a batch after the transport has
       // processed and cleared the send_message op.
@@ -112,16 +111,15 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   std::string out;
 
   if (op->start_connectivity_watch != nullptr) {
-    absl::StrAppend(
-        &out, " START_CONNECTIVITY_WATCH:watcher=0x",
-        absl::Hex(op->start_connectivity_watch.get(), absl::kZeroPad16),
-        ":from=",
+    absl::StrAppendFormat(
+        &out, " START_CONNECTIVITY_WATCH:watcher=%p:from=%s",
+        op->start_connectivity_watch.get(),
         grpc_core::ConnectivityStateName(op->start_connectivity_watch_state));
   }
 
   if (op->stop_connectivity_watch != nullptr) {
-    absl::StrAppend(&out, " STOP_CONNECTIVITY_WATCH:watcher=0x",
-                    absl::Hex(op->stop_connectivity_watch, absl::kZeroPad16));
+    absl::StrAppendFormat(&out, " STOP_CONNECTIVITY_WATCH:watcher=%p",
+                          op->stop_connectivity_watch);
   }
 
   if (!op->disconnect_with_error.ok()) {
@@ -135,10 +133,9 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   if (op->set_accept_stream) {
-    absl::StrAppend(
-        &out, " SET_ACCEPT_STREAM:0x",
-        absl::Hex(op->set_accept_stream_fn, absl::kZeroPad16), "(0x",
-        absl::Hex(op->set_accept_stream_user_data, absl::kZeroPad16), ",...)");
+    absl::StrAppendFormat(&out, " SET_ACCEPT_STREAM:%p(%p,...)",
+                          op->set_accept_stream_fn,
+                          op->set_accept_stream_user_data);
   }
 
   if (op->bind_pollset != nullptr) {
