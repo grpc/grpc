@@ -2016,8 +2016,7 @@ class PromiseBasedCall : public Call,
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
           BatchBuilder(&call->batch_payload_),
-          promise_detail::Context<BatchBuilder>(
-              promise_detail::KeepExistingIfPresent{}, this),
+          promise_detail::Context<BatchBuilder>(this),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
