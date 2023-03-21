@@ -418,6 +418,7 @@ void grpc::testing::interop::RunServer(
           absl::Seconds(0.1)));
   ServerBuilder builder;
   builder.RegisterService(&service);
+  builder.RegisterService(&orca_service);
   builder.AddListeningPort(server_address.str(), creds);
   if (server_options != nullptr) {
     for (size_t i = 0; i < server_options->size(); i++) {
