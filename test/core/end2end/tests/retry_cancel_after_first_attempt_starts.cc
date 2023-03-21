@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 

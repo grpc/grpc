@@ -22,8 +22,6 @@
 #include <initializer_list>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

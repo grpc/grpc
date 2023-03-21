@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"

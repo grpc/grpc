@@ -18,8 +18,6 @@
 
 #include <memory>
 
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 

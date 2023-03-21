@@ -20,8 +20,6 @@
 #include <initializer_list>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 

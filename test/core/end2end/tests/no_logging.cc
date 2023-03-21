@@ -21,8 +21,6 @@
 #include <atomic>
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
