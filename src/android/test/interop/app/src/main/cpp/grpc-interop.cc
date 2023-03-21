@@ -16,8 +16,11 @@
  *
  */
 
-#include <grpcpp/grpcpp.h>
 #include <jni.h>
+
+#include "absl/strings/str_format.h"
+
+#include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/cpp/interop/interop_client.h"
@@ -25,10 +28,7 @@
 std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
                                                         int port,
                                                         bool use_tls) {
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d", host, port);
-
+  std::string host_port = absl::StrFormat("%s:%d", host, port);
   std::shared_ptr<grpc::ChannelCredentials> credentials;
   if (use_tls) {
     credentials = grpc::SslCredentials(grpc::SslCredentialsOptions());
@@ -36,10 +36,11 @@ std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
     credentials = grpc::InsecureChannelCredentials();
   }
 
-  grpc::testing::ChannelCreationFunc channel_creation_func =
-      std::bind(grpc::CreateChannel, host_port, credentials);
+  grpc::testing::ChannelCreationFunc channel_creation_func = std::bind(
+      grpc::CreateChannel, std::move(host_port), std::move(credentials));
   return std::shared_ptr<grpc::testing::InteropClient>(
-      new grpc::testing::InteropClient(channel_creation_func, true, false));
+      new grpc::testing::InteropClient(std::move(channel_creation_func), true,
+                                       false));
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
