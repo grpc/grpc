@@ -17,14 +17,13 @@
 
 #include <memory>
 
-#include <grpc/support/log.h>
-
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -51,7 +50,7 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
     RegisterNativeDnsResolver(builder);
     return;
   }
-  grpc_core::Crash(
+  Crash(
       "Unable to set DNS resolver! Likely a logic error in gRPC-core, "
       "please file a bug.");
 }
