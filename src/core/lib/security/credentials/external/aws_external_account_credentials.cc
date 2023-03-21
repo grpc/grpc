@@ -78,15 +78,6 @@ std::string UrlEncode(const absl::string_view& s) {
   return result;
 }
 
-bool ValidateAwsUrl(const std::string& urlString) {
-  absl::StatusOr<URI> url = URI::Parse(urlString);
-  if (!url.ok()) return false;
-  absl::string_view host;
-  absl::string_view port;
-  SplitHostPort(url->authority(), &host, &port);
-  return host == awsEc2MetadataIpv4Address || host == awsEc2MetadataIpv6Address;
-}
-
 }  // namespace
 
 RefCountedPtr<AwsExternalAccountCredentials>
@@ -129,22 +120,10 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     return;
   }
   region_url_ = it->second.string_value();
-  if (!ValidateAwsUrl(region_url_)) {
-    *error = GRPC_ERROR_CREATE(absl::StrFormat(
-        "Invalid host for region_url field, expecting %s or %s.",
-        awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
-    return;
-  }
   it = options.credential_source.object_value().find("url");
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     url_ = it->second.string_value();
-    if (!ValidateAwsUrl(url_)) {
-      *error = GRPC_ERROR_CREATE(absl::StrFormat(
-          "Invalid host for url field, expecting %s or %s.",
-          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
-      return;
-    }
   }
   it = options.credential_source.object_value().find(
       "regional_cred_verification_url");
@@ -164,13 +143,6 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     imdsv2_session_token_url_ = it->second.string_value();
-    if (!ValidateAwsUrl(imdsv2_session_token_url_)) {
-      *error = GRPC_ERROR_CREATE(absl::StrFormat(
-          "Invalid host for imdsv2_session_token_url field, expecting %s or "
-          "%s.",
-          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
-      return;
-    }
   }
 }
 
