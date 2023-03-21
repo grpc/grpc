@@ -597,7 +597,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
                                              grpc_tcp_server_cb on_accept_cb,
                                              void* on_accept_cb_arg,
                                              grpc_tcp_server** server) {
-  // On Windows, the `event_engine_listener` experiment only supports the
+  // On Windows, the event_engine_listener experiment only supports the
   // default engine
   WindowsEventEngine* engine_ptr = reinterpret_cast<WindowsEventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
@@ -642,7 +642,6 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
     grpc_core::Crash("iomgr on_accept_cb callback should be unused");
   };
   s->on_accept_cb_arg = nullptr;
-  // Reusing `head` as the owner of the listener
   s->head = nullptr;
   s->tail = nullptr;
   s->shutdown_starting.head = nullptr;
