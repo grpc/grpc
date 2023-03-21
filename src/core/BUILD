@@ -1043,6 +1043,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_memory_allocator_factory",
+    hdrs = [
+        "lib/event_engine/memory_allocator_factory.h",
+    ],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    deps = [
+        "event_engine_memory_allocator",
+        "memory_quota",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "memory_quota",
     srcs = [
         "lib/resource_quota/memory_quota.cc",

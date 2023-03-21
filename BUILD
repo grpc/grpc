@@ -1475,6 +1475,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_trace",
@@ -1518,6 +1519,8 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+        "//src/core:windows_event_engine",
+        "//src/core:windows_event_engine_listener",
     ],
 )
 

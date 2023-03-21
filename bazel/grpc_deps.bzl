@@ -101,6 +101,16 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "fuzztest",
+        actual = "@com_google_fuzztest//fuzztest",
+    )
+
+    native.bind(
+        name = "fuzztest_main",
+        actual = "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
+    )
+
+    native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
     )
@@ -256,6 +266,17 @@ def grpc_deps():
             urls = [
                 # 2022-02-09
                 "https://github.com/google/googletest/archive/0e402173c97aea7a00749e825b194bfede4f2e45.tar.gz",
+            ],
+        )
+
+    if "com_google_fuzztest" not in native.existing_rules():
+        http_archive(
+            name = "com_google_fuzztest",
+            sha256 = "f7bb5b3bd162576f3fbbe9bb768b57931fdd98581c1818789aceee5be4eeee64",
+            strip_prefix = "fuzztest-62cf00c7341eb05d128d0a3cbce79ac31dbda032",
+            urls = [
+                # 2023-03-03
+                "https://github.com/google/fuzztest/archive/62cf00c7341eb05d128d0a3cbce79ac31dbda032.tar.gz",
             ],
         )
 

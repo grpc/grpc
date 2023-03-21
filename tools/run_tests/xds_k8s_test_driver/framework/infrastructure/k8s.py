@@ -45,12 +45,13 @@ V1Pod = client.V1Pod
 V1PodList = client.V1PodList
 V1Service = client.V1Service
 V1Namespace = client.V1Namespace
-ApiException = client.ApiException
-FailToCreateError = utils.FailToCreateError
-_timedelta = datetime.timedelta
 
-_RETRY_ON_EXCEPTIONS = (urllib3.exceptions.HTTPError, ApiException,
-                        FailToCreateError)
+_timedelta = datetime.timedelta
+_ApiException = client.ApiException
+_FailToCreateError = utils.FailToCreateError
+
+_RETRY_ON_EXCEPTIONS = (urllib3.exceptions.HTTPError, _ApiException,
+                        _FailToCreateError)
 
 
 def _server_restart_retryer() -> retryers.Retrying:
@@ -77,6 +78,10 @@ def _quick_recovery_retryer() -> retryers.Retrying:
 
 def label_dict_to_selector(labels: dict) -> str:
     return ','.join(f'{k}=={v}' for k, v in labels.items())
+
+
+class NotFound(Exception):
+    """Indicates the resource is not found on the API server."""
 
 
 class KubernetesApiManager:
@@ -156,12 +161,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
             return self._execute(method, *args, **kwargs)
-        except ApiException as err:
-            if err.status == 404:
-                # Instead of trowing an error when a resource doesn't exist,
-                # just return None.
-                return None
-            raise
+        except NotFound:
+            # Instead of trowing an error when a resource doesn't exist,
+            # just return None.
+            return None
 
     def _execute(self, method: Callable[[Any], object], *args, **kwargs):
         # Note: Intentionally leaving return type as unspecified to not confuse
@@ -205,11 +208,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # ApiException means the server has received our request and responded
         # with an error we can parse (except a few corner cases, f.e. SSLError).
-        if isinstance(err, ApiException):
+        if isinstance(err, _ApiException):
             return self._handle_api_exception(err)
 
         # Unwrap FailToCreateError.
-        if isinstance(err, FailToCreateError):
+        if isinstance(err, _FailToCreateError):
             # We're always sending a single document, so we expect
             # a single wrapped exception in return.
             if len(err.api_exceptions) == 1:
@@ -217,8 +220,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         return None
 
-    def _handle_api_exception(self,
-                              err: ApiException) -> Optional[retryers.Retrying]:
+    def _handle_api_exception(
+            self, err: _ApiException) -> Optional[retryers.Retrying]:
         # TODO(sergiitk): replace returns with match/case when we use to py3.10.
         # pylint: disable=too-many-return-statements
 
@@ -234,6 +237,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         if code == 401:
             self._refresh_auth()
             return _quick_recovery_retryer()
+
+        # 404 Not Found. Make it easier for the caller to handle 404s.
+        if code == 404:
+            raise NotFound('Kubernetes API returned 404 Not Found: '
+                           f'{self._status_message_or_body(body)}') from err
 
         # 409 Conflict
         # "Operation cannot be fulfilled on resourcequotas "foo": the object
@@ -269,6 +277,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             return _quick_recovery_retryer()
 
         return None
+
+    @classmethod
+    def _status_message_or_body(cls, body: str) -> str:
+        try:
+            return str(json.loads(body)['message'])
+        except (KeyError, ValueError):
+            return body
 
     def create_single_resource(self, manifest):
         return self._execute(self._apply_manifest, manifest)
