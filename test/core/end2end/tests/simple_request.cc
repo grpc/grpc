@@ -41,15 +41,15 @@ using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
-static void CheckPeer(absl::string_view peer_name) {
+void CheckPeer(absl::string_view peer_name) {
   // If the peer name is a uds path, then check if it is filled
   if (absl::StartsWith(peer_name, "unix:/")) {
     EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
   }
 }
 
-static void SimpleRequestBody(CoreEnd2endTest& test) {
-  auto before = grpc_core::global_stats().Collect();
+void SimpleRequestBody(CoreEnd2endTest& test) {
+  auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -91,8 +91,8 @@ static void SimpleRequestBody(CoreEnd2endTest& test) {
   if (test.GetParam()->feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
-  auto after = grpc_core::global_stats().Collect();
-  gpr_log(GPR_DEBUG, "%s", grpc_core::StatsAsJson(after.get()).c_str());
+  auto after = global_stats().Collect();
+  gpr_log(GPR_DEBUG, "%s", StatsAsJson(after.get()).c_str());
   EXPECT_EQ(after->client_calls_created - before->client_calls_created,
             expected_calls);
   EXPECT_EQ(after->server_calls_created - before->server_calls_created,

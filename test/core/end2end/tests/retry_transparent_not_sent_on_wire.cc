@@ -77,16 +77,14 @@ class FailFirstTenCallsFilter {
       if (calld->fail_) {
         if (batch->recv_trailing_metadata) {
           batch->payload->recv_trailing_metadata.recv_trailing_metadata->Set(
-              grpc_core::GrpcStreamNetworkState(),
-              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
+              GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
         }
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
               grpc_error_set_int(
                   GRPC_ERROR_CREATE("FailFirstTenCallsFilter failing batch"),
-                  grpc_core::StatusIntProperty::kRpcStatus,
-                  GRPC_STATUS_UNAVAILABLE),
+                  StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
               calld->call_combiner_);
           return;
         }
@@ -98,7 +96,7 @@ class FailFirstTenCallsFilter {
     explicit CallData(const grpc_call_element_args* args)
         : call_combiner_(args->call_combiner) {}
 
-    grpc_core::CallCombiner* call_combiner_;
+    CallCombiner* call_combiner_;
     bool fail_ = false;
   };
 
@@ -134,22 +132,21 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 
 // Tests transparent retries when the call was never sent out on the wire.
 TEST_P(RetryTest, RetryTransparentNotSentOnWire) {
-  CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              // Skip on proxy (which explicitly disables retries).
-              if (!builder->channel_args()
-                       .GetBool(GRPC_ARG_ENABLE_RETRIES)
-                       .value_or(true)) {
-                return true;
-              }
-              // Install filter.
-              builder->PrependFilter(&FailFirstTenCallsFilter::kFilterVtable);
-              return true;
-            });
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(
+        GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,
+        [](ChannelStackBuilder* builder) {
+          // Skip on proxy (which explicitly disables retries).
+          if (!builder->channel_args()
+                   .GetBool(GRPC_ARG_ENABLE_RETRIES)
+                   .value_or(true)) {
+            return true;
+          }
+          // Install filter.
+          builder->PrependFilter(&FailFirstTenCallsFilter::kFilterVtable);
+          return true;
+        });
+  });
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);

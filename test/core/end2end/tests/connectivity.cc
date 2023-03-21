@@ -59,7 +59,7 @@ TEST_P(RetryHttp2Test, ConnectivityWatch) {
   EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                       GRPC_CHANNEL_CONNECTING));
   // now let's bring up a server to connect to
-  InitServer(grpc_core::ChannelArgs());
+  InitServer(ChannelArgs());
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {

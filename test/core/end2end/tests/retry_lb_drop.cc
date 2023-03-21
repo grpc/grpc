@@ -101,19 +101,18 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
 TEST_P(RetryTest, RetryLbDrop) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        grpc_core::RegisterTestPickArgsLoadBalancingPolicy(
-            builder,
-            [](const grpc_core::PickArgsSeen& pick_args) {
-              GPR_ASSERT(grpc_core::g_pick_args_vector != nullptr);
-              grpc_core::g_pick_args_vector->push_back(pick_args);
-            },
-            grpc_core::kDropPolicyName);
-      });
-  grpc_core::CoreConfiguration::RegisterBuilder(grpc_core::RegisterDropPolicy);
-  std::vector<grpc_core::PickArgsSeen> pick_args_seen;
-  grpc_core::g_pick_args_vector = &pick_args_seen;
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    RegisterTestPickArgsLoadBalancingPolicy(
+        builder,
+        [](const PickArgsSeen& pick_args) {
+          GPR_ASSERT(g_pick_args_vector != nullptr);
+          g_pick_args_vector->push_back(pick_args);
+        },
+        kDropPolicyName);
+  });
+  CoreConfiguration::RegisterBuilder(RegisterDropPolicy);
+  std::vector<PickArgsSeen> pick_args_seen;
+  g_pick_args_vector = &pick_args_seen;
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -151,7 +150,7 @@ TEST_P(RetryTest, RetryLbDrop) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
   EXPECT_EQ(server_status.message(), "Call dropped by drop LB policy");
   EXPECT_EQ(pick_args_seen.size(), 1);
-  grpc_core::g_pick_args_vector = nullptr;
+  g_pick_args_vector = nullptr;
 }
 
 }  // namespace

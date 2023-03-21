@@ -68,7 +68,7 @@ TEST_P(RetryTest, RetryStreaming) {
                "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  grpc_core::channelz::ChannelNode* channelz_channel =
+  channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch for receiving initial metadata, a message,

@@ -71,12 +71,12 @@ TEST_P(CoreEnd2endTest, Channelz) {
   InitServer(args);
   InitClient(args);
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
+  channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
   ASSERT_NE(channelz_channel, nullptr);
 
-  grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(server())->channelz_node();
+  channelz::ServerNode* channelz_server =
+      Server::FromC(server())->channelz_node();
   ASSERT_NE(channelz_server, nullptr);
 
   std::string json = channelz_channel->RenderJsonString();
@@ -125,12 +125,12 @@ TEST_P(CoreEnd2endTest, ChannelzWithChannelTrace) {
   InitServer(args);
   InitClient(args);
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
+  channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
   ASSERT_NE(channelz_channel, nullptr);
 
-  grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(server())->channelz_node();
+  channelz::ServerNode* channelz_server =
+      Server::FromC(server())->channelz_node();
   ASSERT_NE(channelz_server, nullptr);
 
   RunOneRequest(*this, true);
@@ -152,7 +152,7 @@ TEST_P(CoreEnd2endTest, ChannelzDisabled) {
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, false);
   InitServer(args);
   InitClient(args);
-  grpc_core::channelz::ChannelNode* channelz_channel =
+  channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(client());
   EXPECT_EQ(channelz_channel, nullptr);
   RunOneRequest(*this, true);

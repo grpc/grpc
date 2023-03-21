@@ -111,10 +111,10 @@ class InitWithTempFile {
     return dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider_);
   }
 
-  grpc_core::testing::TmpFile& file() { return tmp_file_; }
+  testing::TmpFile& file() { return tmp_file_; }
 
  private:
-  grpc_core::testing::TmpFile tmp_file_;
+  testing::TmpFile tmp_file_;
   grpc_authorization_policy_provider* provider_;
 };
 

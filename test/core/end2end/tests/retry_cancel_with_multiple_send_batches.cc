@@ -131,7 +131,7 @@ class FailSendOpsFilter {
             batch,
             grpc_error_set_int(
                 GRPC_ERROR_CREATE("FailSendOpsFilter failing batch"),
-                grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
+                StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
       }
@@ -142,7 +142,7 @@ class FailSendOpsFilter {
     explicit CallData(const grpc_call_element_args* args)
         : call_combiner_(args->call_combiner) {}
 
-    grpc_core::CallCombiner* call_combiner_;
+    CallCombiner* call_combiner_;
   };
 
   static grpc_error_handle Init(grpc_channel_element* elem,
@@ -173,7 +173,7 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     "FailSendOpsFilter",
 };
 
-bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
+bool MaybeAddFilter(ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
   if (!builder->channel_args()
            .GetBool(GRPC_ARG_ENABLE_RETRIES)
@@ -186,11 +186,10 @@ bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
 }
 
 void RegisterFilter() {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
-                                               MaybeAddFilter);
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
+                                           MaybeAddFilter);
+  });
 }
 
 TEST_P(RetryTest, RetryCancelWithMultipleSendBatches) {

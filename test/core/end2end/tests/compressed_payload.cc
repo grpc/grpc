@@ -39,7 +39,7 @@ namespace {
 
 class TestConfigurator {
  public:
-  TestConfigurator(CoreEnd2endTest& test) : test_(test) {}
+  explicit TestConfigurator(CoreEnd2endTest& test) : test_(test) {}
 
   TestConfigurator& DisableAlgorithmAtServer(
       grpc_compression_algorithm algorithm) {

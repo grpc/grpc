@@ -37,7 +37,7 @@ void SimpleDelayedRequestBody(CoreEnd2endTest& test) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  test.InitServer(grpc_core::ChannelArgs());
+  test.InitServer(ChannelArgs());
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
