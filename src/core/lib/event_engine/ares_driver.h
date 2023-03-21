@@ -118,6 +118,7 @@ class GrpcAresRequest
   /// synchronizes access to this request, and also to associated
   /// ev_driver and fd_node objects
   absl::Mutex mu_;
+  /// name to resolve
   const std::string name_;
   const std::string default_port_;
   // ares channel
@@ -125,6 +126,7 @@ class GrpcAresRequest
   /// host to resolve, parsed from the name to resolve
   absl::string_view host_;
   /// port to fill in sockaddr_in, parsed from the name to resolve
+  /// This is in network byte order.
   uint16_t port_ = 0;
   const EventEngine::Duration timeout_;
   struct ares_addr_port_node dns_server_addr_ ABSL_GUARDED_BY(mu_);
@@ -146,13 +148,10 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
   explicit GrpcAresHostnameRequest(
       absl::string_view name, absl::string_view default_port,
-      EventEngine::Duration timeout, bool is_balancer,
+      EventEngine::Duration timeout,
       CreateEventHandleCallback create_event_handle_cb,
       EventEngine* event_engine);
 
-  bool is_balancer() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return is_balancer_;
-  }
   void Start(OnResolveCallback<Result> on_resolve) ABSL_LOCKS_EXCLUDED(mu_);
   void OnResolve(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
@@ -160,13 +159,12 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
 
  private:
   ~GrpcAresHostnameRequest() override;
+  bool ResolveAsIPLiteralLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void LogResolvedAddressesList(const char* input_output_str)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void SortResolvedAddresses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::vector<EventEngine::ResolvedAddress> result_;
-  /// is it a grpclb address
-  const bool is_balancer_ ABSL_GUARDED_BY(mu_);
   OnResolveCallback<Result> on_resolve_ ABSL_GUARDED_BY(mu_);
 };
 

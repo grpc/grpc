@@ -219,6 +219,31 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 
 }  // namespace
 
+TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
+  constexpr uint8_t kExpectedAddresses[] = {4, 3, 2, 1};
+
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupHostname(
+      [&verified, &dns_resolver_signal, &kExpectedAddresses](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {MakeAddr4(kExpectedAddresses,
+                                         sizeof(kExpectedAddresses), 1234)}));
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "4.3.2.1:1234",
+      /*default_port=*/"", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
 TEST_F(EventEngineDNSTest, QueryARecord) {
   constexpr uint8_t kExpectedAddresses[][4] = {
       {1, 2, 3, 4}, {1, 2, 3, 5}, {1, 2, 3, 6}};

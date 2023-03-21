@@ -106,9 +106,8 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
   GrpcAresHostnameRequest* request = harg->request;
   if (status != ARES_SUCCESS) {
     std::string error_msg = absl::StrFormat(
-        "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
-        harg->qtype, request->host(), request->is_balancer(),
-        ares_strerror(status));
+        "C-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
+        request->host(), ares_strerror(status));
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
                                request, error_msg.c_str());
     GRPC_ARES_DRIVER_STACK_TRACE();
@@ -592,11 +591,10 @@ void GrpcAresRequest::OnHandleDestroyed(FdNode* fd_node, absl::Status status) {
 
 GrpcAresHostnameRequest::GrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
-    EventEngine::Duration timeout, bool is_balancer,
+    EventEngine::Duration timeout,
     CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
     : GrpcAresRequest(name, default_port, timeout,
-                      std::move(create_event_handle_cb), event_engine),
-      is_balancer_(is_balancer) {}
+                      std::move(create_event_handle_cb), event_engine) {}
 
 GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
@@ -605,8 +603,16 @@ GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
 void GrpcAresHostnameRequest::Start(OnResolveCallback<Result> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
-  GPR_ASSERT(initialized_);
+  GPR_DEBUG_ASSERT(initialized_);
   on_resolve_ = std::move(on_resolve);
+  GRPC_ARES_DRIVER_TRACE_LOG(
+      "request:%p c-ares GrpcAresHostnameRequest::Start name=%s, "
+      "default_port=%s",
+      this, name_.c_str(), default_port_.c_str());
+  // Early out if the target is an ipv4 or ipv6 literal.
+  if (ResolveAsIPLiteralLocked()) {
+    return;
+  }
   // We add up pending_queries_ here since ares_gethostbyname may directly
   // invoke the callback inline if there is any error with the input. The
   // callback will invoke OnResolve with an error status and may destroy the
@@ -697,6 +703,27 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
       on_resolve(std::move(error), token);
     });
   }
+}
+
+bool GrpcAresHostnameRequest::ResolveAsIPLiteralLocked() {
+  GPR_DEBUG_ASSERT(initialized_);
+  // host_ and port_ should have been parsed successfully in Initialize.
+  const std::string hostport = grpc_core::JoinHostPort(host_, ntohs(port_));
+  // TODO(yijiem): maybe add ResolvedAddress version of these to
+  // tcp_socket_utils.cc
+  grpc_resolved_address addr;
+  if (grpc_parse_ipv4_hostport(hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(hostport, &addr, false /* log errors */)) {
+    Result result;
+    result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
+    event_engine_->Run([on_resolve = std::move(on_resolve_),
+                        result = std::move(result),
+                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+      on_resolve(std::move(result), token);
+    });
+    return true;
+  }
+  return false;
 }
 
 void GrpcAresHostnameRequest::LogResolvedAddressesList(

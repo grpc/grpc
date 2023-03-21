@@ -502,7 +502,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
   GrpcAresHostnameRequest* request = new GrpcAresHostnameRequest(
-      name, default_port, timeout, /*is_balancer=*/false,
+      name, default_port, timeout,
       absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
                        this),
       event_engine_);
