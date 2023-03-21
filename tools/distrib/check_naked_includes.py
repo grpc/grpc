@@ -38,7 +38,6 @@ CHECK_SUBDIRS = [
     'src/cpp',
     'test/core',
     'test/cpp',
-    'fuzztest',
 ]
 
 for subdir in CHECK_SUBDIRS:
