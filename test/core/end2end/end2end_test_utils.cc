@@ -22,7 +22,7 @@
 #include "test/core/end2end/end2end_tests.h"
 
 const char* get_host_override_string(const char* str,
-                                     grpc_end2end_test_config config) {
+                                     const CoreTestConfiguration& config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
     return str;
   } else {
@@ -31,7 +31,7 @@ const char* get_host_override_string(const char* str,
 }
 
 const grpc_slice* get_host_override_slice(const char* str,
-                                          grpc_end2end_test_config config) {
+                                          const CoreTestConfiguration& config) {
   const char* r = get_host_override_string(str, config);
   if (r != nullptr) {
     static grpc_slice ret;
@@ -42,7 +42,7 @@ const grpc_slice* get_host_override_slice(const char* str,
 }
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
-                                   grpc_end2end_test_config config) {
+                                   const CoreTestConfiguration& config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
     GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
   }
