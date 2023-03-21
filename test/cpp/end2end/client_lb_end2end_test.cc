@@ -55,7 +55,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -3062,16 +3061,14 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
-  grpc_core::ConfigVars::SetOverrides(overrides);
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

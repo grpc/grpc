@@ -30,7 +30,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"

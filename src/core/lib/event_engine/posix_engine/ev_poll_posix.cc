@@ -40,6 +40,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
@@ -57,10 +58,13 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
