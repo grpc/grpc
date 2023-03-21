@@ -31,16 +31,16 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 
-#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
-  do {                                                          \
-    static std::atomic<uint64_t> prev{0};                       \
-    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
-                       gpr_now(GPR_CLOCK_MONOTONIC))            \
-                       .milliseconds_after_process_epoch();     \
-    uint64_t prev_tsamp = prev.exchange(now);                   \
-    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {       \
-      gpr_log(severity, format, __VA_ARGS__);                   \
-    }                                                           \
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)         \
+  do {                                                         \
+    static std::atomic<int64_t> prev{0};                       \
+    int64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                      gpr_now(GPR_CLOCK_MONOTONIC))            \
+                      .milliseconds_after_process_epoch();     \
+    int64_t prev_tsamp = prev.exchange(now);                   \
+    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {      \
+      gpr_log(severity, format, __VA_ARGS__);                  \
+    }                                                          \
   } while (0)
 
 namespace grpc_core {
@@ -150,7 +150,7 @@ class Timestamp {
 
   bool is_process_epoch() const { return millis_ == 0; }
 
-  uint64_t milliseconds_after_process_epoch() const { return millis_; }
+  int64_t milliseconds_after_process_epoch() const { return millis_; }
 
   gpr_timespec as_timespec(gpr_clock_type type) const;
 
