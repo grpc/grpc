@@ -378,7 +378,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
 
   const int soft_limit =
       channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
-  if (soft_limit <= -1) {
+  if (soft_limit < 0) {
     // Set soft limit to 0.8 * hard limit if this is larger than
     // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
     // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
@@ -448,10 +448,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
         // Set value to 1.25 * soft limit if this is larger than
         // `DEFAULT_MAX_HEADER_LIST_SIZE` and
         // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
-        const int value =
-            static_cast<int>(channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
-                                 .value_or(setting.default_value) *
-                             1.25);
+        const int soft_limit = channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
+                                   .value_or(setting.default_value);
+        const int value = (soft_limit < (INT_MAX / 1.25))
+                              ? static_cast<int>(soft_limit * 1.25)
+                              : soft_limit;
         if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
           queue_setting_update(
               t, setting.setting_id,
