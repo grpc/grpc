@@ -205,7 +205,6 @@ grpc_objc_testing_library(
         "//:grpc++_cronet_credentials",
         "//src/objective-c:grpc_objc_client_core_cronet_testing",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/end2end:end2end_tests",
     ],
 )
 
