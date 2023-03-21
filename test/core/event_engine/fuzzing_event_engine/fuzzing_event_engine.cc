@@ -18,8 +18,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <ratio>
 #include <vector>
+
+#include "fuzzing_event_engine.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -138,12 +141,41 @@ FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
 }
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
-    OnConnectCallback, const ResolvedAddress&, const EndpointConfig&,
-    MemoryAllocator, Duration) {
-  abort();
+    OnConnectCallback on_connect, const ResolvedAddress& addr,
+    const EndpointConfig& args, MemoryAllocator memory_allocator,
+    Duration timeout) {
+  auto task_handle = RunAfter(
+      Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
+        grpc_core::MutexLock lock(&mu_);
+        for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
+          if (!it->second->started) continue;
+          for (const auto& listener_addr : it->second->addresses) {
+            if (EqAddr(listener_addr, addr)) {
+              auto middle = std::make_shared<EndpointMiddle>();
+              auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
+              auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
+              Run([listener = it->second, ep1 = std::move(ep1)]() mutable {
+                listener->on_accept(std::move(ep1));
+              });
+              Run([on_connect = std::move(on_connect),
+                   ep2 = std::move(ep2)]() mutable {
+                on_connect(std::move(ep2));
+              });
+              return;
+            }
+          }
+        }
+        Run([on_connect = std::move(on_connect)]() mutable {
+          on_connect(absl::InvalidArgumentError("No listener found"));
+        });
+      });
+  return ConnectionHandle{{task_handle.keys[0], task_handle.keys[1]}};
 }
 
-bool FuzzingEventEngine::CancelConnect(ConnectionHandle) { abort(); }
+bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
+  return Cancel(
+      TaskHandle{{connection_handle.keys[0], connection_handle.keys[1]}});
+}
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
@@ -218,6 +250,13 @@ void FuzzingEventEngine::UnsetGlobalNowImplEngine(FuzzingEventEngine* engine) {
   g_fuzzing_event_engine = nullptr;
   gpr_now_impl = g_orig_gpr_now_impl;
   g_orig_gpr_now_impl = nullptr;
+}
+
+FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
+  owner->Run([on_shutdown = std::move(on_shutdown),
+              shutdown_status = std::move(shutdown_status)]() mutable {
+    on_shutdown(std::move(shutdown_status));
+  });
 }
 
 }  // namespace experimental

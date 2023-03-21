@@ -97,6 +97,49 @@ class FuzzingEventEngine : public EventEngine {
     absl::AnyInvocable<void()> closure;
   };
 
+  class FuzzingListener : public Listener {
+   public:
+    FuzzingListener(FuzzingEventEngine* engine, intptr_t id);
+
+   private:
+    FuzzingEventEngine* engine_;
+    intptr_t id_;
+  };
+
+  struct ListenerInfo {
+    ListenerInfo(FuzzingEventEngine* owner, intptr_t id,
+                 Listener::AcceptCallback on_accept,
+                 absl::AnyInvocable<void(absl::Status)> on_shutdown)
+        : on_accept(std::move(on_accept)),
+          on_shutdown(std::move(on_shutdown)),
+          started(false),
+          owner(owner) {}
+    ~ListenerInfo();
+    Listener::AcceptCallback on_accept;
+    absl::AnyInvocable<void(absl::Status)> on_shutdown;
+    std::vector<ResolvedAddress> addresses;
+    bool started;
+    FuzzingEventEngine* owner;
+    absl::Status shutdown_status;
+  };
+
+  struct EndpointMiddle {};
+
+  class FuzzingEndpoint : public Endpoint {
+   public:
+    FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
+        : middle_(std::move(middle)), index_(index) {}
+
+   private:
+    std::shared_ptr<EndpointMiddle> middle_;
+    int index_;
+  };
+
+  static bool EqAddr(const ResolvedAddress& a, const ResolvedAddress& b) {
+    if (a.size() != b.size()) return false;
+    return memcmp(a.address(), b.address(), a.size()) == 0;
+  }
+
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
@@ -112,6 +155,8 @@ class FuzzingEventEngine : public EventEngine {
   std::map<intptr_t, Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
+      ABSL_GUARDED_BY(mu_);
+  std::map<intptr_t, std::shared_ptr<ListenerInfo>> listeners_
       ABSL_GUARDED_BY(mu_);
 };
 
