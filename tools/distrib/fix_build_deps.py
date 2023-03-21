@@ -221,6 +221,10 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    'fuzztest/fuzztest.h': [
+        '@com_google_fuzztest//fuzztest',
+        '@com_google_fuzztest//fuzztest:fuzztest_gtest_main'
+    ],
     'google/api/expr/v1alpha1/syntax.upb.h':
         'google_type_expr_upb',
     'google/rpc/status.upb.h':
@@ -433,6 +437,7 @@ for dirname in [
         "test/core/promise",
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",
+        "fuzztest",
 ]:
     parsing_path = dirname
     exec(
@@ -448,6 +453,7 @@ for dirname in [
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
+            'grpc_fuzz_test': grpc_cc_library,
             'grpc_proto_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
             'glob': lambda files: None,
@@ -570,9 +576,13 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not ('//' in dep):
-                dep = '//:' + dep
-            deps.add(dep, hdr)
+            if isinstance(dep, list):
+                for d in dep:
+                    deps.add(d, hdr)
+            else:
+                if not ('//' in dep):
+                    dep = '//:' + dep
+                deps.add(dep, hdr)
             continue
 
         if hdr in vendors:
@@ -588,7 +598,11 @@ def make_library(library):
             continue
 
         if hdr in EXTERNAL_DEPS:
-            external_deps.add(EXTERNAL_DEPS[hdr], hdr)
+            if isinstance(EXTERNAL_DEPS[hdr], list):
+                for dep in EXTERNAL_DEPS[hdr]:
+                    external_deps.add(dep, hdr)
+            else:
+                external_deps.add(EXTERNAL_DEPS[hdr], hdr)
             continue
 
         if hdr.startswith('opencensus/'):
