@@ -193,7 +193,8 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  if (!imdsv2_session_token_url_.empty()) {
+
+  if (!imdsv2_session_token_url_.empty() && ShouldUseMetadataServer()) {
     RetrieveImdsV2SessionToken();
   } else if (signer_ != nullptr) {
     BuildSubjectToken();
@@ -203,9 +204,6 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
 }
 
 void AwsExternalAccountCredentials::RetrieveImdsV2SessionToken() {
-  if (!ShouldUseMetadataServer()) {
-    return;
-  }
   absl::StatusOr<URI> uri = URI::Parse(imdsv2_session_token_url_);
   if (!uri.ok()) {
     return;

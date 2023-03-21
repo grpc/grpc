@@ -3078,10 +3078,9 @@ TEST(CredentialsTest,
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
-  HttpRequest::SetOverride(
-      aws_imdsv2_external_account_creds_httpcli_get_success,
-      aws_external_account_creds_httpcli_post_success,
-      httpcli_put_should_not_be_called);
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
@@ -3122,10 +3121,9 @@ TEST(
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
-  HttpRequest::SetOverride(
-      aws_imdsv2_external_account_creds_httpcli_get_success,
-      aws_external_account_creds_httpcli_post_success,
-      httpcli_put_should_not_be_called);
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
