@@ -45,9 +45,9 @@
 
 namespace grpc_core {
 
-class SockpairFixture : public grpc_core::CoreTestFixture {
+class SockpairFixture : public CoreTestFixture {
  public:
-  explicit SockpairFixture(const grpc_core::ChannelArgs& ep_args)
+  explicit SockpairFixture(const ChannelArgs& ep_args)
       : ep_(grpc_iomgr_create_endpoint_pair("fixture", ep_args.ToC().get())) {}
 
   ~SockpairFixture() override {
@@ -63,20 +63,16 @@ class SockpairFixture : public grpc_core::CoreTestFixture {
   }
 
  private:
-  virtual grpc_core::ChannelArgs MutateClientArgs(grpc_core::ChannelArgs args) {
-    return args;
-  }
-  virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
-    return args;
-  }
-  grpc_server* MakeServer(const grpc_core::ChannelArgs& in_args) override {
+  virtual ChannelArgs MutateClientArgs(ChannelArgs args) { return args; }
+  virtual ChannelArgs MutateServerArgs(ChannelArgs args) { return args; }
+  grpc_server* MakeServer(const ChannelArgs& in_args) override {
     auto args = MutateServerArgs(in_args);
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_transport* transport;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq(), nullptr);
     grpc_server_start(server);
-    auto server_channel_args = grpc_core::CoreConfiguration::Get()
+    auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()
                                    .PreconditionChannelArgs(args.ToC().get());
     auto* server_endpoint = std::exchange(ep_.server, nullptr);
@@ -84,7 +80,7 @@ class SockpairFixture : public grpc_core::CoreTestFixture {
     transport = grpc_create_chttp2_transport(server_channel_args,
                                              server_endpoint, false);
     grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq()));
-    grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+    Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
     if (error.ok()) {
@@ -94,9 +90,9 @@ class SockpairFixture : public grpc_core::CoreTestFixture {
     }
     return server;
   }
-  grpc_channel* MakeClient(const grpc_core::ChannelArgs& in_args) override {
-    grpc_core::ExecCtx exec_ctx;
-    auto args = grpc_core::CoreConfiguration::Get()
+  grpc_channel* MakeClient(const ChannelArgs& in_args) override {
+    ExecCtx exec_ctx;
+    auto args = CoreConfiguration::Get()
                     .channel_args_preconditioning()
                     .PreconditionChannelArgs(
                         MutateClientArgs(in_args)
@@ -107,8 +103,8 @@ class SockpairFixture : public grpc_core::CoreTestFixture {
     auto* client_endpoint = std::exchange(ep_.client, nullptr);
     EXPECT_NE(client_endpoint, nullptr);
     transport = grpc_create_chttp2_transport(args, client_endpoint, true);
-    auto channel = grpc_core::Channel::Create(
-        "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+    auto channel = Channel::Create("socketpair-target", args,
+                                   GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;
     if (channel.ok()) {
       client = channel->release()->c_ptr();

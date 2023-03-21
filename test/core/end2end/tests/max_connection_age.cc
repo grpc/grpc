@@ -80,7 +80,7 @@ TEST_P(Http2Test, MaxAgeForciblyClose) {
   if (got_server) {
     // Request got through to the server before connection timeout
     // Wait for the channel to reach its max age
-    Step(grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
+    Step(Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
     // After the channel reaches its max age, we still do nothing here. And wait
     // for it to use up its max age grace period.
     Expect(1, true);

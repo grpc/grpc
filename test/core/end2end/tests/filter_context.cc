@@ -51,16 +51,16 @@ struct call_data {
   grpc_call_context_element* context;
 };
 
-static grpc_error_handle init_call_elem(grpc_call_element* elem,
-                                        const grpc_call_element_args* args) {
+grpc_error_handle init_call_elem(grpc_call_element* elem,
+                                 const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->context = args->context;
   gpr_log(GPR_INFO, "init_call_elem(): context=%p", args->context);
   return absl::OkStatus();
 }
 
-static void start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+void start_transport_stream_op_batch(grpc_call_element* elem,
+                                     grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // If batch payload context is not null (which will happen in some
   // cancellation cases), make sure we get the same context here that we
@@ -73,18 +73,18 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
-static void destroy_call_elem(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+void destroy_call_elem(grpc_call_element* /*elem*/,
+                       const grpc_call_final_info* /*final_info*/,
+                       grpc_closure* /*ignored*/) {}
 
-static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
+                                    grpc_channel_element_args* /*args*/) {
   return absl::OkStatus();
 }
 
-static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
+void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
-static const grpc_channel_filter test_filter = {
+const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
     nullptr,
     grpc_channel_next_op,
@@ -102,24 +102,23 @@ static const grpc_channel_filter test_filter = {
 // Simple request to test that filters see a consistent view of the
 // call context.
 TEST_P(CoreEnd2endTest, FilterContext) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
-                          GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {
-          builder->channel_init()->RegisterStage(
-              type, INT_MAX, [](grpc_core::ChannelStackBuilder* builder) {
-                // Want to add the filter as close to the end as possible, to
-                // make sure that all of the filters work well together.
-                // However, we can't add it at the very end, because the
-                // connected channel filter must be the last one.  So we add it
-                // right before the last one.
-                auto it = builder->mutable_stack()->end();
-                --it;
-                builder->mutable_stack()->insert(it, &test_filter);
-                return true;
-              });
-        }
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
+                      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {
+      builder->channel_init()->RegisterStage(
+          type, INT_MAX, [](ChannelStackBuilder* builder) {
+            // Want to add the filter as close to the end as possible, to
+            // make sure that all of the filters work well together.
+            // However, we can't add it at the very end, because the
+            // connected channel filter must be the last one.  So we add it
+            // right before the last one.
+            auto it = builder->mutable_stack()->end();
+            --it;
+            builder->mutable_stack()->insert(it, &test_filter);
+            return true;
+          });
+    }
+  });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;

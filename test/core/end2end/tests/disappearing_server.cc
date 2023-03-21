@@ -68,7 +68,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 
 TEST_P(CoreClientChannelTest, DisappearingServer) {
   OneRequestAndShutdownServer(*this);
-  InitServer(grpc_core::ChannelArgs());
+  InitServer(ChannelArgs());
   OneRequestAndShutdownServer(*this);
 }
 

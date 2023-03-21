@@ -87,12 +87,12 @@ TEST_P(RetryHttp2Test, BadPing) {
 TEST_P(RetryHttp2Test, PingsWithoutData) {
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
-  InitClient(grpc_core::ChannelArgs()
+  InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, MAX_PING_STRIKES)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
-  InitServer(grpc_core::ChannelArgs()
+  InitServer(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
-                      grpc_core::Duration::Minutes(5).millis())
+                      Duration::Minutes(5).millis())
                  .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();

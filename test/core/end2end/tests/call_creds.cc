@@ -86,7 +86,7 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   test.Expect(101, true);
   test.Step();
   PrintAuthContext(false, s.GetAuthContext().get());
-  PrintAuthContext(1, c.GetAuthContext().get());
+  PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
   CoreEnd2endTest::IncomingMessage client_message;
@@ -117,7 +117,7 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   }
 }
 
-static void TestRequestResponseWithPayloadAndOverriddenCallCreds(
+void TestRequestResponseWithPayloadAndOverriddenCallCreds(
     CoreEnd2endTest& test, bool use_secure_call_creds) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   grpc_call_credentials* creds;
@@ -151,7 +151,7 @@ static void TestRequestResponseWithPayloadAndOverriddenCallCreds(
   test.Expect(101, true);
   test.Step();
   PrintAuthContext(false, s.GetAuthContext().get());
-  PrintAuthContext(1, c.GetAuthContext().get());
+  PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
   CoreEnd2endTest::IncomingMessage client_message;
@@ -210,7 +210,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   test.Expect(101, true);
   test.Step();
   PrintAuthContext(false, s.GetAuthContext().get());
-  PrintAuthContext(1, c.GetAuthContext().get());
+  PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
   CoreEnd2endTest::IncomingMessage client_message;

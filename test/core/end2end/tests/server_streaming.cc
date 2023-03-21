@@ -72,7 +72,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   while (true) {
     CoreEnd2endTest::IncomingMessage server_message;
     c.NewBatch(102).RecvMessage(server_message);
-    test.Expect(1, grpc_core::CqVerifier::Maybe{&seen_status});
+    test.Expect(1, CqVerifier::Maybe{&seen_status});
     test.Expect(102, true);
     test.Step();
     if (server_message.is_end_of_stream()) {

@@ -45,6 +45,7 @@ const int kServerEndBaseTag = 4000;
 template <typename F>
 auto MakeVec(F init) {
   std::vector<decltype(init(0))> v;
+  v.reserve(kNumCalls);
   for (int i = 0; i < kNumCalls; ++i) {
     v.push_back(init(i));
   }
@@ -119,8 +120,8 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
       case GRPC_STATUS_OK:
         break;
       default:
-        grpc_core::Crash(absl::StrFormat("Unexpected status code: %d",
-                                         server_status[i].status()));
+        Crash(absl::StrFormat("Unexpected status code: %d",
+                              server_status[i].status()));
     }
     if (client_close[i].was_cancelled()) {
       cancelled_calls_on_server++;

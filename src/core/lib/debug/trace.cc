@@ -27,13 +27,13 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/debug/trace.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 

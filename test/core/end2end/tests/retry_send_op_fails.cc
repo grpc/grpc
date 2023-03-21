@@ -78,7 +78,7 @@ class FailFirstCallFilter {
             batch,
             grpc_error_set_int(
                 GRPC_ERROR_CREATE("FailFirstCallFilter failing batch"),
-                grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
+                StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
       }
@@ -89,7 +89,7 @@ class FailFirstCallFilter {
     explicit CallData(const grpc_call_element_args* args)
         : call_combiner_(args->call_combiner) {}
 
-    grpc_core::CallCombiner* call_combiner_;
+    CallCombiner* call_combiner_;
     bool fail_ = false;
   };
 
@@ -131,22 +131,20 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
 TEST_P(RetryTest, RetrySendOpFails) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_SUBCHANNEL, 0,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              // Skip on proxy (which explicitly disables retries).
-              if (!builder->channel_args()
-                       .GetBool(GRPC_ARG_ENABLE_RETRIES)
-                       .value_or(true)) {
-                return true;
-              }
-              // Install filter.
-              builder->PrependFilter(&FailFirstCallFilter::kFilterVtable);
-              return true;
-            });
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(
+        GRPC_CLIENT_SUBCHANNEL, 0, [](ChannelStackBuilder* builder) {
+          // Skip on proxy (which explicitly disables retries).
+          if (!builder->channel_args()
+                   .GetBool(GRPC_ARG_ENABLE_RETRIES)
+                   .value_or(true)) {
+            return true;
+          }
+          // Install filter.
+          builder->PrependFilter(&FailFirstCallFilter::kFilterVtable);
+          return true;
+        });
+  });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

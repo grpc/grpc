@@ -82,11 +82,11 @@ class InjectStatusFilter {
     static void RecvTrailingMetadataReady(void* arg,
                                           grpc_error_handle /*error*/) {
       auto* calld = static_cast<CallData*>(arg);
-      grpc_core::Closure::Run(
-          DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-          grpc_error_set_int(GRPC_ERROR_CREATE("injected error"),
-                             grpc_core::StatusIntProperty::kRpcStatus,
-                             GRPC_STATUS_INVALID_ARGUMENT));
+      Closure::Run(DEBUG_LOCATION,
+                   calld->original_recv_trailing_metadata_ready_,
+                   grpc_error_set_int(GRPC_ERROR_CREATE("injected error"),
+                                      StatusIntProperty::kRpcStatus,
+                                      GRPC_STATUS_INVALID_ARGUMENT));
     }
 
     grpc_closure recv_trailing_metadata_ready_;
@@ -117,7 +117,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
+bool AddFilter(ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
   if (!builder->channel_args()
            .GetBool(GRPC_ARG_ENABLE_RETRIES)
@@ -136,11 +136,10 @@ bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
 TEST_P(RetryTest, RetryRecvTrailingMetadataError) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
-                                               AddFilter);
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
+                                           AddFilter);
+  });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

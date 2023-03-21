@@ -61,7 +61,7 @@ TEST_P(Http2SingleHopTest, KeepaliveTimeout) {
 TEST_P(Http2SingleHopTest, ReadDelaysKeepalive) {
 #ifdef GRPC_POSIX_SOCKET
   // It is hard to get the timing right for the polling engine poll.
-  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") {
+  if (ConfigVars::Get().PollStrategy() == "poll") {
     GTEST_SKIP() << "Skipping test under poll poller";
   }
 #endif  // GRPC_POSIX_SOCKET

@@ -49,30 +49,30 @@ namespace {
 // Test filter - always fails to initialize a call
 //
 
-static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
+grpc_error_handle init_call_elem(grpc_call_element* /*elem*/,
+                                 const grpc_call_element_args* /*args*/) {
   return grpc_error_set_int(GRPC_ERROR_CREATE("access denied"),
-                            grpc_core::StatusIntProperty::kRpcStatus,
+                            StatusIntProperty::kRpcStatus,
                             GRPC_STATUS_PERMISSION_DENIED);
 }
 
-static void destroy_call_elem(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+void destroy_call_elem(grpc_call_element* /*elem*/,
+                       const grpc_call_final_info* /*final_info*/,
+                       grpc_closure* /*ignored*/) {}
 
-static grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
-                                           grpc_channel_element_args* args) {
+grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
+                                    grpc_channel_element_args* args) {
   if (args->channel_args.GetBool("channel_init_fails").value_or(false)) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE("Test channel filter init error"),
-        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_INVALID_ARGUMENT);
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_INVALID_ARGUMENT);
   }
   return absl::OkStatus();
 }
 
-static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
+void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
-static const grpc_channel_filter test_filter = {
+const grpc_channel_filter test_filter = {
     grpc_call_next_op,    nullptr,
     grpc_channel_next_op, 0,
     init_call_elem,       grpc_call_stack_ignore_set_pollset_or_pollset_set,
@@ -82,10 +82,10 @@ static const grpc_channel_filter test_filter = {
     "filter_init_fails"};
 
 void RegisterFilter(grpc_channel_stack_type type) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [type](grpc_core::CoreConfiguration::Builder* builder) {
+  CoreConfiguration::RegisterBuilder(
+      [type](CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterStage(
-            type, INT_MAX, [](grpc_core::ChannelStackBuilder* builder) {
+            type, INT_MAX, [](ChannelStackBuilder* builder) {
               // Want to add the filter as close to the end as possible,
               // to make sure that all of the filters work well together.
               // However, we can't add it at the very end, because either the

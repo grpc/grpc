@@ -31,8 +31,8 @@ namespace {
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
 TEST_P(RetryTest, UnrefBeforeRecv) {
-  InitServer(grpc_core::ChannelArgs());
-  InitClient(grpc_core::ChannelArgs().Set(
+  InitServer(ChannelArgs());
+  InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
       "  \"methodConfig\": [ {\n"
