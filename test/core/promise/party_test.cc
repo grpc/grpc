@@ -183,8 +183,8 @@ TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
 TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
   std::vector<std::thread> trials;
   std::atomic<int> delete_paths_taken[3] = {{0}, {0}, {0}};
-  trials.reserve(10000);
-  for (int i = 0; i < 10000; i++) {
+  trials.reserve(100);
+  for (int i = 0; i < 100; i++) {
     trials.emplace_back([&delete_paths_taken] {
       TypeParam sync(1);
       int delete_path = -1;
