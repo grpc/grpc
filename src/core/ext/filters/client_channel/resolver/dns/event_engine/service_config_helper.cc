@@ -124,6 +124,7 @@ absl::StatusOr<std::string> ChooseServiceConfig(
                                    "Service Config Choices Parser",
                                    DEBUG_LOCATION, error_list);
   }
+  if (service_config == nullptr) return "";
   return service_config->Dump();
 }
 
