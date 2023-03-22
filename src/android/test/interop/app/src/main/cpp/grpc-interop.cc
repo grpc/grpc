@@ -28,19 +28,18 @@
 std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
                                                         int port,
                                                         bool use_tls) {
-  std::string host_port = absl::StrFormat("%s:%d", host, port);
   std::shared_ptr<grpc::ChannelCredentials> credentials;
   if (use_tls) {
     credentials = grpc::SslCredentials(grpc::SslCredentialsOptions());
   } else {
     credentials = grpc::InsecureChannelCredentials();
   }
-
-  grpc::testing::ChannelCreationFunc channel_creation_func = std::bind(
-      grpc::CreateChannel, std::move(host_port), std::move(credentials));
-  return std::shared_ptr<grpc::testing::InteropClient>(
-      new grpc::testing::InteropClient(std::move(channel_creation_func), true,
-                                       false));
+  return std::make_shared<grpc::testing::InteropClient>(
+      new grpc::testing::InteropClient(
+          [host_port = grpc_core::JoinHostPort(host, port), credentials]() {
+            grpc::CreateChannel(host_port, credentials);
+          },
+          true, false));
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
