@@ -41,9 +41,7 @@
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
-#include "opencensus/trace/span_id.h"
 #include "opencensus/trace/status_code.h"
-#include "opencensus/trace/trace_id.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
