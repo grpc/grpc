@@ -32,6 +32,8 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/cpp/client/client_stats_interceptor.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_lb_policies.h"
@@ -137,6 +139,8 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterQueueOnceLoadBalancingPolicy(builder);
         });
+    grpc::internal::RegisterGlobalClientStatsInterceptorFactory(
+        new grpc::internal::OpenCensusClientInterceptorFactory);
     RegisterOpenCensusPlugin();
     // OpenCensus C++ has no API to unregister a previously-registered handler,
     // therefore we register this handler once, and enable/disable recording in

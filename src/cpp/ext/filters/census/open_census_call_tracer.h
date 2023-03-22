@@ -112,6 +112,10 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
 
+  // APIs to record API call latency
+  void RecordApiLatency(absl::Duration api_latency,
+                        absl::StatusCode status_code_);
+
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
 
