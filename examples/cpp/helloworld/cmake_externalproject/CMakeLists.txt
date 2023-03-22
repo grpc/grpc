@@ -54,7 +54,7 @@ ExternalProject_Add(c-ares
 # Builds protobuf project from the git submodule.
 ExternalProject_Add(protobuf
   PREFIX protobuf
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/protobuf/cmake"
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/protobuf"
   CMAKE_CACHE_ARGS
         -Dprotobuf_BUILD_TESTS:BOOL=OFF
         -Dprotobuf_WITH_ZLIB:BOOL=OFF
