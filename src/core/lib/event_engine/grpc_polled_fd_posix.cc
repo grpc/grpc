@@ -17,14 +17,11 @@
 #include <string>
 #include <utility>
 
-#include <ares.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 
-#include "src/core/lib/event_engine/ares_driver.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -42,7 +39,7 @@ namespace experimental {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(AresSocket as, PollerHandle poller_handle)
+  GrpcPolledFdPosix(ares_socket_t as, PollerHandle poller_handle)
       : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))),
         as_(as),
         poller_handle_(poller_handle) {}
@@ -79,13 +76,13 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     poller_handle_->ShutdownHandle(error);
   }
 
-  AresSocket GetWrappedAresSocketLocked() override { return as_; }
+  ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 
   const char* GetName() const override { return name_.c_str(); }
 
  private:
   const std::string name_;
-  const AresSocket as_;
+  const ares_socket_t as_;
   const PollerHandle poller_handle_;
 };
 
@@ -95,11 +92,11 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
       RegisterAresSocketWithPollerCallback register_cb)
       : register_cb_(std::move(register_cb)) {}
 
-  GrpcPolledFd* NewGrpcPolledFdLocked(AresSocket as) override {
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
     return new GrpcPolledFdPosix(as, register_cb_(as));
   }
 
-  void ConfigureAresChannelLocked(AresChannel /*channel*/) override {}
+  void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
 
  private:
   RegisterAresSocketWithPollerCallback register_cb_;

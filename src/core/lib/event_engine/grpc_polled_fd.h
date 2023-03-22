@@ -19,6 +19,8 @@
 
 #include <memory>
 
+#include <ares.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -56,7 +58,7 @@ class GrpcPolledFd {
   virtual void ShutdownLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
   // Get the underlying ares_socket_t that this was created from
-  virtual AresSocket GetWrappedAresSocketLocked()
+  virtual ares_socket_t GetWrappedAresSocketLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
   // A unique name, for logging
   virtual const char* GetName() const = 0;
@@ -70,10 +72,10 @@ class GrpcPolledFdFactory {
  public:
   virtual ~GrpcPolledFdFactory() {}
   // Creates a new wrapped fd for the current platform
-  virtual GrpcPolledFd* NewGrpcPolledFdLocked(AresSocket as)
+  virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
   // Optionally configures the ares channel after creation
-  virtual void ConfigureAresChannelLocked(AresChannel channel)
+  virtual void ConfigureAresChannelLocked(ares_channel channel)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
 };
 

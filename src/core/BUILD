@@ -2213,13 +2213,22 @@ grpc_cc_library(
     srcs = [
         "lib/event_engine/ares_driver.cc",
         "lib/event_engine/nameser.h",
-    ],
+        "lib/event_engine/grpc_polled_fd.h",
+    ] + select({
+        "//:windows": [],
+        "//:windows_msvc": [],
+        "//:windows_other": [],
+        "//conditions:default": [
+            "lib/event_engine/grpc_polled_fd_posix.cc",
+        ],
+    }),
     hdrs = [
         "lib/event_engine/ares_driver.h",
     ],
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
         "absl/synchronization",
@@ -2228,19 +2237,21 @@ grpc_cc_library(
         "cares",
     ],
     select_deps = [{
-        "//:windows": [],
-        "//:windows_msvc": [],
-        "//:windows_other": [],
+        "//:windows": ["windows_iocp"],
+        "//:windows_msvc": ["windows_iocp"],
+        "//:windows_other": ["windows_iocp"],
         "//conditions:default": [
             "posix_event_engine_tcp_socket_utils",
+            "posix_event_engine_closure",
+            "posix_event_engine_event_poller",
         ],
     }],
     deps = [
         "error",
         "event_engine_tcp_socket_utils",
         "examine_stack",
-        "grpc_polled_fd",
         "grpc_sockaddr",
+        "iomgr_port",
         "resolved_address",
         "status_helper",
         "//:debug_location",
@@ -2252,46 +2263,6 @@ grpc_cc_library(
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_polled_fd",
-    srcs =
-        ["lib/event_engine/ares_driver.h"] +  # TODO(yijiem): (debt) revisit this decision
-        select({
-            "//:windows": [],
-            "//:windows_msvc": [],
-            "//:windows_other": [],
-            "//conditions:default": [
-                "lib/event_engine/grpc_polled_fd_posix.cc",
-            ],
-        }),
-    hdrs = [
-        "lib/event_engine/grpc_polled_fd.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/strings",
-        "absl/synchronization",
-        "cares",
-    ],
-    select_deps = [{
-        "//:windows": ["windows_iocp"],
-        "//:windows_msvc": ["windows_iocp"],
-        "//:windows_other": ["windows_iocp"],
-        "//conditions:default": [
-            "posix_event_engine_closure",
-            "posix_event_engine_event_poller",
-        ],
-    }],
-    deps = [
-        "error",
-        "iomgr_port",
-        "//:gpr",
-        "//:orphanable",
     ],
 )
 

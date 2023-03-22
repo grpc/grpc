@@ -50,10 +50,8 @@ using PollerHandle = std::unique_ptr<WinSocket>;
 class EventHandle;
 using PollerHandle = EventHandle*;
 #endif
-using AresChannel = ares_channel;
-using AresSocket = ares_socket_t;
 using RegisterAresSocketWithPollerCallback =
-    absl::AnyInvocable<PollerHandle(AresSocket)>;
+    absl::AnyInvocable<PollerHandle(ares_socket_t)>;
 
 class GrpcPolledFd;
 class GrpcPolledFdFactory;
