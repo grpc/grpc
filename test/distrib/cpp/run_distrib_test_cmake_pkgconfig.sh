@@ -40,7 +40,7 @@ popd
 # Install protobuf
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
-cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
