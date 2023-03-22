@@ -29,8 +29,6 @@
 #include <set>
 #include <tuple>
 
-#include <google/protobuf/duration.pb.h>
-
 #include "opencensus/tags/tag_key.h"
 
 #include <grpc/support/log.h>

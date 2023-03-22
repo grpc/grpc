@@ -25,8 +25,6 @@
 #include <map>
 #include <utility>
 
-#include <google/protobuf/timestamp.pb.h>
-
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
