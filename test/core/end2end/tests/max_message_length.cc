@@ -82,9 +82,6 @@ static void test_max_message_length_on_request(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  grpc_slice expect_in_details = grpc_slice_from_copied_string(
-      send_limit ? "Sent message larger than max (11 vs. 5)"
-                 : "Received message larger than max (11 vs. 5)");
   int was_cancelled = 2;
 
   grpc_channel_args* client_args = nullptr;
@@ -223,10 +220,13 @@ static void test_max_message_length_on_request(
 
 done:
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(grpc_slice_slice(details, expect_in_details) >= 0);
+  GPR_ASSERT(
+      grpc_slice_str_cmp(
+          details, send_limit
+                       ? "Sent message larger than max (11 vs. 5)"
+                       : "Received message larger than max (11 vs. 5)") == 0);
 
   grpc_slice_unref(details);
-  grpc_slice_unref(expect_in_details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -265,9 +265,6 @@ static void test_max_message_length_on_response(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  grpc_slice expect_in_details = grpc_slice_from_copied_string(
-      send_limit ? "Sent message larger than max (11 vs. 5)"
-                 : "Received message larger than max (11 vs. 5)");
   int was_cancelled = 2;
 
   grpc_channel_args* client_args = nullptr;
@@ -407,10 +404,13 @@ static void test_max_message_length_on_response(
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(grpc_slice_slice(details, expect_in_details) >= 0);
+  GPR_ASSERT(
+      grpc_slice_str_cmp(
+          details, send_limit
+                       ? "Sent message larger than max (11 vs. 5)"
+                       : "Received message larger than max (11 vs. 5)") == 0);
 
   grpc_slice_unref(details);
-  grpc_slice_unref(expect_in_details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);

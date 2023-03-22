@@ -265,6 +265,7 @@ GRPCXX_SRCS = [
     "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
+    "src/cpp/client/client_stats_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -296,6 +297,7 @@ GRPCXX_SRCS = [
 
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
+    "src/cpp/client/client_stats_interceptor.h",
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
@@ -699,7 +701,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
-        "absl/functional:any_invocable",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -1310,7 +1311,6 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
-        "//src/core:lib/transport/batch_builder.cc",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1402,7 +1402,6 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
-        "//src/core:lib/transport/batch_builder.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1459,7 +1458,6 @@ grpc_cc_library(
         "stats",
         "uri_parser",
         "work_serializer",
-        "//src/core:1999",
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
@@ -1482,24 +1480,21 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:experiments",
-        "//src/core:for_each",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
         "//src/core:grpc_sockaddr",
         "//src/core:http2_errors",
-        "//src/core:if",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
-        "//src/core:latch",
-        "//src/core:loop",
         "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
@@ -1511,12 +1506,10 @@ grpc_cc_library(
         "//src/core:pollset_set",
         "//src/core:posix_event_engine_base_hdrs",
         "//src/core:promise_status",
-        "//src/core:race",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:resource_quota_trace",
-        "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_cast",
@@ -1531,6 +1524,8 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+        "//src/core:windows_event_engine",
+        "//src/core:windows_event_engine_listener",
     ],
 )
 
@@ -2221,6 +2216,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
         "opencensus-stats",
@@ -2349,7 +2345,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "promise",
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/status",
         "absl/types:optional",
     ],

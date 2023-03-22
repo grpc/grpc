@@ -20,8 +20,6 @@
 
 #include "src/core/lib/gprpp/thd.h"
 
-#include <atomic>
-
 #include "gtest/gtest.h"
 
 #include <grpc/support/sync.h>
@@ -51,7 +49,7 @@ static void thd_body1(void* v) {
 }
 
 // Test that we can create a number of threads, wait for them, and join them.
-TEST(ThreadTest, CanCreateWaitAndJoin) {
+static void test1(void) {
   grpc_core::Thread thds[NUM_THREADS];
   struct test t;
   gpr_mu_init(&t.mu);
@@ -78,7 +76,7 @@ TEST(ThreadTest, CanCreateWaitAndJoin) {
 static void thd_body2(void* /*v*/) {}
 
 // Test that we can create a number of threads and join them.
-TEST(ThreadTest, CanCreateSomeAndJoinThem) {
+static void test2(void) {
   grpc_core::Thread thds[NUM_THREADS];
   for (auto& th : thds) {
     bool ok;
@@ -91,23 +89,11 @@ TEST(ThreadTest, CanCreateSomeAndJoinThem) {
   }
 }
 
-// Test that we can create a thread with an AnyInvocable.
-TEST(ThreadTest, CanCreateWithAnyInvocable) {
-  grpc_core::Thread thds[NUM_THREADS];
-  std::atomic<int> count_run{0};
-  for (auto& th : thds) {
-    bool ok;
-    th = grpc_core::Thread(
-        "grpc_thread_body2_test",
-        [&count_run]() { count_run.fetch_add(1, std::memory_order_relaxed); },
-        &ok);
-    ASSERT_TRUE(ok);
-    th.Start();
-  }
-  for (auto& th : thds) {
-    th.Join();
-  }
-  EXPECT_EQ(count_run.load(std::memory_order_relaxed), NUM_THREADS);
+// -------------------------------------------------
+
+TEST(ThdTest, MainTest) {
+  test1();
+  test2();
 }
 
 int main(int argc, char** argv) {

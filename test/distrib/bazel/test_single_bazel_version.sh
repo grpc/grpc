@@ -30,6 +30,10 @@ EXCLUDED_TARGETS=(
   "-//src/objective-c/..."
   "-//third_party/objective_c/..."
 
+  # Targets here need C++17 to build via a different configuration, so this is
+  # done separately
+  "-//fuzztest/..."
+
   # This could be a legitmate failure due to bitrot.
   "-//src/proto/grpc/testing:test_gen_proto"
 
@@ -57,6 +61,7 @@ ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
 
 tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
 tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"

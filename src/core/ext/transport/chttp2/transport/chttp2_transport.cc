@@ -205,20 +205,14 @@ static void keepalive_watchdog_fired_locked(
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace {
-void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
-                                    absl::string_view annotation) {
-  GPR_ASSERT(s->context);
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return;
+grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
+  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+    return nullptr;
   }
-  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
+  return static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
           s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
-  if (!call_tracer) {
-    return;
-  }
-  call_tracer->RecordAnnotation(annotation);
 }
 }  // namespace
 
@@ -369,8 +363,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)),
             std::string(t->peer_string.as_string_view()),
-            absl::StrFormat("%s %s", get_vtable()->name,
-                            t->peer_string.as_string_view()),
+            absl::StrCat(get_vtable()->name, " ",
+                         t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
@@ -1210,8 +1204,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc,
-                                       grpc_core::DebugLocation whence) {
+                                       const char* desc) {
   grpc_closure* closure = *pclosure;
   *pclosure = nullptr;
   if (closure == nullptr) {
@@ -1222,20 +1215,21 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
-        "write_state=%s whence=%s:%d",
+        "write_state=%s",
         t, closure,
         static_cast<int>(closure->next_data.scratch /
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         static_cast<int>(closure->next_data.scratch %
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         desc, grpc_core::StatusToString(error).c_str(),
-        write_state_name(t->write_state), whence.file(), whence.line());
+        write_state_name(t->write_state));
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure,
-                           desc, grpc_core::StatusToString(error).c_str()));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(
+        absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
+                        grpc_core::StatusToString(error).c_str()));
   }
 
   if (!error.ok()) {
@@ -1310,12 +1304,12 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat(
-               "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
-               op->on_complete));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(absl::StrFormat(
+        "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
+        grpc_transport_stream_op_batch_string(op, true).c_str(),
+        op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -3079,7 +3073,6 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
 }
 
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
-                                             false,
                                              "chttp2",
                                              init_stream,
                                              nullptr,

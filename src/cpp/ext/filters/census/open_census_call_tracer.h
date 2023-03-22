@@ -84,16 +84,15 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(
-        const grpc_core::SliceBuffer& /*send_message*/) override;
+    void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
     void RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& /*send_compressed_message*/) override {}
+        const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override {}
     void RecordReceivedMessage(
-        const grpc_core::SliceBuffer& /*recv_message*/) override;
+        const grpc_core::SliceBuffer& recv_message) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& /*recv_decompressed_message*/) override {}
+        const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
@@ -137,6 +136,10 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
+
+  // APIs to record API call latency
+  void RecordApiLatency(absl::Duration api_latency,
+                        absl::StatusCode status_code_);
 
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
