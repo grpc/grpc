@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <queue>
 #include <ratio>
 #include <utility>
 
@@ -32,6 +33,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
@@ -48,46 +50,45 @@ class FuzzingEventEngine : public EventEngine {
   };
   explicit FuzzingEventEngine(Options options,
                               const fuzzing_event_engine::Actions& actions);
-  ~FuzzingEventEngine() override = default;
+  ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
 
-  void FuzzingDone();
-  void Tick();
+  void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
+  void Tick() ABSL_LOCKS_EXCLUDED(mu_);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
-      override;
+      ABSL_LOCKS_EXCLUDED(mu_) override;
 
   ConnectionHandle Connect(OnConnectCallback on_connect,
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,
-                           MemoryAllocator memory_allocator,
-                           Duration timeout) override;
+                           MemoryAllocator memory_allocator, Duration timeout)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
 
-  bool CancelConnect(ConnectionHandle handle) override;
+  bool CancelConnect(ConnectionHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
   bool IsWorkerThread() override;
 
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
 
-  void Run(Closure* closure) override;
-  void Run(absl::AnyInvocable<void()> closure) override;
-  TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override;
-  bool Cancel(TaskHandle handle) override;
+  void Run(Closure* closure) ABSL_LOCKS_EXCLUDED(mu_) override;
+  void Run(absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+  TaskHandle RunAfter(Duration when, Closure* closure)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+  TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+  bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
   using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
-  static void SetGlobalNowImplEngine(FuzzingEventEngine* engine)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  static void UnsetGlobalNowImplEngine(FuzzingEventEngine* engine)
-      ABSL_LOCKS_EXCLUDED(mu_);
+  void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
   struct Task {
@@ -97,48 +98,89 @@ class FuzzingEventEngine : public EventEngine {
     absl::AnyInvocable<void()> closure;
   };
 
-  class FuzzingListener : public Listener {
-   public:
-    FuzzingListener(FuzzingEventEngine* engine, intptr_t id);
-
-   private:
-    FuzzingEventEngine* engine_;
-    intptr_t id_;
-  };
-
   struct ListenerInfo {
-    ListenerInfo(FuzzingEventEngine* owner, intptr_t id,
-                 Listener::AcceptCallback on_accept,
-                 absl::AnyInvocable<void(absl::Status)> on_shutdown)
+    ListenerInfo(
+        Listener::AcceptCallback on_accept,
+        absl::AnyInvocable<void(absl::Status)> on_shutdown,
+        std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
         : on_accept(std::move(on_accept)),
           on_shutdown(std::move(on_shutdown)),
-          started(false),
-          owner(owner) {}
-    ~ListenerInfo();
+          memory_allocator_factory(std::move(memory_allocator_factory)),
+          started(false) {}
+    ~ListenerInfo() ABSL_LOCKS_EXCLUDED(mu_);
     Listener::AcceptCallback on_accept;
     absl::AnyInvocable<void(absl::Status)> on_shutdown;
-    std::vector<ResolvedAddress> addresses;
-    bool started;
-    FuzzingEventEngine* owner;
-    absl::Status shutdown_status;
+    const std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory;
+    std::vector<int> ports ABSL_GUARDED_BY(mu_);
+    bool started ABSL_GUARDED_BY(mu_);
+    absl::Status shutdown_status ABSL_GUARDED_BY(mu_);
   };
 
-  struct EndpointMiddle {};
+  class FuzzingListener final : public Listener {
+   public:
+    explicit FuzzingListener(std::shared_ptr<ListenerInfo> info)
+        : info_(std::move(info)) {}
+    ~FuzzingListener() override;
+    virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
+    virtual absl::Status Start() override;
 
-  class FuzzingEndpoint : public Endpoint {
+   private:
+    std::shared_ptr<ListenerInfo> info_;
+  };
+
+  struct PendingRead {
+    absl::AnyInvocable<void(absl::Status)> on_read;
+    SliceBuffer* buffer;
+  };
+
+  struct EndpointMiddle {
+    EndpointMiddle(int listener_port, int client_port);
+    const ResolvedAddress addrs[2];
+    bool closed ABSL_GUARDED_BY(mu_) = false;
+    std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_){
+        std::vector<uint8_t>(), std::vector<uint8_t>()};
+    std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
+    absl::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
+
+    bool Write(SliceBuffer* data, int index) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  };
+
+  class FuzzingEndpoint final : public Endpoint {
    public:
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}
+    ~FuzzingEndpoint() override;
+
+    bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+              SliceBuffer* buffer, const ReadArgs* args) override;
+    bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+               SliceBuffer* data, const WriteArgs* args) override;
+    const ResolvedAddress& GetPeerAddress() const override {
+      return middle_->addrs[1 - index_];
+    }
+    const ResolvedAddress& GetLocalAddress() const override {
+      return middle_->addrs[index_];
+    }
 
    private:
+    static void ScheduleDelayedWrite(
+        std::shared_ptr<EndpointMiddle> middle, int index,
+        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
     std::shared_ptr<EndpointMiddle> middle_;
     int index_;
   };
 
-  static bool EqAddr(const ResolvedAddress& a, const ResolvedAddress& b) {
-    if (a.size() != b.size()) return false;
-    return memcmp(a.address(), b.address(), a.size()) == 0;
+  void RunLocked(absl::AnyInvocable<void()> closure)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    RunAfterLocked(Duration::zero(), std::move(closure));
   }
+
+  TaskHandle RunAfterLocked(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  int AllocatePort() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  bool IsPortUsed(int port) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -146,7 +188,7 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   const Duration final_tick_length_;
 
-  grpc_core::Mutex mu_;
+  static grpc_core::NoDestruct<grpc_core::Mutex> mu_;
 
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
   intptr_t current_tick_ ABSL_GUARDED_BY(mu_);
@@ -156,8 +198,10 @@ class FuzzingEventEngine : public EventEngine {
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);
-  std::map<intptr_t, std::shared_ptr<ListenerInfo>> listeners_
-      ABSL_GUARDED_BY(mu_);
+  std::set<std::shared_ptr<ListenerInfo>> listeners_ ABSL_GUARDED_BY(mu_);
+  std::queue<int> free_ports_ ABSL_GUARDED_BY(mu_);
+  int next_free_port_ ABSL_GUARDED_BY(mu_) = 1;
+  std::set<int> fuzzer_mentioned_ports_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

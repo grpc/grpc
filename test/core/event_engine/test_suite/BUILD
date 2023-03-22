@@ -97,5 +97,7 @@ grpc_cc_test(
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/test_suite/tests:timer",
+        "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:server",
     ],
 )

@@ -14,11 +14,16 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <inttypes.h>
+#include <netinet/in.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <limits>
 #include <ratio>
 #include <vector>
 
@@ -27,13 +32,55 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/port.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+
+EventEngine::ResolvedAddress PortToAddress(int port) {
+  sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = htons(port);
+  return EventEngine::ResolvedAddress(reinterpret_cast<const sockaddr*>(&addr),
+                                      sizeof(addr));
+}
+
+absl::StatusOr<int> AddressToPort(const EventEngine::ResolvedAddress& addr) {
+  switch (addr.address()->sa_family) {
+    default:
+      return absl::InvalidArgumentError("Unknown address family");
+    case AF_INET: {
+      const sockaddr_in* addr_in =
+          reinterpret_cast<const sockaddr_in*>(addr.address());
+      if (addr_in->sin_addr.s_addr != htonl(INADDR_LOOPBACK)) {
+        return absl::InvalidArgumentError("Address is not loopback");
+      }
+      return ntohs(addr_in->sin_port);
+    }
+    case AF_INET6: {
+      const sockaddr_in6* addr_in =
+          reinterpret_cast<const sockaddr_in6*>(addr.address());
+      if (memcmp(&addr_in->sin6_addr, &in6addr_loopback,
+                 sizeof(in6addr_loopback)) != 0) {
+        return absl::InvalidArgumentError("Address is not loopback");
+      }
+      return ntohs(addr_in->sin6_port);
+    }
+  }
+}
+
+}  // namespace
+
+grpc_core::NoDestruct<grpc_core::Mutex> FuzzingEventEngine::mu_;
 
 namespace {
 const intptr_t kTaskHandleSalt = 12345;
@@ -81,10 +128,25 @@ FuzzingEventEngine::FuzzingEventEngine(
   for (const auto& delay : actions.run_delay()) {
     update_delay(&task_delays_, delay, std::chrono::seconds(30));
   }
+
+  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
+  g_fuzzing_event_engine = this;
+  g_orig_gpr_now_impl = gpr_now_impl;
+  gpr_now_impl = GlobalNowImpl;
+  grpc_set_pick_port_functions(
+      grpc_pick_port_functions{+[]() -> int {
+                                 grpc_core::MutexLock lock(&*mu_);
+                                 return g_fuzzing_event_engine->AllocatePort();
+                               },
+                               +[]() -> int {
+                                 grpc_core::MutexLock lock(&*mu_);
+                                 return g_fuzzing_event_engine->AllocatePort();
+                               },
+                               +[](int) {}});
 }
 
 void FuzzingEventEngine::FuzzingDone() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&*mu_);
   tick_increments_.clear();
 }
 
@@ -100,7 +162,7 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 void FuzzingEventEngine::Tick() {
   std::vector<absl::AnyInvocable<void()>> to_run;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&*mu_);
     // Increment time
     auto tick_it = tick_increments_.find(current_tick_);
     if (tick_it != tick_increments_.end()) {
@@ -128,17 +190,177 @@ void FuzzingEventEngine::Tick() {
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&*mu_);
   return now_;
 }
 
-absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
-FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
-                                   absl::AnyInvocable<void(absl::Status)>,
-                                   const EndpointConfig&,
-                                   std::unique_ptr<MemoryAllocatorFactory>) {
-  abort();
+int FuzzingEventEngine::AllocatePort() {
+  if (!free_ports_.empty()) {
+    int p = free_ports_.front();
+    free_ports_.pop();
+    return p;
+  }
+  while (true) {
+    int p = next_free_port_++;
+    if (fuzzer_mentioned_ports_.count(p) == 0) {
+      return p;
+    }
+  }
 }
+
+absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
+FuzzingEventEngine::CreateListener(
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown, const EndpointConfig&,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  grpc_core::MutexLock lock(&*mu_);
+  return absl::make_unique<FuzzingListener>(
+      *listeners_
+           .emplace(std::make_shared<ListenerInfo>(
+               std::move(on_accept), std::move(on_shutdown),
+               std::move(memory_allocator_factory)))
+           .first);
+}
+
+FuzzingEventEngine::FuzzingListener::~FuzzingListener() {
+  grpc_core::MutexLock lock(&*mu_);
+  g_fuzzing_event_engine->listeners_.erase(info_);
+}
+
+bool FuzzingEventEngine::IsPortUsed(int port) {
+  for (const auto& listener : listeners_) {
+    if (std::find(listener->ports.begin(), listener->ports.end(), port) !=
+        listener->ports.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+absl::StatusOr<int> FuzzingEventEngine::FuzzingListener::Bind(
+    const ResolvedAddress& addr) {
+  auto port = AddressToPort(addr);
+  if (!port.ok()) return port.status();
+  grpc_core::MutexLock lock(&*mu_);
+  if (info_->started) return absl::InternalError("Already started");
+  if (*port != 0) {
+    if (g_fuzzing_event_engine->IsPortUsed(*port)) {
+      return absl::InternalError("Port in use");
+    }
+  } else {
+    do {
+      port = g_fuzzing_event_engine->AllocatePort();
+    } while (g_fuzzing_event_engine->IsPortUsed(*port));
+  }
+  info_->ports.push_back(*port);
+  return port;
+}
+
+absl::Status FuzzingEventEngine::FuzzingListener::Start() {
+  grpc_core::MutexLock lock(&*mu_);
+  if (info_->started) return absl::InternalError("Already started");
+  info_->started = true;
+  return absl::OkStatus();
+}
+
+bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
+  GPR_ASSERT(!closed);
+  if (data->Length() == 0) return true;
+  size_t write_len = std::numeric_limits<size_t>::max();
+  if (!write_sizes[index].empty()) {
+    write_len = write_sizes[index].front();
+    write_sizes[index].pop();
+  }
+  if (write_len > data->Length()) {
+    write_len = data->Length();
+  }
+  if (write_len == 0) write_len = 1;
+  size_t prev_len = pending[index].size();
+  pending[index].resize(prev_len + write_len);
+  data->MoveFirstNBytesIntoBuffer(write_len, pending[index].data() + prev_len);
+  if (pending_read[1 - index].has_value()) {
+    pending_read[1 - index]->buffer->Append(
+        Slice::FromCopiedBuffer(pending[index]));
+    pending[index].clear();
+    g_fuzzing_event_engine->RunLocked(
+        [cb = std::move(pending_read[1 - index]->on_read)]() mutable {
+          cb(absl::OkStatus());
+        });
+    pending_read[1 - index].reset();
+  }
+  return data->Length() == 0;
+}
+
+bool FuzzingEventEngine::FuzzingEndpoint::Write(
+    absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+    const WriteArgs* args) {
+  grpc_core::MutexLock lock(&*mu_);
+  if (middle_->closed) {
+    g_fuzzing_event_engine->RunLocked(
+        [on_writable = std::move(on_writable)]() mutable {
+          on_writable(absl::CancelledError("Endpoint closed"));
+        });
+  }
+  if (middle_->Write(data, index_)) return true;
+  ScheduleDelayedWrite(middle_, index_, std::move(on_writable), data);
+  return false;
+}
+
+void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
+    std::shared_ptr<EndpointMiddle> middle, int index,
+    absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data) {
+  g_fuzzing_event_engine->RunLocked(
+      [middle = std::move(middle), index, data,
+       on_writable = std::move(on_writable)]() mutable {
+        grpc_core::MutexLock lock(&*mu_);
+        if (middle->closed) {
+          g_fuzzing_event_engine->RunLocked(
+              [on_writable = std::move(on_writable)]() mutable {
+                on_writable(absl::CancelledError("Endpoint closed"));
+              });
+          return;
+        }
+        if (middle->Write(data, index)) {
+          on_writable(absl::OkStatus());
+          return;
+        }
+        ScheduleDelayedWrite(std::move(middle), index, std::move(on_writable),
+                             data);
+      });
+}
+
+FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
+  grpc_core::MutexLock lock(&*mu_);
+  middle_->closed = true;
+  for (int i = 0; i < 2; i++) {
+    if (middle_->pending_read[i].has_value()) {
+      g_fuzzing_event_engine->RunLocked(
+          [cb = std::move(middle_->pending_read[i]->on_read)]() mutable {
+            cb(absl::CancelledError("Endpoint closed"));
+          });
+      middle_->pending_read[i].reset();
+    }
+  }
+}
+
+bool FuzzingEventEngine::FuzzingEndpoint::Read(
+    absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+    const ReadArgs* args) {
+  buffer->Clear();
+  grpc_core::MutexLock lock(&*mu_);
+  if (middle_->pending[1 - index_].empty()) {
+    middle_->pending_read[index_] = PendingRead{std::move(on_read), buffer};
+    return false;
+  } else {
+    buffer->Append(Slice::FromCopiedBuffer(middle_->pending[1 - index_]));
+    middle_->pending[1 - index_].clear();
+    return true;
+  }
+}
+
+FuzzingEventEngine::EndpointMiddle::EndpointMiddle(int listener_port,
+                                                   int client_port)
+    : addrs{PortToAddress(listener_port), PortToAddress(client_port)} {}
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
@@ -146,26 +368,36 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     Duration timeout) {
   auto task_handle = RunAfter(
       Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
-        grpc_core::MutexLock lock(&mu_);
+        auto port = AddressToPort(addr);
+        if (!port.ok()) {
+          on_connect(port.status());
+          return;
+        }
+        grpc_core::MutexLock lock(&*mu_);
         for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
-          if (!it->second->started) continue;
-          for (const auto& listener_addr : it->second->addresses) {
-            if (EqAddr(listener_addr, addr)) {
-              auto middle = std::make_shared<EndpointMiddle>();
+          const auto& listener = *it;
+          if (!listener->started) continue;
+          for (int listener_port : listener->ports) {
+            if (*port == listener_port) {
+              auto middle = std::make_shared<EndpointMiddle>(
+                  listener_port, g_fuzzing_event_engine->AllocatePort());
               auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
               auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
-              Run([listener = it->second, ep1 = std::move(ep1)]() mutable {
-                listener->on_accept(std::move(ep1));
+              RunLocked([listener, ep1 = std::move(ep1)]() mutable {
+                listener->on_accept(
+                    std::move(ep1),
+                    listener->memory_allocator_factory->CreateMemoryAllocator(
+                        "fuzzing"));
               });
-              Run([on_connect = std::move(on_connect),
-                   ep2 = std::move(ep2)]() mutable {
+              RunLocked([on_connect = std::move(on_connect),
+                         ep2 = std::move(ep2)]() mutable {
                 on_connect(std::move(ep2));
               });
               return;
             }
           }
         }
-        Run([on_connect = std::move(on_connect)]() mutable {
+        RunLocked([on_connect = std::move(on_connect)]() mutable {
           on_connect(absl::InvalidArgumentError("No listener found"));
         });
       });
@@ -199,7 +431,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&*mu_);
+  return RunAfterLocked(when, std::move(closure));
+}
+
+EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
+    Duration when, absl::AnyInvocable<void()> closure) {
   const intptr_t id = next_task_id_;
   ++next_task_id_;
   const auto delay_it = task_delays_.find(id);
@@ -215,7 +452,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
 }
 
 bool FuzzingEventEngine::Cancel(TaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&*mu_);
   GPR_ASSERT(handle.keys[1] == kTaskHandleSalt);
   const intptr_t id = handle.keys[0];
   auto it = tasks_by_id_.find(id);
@@ -234,29 +471,27 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
     return gpr_inf_future(clock_type);
   }
   GPR_ASSERT(g_fuzzing_event_engine != nullptr);
-  grpc_core::MutexLock lock(&g_fuzzing_event_engine->mu_);
+  grpc_core::MutexLock lock(&*mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
 
-void FuzzingEventEngine::SetGlobalNowImplEngine(FuzzingEventEngine* engine) {
-  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
-  g_fuzzing_event_engine = engine;
-  g_orig_gpr_now_impl = gpr_now_impl;
-  gpr_now_impl = GlobalNowImpl;
-}
-
-void FuzzingEventEngine::UnsetGlobalNowImplEngine(FuzzingEventEngine* engine) {
-  GPR_ASSERT(g_fuzzing_event_engine == engine);
+void FuzzingEventEngine::UnsetGlobalHooks() {
+  if (g_fuzzing_event_engine != this) return;
   g_fuzzing_event_engine = nullptr;
   gpr_now_impl = g_orig_gpr_now_impl;
   g_orig_gpr_now_impl = nullptr;
+  grpc_set_pick_port_functions(grpc_pick_port_functions{
+      +[]() -> int { grpc_core::Crash("not set"); },
+      +[]() -> int { grpc_core::Crash("not set"); }, +[](int) {}});
 }
 
 FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
-  owner->Run([on_shutdown = std::move(on_shutdown),
-              shutdown_status = std::move(shutdown_status)]() mutable {
-    on_shutdown(std::move(shutdown_status));
-  });
+  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
+  g_fuzzing_event_engine->Run(
+      [on_shutdown = std::move(on_shutdown),
+       shutdown_status = std::move(shutdown_status)]() mutable {
+        on_shutdown(std::move(shutdown_status));
+      });
 }
 
 }  // namespace experimental

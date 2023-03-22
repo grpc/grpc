@@ -131,7 +131,14 @@ absl::Status SendValidatePayload(absl::string_view data,
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
     if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
-      read_cb(absl::OkStatus());
+      if (read_slice_buf.Length() == 0) {
+        gpr_log(
+            GPR_ERROR,
+            "Zero length slice buffer returned immediately (this is a bug)");
+        read_cb(absl::CancelledError());
+      } else {
+        read_cb(absl::OkStatus());
+      }
     }
   };
   // Start asynchronous reading at the receive_endpoint.
