@@ -34,6 +34,9 @@ namespace Grpc.Core.Tests
     public class MarshallingErrorsTest
     {
         const string Host = "127.0.0.1";
+        const string UnserializableDescription = "Error serializing the message.";
+        const string UnparsableDescription = "Error parsing the message.";
+        const string FailureReasonPrefix = "Failure reason: System.IO.IOException: ";
 
         MockServiceHelper helper;
         Server server;
@@ -48,7 +51,7 @@ namespace Grpc.Core.Tests
                     if (str == "UNSERIALIZABLE_VALUE")
                     {
                         // Google.Protobuf throws exception inherited from IOException
-                        throw new IOException("Error serializing the message.");
+                        throw new IOException(UnserializableDescription);
                     }
                     return System.Text.Encoding.UTF8.GetBytes(str); 
                 },
@@ -58,7 +61,7 @@ namespace Grpc.Core.Tests
                     if (s == "UNPARSEABLE_VALUE")
                     {
                         // Google.Protobuf throws exception inherited from IOException
-                        throw new IOException("Error parsing the message.");
+                        throw new IOException(UnparsableDescription);
                     }
                     return s;
                 });
@@ -85,6 +88,9 @@ namespace Grpc.Core.Tests
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "REQUEST"));
             Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+            // https://github.com/grpc/grpc/issues/24784
+            // Check Message contains details of inner exception
+            Assert.IsTrue(ex.Message.Contains(FailureReasonPrefix + UnparsableDescription));
         }
 
         [Test]
@@ -98,7 +104,10 @@ namespace Grpc.Core.Tests
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "REQUEST");
             var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            // https://github.com/grpc/grpc/issues/24784
+            // Check Message contains details of inner exception
             Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+            Assert.IsTrue(ex.Message.Contains(FailureReasonPrefix + UnparsableDescription));
         }
 
         [Test]
