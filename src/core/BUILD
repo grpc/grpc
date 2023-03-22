@@ -2228,12 +2228,10 @@ grpc_cc_library(
         "cares",
     ],
     select_deps = [{
-        "//:windows": ["windows_iocp"],
-        "//:windows_msvc": ["windows_iocp"],
-        "//:windows_other": ["windows_iocp"],
+        "//:windows": [],
+        "//:windows_msvc": [],
+        "//:windows_other": [],
         "//conditions:default": [
-            "posix_event_engine_closure",
-            "posix_event_engine_event_poller",
             "posix_event_engine_tcp_socket_utils",
         ],
     }],
@@ -2241,15 +2239,59 @@ grpc_cc_library(
         "error",
         "event_engine_tcp_socket_utils",
         "examine_stack",
+        "grpc_polled_fd",
+        "grpc_sockaddr",
+        "resolved_address",
         "status_helper",
         "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_polled_fd",
+    srcs =
+        ["lib/event_engine/ares_driver.h"] +  # TODO(yijiem): (debt) revisit this decision
+        select({
+            "//:windows": [],
+            "//:windows_msvc": [],
+            "//:windows_other": [],
+            "//conditions:default": [
+                "lib/event_engine/grpc_polled_fd_posix.cc",
+            ],
+        }),
+    hdrs = [
+        "lib/event_engine/grpc_polled_fd.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/synchronization",
+        "cares",
+    ],
+    select_deps = [{
+        "//:windows": ["windows_iocp"],
+        "//:windows_msvc": ["windows_iocp"],
+        "//:windows_other": ["windows_iocp"],
+        "//conditions:default": [
+            "posix_event_engine_closure",
+            "posix_event_engine_event_poller",
+        ],
+    }],
+    deps = [
+        "error",
+        "iomgr_port",
+        "//:gpr",
+        "//:orphanable",
     ],
 )
 

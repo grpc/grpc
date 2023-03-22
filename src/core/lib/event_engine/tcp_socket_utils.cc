@@ -13,11 +13,12 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "tcp_socket_utils.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON

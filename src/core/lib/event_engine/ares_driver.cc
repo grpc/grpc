@@ -15,42 +15,45 @@
 #include "src/core/lib/event_engine/ares_driver.h"
 
 #include <arpa/nameser.h>
+#include <inttypes.h>
 #include <netdb.h>
 #include <string.h>
 
 #include <algorithm>
+#include <chrono>
 #include <initializer_list>
+#include <ratio>
 #include <type_traits>
+#include <utility>
 
 #include <address_sorting/address_sorting.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "ares.h"
-#include "ares_driver.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
-#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-// #include "src/core/lib/iomgr/resolved_address.h"
-// #include "src/core/lib/iomgr/sockaddr.h"
-
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #ifdef _WIN32
 #else
-#include <sys/ioctl.h>
-
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
 
@@ -87,11 +90,6 @@ grpc_core::TraceFlag grpc_trace_ares_driver(false, "ares_driver");
 
 namespace {
 
-bool is_fd_still_readable(int fd) {
-  size_t bytes_available = 0;
-  return ioctl(fd, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
-}
-
 struct HostbynameArg {
   GrpcAresHostnameRequest* request;
   const char* qtype;
@@ -112,7 +110,6 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
                                request, error_msg.c_str());
     GRPC_ARES_DRIVER_STACK_TRACE();
     absl::Status error = GRPC_ERROR_CREATE(error_msg);
-    // r->error = grpc_error_add_child(error, r->error);
     request->OnResolve(error);
     return;
   }
@@ -122,8 +119,9 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
   GRPC_ARES_DRIVER_STACK_TRACE();
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
-  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-    // TODO(yijiem): how to return back this channel args?
+  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+    // TODO(yijiem): this logic probably should live in the client channel
+    // DNSResolver.
     // grpc_core::ChannelArgs args;
     // if (hr->is_balancer) {
     //   args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
@@ -182,7 +180,6 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                                error_msg.c_str());
     grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
-    // r->error = grpc_error_add_child(error, r->error);
     r->OnResolve(error);
     return;
   }
@@ -234,7 +231,6 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                                error_msg.c_str());
     error = GRPC_ERROR_CREATE(error_msg);
-    // r->error = grpc_error_add_child(error, r->error);
     r->OnResolve(error);
     return;
   }
@@ -259,7 +255,6 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
       service_config_json_out.append(reinterpret_cast<char*>(result->txt),
                                      result->length);
     }
-    // (*r->service_config_json_out)[service_config_len] = '\0';
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p found service config: %s", r,
                                service_config_json_out.c_str());
   }
@@ -268,47 +263,82 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   r->OnResolve(std::move(service_config_json_out));
 }
 
+EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
+  // An alternative here could be to use ares_timeout to try to be more
+  // accurate, but that would require using "struct timeval"'s, which just makes
+  // things a bit more complicated. So just poll every second, as suggested
+  // by the c-ares code comments.
+  return std::chrono::seconds(1);
+}
+
+bool IsIpv6LoopbackAvailable() {
+#ifdef _WIN32
+  // TODO(yijiem): (debt) move pieces for Windows
+#else
+  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+#endif
+}
+
 }  // namespace
 
 struct GrpcAresRequest::FdNode {
   FdNode() = default;
-  explicit FdNode(ares_socket_t as, PollerHandle handle)
-      : as(as), handle(handle) {}
-  int WrappedFd() const { return static_cast<int>(as); }
-  // ares socket
+  explicit FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
+      : as(as), polled_fd(polled_fd) {}
   ares_socket_t as;
-  // Poller event handle
-  PollerHandle handle;
+  std::unique_ptr<GrpcPolledFd> polled_fd;
   // next fd node
   FdNode* next = nullptr;
   /// if the readable closure has been registered
   bool readable_registered = false;
   /// if the writable closure has been registered
   bool writable_registered = false;
+  bool already_shutdown = false;
 };
 
 // TODO(yijiem): see if we can use std::list
 // per ares-channel linked-list of FdNodes
 class GrpcAresRequest::FdNodeList {
  public:
-  FdNodeList() = default;
-  ~FdNodeList() {
-    for (FdNode *node = head_, *next = nullptr; node != nullptr; node = next) {
-      next = node->next;
-      GPR_ASSERT(!node->readable_registered);
-      GPR_ASSERT(!node->writable_registered);
-      delete node;
+  class FdNodeListIterator {
+   public:
+    bool operator!=(const FdNodeListIterator& other) {
+      return node_ != other.node_;
     }
-  }
+    bool operator==(const FdNodeListIterator& other) {
+      return node_ == other.node_;
+    }
+    FdNodeListIterator& operator++(int) {
+      node_ = node_->next;
+      return *this;
+    }
+    FdNode* operator*() { return node_; }
+    static FdNodeListIterator universal_end() {
+      return FdNodeListIterator(nullptr);
+    }
+
+   private:
+    friend class FdNodeList;
+    explicit FdNodeListIterator(FdNode* node) : node_(node) {}
+    FdNode* node_;
+  };
+  using Iterator = FdNodeListIterator;
+
+  FdNodeList() = default;
+  ~FdNodeList() { GPR_ASSERT(IsEmpty()); }
+
+  Iterator begin() { return Iterator(head_); }
+  Iterator end() { return Iterator::universal_end(); }
 
   bool IsEmpty() const { return head_ == nullptr; }
 
-  void PushFdNode(FdNode* fd_node) {
+  void PushFdNode(FdNode* fd_node)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) {
     fd_node->next = head_;
     head_ = fd_node;
   }
 
-  FdNode* PopFdNode() {
+  FdNode* PopFdNode() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) {
     GPR_ASSERT(!IsEmpty());
     FdNode* ret = head_;
     head_ = head_->next;
@@ -318,12 +348,13 @@ class GrpcAresRequest::FdNodeList {
   // Search for as in the FdNode list. This is an O(n) search, the max
   // possible value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2
   // in our tests.
-  FdNode* PopFdNode(ares_socket_t as) {
+  FdNode* PopFdNode(ares_socket_t as)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) {
     FdNode phony_head;
     phony_head.next = head_;
     FdNode* node = &phony_head;
     while (node->next != nullptr) {
-      if (node->next->as == as) {
+      if (node->next->polled_fd->GetWrappedAresSocketLocked() == as) {
         FdNode* ret = node->next;
         node->next = node->next->next;
         head_ = phony_head.next;
@@ -341,16 +372,17 @@ class GrpcAresRequest::FdNodeList {
 GrpcAresRequest::GrpcAresRequest(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
-    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
+    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
                                                           : nullptr),
       name_(name),
       default_port_(default_port.has_value() ? *default_port : ""),
       timeout_(timeout),
-      create_event_handle_cb_(std::move(create_event_handle_cb)),
       fd_node_list_(std::make_unique<FdNodeList>()),
-      event_engine_(event_engine) {}
+      event_engine_(event_engine),
+      polled_fd_factory_(NewGrpcPolledFdFactory(std::move(register_cb), &mu_)) {
+}
 
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
@@ -363,7 +395,7 @@ GrpcAresRequest::~GrpcAresRequest() {
 absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
                                          bool check_port) {
   absl::MutexLock lock(&mu_);
-  GPR_ASSERT(!initialized_);
+  GPR_DEBUG_ASSERT(!initialized_);
   absl::string_view port;
   GPR_ASSERT(grpc_core::SplitHostPort(name_, &host_, &port));
   absl::Status error;
@@ -402,24 +434,14 @@ absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
 
 void GrpcAresRequest::Cancel() {
   absl::MutexLock lock(&mu_);
-  // TODO(yijiem): implement
-  // TODO(yijiem): really need to add locking now
   if (!shutting_down_) {
     shutting_down_ = true;
     cancelled_ = true;
-    while (!fd_node_list_->IsEmpty()) {
-      FdNode* fd_node = fd_node_list_->PopFdNode();
-      fd_node->handle->ShutdownHandle(absl::CancelledError());
-      PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
-          [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Cancel"),
-           fd_node](absl::Status status) {
-            self->OnHandleDestroyed(fd_node, status);
-          },
-          /*is_permanent=*/false);
-      int release_fd = -1;
-      fd_node->handle->OrphanHandle(on_handle_destroyed, &release_fd,
-                                    "GrpcAresRequest::Cancel");
-      GPR_ASSERT(release_fd == fd_node->WrappedFd());
+    for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
+      if (!(*it)->already_shutdown) {
+        (*it)->polled_fd->ShutdownLocked(absl::CancelledError());
+        (*it)->already_shutdown = true;
+      }
     }
   }
 }
@@ -435,9 +457,9 @@ void GrpcAresRequest::Work() {
         ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
       FdNode* fd_node = fd_node_list_->PopFdNode(socks[i]);
       if (fd_node == nullptr) {
-        fd_node = new FdNode(socks[i], create_event_handle_cb_(socks[i]));
-        GRPC_ARES_DRIVER_TRACE_LOG("request:%p new fd: %d", this,
-                                   fd_node->WrappedFd());
+        fd_node = new FdNode(
+            socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i]));
+        GRPC_ARES_DRIVER_TRACE_LOG("request:%p new fd: %d", this, fd_node->as);
       }
       new_list->PushFdNode(fd_node);
       // Register read_closure if the socket is readable and read_closure has
@@ -445,12 +467,11 @@ void GrpcAresRequest::Work() {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
           !fd_node->readable_registered) {
         GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify read on: %d", this,
-                                   fd_node->WrappedFd());
-        PosixEngineClosure* on_read = new PosixEngineClosure(
-            [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"), fd_node](
-                absl::Status status) { self->OnReadable(fd_node, status); },
-            /*is_permanent=*/false);
-        fd_node->handle->NotifyOnRead(on_read);
+                                   fd_node->as);
+        fd_node->polled_fd->RegisterForOnReadableLocked(
+            [self = Ref(DEBUG_LOCATION, "Work"), fd_node](absl::Status status) {
+              self->OnReadable(fd_node, status);
+            });
         fd_node->readable_registered = true;
       }
       // Register write_closure if the socket is writable and write_closure
@@ -458,12 +479,11 @@ void GrpcAresRequest::Work() {
       if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
           !fd_node->writable_registered) {
         GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify write on: %d", this,
-                                   fd_node->WrappedFd());
-        PosixEngineClosure* on_write = new PosixEngineClosure(
-            [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"), fd_node](
-                absl::Status status) { self->OnWritable(fd_node, status); },
-            /*is_permanent=*/false);
-        fd_node->handle->NotifyOnWrite(on_write);
+                                   fd_node->as);
+        fd_node->polled_fd->RegisterForOnWriteableLocked(
+            [self = Ref(DEBUG_LOCATION, "Work"), fd_node](absl::Status status) {
+              self->OnWritable(fd_node, status);
+            });
         fd_node->writable_registered = true;
       }
     }
@@ -473,25 +493,52 @@ void GrpcAresRequest::Work() {
   // from the list.
   while (!fd_node_list_->IsEmpty()) {
     FdNode* fd_node = fd_node_list_->PopFdNode();
-    // TODO(yijiem): shutdown the fd_node/handle from the poller
+    if (!fd_node->already_shutdown) {
+      fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
+      fd_node->already_shutdown = true;
+    }
     if (!fd_node->readable_registered && !fd_node->writable_registered) {
-      // TODO(yijiem): other destroy steps
-      fd_node->handle->ShutdownHandle(absl::OkStatus());
-      PosixEngineClosure* on_handle_destroyed = new PosixEngineClosure(
-          [self = Ref(DEBUG_LOCATION, "GrpcAresRequest::Work"),
-           fd_node](absl::Status status) {
-            self->OnHandleDestroyed(fd_node, status);
-          },
-          /*is_permanent=*/false);
-      int release_fd = -1;
-      fd_node->handle->OrphanHandle(on_handle_destroyed, &release_fd,
-                                    "GrpcAresRequest::Work");
-      GPR_ASSERT(release_fd == fd_node->WrappedFd());
+      GRPC_ARES_DRIVER_TRACE_LOG("request: %p delete fd: %s", this,
+                                 fd_node->polled_fd->GetName());
+      delete fd_node;
     } else {
       new_list->PushFdNode(fd_node);
     }
   }
   fd_node_list_.swap(new_list);
+}
+
+void GrpcAresRequest::StartTimers() {
+  return;
+  // Initialize overall DNS resolution timeout alarm
+  EventEngine::Duration timeout =
+      timeout_.count() == 0 ? EventEngine::Duration::max() : timeout_;
+  GRPC_ARES_DRIVER_TRACE_LOG(
+      "request:%p StartTimers timeout in %" PRId64 " ms", this,
+      std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
+
+  Ref(DEBUG_LOCATION, "StartTimers").release();
+  query_timeout_handle_ = event_engine_->RunAfter(timeout, [this] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    OnQueryTimeout();
+  });
+
+  // Initialize the backup poll alarm
+  EventEngine::Duration next_ares_backup_poll_alarm_duration =
+      calculate_next_ares_backup_poll_alarm_duration();
+  GRPC_ARES_DRIVER_TRACE_LOG(
+      "request:%p StartTimers next ares process poll time in %" PRId64 " ms",
+      this,
+      std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
+
+  Ref(DEBUG_LOCATION, "StartTimers").release();
+  ares_backup_poll_alarm_handle_ =
+      event_engine_->RunAfter(next_ares_backup_poll_alarm_duration, [this] {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        OnAresBackupPollAlarm();
+      });
 }
 
 absl::Status GrpcAresRequest::SetRequestDNSServer(
@@ -536,15 +583,14 @@ void GrpcAresRequest::OnReadable(FdNode* fd_node, absl::Status status) {
   GPR_ASSERT(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_ARES_DRIVER_TRACE_LOG("OnReadable: request: %p %s; fd: %d; status: %s",
-                             this, ToString().c_str(), fd_node->WrappedFd(),
+                             this, ToString().c_str(), fd_node->as,
                              status.ToString().c_str());
   GRPC_ARES_DRIVER_STACK_TRACE();
   if (status.ok() && !shutting_down_) {
     do {
-      ares_process_fd(channel_,
-                      static_cast<ares_socket_t>(fd_node->WrappedFd()),
+      ares_process_fd(channel_, static_cast<ares_socket_t>(fd_node->as),
                       ARES_SOCKET_BAD);
-    } while (is_fd_still_readable(fd_node->WrappedFd()));
+    } while (fd_node->polled_fd->IsFdStillReadableLocked());
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
@@ -562,11 +608,10 @@ void GrpcAresRequest::OnWritable(FdNode* fd_node, absl::Status status) {
   GPR_ASSERT(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_ARES_DRIVER_TRACE_LOG("OnWritable: fd: %d; request:%p; status: %s",
-                             fd_node->WrappedFd(), this,
-                             status.ToString().c_str());
+                             fd_node->as, this, status.ToString().c_str());
   if (status.ok() && !shutting_down_) {
     ares_process_fd(channel_, ARES_SOCKET_BAD,
-                    static_cast<ares_socket_t>(fd_node->WrappedFd()));
+                    static_cast<ares_socket_t>(fd_node->as));
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
@@ -579,22 +624,16 @@ void GrpcAresRequest::OnWritable(FdNode* fd_node, absl::Status status) {
   Work();
 }
 
-void GrpcAresRequest::OnHandleDestroyed(FdNode* fd_node, absl::Status status) {
-  absl::MutexLock lock(&mu_);
-  GPR_ASSERT(status.ok());
-  GRPC_ARES_DRIVER_TRACE_LOG(
-      "OnHandleDestroyed: request: %p; fd_node: %d; status: %s", this,
-      fd_node->WrappedFd(), status.ToString().c_str());
-  GRPC_ARES_DRIVER_STACK_TRACE();
-  delete fd_node;
-}
+void GrpcAresRequest::OnQueryTimeout() { absl::MutexLock lock(&mu_); }
+
+void GrpcAresRequest::OnAresBackupPollAlarm() {}
 
 GrpcAresHostnameRequest::GrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
     EventEngine::Duration timeout,
-    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, default_port, timeout,
-                      std::move(create_event_handle_cb), event_engine) {}
+    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, default_port, timeout, std::move(register_cb),
+                      event_engine) {}
 
 GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
@@ -619,8 +658,7 @@ void GrpcAresHostnameRequest::Start(OnResolveCallback<Result> on_resolve) {
   // object too early (before the second ares_gethostbyname) if we haven't added
   // up here.
   pending_queries_++;
-  // TODO(yijiem): factor out
-  if (PosixSocketWrapper::IsIpv6LoopbackAvailable()) {
+  if (IsIpv6LoopbackAvailable()) {
     pending_queries_++;
     auto* arg = new HostbynameArg();
     arg->request = this;
@@ -636,17 +674,17 @@ void GrpcAresHostnameRequest::Start(OnResolveCallback<Result> on_resolve) {
   // It's possible that ares_gethostbyname gets everything done inline.
   if (!shutting_down_) {
     Work();
+    StartTimers();
   }
 }
 
 void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
-  // TODO(yijiem): handle failure case
   GPR_ASSERT(pending_queries_ > 0);
   pending_queries_--;
   if (result.ok()) {
     result_.insert(result_.end(), result->begin(), result->end());
   } else {
-    error_ = result.status();
+    error_ = grpc_error_add_child(error_, result.status());
   }
   if (pending_queries_ == 0) {
     class ScopedClosureRunner {
@@ -767,20 +805,33 @@ void GrpcAresHostnameRequest::SortResolvedAddresses() {
 
 GrpcAresSRVRequest::GrpcAresSRVRequest(
     absl::string_view name, EventEngine::Duration timeout,
-    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, absl::nullopt, timeout,
-                      std::move(create_event_handle_cb), event_engine) {}
+    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
+                      event_engine) {}
 
-// TODO(yijiem): Don't query for SRV records if the target is "localhost"
 void GrpcAresSRVRequest::Start(OnResolveCallback<Result> on_resolve) {
+  auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  // Don't query for SRV records if the target is "localhost"
+  if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
+    event_engine_->Run([on_resolve = std::move(on_resolve),
+                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+      on_resolve(GRPC_ERROR_CREATE(
+                     "Skip querying for SRV records for localhost target"),
+                 token);
+    });
+    return;
+  }
   on_resolve_ = std::move(on_resolve);
   // Query the SRV record
   service_name_ = absl::StrCat("_grpclb._tcp.", host_);
   ares_query(channel_, service_name_.c_str(), ns_c_in, ns_t_srv,
              on_srv_query_done_locked, static_cast<void*>(this));
-  Work();
+  if (!shutting_down_) {
+    Work();
+    StartTimers();
+  }
 }
 
 void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
@@ -796,20 +847,33 @@ void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
 
 GrpcAresTXTRequest::GrpcAresTXTRequest(
     absl::string_view name, EventEngine::Duration timeout,
-    CreateEventHandleCallback create_event_handle_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, absl::nullopt, timeout,
-                      std::move(create_event_handle_cb), event_engine) {}
+    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
+                      event_engine) {}
 
-// TODO(yijiem): Don't query for TXT records if the target is "localhost"
 void GrpcAresTXTRequest::Start(OnResolveCallback<Result> on_resolve) {
+  auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
+  // Don't query for TXT records if the target is "localhost"
+  if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
+    event_engine_->Run([on_resolve = std::move(on_resolve),
+                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+      on_resolve(
+          GRPC_ERROR_CREATE("Skip querying for TXT records localhost target"),
+          token);
+    });
+    return;
+  }
   on_resolve_ = std::move(on_resolve);
   // Query the TXT record
   config_name_ = absl::StrCat("_grpc_config.", host_);
   ares_search(channel_, config_name_.c_str(), ns_c_in, ns_t_txt,
               on_txt_done_locked, static_cast<void*>(this));
-  Work();
+  if (!shutting_down_) {
+    Work();
+    StartTimers();
+  }
 }
 
 void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {

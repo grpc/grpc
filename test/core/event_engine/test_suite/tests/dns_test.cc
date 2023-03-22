@@ -27,15 +27,15 @@
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
@@ -43,7 +43,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
@@ -80,7 +80,8 @@ class EventEngineDNSTest : public EventEngineTest {
     // 1. launch dns_server
     int port = grpc_pick_unused_port();
     ASSERT_NE(port, 0)
-        << "pick unused port failed, maybe the port server is not running?";
+        << "pick unused port failed, maybe the port server is not running? "
+           "Start it with tools/run_tests/start_port_server.py";
     // <path to python wrapper> <path to dns_server.py> -p <port> -r <path to
     // records config>
     const char* argv[6];
@@ -185,6 +186,10 @@ MATCHER(SRVRecordEq, "") {
          arg0.priority == arg1.priority && arg0.weight == arg1.weight;
 }
 
+MATCHER(StatusCodeEq, "") {
+  return std::get<0>(arg).code() == std::get<1>(arg);
+}
+
 // Copied from tcp_socket_utils_test.cc
 // TODO(yijiem): maybe move those into common test util
 EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len,
@@ -218,6 +223,28 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 }
 
 }  // namespace
+
+TEST_F(EventEngineDNSTest, QueryHostnameFailed) {
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupHostname(
+      [&verified, &dns_resolver_signal](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        EXPECT_THAT(grpc_core::StatusGetChildren(result.status()),
+                    Pointwise(StatusCodeEq(), {absl::StatusCode::kUnknown}));
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "nonexisting-target.dns-test.event-engine.", /*default_port=*/"443",
+      std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
   constexpr uint8_t kExpectedAddresses[] = {4, 3, 2, 1};
@@ -365,6 +392,25 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
         dns_resolver_signal.Notify();
       },
       "srv-multi-target.dns-test.event-engine.", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupSRV(
+      [&verified,
+       &dns_resolver_signal](absl::StatusOr<std::vector<SRVRecord>> result) {
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "localhost:1000", std::chrono::seconds(5));
   dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
   EXPECT_TRUE(verified);
 }
