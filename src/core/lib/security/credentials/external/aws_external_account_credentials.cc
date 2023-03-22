@@ -193,7 +193,6 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-
   if (!imdsv2_session_token_url_.empty() && ShouldUseMetadataServer()) {
     RetrieveImdsV2SessionToken();
   } else if (signer_ != nullptr) {
