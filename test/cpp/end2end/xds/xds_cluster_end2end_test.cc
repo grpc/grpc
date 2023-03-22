@@ -1389,26 +1389,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   size_t num_warmup_rpcs =
       WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
                          WaitForBackendOptions().set_reset_counters(false));
-  // Send kNumRpcsPerAddress RPCs per server with named metrics.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
     CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_request_modifier(
-                            [](EchoRequest* req) {
-                              auto& named_metrics =
-                                  *(req->mutable_param()
-                                        ->mutable_backend_metrics()
-                                        ->mutable_named_metrics());
-                              named_metrics["foo"] = 0.3;
-                              named_metrics["bar"] = 0.4;
-                            }));
+                        RpcOptions().set_server_fail(true));
   }
   const size_t total_successful_rpcs_sent =
       (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
@@ -1440,8 +1425,6 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
                              ::testing::Pair("locality1", ::testing::_)));
   size_t num_successful_rpcs = 0;
   size_t num_failed_rpcs = 0;
-  std::map<std::string, size_t> named_metrics_num_requests;
-  std::map<std::string, double> named_metrics_total;
   for (const auto& p : client_stats.locality_stats()) {
     EXPECT_EQ(p.second.total_requests_in_progress, 0U);
     EXPECT_EQ(
@@ -1449,34 +1432,10 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
         p.second.total_successful_requests + p.second.total_error_requests);
     num_successful_rpcs += p.second.total_successful_requests;
     num_failed_rpcs += p.second.total_error_requests;
-    for (const auto& s : p.second.load_metrics) {
-      named_metrics_num_requests[s.first] +=
-          s.second.num_requests_finished_with_metric;
-      named_metrics_total[s.first] += s.second.total_metric_value;
-    }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
   EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
   EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
-  EXPECT_THAT(
-      named_metrics_num_requests,
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair("foo", (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                     backends_.size()),
-          ::testing::Pair("bar", (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                     backends_.size())));
-  EXPECT_THAT(
-      named_metrics_total,
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair(
-              "foo", ::testing::DoubleEq(
-                         (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                         (kNumFailuresPerAddress * backends_.size()) * 0.3)),
-          ::testing::Pair(
-              "bar", ::testing::DoubleEq(
-                         (kNumRpcsPerAddress * backends_.size()) * 2.0 +
-                         (kNumFailuresPerAddress * backends_.size()) * 0.4))));
-
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -1493,25 +1452,10 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
     CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_request_modifier(
-                            [](EchoRequest* req) {
-                              auto& named_metrics =
-                                  *(req->mutable_param()
-                                        ->mutable_backend_metrics()
-                                        ->mutable_named_metrics());
-                              named_metrics["foo"] = 0.3;
-                              named_metrics["bar"] = 0.4;
-                            }));
+                        RpcOptions().set_server_fail(true));
   }
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -1532,45 +1476,6 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   EXPECT_EQ(kNumFailuresPerAddress * backends_.size(),
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  EXPECT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair(
-          "locality0",
-          ::testing::Field(
-              &ClientStats::LocalityStats::load_metrics,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(
-                      "foo",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                  backends_.size()),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  total_metric_value,
-                              ::testing::DoubleEq(
-                                  (kNumRpcsPerAddress * backends_.size()) *
-                                      1.0 +
-                                  (kNumFailuresPerAddress * backends_.size()) *
-                                      0.3)))),
-                  ::testing::Pair(
-                      "bar",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                  backends_.size()),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  total_metric_value,
-                              ::testing::DoubleEq(
-                                  (kNumRpcsPerAddress * backends_.size()) *
-                                      2.0 +
-                                  (kNumFailuresPerAddress * backends_.size()) *
-                                      0.4)))))))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -1610,11 +1515,6 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  ASSERT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_)));
-  EXPECT_THAT(client_stats.locality_stats().at("locality0").load_metrics,
-              ::testing::IsEmpty());
   // Shut down the balancer.
   balancer_->Shutdown();
   // We should continue using the last EDS response we received from the
@@ -1637,14 +1537,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // This tells us that we're now using the new serverlist.
   num_rpcs += WaitForAllBackends(DEBUG_LOCATION, 2, 4);
   // Send one RPC per backend.
-  CheckRpcSendOk(DEBUG_LOCATION, 2,
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+  CheckRpcSendOk(DEBUG_LOCATION, 2);
   num_rpcs += 2;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
@@ -1654,33 +1547,6 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  EXPECT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair(
-          "locality0",
-          ::testing::Field(
-              &ClientStats::LocalityStats::load_metrics,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(
-                      "foo",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              2),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               LoadMetric::total_metric_value,
-                                           ::testing::DoubleEq(2.0)))),
-                  ::testing::Pair(
-                      "bar",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              2),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               LoadMetric::total_metric_value,
-                                           ::testing::DoubleEq(4.0)))))))));
 }
 
 // Tests load reporting when switching over from one cluster to another.
@@ -1734,10 +1600,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                           0UL),
                       ::testing::Field(
                           &ClientStats::LocalityStats::total_issued_requests,
-                          num_rpcs),
-                      ::testing::Field(
-                          &ClientStats::LocalityStats::load_metrics,
-                          ::testing::IsEmpty()))))),
+                          num_rpcs))))),
           ::testing::Property(&ClientStats::total_dropped_requests, 0UL))));
   // Change RDS resource to point to new cluster.
   RouteConfiguration new_route_config = default_route_config_;
@@ -1775,10 +1638,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                               0UL),
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_issued_requests,
-                                           ::testing::Le(num_rpcs)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::load_metrics,
-                              ::testing::IsEmpty()))))),
+                                           ::testing::Le(num_rpcs)))))),
               ::testing::Property(&ClientStats::total_dropped_requests, 0UL)),
           ::testing::AllOf(
               ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
@@ -1800,10 +1660,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                               0UL),
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_issued_requests,
-                                           ::testing::Le(num_rpcs)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::load_metrics,
-                              ::testing::IsEmpty()))))),
+                                           ::testing::Le(num_rpcs)))))),
               ::testing::Property(&ClientStats::total_dropped_requests, 0UL))));
   size_t total_ok = 0;
   for (const ClientStats& client_stats : load_report) {

@@ -612,17 +612,6 @@ class LrsServiceImpl
    public:
     // Stats for a given locality.
     struct LocalityStats {
-      struct LoadMetric {
-        uint64_t num_requests_finished_with_metric;
-        double total_metric_value;
-        LoadMetric& operator+=(const LoadMetric& other) {
-          num_requests_finished_with_metric +=
-              other.num_requests_finished_with_metric;
-          total_metric_value += other.total_metric_value;
-          return *this;
-        }
-      };
-
       LocalityStats() {}
 
       // Converts from proto message class.
@@ -636,21 +625,13 @@ class LrsServiceImpl
             total_error_requests(
                 upstream_locality_stats.total_error_requests()),
             total_issued_requests(
-                upstream_locality_stats.total_issued_requests()) {
-        for (const auto& s : upstream_locality_stats.load_metric_stats()) {
-          load_metrics[s.metric_name()] += LoadMetric{
-              s.num_requests_finished_with_metric(), s.total_metric_value()};
-        }
-      }
+                upstream_locality_stats.total_issued_requests()) {}
 
       LocalityStats& operator+=(const LocalityStats& other) {
         total_successful_requests += other.total_successful_requests;
         total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
-        for (const auto& p : other.load_metrics) {
-          load_metrics[p.first] += p.second;
-        }
         return *this;
       }
 
@@ -658,7 +639,6 @@ class LrsServiceImpl
       uint64_t total_requests_in_progress = 0;
       uint64_t total_error_requests = 0;
       uint64_t total_issued_requests = 0;
-      std::map<std::string, LoadMetric> load_metrics;
     };
 
     ClientStats() {}

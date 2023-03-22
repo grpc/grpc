@@ -155,13 +155,6 @@ class MyTestServiceImpl : public TestServiceImpl {
         key[p.first.size()] = '\0';
         recorder->RecordUtilizationMetric(key, p.second);
       }
-      for (const auto& p : request_metrics.named_metrics()) {
-        char* key = static_cast<char*>(
-            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-        strncpy(key, p.first.data(), p.first.size());
-        key[p.first.size()] = '\0';
-        recorder->RecordNamedMetricsMetric(key, p.second);
-      }
     }
     return TestServiceImpl::Echo(context, request, response);
   }
@@ -418,7 +411,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void SendRpcsUntil(
       const grpc_core::DebugLocation& debug_location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      const std::function<bool(const Status&)>& continue_predicate,
+      absl::AnyInvocable<bool(const Status&)> continue_predicate,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
     absl::Time deadline = absl::InfiniteFuture();
     if (timeout_ms != 0) {
@@ -530,7 +523,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t start_index = 0, size_t stop_index = 0,
-      const std::function<void(const Status&)>& status_check = nullptr,
+      absl::AnyInvocable<void(const Status&)> status_check = nullptr,
       absl::Duration timeout = absl::Seconds(30)) {
     if (stop_index == 0) stop_index = servers_.size();
     auto deadline = absl::Now() + (timeout * grpc_test_slowdown_factor());
@@ -559,14 +552,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t server_index,
-      const std::function<void(const Status&)>& status_check = nullptr) {
+      absl::AnyInvocable<void(const Status&)> status_check = nullptr) {
     WaitForServers(location, stub, server_index, server_index + 1,
-                   status_check);
+                   std::move(status_check));
   }
 
   bool WaitForChannelState(
       Channel* channel,
-      const std::function<bool(grpc_connectivity_state)>& predicate,
+      absl::AnyInvocable<bool(grpc_connectivity_state)> predicate,
       bool try_to_connect = false, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
@@ -1333,7 +1326,7 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   grpc_core::Notification notification;
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
-  result.result_health_callback = [&](const absl::Status& status) {
+  result.result_health_callback = [&](absl::Status status) {
     EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
     EXPECT_EQ("address list must not be empty", status.message()) << status;
     notification.Notify();
@@ -1742,7 +1735,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
   result.resolution_note = "injected error";
-  result.result_health_callback = [&](const absl::Status& status) {
+  result.result_health_callback = [&](absl::Status status) {
     EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
     EXPECT_EQ("empty address list: injected error", status.message()) << status;
     notification.Notify();
@@ -2364,10 +2357,6 @@ xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
     std::string name(p.first);
     (*load_report.mutable_utilization())[name] = p.second;
   }
-  for (const auto& p : backend_metric_data.named_metrics) {
-    std::string name(p.first);
-    (*load_report.mutable_named_metrics())[name] = p.second;
-  }
   return load_report;
 }
 
@@ -2604,12 +2593,6 @@ void CheckLoadReportAsExpected(
     ASSERT_NE(it, expected.utilization().end());
     EXPECT_EQ(it->second, p.second);
   }
-  EXPECT_EQ(actual.named_metrics().size(), expected.named_metrics().size());
-  for (const auto& p : actual.named_metrics()) {
-    auto it = expected.named_metrics().find(p.first);
-    ASSERT_NE(it, expected.named_metrics().end());
-    EXPECT_EQ(it->second, p.second);
-  }
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
@@ -2630,9 +2613,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   // This will be rejected.
   utilization["out_of_range_invalid1"] = 1.1;
   utilization["out_of_range_invalid2"] = -1.1;
-  auto& named_metrics = *load_report.mutable_named_metrics();
-  named_metrics["metric0"] = 3.0;
-  named_metrics["metric1"] = -1.0;
   auto expected = load_report;
   expected.mutable_utilization()->erase("out_of_range_invalid1");
   expected.mutable_utilization()->erase("out_of_range_invalid2");
@@ -2746,7 +2726,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
       ++total_num_rpcs;
     }
   }
-
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());

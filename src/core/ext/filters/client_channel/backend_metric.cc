@@ -81,11 +81,6 @@ const BackendMetricData* ParseBackendMetricData(
           msg, xds_data_orca_v3_OrcaLoadReport_utilization_next,
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key,
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value, allocator);
-  backend_metric_data->named_metrics =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value, allocator);
   return backend_metric_data;
 }
 

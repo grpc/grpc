@@ -304,17 +304,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
           }
         }
-        if (request->has_param() && request->param().has_backend_metrics()) {
-          const auto& request_metrics = request->param().backend_metrics();
-          auto* recorder = context->ExperimentalGetCallMetricRecorder();
-          for (const auto& p : request_metrics.named_metrics()) {
-            char* key = static_cast<char*>(
-                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-            strncpy(key, p.first.data(), p.first.size());
-            key[p.first.size()] = '\0';
-            recorder->RecordNamedMetricsMetric(key, p.second);
-          }
-        }
         return status;
       }
 
@@ -721,7 +710,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    std::function<void(EchoRequest*)> request_modifier = [](EchoRequest*) {};
 
     RpcOptions() {}
 
@@ -778,12 +766,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_server_expected_error(StatusCode code) {
       server_expected_error = code;
-      return *this;
-    }
-
-    RpcOptions& set_request_modifier(
-        std::function<void(EchoRequest*)> modifier) {
-      request_modifier = std::move(modifier);
       return *this;
     }
 

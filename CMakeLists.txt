@@ -340,18 +340,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/12163cd499b84b089f66e159477d8e988baa8a9d.tar.gz
-    90b9a743c4e05946f692bdf0b6ad664ef5430b965d32e9334c3e3a2744c356d6
-    data-plane-api-12163cd499b84b089f66e159477d8e988baa8a9d
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
+    1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a
+    data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/12163cd499b84b089f66e159477d8e988baa8a9d.tar.gz
-    90b9a743c4e05946f692bdf0b6ad664ef5430b965d32e9334c3e3a2744c356d6
-    data-plane-api-12163cd499b84b089f66e159477d8e988baa8a9d
+    https://github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
+    1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a
+    data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs

@@ -44,9 +44,6 @@ struct BackendMetricData {
   /// are determined by the application.  Each value is expressed as a
   /// fraction of total resources available.
   std::map<absl::string_view, double> utilization;
-  /// Application-specific opaque metrics.  Metric names are determined by the
-  /// the application.  Each value is an opaque measurement.
-  std::map<absl::string_view, double> named_metrics;
 };
 
 }  // namespace grpc_core

@@ -34,7 +34,6 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -216,32 +215,27 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   Snapshot GetSnapshotAndReset();
 
   void AddCallStarted();
-  void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
-                       bool fail = false);
+  void AddCallFinished(bool fail = false);
 
  private:
-  struct Stats {
-    std::atomic<uint64_t> total_successful_requests{0};
-    std::atomic<uint64_t> total_requests_in_progress{0};
-    std::atomic<uint64_t> total_error_requests{0};
-    std::atomic<uint64_t> total_issued_requests{0};
-
-    // Protects backend_metrics. A mutex is necessary because the length of
-    // backend_metrics_ can be accessed by both the callback intercepting the
-    // call's recv_trailing_metadata (not from the control plane work
-    // serializer) and the load reporting thread (from the control plane work
-    // serializer).
-    Mutex backend_metrics_mu;
-    std::map<std::string, BackendMetric> backend_metrics
-        ABSL_GUARDED_BY(backend_metrics_mu);
-  };
-
   RefCountedPtr<XdsClient> xds_client_;
   const XdsBootstrap::XdsServer& lrs_server_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
-  PerCpu<Stats> stats_{32};
+
+  std::atomic<uint64_t> total_successful_requests_{0};
+  std::atomic<uint64_t> total_requests_in_progress_{0};
+  std::atomic<uint64_t> total_error_requests_{0};
+  std::atomic<uint64_t> total_issued_requests_{0};
+
+  // Protects backend_metrics_. A mutex is necessary because the length of
+  // backend_metrics_ can be accessed by both the callback intercepting the
+  // call's recv_trailing_metadata (not from the control plane work serializer)
+  // and the load reporting thread (from the control plane work serializer).
+  Mutex backend_metrics_mu_;
+  std::map<std::string, BackendMetric> backend_metrics_
+      ABSL_GUARDED_BY(backend_metrics_mu_);
 };
 
 }  // namespace grpc_core
