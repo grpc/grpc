@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/logging/logging_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -43,12 +41,20 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -67,8 +73,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/context.h"
 
 namespace grpc_core {
 

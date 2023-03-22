@@ -347,7 +347,8 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
     proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
     // Add tracing details
     proto_entry->set_span_id(entry.span_id);
-    proto_entry->set_trace(entry.trace_id);
+    proto_entry->set_trace(
+        absl::StrFormat("projects/%s/traces/%s", project_id_, entry.trace_id));
     proto_entry->set_trace_sampled(entry.is_sampled);
     // TODO(yashykt): Check if we need to fill receive timestamp
     EntryToJsonStructProto(std::move(entry),

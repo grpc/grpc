@@ -106,15 +106,15 @@ absl::Status GcpObservabilityInit() {
     // Disable OpenCensus stats
     grpc::internal::EnableOpenCensusStats(false);
   }
-  // If tracing or monitoring is enabled, we need to register the OpenCensus
-  // plugin to wait for the environment to be autodetected.
-  if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
-    grpc::RegisterOpenCensusPlugin();
-  }
   if (config->cloud_logging.has_value()) {
     g_logging_sink = new grpc::internal::ObservabilityLoggingSink(
         config->cloud_logging.value(), config->project_id, config->labels);
     grpc_core::RegisterLoggingFilter(g_logging_sink);
+  }
+  // If tracing or monitoring is enabled, we need to register the OpenCensus
+  // plugin to wait for the environment to be autodetected.
+  if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
+    grpc::RegisterOpenCensusPlugin();
   }
   // If tracing or monitoring is enabled, we need to detect the environment for
   // OpenCensus, set the labels and attributes and prepare the StackDriver

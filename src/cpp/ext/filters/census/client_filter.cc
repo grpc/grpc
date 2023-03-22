@@ -41,7 +41,9 @@
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
 #include "opencensus/trace/status_code.h"
+#include "opencensus/trace/trace_id.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -120,6 +122,8 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       arena_allocated_(arena_allocated),
       context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
+  gpr_log(GPR_ERROR, "%s %s", context_.Context().trace_id().ToHex().c_str(),
+          context_.Context().span_id().ToHex().c_str());
   if (parent_->tracing_enabled_) {
     context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
     context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
@@ -278,6 +282,8 @@ OpenCensusCallTracer::OpenCensusCallTracer(
   GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
                         &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);
+  gpr_log(GPR_ERROR, "%s %s", context_.Context().trace_id().ToHex().c_str(),
+          context_.Context().span_id().ToHex().c_str());
 }
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {

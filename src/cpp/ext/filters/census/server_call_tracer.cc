@@ -16,12 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
-#include <grpcpp/opencensus.h>
+
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -36,6 +37,13 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
+#include "opencensus/trace/trace_id.h"
+
+#include <grpcpp/opencensus.h>
+
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -48,10 +56,6 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
-#include "opencensus/trace/span.h"
-#include "opencensus/trace/span_context.h"
-#include "opencensus/trace/span_id.h"
-#include "opencensus/trace/trace_id.h"
 
 namespace grpc {
 namespace internal {
