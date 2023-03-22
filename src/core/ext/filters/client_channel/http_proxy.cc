@@ -63,9 +63,9 @@ bool ServerInCIDRRange(absl::string_view server_host,
   if (!server_address.ok()) {
     return false;
   }
-
   std::pair<absl::string_view, absl::string_view> possible_cidr =
-    absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2));
+      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2),
+                     absl::SkipEmpty());
   if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
     return false;
   }
