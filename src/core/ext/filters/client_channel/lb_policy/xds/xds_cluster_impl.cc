@@ -38,6 +38,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -332,7 +333,13 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     }
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(!args.status.ok());
+      const std::map<absl::string_view, double>* named_metrics = nullptr;
+      if (args.backend_metric_accessor != nullptr &&
+          args.backend_metric_accessor->GetBackendMetricData() != nullptr) {
+        named_metrics = &args.backend_metric_accessor->GetBackendMetricData()
+                             ->named_metrics;
+      }
+      locality_stats_->AddCallFinished(named_metrics, !args.status.ok());
     }
     // Decrement number of calls in flight.
     call_counter_->Decrement();

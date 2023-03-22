@@ -413,6 +413,7 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeAuthorityText() {
 
 void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
                                           EchoRequest* request) const {
+  request_modifier(request);
   for (const auto& item : metadata) {
     context->AddMetadata(item.first, item.second);
   }

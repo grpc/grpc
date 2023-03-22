@@ -3415,6 +3415,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:time",
         "//src/core:upb_utils",

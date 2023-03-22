@@ -89,6 +89,13 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
         p.second, arena.ptr());
     has_data = true;
   }
+  for (const auto& p : data.named_metrics) {
+    xds_data_orca_v3_OrcaLoadReport_named_metrics_set(
+        response,
+        upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
+        p.second, arena.ptr());
+    has_data = true;
+  }
   if (!has_data) {
     return absl::nullopt;
   }

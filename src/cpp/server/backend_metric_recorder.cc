@@ -309,6 +309,18 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
   return *this;
 }
 
+experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetricsMetric(
+    string_ref name, double value) {
+  internal::MutexLock lock(&mu_);
+  absl::string_view name_sv(name.data(), name.length());
+  named_metrics_[name_sv] = value;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] Named metric recorded: %s %f", this,
+            std::string(name_sv).c_str(), value);
+  }
+  return *this;
+}
+
 BackendMetricData BackendMetricState::GetBackendMetricData() {
   // Merge metrics from the ServerMetricRecorder first since metrics recorded
   // to CallMetricRecorder takes a higher precedence.
@@ -341,13 +353,18 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
     for (const auto& r : request_cost_) {
       data.request_cost[r.first] = r.second;
     }
+    for (const auto& r : named_metrics_) {
+      data.named_metrics[r.first] = r.second;
+    }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO,
             "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f eps:%f "
-            "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR,
+            "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR
+            "named_metrics size:%" PRIuPTR,
             this, data.cpu_utilization, data.mem_utilization, data.qps,
-            data.eps, data.utilization.size(), data.request_cost.size());
+            data.eps, data.utilization.size(), data.request_cost.size(),
+            data.named_metrics.size());
   }
   return data;
 }
