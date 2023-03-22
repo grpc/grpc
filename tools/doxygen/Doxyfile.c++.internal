@@ -2710,6 +2710,8 @@ src/cpp/client/channel_cc.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
+src/cpp/client/client_stats_interceptor.cc \
+src/cpp/client/client_stats_interceptor.h \
 src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
