@@ -36,8 +36,8 @@ std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
   }
   std::string host_port = absl::StrFormat("%s:%d", host, port);
   return std::make_shared<grpc::testing::InteropClient>(
-      [host_port, credentials]() {
-        return grpc::CreateChannel(host_port, credentials);
+      [host_port, credentials](grpc::ChannelArguments args) {
+        return grpc::CreateChannel(host_port, credentials, args);
       },
       true, false);
 }
