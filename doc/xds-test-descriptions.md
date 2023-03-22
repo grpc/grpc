@@ -813,6 +813,12 @@ The `backendService` will have the following `localityLbPolicies` entry:
 ]
 ```
 
+The client **should not** implement the `test.ThisLoadBalancerDoesNotExist`, but
+it **should** implement `test.RpcBehaviorLoadBalancer`. The
+`RpcBehaviorLoadBalancer` implementation should set the rpcBehavior request
+header based on the configuration it is provided. The `rpcBehavior` field value
+in the config should be used as the header value.
+
 Assert:
 
 1. The first custom policy is ignored as the client does not have an
