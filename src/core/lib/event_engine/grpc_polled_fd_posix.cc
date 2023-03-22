@@ -61,7 +61,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   void RegisterForOnWriteableLocked(
       absl::AnyInvocable<void(absl::Status)> write_closure) override {
-    poller_handle_->NotifyOnRead(new PosixEngineClosure(
+    poller_handle_->NotifyOnWrite(new PosixEngineClosure(
         std::move(write_closure), /*is_permanent=*/false));
   }
 
