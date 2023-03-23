@@ -69,7 +69,10 @@ static int isolated_pick_unused_port_or_die(void) {
 
 static void isolated_recycle_unused_port(int port) { (void)port; }
 
-const auto grpc_isolated_port_picker_prev_fns =
+// We don't actually use prev_fns for anything, but need to save it in order to
+// be able to call grpc_set_pick_port_functions() to override defaults for this
+// environment.
+static const auto prev_fns =
     grpc_set_pick_port_functions(grpc_pick_port_functions{
         isolated_pick_unused_port_or_die, isolated_recycle_unused_port});
 

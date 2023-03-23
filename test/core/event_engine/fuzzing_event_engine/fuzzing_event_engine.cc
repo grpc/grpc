@@ -423,7 +423,7 @@ FuzzingEventEngine::EndpointMiddle::EndpointMiddle(int listener_port,
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator, Duration) {
+    const EndpointConfig&, MemoryAllocator, Duration) {
   // TODO(ctiller): do something with the timeout
   // Schedule a timer to run (with some fuzzer selected delay) the on_connect
   // callback.

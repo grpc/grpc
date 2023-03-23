@@ -48,6 +48,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
+// It's only allowed to have one FuzzingEventEngine instantiated at a time.
 class FuzzingEventEngine : public EventEngine {
  public:
   struct Options {
@@ -139,7 +140,7 @@ class FuzzingEventEngine : public EventEngine {
     // Used to emulate the Bind/Start semantics demanded by the API.
     bool started ABSL_GUARDED_BY(mu_);
     // The status to return via on_shutdown.
-    absl::Status shutdown_status ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+    absl::Status shutdown_status ABSL_GUARDED_BY(mu_);
   };
 
   // Implementation of Listener.
@@ -172,8 +173,7 @@ class FuzzingEventEngine : public EventEngine {
     // Is the endpoint closed?
     bool closed ABSL_GUARDED_BY(mu_) = false;
     // Bytes written into each endpoint and awaiting a read.
-    std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_){
-        std::vector<uint8_t>(), std::vector<uint8_t>()};
+    std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_);
     // The sizes of each accepted write, as determined by the fuzzer actions.
     std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
     // The next read that's pending (or nullopt).
@@ -218,8 +218,8 @@ class FuzzingEventEngine : public EventEngine {
         std::shared_ptr<EndpointMiddle> middle, int index,
         absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-    std::shared_ptr<EndpointMiddle> middle_;
-    int index_;
+    const std::shared_ptr<EndpointMiddle> middle_;
+    const int index_;
   };
 
   void RunLocked(absl::AnyInvocable<void()> closure)
