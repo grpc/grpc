@@ -12028,6 +12028,34 @@ targets:
   - linux
   - posix
   - mac
+- name: thready_posix_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
+  - test/core/event_engine/thready_event_engine/thready_event_engine.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
+  - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
+  - test/core/event_engine/thready_event_engine/thready_event_engine.cc
+  deps:
+  - grpc_unsecure
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: time_jump_test
   gtest: true
   build: test
