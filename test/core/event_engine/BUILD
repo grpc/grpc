@@ -190,6 +190,21 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "handle_tests",
+    srcs = ["handle_tests.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:event_engine_common",
+        "//:gpr_platform",
+    ],
+)
+
 grpc_cc_library(
     name = "event_engine_test_utils",
     testonly = True,

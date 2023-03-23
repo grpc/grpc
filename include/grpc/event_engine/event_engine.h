@@ -122,6 +122,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
+    static const TaskHandle kInvalid;
+    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
+    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
   static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
@@ -129,6 +132,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
+    static const ConnectionHandle kInvalid;
+    friend bool operator==(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
+    friend bool operator!=(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
   };
   static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
@@ -319,7 +327,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
       intptr_t keys[2];
+      static const LookupTaskHandle kInvalid;
+      friend bool operator==(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
+      friend bool operator!=(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
     };
+    static constexpr LookupTaskHandle kInvalidLookupTaskHandle{-1, -1};
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.
