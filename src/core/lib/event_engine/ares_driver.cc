@@ -714,6 +714,8 @@ void GrpcAresHostnameRequest::Start(OnResolveCallback<Result> on_resolve) {
   if (ResolveAsIPLiteralLocked()) {
     return;
   }
+  // TODO(yijiem): Early out if the target is localhost and we're on Windows.
+
   // We add up pending_queries_ here since ares_gethostbyname may directly
   // invoke the callback inline if there is any error with the input. The
   // callback will invoke OnResolve with an error status and may destroy the
