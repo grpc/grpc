@@ -209,29 +209,35 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
   status_code_ = status.code();
-  if (recv_trailing_metadata == nullptr || transport_stream_stats == nullptr) {
-    return;
-  }
   if (OpenCensusStatsEnabled()) {
     uint64_t elapsed_time = 0;
-    FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
+    if (recv_trailing_metadata != nullptr) {
+      FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
+    }
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
     tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
     tags.emplace_back(ClientStatusTagKey(),
                       absl::StatusCodeToString(status_code_));
     ::opencensus::stats::Record(
+        // TODO(yashykt): Recording zeros here when transport_stream_stats is
+        // nullptr is unfortunate and should be fixed.
         {{RpcClientSentBytesPerRpc(),
-          static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
+          static_cast<double>(transport_stream_stats != nullptr
+                                  ? transport_stream_stats->outgoing.data_bytes
+                                  : 0)},
          {RpcClientReceivedBytesPerRpc(),
-          static_cast<double>(transport_stream_stats->incoming.data_bytes)},
+          static_cast<double>(transport_stream_stats != nullptr
+                                  ? transport_stream_stats->incoming.data_bytes
+                                  : 0)},
          {RpcClientServerLatency(),
           ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))},
          {RpcClientRoundtripLatency(),
           absl::ToDoubleMilliseconds(absl::Now() - start_time_)}},
         tags);
     if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-      if (gpr_time_cmp(transport_stream_stats->latency,
+      if (transport_stream_stats != nullptr &&
+          gpr_time_cmp(transport_stream_stats->latency,
                        gpr_inf_future(GPR_TIMESPAN)) != 0) {
         double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
             gpr_timespec_to_micros(transport_stream_stats->latency)));
@@ -243,9 +249,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    absl::Status /*cancel_error*/) {
-  status_code_ = absl::StatusCode::kCancelled;
-}
+    absl::Status /*cancel_error*/) {}
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
