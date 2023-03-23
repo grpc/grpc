@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {

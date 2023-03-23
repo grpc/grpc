@@ -8513,6 +8513,16 @@ targets:
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
   deps:
   - grpc_test_util
+- name: handle_tests
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/handle_tests.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
