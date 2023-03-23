@@ -120,12 +120,6 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
   for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
-    // TODO(yijiem): this logic probably should live in the client channel
-    // DNSResolver.
-    // grpc_core::ChannelArgs args;
-    // if (hr->is_balancer) {
-    //   args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
-    // }
     switch (hostent->h_addrtype) {
       case AF_INET6: {
         size_t addr_len = sizeof(struct sockaddr_in6);
@@ -424,6 +418,7 @@ absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
     return GRPC_ERROR_CREATE(absl::StrCat(
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
   }
+  ares_driver_test_only_inject_config(channel_);
   error = SetRequestDNSServer(dns_server);
   if (!error.ok()) {
     return error;
@@ -547,29 +542,30 @@ absl::Status GrpcAresRequest::SetRequestDNSServer(
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p Using DNS server %s", this,
                                dns_server.data());
     grpc_resolved_address addr;
+    struct ares_addr_port_node dns_server_addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
-      dns_server_addr_.family = AF_INET;
+      dns_server_addr.family = AF_INET;
       struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
-      memcpy(&dns_server_addr_.addr.addr4, &in->sin_addr,
+      memcpy(&dns_server_addr.addr.addr4, &in->sin_addr,
              sizeof(struct in_addr));
-      dns_server_addr_.tcp_port = grpc_sockaddr_get_port(&addr);
-      dns_server_addr_.udp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
                                         /*log_errors=*/false)) {
-      dns_server_addr_.family = AF_INET6;
+      dns_server_addr.family = AF_INET6;
       struct sockaddr_in6* in6 =
           reinterpret_cast<struct sockaddr_in6*>(addr.addr);
-      memcpy(&dns_server_addr_.addr.addr6, &in6->sin6_addr,
+      memcpy(&dns_server_addr.addr.addr6, &in6->sin6_addr,
              sizeof(struct in6_addr));
-      dns_server_addr_.tcp_port = grpc_sockaddr_get_port(&addr);
-      dns_server_addr_.udp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+      dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else {
       return GRPC_ERROR_CREATE(
           absl::StrCat("cannot parse authority ", dns_server));
     }
     // Prevent an uninitialized variable.
-    dns_server_addr_.next = nullptr;
-    int status = ares_set_servers_ports(channel_, &dns_server_addr_);
+    dns_server_addr.next = nullptr;
+    int status = ares_set_servers_ports(channel_, &dns_server_addr);
     if (status != ARES_SUCCESS) {
       return GRPC_ERROR_CREATE(absl::StrCat(
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
@@ -889,3 +885,8 @@ void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+void noop_inject_channel_config(ares_channel /*channel*/) {}
+
+void (*ares_driver_test_only_inject_config)(ares_channel channel) =
+    noop_inject_channel_config;

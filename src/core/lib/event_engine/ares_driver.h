@@ -127,7 +127,6 @@ class GrpcAresRequest
   /// This is in network byte order.
   uint16_t port_ = 0;
   const EventEngine::Duration timeout_;
-  struct ares_addr_port_node dns_server_addr_ ABSL_GUARDED_BY(mu_);
   size_t pending_queries_ ABSL_GUARDED_BY(mu_) = 0;
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
@@ -214,5 +213,8 @@ class GrpcAresTXTRequest : public GrpcAresRequest {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+// Exposed in this header for C-core tests only
+extern void (*ares_driver_test_only_inject_config)(ares_channel channel);
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_DRIVER_H
