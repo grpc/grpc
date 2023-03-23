@@ -58,6 +58,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_opencensus_plugin",
         "//src/core:logging_filter",
         "//src/core:notification",

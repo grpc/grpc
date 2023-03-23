@@ -797,6 +797,7 @@ libs:
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -2140,6 +2141,7 @@ libs:
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -3048,6 +3050,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -3082,6 +3085,7 @@ libs:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -3446,6 +3450,7 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
   headers:
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/backend_metric_recorder.h
@@ -3459,6 +3464,7 @@ libs:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -3604,6 +3610,7 @@ libs:
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -5111,6 +5118,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -5146,6 +5154,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -6470,6 +6479,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -6505,6 +6515,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -6892,6 +6903,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -6927,6 +6939,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -7414,6 +7427,7 @@ targets:
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -12224,6 +12238,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -12258,6 +12273,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -12523,6 +12539,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -12558,6 +12575,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -12628,6 +12646,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -12663,6 +12682,7 @@ targets:
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
