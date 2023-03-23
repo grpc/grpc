@@ -121,12 +121,13 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
     return loader;
   }
 
-  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* error) {
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
     // Impose lower bound of 100ms on weightUpdatePeriod.
     weight_update_period_ =
         std::max(weight_update_period_, Duration::Milliseconds(100));
-    if (error_utilization_penalty() < 0) {
-      error->AddError("error_utilization_penalty must be non-negative.");
+    if (error_utilization_penalty_ < 0) {
+      ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
+      errors->AddError("must be non-negative");
     }
   }
 
@@ -424,8 +425,8 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f "
-            "error_util_penalty=%f : setting weight=%f old_weight=%f now=%s "
-            "last_update_time=%s non_empty_since=%s",
+            "error_util_penalty=%f : setting weight=%f weight_=%f now=%s "
+            "last_update_time=%s non_empty_since_=%s",
             wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
             error_utilization_penalty, weight, weight_, now.ToString().c_str(),
             last_update_time_.ToString().c_str(),
@@ -444,7 +445,7 @@ float WeightedRoundRobin::AddressWeight::GetWeight(
     gpr_log(GPR_INFO,
             "[WRR %p] subchannel %s: getting weight: now=%s "
             "weight_expiration_period=%s blackout_period=%s "
-            "last_update_time=%s non_empty_since=%s weight=%f",
+            "last_update_time_=%s non_empty_since_=%s weight_=%f",
             wrr_.get(), key_.c_str(), now.ToString().c_str(),
             weight_expiration_period.ToString().c_str(),
             blackout_period.ToString().c_str(),

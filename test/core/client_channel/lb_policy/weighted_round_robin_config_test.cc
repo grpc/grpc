@@ -73,6 +73,25 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
                 "field:weightUpdatePeriod error:is not a string]]"));
 }
 
+TEST(WeightedRoundRobinConfigTest, InvalidValues) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin_experimental\":{\n"
+      "      \"errorUtilizationPenalty\": -1.0\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(service_config.status(),
+            absl::InvalidArgumentError(
+                "errors validating service config: [field:loadBalancingConfig "
+                "error:errors validating priority LB policy config: ["
+                "field:errorUtilizationPenalty error:must be non-negative]]"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
