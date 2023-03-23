@@ -22,7 +22,6 @@
 #include <chrono>
 #include <initializer_list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -62,6 +61,8 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+
+// IWYU pragma: no_include <ratio>
 
 namespace grpc_event_engine {
 namespace experimental {
