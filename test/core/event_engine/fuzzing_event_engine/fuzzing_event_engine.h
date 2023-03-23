@@ -52,7 +52,10 @@ class FuzzingEventEngine : public EventEngine {
                               const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
 
+  // Once the fuzzing work is completed, this method should be called to speed
+  // quiescence.
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
+  // Increment time once and perform any scheduled work.
   void Tick() ABSL_LOCKS_EXCLUDED(mu_);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
@@ -88,9 +91,13 @@ class FuzzingEventEngine : public EventEngine {
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
+  // Clear any global hooks installed by this event engine. Call prior to
+  // destruction to ensure no overlap between tests if constructing/destructing
+  // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
+  // One pending task to be run.
   struct Task {
     Task(intptr_t id, absl::AnyInvocable<void()> closure)
         : id(id), closure(std::move(closure)) {}
@@ -98,6 +105,11 @@ class FuzzingEventEngine : public EventEngine {
     absl::AnyInvocable<void()> closure;
   };
 
+  // Per listener information.
+  // We keep a shared_ptr to this, one reference held by the FuzzingListener
+  // Listener implementation, and one reference in the event engine state, so it
+  // may be iterated through and inspected - principally to discover the ports
+  // on which this listener is listening.
   struct ListenerInfo {
     ListenerInfo(
         Listener::AcceptCallback on_accept,
@@ -108,14 +120,22 @@ class FuzzingEventEngine : public EventEngine {
           memory_allocator_factory(std::move(memory_allocator_factory)),
           started(false) {}
     ~ListenerInfo() ABSL_LOCKS_EXCLUDED(mu_);
+    // The callback to invoke when a new connection is accepted.
     Listener::AcceptCallback on_accept;
+    // The callback to invoke when the listener is shut down.
     absl::AnyInvocable<void(absl::Status)> on_shutdown;
+    // The memory allocator factory to use for this listener.
     const std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory;
+    // The ports on which this listener is listening.
     std::vector<int> ports ABSL_GUARDED_BY(mu_);
+    // Has start been called on the listener?
+    // Used to emulate the Bind/Start semantics demanded by the API.
     bool started ABSL_GUARDED_BY(mu_);
-    absl::Status shutdown_status ABSL_GUARDED_BY(mu_);
+    // The status to return via on_shutdown.
+    absl::Status shutdown_status ABSL_GUARDED_BY(mu_) = absl::OkStatus();
   };
 
+  // Implementation of Listener.
   class FuzzingListener final : public Listener {
    public:
     explicit FuzzingListener(std::shared_ptr<ListenerInfo> info)
@@ -128,23 +148,38 @@ class FuzzingEventEngine : public EventEngine {
     std::shared_ptr<ListenerInfo> info_;
   };
 
+  // One read that's outstanding.
   struct PendingRead {
+    // Callback to invoke when the read completes.
     absl::AnyInvocable<void(absl::Status)> on_read;
+    // The buffer to read into.
     SliceBuffer* buffer;
   };
 
+  // The join between two Endpoint instances.
   struct EndpointMiddle {
-    EndpointMiddle(int listener_port, int client_port);
+    EndpointMiddle(int listener_port, int client_port)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+    // Address of each side of the endpoint.
     const ResolvedAddress addrs[2];
+    // Is the endpoint closed?
     bool closed ABSL_GUARDED_BY(mu_) = false;
+    // Bytes written into each endpoint and awaiting a read.
     std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_){
         std::vector<uint8_t>(), std::vector<uint8_t>()};
+    // The sizes of each accepted write, as determined by the fuzzer actions.
     std::queue<size_t> write_sizes[2] ABSL_GUARDED_BY(mu_);
+    // The next read that's pending (or nullopt).
     absl::optional<PendingRead> pending_read[2] ABSL_GUARDED_BY(mu_);
 
+    // Helper to take some bytes from data and queue them into pending[index].
+    // Returns true if all bytes were consumed, false if more writes are needed.
     bool Write(SliceBuffer* data, int index) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   };
 
+  // Implementation of Endpoint.
+  // When a connection is formed, we create two of these - one with index 0, the
+  // other index 1, both pointing to the same EndpointMiddle.
   class FuzzingEndpoint final : public Endpoint {
    public:
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
@@ -156,13 +191,22 @@ class FuzzingEventEngine : public EventEngine {
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                SliceBuffer* data, const WriteArgs* args) override;
     const ResolvedAddress& GetPeerAddress() const override {
-      return middle_->addrs[1 - index_];
+      return middle_->addrs[peer_index()];
     }
     const ResolvedAddress& GetLocalAddress() const override {
-      return middle_->addrs[index_];
+      return middle_->addrs[my_index()];
     }
 
    private:
+    int my_index() const { return index_; }
+    int peer_index() const { return 1 - index_; }
+    // Schedule additional writes to be performed later.
+    // Takes a ref to middle instead of holding this, so that should the
+    // endpoint be destroyed we don't have to worry about use-after-free.
+    // Instead that scheduled callback will see the middle is closed and finally
+    // report completion to the caller.
+    // Since there is no timeliness contract for the completion of writes after
+    // endpoint shutdown, it's believed this is a legal implementation.
     static void ScheduleDelayedWrite(
         std::shared_ptr<EndpointMiddle> middle, int index,
         absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data)
@@ -179,8 +223,15 @@ class FuzzingEventEngine : public EventEngine {
   TaskHandle RunAfterLocked(Duration when, absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  // Allocate a port. Considered fuzzer selected port orderings first, and then
+  // falls back to an exhaustive incremental search from port #1.
   int AllocatePort() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Is the given port in use by any listener?
   bool IsPortUsed(int port) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // For the next connection being built, query the list of fuzzer selected
+  // write size limits.
+  std::queue<size_t> WriteSizesForConnection()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -199,9 +250,16 @@ class FuzzingEventEngine : public EventEngine {
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);
   std::set<std::shared_ptr<ListenerInfo>> listeners_ ABSL_GUARDED_BY(mu_);
+  // Fuzzer selected port allocations.
   std::queue<int> free_ports_ ABSL_GUARDED_BY(mu_);
+  // Next free port to allocate once fuzzer selections are exhausted.
   int next_free_port_ ABSL_GUARDED_BY(mu_) = 1;
+  // Ports that were included in the fuzzer selected port orderings.
   std::set<int> fuzzer_mentioned_ports_ ABSL_GUARDED_BY(mu_);
+  // Fuzzer selected write sizes for future connections - one picked off per
+  // WriteSizesForConnection() call.
+  std::queue<std::queue<size_t>> write_sizes_for_future_connections_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace experimental

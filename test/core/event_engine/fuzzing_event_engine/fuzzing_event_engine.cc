@@ -44,6 +44,10 @@ namespace experimental {
 
 namespace {
 
+// Inside the fuzzing event engine we consider everything is bound to a single
+// loopback device. It cannot reach any other devices, and shares all ports
+// between ipv4 and ipv6.
+
 EventEngine::ResolvedAddress PortToAddress(int port) {
   sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));
@@ -102,6 +106,22 @@ FuzzingEventEngine::FuzzingEventEngine(
   // The grpc_core::Timer code special cases the zero second time period after
   // epoch to allow for some fancy atomic stuff.
   now_ = Time() + std::chrono::seconds(5);
+
+  // Allow the fuzzer to assign ports.
+  // Once this list is exhausted, we fall back to a deterministic algorithm.
+  for (auto port : actions.assign_ports()) {
+    free_ports_.push(port);
+    fuzzer_mentioned_ports_.insert(port);
+  }
+
+  // Fill the write sizes queue for future connections.
+  for (const auto& connection : actions.connections()) {
+    std::queue<size_t> write_sizes;
+    for (auto size : connection.write_size()) {
+      write_sizes.push(size);
+    }
+    write_sizes_for_future_connections_.emplace(std::move(write_sizes));
+  }
 
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
@@ -195,11 +215,14 @@ FuzzingEventEngine::Time FuzzingEventEngine::Now() {
 }
 
 int FuzzingEventEngine::AllocatePort() {
+  // If the fuzzer selected some port orderings, do that first.
   if (!free_ports_.empty()) {
     int p = free_ports_.front();
     free_ports_.pop();
     return p;
   }
+  // Otherwise just scan through starting at one and skipping any ports
+  // that were in the fuzzers initial list.
   while (true) {
     int p = next_free_port_++;
     if (fuzzer_mentioned_ports_.count(p) == 0) {
@@ -214,6 +237,8 @@ FuzzingEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown, const EndpointConfig&,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
   grpc_core::MutexLock lock(&*mu_);
+  // Create a listener and register it into the set of listener info in the
+  // event engine.
   return absl::make_unique<FuzzingListener>(
       *listeners_
            .emplace(std::make_shared<ListenerInfo>(
@@ -228,6 +253,7 @@ FuzzingEventEngine::FuzzingListener::~FuzzingListener() {
 }
 
 bool FuzzingEventEngine::IsPortUsed(int port) {
+  // Return true if a port is bound to a listener.
   for (const auto& listener : listeners_) {
     if (std::find(listener->ports.begin(), listener->ports.end(), port) !=
         listener->ports.end()) {
@@ -239,24 +265,30 @@ bool FuzzingEventEngine::IsPortUsed(int port) {
 
 absl::StatusOr<int> FuzzingEventEngine::FuzzingListener::Bind(
     const ResolvedAddress& addr) {
+  // Extract the port from the address (or fail if non-localhost).
   auto port = AddressToPort(addr);
   if (!port.ok()) return port.status();
   grpc_core::MutexLock lock(&*mu_);
+  // Check that the listener hasn't already been started.
   if (info_->started) return absl::InternalError("Already started");
   if (*port != 0) {
+    // If the port is non-zero, check that it's not already in use.
     if (g_fuzzing_event_engine->IsPortUsed(*port)) {
       return absl::InternalError("Port in use");
     }
   } else {
+    // If the port is zero, allocate a new one.
     do {
       port = g_fuzzing_event_engine->AllocatePort();
     } while (g_fuzzing_event_engine->IsPortUsed(*port));
   }
+  // Add the port to the listener.
   info_->ports.push_back(*port);
   return port;
 }
 
 absl::Status FuzzingEventEngine::FuzzingListener::Start() {
+  // Start the listener or fail if it's already started.
   grpc_core::MutexLock lock(&*mu_);
   if (info_->started) return absl::InternalError("Already started");
   info_->started = true;
@@ -265,8 +297,12 @@ absl::Status FuzzingEventEngine::FuzzingListener::Start() {
 
 bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
   GPR_ASSERT(!closed);
+  const int peer_index = 1 - index;
   if (data->Length() == 0) return true;
   size_t write_len = std::numeric_limits<size_t>::max();
+  // Check the write_sizes queue for fuzzer imposed restrictions on this write
+  // size. This allows the fuzzer to force small writes to be seen by the
+  // reader.
   if (!write_sizes[index].empty()) {
     write_len = write_sizes[index].front();
     write_sizes[index].pop();
@@ -274,19 +310,24 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
   if (write_len > data->Length()) {
     write_len = data->Length();
   }
+  // If the write_len is zero, we still need to write something, so we write one
+  // byte.
   if (write_len == 0) write_len = 1;
+  // Expand the pending buffer.
   size_t prev_len = pending[index].size();
   pending[index].resize(prev_len + write_len);
+  // Move bytes from the to-write data into the pending buffer.
   data->MoveFirstNBytesIntoBuffer(write_len, pending[index].data() + prev_len);
-  if (pending_read[1 - index].has_value()) {
-    pending_read[1 - index]->buffer->Append(
+  // If there was a pending read, then we can fulfill it.
+  if (pending_read[peer_index].has_value()) {
+    pending_read[peer_index]->buffer->Append(
         Slice::FromCopiedBuffer(pending[index]));
     pending[index].clear();
     g_fuzzing_event_engine->RunLocked(
-        [cb = std::move(pending_read[1 - index]->on_read)]() mutable {
+        [cb = std::move(pending_read[peer_index]->on_read)]() mutable {
           cb(absl::OkStatus());
         });
-    pending_read[1 - index].reset();
+    pending_read[peer_index].reset();
   }
   return data->Length() == 0;
 }
@@ -295,14 +336,16 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs* args) {
   grpc_core::MutexLock lock(&*mu_);
+  // If the endpoint is closed, then we fail the write.
   if (middle_->closed) {
     g_fuzzing_event_engine->RunLocked(
         [on_writable = std::move(on_writable)]() mutable {
-          on_writable(absl::CancelledError("Endpoint closed"));
+          on_writable(absl::InternalError("Endpoint closed"));
         });
   }
-  if (middle_->Write(data, index_)) return true;
-  ScheduleDelayedWrite(middle_, index_, std::move(on_writable), data);
+  // If the write succeeds immediately, then we return true.
+  if (middle_->Write(data, my_index())) return true;
+  ScheduleDelayedWrite(middle_, my_index(), std::move(on_writable), data);
   return false;
 }
 
@@ -316,7 +359,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
         if (middle->closed) {
           g_fuzzing_event_engine->RunLocked(
               [on_writable = std::move(on_writable)]() mutable {
-                on_writable(absl::CancelledError("Endpoint closed"));
+                on_writable(absl::InternalError("Endpoint closed"));
               });
           return;
         }
@@ -336,7 +379,7 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
     if (middle_->pending_read[i].has_value()) {
       g_fuzzing_event_engine->RunLocked(
           [cb = std::move(middle_->pending_read[i]->on_read)]() mutable {
-            cb(absl::CancelledError("Endpoint closed"));
+            cb(absl::InternalError("Endpoint closed"));
           });
       middle_->pending_read[i].reset();
     }
@@ -348,37 +391,64 @@ bool FuzzingEventEngine::FuzzingEndpoint::Read(
     const ReadArgs* args) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
-  if (middle_->pending[1 - index_].empty()) {
-    middle_->pending_read[index_] = PendingRead{std::move(on_read), buffer};
+  // If the endpoint is closed, fail asynchronously.
+  if (middle_->closed) {
+    g_fuzzing_event_engine->RunLocked([on_read = std::move(on_read)]() mutable {
+      on_read(absl::InternalError("Endpoint closed"));
+    });
+    return false;
+  }
+  if (middle_->pending[peer_index()].empty()) {
+    // If the endpoint has no pending data, then we need to wait for a write.
+    middle_->pending_read[my_index()] = PendingRead{std::move(on_read), buffer};
     return false;
   } else {
-    buffer->Append(Slice::FromCopiedBuffer(middle_->pending[1 - index_]));
-    middle_->pending[1 - index_].clear();
+    // If the endpoint has pending data, then we can fulfill the read
+    // immediately.
+    buffer->Append(Slice::FromCopiedBuffer(middle_->pending[peer_index()]));
+    middle_->pending[peer_index()].clear();
     return true;
   }
 }
 
+std::queue<size_t> FuzzingEventEngine::WriteSizesForConnection() {
+  if (write_sizes_for_future_connections_.empty()) return std::queue<size_t>();
+  auto ret = std::move(write_sizes_for_future_connections_.front());
+  write_sizes_for_future_connections_.pop();
+  return ret;
+}
+
 FuzzingEventEngine::EndpointMiddle::EndpointMiddle(int listener_port,
                                                    int client_port)
-    : addrs{PortToAddress(listener_port), PortToAddress(client_port)} {}
+    : addrs{PortToAddress(listener_port), PortToAddress(client_port)},
+      write_sizes{g_fuzzing_event_engine->WriteSizesForConnection(),
+                  g_fuzzing_event_engine->WriteSizesForConnection()} {}
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
+  // TODO(ctiller): do something with the timeout
+  // Schedule a timer to run (with some fuzzer selected delay) the on_connect
+  // callback.
   auto task_handle = RunAfter(
       Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
+        // Check for a legal address and extract the target port number.
         auto port = AddressToPort(addr);
         if (!port.ok()) {
           on_connect(port.status());
           return;
         }
         grpc_core::MutexLock lock(&*mu_);
+        // Find the listener that is listening on the target port.
         for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
           const auto& listener = *it;
+          // Listener must be started.
           if (!listener->started) continue;
           for (int listener_port : listener->ports) {
             if (*port == listener_port) {
+              // Port matches on a started listener: create an endpoint, call
+              // on_accept for the listener and on_connect for the client.
               auto middle = std::make_shared<EndpointMiddle>(
                   listener_port, g_fuzzing_event_engine->AllocatePort());
               auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
@@ -397,6 +467,7 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
             }
           }
         }
+        // Fail: no such listener.
         RunLocked([on_connect = std::move(on_connect)]() mutable {
           on_connect(absl::InvalidArgumentError("No listener found"));
         });
