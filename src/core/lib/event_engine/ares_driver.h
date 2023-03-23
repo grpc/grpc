@@ -103,21 +103,19 @@ class GrpcAresRequest : public grpc_core::RefCounted<GrpcAresRequest> {
   using OnResolveCallback =
       absl::AnyInvocable<void(absl::StatusOr<T>, intptr_t)>;
 
-  bool initialized_ = false;
-  /// synchronizes access to this request, and also to associated
-  /// ev_driver and fd_node objects
   absl::Mutex mu_;
+  bool initialized_ ABSL_GUARDED_BY(mu_) = false;
   /// name to resolve
-  const std::string name_;
-  const std::string default_port_;
+  const std::string name_ ABSL_GUARDED_BY(mu_);
+  const std::string default_port_ ABSL_GUARDED_BY(mu_);
   // ares channel
-  ares_channel channel_ = nullptr;
+  ares_channel channel_ ABSL_GUARDED_BY(mu_) = nullptr;
   /// host to resolve, parsed from the name to resolve
-  absl::string_view host_;
+  absl::string_view host_ ABSL_GUARDED_BY(mu_);
   /// port to fill in sockaddr_in, parsed from the name to resolve
   /// This is in network byte order.
-  uint16_t port_ = 0;
-  const EventEngine::Duration timeout_;
+  uint16_t port_ ABSL_GUARDED_BY(mu_) = 0;
+  const EventEngine::Duration timeout_ ABSL_GUARDED_BY(mu_);
   size_t pending_queries_ ABSL_GUARDED_BY(mu_) = 0;
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
@@ -128,7 +126,7 @@ class GrpcAresRequest : public grpc_core::RefCounted<GrpcAresRequest> {
       ABSL_GUARDED_BY(mu_);
   absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mu_);
-  std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
+  std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
 };
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
