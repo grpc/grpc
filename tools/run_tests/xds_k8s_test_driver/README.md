@@ -174,7 +174,10 @@ export KUBE_CONTEXT="$(kubectl config current-context)"
 
 ```shell
 # Create python virtual environment
-python3.7 -m venv venv
+python3 -m venv venv
+
+# Run the following command if previous command failed with "Error: name 'cmd' is not defined" then retry previous command
+# sudo apt-get install python3-venv
 
 # Activate virtual environment
 . ./venv/bin/activate
