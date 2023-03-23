@@ -14,26 +14,27 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <inttypes.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 
 #include <algorithm>
 #include <chrono>
-#include <cstddef>
 #include <limits>
 #include <ratio>
+#include <type_traits>
 #include <vector>
 
-#include "fuzzing_event_engine.h"
+#include "absl/memory/memory.h"
 
+#include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
