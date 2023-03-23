@@ -103,4 +103,4 @@ class ThreadyEventEngine final : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_THREADY_EVENT_ENGINE_THREADY_EVENT_ENGINE_H
