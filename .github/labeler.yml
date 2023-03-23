@@ -41,6 +41,7 @@ lang/python:
 - requirements.bazel.txt
 - src/compiler/python*
 - src/python/**
+- "!src/python/grpcio/grpc_core_dependencies.py"
 
 lang/ruby:
 - examples/ruby/**

@@ -76,8 +76,8 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   grpc_event_engine::experimental::RegisterEventEngineChannelArgPreconditioning(
       builder);
   // The order of the handshaker registration is crucial here.
-  // We want TCP connect handshaker to be registered last so that it is added to
-  // the start of the handshaker list.
+  // We want TCP connect handshaker to be registered last so that it is added
+  // to the start of the handshaker list.
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterPriorityLbPolicy(builder);

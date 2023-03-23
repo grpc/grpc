@@ -1990,6 +1990,7 @@ src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/call_finalization.h \
+src/core/lib/channel/call_tracer.cc \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
@@ -2013,8 +2014,7 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
-src/core/lib/channel/server_call_tracer.cc \
-src/core/lib/channel/server_call_tracer.h \
+src/core/lib/channel/server_call_tracer_filter.cc \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \
@@ -2047,6 +2047,7 @@ src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/memory_allocator_factory.h \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix.h \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
@@ -2390,6 +2391,7 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
+src/core/lib/promise/cancel_callback.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
@@ -2708,6 +2710,8 @@ src/cpp/client/channel_cc.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
+src/cpp/client/client_stats_interceptor.cc \
+src/cpp/client/client_stats_interceptor.h \
 src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
