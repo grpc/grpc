@@ -432,12 +432,7 @@ void GrpcAresRequest::Cancel() {
   if (!shutting_down_) {
     shutting_down_ = true;
     cancelled_ = true;
-    for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
-      if (!(*it)->already_shutdown) {
-        (*it)->polled_fd->ShutdownLocked(absl::CancelledError());
-        (*it)->already_shutdown = true;
-      }
-    }
+    ShutdownPollerHandles();
   }
 }
 
@@ -504,13 +499,14 @@ void GrpcAresRequest::Work() {
 }
 
 void GrpcAresRequest::StartTimers() {
-  return;
+#define ToMillis(duration) \
+  std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
+
   // Initialize overall DNS resolution timeout alarm
   EventEngine::Duration timeout =
       timeout_.count() == 0 ? EventEngine::Duration::max() : timeout_;
-  GRPC_ARES_DRIVER_TRACE_LOG(
-      "request:%p StartTimers timeout in %" PRId64 " ms", this,
-      std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
+  GRPC_ARES_DRIVER_TRACE_LOG("request:%p StartTimers timeout in %" PRId64 " ms",
+                             this, ToMillis(timeout));
 
   Ref(DEBUG_LOCATION, "StartTimers").release();
   query_timeout_handle_ = event_engine_->RunAfter(timeout, [this] {
@@ -524,8 +520,7 @@ void GrpcAresRequest::StartTimers() {
       calculate_next_ares_backup_poll_alarm_duration();
   GRPC_ARES_DRIVER_TRACE_LOG(
       "request:%p StartTimers next ares process poll time in %" PRId64 " ms",
-      this,
-      std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
+      this, ToMillis(next_ares_backup_poll_alarm_duration));
 
   Ref(DEBUG_LOCATION, "StartTimers").release();
   ares_backup_poll_alarm_handle_ =
@@ -534,6 +529,21 @@ void GrpcAresRequest::StartTimers() {
         grpc_core::ExecCtx exec_ctx;
         OnAresBackupPollAlarm();
       });
+}
+
+void GrpcAresRequest::CancelTimers() {
+  if (query_timeout_handle_.has_value()) {
+    if (event_engine_->Cancel(*query_timeout_handle_)) {
+      Unref(DEBUG_LOCATION, "CancelTimers");
+    }
+    query_timeout_handle_.reset();
+  }
+  if (ares_backup_poll_alarm_handle_.has_value()) {
+    if (event_engine_->Cancel(*ares_backup_poll_alarm_handle_)) {
+      Unref(DEBUG_LOCATION, "CancelTimers");
+    }
+    ares_backup_poll_alarm_handle_.reset();
+  }
 }
 
 absl::Status GrpcAresRequest::SetRequestDNSServer(
@@ -620,9 +630,68 @@ void GrpcAresRequest::OnWritable(FdNode* fd_node, absl::Status status) {
   Work();
 }
 
-void GrpcAresRequest::OnQueryTimeout() { absl::MutexLock lock(&mu_); }
+void GrpcAresRequest::OnQueryTimeout() {
+  absl::MutexLock lock(&mu_);
+  query_timeout_handle_.reset();
+  GRPC_ARES_DRIVER_TRACE_LOG("request:%p OnQueryTimeout. shutting_down_=%d",
+                             this, shutting_down_);
+  if (!shutting_down_) {
+    shutting_down_ = true;
+    ShutdownPollerHandles();
+  }
+  Unref(DEBUG_LOCATION, "OnQueryTimeout");
+}
 
-void GrpcAresRequest::OnAresBackupPollAlarm() {}
+// In case of non-responsive DNS servers, dropped packets, etc., c-ares has
+// intelligent timeout and retry logic, which we can take advantage of by
+// polling ares_process_fd on time intervals. Overall, the c-ares library is
+// meant to be called into and given a chance to proceed name resolution:
+//   a) when fd events happen
+//   b) when some time has passed without fd events having happened
+// For the latter, we use this backup poller. Also see
+// https://github.com/grpc/grpc/pull/17688 description for more details.
+void GrpcAresRequest::OnAresBackupPollAlarm() {
+  absl::MutexLock lock(&mu_);
+  ares_backup_poll_alarm_handle_.reset();
+  GRPC_ARES_DRIVER_TRACE_LOG(
+      "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
+      shutting_down_);
+  if (!shutting_down_) {
+    for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
+      if (!(*it)->already_shutdown) {
+        GRPC_ARES_DRIVER_TRACE_LOG(
+            "request:%p OnAresBackupPollAlarm; ares_process_fd. fd=%s", this,
+            (*it)->polled_fd->GetName());
+        ares_socket_t as = (*it)->polled_fd->GetWrappedAresSocketLocked();
+        ares_process_fd(channel_, as, as);
+      }
+    }
+    if (!shutting_down_) {
+      EventEngine::Duration next_ares_backup_poll_alarm_duration =
+          calculate_next_ares_backup_poll_alarm_duration();
+      Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm").release();
+      ares_backup_poll_alarm_handle_ =
+          event_engine_->RunAfter(next_ares_backup_poll_alarm_duration, [this] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            OnAresBackupPollAlarm();
+          });
+    }
+    Work();
+  }
+  Unref(DEBUG_LOCATION, "OnAresBackupPollAlarm");
+}
+
+void GrpcAresRequest::ShutdownPollerHandles() {
+  for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
+    if (!(*it)->already_shutdown) {
+      (*it)->polled_fd->ShutdownLocked(
+          grpc_core::StatusCreate(absl::StatusCode::kCancelled,
+                                  "ShutdownPollerHandles", DEBUG_LOCATION, {}));
+      (*it)->already_shutdown = true;
+    }
+  }
+}
 
 GrpcAresHostnameRequest::GrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
@@ -701,8 +770,7 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
     // grpc_ares_notify_on_event_locked will shut down any remaining
     // fds.
     shutting_down_ = true;
-    // TODO(yijiem): cancel timers here
-
+    CancelTimers();
     if (cancelled_) {
       // Cancel does not invoke on_resolve.
       return;
@@ -710,7 +778,6 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
     if (!result_.empty()) {
       // As long as there are records, we return them. Note that there might be
       // error_ from the other request too.
-      // TODO(yijiem): sort the addresses
       SortResolvedAddresses();
       event_engine_->Run([on_resolve = std::move(on_resolve_),
                           result = std::move(result_),
@@ -832,7 +899,7 @@ void GrpcAresSRVRequest::Start(OnResolveCallback<Result> on_resolve) {
 
 void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
   shutting_down_ = true;
-  // TODO(yijiem): cancel timers here
+  CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
                       result = std::move(result),
                       token = reinterpret_cast<intptr_t>(this)]() mutable {
@@ -874,7 +941,7 @@ void GrpcAresTXTRequest::Start(OnResolveCallback<Result> on_resolve) {
 
 void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {
   shutting_down_ = true;
-  // TODO(yijiem): cancel timers here
+  CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
                       result = std::move(result),
                       token = reinterpret_cast<intptr_t>(this)]() mutable {

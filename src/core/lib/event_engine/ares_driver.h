@@ -89,6 +89,7 @@ class GrpcAresRequest
 
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void CancelTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
   friend class grpc_event_engine::experimental::GrpcPolledFd;
@@ -106,6 +107,7 @@ class GrpcAresRequest
       ABSL_LOCKS_EXCLUDED(mu_);
   void OnQueryTimeout() ABSL_LOCKS_EXCLUDED(mu_);
   void OnAresBackupPollAlarm() ABSL_LOCKS_EXCLUDED(mu_);
+  void ShutdownPollerHandles() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  protected:
   template <typename T>
