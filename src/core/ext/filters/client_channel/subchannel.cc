@@ -920,7 +920,8 @@ bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
   ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
                                   connecting_result_.channel_args);
-  builder.SetTransport(connecting_result_.transport);
+  // Builder takes ownership of transport.
+  builder.SetTransport(std::exchange(connecting_result_.transport, nullptr));
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
