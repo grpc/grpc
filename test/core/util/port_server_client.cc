@@ -54,7 +54,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "test/core/util/test_config.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;

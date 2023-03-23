@@ -15,22 +15,28 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 
+#include <stddef.h>
+
 #include <chrono>
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <queue>
 #include <ratio>
+#include <set>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -142,8 +148,8 @@ class FuzzingEventEngine : public EventEngine {
     explicit FuzzingListener(std::shared_ptr<ListenerInfo> info)
         : info_(std::move(info)) {}
     ~FuzzingListener() override;
-    virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    virtual absl::Status Start() override;
+    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
+    absl::Status Start() override;
 
    private:
     std::shared_ptr<ListenerInfo> info_;
