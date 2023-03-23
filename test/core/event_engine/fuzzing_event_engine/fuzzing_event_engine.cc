@@ -334,7 +334,7 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const WriteArgs* args) {
+    const WriteArgs*) {
   grpc_core::MutexLock lock(&*mu_);
   // If the endpoint is closed, then we fail the write.
   if (middle_->closed) {
@@ -388,7 +388,7 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-    const ReadArgs* args) {
+    const ReadArgs*) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
   // If the endpoint is closed, fail asynchronously.
@@ -426,8 +426,7 @@ FuzzingEventEngine::EndpointMiddle::EndpointMiddle(int listener_port,
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator memory_allocator,
-    Duration timeout) {
+    const EndpointConfig& args, MemoryAllocator, Duration) {
   // TODO(ctiller): do something with the timeout
   // Schedule a timer to run (with some fuzzer selected delay) the on_connect
   // callback.
