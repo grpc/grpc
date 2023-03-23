@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "port.h"
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -31,7 +31,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/port.h"
 #include "test/core/util/port_server_client.h"
-#include "test/core/util/test_config.h"
 
 static int* chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;
