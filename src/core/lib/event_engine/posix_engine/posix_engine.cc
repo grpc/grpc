@@ -499,7 +499,7 @@ using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
-  GrpcAresHostnameRequest* request = new GrpcAresHostnameRequest(
+  GrpcAresHostnameRequest* request = CreateGrpcAresHostnameRequest(
       name, default_port, timeout,
       absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
                        this),
@@ -513,7 +513,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   }
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(reinterpret_cast<intptr_t>(request));
   }
   request->Start(
       [on_resolve = std::move(on_resolve), this](
@@ -522,8 +522,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
         {
           absl::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
+          GPR_ASSERT(inflight_requests_.erase(token) == 1);
         }
         on_resolve(std::move(result));
       });
@@ -535,7 +534,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
     LookupSRVCallback on_resolve, absl::string_view name, Duration timeout) {
-  GrpcAresSRVRequest* request = new GrpcAresSRVRequest(
+  GrpcAresSRVRequest* request = CreateGrpcAresSRVRequest(
       name, timeout,
       absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
                        this),
@@ -549,7 +548,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   }
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(reinterpret_cast<intptr_t>(request));
   }
   request->Start(
       [on_resolve = std::move(on_resolve), this](
@@ -559,8 +558,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
         {
           absl::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
+          GPR_ASSERT(inflight_requests_.erase(token) == 1);
         }
         on_resolve(std::move(result));
       });
@@ -572,7 +570,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
     LookupTXTCallback on_resolve, absl::string_view name, Duration timeout) {
-  GrpcAresTXTRequest* request = new GrpcAresTXTRequest(
+  GrpcAresTXTRequest* request = CreateGrpcAresTXTRequest(
       name, timeout,
       absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
                        this),
@@ -586,7 +584,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
   }
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(reinterpret_cast<intptr_t>(request));
   }
   request->Start(
       [on_resolve = std::move(on_resolve), this](
@@ -594,8 +592,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
         {
           absl::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
+          GPR_ASSERT(inflight_requests_.erase(token) == 1);
         }
         on_resolve(std::move(result));
       });
@@ -607,10 +604,9 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
   absl::MutexLock lock(&mu_);
-  auto iter = inflight_requests_.find(
-      reinterpret_cast<GrpcAresRequest*>(handle.keys[0]));
+  auto iter = inflight_requests_.find(handle.keys[0]);
   if (iter != inflight_requests_.end()) {
-    (*iter)->Cancel();
+    reinterpret_cast<GrpcAresRequest*>(*iter)->Cancel();
     return true;
   }
   return false;

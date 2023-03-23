@@ -44,22 +44,17 @@ class GrpcPolledFd {
   virtual ~GrpcPolledFd() {}
   // Called when c-ares library is interested and there's no pending callback
   virtual void RegisterForOnReadableLocked(
-      absl::AnyInvocable<void(absl::Status)> read_closure)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+      absl::AnyInvocable<void(absl::Status)> read_closure) = 0;
   // Called when c-ares library is interested and there's no pending callback
   virtual void RegisterForOnWriteableLocked(
-      absl::AnyInvocable<void(absl::Status)> write_closure)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+      absl::AnyInvocable<void(absl::Status)> write_closure) = 0;
   // Indicates if there is data left even after just being read from
-  virtual bool IsFdStillReadableLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+  virtual bool IsFdStillReadableLocked() = 0;
   // Called once and only once. Must cause cancellation of any pending
   // read/write callbacks.
-  virtual void ShutdownLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+  virtual void ShutdownLocked(grpc_error_handle error) = 0;
   // Get the underlying ares_socket_t that this was created from
-  virtual ares_socket_t GetWrappedAresSocketLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+  virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   // A unique name, for logging
   virtual const char* GetName() const = 0;
 };
@@ -72,11 +67,9 @@ class GrpcPolledFdFactory {
  public:
   virtual ~GrpcPolledFdFactory() {}
   // Creates a new wrapped fd for the current platform
-  virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+  virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation
-  virtual void ConfigureAresChannelLocked(ares_channel channel)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequest::mu_) = 0;
+  virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
 // Creates a new polled fd factory.
