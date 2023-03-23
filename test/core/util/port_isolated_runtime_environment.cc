@@ -69,7 +69,7 @@ static int isolated_pick_unused_port_or_die(void) {
 
 static void isolated_recycle_unused_port(int port) { (void)port; }
 
-static const auto prev_fns =
+const auto grpc_isolated_port_picker_prev_fns =
     grpc_set_pick_port_functions(grpc_pick_port_functions{
         isolated_pick_unused_port_or_die, isolated_recycle_unused_port});
 

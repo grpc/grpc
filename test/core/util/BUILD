@@ -113,6 +113,7 @@ grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
+    alwayslink = 1,
     external_deps = [
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
@@ -157,6 +158,7 @@ grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
+    alwayslink = 1,
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/status",
