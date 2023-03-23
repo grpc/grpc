@@ -69,7 +69,6 @@ using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 

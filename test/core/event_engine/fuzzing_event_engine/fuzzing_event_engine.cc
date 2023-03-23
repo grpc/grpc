@@ -14,28 +14,32 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 
 #include <algorithm>
 #include <chrono>
 #include <limits>
 #include <ratio>
+#include <string>
 #include <type_traits>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
+
+// IWYU pragma: no_include <sys/socket.h>
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -49,37 +53,18 @@ namespace {
 // between ipv4 and ipv6.
 
 EventEngine::ResolvedAddress PortToAddress(int port) {
-  sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port = htons(port);
-  return EventEngine::ResolvedAddress(reinterpret_cast<const sockaddr*>(&addr),
-                                      sizeof(addr));
+  grpc_resolved_address addr;
+  GPR_ASSERT(grpc_parse_ipv4_hostport(absl::StrCat("127.0.0.1:", port).c_str(),
+                                      &addr, false));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
 absl::StatusOr<int> AddressToPort(const EventEngine::ResolvedAddress& addr) {
-  switch (addr.address()->sa_family) {
-    default:
-      return absl::InvalidArgumentError("Unknown address family");
-    case AF_INET: {
-      const sockaddr_in* addr_in =
-          reinterpret_cast<const sockaddr_in*>(addr.address());
-      if (addr_in->sin_addr.s_addr != htonl(INADDR_LOOPBACK)) {
-        return absl::InvalidArgumentError("Address is not loopback");
-      }
-      return ntohs(addr_in->sin_port);
-    }
-    case AF_INET6: {
-      const sockaddr_in6* addr_in =
-          reinterpret_cast<const sockaddr_in6*>(addr.address());
-      if (memcmp(&addr_in->sin6_addr, &in6addr_loopback,
-                 sizeof(in6addr_loopback)) != 0) {
-        return absl::InvalidArgumentError("Address is not loopback");
-      }
-      return ntohs(addr_in->sin6_port);
-    }
-  }
+  grpc_resolved_address ra;
+  memcpy(ra.addr, addr.address(), addr.size());
+  ra.len = addr.size();
+  return grpc_sockaddr_get_port(&ra);
 }
 
 }  // namespace
