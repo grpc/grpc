@@ -23,10 +23,16 @@
 
 #include <stdint.h>
 
+#include <string>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
+#include "opencensus/trace/trace_id.h"
 
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
@@ -63,6 +69,17 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
                                 uint64_t attempt_num, bool is_transparent_retry,
                                 bool arena_allocated);
+
+    std::string TraceId() override {
+      return context_.Context().trace_id().ToHex();
+    }
+
+    std::string SpanId() override {
+      return context_.Context().span_id().ToHex();
+    }
+
+    bool IsSampled() override { return context_.Span().IsSampled(); }
+
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
@@ -106,6 +123,14 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
                                 grpc_core::Slice path, grpc_core::Arena* arena,
                                 bool tracing_enabled);
   ~OpenCensusCallTracer() override;
+
+  std::string TraceId() override {
+    return context_.Context().trace_id().ToHex();
+  }
+
+  std::string SpanId() override { return context_.Context().span_id().ToHex(); }
+
+  bool IsSampled() override { return context_.Span().IsSampled(); }
 
   void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(

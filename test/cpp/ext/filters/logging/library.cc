@@ -16,17 +16,12 @@
 //
 //
 
-#include "test/cpp/ext/filters/census/library.h"
+#include "test/cpp/ext/filters/logging/library.h"
 
 namespace grpc {
 namespace testing {
 
-const ::opencensus::tags::TagKey TEST_TAG_KEY =
-    ::opencensus::tags::TagKey::Register("my_key");
-const char* TEST_TAG_VALUE = "my_value";
-const char* kExpectedTraceIdKey = "expected_trace_id";
-
-ExportedTracesRecorder* traces_recorder_ = new ExportedTracesRecorder();
+TestLoggingSink* g_test_logging_sink = nullptr;
 
 }  // namespace testing
 }  // namespace grpc
