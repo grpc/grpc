@@ -132,7 +132,9 @@ ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
           absl::StatusOr<std::vector<SRVRecord>> records) mutable {
         return engine_->Asynchronously(
             [on_resolve = std::move(on_resolve),
-             records = std::move(records)]() mutable {});
+             records = std::move(records)]() mutable {
+              on_resolve(std::move(records));
+            });
       },
       name, timeout);
 }
