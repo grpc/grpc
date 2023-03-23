@@ -4487,11 +4487,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "json",
         "lb_policy",
         "lb_policy_factory",
-        "subchannel_interface",
+        "pollset_set",
         "//:config",
         "//:debug_location",
         "//:gpr",
