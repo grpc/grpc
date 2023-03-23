@@ -102,6 +102,10 @@ class LoggingSink {
     std::string service_name;
     std::string method_name;
     Timestamp timestamp;
+    // Optional tracing details
+    std::string trace_id;
+    std::string span_id;
+    bool is_sampled;
   };
 
   virtual ~LoggingSink() = default;

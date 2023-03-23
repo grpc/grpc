@@ -131,6 +131,8 @@ class ExportedTracesRecorder
       ABSL_GUARDED_BY(mutex_);
 };
 
+extern ExportedTracesRecorder* traces_recorder_;
+
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
@@ -197,7 +199,6 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
   std::thread server_thread_;
 
   std::unique_ptr<EchoTestService::Stub> stub_;
-  static ExportedTracesRecorder* traces_recorder_;
 };
 
 }  // namespace testing
