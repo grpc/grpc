@@ -403,8 +403,8 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   float weight = 0;
   if (qps > 0 && cpu_utilization > 0) {
     double penalty = 0.0;
-    if (eps > 0 && wrr_->config_->error_utilization_penalty() > 0) {
-      penalty = eps / qps * wrr_->config_->error_utilization_penalty();
+    if (eps > 0 && error_utilization_penalty > 0) {
+      penalty = eps / qps * error_utilization_penalty;
     }
     weight = qps / (cpu_utilization + penalty);
   }
@@ -414,7 +414,7 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
               "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f: "
               "error_util_penalty=%f, weight=%f (not updating)",
               wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
-              wrr_->config_->error_utilization_penalty(), weight);
+              error_utilization_penalty, weight);
     }
     return;
   }
@@ -427,8 +427,8 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
             "error_util_penalty=%f : setting weight=%f old_weight=%f now=%s "
             "last_update_time=%s non_empty_since=%s",
             wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
-            wrr_->config_->error_utilization_penalty(), weight, weight_,
-            now.ToString().c_str(), last_update_time_.ToString().c_str(),
+            error_utilization_penalty, weight, weight_, now.ToString().c_str(),
+            last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
   }
   if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
