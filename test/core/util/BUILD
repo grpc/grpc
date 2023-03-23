@@ -113,7 +113,6 @@ grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
-    alwayslink = 1,
     external_deps = [
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
@@ -152,13 +151,13 @@ grpc_cc_library(
         "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
-    alwayslink = 1,
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/status",
@@ -192,6 +191,7 @@ grpc_cc_library(
         "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -337,6 +337,24 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "grpc_test_util",
+        "//:gpr",
+        "//:grpc",
+        "//:sockaddr_utils",
+        "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_udp_and_tcp_server_unsecure",
+    srcs = ["fake_udp_and_tcp_server.cc"],
+    hdrs = ["fake_udp_and_tcp_server.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
