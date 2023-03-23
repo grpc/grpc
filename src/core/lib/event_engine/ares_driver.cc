@@ -367,7 +367,7 @@ GrpcAresRequest::GrpcAresRequest(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : grpc_core::InternallyRefCounted<GrpcAresRequest>(
+    : grpc_core::RefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
                                                           : nullptr),
       name_(name),
@@ -435,8 +435,6 @@ void GrpcAresRequest::Cancel() {
     ShutdownPollerHandles();
   }
 }
-
-void GrpcAresRequest::Orphan() {}
 
 void GrpcAresRequest::Work() {
   std::unique_ptr<FdNodeList> new_list = std::make_unique<FdNodeList>();
@@ -588,9 +586,8 @@ void GrpcAresRequest::OnReadable(FdNode* fd_node, absl::Status status) {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->readable_registered);
   fd_node->readable_registered = false;
-  GRPC_ARES_DRIVER_TRACE_LOG("OnReadable: request: %p %s; fd: %d; status: %s",
-                             this, ToString().c_str(), fd_node->as,
-                             status.ToString().c_str());
+  GRPC_ARES_DRIVER_TRACE_LOG("OnReadable: request: %p; fd: %d; status: %s",
+                             this, fd_node->as, status.ToString().c_str());
   GRPC_ARES_DRIVER_STACK_TRACE();
   if (status.ok() && !shutting_down_) {
     do {

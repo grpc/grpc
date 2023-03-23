@@ -38,7 +38,7 @@
 
 #include "include/grpc/event_engine/event_engine.h"
 
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -57,8 +57,7 @@ class GrpcPolledFd;
 class GrpcPolledFdFactory;
 
 // An inflight name service lookup request
-class GrpcAresRequest
-    : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
+class GrpcAresRequest : public grpc_core::RefCounted<GrpcAresRequest> {
  public:
   ~GrpcAresRequest() override;
 
@@ -76,16 +75,6 @@ class GrpcAresRequest
                            EventEngine::Duration timeout,
                            RegisterAresSocketWithPollerCallback register_cb,
                            EventEngine* event_engine);
-
-  // Cancel the lookup and start the shutdown process
-  void Orphan() ABSL_LOCKS_EXCLUDED(mu_) override;
-  std::string ToString() const {
-    std::ostringstream s;
-    s << "[channel: " << channel_ << "; host: " << host_
-      << "; port: " << ntohs(port_) << "; timeout: " << timeout_.count()
-      << "ns]";
-    return s.str();
-  }
 
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

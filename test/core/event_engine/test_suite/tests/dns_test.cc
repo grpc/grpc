@@ -450,9 +450,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   EXPECT_TRUE(verified);
 }
 
-// In the spirit of cancel_ares_query_test.cc:
-#define CancelDuringActiveQuery EventEngineDNSTest
-TEST_F(CancelDuringActiveQuery, TestCancelActiveDNSQuery) {
+TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   // Start up fake non responsive DNS server
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
@@ -475,13 +473,26 @@ TEST_F(CancelDuringActiveQuery, TestCancelActiveDNSQuery) {
   EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
   WaitForSingleOwner(std::move(test_ee));
 }
-TEST_F(CancelDuringActiveQuery,
-       TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {}
-TEST_F(
-    CancelDuringActiveQuery,
-    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-}
-TEST_F(
-    CancelDuringActiveQuery,
-    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
+
+TEST_F(EventEngineDNSTest, TestQueryTimeout) {
+  // Start up fake non responsive DNS server
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  const std::string name = "dont-care-since-wont-be-resolved.test.com.";
+  const std::string dns_server =
+      absl::StrFormat("[::1]:%d", fake_dns_server.port());
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = dns_server});
+  grpc_core::Notification dns_resolver_signal;
+  dns_resolver->LookupTXT(
+      [&dns_resolver_signal](absl::StatusOr<std::string> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        dns_resolver_signal.Notify();
+      },
+      name, std::chrono::seconds(3));  // timeout in 3 seconds
+  dns_resolver_signal.WaitForNotification();
 }
