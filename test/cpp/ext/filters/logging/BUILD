@@ -21,7 +21,7 @@ licenses(["notice"])
 grpc_package(name = "test/cpp/ext/filters/logging")
 
 grpc_cc_library(
-    name = "library",
+    name = "logging_test_library",
     testonly = 1,
     srcs = ["library.cc"],
     hdrs = ["library.h"],
@@ -54,7 +54,7 @@ grpc_cc_test(
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
     deps = [
-        ":library",
+        ":logging_test_library",
         "//:grpc++",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
@@ -79,7 +79,7 @@ grpc_cc_test(
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
     deps = [
-        ":library",
+        ":logging_test_library",
         "//:grpc++",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
