@@ -35,7 +35,7 @@ class PerCpu {
       : cpus_(std::min<size_t>(max, gpr_cpu_num_cores())),
         data_{new T[cpus_]} {}
 
-  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu()]; }
+  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
 
   T* begin() { return data_.get(); }
   T* end() { return data_.get() + cpus_; }

@@ -309,7 +309,7 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
   return *this;
 }
 
-experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetricsMetric(
+experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetric(
     string_ref name, double value) {
   internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());

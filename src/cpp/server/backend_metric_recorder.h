@@ -64,8 +64,8 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
       string_ref name, double value) override;
   experimental::CallMetricRecorder& RecordRequestCostMetric(
       string_ref name, double value) override;
-  experimental::CallMetricRecorder& RecordNamedMetricsMetric(
-      string_ref name, double value) override;
+  experimental::CallMetricRecorder& RecordNamedMetric(string_ref name,
+                                                      double value) override;
   // This clears metrics currently recorded. Don't call twice.
   grpc_core::BackendMetricData GetBackendMetricData() override;
 

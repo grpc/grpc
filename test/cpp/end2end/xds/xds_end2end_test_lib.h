@@ -44,6 +44,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -312,7 +313,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                 grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
             strncpy(key, p.first.data(), p.first.size());
             key[p.first.size()] = '\0';
-            recorder->RecordNamedMetricsMetric(key, p.second);
+            recorder->RecordNamedMetric(key, p.second);
           }
         }
         return status;
@@ -721,7 +722,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    std::function<void(EchoRequest*)> request_modifier = [](EchoRequest*) {};
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics =
+        absl::nullopt;
 
     RpcOptions() {}
 
@@ -781,9 +783,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
-    RpcOptions& set_request_modifier(
-        std::function<void(EchoRequest*)> modifier) {
-      request_modifier = std::move(modifier);
+    RpcOptions& set_backend_metrics(
+        const xds::data::orca::v3::OrcaLoadReport& metrics) {
+      backend_metrics = metrics;
       return *this;
     }
 

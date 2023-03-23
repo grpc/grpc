@@ -333,11 +333,11 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     }
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
+      auto* backend_metric_data =
+          args.backend_metric_accessor->GetBackendMetricData();
       const std::map<absl::string_view, double>* named_metrics = nullptr;
-      if (args.backend_metric_accessor != nullptr &&
-          args.backend_metric_accessor->GetBackendMetricData() != nullptr) {
-        named_metrics = &args.backend_metric_accessor->GetBackendMetricData()
-                             ->named_metrics;
+      if (backend_metric_data != nullptr) {
+        named_metrics = &backend_metric_data->named_metrics;
       }
       locality_stats_->AddCallFinished(named_metrics, !args.status.ok());
     }

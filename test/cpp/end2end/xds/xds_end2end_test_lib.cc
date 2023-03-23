@@ -413,7 +413,6 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeAuthorityText() {
 
 void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
                                           EchoRequest* request) const {
-  request_modifier(request);
   for (const auto& item : metadata) {
     context->AddMetadata(item.first, item.second);
   }
@@ -435,6 +434,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   }
   if (skip_cancelled_check) {
     request->mutable_param()->set_skip_cancelled_check(true);
+  }
+  if (backend_metrics.has_value()) {
+    *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
   }
 }
 

@@ -131,7 +131,7 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
 
 XdsClusterLocalityStats::Snapshot
 XdsClusterLocalityStats::GetSnapshotAndReset() {
-  Snapshot snapshot = {};
+  Snapshot snapshot;
   for (auto& percpu_stats : stats_) {
     Snapshot percpu_snapshot = {
         GetAndResetCounter(&percpu_stats.total_successful_requests),
@@ -141,8 +141,10 @@ XdsClusterLocalityStats::GetSnapshotAndReset() {
         GetAndResetCounter(&percpu_stats.total_error_requests),
         GetAndResetCounter(&percpu_stats.total_issued_requests),
         {}};
-    MutexLock lock(&percpu_stats.backend_metrics_mu);
-    percpu_snapshot.backend_metrics = std::move(percpu_stats.backend_metrics);
+    {
+      MutexLock lock(&percpu_stats.backend_metrics_mu);
+      percpu_snapshot.backend_metrics = std::move(percpu_stats.backend_metrics);
+    }
     snapshot += percpu_snapshot;
   }
   return snapshot;

@@ -25,6 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -1389,25 +1390,18 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
       WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
                          WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server with named metrics.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+                 RpcOptions().set_backend_metrics(backend_metrics));
+  named_metrics["foo"] = 0.3;
+  named_metrics["bar"] = 0.4;
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
     CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_request_modifier(
-                            [](EchoRequest* req) {
-                              auto& named_metrics =
-                                  *(req->mutable_param()
-                                        ->mutable_backend_metrics()
-                                        ->mutable_named_metrics());
-                              named_metrics["foo"] = 0.3;
-                              named_metrics["bar"] = 0.4;
-                            }));
+                        RpcOptions().set_server_fail(true).set_backend_metrics(
+                            backend_metrics));
   }
   const size_t total_successful_rpcs_sent =
       (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
@@ -1439,8 +1433,8 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
                              ::testing::Pair("locality1", ::testing::_)));
   size_t num_successful_rpcs = 0;
   size_t num_failed_rpcs = 0;
-  std::map<std::string, size_t> named_metrics_num_requests;
-  std::map<std::string, double> named_metrics_total;
+  std::map<std::string, ClientStats::LocalityStats::LoadMetric>
+      named_metrics_total;
   for (const auto& p : client_stats.locality_stats()) {
     EXPECT_EQ(p.second.total_requests_in_progress, 0U);
     EXPECT_EQ(
@@ -1449,33 +1443,44 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
     num_successful_rpcs += p.second.total_successful_requests;
     num_failed_rpcs += p.second.total_error_requests;
     for (const auto& s : p.second.load_metrics) {
-      named_metrics_num_requests[s.first] +=
-          s.second.num_requests_finished_with_metric;
-      named_metrics_total[s.first] += s.second.total_metric_value;
+      named_metrics_total[s.first] += s.second;
     }
   }
   EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
   EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
   EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
   EXPECT_THAT(
-      named_metrics_num_requests,
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair("foo", (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                     backends_.size()),
-          ::testing::Pair("bar", (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                     backends_.size())));
-  EXPECT_THAT(
       named_metrics_total,
       ::testing::UnorderedElementsAre(
           ::testing::Pair(
-              "foo", ::testing::DoubleEq(
-                         (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                         (kNumFailuresPerAddress * backends_.size()) * 0.3)),
+              "foo",
+              ::testing::AllOf(
+                  ::testing::Field(
+                      &ClientStats::LocalityStats::LoadMetric::
+                          num_requests_finished_with_metric,
+                      (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                          backends_.size()),
+                  ::testing::Field(
+                      &ClientStats::LocalityStats::LoadMetric::
+                          total_metric_value,
+                      ::testing::DoubleEq(
+                          (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                          (kNumFailuresPerAddress * backends_.size()) * 0.3)))),
           ::testing::Pair(
-              "bar", ::testing::DoubleEq(
-                         (kNumRpcsPerAddress * backends_.size()) * 2.0 +
-                         (kNumFailuresPerAddress * backends_.size()) * 0.4))));
+              "bar", ::testing::AllOf(
+                         ::testing::Field(
+                             &ClientStats::LocalityStats::LoadMetric::
+                                 num_requests_finished_with_metric,
 
+                             (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                                 backends_.size()),
+                         ::testing::Field(
+                             &ClientStats::LocalityStats::LoadMetric::
+                                 total_metric_value,
+                             ::testing::DoubleEq(
+                                 (kNumRpcsPerAddress * backends_.size()) * 2.0 +
+                                 (kNumFailuresPerAddress * backends_.size()) *
+                                     0.4))))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -1492,25 +1497,18 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+                 RpcOptions().set_backend_metrics(backend_metrics));
+  named_metrics["foo"] = 0.3;
+  named_metrics["bar"] = 0.4;
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
     CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_request_modifier(
-                            [](EchoRequest* req) {
-                              auto& named_metrics =
-                                  *(req->mutable_param()
-                                        ->mutable_backend_metrics()
-                                        ->mutable_named_metrics());
-                              named_metrics["foo"] = 0.3;
-                              named_metrics["bar"] = 0.4;
-                            }));
+                        RpcOptions().set_server_fail(true).set_backend_metrics(
+                            backend_metrics));
   }
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -1609,11 +1607,11 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  ASSERT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_)));
-  EXPECT_THAT(client_stats.locality_stats().at("locality0").load_metrics,
-              ::testing::IsEmpty());
+  ASSERT_THAT(client_stats.locality_stats(),
+              ::testing::ElementsAre(::testing::Pair(
+                  "locality0",
+                  ::testing::Field(&ClientStats::LocalityStats::load_metrics,
+                                   ::testing::IsEmpty()))));
   // Shut down the balancer.
   balancer_->Shutdown();
   // We should continue using the last EDS response we received from the
@@ -1636,14 +1634,12 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // This tells us that we're now using the new serverlist.
   num_rpcs += WaitForAllBackends(DEBUG_LOCATION, 2, 4);
   // Send one RPC per backend.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;
   CheckRpcSendOk(DEBUG_LOCATION, 2,
-                 RpcOptions().set_request_modifier([](EchoRequest* req) {
-                   auto& named_metrics = *(req->mutable_param()
-                                               ->mutable_backend_metrics()
-                                               ->mutable_named_metrics());
-                   named_metrics["foo"] = 1.0;
-                   named_metrics["bar"] = 2.0;
-                 }));
+                 RpcOptions().set_backend_metrics(backend_metrics));
   num_rpcs += 2;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();

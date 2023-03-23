@@ -86,8 +86,8 @@ class CallMetricRecorder {
   /// itself, since it's going to be sent as trailers after the RPC
   /// finishes. It is assumed the strings are common names that
   /// are global constants.
-  virtual CallMetricRecorder& RecordNamedMetricsMetric(string_ref name,
-                                                       double value) = 0;
+  virtual CallMetricRecorder& RecordNamedMetric(string_ref name,
+                                                double value) = 0;
 };
 
 }  // namespace experimental

@@ -159,7 +159,7 @@ class MyTestServiceImpl : public TestServiceImpl {
             grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
         strncpy(key, p.first.data(), p.first.size());
         key[p.first.size()] = '\0';
-        recorder->RecordNamedMetricsMetric(key, p.second);
+        recorder->RecordNamedMetric(key, p.second);
       }
     }
     return TestServiceImpl::Echo(context, request, response);

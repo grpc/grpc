@@ -160,8 +160,8 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
  public:
   struct BackendMetric {
-    uint64_t num_requests_finished_with_metric;
-    double total_metric_value;
+    uint64_t num_requests_finished_with_metric = 0;
+    double total_metric_value = 0;
 
     BackendMetric& operator+=(const BackendMetric& other) {
       num_requests_finished_with_metric +=
@@ -176,10 +176,10 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   struct Snapshot {
-    uint64_t total_successful_requests;
-    uint64_t total_requests_in_progress;
-    uint64_t total_error_requests;
-    uint64_t total_issued_requests;
+    uint64_t total_successful_requests = 0;
+    uint64_t total_requests_in_progress = 0;
+    uint64_t total_error_requests = 0;
+    uint64_t total_issued_requests = 0;
     std::map<std::string, BackendMetric> backend_metrics;
 
     Snapshot& operator+=(const Snapshot& other) {
