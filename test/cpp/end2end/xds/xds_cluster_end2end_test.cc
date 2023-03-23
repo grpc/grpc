@@ -1375,6 +1375,18 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType().set_enable_load_reporting()),
     &XdsTestType::Name);
 
+MATCHER_P2(LoadMetricEq, num_requests_finished_with_metric, total_metric_value,
+           "equals LoadMetric") {
+  bool match = true;
+  match &= ::testing::ExplainMatchResult(num_requests_finished_with_metric,
+                                         arg.num_requests_finished_with_metric,
+                                         result_listener);
+  match &=
+      ::testing::ExplainMatchResult(::testing::DoubleEq(total_metric_value),
+                                    arg.total_metric_value, result_listener);
+  return match;
+}
+
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
   CreateAndStartBackends(4);
@@ -1454,33 +1466,22 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
       ::testing::UnorderedElementsAre(
           ::testing::Pair(
               "foo",
-              ::testing::AllOf(
-                  ::testing::Field(
-                      &ClientStats::LocalityStats::LoadMetric::
-                          num_requests_finished_with_metric,
-                      (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                          backends_.size()),
-                  ::testing::Field(
-                      &ClientStats::LocalityStats::LoadMetric::
-                          total_metric_value,
-                      ::testing::DoubleEq(
-                          (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                          (kNumFailuresPerAddress * backends_.size()) * 0.3)))),
+              LoadMetricEq(
+                  /*num_requests_finished_with_metric=*/
+                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                      backends_.size(),
+                  /*total_metric_value=*/
+                  (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                      (kNumFailuresPerAddress * backends_.size()) * 0.3)),
           ::testing::Pair(
-              "bar", ::testing::AllOf(
-                         ::testing::Field(
-                             &ClientStats::LocalityStats::LoadMetric::
-                                 num_requests_finished_with_metric,
-
-                             (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                 backends_.size()),
-                         ::testing::Field(
-                             &ClientStats::LocalityStats::LoadMetric::
-                                 total_metric_value,
-                             ::testing::DoubleEq(
-                                 (kNumRpcsPerAddress * backends_.size()) * 2.0 +
-                                 (kNumFailuresPerAddress * backends_.size()) *
-                                     0.4))))));
+              "bar",
+              LoadMetricEq(
+                  /*num_requests_finished_with_metric=*/
+                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                      backends_.size(),
+                  /*total_metric_value=*/
+                  (kNumRpcsPerAddress * backends_.size()) * 2.0 +
+                      (kNumFailuresPerAddress * backends_.size()) * 0.4))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -1538,36 +1539,24 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
               ::testing::UnorderedElementsAre(
                   ::testing::Pair(
                       "foo",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                  backends_.size()),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  total_metric_value,
-                              ::testing::DoubleEq(
-                                  (kNumRpcsPerAddress * backends_.size()) *
-                                      1.0 +
-                                  (kNumFailuresPerAddress * backends_.size()) *
-                                      0.3)))),
+                      LoadMetricEq(
+                          /*num_requests_finished_with_metric=*/
+                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                              backends_.size(),
+                          /*total_metric_value=*/
+                          (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                              (kNumFailuresPerAddress * backends_.size()) *
+                                  0.3)),
                   ::testing::Pair(
                       "bar",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                                  backends_.size()),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  total_metric_value,
-                              ::testing::DoubleEq(
-                                  (kNumRpcsPerAddress * backends_.size()) *
-                                      2.0 +
-                                  (kNumFailuresPerAddress * backends_.size()) *
-                                      0.4)))))))));
+                      LoadMetricEq(
+                          /*num_requests_finished_with_metric=*/
+                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                              backends_.size(),
+                          /*total_metric_value=*/
+                          (kNumRpcsPerAddress * backends_.size()) * 2.0 +
+                              (kNumFailuresPerAddress * backends_.size()) *
+                                  0.4)))))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -1607,7 +1596,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  ASSERT_THAT(client_stats.locality_stats(),
+  EXPECT_THAT(client_stats.locality_stats(),
               ::testing::ElementsAre(::testing::Pair(
                   "locality0",
                   ::testing::Field(&ClientStats::LocalityStats::load_metrics,
@@ -1656,26 +1645,14 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
           ::testing::Field(
               &ClientStats::LocalityStats::load_metrics,
               ::testing::UnorderedElementsAre(
-                  ::testing::Pair(
-                      "foo",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              2),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               LoadMetric::total_metric_value,
-                                           ::testing::DoubleEq(2.0)))),
-                  ::testing::Pair(
-                      "bar",
-                      ::testing::AllOf(
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::LoadMetric::
-                                  num_requests_finished_with_metric,
-                              2),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               LoadMetric::total_metric_value,
-                                           ::testing::DoubleEq(4.0)))))))));
+                  ::testing::Pair("foo",
+                                  LoadMetricEq(
+                                      /*num_requests_finished_with_metric=*/2,
+                                      /*total_metric_value=*/2.0)),
+                  ::testing::Pair("bar",
+                                  LoadMetricEq(
+                                      /*num_requests_finished_with_metric=*/2,
+                                      /*total_metric_value=*/4.0)))))));
 }
 
 // Tests load reporting when switching over from one cluster to another.

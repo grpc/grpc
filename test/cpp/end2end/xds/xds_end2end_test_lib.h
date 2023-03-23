@@ -722,8 +722,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics =
-        absl::nullopt;
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
 
     RpcOptions() {}
 
@@ -784,8 +783,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     }
 
     RpcOptions& set_backend_metrics(
-        const xds::data::orca::v3::OrcaLoadReport& metrics) {
-      backend_metrics = metrics;
+        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+      backend_metrics = std::move(metrics);
       return *this;
     }
 
