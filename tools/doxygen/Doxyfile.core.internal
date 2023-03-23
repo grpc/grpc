@@ -1827,6 +1827,7 @@ src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/memory_allocator_factory.h \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix.h \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
@@ -2182,14 +2183,12 @@ src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
-src/core/lib/promise/for_each.h \
 src/core/lib/promise/if.h \
 src/core/lib/promise/interceptor_list.h \
+src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
-src/core/lib/promise/party.cc \
-src/core/lib/promise/party.h \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
@@ -2398,8 +2397,6 @@ src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
-src/core/lib/transport/batch_builder.cc \
-src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/connectivity_state.cc \

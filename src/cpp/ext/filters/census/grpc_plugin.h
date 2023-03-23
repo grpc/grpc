@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
 
@@ -127,8 +129,14 @@ using experimental::ServerStartedRpcsHour;             // NOLINT
 
 namespace internal {
 
-// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
+extern const absl::string_view kRpcClientApiLatencyMeasureName;
+
+// This view is in an internal namespace since this is meant just for GCP
+// Observability purposes.
+const ::opencensus::stats::ViewDescriptor& ClientApiLatency();
+
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the
+// start of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
 void EnableOpenCensusTracing(bool enable);
 // Gets the current status of OpenCensus stats/tracing

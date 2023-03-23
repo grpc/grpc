@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/loop.h"
 
-#include <utility>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
@@ -49,20 +47,6 @@ TEST(LoopTest, LoopOfSeq) {
   auto x =
       Loop(Seq([]() { return 42; }, [](int i) -> LoopCtl<int> { return i; }))();
   EXPECT_EQ(x, Poll<int>(42));
-}
-
-TEST(LoopTest, CanAccessFactoryLambdaVariables) {
-  int i = 0;
-  auto x = Loop([p = &i]() {
-    return [q = &p]() -> Poll<LoopCtl<int>> {
-      ++**q;
-      return Pending{};
-    };
-  });
-  auto y = std::move(x);
-  auto z = std::move(y);
-  z();
-  EXPECT_EQ(i, 1);
 }
 
 }  // namespace grpc_core

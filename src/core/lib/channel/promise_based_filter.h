@@ -184,7 +184,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
+  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -222,11 +222,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     void Resume(grpc_transport_stream_op_batch* batch) {
       GPR_ASSERT(!call_->is_last());
-      if (batch->HasOp()) {
-        release_.push_back(batch);
-      } else if (batch->on_complete != nullptr) {
-        Complete(batch);
-      }
+      release_.push_back(batch);
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,
@@ -244,8 +240,6 @@ class BaseCallData : public Activity, private Wakeable {
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
-
-    BaseCallData* call() const { return call_; }
 
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
@@ -288,6 +282,11 @@ class BaseCallData : public Activity, private Wakeable {
       grpc_metadata_batch* p) {
     return Arena::PoolPtr<grpc_metadata_batch>(p,
                                                Arena::PooledDeleter(nullptr));
+  }
+
+  static grpc_metadata_batch* UnwrapMetadata(
+      Arena::PoolPtr<grpc_metadata_batch> p) {
+    return p.release();
   }
 
   class ReceiveInterceptor final : public Interceptor {
@@ -403,8 +402,6 @@ class BaseCallData : public Activity, private Wakeable {
       kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
-      // We're done, but we haven't gotten a status yet
-      kCancelledButNoStatus,
     };
     static const char* StateString(State);
 
@@ -545,8 +542,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup(WakeupMask) final;
-  void Drop(WakeupMask) final;
+  void Wakeup(void*) final;
+  void Drop(void*) final;
 
   virtual void OnWakeup() = 0;
 
@@ -572,11 +569,9 @@ class ClientCallData : public BaseCallData {
   ~ClientCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll(WakeupMask) final;
+  void ForceImmediateRepoll() final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
-
-  std::string DebugTag() const override;
 
  private:
   // At what stage is our handling of send initial metadata?
@@ -674,8 +669,6 @@ class ClientCallData : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Polling related data. Non-null if we're actively polling
   PollContext* poll_ctx_ = nullptr;
-  // Initial metadata outstanding token
-  ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
 class ServerCallData : public BaseCallData {
@@ -685,11 +678,9 @@ class ServerCallData : public BaseCallData {
   ~ServerCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll(WakeupMask) final;
+  void ForceImmediateRepoll() final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
-
-  std::string DebugTag() const override;
 
  protected:
   absl::string_view ClientOrServerString() const override { return "SVR"; }

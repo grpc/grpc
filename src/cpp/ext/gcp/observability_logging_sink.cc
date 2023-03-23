@@ -345,6 +345,11 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
     gpr_timespec timespec = entry.timestamp.as_timespec(GPR_CLOCK_REALTIME);
     proto_entry->mutable_timestamp()->set_seconds(timespec.tv_sec);
     proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
+    // Add tracing details
+    proto_entry->set_span_id(entry.span_id);
+    proto_entry->set_trace(
+        absl::StrFormat("projects/%s/traces/%s", project_id_, entry.trace_id));
+    proto_entry->set_trace_sampled(entry.is_sampled);
     // TODO(yashykt): Check if we need to fill receive timestamp
     EntryToJsonStructProto(std::move(entry),
                            proto_entry->mutable_json_payload());

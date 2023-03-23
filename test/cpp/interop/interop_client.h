@@ -21,8 +21,6 @@
 
 #include <memory>
 
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 
