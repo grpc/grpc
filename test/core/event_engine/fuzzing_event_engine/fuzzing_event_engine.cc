@@ -34,7 +34,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
@@ -339,6 +338,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
         [on_writable = std::move(on_writable)]() mutable {
           on_writable(absl::InternalError("Endpoint closed"));
         });
+    return false;
   }
   // If the write succeeds immediately, then we return true.
   if (middle_->Write(data, my_index())) return true;
