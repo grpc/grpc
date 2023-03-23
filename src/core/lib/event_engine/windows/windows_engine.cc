@@ -226,7 +226,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     Run([on_connect = std::move(on_connect), status = uri.status()]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
                           uri->c_str());
@@ -243,14 +243,14 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   status = PrepareSocket(sock);
   if (!status.ok()) {
     Run([on_connect = std::move(on_connect), status]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Grab the function pointer for ConnectEx for that specific socket It may
   // change depending on the interface.
@@ -267,7 +267,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
              "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // bind the local address
   auto local_address = ResolvedAddressMakeWild6(0);
@@ -277,7 +277,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "bind")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Connect
   auto watched_socket = iocp_.Watch(sock);
@@ -295,7 +295,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
         on_connect(status);
       });
       watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      return EventEngine::kInvalidConnectionHandle;
+      return EventEngine::ConnectionHandle::kInvalid;
     }
   }
   GPR_ASSERT(watched_socket != nullptr);
@@ -332,7 +332,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (TaskHandleComparator<ConnectionHandle>::Eq()(
-          handle, EventEngine::kInvalidConnectionHandle)) {
+          handle, EventEngine::ConnectionHandle::kInvalid)) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;

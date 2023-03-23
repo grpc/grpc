@@ -18,11 +18,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-constexpr EventEngine::TaskHandle EventEngine::kInvalidTaskHandle;
-constexpr EventEngine::ConnectionHandle EventEngine::kInvalidConnectionHandle;
-constexpr EventEngine::DNSResolver::LookupTaskHandle
-    EventEngine::DNSResolver::kInvalidLookupTaskHandle;
-
 constexpr EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 constexpr EventEngine::ConnectionHandle
     EventEngine::ConnectionHandle::kInvalid = {-1, -1};

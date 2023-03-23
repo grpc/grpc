@@ -126,7 +126,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
     friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
-  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
@@ -138,7 +137,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     friend bool operator!=(const ConnectionHandle& lhs,
                            const ConnectionHandle& rhs);
   };
-  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -333,7 +331,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
       friend bool operator!=(const LookupTaskHandle& lhs,
                              const LookupTaskHandle& rhs);
     };
-    static constexpr LookupTaskHandle kInvalidLookupTaskHandle{-1, -1};
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.
