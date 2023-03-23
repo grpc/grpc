@@ -73,8 +73,8 @@ def generate_resolver_component_tests():
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
                 "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-                "//:grpc++",
-                "//:grpc",
+                "//:grpc++%s" % unsecure_build_config_suffix,
+                "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
             ],
