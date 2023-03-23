@@ -27,15 +27,9 @@ if "%GRPC_PROTOC_BUILD_COMPILER_JOBS%"=="" (
   set GRPC_PROTOC_BUILD_COMPILER_JOBS=2
 )
 
-@rem Workaround a bug where VS150COMNTOOLS is not set due to a bug in VS 2017 installer
-@rem see https://developercommunity.visualstudio.com/t/installing-visualstudio-build-tools-doesnt-add-env/17435
-If "%VS150COMNTOOLS%" == "" (
-  set "VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
-)
-
-@rem set cl.exe build environment to build with VS2015 tooling
+@rem set cl.exe build environment to build with VS2019 tooling
 @rem this is required for Ninja build to work
-call "%VS150COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %ARCHITECTURE%
+call "%VS160COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %ARCHITECTURE%
 @rem restore command echo
 echo on
 
