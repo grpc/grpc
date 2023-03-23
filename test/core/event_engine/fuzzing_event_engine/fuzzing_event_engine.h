@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -260,6 +261,7 @@ class FuzzingEventEngine : public EventEngine {
   // WriteSizesForConnection() call.
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
+  grpc_pick_port_functions previous_pick_port_functions_;
 };
 
 }  // namespace experimental

@@ -153,12 +153,8 @@ FuzzingEventEngine::FuzzingEventEngine(
   g_fuzzing_event_engine = this;
   g_orig_gpr_now_impl = gpr_now_impl;
   gpr_now_impl = GlobalNowImpl;
-  grpc_set_pick_port_functions(
+  previous_pick_port_functions_ = grpc_set_pick_port_functions(
       grpc_pick_port_functions{+[]() -> int {
-                                 grpc_core::MutexLock lock(&*mu_);
-                                 return g_fuzzing_event_engine->AllocatePort();
-                               },
-                               +[]() -> int {
                                  grpc_core::MutexLock lock(&*mu_);
                                  return g_fuzzing_event_engine->AllocatePort();
                                },
@@ -550,9 +546,7 @@ void FuzzingEventEngine::UnsetGlobalHooks() {
   g_fuzzing_event_engine = nullptr;
   gpr_now_impl = g_orig_gpr_now_impl;
   g_orig_gpr_now_impl = nullptr;
-  grpc_set_pick_port_functions(grpc_pick_port_functions{
-      +[]() -> int { grpc_core::Crash("not set"); },
-      +[]() -> int { grpc_core::Crash("not set"); }, +[](int) {}});
+  grpc_set_pick_port_functions(previous_pick_port_functions_);
 }
 
 FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
