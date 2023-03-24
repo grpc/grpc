@@ -107,6 +107,7 @@ WindowsEventEngine::WindowsEventEngine()
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
+  GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
   {
     grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
@@ -180,7 +181,9 @@ std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
   grpc_core::Crash("unimplemented");
 }
 
-bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
+bool WindowsEventEngine::IsWorkerThread() {
+  return executor_->IsThreadPoolThread();
+}
 
 void WindowsEventEngine::OnConnectCompleted(
     std::shared_ptr<ConnectionState> state) {
@@ -207,7 +210,7 @@ void WindowsEventEngine::OnConnectCompleted(
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
-          cfg, executor_.get());
+          cfg, executor_.get(), shared_from_this());
     }
   }
   cb(std::move(endpoint));

@@ -205,20 +205,14 @@ static void keepalive_watchdog_fired_locked(
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace {
-void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
-                                    absl::string_view annotation) {
-  GPR_ASSERT(s->context);
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return;
+grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
+  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+    return nullptr;
   }
-  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+  return static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
-  if (!call_tracer) {
-    return;
-  }
-  call_tracer->RecordAnnotation(annotation);
 }
 }  // namespace
 
@@ -369,8 +363,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)),
             std::string(t->peer_string.as_string_view()),
-            absl::StrFormat("%s %s", get_vtable()->name,
-                            t->peer_string.as_string_view()),
+            absl::StrCat(get_vtable()->name, " ",
+                         t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
@@ -1232,10 +1226,11 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state), whence.file(), whence.line());
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure,
-                           desc, grpc_core::StatusToString(error).c_str()));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(
+        absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
+                        grpc_core::StatusToString(error).c_str()));
   }
 
   if (!error.ok()) {
@@ -1310,12 +1305,12 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat(
-               "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
-               op->on_complete));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(absl::StrFormat(
+        "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
+        grpc_transport_stream_op_batch_string(op, true).c_str(),
+        op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -3118,9 +3113,24 @@ void grpc_chttp2_transport_start_reading(
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
-  t->notify_on_receive_settings = notify_on_receive_settings;
-  t->notify_on_close = notify_on_close;
   t->combiner->Run(
-      GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t, nullptr),
+      grpc_core::NewClosure([t, notify_on_receive_settings,
+                             notify_on_close](grpc_error_handle) {
+        if (!t->closed_with_error.ok()) {
+          if (notify_on_receive_settings != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
+                                    t->closed_with_error);
+          }
+          if (notify_on_close != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
+                                    t->closed_with_error);
+          }
+          GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
+          return;
+        }
+        t->notify_on_receive_settings = notify_on_receive_settings;
+        t->notify_on_close = notify_on_close;
+        read_action_locked(t, absl::OkStatus());
+      }),
       absl::OkStatus());
 }

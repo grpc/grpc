@@ -29,7 +29,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
-                  Executor* Executor);
+                  Executor* Executor, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
@@ -49,11 +49,21 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                absl::AnyInvocable<void(absl::Status)> cb);
     // Resets the per-request data
     void Reset();
+    // Run the callback with whatever data is available, and reset state.
+    //
+    // Returns true if the callback has been called with some data. Returns
+    // false if no data has been read.
+    bool MaybeFinishIfDataHasAlreadyBeenRead();
+    // Execute the callback and reset.
+    void ExecuteCallbackAndReset(absl::Status status);
+    // Swap any leftover slices into the provided buffer
+    void DonateSpareSlices(SliceBuffer* buffer);
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
     absl::AnyInvocable<void(absl::Status)> cb_;
     SliceBuffer* buffer_ = nullptr;
+    SliceBuffer last_read_buffer_;
   };
 
   // Permanent closure type for Write callbacks
@@ -86,6 +96,10 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     HandleWriteClosure handle_write_event;
   };
 
+  // Perform the low-level calls and execute the HandleReadClosure
+  // asynchronously.
+  absl::Status DoTcpRead(SliceBuffer* buffer);
+
   EventEngine::ResolvedAddress peer_address_;
   std::string peer_address_string_;
   EventEngine::ResolvedAddress local_address_;
@@ -93,6 +107,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   MemoryAllocator allocator_;
   Executor* executor_;
   std::shared_ptr<AsyncIOState> io_state_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 }  // namespace experimental

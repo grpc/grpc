@@ -63,7 +63,6 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -388,8 +387,9 @@ class ClientChannel::LoadBalancedCall
   ConfigSelector::CallDispatchController* call_dispatch_controller() const {
     return call_dispatch_controller_;
   }
-  CallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return call_attempt_tracer_;
+  ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
+    return static_cast<ClientCallTracer::CallAttemptTracer*>(
+        call_context()[GRPC_CONTEXT_CALL_TRACER].value);
   }
   gpr_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }
   ConnectedSubchannel* connected_subchannel() const {
@@ -442,7 +442,6 @@ class ClientChannel::LoadBalancedCall
   ClientChannel* chand_;
 
   ConfigSelector::CallDispatchController* call_dispatch_controller_;
-  CallTracer::CallAttemptTracer* call_attempt_tracer_;
 
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
@@ -525,7 +524,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
 
   static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-  static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
   // Called to perform a pick, both when the call is initially started
@@ -567,11 +565,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-
-  // For intercepting recv_message_ready.
-  absl::optional<SliceBuffer>* recv_message_ = nullptr;
-  grpc_closure recv_message_ready_;
-  grpc_closure* original_recv_message_ready_ = nullptr;
 
   // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;

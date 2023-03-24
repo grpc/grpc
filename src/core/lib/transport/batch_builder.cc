@@ -61,6 +61,7 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
     : party(static_cast<Party*>(Activity::current())->Ref()),
       stream_refcount(stream_refcount) {
   batch.payload = payload;
+  batch.is_traced = GetContext<CallContext>()->traced();
 #ifndef NDEBUG
   grpc_stream_ref(stream_refcount, "pending-batch");
 #else
