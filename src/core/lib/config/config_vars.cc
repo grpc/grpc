@@ -103,35 +103,42 @@ ConfigVars::ConfigVars(const Overrides& overrides)
                                          overrides.stacktrace_minloglevel, "")),
       poll_strategy_(
           LoadConfig(FLAGS_grpc_poll_strategy, overrides.poll_strategy, "all")),
-      system_ssl_roots_dir_(LoadConfig(FLAGS_grpc_system_ssl_roots_dir,
-                                       overrides.system_ssl_roots_dir, "")),
-      default_ssl_roots_file_path_(
-          LoadConfig(FLAGS_grpc_default_ssl_roots_file_path,
-                     overrides.default_ssl_roots_file_path, "")),
       ssl_cipher_suites_(LoadConfig(
           FLAGS_grpc_ssl_cipher_suites, overrides.ssl_cipher_suites,
           "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_"
           "SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:"
-          "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384")) {}
+          "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384")),
+      override_system_ssl_roots_dir_(overrides.system_ssl_roots_dir),
+      override_default_ssl_roots_file_path_(
+          overrides.default_ssl_roots_file_path) {}
+
+std::string ConfigVars::SystemSslRootsDir() const {
+  return LoadConfig(FLAGS_grpc_system_ssl_roots_dir,
+                    override_system_ssl_roots_dir_, "");
+}
+
+std::string ConfigVars::DefaultSslRootsFilePath() const {
+  return LoadConfig(FLAGS_grpc_default_ssl_roots_file_path,
+                    override_default_ssl_roots_file_path_, "");
+}
 
 std::string ConfigVars::ToString() const {
   return absl::StrCat(
-      "experiments: ", "\"", absl::CEscape(experiments_), "\"",
+      "experiments: ", "\"", absl::CEscape(Experiments()), "\"",
       ", client_channel_backup_poll_interval_ms: ",
-      client_channel_backup_poll_interval_ms_, ", dns_resolver: ", "\"",
-      absl::CEscape(dns_resolver_), "\"", ", trace: ", "\"",
-      absl::CEscape(trace_), "\"", ", verbosity: ", "\"",
-      absl::CEscape(verbosity_), "\"", ", stacktrace_minloglevel: ", "\"",
-      absl::CEscape(stacktrace_minloglevel_), "\"",
-      ", enable_fork_support: ", enable_fork_support_ ? "true" : "false",
-      ", poll_strategy: ", "\"", absl::CEscape(poll_strategy_), "\"",
-      ", abort_on_leaks: ", abort_on_leaks_ ? "true" : "false",
-      ", system_ssl_roots_dir: ", "\"", absl::CEscape(system_ssl_roots_dir_),
+      ClientChannelBackupPollIntervalMs(), ", dns_resolver: ", "\"",
+      absl::CEscape(DnsResolver()), "\"", ", trace: ", "\"",
+      absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
+      absl::CEscape(Verbosity()), "\"", ", stacktrace_minloglevel: ", "\"",
+      absl::CEscape(StacktraceMinloglevel()), "\"",
+      ", enable_fork_support: ", EnableForkSupport() ? "true" : "false",
+      ", poll_strategy: ", "\"", absl::CEscape(PollStrategy()), "\"",
+      ", abort_on_leaks: ", AbortOnLeaks() ? "true" : "false",
+      ", system_ssl_roots_dir: ", "\"", absl::CEscape(SystemSslRootsDir()),
       "\"", ", default_ssl_roots_file_path: ", "\"",
-      absl::CEscape(default_ssl_roots_file_path_), "\"",
-      ", not_use_system_ssl_roots: ",
-      not_use_system_ssl_roots_ ? "true" : "false",
-      ", ssl_cipher_suites: ", "\"", absl::CEscape(ssl_cipher_suites_), "\"");
+      absl::CEscape(DefaultSslRootsFilePath()), "\"",
+      ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
+      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"");
 }
 
 }  // namespace grpc_core
