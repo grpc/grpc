@@ -1259,8 +1259,9 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p attempt=%p: perAttemptRecvTimeout timer fired: "
-            "error=%s",
-            calld->chand_, calld, call_attempt, StatusToString(error).c_str());
+            "error=%s, per_attempt_recv_timer_handle_.has_value()=%d",
+            calld->chand_, calld, call_attempt, StatusToString(error).c_str(),
+            call_attempt->per_attempt_recv_timer_handle_.has_value());
   }
   CallCombinerClosureList closures;
   call_attempt->per_attempt_recv_timer_handle_.reset();
@@ -2604,6 +2605,9 @@ void RetryFilter::CallData::OnRetryTimer() {
 void RetryFilter::CallData::OnRetryTimerLocked(
     void* arg, GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
+#ifdef NDEBUG
+  (void)error;
+#endif
   auto* calld = static_cast<CallData*>(arg);
   calld->retry_timer_handle_.reset();
   calld->CreateCallAttempt(/*is_transparent_retry=*/false);
