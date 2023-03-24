@@ -206,6 +206,9 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
     if (data.qps != -1) {
       xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
     }
+    if (data.eps != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_eps(response, data.eps);
+    }
     for (const auto& u : data.utilization) {
       xds_data_orca_v3_OrcaLoadReport_utilization_set(
           response,
