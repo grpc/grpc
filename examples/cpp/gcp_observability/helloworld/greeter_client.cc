@@ -85,8 +85,9 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   std::string target_str = absl::GetFlag(FLAGS_target);
-  // Turn on GCP Observability for the whole binary. Note that this should be
-  // done before any other gRPC operation.
+  // Turn on GCP Observability for the whole binary. Based on the configuration,
+  // this will emit observability data (stats, tracing and logging) to GCP
+  // backends. Note that this should be done before any other gRPC operation.
   auto status = grpc::experimental::GcpObservabilityInit();
   if (!status.ok()) {
     std::cerr << "GcpObservabilityInit() failed: " << status.ToString()

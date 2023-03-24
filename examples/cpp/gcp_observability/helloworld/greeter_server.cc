@@ -96,8 +96,9 @@ int main(int argc, char** argv) {
   // Install a signal handler for an indication to shut down server and flush
   // out observability data;
   std::signal(SIGINT, signal_handler);
-  // Turn on GCP Observability for the whole binary. Note that this should be
-  // done before any other gRPC operation.
+  // Turn on GCP Observability for the whole binary. Based on the configuration,
+  // this will emit observability data (stats, tracing and logging) to GCP
+  // backends. Note that this should be done before any other gRPC operation.
   auto status = grpc::experimental::GcpObservabilityInit();
   if (!status.ok()) {
     std::cerr << "GcpObservabilityInit() failed: " << status.ToString()
