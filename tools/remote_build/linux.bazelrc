@@ -17,6 +17,9 @@
 
 import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
 
+# invalidate old and possibly poisoned cache by using a new random UUID as cache key (see b/275038656)
+build --remote_default_exec_properties="grpc_cache_silo_key1=83e33624-ca52-11ed-afca-1b104ed323aa"
+
 # Next section is linux-specific RBE configuration
 build --crosstool_top=//third_party/toolchains:rbe_linux_default_toolchain_suite
 build --extra_toolchains=//third_party/toolchains:rbe_linux_default_cc_toolchain
