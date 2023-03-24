@@ -424,7 +424,6 @@ grpc_cc_library(
         "context",
         "promise_factory",
         "promise_trace",
-        "//:debug_location",
         "ref_counted",
         "//:exec_ctx",
         "//:gpr",
