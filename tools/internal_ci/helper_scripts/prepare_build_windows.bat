@@ -55,7 +55,7 @@ nasm
 
 @rem Install ccache
 mkdir C:\ccache
-curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.6-windows-64/ccache.exe || goto :error
+curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.8-windows-64/ccache.exe || goto :error
 set PATH=C:\ccache;%PATH%
 ccache --version
 

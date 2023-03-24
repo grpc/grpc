@@ -55,6 +55,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "thready_posix_event_engine_test",
+    srcs = ["thready_posix_event_engine_test.cc"],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:server",
+        "//test/core/event_engine/test_suite/tests:timer",
+        "//test/core/event_engine/thready_event_engine",
+    ],
+)
+
+grpc_cc_test(
     name = "windows_event_engine_test",
     srcs = ["windows_event_engine_test.cc"],
     tags = [
