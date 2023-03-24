@@ -3229,14 +3229,25 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   if (server_initial_metadata_ != nullptr) {
     server_initial_metadata_->Close();
   }
+  const auto status =
+      result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   channelz::ServerNode* channelz_node = server_->channelz_node();
   if (channelz_node != nullptr) {
-    if (result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-        GRPC_STATUS_OK) {
+    if (status == GRPC_STATUS_OK) {
       channelz_node->RecordCallSucceeded();
     } else {
       channelz_node->RecordCallFailed();
     }
+  }
+  absl::string_view message_string;
+  if (Slice* message = result->get_pointer(GrpcMessageMetadata())) {
+    message_string = message->as_string_view();
+  }
+  if (message_string.empty()) {
+    RunFinalization(status, nullptr);
+  } else {
+    std::string error_string(message_string);
+    RunFinalization(status, error_string.c_str());
   }
   set_completed();
   ResetDeadline();
