@@ -446,8 +446,7 @@ class RetryFilter::CallData {
     void Abandon();
 
     void OnPerAttemptRecvTimer();
-    static void OnPerAttemptRecvTimerLocked(
-        void* arg, grpc_error_handle error);
+    static void OnPerAttemptRecvTimerLocked(void* arg, grpc_error_handle error);
     void MaybeCancelPerAttemptRecvTimer();
 
     CallData* calld_;
@@ -552,8 +551,7 @@ class RetryFilter::CallData {
   void StartRetryTimer(absl::optional<Duration> server_pushback);
 
   void OnRetryTimer();
-  static void OnRetryTimerLocked(void* arg,
-                                 grpc_error_handle error);
+  static void OnRetryTimerLocked(void* arg, grpc_error_handle /*error*/);
 
   // Adds a closure to closures to start a transparent retry.
   void AddClosureToStartTransparentRetry(CallCombinerClosureList* closures);
@@ -1253,7 +1251,6 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimer() {
 
 void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     void* arg, grpc_error_handle error) {
-  GPR_DEBUG_ASSERT(error.ok());
   auto* call_attempt = static_cast<CallAttempt*>(arg);
   auto* calld = call_attempt->calld_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -2602,12 +2599,8 @@ void RetryFilter::CallData::OnRetryTimer() {
                            "retry timer fired");
 }
 
-void RetryFilter::CallData::OnRetryTimerLocked(
-    void* arg, grpc_error_handle error) {
-  GPR_DEBUG_ASSERT(error.ok());
-#ifdef NDEBUG
-  (void)error;
-#endif
+void RetryFilter::CallData::OnRetryTimerLocked(void* arg,
+                                               grpc_error_handle /*error*/) {
   auto* calld = static_cast<CallData*>(arg);
   calld->retry_timer_handle_.reset();
   calld->CreateCallAttempt(/*is_transparent_retry=*/false);
