@@ -511,25 +511,22 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     on_resolve(status);
     return LookupTaskHandle{};
   }
+  LookupTaskHandle handle{reinterpret_cast<intptr_t>(request),
+                          aba_token_.fetch_add(1)};
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(handle);
   }
-  request->Start(
-      [on_resolve = std::move(on_resolve), this](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result,
-          intptr_t token) mutable {
-        {
-          absl::MutexLock lock(&mu_);
-          // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
-        }
-        on_resolve(std::move(result));
-      });
-  LookupTaskHandle handle;
-  handle.keys[0] = reinterpret_cast<intptr_t>(request);
-  // TODO(yijiem): aba_token at keys[1]?
+  request->Start([on_resolve = std::move(on_resolve), handle, this](
+                     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+                         result) mutable {
+    {
+      absl::MutexLock lock(&mu_);
+      // on_resolved called, no longer inflight.
+      GPR_ASSERT(inflight_requests_.erase(handle) == 1);
+    }
+    on_resolve(std::move(result));
+  });
   return handle;
 }
 
@@ -547,26 +544,23 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
     on_resolve(status);
     return LookupTaskHandle{};
   }
+  LookupTaskHandle handle{reinterpret_cast<intptr_t>(request),
+                          aba_token_.fetch_add(1)};
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(handle);
   }
   request->Start(
-      [on_resolve = std::move(on_resolve), this](
-          absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-              result,
-          intptr_t token) mutable {
+      [on_resolve = std::move(on_resolve), handle,
+       this](absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+                 result) mutable {
         {
           absl::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
+          GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
         on_resolve(std::move(result));
       });
-  LookupTaskHandle handle;
-  handle.keys[0] = reinterpret_cast<intptr_t>(request);
-  // TODO(yijiem): aba_token at keys[1]?
   return handle;
 }
 
@@ -584,33 +578,29 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
     on_resolve(status);
     return LookupTaskHandle{};
   }
+  LookupTaskHandle handle{reinterpret_cast<intptr_t>(request),
+                          aba_token_.fetch_add(1)};
   {
     absl::MutexLock lock(&mu_);
-    inflight_requests_.insert(request);
+    inflight_requests_.insert(handle);
   }
-  request->Start(
-      [on_resolve = std::move(on_resolve), this](
-          absl::StatusOr<std::string> result, intptr_t token) mutable {
-        {
-          absl::MutexLock lock(&mu_);
-          // on_resolved called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(
-                         reinterpret_cast<GrpcAresRequest*>(token)) == 1);
-        }
-        on_resolve(std::move(result));
-      });
-  LookupTaskHandle handle;
-  handle.keys[0] = reinterpret_cast<intptr_t>(request);
-  // TODO(yijiem): aba_token at keys[1]?
+  request->Start([on_resolve = std::move(on_resolve), handle,
+                  this](absl::StatusOr<std::string> result) mutable {
+    {
+      absl::MutexLock lock(&mu_);
+      // on_resolved called, no longer inflight.
+      GPR_ASSERT(inflight_requests_.erase(handle) == 1);
+    }
+    on_resolve(std::move(result));
+  });
   return handle;
 }
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
   absl::MutexLock lock(&mu_);
-  auto iter = inflight_requests_.find(
-      reinterpret_cast<GrpcAresRequest*>(handle.keys[0]));
+  auto iter = inflight_requests_.find(handle);
   if (iter != inflight_requests_.end()) {
-    (*iter)->Cancel();
+    reinterpret_cast<GrpcAresRequest*>(iter->keys[0])->Cancel();
     return true;
   }
   return false;

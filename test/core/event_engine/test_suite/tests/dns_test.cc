@@ -72,6 +72,16 @@ constexpr char kTCPConnectPath[] = "test/cpp/naming/utils/tcp_connect.py";
 constexpr char kHealthCheckRecordName[] =
     "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp";
 
+// You know where this comes from.
+template <typename T>
+void WaitForSingleOwner(std::shared_ptr<T>&& object) {
+  while (object.use_count() > 1) {
+    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
+                         object.use_count());
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
+
 }  // namespace
 
 class EventEngineDNSTest : public EventEngineTest {
@@ -495,4 +505,44 @@ TEST_F(EventEngineDNSTest, TestQueryTimeout) {
       },
       name, std::chrono::seconds(3));  // timeout in 3 seconds
   dns_resolver_signal.WaitForNotification();
+}
+
+TEST_F(EventEngineDNSTest, MultithreadedCancel) {
+  // Start up fake non responsive DNS server
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  const std::string name = "dont-care-since-wont-be-resolved.test.com.";
+  const std::string dns_server =
+      absl::StrFormat("[::1]:%d", fake_dns_server.port());
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = fake_dns_server.address()});
+  constexpr int kNumOfThreads = 10;
+  constexpr int kNumOfIterationsPerThread = 100;
+  std::vector<std::thread> yarn;
+  yarn.reserve(kNumOfThreads);
+  for (int i = 0; i < kNumOfThreads; i++) {
+    yarn.emplace_back([dns_resolver = dns_resolver.get()] {
+      for (int i = 0; i < kNumOfIterationsPerThread; i++) {
+        const std::string name =
+            "dont-care-since-wont-be-resolved.test.com:1234";
+        std::shared_ptr<int> shared_object = std::make_shared<int>();
+        EventEngine::DNSResolver::LookupTaskHandle task_handle =
+            dns_resolver->LookupHostname(
+                [shared_object](auto) {
+                  // Cancel should not execute on_resolve
+                  FAIL() << "This should not be reached";
+                },
+                name, "1234", std::chrono::minutes(1));
+        EXPECT_GT(shared_object.use_count(), 1);
+        EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
+        WaitForSingleOwner(std::move(shared_object));
+      }
+    });
+  }
+  for (int i = 0; i < kNumOfThreads; i++) {
+    yarn[i].join();
+  }
 }
