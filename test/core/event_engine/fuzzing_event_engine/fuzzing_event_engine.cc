@@ -34,6 +34,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -53,18 +54,7 @@ namespace {
 // between ipv4 and ipv6.
 
 EventEngine::ResolvedAddress PortToAddress(int port) {
-  grpc_resolved_address addr;
-  GPR_ASSERT(grpc_parse_ipv4_hostport(absl::StrCat("127.0.0.1:", port).c_str(),
-                                      &addr, false));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
-
-absl::StatusOr<int> AddressToPort(const EventEngine::ResolvedAddress& addr) {
-  grpc_resolved_address ra;
-  memcpy(ra.addr, addr.address(), addr.size());
-  ra.len = addr.size();
-  return grpc_sockaddr_get_port(&ra);
+  return URIToResolvedAddress(absl::StrCat("ipv4:127.0.0.1:", port)).value();
 }
 
 }  // namespace
@@ -247,24 +237,23 @@ bool FuzzingEventEngine::IsPortUsed(int port) {
 absl::StatusOr<int> FuzzingEventEngine::FuzzingListener::Bind(
     const ResolvedAddress& addr) {
   // Extract the port from the address (or fail if non-localhost).
-  auto port = AddressToPort(addr);
-  if (!port.ok()) return port.status();
+  auto port = ResolvedAddressGetPort(addr);
   grpc_core::MutexLock lock(&*mu_);
   // Check that the listener hasn't already been started.
   if (info_->started) return absl::InternalError("Already started");
-  if (*port != 0) {
+  if (port != 0) {
     // If the port is non-zero, check that it's not already in use.
-    if (g_fuzzing_event_engine->IsPortUsed(*port)) {
+    if (g_fuzzing_event_engine->IsPortUsed(port)) {
       return absl::InternalError("Port in use");
     }
   } else {
     // If the port is zero, allocate a new one.
     do {
       port = g_fuzzing_event_engine->AllocatePort();
-    } while (g_fuzzing_event_engine->IsPortUsed(*port));
+    } while (g_fuzzing_event_engine->IsPortUsed(port));
   }
   // Add the port to the listener.
-  info_->ports.push_back(*port);
+  info_->ports.push_back(port);
   return port;
 }
 
@@ -415,11 +404,7 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   auto task_handle = RunAfter(
       Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
         // Check for a legal address and extract the target port number.
-        auto port = AddressToPort(addr);
-        if (!port.ok()) {
-          on_connect(port.status());
-          return;
-        }
+        auto port = ResolvedAddressGetPort(addr);
         grpc_core::MutexLock lock(&*mu_);
         // Find the listener that is listening on the target port.
         for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
@@ -427,7 +412,7 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
           // Listener must be started.
           if (!listener->started) continue;
           for (int listener_port : listener->ports) {
-            if (*port == listener_port) {
+            if (port == listener_port) {
               // Port matches on a started listener: create an endpoint, call
               // on_accept for the listener and on_connect for the client.
               auto middle = std::make_shared<EndpointMiddle>(
