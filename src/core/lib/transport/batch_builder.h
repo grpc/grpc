@@ -154,6 +154,7 @@ class BatchBuilder {
 
     absl::optional<SliceBuffer> payload;
     uint32_t flags;
+    bool call_failed_before_recv_message;
   };
 
   // A pending receive metadata.
@@ -392,14 +393,21 @@ inline auto BatchBuilder::ReceiveMessage(Target target) {
   payload_->recv_message.recv_message_ready = &pc->on_done_closure;
   payload_->recv_message.recv_message = &pc->payload;
   payload_->recv_message.flags = &pc->flags;
-  return batch->RefUntil(
-      Map(pc->done_latch.Wait(),
-          [pc](absl::Status status)
-              -> absl::StatusOr<absl::optional<MessageHandle>> {
-            if (!status.ok()) return status;
-            if (!pc->payload.has_value()) return absl::nullopt;
-            return pc->IntoMessageHandle();
-          }));
+  payload_->recv_message.call_failed_before_recv_message =
+      &pc->call_failed_before_recv_message;
+  return batch->RefUntil(Map(
+      pc->done_latch.Wait(),
+      [pc](absl::Status status)
+          -> absl::StatusOr<absl::optional<MessageHandle>> {
+        if (!status.ok()) return status;
+        if (!pc->payload.has_value()) {
+          if (pc->call_failed_before_recv_message) {
+            return absl::InternalError("Call failed before reading message");
+          }
+          return absl::nullopt;
+        }
+        return pc->IntoMessageHandle();
+      }));
 }
 
 inline auto BatchBuilder::ReceiveInitialMetadata(Target target) {

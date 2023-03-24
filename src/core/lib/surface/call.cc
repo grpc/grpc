@@ -2004,6 +2004,9 @@ class PromiseBasedCall : public Call,
   void Run() override;
 
   virtual ServerCallContext* server_call_context() { return nullptr; }
+  bool failed_before_recv_message() const final {
+    return failed_before_recv_message_.load(std::memory_order_relaxed);
+  }
 
   using Call::arena;
 
@@ -2333,6 +2336,7 @@ class PromiseBasedCall : public Call,
   // GRPC_OP_SEND_MESSAGE (one count each), and 0 once those payloads have been
   // pushed onto the outgoing pipe.
   std::atomic<uint8_t> sends_queued_{0};
+  std::atomic<bool> failed_before_recv_message_{false};
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
@@ -2590,6 +2594,7 @@ void PromiseBasedCall::StartRecvMessage(
                     "finishes: received end-of-stream with error",
                     DebugTag().c_str());
           }
+          failed_before_recv_message_.store(true);
           FailCompletion(completion);
           *recv_message_ = nullptr;
         } else {
@@ -2706,7 +2711,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
   absl::string_view GetServerAuthority() const override { abort(); }
   bool is_trailers_only() const override { return is_trailers_only_; }
-  bool failed_before_recv_message() const override { return false; }
 
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
@@ -3032,7 +3036,6 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CancelWithError(grpc_error_handle) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
-  bool failed_before_recv_message() const override { return false; }
   bool is_trailers_only() const override { abort(); }
   absl::string_view GetServerAuthority() const override {
     gpr_log(GPR_ERROR, "GetServerAuthority(): md=%s",

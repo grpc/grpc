@@ -405,7 +405,7 @@ auto ConnectedChannelStream::RecvMessages(
                          return Continue{};
                        });
           };
-          auto publish_close = [&status]() mutable {
+          auto publish_close = [&incoming_messages, &status]() mutable {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
@@ -413,6 +413,7 @@ auto ConnectedChannelStream::RecvMessages(
                       Activity::current()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
+            if (!status.ok()) incoming_messages.CloseWithError();
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
           return If(has_message, std::move(publish_message),
