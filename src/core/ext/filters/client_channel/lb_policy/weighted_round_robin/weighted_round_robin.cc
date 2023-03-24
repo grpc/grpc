@@ -426,7 +426,7 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
     gpr_log(GPR_INFO,
             "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f "
             "error_util_penalty=%f : setting weight=%f weight_=%f now=%s "
-            "last_update_time=%s non_empty_since_=%s",
+            "last_update_time_=%s non_empty_since_=%s",
             wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
             error_utilization_penalty, weight, weight_, now.ToString().c_str(),
             last_update_time_.ToString().c_str(),
@@ -989,15 +989,14 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
-      // priority was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:priority policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
+          "field:loadBalancingPolicy error:weighted_round_robin policy "
+          "requires configuration. Please use loadBalancingConfig field of "
+          "service config instead.");
     }
     return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
-        json, JsonArgs(), "errors validating priority LB policy config");
+        json, JsonArgs(),
+        "errors validating weighted_round_robin LB policy config");
   }
 };
 
