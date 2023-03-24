@@ -17,26 +17,28 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[4] = {
+static const upb_MiniTable_Sub envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[5] = {
   {.submsg = &google_protobuf_UInt64Value_msginit},
   {.submsg = &google_protobuf_UInt64Value_msginit},
   {.submsg = &google_protobuf_UInt32Value_msginit},
   {.submsg = &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit},
+  {.submsg = &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit},
 };
 
-static const upb_MiniTable_Field envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[6] = {
+static const upb_MiniTable_Field envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[7] = {
   {1, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 24), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(20, 32), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(24, 40), UPB_SIZE(4, 4), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 48), UPB_SIZE(5, 5), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit = {
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[0],
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[0],
-  UPB_SIZE(32, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(32, 56), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -32,6 +32,8 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/cpp/client/client_stats_interceptor.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_lb_policies.h"
@@ -59,6 +61,8 @@ class EchoServer final : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     CheckMetadata(context);
+    // Enabled for compression trace annotation tests.
+    context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
     return TestServiceImpl::Echo(context, request, response);
   }
 
@@ -127,6 +131,8 @@ class ExportedTracesRecorder
       ABSL_GUARDED_BY(mutex_);
 };
 
+extern ExportedTracesRecorder* traces_recorder_;
+
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
@@ -135,6 +141,8 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterQueueOnceLoadBalancingPolicy(builder);
         });
+    grpc::internal::RegisterGlobalClientStatsInterceptorFactory(
+        new grpc::internal::OpenCensusClientInterceptorFactory);
     RegisterOpenCensusPlugin();
     // OpenCensus C++ has no API to unregister a previously-registered handler,
     // therefore we register this handler once, and enable/disable recording in
@@ -191,7 +199,6 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
   std::thread server_thread_;
 
   std::unique_ptr<EchoTestService::Stub> stub_;
-  static ExportedTracesRecorder* traces_recorder_;
 };
 
 }  // namespace testing

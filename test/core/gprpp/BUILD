@@ -444,3 +444,18 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "uuid_v4_test",
+    srcs = ["uuid_v4_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:uuid_v4",
+        "//test/core/util:grpc_test_util",
+    ],
+)

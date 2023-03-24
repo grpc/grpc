@@ -53,6 +53,11 @@ class CallMetricRecorder {
   /// Values outside of the valid range [0, infy) are ignored.
   virtual CallMetricRecorder& RecordQpsMetric(double value) = 0;
 
+  /// Records a call metric measurement for errors per second.
+  /// Multiple calls to this method will override the stored value.
+  /// Values outside of the valid range [0, infy) are ignored.
+  virtual CallMetricRecorder& RecordEpsMetric(double value) = 0;
+
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
   /// override the corresponding stored value. The lifetime of the
