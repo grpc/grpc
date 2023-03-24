@@ -1283,6 +1283,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     };
   }
   Timestamp deadline = GetContext<CallContext>()->deadline();
+  gpr_log(GPR_DEBUG, "Server call: deadline=%s", deadline.ToString().c_str());
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =

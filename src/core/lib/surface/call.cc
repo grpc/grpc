@@ -292,6 +292,9 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   GPR_ASSERT(!parent->is_client_);
 
   if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
+    gpr_log(GPR_DEBUG, "Propagating deadline from parent call: %s / %s",
+            send_deadline_.ToString().c_str(),
+            parent->send_deadline_.ToString().c_str());
     send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
   }
   // for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
@@ -3428,6 +3431,7 @@ ServerCallContext::MakeTopOfServerCallPromise(
   call_->server_initial_metadata_ = call_args.server_initial_metadata;
   call_->client_initial_metadata_ =
       std::move(call_args.client_initial_metadata);
+  call_->set_send_deadline(call_->deadline());
   call_->ProcessIncomingInitialMetadata(*call_->client_initial_metadata_);
   PublishMetadataArray(call_->client_initial_metadata_.get(),
                        publish_initial_metadata);
