@@ -1282,10 +1282,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
           absl::InternalError("Missing :authority header"));
     };
   }
-  // TODO(ctiller): deadline handling
-  Timestamp deadline =
-      call_args.client_initial_metadata->get(GrpcTimeoutMetadata())
-          .value_or(Timestamp::InfFuture());
+  Timestamp deadline = GetContext<CallContext>()->deadline();
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =

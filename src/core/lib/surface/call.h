@@ -107,6 +107,7 @@ class CallContext {
 
   // Update the deadline (if deadline < the current deadline).
   void UpdateDeadline(Timestamp deadline);
+  Timestamp deadline() const;
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion

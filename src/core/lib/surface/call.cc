@@ -1995,6 +1995,10 @@ class PromiseBasedCall : public Call,
 
   void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  Timestamp deadline() {
+    MutexLock lock(&deadline_mu_);
+    return deadline_;
+  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
@@ -2617,6 +2621,8 @@ void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
 void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
 }
+
+Timestamp CallContext::deadline() const { return call_->deadline(); }
 
 ServerCallContext* CallContext::server_call_context() {
   return call_->server_call_context();
@@ -3317,7 +3323,8 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         metadata->Set(GrpcStatusMetadata(),
                       op.data.send_status_from_server.status);
         if (auto* details = op.data.send_status_from_server.status_details) {
-          metadata->Set(GrpcMessageMetadata(), Slice(CSliceRef(*details)));
+          metadata->Set(GrpcMessageMetadata(),
+                        Slice(grpc_slice_copy(*details)));
         }
         spawner.Spawn(
             "call_send_status_from_server",
