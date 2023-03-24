@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/uuid_v4.h"
 
-#include <initializer_list>
-
-#include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
-std::string GenerateUUIDv4(uint64_t hi, uint64_t lo) {
-  uint32_t time_low = hi >> 32;
-  uint16_t time_mid = hi >> 16;
-  uint16_t time_hi_and_version = (hi & 0x0fff) | 0x4000;
-  uint16_t clock_seq_hi_low = ((lo >> 48) & 0x3fff) | 0x8000;
-  uint64_t node = lo & 0xffffffffffff;
-  return absl::StrFormat("%08x-%04x-%04x-%04x-%012x", time_low, time_mid,
-                         time_hi_and_version, clock_seq_hi_low, node);
+namespace {
+
+TEST(UUIDv4Test, Basic) {
+  EXPECT_EQ(GenerateUUIDv4(0, 0), "00000000-0000-4000-8000-000000000000");
+  EXPECT_EQ(GenerateUUIDv4(0x0123456789abcdef, 0x0123456789abcdef),
+            "01234567-89ab-4def-8123-456789abcdef");
 }
 
+}  // namespace
 }  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

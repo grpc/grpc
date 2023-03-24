@@ -1265,6 +1265,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
   add_dependencies(buildtests_cxx uri_parser_test)
   add_dependencies(buildtests_cxx useful_test)
+  add_dependencies(buildtests_cxx uuid_v4_test)
   add_dependencies(buildtests_cxx validation_errors_test)
   add_dependencies(buildtests_cxx varint_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -22034,6 +22035,44 @@ target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::strings
   absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(uuid_v4_test
+  src/core/lib/gprpp/uuid_v4.cc
+  test/core/gprpp/uuid_v4_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(uuid_v4_test PUBLIC cxx_std_14)
+target_include_directories(uuid_v4_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(uuid_v4_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
