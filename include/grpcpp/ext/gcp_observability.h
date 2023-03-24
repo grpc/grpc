@@ -17,10 +17,11 @@
 #ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
 #define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/status/status.h"
 
 namespace grpc {
-namespace experimental {
 
 // Initialize GCP Observability for gRPC.
 // This should be called before any other gRPC operations like creating a
@@ -35,7 +36,18 @@ absl::Status GcpObservabilityInit();
 // Note that graceful shutdown for stats and tracing is not yet supported.
 void GcpObservabilityClose();
 
+namespace experimental {
+// TODO(yashykt): Delete this after the 1.55 release.
+GRPC_DEPRECATED(
+    "Use grpc::GcpObservabilityInit instead. The experimental version will be "
+    "deleted after the 1.55 release.")
+using grpc::GcpObservabilityInit;
+GRPC_DEPRECATED(
+    "Use grpc::GcpObservabilityClose instead. The experimental version will be "
+    "deleted after the 1.55 release.")
+using grpc::GcpObservabilityClose;
 }  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H

@@ -55,7 +55,6 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
 namespace grpc {
-namespace experimental {
 
 namespace {
 
@@ -74,18 +73,20 @@ constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
-  ClientStartedRpcs().RegisterForExport();
-  ClientCompletedRpcs().RegisterForExport();
-  ClientRoundtripLatency().RegisterForExport();
+  experimental::ClientStartedRpcs().RegisterForExport();
+  experimental::ClientCompletedRpcs().RegisterForExport();
+  experimental::ClientRoundtripLatency().RegisterForExport();
   internal::ClientApiLatency().RegisterForExport();
-  ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
-  ClientReceivedCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ClientReceivedCompressedMessageBytesPerRpc()
+      .RegisterForExport();
   // Register server default views for GCP observability
-  ServerStartedRpcs().RegisterForExport();
-  ServerCompletedRpcs().RegisterForExport();
-  ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
-  ServerReceivedCompressedMessageBytesPerRpc().RegisterForExport();
-  ServerServerLatency().RegisterForExport();
+  experimental::ServerStartedRpcs().RegisterForExport();
+  experimental::ServerCompletedRpcs().RegisterForExport();
+  experimental::ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ServerReceivedCompressedMessageBytesPerRpc()
+      .RegisterForExport();
+  experimental::ServerServerLatency().RegisterForExport();
 }
 
 }  // namespace
@@ -208,5 +209,4 @@ void GcpObservabilityClose() {
   }
 }
 
-}  // namespace experimental
 }  // namespace grpc
