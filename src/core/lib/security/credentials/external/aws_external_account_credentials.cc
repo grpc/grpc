@@ -38,7 +38,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
@@ -48,9 +47,6 @@
 namespace grpc_core {
 
 namespace {
-
-const char* awsEc2MetadataIpv4Address = "169.254.169.254";
-const char* awsEc2MetadataIpv6Address = "fd00:ec2::254";
 
 const char* kExpectedEnvironmentId = "aws1";
 

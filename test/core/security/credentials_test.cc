@@ -260,56 +260,6 @@ const char valid_aws_external_account_creds_options_credential_source_ipv6[] =
     "\"regional_cred_verification_url\":\"https://foo.com:5555/"
     "regional_cred_verification_url_{region}\"}";
 
-const char
-    invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id
-        [] = "{\"environment_id\":\"unsupported_aws_version\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_region_url_host
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://fakeurl.com/url\","
-             "\"url\":\"https://169.254.169.254:5555/url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_url_host
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://fake.com/url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_missing_role_name
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
-             "\"regional_cred_verification_url\":\"invalid_regional_cred_"
-             "verification_url\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_imdsv2_url_host
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url\","
-             "\"imdsv2_session_token_url\":\"https://foo.com/"
-             "imdsv2_session_token_url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
 //  -- Global state flags. --
 
 bool g_test_is_on_gce = false;
