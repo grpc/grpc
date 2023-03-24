@@ -146,6 +146,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h" role="src" />
