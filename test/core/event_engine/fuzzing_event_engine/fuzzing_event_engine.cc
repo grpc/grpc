@@ -15,13 +15,11 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
 #include <chrono>
 #include <limits>
 #include <ratio>
-#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -32,11 +30,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
