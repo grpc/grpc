@@ -254,7 +254,11 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
                 "https://github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
             ],
-            patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
+            patches = [
+                "@com_github_grpc_grpc//third_party:protobuf.patch",
+                # workaround for https://github.com/protocolbuffers/upb/issues/1239
+                "@com_github_grpc_grpc//third_party:protobuf2.patch",
+            ],
             patch_args = ["-p1"],
         )
 
