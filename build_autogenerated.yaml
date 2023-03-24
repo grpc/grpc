@@ -12453,6 +12453,18 @@ targets:
   - absl/strings:strings
   - absl/types:variant
   uses_polling: false
+- name: uuid_v4_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/uuid_v4.h
+  src:
+  - src/core/lib/gprpp/uuid_v4.cc
+  - test/core/gprpp/uuid_v4_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: validation_errors_test
   gtest: true
   build: test
