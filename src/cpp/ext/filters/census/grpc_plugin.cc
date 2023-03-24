@@ -69,6 +69,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientTransparentRetriesPerCall();
   RpcClientRetryDelayPerCall();
   RpcClientTransportLatency();
+  internal::RpcClientApiLatency();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -180,6 +181,8 @@ ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
 
 namespace internal {
 
+ABSL_CONST_INIT const absl::string_view kRpcClientApiLatencyMeasureName =
+    "grpc.io/client/api_latency";
 namespace {
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);

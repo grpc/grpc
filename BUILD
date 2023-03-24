@@ -265,6 +265,7 @@ GRPCXX_SRCS = [
     "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
+    "src/cpp/client/client_stats_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -296,6 +297,7 @@ GRPCXX_SRCS = [
 
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
+    "src/cpp/client/client_stats_interceptor.h",
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
@@ -2211,6 +2213,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
         "opencensus-stats",

@@ -941,6 +941,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "uuid_v4",
+    srcs = ["lib/gprpp/uuid_v4.cc"],
+    external_deps = ["absl/strings:str_format"],
+    language = "c++",
+    public_hdrs = ["lib/gprpp/uuid_v4.h"],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
@@ -5372,7 +5381,10 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/logging/logging_sink.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/numeric:int128",
+        "absl/strings",
+    ],
     language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
@@ -5393,7 +5405,9 @@ grpc_cc_library(
         "ext/filters/logging/logging_filter.h",
     ],
     external_deps = [
+        "absl/numeric:int128",
         "absl/random",
+        "absl/random:distributions",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
