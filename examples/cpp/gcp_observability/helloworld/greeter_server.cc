@@ -16,9 +16,12 @@
 //
 //
 
+#include <chrono>
+#include <csignal>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -45,7 +48,16 @@ using helloworld::HelloRequest;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-// Logic and data behind the server's behavior.
+namespace {
+
+volatile std::sig_atomic_t g_shutdown_flag = 0;
+
+void signal_handler(int signal) {
+  g_shutdown_flag = 1;
+  std::signal(signal, SIG_DFL);
+}
+
+// Logic and data behind the server's behavior.W
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
@@ -69,14 +81,21 @@ void RunServer(uint16_t port) {
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
+  // Instead of server->Wait(), we are waiting on a shutdown notification from
+  // SIGINT.
+  while (!g_shutdown_flag) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  server->Shutdown();
 }
+
+}  // namespace
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  // Install a signal handler for an indication to shut down server and flush
+  // out observability data;
+  std::signal(SIGINT, signal_handler);
   // Turn on GCP Observability for the whole binary. Note that this should be
   // done before any other gRPC operation.
   auto status = grpc::experimental::GcpObservabilityInit();
@@ -87,9 +106,16 @@ int main(int argc, char** argv) {
   }
   std::cout << "Initialized GCP Observability" << std::endl;
   RunServer(absl::GetFlag(FLAGS_port));
-  // Note that RunServer() never returns and hence there is no need for a
-  // GcpObservabilityClose() here, but as on the client side, we need to wait
-  // atleast 25seconds after the last RPC to make sure that stats and tracing
-  // are flushed.
+  // Flush out any pending Observability data
+  std::cout << "Closing GCP Observability" << std::endl;
+  grpc::experimental::GcpObservabilityClose();
+  std::cout << "Sleeping for 25 seconds to make sure Observability stats and "
+               "tracing are flushed.(Another Ctrl+C will immediately exit the "
+               "program.)"
+            << std::endl;
+  // Currently, GcpObservabilityClose() only supports flushing logs. Stats and
+  // tracing get automatically flushed at a regular interval, so sleep for an
+  // interval to make sure that those are flushed too.
+  std::this_thread::sleep_for(std::chrono::seconds(25));
   return 0;
 }

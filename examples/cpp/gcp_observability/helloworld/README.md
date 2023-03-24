@@ -17,9 +17,7 @@ mentioned in the Microservices Observability user guide.
 You need to set the `GRPC_GCP_OBSERVABILITY_CONFIG_FILE` environment variable to
 point to the gRPC GCP Observability configuration file (preferred) or
 alternatively set `GRPC_GCP_OBSERVABILITY_CONFIG` environment variable to gRPC
-GCP Observability configuration value. This is needed by both
-`build/install/example-gcp-observability/bin/gcp-observability-client` and
-`build/install/example-gcp-observability/bin/gcp-observability-server`.
+GCP Observability configuration value. This is needed by both client and server.
 
 Sample configurations are provided with the example.
 
