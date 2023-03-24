@@ -26,14 +26,15 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include <limits>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/numeric/int128.h"
 #include "absl/random/random.h"
+#include "absl/random/uniform_int_distribution.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -80,9 +81,9 @@ namespace {
 
 LoggingSink* g_logging_sink = nullptr;
 
-uint64_t GetCallId() {
+absl::uint128 GetCallId() {
   thread_local absl::InsecureBitGen gen;
-  return absl::Uniform(gen, 0u, std::numeric_limits<uint64_t>::max());
+  return absl::uniform_int_distribution<absl::uint128>()(gen);
 }
 
 class MetadataEncoder {
@@ -330,7 +331,7 @@ class CallData {
       entry->is_sampled = tracer->IsSampled();
     }
   }
-  uint64_t call_id_;
+  absl::uint128 call_id_;
   uint32_t sequence_id_ = 0;
   std::string service_name_;
   std::string method_name_;

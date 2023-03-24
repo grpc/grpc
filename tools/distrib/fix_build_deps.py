@@ -82,9 +82,13 @@ EXTERNAL_DEPS = {
         'absl/memory',
     'absl/meta/type_traits.h':
         'absl/meta:type_traits',
+    'absl/numeric/int128.h':
+        'absl/numeric:int128',
     'absl/random/random.h':
         'absl/random',
     'absl/random/distributions.h':
+        'absl/random:distributions',
+    'absl/random/uniform_int_distribution.h':
         'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',
