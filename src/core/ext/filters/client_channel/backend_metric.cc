@@ -70,6 +70,7 @@ const BackendMetricData* ParseBackendMetricData(
       xds_data_orca_v3_OrcaLoadReport_mem_utilization(msg);
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
+  backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
   backend_metric_data->request_cost =
       ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
           msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,

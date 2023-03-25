@@ -44,6 +44,9 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   ~WindowsEventEngineListener() override;
   absl::StatusOr<int> Bind(const EventEngine::ResolvedAddress& addr) override;
   absl::Status Start() override;
+  // TODO(hork): this may only be needed for the iomgr shim, to accommodate
+  // calls to grpc_tcp_server_shutdown_listeners
+  void ShutdownListeners();
 
  private:
   /// Responsible for listening on a single port.
@@ -138,9 +141,10 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   AcceptCallback accept_cb_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
   std::atomic<bool> started_{false};
-  grpc_core::Mutex socket_listeners_mu_;
+  grpc_core::Mutex port_listeners_mu_;
   std::list<std::unique_ptr<SinglePortSocketListener>> port_listeners_
-      ABSL_GUARDED_BY(socket_listeners_mu_);
+      ABSL_GUARDED_BY(port_listeners_mu_);
+  bool listeners_shutdown_ ABSL_GUARDED_BY(port_listeners_mu_) = false;
 };
 
 }  // namespace experimental

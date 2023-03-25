@@ -845,6 +845,15 @@ UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_send_fully_quali
 UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_send_fully_qualified_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool);
 }
+UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_has_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  return _upb_hasbit(msg, 4);
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_BoolValue*);
+}
 
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_allow_absolute_url(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 1);
@@ -899,6 +908,19 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolO
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_send_fully_qualified_url(envoy_config_core_v3_Http1ProtocolOptions *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_use_balsa_parser(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
+  _upb_sethas(msg, 4);
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_BoolValue*) = value;
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_mutable_use_balsa_parser(envoy_config_core_v3_Http1ProtocolOptions* msg, upb_Arena* arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_core_v3_Http1ProtocolOptions_use_balsa_parser(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google_protobuf_BoolValue_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_core_v3_Http1ProtocolOptions_set_use_balsa_parser(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.core.v3.Http1ProtocolOptions.HeaderKeyFormat */

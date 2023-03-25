@@ -2047,6 +2047,7 @@ src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/memory_allocator_factory.h \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix.h \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
@@ -2713,6 +2714,8 @@ src/cpp/client/channel_cc.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
+src/cpp/client/client_stats_interceptor.cc \
+src/cpp/client/client_stats_interceptor.h \
 src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
