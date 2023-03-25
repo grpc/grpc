@@ -41,11 +41,11 @@ namespace experimental {
 GRPC_DEPRECATED(
     "Use grpc::GcpObservabilityInit instead. The experimental version will be "
     "deleted after the 1.55 release.")
-using grpc::GcpObservabilityInit;
+absl::Status GcpObservabilityInit();
 GRPC_DEPRECATED(
     "Use grpc::GcpObservabilityClose instead. The experimental version will be "
     "deleted after the 1.55 release.")
-using grpc::GcpObservabilityClose;
+void GcpObservabilityClose();
 }  // namespace experimental
 
 }  // namespace grpc

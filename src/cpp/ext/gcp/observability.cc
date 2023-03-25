@@ -209,4 +209,12 @@ void GcpObservabilityClose() {
   }
 }
 
+namespace experimental {
+
+absl::Status GcpObservabilityInit() { return grpc::GcpObservabilityInit(); }
+
+void GcpObservabilityClose() { return grpc::GcpObservabilityClose(); }
+
+}  // namespace experimental
+
 }  // namespace grpc
