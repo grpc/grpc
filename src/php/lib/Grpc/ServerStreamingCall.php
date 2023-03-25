@@ -48,7 +48,7 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
-     * @return mixed An iterator of response values
+     * @return \Generator<int,object> An iterator of response values
      */
     public function responses()
     {

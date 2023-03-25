@@ -6,7 +6,9 @@
   "homepage": "https://grpc.io",
   "license": "Apache-2.0",
   "require": {
-    "php": ">=7.0.0"
+    "php": ">=7.0.0",
+    "ext-grpc": "*",
+    "ext-json": "*"
   },
   "require-dev": {
     "google/auth": "^v1.3.0"

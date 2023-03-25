@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Represents an interceptor that intercept RPC invocations before call starts.
  * There is one proposal related to the argument $deserialize under the review.
@@ -26,6 +28,11 @@ namespace Grpc;
  */
 class Interceptor
 {
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptUnaryUnary(
         $method,
         $argument,
@@ -37,6 +44,11 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptStreamUnary(
         $method,
         $deserialize,
@@ -47,6 +59,11 @@ class Interceptor
         return $continuation($method, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptUnaryStream(
         $method,
         $argument,
@@ -58,6 +75,11 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptStreamStream(
         $method,
         $deserialize,
@@ -75,15 +97,16 @@ class Interceptor
      * @param Interceptor|Interceptor[] $interceptors interceptors to be added
      *
      * @return InterceptorChannel
+     * @throws \Exception
      */
     public static function intercept($channel, $interceptors)
     {
         if (is_array($interceptors)) {
             for ($i = count($interceptors) - 1; $i >= 0; $i--) {
-                $channel = new Internal\InterceptorChannel($channel, $interceptors[$i]);
+                $channel = new InterceptorChannel($channel, $interceptors[$i]);
             }
         } else {
-            $channel =  new Internal\InterceptorChannel($channel, $interceptors);
+            $channel =  new InterceptorChannel($channel, $interceptors);
         }
         return $channel;
     }

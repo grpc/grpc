@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Base class for generated client stubs. Stub methods are expected to call
  * _simpleRequest or _streamRequest and return the result.
@@ -40,6 +42,8 @@ class BaseStub
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
      * @param Channel|InterceptorChannel $channel An already created Channel or InterceptorChannel object (optional)
+     *
+     * @throws \Exception
      */
     public function __construct($hostname, $opts, $channel = null)
     {
@@ -113,7 +117,8 @@ class BaseStub
     /**
      * Creates and returns the default Channel
      *
-     * @param array $opts Channel constructor options
+     * @param string $hostname
+     * @param array<string,mixed> $opts Channel constructor options
      *
      * @return Channel The channel
      */
@@ -180,10 +185,10 @@ class BaseStub
     }
 
     /**
-     * @param $new_state Connect state
+     * @param int|numeric-string $new_state Connect state
      *
      * @return bool true if state is CHANNEL_READY
-     * @throw Exception if state is CHANNEL_FATAL_FAILURE
+     * @throw \Exception if state is CHANNEL_FATAL_FAILURE
      */
     private function _checkConnectivityState($new_state)
     {
@@ -264,7 +269,6 @@ class BaseStub
      * Create a function which can be used to create UnaryCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -301,7 +305,6 @@ class BaseStub
      * Create a function which can be used to create ServerStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -337,7 +340,6 @@ class BaseStub
      * Create a function which can be used to create ClientStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -374,7 +376,6 @@ class BaseStub
      * Create a function which can be used to create BidiStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -411,7 +412,6 @@ class BaseStub
      * Create a function which can be used to create UnaryCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -440,7 +440,6 @@ class BaseStub
      * Create a function which can be used to create ServerStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -469,7 +468,6 @@ class BaseStub
      * Create a function which can be used to create ClientStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -496,7 +494,6 @@ class BaseStub
      * Create a function which can be used to create BidiStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
      * @return \Closure
      */

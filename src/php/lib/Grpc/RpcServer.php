@@ -32,7 +32,10 @@ namespace Grpc;
  */
 class RpcServer extends Server
 {
-    // [ <String method_full_path> => MethodDescriptor ]
+    /**
+     * [ <String method_full_path> => MethodDescriptor ]
+     * @var array<string,MethodDescriptor>
+     */
     private $paths_map = [];
 
     private function waitForNextEvent()
@@ -44,6 +47,8 @@ class RpcServer extends Server
      * Add a service to this server
      *
      * @param Object   $service      The service to be added
+     *
+     * @return array<string,MethodDescriptor>
      */
     public function handle($service)
     {
@@ -58,6 +63,9 @@ class RpcServer extends Server
         return $this->paths_map;
     }
 
+    /**
+     * @return void
+     */
     public function run()
     {
         $this->start();
