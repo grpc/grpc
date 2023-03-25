@@ -242,6 +242,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   void HandleCompressionAlgorithmNotAccepted(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
 
+  gpr_cycle_counter start_time() const { return start_time_; }
+
  private:
   RefCountedPtr<Channel> channel_;
   Arena* const arena_;
@@ -263,6 +265,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
   mutable Mutex peer_mu_;
   Slice peer_string_;
+  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -709,7 +712,6 @@ class FilterStackCall final : public Call {
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 
   /// has grpc_call_unref been called
   bool destroy_called_ = false;
@@ -871,7 +873,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_call_element_args call_args = {
       call->call_stack(), args->server_transport_data,
       call->context_,     path,
-      call->start_time_,  call->send_deadline(),
+      call->start_time(), call->send_deadline(),
       call->arena(),      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
@@ -953,7 +955,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
                         &(c->final_info_.error_string));
   c->status_error_.set(absl::OkStatus());
   c->final_info_.stats.latency =
-      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time_);
+      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time());
   grpc_call_stack_destroy(c->call_stack(), &c->final_info_,
                           GRPC_CLOSURE_INIT(&c->release_call_, ReleaseCall, c,
                                             grpc_schedule_on_exec_ctx));
@@ -2164,6 +2166,8 @@ class PromiseBasedCall : public Call,
     final_info.stats = final_stats_;
     final_info.final_status = status;
     final_info.error_string = status_details;
+    final_info.stats.latency =
+        gpr_cycle_counter_sub(gpr_get_cycle_counter(), start_time());
     finalization_.Run(&final_info);
   }
 
