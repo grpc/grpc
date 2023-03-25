@@ -295,9 +295,6 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   GPR_ASSERT(!parent->is_client_);
 
   if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
-    gpr_log(GPR_DEBUG, "Propagating deadline from parent call: %s / %s",
-            send_deadline_.ToString().c_str(),
-            parent->send_deadline_.ToString().c_str());
     send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
   }
   // for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
