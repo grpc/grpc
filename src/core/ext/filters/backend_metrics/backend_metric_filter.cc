@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stddef.h>
-#include <grpc/support/log.h>
-#include <grpc/impl/grpc_types.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -29,6 +29,10 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
+
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
