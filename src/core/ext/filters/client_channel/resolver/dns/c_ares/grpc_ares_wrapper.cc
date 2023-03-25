@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -453,8 +454,6 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
                                ev_driver->request,
                                fdn->grpc_polled_fd->GetName());
           grpc_ares_ev_driver_ref(ev_driver);
-          GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable, fdn,
-                            grpc_schedule_on_exec_ctx);
           GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable, fdn,
                             grpc_schedule_on_exec_ctx);
           fdn->grpc_polled_fd->RegisterForOnWriteableLocked(

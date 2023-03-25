@@ -180,6 +180,28 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
   }
 }
 
+int PeerPropertyExternalVerifier::Verify(
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb, void*,
+    grpc_status_code* sync_status, char** sync_error_details) {
+  auto* self = static_cast<PeerPropertyExternalVerifier*>(user_data);
+  if (request->peer_info.verified_root_cert_subject !=
+      self->expected_verified_root_cert_subject_) {
+    *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+    *sync_error_details = gpr_strdup("PeerPropertyExternalVerifier failed");
+    return true;
+  } else {
+    *sync_status = GRPC_STATUS_OK;
+    return true;  // Synchronous call
+  }
+  return true;  // Synchronous call
+}
+
+void PeerPropertyExternalVerifier::Destruct(void* user_data) {
+  auto* self = static_cast<PeerPropertyExternalVerifier*>(user_data);
+  delete self;
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

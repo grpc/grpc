@@ -22,13 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <functional>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/base/call_once.h"
+#include "absl/strings/string_view.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
 
@@ -129,8 +129,14 @@ using experimental::ServerStartedRpcsHour;             // NOLINT
 
 namespace internal {
 
-// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
+extern const absl::string_view kRpcClientApiLatencyMeasureName;
+
+// This view is in an internal namespace since this is meant just for GCP
+// Observability purposes.
+const ::opencensus::stats::ViewDescriptor& ClientApiLatency();
+
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the
+// start of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
 void EnableOpenCensusTracing(bool enable);
 // Gets the current status of OpenCensus stats/tracing
@@ -146,18 +152,12 @@ class OpenCensusRegistry {
     std::string value;
   };
 
+  struct Attribute {
+    std::string key;
+    std::string value;
+  };
+
   static OpenCensusRegistry& Get();
-
-  // Registers the functions to be run post-init.
-  void RegisterFunctions(std::function<void()> f) {
-    exporter_registry_.push_back(std::move(f));
-  }
-
-  // Runs the registry post-init exactly once. Protected with an absl::CallOnce.
-  void RunFunctionsPostInit() {
-    absl::call_once(once_, &OpenCensusRegistry::RunFunctionsPostInitHelper,
-                    this);
-  }
 
   void RegisterConstantLabels(
       const std::map<std::string, std::string>& labels) {
@@ -168,26 +168,27 @@ class OpenCensusRegistry {
     }
   }
 
+  void RegisterConstantAttributes(std::vector<Attribute> attributes) {
+    constant_attributes_ = std::move(attributes);
+  }
+
   ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
       const ::opencensus::tags::TagMap& tag_map);
 
   void PopulateCensusContextWithConstantAttributes(
       grpc::experimental::CensusContext* context);
 
-  const std::vector<Label>& constant_labels() const { return constant_labels_; }
+  const std::vector<Label>& ConstantLabels() { return constant_labels_; }
 
- private:
-  void RunFunctionsPostInitHelper() {
-    for (const auto& f : exporter_registry_) {
-      f();
-    }
+  const std::vector<Attribute>& ConstantAttributes() {
+    return constant_attributes_;
   }
 
+ private:
   OpenCensusRegistry() = default;
 
-  std::vector<std::function<void()>> exporter_registry_;
-  absl::once_flag once_;
   std::vector<Label> constant_labels_;
+  std::vector<Attribute> constant_attributes_;
 };
 
 }  // namespace internal

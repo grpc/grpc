@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -36,6 +37,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
@@ -144,12 +146,11 @@ RbacFilter::RbacFilter(size_t index,
 grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
                                    grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &kFilterVtable);
-  auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
+  auto* auth_context = args->channel_args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
   }
-  auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
-      args->channel_args, GRPC_ARG_TRANSPORT);
+  auto* transport = args->channel_args.GetObject<grpc_transport>();
   if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.

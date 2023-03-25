@@ -203,7 +203,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         }
         GPR_ASSERT((size_t)info->bytes_transferred == tcp->read_slices->length);
 
-        if (grpc_tcp_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+            gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
           size_t i;
           for (i = 0; i < tcp->read_slices->count; i++) {
             char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
@@ -236,7 +237,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
 #define DEFAULT_TARGET_READ_SIZE 8192
 #define MAX_WSABUF_COUNT 16
 static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
-                     grpc_closure* cb, bool urgent, int /*min_progress_size*/) {
+                     grpc_closure* cb, bool /* urgent */,
+                     int /* min_progress_size */) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* handle = tcp->socket;
   grpc_winsocket_callback_info* info = &handle->read_info;
@@ -341,7 +343,8 @@ static void on_write(void* tcpp, grpc_error_handle error) {
 
 // Initiates a write.
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
+                      grpc_closure* cb, void* /* arg */,
+                      int /* max_frame_size */) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;
@@ -353,7 +356,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   WSABUF* buffers = local_buffers;
   size_t len, async_buffers_offset = 0;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
+      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
     size_t i;
     for (i = 0; i < slices->count; i++) {
       char* data =
@@ -466,8 +470,8 @@ static void win_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pss) {
   grpc_iocp_add_socket(tcp->socket);
 }
 
-static void win_delete_from_pollset_set(grpc_endpoint* ep,
-                                        grpc_pollset_set* pss) {}
+static void win_delete_from_pollset_set(grpc_endpoint* /* ep */,
+                                        grpc_pollset_set* /* pss */) {}
 
 // Initiates a shutdown of the TCP endpoint. This will queue abort callbacks
 // for the potential read and write operations. It is up to the caller to
@@ -504,9 +508,9 @@ static absl::string_view win_get_local_address(grpc_endpoint* ep) {
   return tcp->local_address;
 }
 
-static int win_get_fd(grpc_endpoint* ep) { return -1; }
+static int win_get_fd(grpc_endpoint* /* ep */) { return -1; }
 
-static bool win_can_track_err(grpc_endpoint* ep) { return false; }
+static bool win_can_track_err(grpc_endpoint* /* ep */) { return false; }
 
 static grpc_endpoint_vtable vtable = {win_read,
                                       win_write,

@@ -238,9 +238,6 @@ class PosixSocketWrapper {
     DSMODE_DUALSTACK
   };
 
-  // Tries to set the socket to dualstack. Returns true on success.
-  bool SetSocketDualStack();
-
   // Returns the underlying file-descriptor.
   int Fd() const { return fd_; }
 

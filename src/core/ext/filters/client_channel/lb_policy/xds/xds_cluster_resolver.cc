@@ -883,12 +883,17 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         child_policy = config_->xds_lb_policy();
       }
       // Wrap the xDS LB policy in the xds_override_host policy.
+      Json::Object xds_override_host_lb_config = {
+          {"childPolicy", std::move(child_policy)},
+      };
+      if (!discovery_config.override_host_statuses.empty()) {
+        xds_override_host_lb_config["overrideHostStatus"] =
+            discovery_config.override_host_statuses;
+      }
       Json::Array xds_override_host_config = {Json::Object{
           {"xds_override_host_experimental",
-           Json::Object{
-               {"overrideHostStatus", discovery_config.override_host_statuses},
-               {"childPolicy", std::move(child_policy)},
-           }}}};
+           std::move(xds_override_host_lb_config)},
+      }};
       // Wrap it in the xds_cluster_impl policy.
       Json::Array drop_categories;
       if (discovery_entry.latest_update->drop_config != nullptr) {

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -97,14 +98,15 @@ namespace {
 std::string GetCensusSafeClientIpString(
     const ClientMetadataHandle& initial_metadata) {
   // Find the client URI string.
-  auto client_uri_str = initial_metadata->get(PeerString());
-  if (!client_uri_str.has_value()) {
+  Slice* client_uri_slice = initial_metadata->get_pointer(PeerString());
+  if (client_uri_slice == nullptr) {
     gpr_log(GPR_ERROR,
             "Unable to extract client URI string (peer string) from gRPC "
             "metadata.");
     return "";
   }
-  absl::StatusOr<URI> client_uri = URI::Parse(*client_uri_str);
+  absl::StatusOr<URI> client_uri =
+      URI::Parse(client_uri_slice->as_string_view());
   if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "

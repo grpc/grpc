@@ -188,8 +188,14 @@ struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
-  static Result Get(StoredType p) { return p->get(); };
-  static ReffedResult GetReffed(StoredType p) { return ReffedResult(*p); };
+  static Result Get(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return p->get();
+  };
+  static ReffedResult GetReffed(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return ReffedResult(*p);
+  };
   static ReffedResult GetReffed(StoredType p,
                                 const DebugLocation& /* location */,
                                 const char* /* reason */) {

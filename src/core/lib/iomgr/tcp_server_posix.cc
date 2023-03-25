@@ -52,6 +52,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -78,23 +79,9 @@ static std::atomic<int64_t> num_dropped_connections{0};
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
 using ::grpc_event_engine::experimental::SliceBuffer;
-
-class MemoryAllocatorFactoryWrapper
-    : public grpc_event_engine::experimental::MemoryAllocatorFactory {
- public:
-  explicit MemoryAllocatorFactoryWrapper(
-      grpc_core::MemoryQuotaRefPtr memory_quota)
-      : memory_quota_(std::move(memory_quota)) {}
-
-  MemoryAllocator CreateMemoryAllocator(absl::string_view name) override {
-    return memory_quota_->CreateMemoryAllocator(name);
-  }
-
- private:
-  grpc_core::MemoryQuotaRefPtr memory_quota_;
-};
 
 static grpc_error_handle CreateEventEngineListener(
     grpc_tcp_server* s, grpc_closure* shutdown_complete,
@@ -171,19 +158,27 @@ static grpc_error_handle CreateEventEngineListener(
   auto on_shutdown_complete_cb =
       grpc_event_engine::experimental::GrpcClosureToStatusCallback(
           shutdown_complete);
-  auto listener =
+  PosixEventEngineWithFdSupport* engine_ptr =
       reinterpret_cast<PosixEventEngineWithFdSupport*>(
-          grpc_event_engine::experimental::GetDefaultEventEngine().get())
-          ->CreatePosixListener(
-              std::move(accept_cb),
-              [s, shutdown_complete](absl::Status status) {
-                grpc_event_engine::experimental::RunEventEngineClosure(
-                    shutdown_complete, absl_status_to_grpc_error(status));
-                delete s->fd_handler;
-                delete s;
-              },
-              config,
-              std::make_unique<MemoryAllocatorFactoryWrapper>(s->memory_quota));
+          config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  // Keeps the engine alive for some tests that have not otherwise instantiated
+  // an EventEngine
+  std::shared_ptr<EventEngine> keeper;
+  if (engine_ptr == nullptr) {
+    keeper = grpc_event_engine::experimental::GetDefaultEventEngine();
+    engine_ptr = reinterpret_cast<PosixEventEngineWithFdSupport*>(keeper.get());
+  }
+  auto listener = engine_ptr->CreatePosixListener(
+      std::move(accept_cb),
+      [s, shutdown_complete](absl::Status status) {
+        grpc_event_engine::experimental::RunEventEngineClosure(
+            shutdown_complete, absl_status_to_grpc_error(status));
+        delete s->fd_handler;
+        delete s;
+      },
+      config,
+      std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
+          s->memory_quota));
   if (!listener.ok()) {
     delete s;
     *server = nullptr;

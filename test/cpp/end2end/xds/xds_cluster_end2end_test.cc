@@ -459,6 +459,54 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   });
 }
 
+// This tests the bug described in https://github.com/grpc/grpc/issues/32486.
+TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has one locality with no endpoints.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // EDS update removes all endpoints from the locality.
+  EdsResourceArgs::Locality empty_locality("locality0", {});
+  args = EdsResourceArgs({std::move(empty_locality)});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait for RPCs to start failing.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
+    if (result.status.ok()) return true;
+    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(result.status.error_message(),
+                ::testing::MatchesRegex(kErrorMessage));
+    return false;
+  });
+  // Shut down backend.  This triggers a connectivity state update from the
+  // deactivated child of the weighted_target policy.
+  ShutdownAllBackends();
+  // Now restart the backend.
+  StartAllBackends();
+  // Re-add endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(absl::StrCat(
+                      // The error message we see here depends on whether
+                      // the client sees the EDS update before or after it
+                      // sees the backend come back up.
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "),
+                      "|", kErrorMessage)));
+    }
+  });
+}
+
 TEST_P(EdsTest, NoLocalities) {
   CreateAndStartBackends(1);
   // Initial EDS resource has no localities.
@@ -499,11 +547,8 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   // seconds, and we should disocver in that time that the target backend is
   // down.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)",
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "),
                       RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
@@ -526,11 +571,8 @@ TEST_P(EdsTest, BackendsRestart) {
                                ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -1176,14 +1218,9 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  constexpr char kErrorMessageRegex[] =
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      kErrorMessageRegex);
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1195,7 +1232,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
       EXPECT_THAT(result.status.error_message(),
-                  ::testing::MatchesRegex(kErrorMessageRegex));
+                  ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: ")));
     }
   });
 }

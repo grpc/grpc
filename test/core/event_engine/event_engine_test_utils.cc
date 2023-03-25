@@ -77,7 +77,8 @@ std::string GetNextSendMessage() {
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
-    GRPC_LOG_EVERY_N_SEC(2, "engine.use_count() = %ld", engine.use_count());
+    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
+                         engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
   }
 }
@@ -129,17 +130,23 @@ absl::Status SendValidatePayload(absl::string_view data,
     args.read_hint_bytes -= read_slice_buf.Length();
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
-    receive_endpoint->Read(read_cb, &read_slice_buf, &args);
+    if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+      read_cb(absl::OkStatus());
+    }
   };
   // Start asynchronous reading at the receive_endpoint.
-  receive_endpoint->Read(read_cb, &read_slice_buf, &args);
+  if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+    read_cb(absl::OkStatus());
+  }
   // Start asynchronous writing at the send_endpoint.
-  send_endpoint->Write(
-      [&write_signal](absl::Status status) {
-        GPR_ASSERT(status.ok());
-        write_signal.Notify();
-      },
-      &write_slice_buf, nullptr);
+  if (send_endpoint->Write(
+          [&write_signal](absl::Status status) {
+            GPR_ASSERT(status.ok());
+            write_signal.Notify();
+          },
+          &write_slice_buf, nullptr)) {
+    write_signal.Notify();
+  }
   write_signal.WaitForNotification();
   read_signal.WaitForNotification();
   // Check if data written == data read

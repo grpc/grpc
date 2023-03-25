@@ -43,7 +43,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -369,7 +369,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
-  auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
   auto overridden_host_pick = PickOverridenHost(override_host);
   if (overridden_host_pick.has_value()) {
@@ -519,7 +519,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       // Skip draining hosts if not in the override status set.
       continue;
     }
-    auto key = grpc_sockaddr_to_string(&address.address(), false);
+    auto key = grpc_sockaddr_to_uri(&address.address());
     if (key.ok()) {
       addresses_for_map.emplace(std::move(*key), status);
     }
@@ -550,7 +550,7 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
     ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
-  auto key = grpc_sockaddr_to_string(&address.address(), false);
+  auto key = grpc_sockaddr_to_uri(&address.address());
   if (!key.ok()) {
     return subchannel;
   }
@@ -580,11 +580,22 @@ XdsOverrideHostLb::GetSubchannelByAddress(
     absl::string_view address, XdsHealthStatusSet overriden_health_statuses) {
   MutexLock lock(&subchannel_map_mu_);
   auto it = subchannel_map_.find(address);
-  if (it != subchannel_map_.end() &&
-      overriden_health_statuses.Contains(it->second.eds_health_status())) {
-    return it->second.GetSubchannel()->Ref();
+  if (it == subchannel_map_.end() || it->second.GetSubchannel() == nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Subchannel %s was not found",
+              std::string(address).c_str());
+    }
+    return nullptr;
   }
-  return nullptr;
+  if (!overriden_health_statuses.Contains(it->second.eds_health_status())) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Subchannel %s health status is not overridden (%s)",
+              std::string(address).c_str(),
+              it->second.eds_health_status().ToString());
+    }
+    return nullptr;
+  }
+  return it->second.GetSubchannel()->Ref();
 }
 
 void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(

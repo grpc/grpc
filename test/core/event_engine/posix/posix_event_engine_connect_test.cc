@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 #include <ratio>
 #include <string>

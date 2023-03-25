@@ -76,7 +76,7 @@ absl::optional<std::string> GetHttpProxyServer(
   if (!uri_str.has_value()) uri_str = GetEnv("https_proxy");
   if (!uri_str.has_value()) uri_str = GetEnv("http_proxy");
   if (!uri_str.has_value()) return absl::nullopt;
-  // an emtpy value means "don't use proxy"
+  // an empty value means "don't use proxy"
   if (uri_str->empty()) return absl::nullopt;
   uri = URI::Parse(*uri_str);
   if (!uri.ok() || uri->authority().empty()) {

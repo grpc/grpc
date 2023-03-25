@@ -31,5 +31,7 @@ build --remote_timeout=7200  # very large value to avoid problems like https://g
 build --define GRPC_PORT_ISOLATED_RUNTIME=1
 
 # TODO(jtattermusch): is this still required for remote execution to work?
+# TODO(jtattermusch): Option 'experimental_strict_action_env' is deprecated: Use --incompatible_strict_action_env instead
 build --experimental_strict_action_env=true
+# TODO(jtattermusch): is this still required for remote execution to work?
 build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1

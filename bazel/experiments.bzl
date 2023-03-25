@@ -25,6 +25,7 @@ EXPERIMENTS = {
         ],
         "core_end2end_test": [
             "promise_based_client_call",
+            "promise_based_server_call",
         ],
         "endpoint_test": [
             "tcp_frame_size_tuning",
@@ -51,14 +52,8 @@ EXPERIMENTS = {
         ],
     },
     "on": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
         "flow_control_test": [
             "flow_control_fixes",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
         ],
     },
     "opt": {

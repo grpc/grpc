@@ -232,7 +232,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
          ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "invalid addr: ",
              addr_uri.value()))]() mutable { on_connect(std::move(ep)); });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
@@ -253,7 +253,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
                                   std::move(allocator), options)]() mutable {
       on_connect(std::move(ep));
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   if (saved_errno != EWOULDBLOCK && saved_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
@@ -265,7 +265,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
                           " error: ", std::strerror(saved_errno)))]() mutable {
       on_connect(std::move(ep));
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   AsyncConnect* ac = new AsyncConnect(
       std::move(on_connect), shared_from_this(), executor_.get(), handle,
@@ -293,12 +293,14 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
     : poller_(grpc_event_engine::experimental::MakeDefaultPoller(this)),
-      executor_(std::move(executor)) {}
+      executor_(std::move(executor)),
+      trigger_shutdown_called_(false) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
     : poller_(poller),
       poller_state_(PollerState::kExternal),
-      executor_(nullptr) {
+      executor_(nullptr),
+      trigger_shutdown_called_(false) {
   GPR_DEBUG_ASSERT(poller_ != nullptr);
 }
 
@@ -316,6 +318,8 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
 }
 
 void PosixEnginePollerManager::TriggerShutdown() {
+  GPR_DEBUG_ASSERT(trigger_shutdown_called_ == false);
+  trigger_shutdown_called_ = true;
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
   if (poller_state_.exchange(PollerState::kShuttingDown) ==
@@ -347,6 +351,8 @@ PosixEventEngine::PosixEventEngine()
       timer_manager_(executor_) {
   if (NeedPosixEngine()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
+    // The threadpool must be instantiated after the poller otherwise, the
+    // process will deadlock when forking.
     if (poller_manager_->Poller() != nullptr) {
       executor_->Run([poller_manager = poller_manager_]() {
         PollerWorkInternal(poller_manager);
@@ -554,7 +560,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   return ConnectInternal((*socket).sock, std::move(on_connect),
                          (*socket).mapped_target_addr,

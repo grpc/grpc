@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <string>
 #include <type_traits>
 #include <utility>

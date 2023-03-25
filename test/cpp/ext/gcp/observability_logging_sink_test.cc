@@ -29,6 +29,8 @@ namespace internal {
 
 namespace {
 
+using grpc_core::LoggingSink;
+
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigEmpty) {
   const char* json_str = R"json({
       "cloud_logging": {
@@ -335,7 +337,7 @@ TEST(EntryToJsonStructTest, ClientHeader) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -456,7 +458,7 @@ TEST(EntryToJsonStructTest, ServerHeader) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -566,7 +568,7 @@ TEST(EntryToJsonStructTest, ClientMessage) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -676,7 +678,7 @@ TEST(EntryToJsonStructTest, ServerMessage) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -784,7 +786,7 @@ TEST(EntryToJsonStructTest, ClientHalfClose) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -880,7 +882,7 @@ TEST(EntryToJsonStructTest, ServerTrailer) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"
@@ -988,7 +990,7 @@ TEST(EntryToJsonStructTest, Cancel) {
       "fields {\n"
       "  key: \"callId\"\n"
       "  value {\n"
-      "    string_value: \"1234\"\n"
+      "    string_value: \"00000000-0000-4000-8000-0000000004d2\"\n"
       "  }\n"
       "}\n"
       "fields {\n"

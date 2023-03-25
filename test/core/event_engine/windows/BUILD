@@ -102,6 +102,7 @@ grpc_cc_test(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:windows_endpoint",
+        "//src/core:windows_event_engine",
         "//src/core:windows_iocp",
     ],
 )

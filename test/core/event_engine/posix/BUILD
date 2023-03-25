@@ -320,3 +320,25 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "log_too_many_open_files_test",
+    srcs = ["log_too_many_open_files_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:posix_event_engine_tcp_socket_utils",
+        "//src/core:strerror",
+        "//test/core/util:grpc_test_util",
+    ],
+)

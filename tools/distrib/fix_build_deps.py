@@ -29,7 +29,7 @@ INCLUDED_DIRECTORIES = [
     "",
     "src/core",
     "src/cpp/ext/gcp",
-    "src/cpp/ext/filters/logging",
+    "test/core/backoff",
     "test/core/uri",
     "test/core/util",
     "test/core/end2end",
@@ -37,6 +37,7 @@ INCLUDED_DIRECTORIES = [
     "test/core/promise",
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
+    "fuzztest",
 ]
 
 # find our home
@@ -99,9 +100,13 @@ EXTERNAL_DEPS = {
         'absl/memory',
     'absl/meta/type_traits.h':
         'absl/meta:type_traits',
+    'absl/numeric/int128.h':
+        'absl/numeric:int128',
     'absl/random/random.h':
         'absl/random',
     'absl/random/distributions.h':
+        'absl/random:distributions',
+    'absl/random/uniform_int_distribution.h':
         'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',
@@ -155,6 +160,7 @@ EXTERNAL_DEPS = {
         'cares',
     'benchmark/benchmark.h':
         'benchmark',
+    'fuzztest/fuzztest.h': ['fuzztest', 'fuzztest_main'],
     'google/api/monitored_resource.pb.h':
         'google/api:monitored_resource_cc_proto',
     'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
@@ -181,6 +187,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'opencensus/trace/span_context.h':
+        'opencensus-trace-span_context',
     'openssl/base.h':
         'libssl',
     'openssl/bio.h':
@@ -304,7 +312,10 @@ def _get_filename(name, parsing_path):
         (parsing_path + '/' if
          (parsing_path and not name.startswith('//')) else ''), name)
     filename = filename.replace('//:', '')
-    return filename.replace('//src/core:', 'src/core/')
+    filename = filename.replace('//src/core:', 'src/core/')
+    filename = filename.replace('//src/cpp/ext/filters/census:',
+                                'src/cpp/ext/filters/census/')
+    return filename
 
 
 def grpc_cc_library(name,
@@ -460,31 +471,37 @@ def included_directories():
 
 for dirname in included_directories():
     parsing_path = dirname
-    exec(
-        open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
-            'load': lambda filename, *args: None,
-            'licenses': lambda licenses: None,
-            'package': lambda **kwargs: None,
-            'exports_files': lambda files, visibility=None: None,
-            'config_setting': lambda **kwargs: None,
-            'selects': FakeSelects(),
-            'python_config_settings': lambda **kwargs: None,
-            'grpc_proto_library': lambda **kwargs: None,
-            'grpc_cc_binary': grpc_cc_library,
-            'grpc_cc_library': grpc_cc_library,
-            'grpc_cc_test': grpc_cc_library,
-            'grpc_fuzzer': grpc_cc_library,
-            'grpc_proto_fuzzer': grpc_cc_library,
-            'select': lambda d: d["//conditions:default"],
-            'glob': lambda files: None,
-            'grpc_end2end_tests': lambda: None,
-            'grpc_upb_proto_library': lambda name, **kwargs: None,
-            'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
-            'grpc_generate_one_off_targets': lambda: None,
-            'grpc_package': lambda **kwargs: None,
-            'filegroup': lambda name, **kwargs: None,
-            'sh_library': lambda name, **kwargs: None,
-        }, {})
+    build_file = '%sBUILD' % (dirname + '/' if dirname else '')
+    try:
+        exec(
+            open(build_file, 'r').read(), {
+                'load': lambda filename, *args: None,
+                'licenses': lambda licenses: None,
+                'package': lambda **kwargs: None,
+                'exports_files': lambda files, visibility=None: None,
+                'config_setting': lambda **kwargs: None,
+                'selects': FakeSelects(),
+                'python_config_settings': lambda **kwargs: None,
+                'grpc_proto_library': lambda **kwargs: None,
+                'grpc_cc_binary': grpc_cc_library,
+                'grpc_cc_library': grpc_cc_library,
+                'grpc_cc_test': grpc_cc_library,
+                'grpc_fuzzer': grpc_cc_library,
+                'grpc_fuzz_test': grpc_cc_library,
+                'grpc_proto_fuzzer': grpc_cc_library,
+                'select': lambda d: d["//conditions:default"],
+                'glob': lambda files: None,
+                'grpc_end2end_tests': lambda: None,
+                'grpc_upb_proto_library': lambda name, **kwargs: None,
+                'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
+                'grpc_generate_one_off_targets': lambda: None,
+                'grpc_package': lambda **kwargs: None,
+                'filegroup': lambda name, **kwargs: None,
+                'sh_library': lambda name, **kwargs: None,
+            }, {})
+    except Exception as e:
+        print('Error parsing %s' % build_file)
+        raise e
     parsing_path = None
 
 if args.whats_left:
@@ -604,9 +621,13 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not ('//' in dep):
-                dep = '//:' + dep
-            deps.add(dep, hdr)
+            if isinstance(dep, list):
+                for d in dep:
+                    deps.add(d, hdr)
+            else:
+                if not ('//' in dep):
+                    dep = '//:' + dep
+                deps.add(dep, hdr)
             continue
 
         if hdr in canonical_deps:
@@ -630,7 +651,11 @@ def make_library(library):
             continue
 
         if hdr in EXTERNAL_DEPS:
-            external_deps.add(EXTERNAL_DEPS[hdr], hdr)
+            if isinstance(EXTERNAL_DEPS[hdr], list):
+                for dep in EXTERNAL_DEPS[hdr]:
+                    external_deps.add(dep, hdr)
+            else:
+                external_deps.add(EXTERNAL_DEPS[hdr], hdr)
             continue
 
         if hdr.startswith('opencensus/'):

@@ -23,6 +23,7 @@
 
 #include <functional>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
@@ -71,8 +72,7 @@ class Alarm : private grpc::internal::GrpcLibrary {
   /// Alarms are movable.
   Alarm(Alarm&& rhs) noexcept : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
   Alarm& operator=(Alarm&& rhs) noexcept {
-    alarm_ = rhs.alarm_;
-    rhs.alarm_ = nullptr;
+    std::swap(alarm_, rhs.alarm_);
     return *this;
   }
 
