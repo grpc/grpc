@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/connected_channel.h"
 
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
-#include <grpc/impl/grpc_types.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -40,6 +38,12 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+
+#include <grpc/impl/grpc_types.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

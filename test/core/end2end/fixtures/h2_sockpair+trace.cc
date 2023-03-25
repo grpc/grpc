@@ -24,7 +24,7 @@
 #include <grpc/impl/trace.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-=======
+    =======
 >>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
 #include <grpc/support/log.h>
 
@@ -40,12 +40,12 @@
 #include <unistd.h>
 #endif
 
-// All test configurations
-static CoreTestConfiguration configs[] = {
-    {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
-     [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
-       return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
-     }},
+    // All test configurations
+    static CoreTestConfiguration configs[] = {
+        {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
+         [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+           return std::make_unique<SockpairFixture>(grpc_core::ChannelArgs());
+         }},
 };
 
 int main(int argc, char** argv) {

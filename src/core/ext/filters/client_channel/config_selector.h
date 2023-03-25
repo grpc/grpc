@@ -18,14 +18,18 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 
 #include <grpc/support/port_platform.h>
+
 #include <string.h>
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
+
 #include <utility>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"

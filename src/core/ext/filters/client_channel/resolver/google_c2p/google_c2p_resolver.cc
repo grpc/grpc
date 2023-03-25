@@ -15,7 +15,7 @@
 //
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
+
 #include <cstdint>
 #include <memory>
 #include <random>
@@ -28,6 +28,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
