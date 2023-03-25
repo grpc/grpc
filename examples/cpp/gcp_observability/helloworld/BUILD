@@ -41,4 +41,3 @@ cc_binary(
         "@com_google_absl//absl/strings:str_format",
     ],
 )
-
