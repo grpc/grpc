@@ -8311,11 +8311,8 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9067,6 +9064,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(common_closures_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/resolved_address.cc
@@ -9074,6 +9072,7 @@ add_executable(common_closures_test
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/common_closures_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10103,6 +10102,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
@@ -10112,6 +10112,7 @@ add_executable(endpoint_config_test
   src/core/lib/gprpp/time.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
@@ -10629,11 +10630,8 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10668,6 +10666,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::utility
   gpr
   upb
 )
@@ -11118,11 +11117,8 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
@@ -11199,11 +11195,8 @@ add_executable(for_each_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11738,6 +11731,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    src/core/lib/debug/trace.cc
     src/core/lib/event_engine/event_engine.cc
     src/core/lib/event_engine/memory_allocator.cc
     src/core/lib/event_engine/resolved_address.cc
@@ -11746,6 +11740,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/gprpp/time.cc
     src/core/lib/slice/slice.cc
     src/core/lib/slice/slice_buffer.cc
+    src/core/lib/slice/slice_refcount.cc
     src/core/lib/slice/slice_string_helpers.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -13244,6 +13239,16 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(handle_tests
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/handle_tests.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13273,7 +13278,11 @@ target_link_libraries(handle_tests
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  absl::any_invocable
+  absl::hash
+  absl::statusor
+  absl::utility
+  gpr
 )
 
 
@@ -14126,7 +14135,11 @@ add_executable(interceptor_list_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -14147,6 +14160,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
@@ -14941,11 +14955,8 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16352,11 +16363,8 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-<<<<<<< HEAD
   src/core/lib/slice/slice_buffer.cc
-=======
   src/core/lib/slice/slice_refcount.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16487,38 +16495,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pipe_test
-<<<<<<< HEAD
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/memory_allocator.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-=======
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   test/core/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -20457,6 +20433,7 @@ add_executable(tcp_socket_utils_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/uri/uri_parser.cc
   test/core/event_engine/tcp_socket_utils_test.cc
@@ -20501,6 +20478,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_heap_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -20512,6 +20490,7 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/posix/timer_heap_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -20554,6 +20533,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_list_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -20565,6 +20545,7 @@ add_executable(test_core_event_engine_posix_timer_list_test
   src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/posix/timer_list_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -20607,12 +20588,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
-<<<<<<< HEAD
-=======
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/resolved_address.cc
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/slice/slice.cc
@@ -21218,6 +21194,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_pool_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
@@ -21228,6 +21205,7 @@ add_executable(thread_pool_test
   src/core/lib/gprpp/time.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/thread_pool_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -21405,8 +21383,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
-    grpc_test_util
+    grpc
+    grpc_test_util_unsecure
   )
 
 
@@ -21809,6 +21787,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/event_engine/slice_buffer.cc
     src/core/lib/gprpp/status_helper.cc
     src/core/lib/gprpp/time.cc
+    src/core/lib/iomgr/closure.cc
     src/core/lib/iomgr/combiner.cc
     src/core/lib/iomgr/error.cc
     src/core/lib/iomgr/exec_ctx.cc
@@ -21817,6 +21796,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/slice/percent_encoding.cc
     src/core/lib/slice/slice.cc
     src/core/lib/slice/slice_buffer.cc
+    src/core/lib/slice/slice_refcount.cc
     src/core/lib/slice/slice_string_helpers.cc
     test/core/event_engine/posix/traced_buffer_list_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -22034,81 +22014,6 @@ target_link_libraries(transport_stream_receiver_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-<<<<<<< HEAD
-add_executable(try_concurrently_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/memory_allocator.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/pipe.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/trace.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  test/core/promise/try_concurrently_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(try_concurrently_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(try_concurrently_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::any_invocable
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
-  upb
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-=======
->>>>>>> 8038d2d87860feecc279346460c7e223fdde7bd9
 add_executable(try_join_test
   test/core/promise/try_join_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
