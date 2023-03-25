@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <atomic>
 #include <initializer_list>
-#include <memory>
 #include <new>
 #include <string>
 #include <utility>
@@ -35,7 +34,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -45,7 +43,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -861,11 +858,8 @@ static void cq_end_op_for_callback(
   // 2. The callback is marked inlineable and there is an ACEC available
   // 3. We are already running in a background poller thread (which always has
   //    an ACEC available at the base of the stack).
-  // 4. We are running in an event engine thread with ACEC available.
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  if (((internal || functor->inlineable ||
-        grpc_event_engine::experimental::GetDefaultEventEngine()
-            ->IsWorkerThread()) &&
+  if (((internal || functor->inlineable) &&
        grpc_core::ApplicationCallbackExecCtx::Available()) ||
       grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error.ok()));

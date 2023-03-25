@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -52,6 +54,9 @@ class CallTracerAnnotationInterface {
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
+  virtual std::string TraceId() = 0;
+  virtual std::string SpanId() = 0;
+  virtual bool IsSampled() = 0;
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.

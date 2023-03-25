@@ -88,12 +88,14 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   // Endpoint, and be destroyed asynchronously when all pending overlapped
   // events are complete.
   struct AsyncIOState {
-    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket);
+    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket,
+                 std::shared_ptr<EventEngine> engine);
     ~AsyncIOState();
     WindowsEndpoint* const endpoint;
     std::unique_ptr<WinSocket> socket;
     HandleReadClosure handle_read_event;
     HandleWriteClosure handle_write_event;
+    std::shared_ptr<EventEngine> engine;
   };
 
   // Perform the low-level calls and execute the HandleReadClosure
@@ -107,7 +109,6 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   MemoryAllocator allocator_;
   Executor* executor_;
   std::shared_ptr<AsyncIOState> io_state_;
-  std::shared_ptr<EventEngine> engine_;
 };
 
 }  // namespace experimental

@@ -3142,6 +3142,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   // This should override per-server QPS above and give 1/4:1/2:1/3 = 3:6:4 WRR
   // picks.
   EchoRequest request;
+  // We cannot override with 0 with proto3, so setting it to almost 0.
   request.mutable_param()->mutable_backend_metrics()->set_eps(
       std::numeric_limits<double>::min());
   request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);

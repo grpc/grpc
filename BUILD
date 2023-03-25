@@ -265,6 +265,7 @@ GRPCXX_SRCS = [
     "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
+    "src/cpp/client/client_stats_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -296,6 +297,7 @@ GRPCXX_SRCS = [
 
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
+    "src/cpp/client/client_stats_interceptor.h",
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
@@ -1478,6 +1480,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_trace",
@@ -1521,6 +1524,8 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+        "//src/core:windows_event_engine",
+        "//src/core:windows_event_engine_listener",
     ],
 )
 
@@ -2211,6 +2216,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
         "opencensus-stats",
