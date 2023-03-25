@@ -3243,6 +3243,7 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   if (Slice* message = result->get_pointer(GrpcMessageMetadata())) {
     message_string = message->as_string_view();
   }
+  AcceptTransportStatsFromContext();
   if (message_string.empty()) {
     RunFinalization(status, nullptr);
   } else {
