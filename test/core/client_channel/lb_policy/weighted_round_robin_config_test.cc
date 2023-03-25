@@ -92,7 +92,6 @@ TEST(WeightedRoundRobinConfigTest, InvalidValues) {
           "errors validating service config: [field:loadBalancingConfig "
           "error:errors validating weighted_round_robin LB policy config: ["
           "field:errorUtilizationPenalty error:must be non-negative]]"));
->>>>>>> upstream/master
 }
 
 }  // namespace
