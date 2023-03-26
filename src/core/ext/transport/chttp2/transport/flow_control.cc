@@ -177,7 +177,7 @@ int64_t TransportFlowControl::target_window() const {
 FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t target = target_window();
   // round up so that one byte targets are sent.
-  const int64_t send_threshold = target / 2 + target % 2;
+  const int64_t send_threshold = (target + 1) / 2;
   if (announced_window_ < send_threshold) {
     action.set_send_transport_update(
         FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
