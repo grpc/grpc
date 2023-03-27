@@ -32,8 +32,6 @@ namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
 
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
-
 //
 // XdsClientTest - basic tests of XdsClient functionality
 //
