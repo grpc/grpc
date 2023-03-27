@@ -25,8 +25,8 @@
 
 namespace grpc_core {
 
-// TODO(donnadionne): check to see if federation is enabled, this will be
-// removed once federation is fully integrated and enabled by default.
+// TODO(roth,apolcyn): remove this federation env var after the 1.55
+// release.
 bool XdsFederationEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   if (!value.has_value()) return true;
