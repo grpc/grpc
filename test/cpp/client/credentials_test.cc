@@ -36,7 +36,7 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-#define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data"
+#define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
 
 namespace {
 

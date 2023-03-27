@@ -27,9 +27,9 @@
 
 #include <google/protobuf/timestamp.pb.h>
 
+#include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
@@ -48,6 +48,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/uuid_v4.h"
 #include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
@@ -207,7 +208,8 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
 void EntryToJsonStructProto(LoggingSink::Entry entry,
                             ::google::protobuf::Struct* json_payload) {
   (*json_payload->mutable_fields())["callId"].set_string_value(
-      absl::StrCat(entry.call_id));
+      grpc_core::GenerateUUIDv4(absl::Uint128High64(entry.call_id),
+                                absl::Uint128Low64(entry.call_id)));
   (*json_payload->mutable_fields())["sequenceId"].set_number_value(
       entry.sequence_id);
   (*json_payload->mutable_fields())["type"].set_string_value(
@@ -345,6 +347,11 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
     gpr_timespec timespec = entry.timestamp.as_timespec(GPR_CLOCK_REALTIME);
     proto_entry->mutable_timestamp()->set_seconds(timespec.tv_sec);
     proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
+    // Add tracing details
+    proto_entry->set_span_id(entry.span_id);
+    proto_entry->set_trace(
+        absl::StrFormat("projects/%s/traces/%s", project_id_, entry.trace_id));
+    proto_entry->set_trace_sampled(entry.is_sampled);
     // TODO(yashykt): Check if we need to fill receive timestamp
     EntryToJsonStructProto(std::move(entry),
                            proto_entry->mutable_json_payload());

@@ -93,6 +93,7 @@ class WindowsEventEngine : public EventEngine,
   // WindowsEventEngine type are effectively friends.
   // Not intended for external use.
   Executor* executor() { return executor_.get(); }
+  IOCP* poller() { return &iocp_; }
 
  private:
   // State of an active connection.
