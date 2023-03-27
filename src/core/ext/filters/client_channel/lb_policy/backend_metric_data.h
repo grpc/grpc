@@ -32,10 +32,8 @@ struct BackendMetricData {
   /// Memory utilization expressed as a fraction of available memory
   /// resources.
   double mem_utilization = -1;
-  /// Total queries per second being served by the backend across all services.
+  /// Total QPS being served by the backend across all services.
   double qps = -1;
-  /// Total errors per second reported by the backend across all services.
-  double eps = -1;
   /// Application-specific requests cost metrics.  Metric names are
   /// determined by the application.  Each value is an absolute cost
   /// (e.g. 3487 bytes of storage) associated with the request.
