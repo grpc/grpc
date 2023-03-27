@@ -460,6 +460,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/address_utils/parse_address.cc',
     'src/core/lib/address_utils/sockaddr_utils.cc',
     'src/core/lib/backoff/backoff.cc',
+    'src/core/lib/backoff/random_early_detection.cc',
     'src/core/lib/channel/call_tracer.cc',
     'src/core/lib/channel/channel_args.cc',
     'src/core/lib/channel/channel_args_preconditioning.cc',

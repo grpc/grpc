@@ -994,6 +994,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/avl/avl.h )
   s.files += %w( src/core/lib/backoff/backoff.cc )
   s.files += %w( src/core/lib/backoff/backoff.h )
+  s.files += %w( src/core/lib/backoff/random_early_detection.cc )
+  s.files += %w( src/core/lib/backoff/random_early_detection.h )
   s.files += %w( src/core/lib/channel/call_finalization.h )
   s.files += %w( src/core/lib/channel/call_tracer.cc )
   s.files += %w( src/core/lib/channel/call_tracer.h )
