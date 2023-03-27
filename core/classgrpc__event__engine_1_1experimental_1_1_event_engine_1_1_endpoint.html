@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -82,10 +82,10 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -233,7 +233,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
 <p>When data is available on the connection, that data is moved into the <em>buffer</em>, and the <em>on_read</em> callback is called. The caller must ensure that the callback has access to the buffer when executed later. Ownership of the buffer is not transferred. Valid slices <em>may</em> be placed into the buffer even if the callback is invoked with a non-OK Status.</p>
-<p>There can be at most one outstanding read per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding read is one in which the <em>on_read</em> callback has not yet been executed for some previous call to <em>Read</em>. If an attempt is made to call <em>Read</em> while a previous read is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a></em> must abort.</p>
+<p>There can be at most one outstanding read per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding read is one in which the <em>on_read</em> callback has not yet been executed for some previous call to <em>Read</em>. If an attempt is made to call <em>Read</em> while a previous read is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a></em> must abort.</p>
 <p>For failed read operations, implementations should pass the appropriate statuses to <em>on_read</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
 </div>
@@ -280,7 +280,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Writes data out on the connection. </p>
 <p><em>on_writable</em> is called when the connection is ready for more data. The Slices within the <em>data</em> buffer may be mutated at will by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> until <em>on_writable</em> is called. The <em>data</em> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> will remain valid after calling <em>Write</em>, but its state is otherwise undefined. All bytes in <em>data</em> must have been written before calling <em>on_writable</em> unless an error has occurred.</p>
-<p>There can be at most one outstanding write per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding write is one in which the <em>on_writable</em> callback has not yet been executed for some previous call to <em>Write</em>. If an attempt is made to call <em>Write</em> while a previous write is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a></em> must abort.</p>
+<p>There can be at most one outstanding write per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding write is one in which the <em>on_writable</em> callback has not yet been executed for some previous call to <em>Write</em>. If an attempt is made to call <em>Write</em> while a previous write is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a></em> must abort.</p>
 <p>For failed write operations, implementations should pass the appropriate statuses to <em>on_writable</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
 </div>
@@ -291,7 +291,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

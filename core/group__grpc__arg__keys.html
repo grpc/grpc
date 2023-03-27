@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -89,6 +89,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaae124ed1c6d60a08d0f56884e9442044"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaae124ed1c6d60a08d0f56884e9442044">GRPC_ARG_ENABLE_LOAD_REPORTING</a>&#160;&#160;&#160;&quot;grpc.loadreporting&quot;</td></tr>
 <tr class="memdesc:gaae124ed1c6d60a08d0f56884e9442044"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, enable load reporting.  <a href="group__grpc__arg__keys.html#gaae124ed1c6d60a08d0f56884e9442044">More...</a><br /></td></tr>
 <tr class="separator:gaae124ed1c6d60a08d0f56884e9442044"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0e1cf7865c8f8fd0144e8636e9c9f50d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga0e1cf7865c8f8fd0144e8636e9c9f50d">GRPC_ARG_SERVER_CALL_METRIC_RECORDING</a>&#160;&#160;&#160;&quot;grpc.server_call_metric_recording&quot;</td></tr>
+<tr class="memdesc:ga0e1cf7865c8f8fd0144e8636e9c9f50d"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, call metric recording is enabled.  <a href="group__grpc__arg__keys.html#ga0e1cf7865c8f8fd0144e8636e9c9f50d">More...</a><br /></td></tr>
+<tr class="separator:ga0e1cf7865c8f8fd0144e8636e9c9f50d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga17b79aacf3bbfb0bce6d29bf9867988b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga17b79aacf3bbfb0bce6d29bf9867988b">GRPC_ARG_MINIMAL_STACK</a>&#160;&#160;&#160;&quot;grpc.minimal_stack&quot;</td></tr>
 <tr class="memdesc:ga17b79aacf3bbfb0bce6d29bf9867988b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request that optional features default to off (regardless of what they usually default to) - to enable tight control over what gets enabled.  <a href="group__grpc__arg__keys.html#ga17b79aacf3bbfb0bce6d29bf9867988b">More...</a><br /></td></tr>
 <tr class="separator:ga17b79aacf3bbfb0bce6d29bf9867988b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -163,6 +166,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gacccbdf888685b6d4beda61a3600f4a20"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gacccbdf888685b6d4beda61a3600f4a20">GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY</a>&#160;&#160;&#160;&quot;grpc.http2.true_binary&quot;</td></tr>
 <tr class="memdesc:gacccbdf888685b6d4beda61a3600f4a20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should we allow receipt of true-binary data on http2 connections? Defaults to on (1)  <a href="group__grpc__arg__keys.html#gacccbdf888685b6d4beda61a3600f4a20">More...</a><br /></td></tr>
 <tr class="separator:gacccbdf888685b6d4beda61a3600f4a20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4450fc268fe8e95e15af8f7d354c37ab"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4450fc268fe8e95e15af8f7d354c37ab">GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.http2.enable_preferred_frame_size&quot;</td></tr>
+<tr class="memdesc:ga4450fc268fe8e95e15af8f7d354c37ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">An experimental channel arg which determines whether the preferred crypto frame size http2 setting sent to the peer at startup.  <a href="group__grpc__arg__keys.html#ga4450fc268fe8e95e15af8f7d354c37ab">More...</a><br /></td></tr>
+<tr class="separator:ga4450fc268fe8e95e15af8f7d354c37ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabeeccb441a671122c75384e062b1b91b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabeeccb441a671122c75384e062b1b91b">GRPC_ARG_KEEPALIVE_TIME_MS</a>&#160;&#160;&#160;&quot;grpc.keepalive_time_ms&quot;</td></tr>
 <tr class="memdesc:gabeeccb441a671122c75384e062b1b91b"><td class="mdescLeft">&#160;</td><td class="mdescRight">After a duration of this time the client/server pings its peer to see if the transport is still alive.  <a href="group__grpc__arg__keys.html#gabeeccb441a671122c75384e062b1b91b">More...</a><br /></td></tr>
 <tr class="separator:gabeeccb441a671122c75384e062b1b91b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -226,6 +232,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">GRPC_ARG_LB_POLICY_NAME</a>&#160;&#160;&#160;&quot;grpc.lb_policy_name&quot;</td></tr>
 <tr class="memdesc:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="mdescLeft">&#160;</td><td class="mdescRight">LB policy name.  <a href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">More...</a><br /></td></tr>
 <tr class="separator:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga36f5980f634babe3ce3c9aa75e6395a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga36f5980f634babe3ce3c9aa75e6395a3">GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP</a>&#160;&#160;&#160;&quot;grpc.lb.ring_hash.ring_size_cap&quot;</td></tr>
+<tr class="memdesc:ga36f5980f634babe3ce3c9aa75e6395a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cap for ring size in the ring_hash LB policy.  <a href="group__grpc__arg__keys.html#ga36f5980f634babe3ce3c9aa75e6395a3">More...</a><br /></td></tr>
+<tr class="separator:ga36f5980f634babe3ce3c9aa75e6395a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabdcf8122824e386dcc23b947473e83e0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabdcf8122824e386dcc23b947473e83e0">GRPC_ARG_SOCKET_MUTATOR</a>&#160;&#160;&#160;&quot;grpc.socket_mutator&quot;</td></tr>
 <tr class="memdesc:gabdcf8122824e386dcc23b947473e83e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The grpc_socket_mutator instance that set the socket options.  <a href="group__grpc__arg__keys.html#gabdcf8122824e386dcc23b947473e83e0">More...</a><br /></td></tr>
 <tr class="separator:gabdcf8122824e386dcc23b947473e83e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -672,6 +681,25 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga4450fc268fe8e95e15af8f7d354c37ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4450fc268fe8e95e15af8f7d354c37ab">&#9670;&nbsp;</a></span>GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE&#160;&#160;&#160;&quot;grpc.experimental.http2.enable_preferred_frame_size&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>An experimental channel arg which determines whether the preferred crypto frame size http2 setting sent to the peer at startup. </p>
+<p>If set to 0 (false</p><ul>
+<li>default), the preferred frame size is not sent to the peer. Otherwise it sends a default preferred crypto frame size value of 4GB to the peer at the startup of each connection. </li>
+</ul>
+
+</div>
+</div>
 <a id="ga1768735fceeb8108a2f1eb12ea0a894e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga1768735fceeb8108a2f1eb12ea0a894e">&#9670;&nbsp;</a></span>GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS</h2>
 
@@ -929,7 +957,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Channel arg to set http proxy per channel. </p>
-<p>If set, the channel arg value will be prefered over the envrionment variable settings. </p>
+<p>If set, the channel arg value will be preferred over the environment variable settings. </p>
 
 </div>
 </div>
@@ -1330,6 +1358,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga36f5980f634babe3ce3c9aa75e6395a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga36f5980f634babe3ce3c9aa75e6395a3">&#9670;&nbsp;</a></span>GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP&#160;&#160;&#160;&quot;grpc.lb.ring_hash.ring_size_cap&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Cap for ring size in the ring_hash LB policy. </p>
+<p>The min and max ring size values set in the LB policy config will be capped to this value. Default is 4096. </p>
+
+</div>
+</div>
 <a id="gaf47b4048c11e4f8f4162f12c135c2da4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaf47b4048c11e4f8f4162f12c135c2da4">&#9670;&nbsp;</a></span>GRPC_ARG_SECONDARY_USER_AGENT_STRING</h2>
 
@@ -1344,6 +1389,22 @@ Macros</h2></td></tr>
 
 <p>Secondary user agent: goes at the end of the user-agent metadata sent on each request. </p>
 <p>A string. </p>
+
+</div>
+</div>
+<a id="ga0e1cf7865c8f8fd0144e8636e9c9f50d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga0e1cf7865c8f8fd0144e8636e9c9f50d">&#9670;&nbsp;</a></span>GRPC_ARG_SERVER_CALL_METRIC_RECORDING</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_SERVER_CALL_METRIC_RECORDING&#160;&#160;&#160;&quot;grpc.server_call_metric_recording&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, call metric recording is enabled. </p>
 
 </div>
 </div>
@@ -1578,7 +1639,6 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, it will determine the maximum frame size used by TSI's frame protector. </p>
-<p>NOTE: Be aware that using a large "max_frame_size" is memory inefficient for non-zerocopy protectors. Also, increasing this value above 1MiB can break old binaries that don't support larger than 1MiB frame size. </p>
 
 </div>
 </div>
@@ -1736,7 +1796,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

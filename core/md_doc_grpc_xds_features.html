@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -122,18 +122,20 @@ Request routing to multiple clusters based on <a href="https://www.envoyproxy.io
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Support for <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/api">xDS v3 APIs</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A30-xds-v3.md">A30</a> </td><td class="markdownTableBodyNone">v1.36.0 </td><td class="markdownTableBodyNone">v1.36.0 </td><td class="markdownTableBodyNone">v1.36.0 </td><td class="markdownTableBodyNone">v1.4.0  </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Support for <a href="https://www.envoyproxy.io/docs/envoy/latest/api/api_supported_versions">xDS v2 APIs</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A30-xds-v3.md#details-of-the-v2-to-v3-transition">A27</a> </td><td class="markdownTableBodyNone">&lt;&#160;v1.51.0 </td><td class="markdownTableBodyNone">&lt;&#160;v1.53.0 </td><td class="markdownTableBodyNone">TBA </td><td class="markdownTableBodyNone">&lt;&#160;v1.8.0  </td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-routeaction-maxstreamduration">Maximum Stream Duration</a>:<ul>
 <li>
 Only max_stream_duration is supported.</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md">A31</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.4.0  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto">Circuit Breaking</a>:<ul>
 <li>
 Only max_requests is supported.</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md">A32</a> </td><td class="markdownTableBodyNone">v1.37.1 (N/A for PHP) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.4.0  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/fault/v3/fault.proto">Fault Injection</a>:<br  />
  Only the following fields are supported:<ul>
 <li>
@@ -146,10 +148,10 @@ max_active_faults</li>
 headers</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md">A33</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.4.0  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.proto">Client Status Discovery Service</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A40-csds-support.md">A40</a> </td><td class="markdownTableBodyNone">v1.37.1 (C++)<br  />
 v1.38.0 (Python) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.5.0  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash">Ring hash</a> load balancing policy:<br  />
  Only the following <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/route/v3/route_components.proto#L706">policy specifiers</a> are supported:<ul>
 <li>
@@ -159,7 +161,7 @@ filter_state with key <code>io.grpc.channel_id</code></li>
 </ul>
 Only <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/cluster/v3/cluster.proto#L383"><code>XX_HASH</code></a> function is supported. </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md">A42</a> </td><td class="markdownTableBodyNone">v1.40.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.40.1 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-retrypolicy">Retry</a>:<br  />
 Only the following fields are supported:<ul>
 <li>
@@ -171,11 +173,11 @@ retry_back_off</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A44-xds-retry.md">A44</a> </td><td class="markdownTableBodyNone">v1.40.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.40.1 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/security/security">Security</a>:<br  />
 Uses <a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md#certificate-provider-plugin-framework">certificate providers</a> instead of SDS </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md">A29</a> </td><td class="markdownTableBodyNone">v1.41.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.41.0 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/rbac/v3/rbac.proto">Authorization (RBAC)</a>:<br  />
 <ul>
 <li>
@@ -183,13 +185,22 @@ Uses <a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.
 <li>
 CEL unsupported and rejected</li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md">A41</a> </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.42.0 </td><td class="markdownTableBodyNone">1.42.0 </td><td class="markdownTableBodyNone"></td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md">A41</a> </td><td class="markdownTableBodyNone">v1.51.0<br  />
+(C++ and Python) </td><td class="markdownTableBodyNone">v1.42.0 </td><td class="markdownTableBodyNone">1.42.0 </td><td class="markdownTableBodyNone"></td></tr>
 </table>
+<p><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier">Outlier Detection</a>:<br  />
+Only the following detection types are supported:</p><ul>
+<li>
+Success Rate</li>
+<li>
+Failure Percentage</li>
+</ul>
+<p>| <a href="https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md">A50</a> | v1.51.0 | v1.49.0 | v1.50.0 | v1.7.0 | | </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:36 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

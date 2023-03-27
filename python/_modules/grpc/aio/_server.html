@@ -5,13 +5,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._server &#8212; gRPC Python 1.46.2 documentation</title>
+    <title>grpc.aio._server &#8212; gRPC Python 1.53.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +28,7 @@
 
 
 
-<p class="blurb">1.46.2</p>
+<p class="blurb">1.53.0</p>
 
 
 
@@ -71,7 +70,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -124,7 +123,7 @@
 
 
 <span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">_base_server</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Serves RPCs.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serves RPCs.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Executor</span><span class="p">],</span>
                  <span class="n">generic_handlers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">]],</span>
@@ -150,7 +149,7 @@
     <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">generic_rpc_handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
 
 <span class="sd">        This method is only safe to call before the server is started.</span>
 
@@ -161,7 +160,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">add_generic_rpc_handlers</span><span class="p">(</span><span class="n">generic_rpc_handlers</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Opens an insecure port for accepting RPCs.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens an insecure port for accepting RPCs.</span>
 
 <span class="sd">        This method may only be called before starting the server.</span>
 
@@ -177,7 +176,7 @@
 
     <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                         <span class="n">server_credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Opens a secure port for accepting RPCs.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens a secure port for accepting RPCs.</span>
 
 <span class="sd">        This method may only be called before starting the server.</span>
 
@@ -196,14 +195,14 @@
                                          <span class="n">server_credentials</span><span class="p">))</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Starts this Server.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Starts this Server.</span>
 
 <span class="sd">        This method may only be called once. (i.e. it is not idempotent).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Stops this Server.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stops this Server.</span>
 
 <span class="sd">        This method immediately stops the server from servicing new RPCs in</span>
 <span class="sd">        all cases.</span>
@@ -228,7 +227,7 @@
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                    <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Block current coroutine until the server stops.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block current coroutine until the server stops.</span>
 
 <span class="sd">        This is an EXPERIMENTAL API.</span>
 
@@ -251,7 +250,7 @@
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server</span><span class="o">.</span><span class="n">wait_for_termination</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Schedules a graceful shutdown in current event loop.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedules a graceful shutdown in current event loop.</span>
 
 <span class="sd">        The Cython AioServer doesn&#39;t hold a ref-count to this class. It should</span>
 <span class="sd">        be safe to slightly extend the underlying Cython object&#39;s life span.</span>
@@ -270,7 +269,7 @@
            <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
            <span class="n">maximum_concurrent_rpcs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
            <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      migration_thread_pool: A futures.ThreadPoolExecutor to be used by the</span>
@@ -289,8 +288,7 @@
 <span class="sd">        indicate no limit.</span>
 <span class="sd">      compression: An element of grpc.compression, e.g.</span>
 <span class="sd">        grpc.compression.Gzip. This compression algorithm will be used for the</span>
-<span class="sd">        lifetime of the server unless overridden by set_compression. This is an</span>
-<span class="sd">        EXPERIMENTAL option.</span>
+<span class="sd">        lifetime of the server unless overridden by set_compression.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Server object.</span>

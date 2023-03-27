@@ -4,15 +4,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>gRPC Reflection &#8212; gRPC Python 1.46.2 documentation</title>
+    <title>gRPC Reflection &#8212; gRPC Python 1.53.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Status" href="grpc_status.html" />
@@ -32,7 +31,7 @@
 
 
 
-<p class="blurb">1.46.2</p>
+<p class="blurb">1.53.0</p>
 
 
 
@@ -52,8 +51,25 @@
 <li class="toctree-l2"><a class="reference internal" href="#what-is-grpc-reflection">What is gRPC reflection?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-grpc_reflection.v1alpha.reflection">Server-side</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database">Client-side</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-grpc_reflection.v1alpha.reflection">Server-side</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer"><code class="docutils literal notranslate"><span class="pre">ReflectionServicer</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo"><code class="docutils literal notranslate"><span class="pre">ReflectionServicer.ServerReflectionInfo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection"><code class="docutils literal notranslate"><span class="pre">enable_server_reflection()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database">Client-side</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase.get_services()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileByName"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase.FindFileByName()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingSymbol"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase.FindFileContainingSymbol()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingExtension"><code class="docutils literal notranslate"><span class="pre">ProtoReflectionDescriptorDatabase.FindFileContainingExtension()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -81,7 +97,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -99,19 +115,19 @@
           <div class="body" role="main">
             
   <section id="grpc-reflection">
-<h1>gRPC Reflection<a class="headerlink" href="#grpc-reflection" title="Permalink to this headline">¶</a></h1>
+<h1>gRPC Reflection<a class="headerlink" href="#grpc-reflection" title="Permalink to this heading">¶</a></h1>
 <section id="what-is-grpc-reflection">
-<h2>What is gRPC reflection?<a class="headerlink" href="#what-is-grpc-reflection" title="Permalink to this headline">¶</a></h2>
+<h2>What is gRPC reflection?<a class="headerlink" href="#what-is-grpc-reflection" title="Permalink to this heading">¶</a></h2>
 <p>Check this out <a class="reference external" href="https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md">gRPC Python Server Reflection</a></p>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 <p>Refer to the GitHub <a class="reference external" href="https://github.com/grpc/grpc/blob/master/examples/python/helloworld/greeter_server_with_reflection.py">reflection example</a></p>
 </section>
 <section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
 <section id="module-grpc_reflection.v1alpha.reflection">
-<span id="server-side"></span><h3>Server-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.reflection" title="Permalink to this headline">¶</a></h3>
+<span id="server-side"></span><h3>Server-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.reflection" title="Permalink to this heading">¶</a></h3>
 <p>Reference implementation for reflection in gRPC Python.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_reflection.v1alpha.reflection.ReflectionServicer">
@@ -131,7 +147,7 @@ all related requests go to a single server.</p>
 <span class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></span><span class="sig-name descname"><span class="pre">enable_server_reflection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables server reflection on a server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_names</strong> – Iterable of fully-qualified service names available.</p></li>
 <li><p><strong>server</strong> – grpc.Server to which reflection service will be added.</p></li>
@@ -143,7 +159,7 @@ all related requests go to a single server.</p>
 
 </section>
 <section id="module-grpc_reflection.v1alpha.proto_reflection_descriptor_database">
-<span id="client-side"></span><h3>Client-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database" title="Permalink to this headline">¶</a></h3>
+<span id="client-side"></span><h3>Client-side<a class="headerlink" href="#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database" title="Permalink to this heading">¶</a></h3>
 <p>Reference implementation for reflection client in gRPC Python.</p>
 <p>For usage instructions, see the Python Reflection documentation at
 <code class="docutils literal notranslate"><span class="pre">doc/python/server_reflection.md</span></code>.</p>
@@ -157,8 +173,8 @@ Reflection service, and provides an interface to retrieve the Reflection
 information. It implements the DescriptorDatabase interface.</p>
 <p>It is typically used to feed a DescriptorPool instance.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>channel</strong> (<a class="reference internal" href="grpc.html#grpc.Channel" title="grpc.Channel"><em>grpc.Channel</em></a>) – </p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>channel</strong> (<a class="reference internal" href="grpc.html#grpc.Channel" title="grpc.Channel"><em>Channel</em></a>) – </p>
 </dd>
 </dl>
 <dl class="py method">
@@ -166,10 +182,10 @@ information. It implements the DescriptorDatabase interface.</p>
 <span class="sig-name descname"><span class="pre">get_services</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/proto_reflection_descriptor_database.html#ProtoReflectionDescriptorDatabase.get_services"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get list of full names of the registered services.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A list of strings corresponding to the names of the services.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Iterable</em>[str]</p>
 </dd>
 </dl>
@@ -182,17 +198,17 @@ information. It implements the DescriptorDatabase interface.</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – The name of the file. Typically this is a relative path ending in “.proto”.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A FileDescriptorProto for the file.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>KeyError</strong> – the file was not found.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>google.protobuf.descriptor_pb2.FileDescriptorProto</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>FileDescriptorProto</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -213,17 +229,17 @@ descriptor’s package and any containing messages. Some examples:</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>symbol</strong> (<em>str</em>) – The fully-qualified name of the symbol.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>FileDescriptorProto for the file containing the symbol.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>KeyError</strong> – the symbol was not found.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>google.protobuf.descriptor_pb2.FileDescriptorProto</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>FileDescriptorProto</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -235,16 +251,16 @@ typically not called directly; prefer using a DescriptorPool instead.</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>extendee_name</strong> (<em>str</em>) – fully-qualified name of the extended message type.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of field numbers used by all known extensions.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>KeyError</strong> – The message type <cite>extendee_name</cite> was not found.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Iterable</em>[int]</p>
 </dd>
 </dl>
@@ -258,20 +274,20 @@ and field number.</p>
 <p>This function implements a DescriptorDatabase interface, and is
 typically not called directly; prefer using a DescriptorPool instead.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>extendee_name</strong> (<em>str</em>) – fully-qualified name of the extended message type.</p></li>
 <li><p><strong>extension_number</strong> (<em>int</em>) – the number of the extension field.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>FileDescriptorProto for the file containing the extension.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>KeyError</strong> – The message or the extension number were not found.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>google.protobuf.descriptor_pb2.FileDescriptorProto</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>FileDescriptorProto</em></p>
 </dd>
 </dl>
 </dd></dl>

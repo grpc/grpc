@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.50.0</span>
+   &#160;<span id="projectnumber">1.53.0</span>
    </div>
   </td>
  </tr>
@@ -126,6 +126,9 @@ $(function() {
 <li>call_cq_
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a63a5ad0006dfaa7c05afe0cd05b1fb69">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
+<li>call_metric_recording_enabled_
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#abf9cc57aa1b022a686eba6c99c35832a">grpc::ServerInterface::BaseAsyncRequest</a>
+</li>
 <li>call_requester
 : <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a19f0ef478bb82487c2f4a749c250e6a1">grpc::internal::MethodHandler::HandlerParameter</a>
 </li>
@@ -163,12 +166,6 @@ $(function() {
 <li>CallbackWithSuccessTag()
 : <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#ad11c7809c2233ce3d2857304357b61f7">grpc::internal::CallbackWithSuccessTag</a>
 </li>
-<li>CallCredentials()
-: <a class="el" href="classgrpc_1_1_call_credentials.html#af28714fa5ebfe120cd02f26aaaca595a">grpc::CallCredentials</a>
-</li>
-<li>CallMetricRecorder()
-: <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a2c047e65850ea89dfdd7d4ca3f7c51a5">grpc::experimental::CallMetricRecorder</a>
-</li>
 <li>CallOpClientRecvStatus()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_client_recv_status.html#acae2b8affec2dcffa44a96aecb81a319">grpc::internal::CallOpClientRecvStatus</a>
 </li>
@@ -201,9 +198,6 @@ $(function() {
 </li>
 <li>CancelConnect()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">grpc_event_engine::experimental::EventEngine</a>
-</li>
-<li>cancelled()
-: <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a619a3f96e3cf1d0c87d47e5d6c7822a4">grpc::CoreCodegenInterface</a>
 </li>
 <li>CANCELLED
 : <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab">grpc::Status</a>
@@ -255,9 +249,6 @@ $(function() {
 <li>ChannelArguments()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#aecabf1ea1c78a3202544571cf857e8eb">grpc::ChannelArguments</a>
 </li>
-<li>ChannelCredentials()
-: <a class="el" href="classgrpc_1_1_channel_credentials.html#a961606a781db020e7dbd100c00b8071b">grpc::ChannelCredentials</a>
-</li>
 <li>Clear()
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a185b593e5c7d2b888fa377989a6bae80">grpc::ByteBuffer</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#aebb25acded8189702314574955e64e40">grpc::internal::CallbackWithSuccessTag</a>
@@ -278,6 +269,18 @@ $(function() {
 </li>
 <li>clear_write_through()
 : <a class="el" href="classgrpc_1_1_write_options.html#a5355c88989456f2e24e85e0ba8116705">grpc::WriteOptions</a>
+</li>
+<li>ClearCpuUtilization()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a42ba31217bfbb0b3b7915afa9c443325">grpc::experimental::ServerMetricRecorder</a>
+</li>
+<li>ClearMemoryUtilization()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a1b82bcd3c4ea8d61f33babb9ebc142bf">grpc::experimental::ServerMetricRecorder</a>
+</li>
+<li>ClearNamedUtilization()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a22f6964b20f1665dd2eae387c913b4c3">grpc::experimental::ServerMetricRecorder</a>
+</li>
+<li>ClearQps()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ab2ec6b5b456d52ba00194b3f5c2d1195">grpc::experimental::ServerMetricRecorder</a>
 </li>
 <li>ClearState()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aae108abad0aee0aaa5645584070bb14c">grpc::internal::InterceptorBatchMethodsImpl</a>
@@ -328,7 +331,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_client_recv_status.html#ab45c6af5adf25f0da123f1db9d9a2d64">grpc::internal::CallOpClientRecvStatus</a>
 </li>
 <li>ClientRpcInfo()
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a1bbddf9e41ecd9445376031b66af67c7">grpc::experimental::ClientRpcInfo</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a42aeb98ab3b464d26b78338f9595122f">grpc::experimental::ClientRpcInfo</a>
 </li>
 <li>ClientSendClose()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_client_send_close.html#a56860a96c2e6f8e34c1f6b29a4988189">grpc::internal::CallOpClientSendClose</a>
@@ -356,7 +359,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1string__ref.html#a2e3fa91fae8362cd8afd0eb0a7f0174e">grpc::string_ref</a>
 </li>
 <li>CompletionQueue()
-: <a class="el" href="classgrpc_1_1_completion_queue.html#abf1d4810de32ca2cc2c14c591b41d2cd">grpc::CompletionQueue</a>
+: <a class="el" href="classgrpc_1_1_completion_queue.html#a081a954044215a7ca8554da4220fb369">grpc::CompletionQueue</a>
 </li>
 <li>CompositeCallCredentials
 : <a class="el" href="classgrpc_1_1_call_credentials.html#a064b061a7e2a80e1d6466addd8600779">grpc::CallCredentials</a>
@@ -392,7 +395,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1string__ref.html#a32ec8b9506c598690f211ae5afb47b85">grpc::string_ref</a>
 </li>
 <li>Container()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a3bafc0cf3260f5fa626c81a6cb45b371">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a6d73f33bf0d7a6b8814baaa76932fd93">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
 </li>
 <li>context_
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a438c550a34d2a2531df7cd97c9db5302">grpc::ServerInterface::BaseAsyncRequest</a>
@@ -452,6 +455,7 @@ $(function() {
 <li>Create()
 : <a class="el" href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html#a9585983d0bd04c7a0a126b5b1cc15359">grpc::experimental::ExternalCertificateVerifier</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_authorization_policy_provider.html#a00914ffa45c8f12ec75386ea7d9be64c">grpc::experimental::FileWatcherAuthorizationPolicyProvider</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ae31ecbc02bcb0f48c9d58a2048348163">grpc::experimental::ServerMetricRecorder</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#a4b5a96db220eb464ae7db3ffa80b2195">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html#ab68715415fa1b67f8810c5bb49c89c35">grpc::internal::ClientAsyncReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html#ad3759cfa9f62989b1efb48e783e05886">grpc::internal::ClientAsyncReaderWriterFactory&lt; W, R &gt;</a>
@@ -506,7 +510,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

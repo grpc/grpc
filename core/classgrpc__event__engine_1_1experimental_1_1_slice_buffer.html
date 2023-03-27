@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::SliceBuffer Class Reference</div>  </div>
 </div><!--header-->
@@ -93,6 +94,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:abf41faf44ae5b4f04c3383f25f9087a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5ba6ea93b21f1e543e980748f04a126"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac5ba6ea93b21f1e543e980748f04a126">operator=</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;&amp;other) noexcept</td></tr>
 <tr class="separator:ac5ba6ea93b21f1e543e980748f04a126"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7e41f9489aa8b25b6e47c8e556accad"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa7e41f9489aa8b25b6e47c8e556accad">Swap</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;other)</td></tr>
+<tr class="memdesc:aa7e41f9489aa8b25b6e47c8e556accad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Swap the contents of this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> with the contents of another.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa7e41f9489aa8b25b6e47c8e556accad">More...</a><br /></td></tr>
+<tr class="separator:aa7e41f9489aa8b25b6e47c8e556accad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3dfb313a28fbd62358473e81b431d070"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a3dfb313a28fbd62358473e81b431d070">Append</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a> slice)</td></tr>
 <tr class="memdesc:a3dfb313a28fbd62358473e81b431d070"><td class="mdescLeft">&#160;</td><td class="mdescRight">Appends a new slice into the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> and makes an attempt to merge this slice with the last slice in the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a3dfb313a28fbd62358473e81b431d070">More...</a><br /></td></tr>
 <tr class="separator:a3dfb313a28fbd62358473e81b431d070"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,6 +112,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a686e07ab26b3b6cd9ec77f2570127a61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a686e07ab26b3b6cd9ec77f2570127a61">MoveFirstNBytesIntoBuffer</a> (size_t n, void *dst)</td></tr>
 <tr class="memdesc:a686e07ab26b3b6cd9ec77f2570127a61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Move the first n bytes of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> into a memory pointed to by dst.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a686e07ab26b3b6cd9ec77f2570127a61">More...</a><br /></td></tr>
 <tr class="separator:a686e07ab26b3b6cd9ec77f2570127a61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98197734ac603a88cf2264fdf7fdb9b9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a98197734ac603a88cf2264fdf7fdb9b9">MoveLastNBytesIntoSliceBuffer</a> (size_t n, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;other)</td></tr>
+<tr class="memdesc:a98197734ac603a88cf2264fdf7fdb9b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes/deletes the last n bytes in the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> and add it to the other <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a98197734ac603a88cf2264fdf7fdb9b9">More...</a><br /></td></tr>
+<tr class="separator:a98197734ac603a88cf2264fdf7fdb9b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8f75c8c8866df72cd8a99cd3a6bcf0a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac8f75c8c8866df72cd8a99cd3a6bcf0a">MoveFirstNBytesIntoSliceBuffer</a> (size_t n, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;other)</td></tr>
+<tr class="memdesc:ac8f75c8c8866df72cd8a99cd3a6bcf0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Move the first n bytes of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> into the other <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac8f75c8c8866df72cd8a99cd3a6bcf0a">More...</a><br /></td></tr>
+<tr class="separator:ac8f75c8c8866df72cd8a99cd3a6bcf0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8279d76edb2d6fcbb052ea8c806485a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a8279d76edb2d6fcbb052ea8c806485a1">Clear</a> ()</td></tr>
 <tr class="memdesc:a8279d76edb2d6fcbb052ea8c806485a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes and unrefs all slices in the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a8279d76edb2d6fcbb052ea8c806485a1">More...</a><br /></td></tr>
 <tr class="separator:a8279d76edb2d6fcbb052ea8c806485a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,18 +130,29 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a17eb15c28740a26c188bac8b07c4d1c1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a17eb15c28740a26c188bac8b07c4d1c1">RefSlice</a> (size_t index)</td></tr>
 <tr class="memdesc:a17eb15c28740a26c188bac8b07c4d1c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increased the ref-count of slice at the specified index and returns the associated slice.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a17eb15c28740a26c188bac8b07c4d1c1">More...</a><br /></td></tr>
 <tr class="separator:a17eb15c28740a26c188bac8b07c4d1c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf25fef03b68e35b98e46c3006cbad91"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aaf25fef03b68e35b98e46c3006cbad91">Length</a> ()</td></tr>
-<tr class="memdesc:aaf25fef03b68e35b98e46c3006cbad91"><td class="mdescLeft">&#160;</td><td class="mdescRight">The total number of bytes held by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aaf25fef03b68e35b98e46c3006cbad91">More...</a><br /></td></tr>
-<tr class="separator:aaf25fef03b68e35b98e46c3006cbad91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd161dca1b657f4ebd15cf2fd4fcd002"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abd161dca1b657f4ebd15cf2fd4fcd002">operator[]</a> (size_t index) const</td></tr>
+<tr class="memdesc:abd161dca1b657f4ebd15cf2fd4fcd002"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array access into the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abd161dca1b657f4ebd15cf2fd4fcd002">More...</a><br /></td></tr>
+<tr class="separator:abd161dca1b657f4ebd15cf2fd4fcd002"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa916497f83ef70c51aa09b1184f9cd49"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa916497f83ef70c51aa09b1184f9cd49">MutableSliceAt</a> (size_t index) const</td></tr>
+<tr class="memdesc:aa916497f83ef70c51aa09b1184f9cd49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return mutable reference to the slice at the specified index.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa916497f83ef70c51aa09b1184f9cd49">More...</a><br /></td></tr>
+<tr class="separator:aa916497f83ef70c51aa09b1184f9cd49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58482c45684909c532608a771e7e5a72"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a58482c45684909c532608a771e7e5a72">Length</a> () const</td></tr>
+<tr class="memdesc:a58482c45684909c532608a771e7e5a72"><td class="mdescLeft">&#160;</td><td class="mdescRight">The total number of bytes held by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a58482c45684909c532608a771e7e5a72">More...</a><br /></td></tr>
+<tr class="separator:a58482c45684909c532608a771e7e5a72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca36a90ea747f310ebf1962af5a45cfb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aca36a90ea747f310ebf1962af5a45cfb">c_slice_buffer</a> ()</td></tr>
 <tr class="memdesc:aca36a90ea747f310ebf1962af5a45cfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the back raw <a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aca36a90ea747f310ebf1962af5a45cfb">More...</a><br /></td></tr>
 <tr class="separator:aca36a90ea747f310ebf1962af5a45cfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:abc8a8e5de16e1cdb7390af5d8e898091"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abc8a8e5de16e1cdb7390af5d8e898091">TakeCSliceBuffer</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> &amp;slice_buffer)</td></tr>
+<tr class="separator:abc8a8e5de16e1cdb7390af5d8e898091"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A Wrapper around <em><a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a></em> pointer. </p>
 <p>A slice buffer holds the memory for a collection of slices. The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> object itself is meant to only hide the C-style API, and won't hold the data itself. In terms of lifespan, the <a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a> ought to be kept somewhere inside the caller's objects, like a transport or an endpoint.</p>
 <p>This lifespan rule is likely to change in the future, as we may collapse the <a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a> structure straight into this class.</p>
-<p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> API is basically a replica of the <a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a>'s, and its documentation will move here once we remove the C structure, which should happen before the Event Engine's API is no longer an experimental API. </p>
+<p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> API is basically a replica of the <a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a>'s, and its documentation will move here once we remove the C structure, which should happen before the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a>'s API is no longer an experimental API. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a63efd26d98882e9247861e61550d8ad9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a63efd26d98882e9247861e61550d8ad9">&#9670;&nbsp;</a></span>SliceBuffer() <span class="overload">[1/3]</span></h2>
@@ -151,7 +172,7 @@ Public Member Functions</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -360,8 +381,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aaf25fef03b68e35b98e46c3006cbad91"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaf25fef03b68e35b98e46c3006cbad91">&#9670;&nbsp;</a></span>Length()</h2>
+<a id="a58482c45684909c532608a771e7e5a72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a58482c45684909c532608a771e7e5a72">&#9670;&nbsp;</a></span>Length()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -373,7 +394,7 @@ Public Member Functions</h2></td></tr>
           <td class="memname">size_t grpc_event_engine::experimental::SliceBuffer::Length </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -422,6 +443,110 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Move the first n bytes of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> into a memory pointed to by dst. </p>
+
+</div>
+</div>
+<a id="ac8f75c8c8866df72cd8a99cd3a6bcf0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8f75c8c8866df72cd8a99cd3a6bcf0a">&#9670;&nbsp;</a></span>MoveFirstNBytesIntoSliceBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_event_engine::experimental::SliceBuffer::MoveFirstNBytesIntoSliceBuffer </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>n</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Move the first n bytes of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> into the other <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>. </p>
+
+</div>
+</div>
+<a id="a98197734ac603a88cf2264fdf7fdb9b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98197734ac603a88cf2264fdf7fdb9b9">&#9670;&nbsp;</a></span>MoveLastNBytesIntoSliceBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_event_engine::experimental::SliceBuffer::MoveLastNBytesIntoSliceBuffer </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>n</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Removes/deletes the last n bytes in the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> and add it to the other <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>. </p>
+
+</div>
+</div>
+<a id="aa916497f83ef70c51aa09b1184f9cd49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa916497f83ef70c51aa09b1184f9cd49">&#9670;&nbsp;</a></span>MutableSliceAt()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a>&amp; grpc_event_engine::experimental::SliceBuffer::MutableSliceAt </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>index</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return mutable reference to the slice at the specified index. </p>
 
 </div>
 </div>
@@ -474,6 +599,35 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="abd161dca1b657f4ebd15cf2fd4fcd002"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abd161dca1b657f4ebd15cf2fd4fcd002">&#9670;&nbsp;</a></span>operator[]()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a>&amp; grpc_event_engine::experimental::SliceBuffer::operator[] </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>index</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Array access into the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a>. </p>
+<p>It returns a non mutable reference to the slice at the specified index </p>
 
 </div>
 </div>
@@ -545,6 +699,60 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aa7e41f9489aa8b25b6e47c8e556accad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7e41f9489aa8b25b6e47c8e556accad">&#9670;&nbsp;</a></span>Swap()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_event_engine::experimental::SliceBuffer::Swap </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Swap the contents of this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> with the contents of another. </p>
+
+</div>
+</div>
+<a id="abc8a8e5de16e1cdb7390af5d8e898091"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc8a8e5de16e1cdb7390af5d8e898091">&#9670;&nbsp;</a></span>TakeCSliceBuffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> &amp;&#160;</td>
+          <td class="paramname"><em>slice_buffer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aa24098dc70146ac31fc64132e180df95"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa24098dc70146ac31fc64132e180df95">&#9670;&nbsp;</a></span>TakeFirst()</h2>
 
@@ -570,7 +778,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
