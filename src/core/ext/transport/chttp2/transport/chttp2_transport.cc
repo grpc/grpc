@@ -1683,12 +1683,16 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
-    Ref().release();  // Ref for the timer
-    timer_handle_ =
-        t_->event_engine->RunAfter(grpc_core::Duration::Seconds(20), [this] {
+    timer_handle_ = t_->event_engine->RunAfter(
+        grpc_core::Duration::Seconds(20),
+        [self = Ref(DEBUG_LOCATION, "GoawayTimer")] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
-          OnTimer();
+          self->Ref().release();
+          self->t_->combiner->Run(
+              GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self.get(),
+                                nullptr),
+              absl::OkStatus());
         });
   }
 
@@ -1729,20 +1733,10 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   static void OnPingAckLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
-    if (self->timer_handle_ != TaskHandle::kInvalid) {
-      if (self->t_->event_engine->Cancel(self->timer_handle_)) {
-        self->Unref();
-      }
-      self->timer_handle_ = TaskHandle::kInvalid;
-    }
+    self->t_->event_engine->Cancel(
+        std::exchange(self->timer_handle_, TaskHandle::kInvalid));
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
-  }
-
-  void OnTimer() {
-    t_->combiner->Run(
-        GRPC_CLOSURE_INIT(&on_timer_, OnTimerLocked, this, nullptr),
-        absl::OkStatus());
   }
 
   static void OnTimerLocked(void* arg, grpc_error_handle /* error */) {
