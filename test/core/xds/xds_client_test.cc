@@ -2520,12 +2520,12 @@ TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
 // TODO(roth,apolcyn): remove this test when the
 // GRPC_EXPERIMENTAL_XDS_FEDERATION env var is removed.
 TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
+  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION",
+                                           "false");
   // We will use this xdstp name, whose authority is not present in
   // the bootstrap config.  But since federation is not enabled, we
   // will treat this as an opaque old-style name, so we'll send it to
   // the default server.
-  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION",
-                                           "false");
   constexpr char kXdstpResourceName[] =
       "xdstp://xds.example.com/test.v3.foo/foo1";
   InitXdsClient();
