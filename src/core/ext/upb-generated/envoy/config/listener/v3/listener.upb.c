@@ -168,7 +168,25 @@ const upb_MiniTable envoy_config_listener_v3_Listener_InternalListenerConfig_msg
   UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[7] = {
+const upb_MiniTable envoy_config_listener_v3_ListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+const upb_MiniTable envoy_config_listener_v3_ValidationListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+const upb_MiniTable envoy_config_listener_v3_ApiListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[10] = {
   &envoy_config_listener_v3_AdditionalAddress_msginit,
   &envoy_config_listener_v3_ListenerCollection_msginit,
   &envoy_config_listener_v3_Listener_msginit,
@@ -176,13 +194,16 @@ static const upb_MiniTable *messages_layout[7] = {
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_msginit,
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit,
   &envoy_config_listener_v3_Listener_InternalListenerConfig_msginit,
+  &envoy_config_listener_v3_ListenerManager_msginit,
+  &envoy_config_listener_v3_ValidationListenerManager_msginit,
+  &envoy_config_listener_v3_ApiListenerManager_msginit,
 };
 
 const upb_MiniTable_File envoy_config_listener_v3_listener_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  7,
+  10,
   0,
   0,
 };
