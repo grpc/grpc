@@ -1,28 +1,27 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Test of gpr thread support. */
+// Test of gpr thread support.
 
 #include "src/core/lib/gprpp/thd.h"
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -37,7 +36,7 @@ struct test {
   gpr_cv done_cv;
 };
 
-/* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
+// A Thread body.   Decrement t->n, and if is becomes zero, set t->done.
 static void thd_body1(void* v) {
   struct test* t = static_cast<struct test*>(v);
   gpr_mu_lock(&t->mu);
@@ -49,7 +48,7 @@ static void thd_body1(void* v) {
   gpr_mu_unlock(&t->mu);
 }
 
-/* Test that we can create a number of threads, wait for them, and join them. */
+// Test that we can create a number of threads, wait for them, and join them.
 static void test1(void) {
   grpc_core::Thread thds[NUM_THREADS];
   struct test t;
@@ -76,7 +75,7 @@ static void test1(void) {
 
 static void thd_body2(void* /*v*/) {}
 
-/* Test that we can create a number of threads and join them. */
+// Test that we can create a number of threads and join them.
 static void test2(void) {
   grpc_core::Thread thds[NUM_THREADS];
   for (auto& th : thds) {
@@ -90,7 +89,7 @@ static void test2(void) {
   }
 }
 
-/* ------------------------------------------------- */
+// -------------------------------------------------
 
 TEST(ThdTest, MainTest) {
   test1();

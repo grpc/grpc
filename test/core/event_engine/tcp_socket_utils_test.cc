@@ -19,6 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
 // IWYU pragma: no_include <arpa/inet.h>
 
 #include <string>
@@ -42,8 +45,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-using ::grpc_event_engine::experimental::EventEngine;
-
 const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                            0, 0, 0xff, 0xff, 192, 0, 2, 1};
 const uint8_t kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,

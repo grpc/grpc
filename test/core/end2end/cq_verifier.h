@@ -1,23 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
+
+#include <stdint.h>
 
 #include <string>
 #include <vector>
@@ -73,6 +75,8 @@ class CqVerifier {
 
   std::string ToString() const;
 
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+
  private:
   struct Expectation {
     SourceLocation location;
@@ -100,4 +104,4 @@ int contains_metadata(grpc_metadata_array* array, const char* key,
 int contains_metadata_slices(grpc_metadata_array* array, grpc_slice key,
                              grpc_slice value);
 
-#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
+#endif  // GRPC_TEST_CORE_END2END_CQ_VERIFIER_H

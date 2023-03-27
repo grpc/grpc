@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
@@ -26,6 +26,7 @@
 
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 
 namespace grpc {
 namespace testing {
@@ -35,14 +36,15 @@ typedef std::function<void(const InteropClientContextInspector&,
                            const SimpleRequest*, const SimpleResponse*)>
     CheckerFn;
 
-typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
+typedef std::function<std::shared_ptr<Channel>(ChannelArguments)>
+    ChannelCreationFunc;
 
 class InteropClient {
  public:
   /// If new_stub_every_test_case is true, a new TestService::Stub object is
   /// created for every test case
-  /// If do_not_abort_on_transient_failures is true, abort() is not called in
-  /// case of transient failures (like connection failures)
+  /// If do_not_abort_on_transient_failures is true, abort() is not called
+  /// in case of transient failures (like connection failures)
   explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
@@ -73,16 +75,20 @@ class InteropClient {
   bool DoUnimplementedService();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
+  bool DoOrcaPerRpc();
+  bool DoOrcaOob();
 
   // The following interop test are not yet part of the interop spec, and are
   // not implemented cross-language. They are considered experimental for now,
   // but at some point in the future, might be codified and implemented in all
   // languages
-  bool DoChannelSoakTest(int32_t soak_iterations, int32_t max_failures,
+  bool DoChannelSoakTest(const std::string& server_uri, int32_t soak_iterations,
+                         int32_t max_failures,
                          int64_t max_acceptable_per_iteration_latency_ms,
                          int32_t soak_min_time_ms_between_rpcs,
                          int32_t overall_timeout_seconds);
-  bool DoRpcSoakTest(int32_t soak_iterations, int32_t max_failures,
+  bool DoRpcSoakTest(const std::string& server_uri, int32_t soak_iterations,
+                     int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
                      int32_t soak_min_time_ms_between_rpcs,
                      int32_t overall_timeout_seconds);
@@ -105,6 +111,7 @@ class InteropClient {
  private:
   class ServiceStub {
    public:
+    typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
     ServiceStub(ChannelCreationFunc channel_creation_func,
@@ -141,7 +148,8 @@ class InteropClient {
       const bool reset_channel,
       const int32_t max_acceptable_per_iteration_latency_ms);
 
-  void PerformSoakTest(const bool reset_channel_per_iteration,
+  void PerformSoakTest(const std::string& server_uri,
+                       const bool reset_channel_per_iteration,
                        const int32_t soak_iterations,
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
@@ -151,6 +159,8 @@ class InteropClient {
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
+  // Load Orca metrics captured by the custom LB policy.
+  LoadReportTracker load_report_tracker_;
 };
 
 }  // namespace testing

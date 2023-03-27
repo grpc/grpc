@@ -14,19 +14,19 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/arena.h"
 #include "upb/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -39,10 +39,10 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      XdsExtension extension, upb_Arena* arena,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
@@ -55,4 +55,4 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H

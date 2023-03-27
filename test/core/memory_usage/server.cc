@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <signal.h>
 #include <stdint.h>
@@ -38,7 +38,7 @@
 
 #include "test/core/memory_usage/memstats.h"
 #ifndef _WIN32
-/* This is for _exit() below, which is temporary. */
+// This is for _exit() below, which is temporary.
 #include <unistd.h>
 #endif
 
@@ -150,8 +150,8 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
              grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, nullptr));
 }
-/* We have some sort of deadlock, so let's not exit gracefully for now.
-   When that is resolved, please remove the #include <unistd.h> above. */
+// We have some sort of deadlock, so let's not exit gracefully for now.
+// When that is resolved, please remove the #include <unistd.h> above.
 static void sigint_handler(int /*x*/) { _exit(0); }
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");

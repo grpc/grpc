@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_API_H
-#define GRPC_CORE_EXT_XDS_XDS_API_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_API_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_API_H
 
 #include <grpc/support/port_platform.h>
 
@@ -147,7 +147,8 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         upb::SymbolTable* symtab);
+         upb::SymbolTable* symtab, std::string user_agent_name,
+         std::string user_agent_version);
 
   // Creates an ADS request.
   std::string CreateAdsRequest(absl::string_view type_url,
@@ -189,4 +190,4 @@ class XdsApi {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_API_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_API_H

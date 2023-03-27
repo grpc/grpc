@@ -1,25 +1,36 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
+
+#include <algorithm>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/strings/string_view.h"
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 
 #include <grpcpp/opencensus.h>
 
@@ -116,14 +127,72 @@ using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
 using experimental::ServerServerLatencyHour;           // NOLINT
 using experimental::ServerStartedRpcsHour;             // NOLINT
 
-// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
+namespace internal {
+
+extern const absl::string_view kRpcClientApiLatencyMeasureName;
+
+// This view is in an internal namespace since this is meant just for GCP
+// Observability purposes.
+const ::opencensus::stats::ViewDescriptor& ClientApiLatency();
+
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the
+// start of a program, before any channels/servers are built.
 void EnableOpenCensusStats(bool enable);
 void EnableOpenCensusTracing(bool enable);
 // Gets the current status of OpenCensus stats/tracing
 bool OpenCensusStatsEnabled();
 bool OpenCensusTracingEnabled();
 
+// Registers various things for the OpenCensus plugin.
+class OpenCensusRegistry {
+ public:
+  struct Label {
+    std::string key;
+    opencensus::tags::TagKey tag_key;
+    std::string value;
+  };
+
+  struct Attribute {
+    std::string key;
+    std::string value;
+  };
+
+  static OpenCensusRegistry& Get();
+
+  void RegisterConstantLabels(
+      const std::map<std::string, std::string>& labels) {
+    constant_labels_.reserve(labels.size());
+    for (const auto& label : labels) {
+      auto tag_key = opencensus::tags::TagKey::Register(label.first);
+      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
+    }
+  }
+
+  void RegisterConstantAttributes(std::vector<Attribute> attributes) {
+    constant_attributes_ = std::move(attributes);
+  }
+
+  ::opencensus::tags::TagMap PopulateTagMapWithConstantLabels(
+      const ::opencensus::tags::TagMap& tag_map);
+
+  void PopulateCensusContextWithConstantAttributes(
+      grpc::experimental::CensusContext* context);
+
+  const std::vector<Label>& ConstantLabels() { return constant_labels_; }
+
+  const std::vector<Attribute>& ConstantAttributes() {
+    return constant_attributes_;
+  }
+
+ private:
+  OpenCensusRegistry() = default;
+
+  std::vector<Label> constant_labels_;
+  std::vector<Attribute> constant_attributes_;
+};
+
+}  // namespace internal
+
 }  // namespace grpc
 
-#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H

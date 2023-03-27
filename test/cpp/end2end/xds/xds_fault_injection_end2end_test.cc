@@ -229,6 +229,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
                    http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
+  // Make sure channel is connected.  This avoids flakiness caused by
+  // having multiple queued RPCs proceed in parallel when the name
+  // resolution response is returned to the channel.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the delays.
   RpcOptions rpc_options =
       RpcOptions().set_timeout(kRpcTimeout).set_skip_cancelled_check(true);
@@ -272,6 +276,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
       kDelayPercentageCap);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
+  // Make sure channel is connected.  This avoids flakiness caused by
+  // having multiple queued RPCs proceed in parallel when the name
+  // resolution response is returned to the channel.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the delays.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-delay-request",
@@ -332,7 +340,6 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   CreateAndStartBackends(1);
-  const auto kConnectTimeout = grpc_core::Duration::Seconds(10);
   const auto kRpcTimeout = grpc_core::Duration::Seconds(30);
   const auto kFixedDelay = grpc_core::Duration::Seconds(1);
   const uint32_t kAbortPercentagePerHundred = 50;
@@ -363,11 +370,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
                    http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
-  // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same ExecCtx object and using the cached Now()
-  // value, which causes millisecond level delay error.
-  channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectTimeout.millis()));
+  // Make sure channel is connected.  This avoids flakiness caused by
+  // having multiple queued RPCs proceed in parallel when the name
+  // resolution response is returned to the channel.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
@@ -391,7 +397,6 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
 TEST_P(FaultInjectionTest,
        XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
   CreateAndStartBackends(1);
-  const auto kConnectTimeout = grpc_core::Duration::Seconds(10);
   const auto kRpcTimeout = grpc_core::Duration::Seconds(30);
   const auto kFixedDelay = grpc_core::Duration::Seconds(1);
   const uint32_t kAbortPercentagePerMillion = 500000;
@@ -422,11 +427,10 @@ TEST_P(FaultInjectionTest,
                    http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
-  // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same ExecCtx object and using the cached Now()
-  // value, which causes millisecond level delay error.
-  channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectTimeout.millis()));
+  // Make sure channel is connected.  This avoids flakiness caused by
+  // having multiple queued RPCs proceed in parallel when the name
+  // resolution response is returned to the channel.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
@@ -465,6 +469,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
+  // Make sure channel is connected.  This avoids flakiness caused by
+  // having multiple queued RPCs proceed in parallel when the name
+  // resolution response is returned to the channel.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Sends a batch of long running RPCs with long timeout to consume all
   // active faults quota.
   int num_delayed = 0;

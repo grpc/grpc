@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <initializer_list>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -68,6 +70,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -619,8 +622,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       continue;
     }
     absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(std::move(*extension_to_use),
-                                                  context.arena, errors);
+        filter_impl->GenerateFilterConfigOverride(
+            context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {
       typed_per_filter_config[std::string(key)] = std::move(*filter_config);
     }
@@ -834,6 +837,7 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     GPR_ASSERT(weighted_clusters_proto != nullptr);
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
         action_weighted_clusters;
+    uint64_t total_weight = 0;
     size_t clusters_size;
     const envoy_config_route_v3_WeightedCluster_ClusterWeight* const* clusters =
         envoy_config_route_v3_WeightedCluster_clusters(weighted_clusters_proto,
@@ -873,12 +877,15 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       } else {
         cluster.weight = google_protobuf_UInt32Value_value(weight_proto);
         if (cluster.weight == 0) continue;
+        total_weight += cluster.weight;
       }
       // Add entry to WeightedClusters.
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
     if (action_weighted_clusters.empty()) {
       errors->AddError("no valid clusters specified");
+    } else if (total_weight > std::numeric_limits<uint32_t>::max()) {
+      errors->AddError("sum of cluster weights exceeds uint32 max");
     }
     route_action.action = std::move(action_weighted_clusters);
   } else if (XdsRlsEnabled() &&
@@ -1055,7 +1062,6 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     }
     // Parse routes.
     ValidationErrors::ScopedField field2(errors, ".routes");
-    const size_t original_error_size = errors->size();
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
@@ -1065,9 +1071,6 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
                               rds_update.cluster_specifier_plugin_map,
                               &cluster_specifier_plugins_not_seen, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
-    }
-    if (errors->size() == original_error_size && vhost.routes.empty()) {
-      errors->AddError("no valid routes in VirtualHost");
     }
   }
   // For cluster specifier plugins that were not used in any route action,

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <gtest/gtest.h>
 
@@ -30,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -69,7 +70,7 @@ class EndpointPairFixture {
 
     grpc_core::ExecCtx exec_ctx;
 
-    /* add server endpoint to server_ */
+    // add server endpoint to server_
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
@@ -86,7 +87,7 @@ class EndpointPairFixture {
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 
-    /* create channel */
+    // create channel
     {
       grpc_core::ChannelArgs args =
           grpc_core::CoreConfiguration::Get()
@@ -141,7 +142,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  int writes_performed() const { return stats_->num_writes; }
+  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
 
  private:
   grpc_passthru_endpoint_stats* stats_;

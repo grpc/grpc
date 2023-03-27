@@ -1165,7 +1165,7 @@ CallOptions, that will be filled in by the custom LB policy as part of the
         cpu_utilization: 0.29309
         memory_utilization: 0.2
         utilization: {
-          util: 100.2039
+          util: 0.2039
         }
       }
       response_parameters:{

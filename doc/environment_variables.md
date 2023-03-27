@@ -84,6 +84,8 @@ some configuration as environment variables that can be set.
   - ring_hash_lb - traces the ring hash load balancing policy
   - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
+  - weighted_round_robin_lb - traces the weighted_round_robin load balancing
+    policy
   - queue_pluck
   - grpc_authz_api - traces gRPC authorization
   - server_channel - lightweight trace of significant server channel events
@@ -116,6 +118,7 @@ some configuration as environment variables that can be set.
   - queue_refcount
   - error_refcount
   - stream_refcount
+  - slice_refcount
   - workqueue_refcount
   - fd_refcount
   - cq_refcount

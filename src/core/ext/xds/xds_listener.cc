@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <set>
 #include <utility>
 
@@ -58,7 +59,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -412,8 +412,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(std::move(*extension),
-                                              context.arena, errors);
+            filter_impl->GenerateFilterConfig(context, std::move(*extension),
+                                              errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{

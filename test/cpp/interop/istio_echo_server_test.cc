@@ -27,6 +27,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -51,7 +52,7 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* /* context */,
                     const proto::EchoRequest* /* request */,
                     proto::EchoResponse* /* response */) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
     return Status(StatusCode::INVALID_ARGUMENT, "Unexpected");
   }
 

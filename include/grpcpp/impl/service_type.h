@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_IMPL_SERVICE_TYPE_H
 #define GRPCPP_IMPL_SERVICE_TYPE_H
 
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server_interface.h>
@@ -52,7 +52,7 @@ class ServerAsyncStreamingInterface {
 };
 }  // namespace internal
 
-/// Desriptor of an RPC service and its various RPC methods
+/// Descriptor of an RPC service and its various RPC methods
 class Service {
  public:
   Service() : server_(nullptr) {}
@@ -150,10 +150,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'async' because it has already been "
-        "marked as 'generic'.");
+    GPR_ASSERT(methods_[idx].get() != nullptr &&
+               "Cannot mark the method as 'async' because it has already been "
+               "marked as 'generic'.");
     methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::ASYNC);
   }
 
@@ -161,9 +160,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(methods_[idx].get() != nullptr &&
-                       "Cannot mark the method as 'raw' because it has already "
-                       "been marked as 'generic'.");
+    GPR_ASSERT(methods_[idx].get() != nullptr &&
+               "Cannot mark the method as 'raw' because it has already "
+               "been marked as 'generic'.");
     methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::RAW);
   }
 
@@ -171,7 +170,7 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
+    GPR_ASSERT(
         methods_[idx]->handler() != nullptr &&
         "Cannot mark the method as 'generic' because it has already been "
         "marked as 'async' or 'raw'.");
@@ -182,8 +181,8 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(methods_[idx] && methods_[idx]->handler() &&
-                       "Cannot mark an async or generic method Streamed");
+    GPR_ASSERT(methods_[idx] && methods_[idx]->handler() &&
+               "Cannot mark an async or generic method Streamed");
     methods_[idx]->SetHandler(streamed_method);
 
     // From the server's point of view, streamed unary is a special
@@ -197,7 +196,7 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
+    GPR_ASSERT(
         methods_[idx].get() != nullptr &&
         "Cannot mark the method as 'callback' because it has already been "
         "marked as 'generic'.");
@@ -210,7 +209,7 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
+    GPR_ASSERT(
         methods_[idx].get() != nullptr &&
         "Cannot mark the method as 'raw callback' because it has already "
         "been marked as 'generic'.");

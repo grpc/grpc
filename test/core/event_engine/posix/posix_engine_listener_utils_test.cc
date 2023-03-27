@@ -42,13 +42,9 @@
 #include "test/core/util/port.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
-
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
 
 class TestListenerSocketsContainer : public ListenerSocketsContainer {
  public:
@@ -148,7 +144,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
 }
 #endif  // GRPC_HAVE_IFADDRS
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
@@ -156,8 +152,8 @@ int main(int argc, char** argv) {
   return RUN_ALL_TESTS();
 }
 
-#else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 int main(int argc, char** argv) { return 0; }
 
-#endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON

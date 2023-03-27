@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SERVER_INTERFACE_H
 #define GRPCPP_SERVER_INTERFACE_H
@@ -22,10 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -42,8 +43,6 @@ class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
@@ -55,6 +54,7 @@ class CallbackGenericService;
 
 namespace experimental {
 class ServerInterceptorFactoryInterface;
+class ServerMetricRecorder;
 }  // namespace experimental
 
 class ServerInterface : public internal::CallHook {
@@ -103,10 +103,7 @@ class ServerInterface : public internal::CallHook {
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
-  void Shutdown() {
-    ShutdownInternal(
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
-  }
+  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   /// Block waiting for all work to complete.
   ///
@@ -189,6 +186,8 @@ class ServerInterface : public internal::CallHook {
     internal::Call call_wrapper_;
     internal::InterceptorBatchMethodsImpl interceptor_methods_;
     bool done_intercepting_;
+    bool call_metric_recording_enabled_;
+    experimental::ServerMetricRecorder* server_metric_recorder_;
   };
 
   /// RegisteredAsyncRequest is not part of the C++ API
@@ -203,7 +202,7 @@ class ServerInterface : public internal::CallHook {
                            internal::RpcMethod::RpcType type);
 
     bool FinalizeResult(void** tag, bool* status) override {
-      /* If we are done intercepting, then there is nothing more for us to do */
+      // If we are done intercepting, then there is nothing more for us to do
       if (done_intercepting_) {
         return BaseAsyncRequest::FinalizeResult(tag, status);
       }
@@ -261,7 +260,7 @@ class ServerInterface : public internal::CallHook {
     }
 
     bool FinalizeResult(void** tag, bool* status) override {
-      /* If we are done intercepting, then there is nothing more for us to do */
+      // If we are done intercepting, then there is nothing more for us to do
       if (done_intercepting_) {
         return RegisteredAsyncRequest::FinalizeResult(tag, status);
       }
@@ -283,7 +282,7 @@ class ServerInterface : public internal::CallHook {
           return false;
         }
       }
-      /* Set interception point for recv message */
+      // Set interception point for recv message
       interceptor_methods_.AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
       interceptor_methods_.SetRecvMessage(request_, nullptr);
@@ -302,9 +301,12 @@ class ServerInterface : public internal::CallHook {
                         internal::ServerAsyncStreamingInterface* stream,
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
-                        bool delete_on_finalize);
+                        bool delete_on_finalize, bool issue_request = true);
 
     bool FinalizeResult(void** tag, bool* status) override;
+
+   protected:
+    void IssueRequest();
 
    private:
     grpc_call_details call_details_;
@@ -317,7 +319,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -328,7 +330,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq,
                         void* tag) {
-    GPR_CODEGEN_ASSERT(method);
+    GPR_ASSERT(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }
@@ -353,6 +355,13 @@ class ServerInterface : public internal::CallHook {
   interceptor_creators() {
     return nullptr;
   }
+
+  // Whether per-call load reporting is enabled.
+  virtual bool call_metric_recording_enabled() const = 0;
+
+  // Interface to read or update server-wide metrics. Returns null when not set.
+  virtual experimental::ServerMetricRecorder* server_metric_recorder()
+      const = 0;
 
   // A method to get the callbackable completion queue associated with this
   // server. If the return value is nullptr, this server doesn't support

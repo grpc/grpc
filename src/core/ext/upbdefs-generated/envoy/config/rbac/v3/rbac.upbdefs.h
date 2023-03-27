@@ -26,6 +26,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_getmsgdef(upb_DefPool
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_AuditLoggingOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC.AuditLoggingOptions");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_PoliciesEntry_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC.PoliciesEntry");

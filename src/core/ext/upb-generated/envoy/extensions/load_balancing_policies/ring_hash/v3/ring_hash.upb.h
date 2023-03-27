@@ -23,8 +23,12 @@ extern "C" {
 struct envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash;
 typedef struct envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash;
 extern const upb_MiniTable envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit;
+struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig;
+struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig;
 struct google_protobuf_UInt32Value;
 struct google_protobuf_UInt64Value;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit;
 extern const upb_MiniTable google_protobuf_UInt32Value_msginit;
 extern const upb_MiniTable google_protobuf_UInt64Value_msginit;
 
@@ -110,6 +114,24 @@ UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_c
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_balance_factor(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_UInt32Value*);
 }
+UPB_INLINE bool envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_has_consistent_hashing_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  return _upb_hasbit(msg, 4);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_clear_consistent_hashing_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_consistent_hashing_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*);
+}
+UPB_INLINE bool envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_has_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  return _upb_hasbit(msg, 5);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_clear_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*);
+}
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_hash_function(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
@@ -153,6 +175,32 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_p
     sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_hash_balance_factor(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_consistent_hashing_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* value) {
+  _upb_sethas(msg, 4);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*) = value;
+}
+UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_consistent_hashing_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
+  struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_consistent_hashing_lb_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_consistent_hashing_lb_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* value) {
+  _upb_sethas(msg, 5);
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*) = value;
+}
+UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
+  struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_locality_weighted_lb_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_locality_weighted_lb_config(msg, sub);
   }
   return sub;
 }

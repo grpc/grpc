@@ -31,8 +31,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
@@ -128,13 +128,6 @@ class PickFirst : public LoadBalancingPolicy {
 
     size_t attempting_index() const { return attempting_index_; }
     void set_attempting_index(size_t index) { attempting_index_ = index; }
-
-    bool AllSubchannelsSeenInitialState() {
-      for (size_t i = 0; i < num_subchannels(); ++i) {
-        if (!subchannel(i)->connectivity_state().has_value()) return false;
-      }
-      return true;
-    }
 
    private:
     bool in_transient_failure_ = false;

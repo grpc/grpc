@@ -30,18 +30,20 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub envoy_config_listener_v3_AdditionalAddress_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_config_listener_v3_AdditionalAddress_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_Address_msginit},
+  {.submsg = &envoy_config_core_v3_SocketOptionsOverride_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_listener_v3_AdditionalAddress__fields[1] = {
+static const upb_MiniTable_Field envoy_config_listener_v3_AdditionalAddress__fields[2] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_listener_v3_AdditionalAddress_msginit = {
   &envoy_config_listener_v3_AdditionalAddress_submsgs[0],
   &envoy_config_listener_v3_AdditionalAddress__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_ListenerCollection_submsgs[1] = {
@@ -166,7 +168,25 @@ const upb_MiniTable envoy_config_listener_v3_Listener_InternalListenerConfig_msg
   UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[7] = {
+const upb_MiniTable envoy_config_listener_v3_ListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+const upb_MiniTable envoy_config_listener_v3_ValidationListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+const upb_MiniTable envoy_config_listener_v3_ApiListenerManager_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[10] = {
   &envoy_config_listener_v3_AdditionalAddress_msginit,
   &envoy_config_listener_v3_ListenerCollection_msginit,
   &envoy_config_listener_v3_Listener_msginit,
@@ -174,13 +194,16 @@ static const upb_MiniTable *messages_layout[7] = {
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_msginit,
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit,
   &envoy_config_listener_v3_Listener_InternalListenerConfig_msginit,
+  &envoy_config_listener_v3_ListenerManager_msginit,
+  &envoy_config_listener_v3_ValidationListenerManager_msginit,
+  &envoy_config_listener_v3_ApiListenerManager_msginit,
 };
 
 const upb_MiniTable_File envoy_config_listener_v3_listener_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  7,
+  10,
   0,
   0,
 };

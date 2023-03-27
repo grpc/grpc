@@ -50,11 +50,11 @@ GRPC_GITREF="$(git show --format="%H" --no-patch)"
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
     GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
 else
-    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+    GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
-GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
-GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+GRPC_DOTNET_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
+GRPC_GO_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-go.git master | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -97,7 +97,7 @@ buildConfigs() {
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l python -l ruby
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l dotnet -l go -l java
 
 # Delete prebuilt images on exit.
@@ -115,7 +115,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -l "dotnet:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
-    -l "php7:${GRPC_CORE_GITREF}" \
     -l "python:${GRPC_CORE_GITREF}" \
     -l "ruby:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \

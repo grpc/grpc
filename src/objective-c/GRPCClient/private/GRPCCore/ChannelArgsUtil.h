@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 
 /** Free resources in the grpc core struct grpc_channel_args */
 void GRPCFreeChannelArgs(grpc_channel_args* channel_args);

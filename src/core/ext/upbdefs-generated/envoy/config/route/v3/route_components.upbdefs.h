@@ -36,6 +36,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_FilterAction_getmsgdef(up
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.FilterAction");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteList_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteList");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_Route_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.Route");
@@ -264,6 +269,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_DynamicM
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_MetaData_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.MetaData");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.QueryParameterValueMatch");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_getmsgdef(upb_DefPool *s) {

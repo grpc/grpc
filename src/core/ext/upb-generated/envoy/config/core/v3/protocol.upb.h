@@ -484,6 +484,12 @@ UPB_INLINE void envoy_config_core_v3_AlternateProtocolsCacheOptions_clear_prepop
 UPB_INLINE const envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry* const* envoy_config_core_v3_AlternateProtocolsCacheOptions_prepopulated_entries(const envoy_config_core_v3_AlternateProtocolsCacheOptions* msg, size_t* len) {
   return (const envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry* const*)_upb_array_accessor(msg, UPB_SIZE(20, 40), len);
 }
+UPB_INLINE void envoy_config_core_v3_AlternateProtocolsCacheOptions_clear_canonical_suffixes(const envoy_config_core_v3_AlternateProtocolsCacheOptions* msg) {
+  _upb_array_detach(msg, UPB_SIZE(24, 48));
+}
+UPB_INLINE upb_StringView const* envoy_config_core_v3_AlternateProtocolsCacheOptions_canonical_suffixes(const envoy_config_core_v3_AlternateProtocolsCacheOptions* msg, size_t* len) {
+  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len);
+}
 
 UPB_INLINE void envoy_config_core_v3_AlternateProtocolsCacheOptions_set_name(envoy_config_core_v3_AlternateProtocolsCacheOptions *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
@@ -525,6 +531,15 @@ UPB_INLINE struct envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateP
   bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(20, 40), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
+}
+UPB_INLINE upb_StringView* envoy_config_core_v3_AlternateProtocolsCacheOptions_mutable_canonical_suffixes(envoy_config_core_v3_AlternateProtocolsCacheOptions* msg, size_t* len) {
+  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
+}
+UPB_INLINE upb_StringView* envoy_config_core_v3_AlternateProtocolsCacheOptions_resize_canonical_suffixes(envoy_config_core_v3_AlternateProtocolsCacheOptions* msg, size_t len, upb_Arena* arena) {
+  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(24, 48), len, UPB_SIZE(3, 4), arena);
+}
+UPB_INLINE bool envoy_config_core_v3_AlternateProtocolsCacheOptions_add_canonical_suffixes(envoy_config_core_v3_AlternateProtocolsCacheOptions* msg, upb_StringView val, upb_Arena* arena) {
+  return _upb_Array_Append_accessor2(msg, UPB_SIZE(24, 48), UPB_SIZE(3, 4), &val, arena);
 }
 
 /* envoy.config.core.v3.AlternateProtocolsCacheOptions.AlternateProtocolsCacheEntry */
@@ -830,6 +845,15 @@ UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_send_fully_quali
 UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_send_fully_qualified_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool);
 }
+UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_has_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  return _upb_hasbit(msg, 4);
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_use_balsa_parser(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_BoolValue*);
+}
 
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_allow_absolute_url(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 1);
@@ -884,6 +908,19 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolO
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_send_fully_qualified_url(envoy_config_core_v3_Http1ProtocolOptions *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_use_balsa_parser(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
+  _upb_sethas(msg, 4);
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_BoolValue*) = value;
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_mutable_use_balsa_parser(envoy_config_core_v3_Http1ProtocolOptions* msg, upb_Arena* arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_core_v3_Http1ProtocolOptions_use_balsa_parser(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google_protobuf_BoolValue_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_core_v3_Http1ProtocolOptions_set_use_balsa_parser(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.core.v3.Http1ProtocolOptions.HeaderKeyFormat */

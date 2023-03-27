@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.2.0RC4-zts-buster
+FROM php:8.2-zts-buster
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -22,12 +22,6 @@ ARG MAKEFLAGS=-j8
 
 
 WORKDIR /tmp
-
-# install pear
-RUN apt-get install expect -y && \
-  curl -LO http://pear.php.net/go-pear.phar && \
-  expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && \
-  rm go-pear.phar
 
 RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
   mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
@@ -42,4 +36,6 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
+

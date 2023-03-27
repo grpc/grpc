@@ -36,7 +36,7 @@ namespace experimental {
 /// name and class name will be used identify the specific application component
 /// to connect to.
 ///
-/// \param jni_env Pointer to a JNIEnv structure
+/// \param jni_env_void Pointer to a JNIEnv structure
 /// \param context The context that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
@@ -45,7 +45,7 @@ namespace experimental {
 /// \param security_policy Used for checking if remote component is allowed to
 /// connect
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env, jobject context, absl::string_view package_name,
+    void* jni_env_void, jobject context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
@@ -54,7 +54,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 /// name and class name will be used identify the specific application component
 /// to connect to.
 ///
-/// \param jni_env Pointer to a JNIEnv structure
+/// \param jni_env_void Pointer to a JNIEnv structure
 /// \param context The context that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
@@ -64,14 +64,14 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 /// connect
 /// \param args Options for channel creation.
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
+    void* jni_env_void, jobject context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args);
 
 /// EXPERIMENTAL Create a new \a Channel based on binder transport.
 ///
-/// \param jni_env Pointer to a JNIEnv structure
+/// \param jni_env_void Pointer to a JNIEnv structure
 /// \param context The context that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
@@ -80,13 +80,13 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 /// \param security_policy Used for checking if remote component is allowed to
 /// connect
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env, jobject context, absl::string_view uri,
+    void* jni_env_void, jobject context, absl::string_view uri,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
 
 /// EXPERIMENTAL Create a new \a Channel based on binder transport.
 ///
-/// \param jni_env Pointer to a JNIEnv structure
+/// \param jni_env_void Pointer to a JNIEnv structure
 /// \param context The context that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
@@ -96,7 +96,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 /// connect
 /// \param args Options for channel creation.
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env, jobject context, absl::string_view uri,
+    void* jni_env_void, jobject context, absl::string_view uri,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args);
 

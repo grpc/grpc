@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -79,7 +79,12 @@ absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
 absl::StatusOr<std::string> ResolvedAddressToURI(
     const EventEngine::ResolvedAddress& resolved_address);
 
+// Given a URI string, returns the corresponding resolved address if the URI
+// is valid. Otherwise it returns an appropriate error.
+absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
+    std::string address_str);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_TCP_SOCKET_UTILS_H

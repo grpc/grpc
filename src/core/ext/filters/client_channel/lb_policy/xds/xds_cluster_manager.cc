@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -33,10 +34,10 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -44,7 +45,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -101,8 +101,6 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
 
  private:
   std::map<std::string, Child> cluster_map_;
@@ -231,8 +229,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto cluster_name =
       call_state->GetCallAttribute(XdsClusterAttributeTypeName());
   auto it = cluster_map_.find(std::string(cluster_name));
@@ -330,7 +327,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  size_t num_transient_failures = 0;
   for (const auto& p : children_) {
     const auto& child_name = p.first;
     const ClusterChild* child = p.second.get();
@@ -353,7 +349,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        ++num_transient_failures;
         break;
       }
       default:
@@ -664,16 +659,6 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
           .Field("children", &XdsClusterManagerLbConfig::cluster_map_)
           .Finish();
   return loader;
-}
-
-void XdsClusterManagerLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
-                                             ValidationErrors* errors) {
-  if (cluster_map_.empty()) {
-    ValidationErrors::ScopedField field(errors, ".children");
-    if (!errors->FieldHasErrors()) {
-      errors->AddError("no valid children configured");
-    }
-  }
 }
 
 class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {

@@ -93,7 +93,7 @@ StaticSlice ContentTypeMetadata::Encode(ValueType x) {
       return StaticSlice::FromStaticString("unrepresentable value"));
 }
 
-const char* ContentTypeMetadata::DisplayValue(MementoType content_type) {
+const char* ContentTypeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case ValueType::kApplicationGrpc:
       return "application/grpc";
@@ -137,7 +137,7 @@ TeMetadata::MementoType TeMetadata::ParseMemento(
   return out;
 }
 
-const char* TeMetadata::DisplayValue(MementoType te) {
+const char* TeMetadata::DisplayValue(ValueType te) {
   switch (te) {
     case ValueType::kTrailers:
       return "trailers";
@@ -168,7 +168,18 @@ StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
   }
 }
 
-const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x) {
+  switch (x) {
+    case HttpSchemeMetadata::kHttp:
+      return 4;
+    case HttpSchemeMetadata::kHttps:
+      return 5;
+    default:
+      return 0;
+  }
+}
+
+const char* HttpSchemeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kHttp:
       return "http";
@@ -211,7 +222,7 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
   }
 }
 
-const char* HttpMethodMetadata::DisplayValue(MementoType content_type) {
+const char* HttpMethodMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kPost:
       return "POST";
@@ -253,7 +264,7 @@ Slice LbCostBinMetadata::Encode(const ValueType& x) {
   return Slice(std::move(slice));
 }
 
-std::string LbCostBinMetadata::DisplayValue(MementoType x) {
+std::string LbCostBinMetadata::DisplayValue(ValueType x) {
   return absl::StrCat(x.name, ":", x.cost);
 }
 
@@ -281,7 +292,10 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
   GPR_UNREACHABLE_CODE(return "unknown value");
 }
 
-std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }
+std::string PeerString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
 }

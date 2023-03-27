@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H_
-#define GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H_
+#ifndef GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
+#define GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
 
 namespace grpc_core {
 
@@ -26,4 +26,4 @@ void LocalhostResolves(bool* ipv4, bool* ipv6);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H_
+#endif  // GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H

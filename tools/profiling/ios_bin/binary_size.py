@@ -54,36 +54,19 @@ def dir_size(dir):
     return total
 
 
-def get_size(where, frameworks):
+def get_size(where):
     build_dir = 'src/objective-c/examples/Sample/Build/Build-%s/' % where
-    if not frameworks:
-        link_map_filename = 'Build/Intermediates.noindex/Sample.build/Release-iphoneos/Sample.build/Sample-LinkMap-normal-arm64.txt'
-        # IMPORTANT: order needs to match labels in _SIZE_LABELS
-        return parse_link_map(build_dir + link_map_filename)
-    else:
-        framework_dir = 'Build/Products/Release-iphoneos/Sample.app/Frameworks/'
-        core_size = dir_size(build_dir + framework_dir + 'grpc.framework')
-        objc_size = dir_size(build_dir + framework_dir + 'GRPCClient.framework') + \
-                    dir_size(build_dir + framework_dir + 'RxLibrary.framework') + \
-                    dir_size(build_dir + framework_dir + 'ProtoRPC.framework')
-        boringssl_size = dir_size(build_dir + framework_dir +
-                                  'openssl.framework')
-        protobuf_size = dir_size(build_dir + framework_dir +
-                                 'Protobuf.framework')
-        # a.k.a. "Total"
-        app_size = dir_size(build_dir +
-                            'Build/Products/Release-iphoneos/Sample.app')
-        # IMPORTANT: order needs to match labels in _SIZE_LABELS
-        return core_size, objc_size, boringssl_size, protobuf_size, app_size
+    link_map_filename = 'Build/Intermediates.noindex/Sample.build/Release-iphoneos/Sample.build/Sample-LinkMap-normal-arm64.txt'
+    # IMPORTANT: order needs to match labels in _SIZE_LABELS
+    return parse_link_map(build_dir + link_map_filename)
 
 
-def build(where, frameworks):
+def build(where):
     subprocess.check_call(['make', 'clean'])
     shutil.rmtree('src/objective-c/examples/Sample/Build/Build-%s' % where,
                   ignore_errors=True)
     subprocess.check_call(
-        'CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample FRAMEWORKS=%s ./build_one_example.sh'
-        % ('YES' if frameworks else 'NO'),
+        'CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample ./build_one_example.sh',
         shell=True,
         cwd='src/objective-c/tests')
     os.rename('src/objective-c/examples/Sample/Build/Build',
@@ -119,57 +102,55 @@ def _diff_sign(new, old, diff_threshold=None):
 
 
 text = 'Objective-C binary sizes\n'
-for frameworks in [False, True]:
-    build('new', frameworks)
-    new_size = get_size('new', frameworks)
-    old_size = None
 
-    if args.diff_base:
-        old = 'old'
-        where_am_i = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+build('new')
+new_size = get_size('new')
+old_size = None
+
+if args.diff_base:
+    old = 'old'
+    where_am_i = subprocess.check_output(
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+    subprocess.check_call(['git', 'checkout', '--', '.'])
+    subprocess.check_call(['git', 'checkout', args.diff_base])
+    subprocess.check_call(['git', 'submodule', 'update', '--force'])
+    try:
+        build('old')
+        old_size = get_size('old')
+    finally:
         subprocess.check_call(['git', 'checkout', '--', '.'])
-        subprocess.check_call(['git', 'checkout', args.diff_base])
+        subprocess.check_call(['git', 'checkout', where_am_i])
         subprocess.check_call(['git', 'submodule', 'update', '--force'])
-        try:
-            build('old', frameworks)
-            old_size = get_size('old', frameworks)
-        finally:
-            subprocess.check_call(['git', 'checkout', '--', '.'])
-            subprocess.check_call(['git', 'checkout', where_am_i])
-            subprocess.check_call(['git', 'submodule', 'update', '--force'])
 
-    text += ('********************FRAMEWORKS****************\n' if frameworks
-             else '**********************STATIC******************\n')
-    text += _render_row('New size', '', 'Old size')
-    if old_size == None:
-        for i in range(0, len(_SIZE_LABELS)):
-            if i == len(_SIZE_LABELS) - 1:
-                # skip line before rendering "Total"
-                text += '\n'
-            text += _render_row(new_size[i], _SIZE_LABELS[i], '')
-    else:
-        has_diff = False
-        # go through all labels but "Total"
-        for i in range(0, len(_SIZE_LABELS) - 1):
-            if abs(new_size[i] - old_size[i]) >= _DIFF_THRESHOLD:
-                has_diff = True
-            diff_sign = _diff_sign(new_size[i],
-                                   old_size[i],
-                                   diff_threshold=_DIFF_THRESHOLD)
-            text += _render_row(new_size[i], _SIZE_LABELS[i] + diff_sign,
-                                old_size[i])
-
-        # render the "Total"
-        i = len(_SIZE_LABELS) - 1
-        diff_sign = _diff_sign(new_size[i], old_size[i])
-        # skip line before rendering "Total"
-        text += '\n'
+text += '**********************STATIC******************\n'
+text += _render_row('New size', '', 'Old size')
+if old_size == None:
+    for i in range(0, len(_SIZE_LABELS)):
+        if i == len(_SIZE_LABELS) - 1:
+            # skip line before rendering "Total"
+            text += '\n'
+        text += _render_row(new_size[i], _SIZE_LABELS[i], '')
+else:
+    has_diff = False
+    # go through all labels but "Total"
+    for i in range(0, len(_SIZE_LABELS) - 1):
+        if abs(new_size[i] - old_size[i]) >= _DIFF_THRESHOLD:
+            has_diff = True
+        diff_sign = _diff_sign(new_size[i],
+                               old_size[i],
+                               diff_threshold=_DIFF_THRESHOLD)
         text += _render_row(new_size[i], _SIZE_LABELS[i] + diff_sign,
                             old_size[i])
-        if not has_diff:
-            text += '\n No significant differences in binary sizes\n'
+
+    # render the "Total"
+    i = len(_SIZE_LABELS) - 1
+    diff_sign = _diff_sign(new_size[i], old_size[i])
+    # skip line before rendering "Total"
     text += '\n'
+    text += _render_row(new_size[i], _SIZE_LABELS[i] + diff_sign, old_size[i])
+    if not has_diff:
+        text += '\n No significant differences in binary sizes\n'
+text += '\n'
 
 print(text)
 
