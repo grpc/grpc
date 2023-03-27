@@ -404,11 +404,16 @@ void FlowControlFuzzer::AssertNoneStuck() const {
       fprintf(stderr,
               "FAILED: stream %d has stream_window=%" PRId64
               ", transport_window=%" PRId64 ", delta=%" PRId64
-              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64 "\n",
+              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
+              ", transport announced_stream_total_over_incoming_window=%" PRId64
+              ", transport announced_window=%" PRId64
+              " transport target_window=%" PRId64 "\n",
               id_stream.first, stream_window, reconciled_transport_window,
               reconciled_stream_deltas[id_stream.first],
               reconciled_initial_window,
-              (id_stream.second.fc.min_progress_size()));
+              (id_stream.second.fc.min_progress_size()),
+              tfc_->announced_stream_total_over_incoming_window(),
+              tfc_->announced_window(), tfc_->target_window());
       fprintf(stderr,
               "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
               remote_initial_window_size_,
