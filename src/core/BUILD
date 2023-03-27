@@ -1956,7 +1956,6 @@ grpc_cc_library(
     deps = [
         "event_engine_common",
         "event_engine_poller",
-        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
