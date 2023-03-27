@@ -19,7 +19,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/experiments/config.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/event_engine/test_suite/tests/client_test.h"

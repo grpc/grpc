@@ -44,7 +44,6 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
