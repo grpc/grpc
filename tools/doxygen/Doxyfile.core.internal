@@ -1766,6 +1766,8 @@ src/core/lib/address_utils/sockaddr_utils.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
+src/core/lib/backoff/random_early_detection.cc \
+src/core/lib/backoff/random_early_detection.h \
 src/core/lib/channel/README.md \
 src/core/lib/channel/call_finalization.h \
 src/core/lib/channel/call_tracer.cc \

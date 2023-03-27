@@ -976,6 +976,8 @@
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_finalization.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_tracer.h" role="src" />
