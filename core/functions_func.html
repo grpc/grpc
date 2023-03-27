@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -240,7 +240,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a4ed06eff795558e089f0bdc4f2cb433a">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
 </li>
 <li>Length()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aaf25fef03b68e35b98e46c3006cbad91">grpc_event_engine::experimental::SliceBuffer</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a58482c45684909c532608a771e7e5a72">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>LookupHostname()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a1a3c83499257e24aaf5c124204b588af">grpc_event_engine::experimental::EventEngine::DNSResolver</a>
@@ -277,7 +277,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a9e6a8e994d3e67e054d308142dd6dc8c">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
 </li>
 <li>MemoryRequest()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a4b865723f0e2c15af381ab516cad5d1d">grpc_event_engine::experimental::MemoryRequest</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a2502ca8932ee81cf8015db45bc5188c6">grpc_event_engine::experimental::MemoryRequest</a>
 </li>
 <li>min()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a0ae4bf6f6efa919f6a0f467467c5dcdf">grpc_event_engine::experimental::MemoryRequest</a>
@@ -285,11 +285,20 @@ $(function() {
 <li>MoveFirstNBytesIntoBuffer()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a686e07ab26b3b6cd9ec77f2570127a61">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
+<li>MoveFirstNBytesIntoSliceBuffer()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac8f75c8c8866df72cd8a99cd3a6bcf0a">grpc_event_engine::experimental::SliceBuffer</a>
+</li>
+<li>MoveLastNBytesIntoSliceBuffer()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a98197734ac603a88cf2264fdf7fdb9b9">grpc_event_engine::experimental::SliceBuffer</a>
+</li>
 <li>mutable_data()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a63a6a73fe57a3e5eb048927fecbe1f62">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
 </li>
 <li>MutableSlice()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#aa3f3c19866bdb83dc8f2effb0c81c974">grpc_event_engine::experimental::MutableSlice</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#a2598461777e7746629870411c0cd4bbe">grpc_event_engine::experimental::MutableSlice</a>
+</li>
+<li>MutableSliceAt()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa916497f83ef70c51aa09b1184f9cd49">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 </ul>
 
@@ -310,11 +319,12 @@ $(function() {
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#aaa058a73b64fcb0a02d006e8f622433a">grpc_event_engine::experimental::MutableSlice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a786d0b682e5b7adf6f3924da95a3dee2">grpc_event_engine::experimental::Slice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#acb81f419621acc44518311dbc66e2ed2">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abf41faf44ae5b4f04c3383f25f9087a9">grpc_event_engine::experimental::SliceBuffer</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac5ba6ea93b21f1e543e980748f04a126">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>operator[]()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#a4b9ad55b79a193d8c14ff94dc969c74e">grpc_event_engine::experimental::MutableSlice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a2d29a78197ddb99057b03482c48c5c75">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abd161dca1b657f4ebd15cf2fd4fcd002">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 </ul>
 
@@ -384,7 +394,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#ae05fd26edfe883bb2601dd3b906e1edd">grpc_event_engine::experimental::Slice</a>
 </li>
 <li>SliceBuffer()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a63efd26d98882e9247861e61550d8ad9">grpc_event_engine::experimental::SliceBuffer</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a43c5d22b87a18752251ec8615a03614f">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>Split()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a9c9bd6e139ce9c81cea21b9dff7920c9">grpc_event_engine::experimental::Slice</a>
@@ -394,6 +404,7 @@ $(function() {
 </li>
 <li>Swap()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a356b53a18d62f5afe8cf058d401abe5f">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa7e41f9489aa8b25b6e47c8e556accad">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 </ul>
 
@@ -401,6 +412,9 @@ $(function() {
 <h3><a id="index_t"></a>- t -</h3><ul>
 <li>TakeCSlice()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a37a881979ae52d0c51aa1a3ca88f1007">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+</li>
+<li>TakeCSliceBuffer()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abc8a8e5de16e1cdb7390af5d8e898091">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>TakeFirst()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aa24098dc70146ac31fc64132e180df95">grpc_event_engine::experimental::SliceBuffer</a>
@@ -486,7 +500,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

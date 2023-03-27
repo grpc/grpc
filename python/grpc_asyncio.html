@@ -4,15 +4,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.46.2 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.53.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Admin" href="grpc_admin.html" />
@@ -32,7 +31,7 @@
 
 
 
-<p class="blurb">1.46.2</p>
+<p class="blurb">1.53.0</p>
 
 
 
@@ -48,18 +47,192 @@
 <li class="toctree-l2"><a class="reference internal" href="#caveats">Caveats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#blocking-code-in-asyncio">Blocking Code in AsyncIO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#create-channel">Create Channel</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#channel-object">Channel Object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#create-server">Create Server</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#server-object">Server Object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#grpc-exceptions">gRPC Exceptions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#grpc-metadata">gRPC Metadata</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#shared-context">Shared Context</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#client-side-context">Client-Side Context</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#server-side-context">Server-Side Context</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#client-side-interceptor">Client-Side Interceptor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#server-side-interceptor">Server-Side Interceptor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-channel">Create Channel</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.insecure_channel"><code class="docutils literal notranslate"><span class="pre">insecure_channel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.secure_channel"><code class="docutils literal notranslate"><span class="pre">secure_channel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#channel-object">Channel Object</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.Channel"><code class="docutils literal notranslate"><span class="pre">Channel</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.__aenter__"><code class="docutils literal notranslate"><span class="pre">Channel.__aenter__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.__aexit__"><code class="docutils literal notranslate"><span class="pre">Channel.__aexit__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.channel_ready"><code class="docutils literal notranslate"><span class="pre">Channel.channel_ready()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.close"><code class="docutils literal notranslate"><span class="pre">Channel.close()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.get_state"><code class="docutils literal notranslate"><span class="pre">Channel.get_state()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.stream_stream"><code class="docutils literal notranslate"><span class="pre">Channel.stream_stream()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.stream_unary"><code class="docutils literal notranslate"><span class="pre">Channel.stream_unary()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.unary_stream"><code class="docutils literal notranslate"><span class="pre">Channel.unary_stream()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.unary_unary"><code class="docutils literal notranslate"><span class="pre">Channel.unary_unary()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Channel.wait_for_state_change"><code class="docutils literal notranslate"><span class="pre">Channel.wait_for_state_change()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#create-server">Create Server</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.server"><code class="docutils literal notranslate"><span class="pre">server()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#server-object">Server Object</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.Server"><code class="docutils literal notranslate"><span class="pre">Server</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.add_generic_rpc_handlers"><code class="docutils literal notranslate"><span class="pre">Server.add_generic_rpc_handlers()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.add_insecure_port"><code class="docutils literal notranslate"><span class="pre">Server.add_insecure_port()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.add_secure_port"><code class="docutils literal notranslate"><span class="pre">Server.add_secure_port()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.start"><code class="docutils literal notranslate"><span class="pre">Server.start()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.stop"><code class="docutils literal notranslate"><span class="pre">Server.stop()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Server.wait_for_termination"><code class="docutils literal notranslate"><span class="pre">Server.wait_for_termination()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grpc-exceptions">gRPC Exceptions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.BaseError"><code class="docutils literal notranslate"><span class="pre">BaseError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UsageError"><code class="docutils literal notranslate"><span class="pre">UsageError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.AbortError"><code class="docutils literal notranslate"><span class="pre">AbortError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.InternalError"><code class="docutils literal notranslate"><span class="pre">InternalError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.AioRpcError"><code class="docutils literal notranslate"><span class="pre">AioRpcError</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.AioRpcError.code"><code class="docutils literal notranslate"><span class="pre">AioRpcError.code()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.AioRpcError.debug_error_string"><code class="docutils literal notranslate"><span class="pre">AioRpcError.debug_error_string()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.AioRpcError.details"><code class="docutils literal notranslate"><span class="pre">AioRpcError.details()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.AioRpcError.initial_metadata"><code class="docutils literal notranslate"><span class="pre">AioRpcError.initial_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.AioRpcError.trailing_metadata"><code class="docutils literal notranslate"><span class="pre">AioRpcError.trailing_metadata()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grpc-metadata">gRPC Metadata</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.Metadata"><code class="docutils literal notranslate"><span class="pre">Metadata</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.__delitem__"><code class="docutils literal notranslate"><span class="pre">Metadata.__delitem__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.__getitem__"><code class="docutils literal notranslate"><span class="pre">Metadata.__getitem__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.__len__"><code class="docutils literal notranslate"><span class="pre">Metadata.__len__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.__setitem__"><code class="docutils literal notranslate"><span class="pre">Metadata.__setitem__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.delete_all"><code class="docutils literal notranslate"><span class="pre">Metadata.delete_all()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Metadata.get_all"><code class="docutils literal notranslate"><span class="pre">Metadata.get_all()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#shared-context">Shared Context</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.RpcContext"><code class="docutils literal notranslate"><span class="pre">RpcContext</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.add_done_callback"><code class="docutils literal notranslate"><span class="pre">RpcContext.add_done_callback()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.cancel"><code class="docutils literal notranslate"><span class="pre">RpcContext.cancel()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.cancelled"><code class="docutils literal notranslate"><span class="pre">RpcContext.cancelled()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.done"><code class="docutils literal notranslate"><span class="pre">RpcContext.done()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.time_remaining"><code class="docutils literal notranslate"><span class="pre">RpcContext.time_remaining()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#client-side-context">Client-Side Context</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.Call"><code class="docutils literal notranslate"><span class="pre">Call</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Call.code"><code class="docutils literal notranslate"><span class="pre">Call.code()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Call.details"><code class="docutils literal notranslate"><span class="pre">Call.details()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Call.initial_metadata"><code class="docutils literal notranslate"><span class="pre">Call.initial_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Call.trailing_metadata"><code class="docutils literal notranslate"><span class="pre">Call.trailing_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.Call.wait_for_connection"><code class="docutils literal notranslate"><span class="pre">Call.wait_for_connection()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryUnaryCall"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryCall</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryUnaryCall.__await__"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryCall.__await__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryStreamCall"><code class="docutils literal notranslate"><span class="pre">UnaryStreamCall</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryStreamCall.__aiter__"><code class="docutils literal notranslate"><span class="pre">UnaryStreamCall.__aiter__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryStreamCall.read"><code class="docutils literal notranslate"><span class="pre">UnaryStreamCall.read()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamUnaryCall"><code class="docutils literal notranslate"><span class="pre">StreamUnaryCall</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamUnaryCall.__await__"><code class="docutils literal notranslate"><span class="pre">StreamUnaryCall.__await__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamUnaryCall.done_writing"><code class="docutils literal notranslate"><span class="pre">StreamUnaryCall.done_writing()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamUnaryCall.write"><code class="docutils literal notranslate"><span class="pre">StreamUnaryCall.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamStreamCall"><code class="docutils literal notranslate"><span class="pre">StreamStreamCall</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamCall.__aiter__"><code class="docutils literal notranslate"><span class="pre">StreamStreamCall.__aiter__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamCall.done_writing"><code class="docutils literal notranslate"><span class="pre">StreamStreamCall.done_writing()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamCall.read"><code class="docutils literal notranslate"><span class="pre">StreamStreamCall.read()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamCall.write"><code class="docutils literal notranslate"><span class="pre">StreamStreamCall.write()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#server-side-context">Server-Side Context</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.ServicerContext"><code class="docutils literal notranslate"><span class="pre">ServicerContext</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.abort"><code class="docutils literal notranslate"><span class="pre">ServicerContext.abort()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.add_done_callback"><code class="docutils literal notranslate"><span class="pre">ServicerContext.add_done_callback()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.auth_context"><code class="docutils literal notranslate"><span class="pre">ServicerContext.auth_context()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.cancelled"><code class="docutils literal notranslate"><span class="pre">ServicerContext.cancelled()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.code"><code class="docutils literal notranslate"><span class="pre">ServicerContext.code()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.details"><code class="docutils literal notranslate"><span class="pre">ServicerContext.details()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.disable_next_message_compression"><code class="docutils literal notranslate"><span class="pre">ServicerContext.disable_next_message_compression()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.done"><code class="docutils literal notranslate"><span class="pre">ServicerContext.done()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.invocation_metadata"><code class="docutils literal notranslate"><span class="pre">ServicerContext.invocation_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.peer"><code class="docutils literal notranslate"><span class="pre">ServicerContext.peer()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.peer_identities"><code class="docutils literal notranslate"><span class="pre">ServicerContext.peer_identities()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.peer_identity_key"><code class="docutils literal notranslate"><span class="pre">ServicerContext.peer_identity_key()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.read"><code class="docutils literal notranslate"><span class="pre">ServicerContext.read()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.send_initial_metadata"><code class="docutils literal notranslate"><span class="pre">ServicerContext.send_initial_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.set_code"><code class="docutils literal notranslate"><span class="pre">ServicerContext.set_code()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.set_compression"><code class="docutils literal notranslate"><span class="pre">ServicerContext.set_compression()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.set_details"><code class="docutils literal notranslate"><span class="pre">ServicerContext.set_details()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.set_trailing_metadata"><code class="docutils literal notranslate"><span class="pre">ServicerContext.set_trailing_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.time_remaining"><code class="docutils literal notranslate"><span class="pre">ServicerContext.time_remaining()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.trailing_metadata"><code class="docutils literal notranslate"><span class="pre">ServicerContext.trailing_metadata()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServicerContext.write"><code class="docutils literal notranslate"><span class="pre">ServicerContext.write()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#client-side-interceptor">Client-Side Interceptor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.ClientCallDetails"><code class="docutils literal notranslate"><span class="pre">ClientCallDetails</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.InterceptedUnaryUnaryCall"><code class="docutils literal notranslate"><span class="pre">InterceptedUnaryUnaryCall</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.InterceptedUnaryUnaryCall.time_remaining"><code class="docutils literal notranslate"><span class="pre">InterceptedUnaryUnaryCall.time_remaining()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.ClientInterceptor"><code class="docutils literal notranslate"><span class="pre">ClientInterceptor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryUnaryClientInterceptor"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryClientInterceptor</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryUnaryClientInterceptor.intercept_unary_unary"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryClientInterceptor.intercept_unary_unary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryStreamClientInterceptor"><code class="docutils literal notranslate"><span class="pre">UnaryStreamClientInterceptor</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryStreamClientInterceptor.intercept_unary_stream"><code class="docutils literal notranslate"><span class="pre">UnaryStreamClientInterceptor.intercept_unary_stream()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamUnaryClientInterceptor"><code class="docutils literal notranslate"><span class="pre">StreamUnaryClientInterceptor</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary"><code class="docutils literal notranslate"><span class="pre">StreamUnaryClientInterceptor.intercept_stream_unary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamStreamClientInterceptor"><code class="docutils literal notranslate"><span class="pre">StreamStreamClientInterceptor</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream"><code class="docutils literal notranslate"><span class="pre">StreamStreamClientInterceptor.intercept_stream_stream()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#server-side-interceptor">Server-Side Interceptor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.ServerInterceptor"><code class="docutils literal notranslate"><span class="pre">ServerInterceptor</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.ServerInterceptor.intercept_service"><code class="docutils literal notranslate"><span class="pre">ServerInterceptor.intercept_service()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryMultiCallable</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable.__call__"><code class="docutils literal notranslate"><span class="pre">UnaryUnaryMultiCallable.__call__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable"><code class="docutils literal notranslate"><span class="pre">UnaryStreamMultiCallable</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable.__call__"><code class="docutils literal notranslate"><span class="pre">UnaryStreamMultiCallable.__call__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable"><code class="docutils literal notranslate"><span class="pre">StreamUnaryMultiCallable</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable.__call__"><code class="docutils literal notranslate"><span class="pre">StreamUnaryMultiCallable.__call__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable"><code class="docutils literal notranslate"><span class="pre">StreamStreamMultiCallable</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable.__call__"><code class="docutils literal notranslate"><span class="pre">StreamStreamMultiCallable.__call__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -92,7 +265,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -110,9 +283,9 @@
           <div class="body" role="main">
             
   <section id="module-grpc.aio">
-<span id="grpc-asyncio-api"></span><h1>gRPC AsyncIO API<a class="headerlink" href="#module-grpc.aio" title="Permalink to this headline">¶</a></h1>
+<span id="grpc-asyncio-api"></span><h1>gRPC AsyncIO API<a class="headerlink" href="#module-grpc.aio" title="Permalink to this heading">¶</a></h1>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h2>
 <p>gRPC AsyncIO API is the <strong>new version</strong> of gRPC Python whose architecture is
 tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
 as existing stack, and it replaces all gRPC IO operations with methods provided
@@ -122,20 +295,20 @@ by the AsyncIO library.</p>
 <p>The design doc can be found here as <a class="reference external" href="https://github.com/grpc/proposal/pull/155">gRFC</a>.</p>
 </section>
 <section id="caveats">
-<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this heading">¶</a></h2>
 <p>gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn’t provide thread safety for most of its APIs.</p>
 </section>
 <section id="blocking-code-in-asyncio">
-<h2>Blocking Code in AsyncIO<a class="headerlink" href="#blocking-code-in-asyncio" title="Permalink to this headline">¶</a></h2>
+<h2>Blocking Code in AsyncIO<a class="headerlink" href="#blocking-code-in-asyncio" title="Permalink to this heading">¶</a></h2>
 <p>Making blocking function calls in coroutines or in the thread running event
 loop will block the event loop, potentially starving all RPCs in the process.
 Refer to the Python language documentation on AsyncIO for more details (<a class="reference external" href="https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code">running-blocking-code</a>).</p>
 </section>
 <section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
 <section id="create-channel">
-<h3>Create Channel<a class="headerlink" href="#create-channel" title="Permalink to this headline">¶</a></h3>
+<h3>Create Channel<a class="headerlink" href="#create-channel" title="Permalink to this heading">¶</a></h3>
 <p>Channels are the abstraction of clients, where most of networking logic
 happens, for example, managing one or more underlying connections, name
 resolution, load balancing, flow control, etc.. If you are using ProtoBuf,
@@ -146,18 +319,18 @@ application can invoke remote functions as if they are local functions.</p>
 <span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">insecure_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interceptors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_channel.html#insecure_channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.insecure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an insecure asynchronous Channel to a server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> (<em>str</em>) – The server address</p></li>
-<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
+<li><p><strong>options</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>] </em><em>| </em><em>None</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
 in gRPC Core runtime) to configure the channel.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An optional value indicating the compression method to be
-used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
-<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientInterceptor" title="grpc.aio._interceptor.ClientInterceptor"><em>grpc.aio._interceptor.ClientInterceptor</em></a><em>]</em><em>]</em>) – An optional sequence of interceptors that will be executed for
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An optional value indicating the compression method to be
+used over the lifetime of the channel.</p></li>
+<li><p><strong>interceptors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientInterceptor" title="grpc.aio._interceptor.ClientInterceptor"><em>ClientInterceptor</em></a><em>] </em><em>| </em><em>None</em>) – An optional sequence of interceptors that will be executed for
 any call executed with this channel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Channel.</p>
 </dd>
 </dl>
@@ -168,19 +341,19 @@ any call executed with this channel.</p></li>
 <span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">secure_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interceptors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_channel.html#secure_channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.secure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a secure asynchronous Channel to a server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> (<em>str</em>) – The server address.</p></li>
-<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelCredentials" title="grpc.ChannelCredentials"><em>grpc.ChannelCredentials</em></a>) – A ChannelCredentials instance.</p></li>
-<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelCredentials" title="grpc.ChannelCredentials"><em>ChannelCredentials</em></a>) – A ChannelCredentials instance.</p></li>
+<li><p><strong>options</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>] </em><em>| </em><em>None</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a>
 in gRPC Core runtime) to configure the channel.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An optional value indicating the compression method to be
-used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
-<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientInterceptor" title="grpc.aio._interceptor.ClientInterceptor"><em>grpc.aio._interceptor.ClientInterceptor</em></a><em>]</em><em>]</em>) – An optional sequence of interceptors that will be executed for
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An optional value indicating the compression method to be
+used over the lifetime of the channel.</p></li>
+<li><p><strong>interceptors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientInterceptor" title="grpc.aio._interceptor.ClientInterceptor"><em>ClientInterceptor</em></a><em>] </em><em>| </em><em>None</em>) – An optional sequence of interceptors that will be executed for
 any call executed with this channel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An aio.Channel.</p>
 </dd>
 </dl>
@@ -188,7 +361,7 @@ any call executed with this channel.</p></li>
 
 </section>
 <section id="channel-object">
-<h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this headline">¶</a></h3>
+<h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.Channel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel" title="Permalink to this definition">¶</a></dt>
@@ -201,7 +374,7 @@ multiple times.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__aenter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.__aenter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.__aenter__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts an asynchronous context manager.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Channel the channel that was instantiated.</p>
 </dd>
 </dl>
@@ -219,7 +392,7 @@ multiple times.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">channel_ready</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.channel_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.channel_ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a coroutine that blocks until the Channel is READY.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -237,8 +410,8 @@ been terminated are cancelled. If a grace period is not specified
 (by passing None for grace), all existing RPCs are cancelled immediately.</p>
 <p>This method is idempotent.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>grace</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – </p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>grace</strong> (<em>float</em><em> | </em><em>None</em>) – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -252,12 +425,12 @@ been terminated are cancelled. If a grace period is not specified
 that the return value of this function will eventually converge to that
 state.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>try_to_connect</strong> (<em>bool</em>) – a bool indicate whether the Channel should try to
 connect to peer or not.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity">grpc.ChannelConnectivity</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity"><em>ChannelConnectivity</em></a></p>
 </dd>
 </dl>
 <p>Returns: A ChannelConnectivity object.</p>
@@ -268,21 +441,21 @@ connect to peer or not.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stream_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a StreamStreamMultiCallable for a stream-stream method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A StreamStreamMultiCallable value for the named stream-stream method.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable" title="grpc.aio._base_channel.StreamStreamMultiCallable">grpc.aio._base_channel.StreamStreamMultiCallable</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable" title="grpc.aio._base_channel.StreamStreamMultiCallable"><em>StreamStreamMultiCallable</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -292,21 +465,21 @@ is passed.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stream_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a StreamUnaryMultiCallable for a stream-unary method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A StreamUnaryMultiCallable value for the named stream-unary method.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable" title="grpc.aio._base_channel.StreamUnaryMultiCallable">grpc.aio._base_channel.StreamUnaryMultiCallable</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable" title="grpc.aio._base_channel.StreamUnaryMultiCallable"><em>StreamUnaryMultiCallable</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -316,21 +489,21 @@ is passed.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unary_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a UnaryStreamMultiCallable for a unary-stream method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A UnarySteramMultiCallable value for the named unary-stream method.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable" title="grpc.aio._base_channel.UnaryStreamMultiCallable">grpc.aio._base_channel.UnaryStreamMultiCallable</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable" title="grpc.aio._base_channel.UnaryStreamMultiCallable"><em>UnaryStreamMultiCallable</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -340,21 +513,21 @@ is passed.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a UnaryUnaryMultiCallable for a unary-unary method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A UnaryUnaryMultiCallable value for the named unary-unary method.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable" title="grpc.aio._base_channel.UnaryUnaryMultiCallable">grpc.aio._base_channel.UnaryUnaryMultiCallable</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable" title="grpc.aio._base_channel.UnaryUnaryMultiCallable"><em>UnaryUnaryMultiCallable</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -374,11 +547,11 @@ observe every state transition.</p>
 <p>If there is a need to put a timeout for this function, please refer to
 “asyncio.wait_for”.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>last_observed_state</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity"><em>grpc.ChannelConnectivity</em></a>) – A grpc.ChannelConnectivity object representing
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>last_observed_state</strong> (<a class="reference internal" href="grpc.html#grpc.ChannelConnectivity" title="grpc.ChannelConnectivity"><em>ChannelConnectivity</em></a>) – A grpc.ChannelConnectivity object representing
 the last known state.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -388,35 +561,34 @@ the last known state.</p>
 
 </section>
 <section id="create-server">
-<h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
+<h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this heading">¶</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="grpc.aio.server">
 <span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">migration_thread_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handlers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interceptors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_concurrent_rpcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_server.html#server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server with which RPCs can be serviced.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>migration_thread_pool</strong> (<em>Optional</em><em>[</em><em>concurrent.futures._base.Executor</em><em>]</em>) – A futures.ThreadPoolExecutor to be used by the
+<li><p><strong>migration_thread_pool</strong> (<em>Executor</em><em> | </em><em>None</em>) – A futures.ThreadPoolExecutor to be used by the
 Server to execute non-AsyncIO RPC handlers for migration purpose.</p></li>
-<li><p><strong>handlers</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>grpc.GenericRpcHandler</em></a><em>]</em><em>]</em>) – An optional list of GenericRpcHandlers used for executing RPCs.
+<li><p><strong>handlers</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>GenericRpcHandler</em></a><em>] </em><em>| </em><em>None</em>) – An optional list of GenericRpcHandlers used for executing RPCs.
 More handlers may be added by calling add_generic_rpc_handlers any time
 before the server is started.</p></li>
-<li><p><strong>interceptors</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – An optional list of ServerInterceptor objects that observe
+<li><p><strong>interceptors</strong> (<em>Sequence</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>None</em>) – An optional list of ServerInterceptor objects that observe
 and optionally manipulate the incoming RPCs before handing them over to
 handlers. The interceptors are given control in the order they are
 specified. This is an EXPERIMENTAL API.</p></li>
-<li><p><strong>options</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a> in gRPC runtime)
+<li><p><strong>options</strong> (<em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>] </em><em>| </em><em>None</em>) – An optional list of key-value pairs (<a class="reference internal" href="glossary.html#term-channel_arguments"><span class="xref std std-term">channel_arguments</span></a> in gRPC runtime)
 to configure the channel.</p></li>
-<li><p><strong>maximum_concurrent_rpcs</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The maximum number of concurrent RPCs this server
+<li><p><strong>maximum_concurrent_rpcs</strong> (<em>int</em><em> | </em><em>None</em>) – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
 grpc.compression.Gzip. This compression algorithm will be used for the
-lifetime of the server unless overridden by set_compression. This is an
-EXPERIMENTAL option.</p></li>
+lifetime of the server unless overridden by set_compression.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Server object.</p>
 </dd>
 </dl>
@@ -424,7 +596,7 @@ EXPERIMENTAL option.</p></li>
 
 </section>
 <section id="server-object">
-<h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this headline">¶</a></h3>
+<h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.Server">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">Server</span></span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#Server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Server" title="Permalink to this definition">¶</a></dt>
@@ -435,13 +607,13 @@ EXPERIMENTAL option.</p></li>
 <dd><p>Registers GenericRpcHandlers with this Server.</p>
 <p>This method is only safe to call before the server is started.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>generic_rpc_handlers</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>grpc.GenericRpcHandler</em></a><em>]</em>) – A sequence of GenericRpcHandlers that will be</p></li>
+<li><p><strong>generic_rpc_handlers</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>GenericRpcHandler</em></a><em>]</em>) – A sequence of GenericRpcHandlers that will be</p></li>
 <li><p><strong>RPCs.</strong> (<em>used to service</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -455,14 +627,14 @@ EXPERIMENTAL option.</p></li>
 like TCP and UDP. To date, we only support TCP.</p>
 <p>This method may only be called before starting the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>address</strong> (<em>str</em>) – The address for which to open a port. If the port is 0,
 or not specified in the address, then the gRPC runtime will choose a port.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An integer port on which the server will accept RPC requests.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
 </dd>
 </dl>
@@ -476,18 +648,18 @@ or not specified in the address, then the gRPC runtime will choose a port.</p>
 like TCP and UDP. To date, we only support TCP.</p>
 <p>This method may only be called before starting the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>address</strong> (<em>str</em>) – The address for which to open a port.
 if the port is 0, or not specified in the address, then the gRPC
 runtime will choose a port.</p></li>
-<li><p><strong>server_credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ServerCredentials" title="grpc.ServerCredentials"><em>grpc.ServerCredentials</em></a>) – A ServerCredentials object.</p></li>
+<li><p><strong>server_credentials</strong> (<a class="reference internal" href="grpc.html#grpc.ServerCredentials" title="grpc.ServerCredentials"><em>ServerCredentials</em></a>) – A ServerCredentials object.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An integer port on which the server will accept RPC requests.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
 </dd>
 </dl>
@@ -499,7 +671,7 @@ runtime will choose a port.</p></li>
 <dd><p>Starts this Server.</p>
 <p>This method may only be called once. (i.e. it is not idempotent).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -523,10 +695,10 @@ stopping the server immediately). Passing a larger grace value in a
 subsequent call will not have the effect of stopping the server later
 (i.e. the most restrictive grace value is used).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>grace</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – A duration of time in seconds or None.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>grace</strong> (<em>float</em><em> | </em><em>None</em>) – A duration of time in seconds or None.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -546,14 +718,14 @@ it will block until one of the two following conditions are met:</p>
 <p>The timeout argument works in the same way as <cite>threading.Event.wait()</cite>.
 <a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Event.wait">https://docs.python.org/3/library/threading.html#threading.Event.wait</a></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – A floating point number specifying a timeout for the
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – A floating point number specifying a timeout for the
 operation in seconds.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A bool indicates if the operation times out.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
@@ -563,7 +735,7 @@ operation in seconds.</p>
 
 </section>
 <section id="grpc-exceptions">
-<h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this headline">¶</a></h3>
+<h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this heading">¶</a></h3>
 <dl class="py exception">
 <dt class="sig sig-object py" id="grpc.aio.BaseError">
 <em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">BaseError</span></span><a class="headerlink" href="#grpc.aio.BaseError" title="Permalink to this definition">¶</a></dt>
@@ -600,16 +772,16 @@ perform certain clean-up logic, and then re-raise it.</p>
 <p>Raised RpcError is a snapshot of the final status of the RPC, values are
 determined. Hence, its methods no longer needs to be coroutines.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – </p></li>
-<li><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a>) – </p></li>
-<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a>) – </p></li>
-<li><p><strong>details</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>debug_error_string</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a>) – </p></li>
+<li><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a>) – </p></li>
+<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a>) – </p></li>
+<li><p><strong>details</strong> (<em>str</em><em> | </em><em>None</em>) – </p></li>
+<li><p><strong>debug_error_string</strong> (<em>str</em><em> | </em><em>None</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -618,11 +790,11 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">code</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError.code"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError.code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the status code sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The <cite>grpc.StatusCode</cite> status code.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode">grpc.StatusCode</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -632,10 +804,10 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">debug_error_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError.debug_error_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError.debug_error_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the debug error string sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The debug error string received.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
@@ -646,11 +818,11 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">details</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError.details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError.details" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the details sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The description of the error.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[str]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -660,11 +832,11 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The initial metadata received.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -674,11 +846,11 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">trailing_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_call.html#AioRpcError.trailing_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.AioRpcError.trailing_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the trailing metadata sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The trailing metadata received.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -687,7 +859,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 
 </section>
 <section id="grpc-metadata">
-<h3>gRPC Metadata<a class="headerlink" href="#grpc-metadata" title="Permalink to this headline">¶</a></h3>
+<h3>gRPC Metadata<a class="headerlink" href="#grpc-metadata" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.Metadata">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">Metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_metadata.html#Metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Metadata" title="Permalink to this definition">¶</a></dt>
@@ -704,11 +876,8 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em>) – </p>
 </dd>
 </dl>
 <dl class="py method">
@@ -716,10 +885,10 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <span class="sig-name descname"><span class="pre">__delitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_metadata.html#Metadata.__delitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Metadata.__delitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">metadata[&lt;key&gt;]</span></code> deletes the first mapping for &lt;key&gt;.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -731,11 +900,11 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dd><p>When calling &lt;metadata&gt;[&lt;key&gt;], the first element of all those
 mapped for &lt;key&gt; is returned.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[str, bytes]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str | bytes</p>
 </dd>
 </dl>
 </dd></dl>
@@ -746,7 +915,7 @@ mapped for &lt;key&gt; is returned.</p>
 <dd><p>Return the total number of elements that there are in the metadata,
 including multiple values for the same key.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
 </dd>
 </dl>
@@ -758,13 +927,13 @@ including multiple values for the same key.</p>
 <dd><p>Calling metadata[&lt;key&gt;] = &lt;value&gt;
 Maps &lt;value&gt; to the first instance of &lt;key&gt;.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>key</strong> (<em>str</em>) – </p></li>
-<li><p><strong>value</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em>) – </p></li>
+<li><p><strong>value</strong> (<em>str</em><em> | </em><em>bytes</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -775,10 +944,10 @@ Maps &lt;value&gt; to the first instance of &lt;key&gt;.</p>
 <span class="sig-name descname"><span class="pre">delete_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_metadata.html#Metadata.delete_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Metadata.delete_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete all mappings for &lt;key&gt;.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -790,11 +959,11 @@ Maps &lt;value&gt; to the first instance of &lt;key&gt;.</p>
 <dd><p>For compatibility with other Metadata abstraction objects (like in Java),
 this would return all items under the desired &lt;key&gt;.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>List</em>[<em>Union</em>[str, bytes]]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>List</em>[str | bytes]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -803,7 +972,7 @@ this would return all items under the desired &lt;key&gt;.</p>
 
 </section>
 <section id="shared-context">
-<h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this headline">¶</a></h3>
+<h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.RpcContext">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">RpcContext</span></span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#RpcContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.RpcContext" title="Permalink to this definition">¶</a></dt>
@@ -813,13 +982,13 @@ this would return all items under the desired &lt;key&gt;.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_done_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#RpcContext.add_done_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.RpcContext.add_done_callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers a callback to be called on RPC termination.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable object will be called with the call object as</p></li>
 <li><p><strong>argument.</strong> (<em>its only</em>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -831,10 +1000,10 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dd><p>Cancels the RPC.</p>
 <p>Idempotent and has no effect if the RPC has already terminated.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A bool indicates if the cancellation is performed or not.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -846,10 +1015,10 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dd><p>Return True if the RPC is cancelled.</p>
 <p>The RPC is cancelled when the cancellation was requested with cancel().</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A bool indicates whether the RPC is cancelled or not.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -861,10 +1030,10 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dd><p>Return True if the RPC is done.</p>
 <p>An RPC is done if the RPC is completed, cancelled or aborted.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A bool indicates if the RPC is done.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -875,13 +1044,13 @@ this would return all items under the desired &lt;key&gt;.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time_remaining</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#RpcContext.time_remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.RpcContext.time_remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes the length of allowed time remaining for the RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
 remaining for the RPC to complete before it is considered to have
 timed out, or None if no deadline was specified for the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[float]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -890,7 +1059,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 
 </section>
 <section id="client-side-context">
-<h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this headline">¶</a></h3>
+<h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.Call">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">Call</span></span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#Call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Call" title="Permalink to this definition">¶</a></dt>
@@ -900,11 +1069,11 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">code</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#Call.code"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Call.code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the status code sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The StatusCode value for the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode">grpc.StatusCode</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -914,10 +1083,10 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">details</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#Call.details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Call.details" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the details sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The details string of the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
@@ -928,11 +1097,11 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#Call.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Call.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -942,11 +1111,11 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trailing_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#Call.trailing_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Call.trailing_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the trailing metadata sent by the server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -961,7 +1130,7 @@ an AioRpcError will be raised to explain the reason of the connection
 failure.</p>
 <p>This method is recommended for building retry mechanisms.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -978,11 +1147,11 @@ failure.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__await__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#UnaryUnaryCall.__await__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryCall.__await__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Await the response message to be ready.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The response message of the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Awaitable</em>[grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Awaitable</em>[<em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -998,11 +1167,11 @@ failure.</p>
 <dd><p>Returns the async iterable representation that yields messages.</p>
 <p>Under the hood, it is calling the “read” method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>An async iterable object that yields messages.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>AsyncIterable</em>[grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1014,12 +1183,12 @@ failure.</p>
 <p>Read operations must be serialized when called from multiple
 coroutines.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
 stream.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>_EOF</em> | <em>ResponseType</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1034,11 +1203,11 @@ stream.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__await__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#StreamUnaryCall.__await__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamUnaryCall.__await__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Await the response message to be ready.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The response message of the stream.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Awaitable</em>[grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Awaitable</em>[<em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1050,7 +1219,7 @@ stream.</p>
 <p>After done_writing is called, any additional invocation to the write
 function will fail. This function is idempotent.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1061,13 +1230,13 @@ function will fail. This function is idempotent.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#StreamUnaryCall.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamUnaryCall.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes one message to the stream.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
 </dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><p><strong>request</strong> (<em>grpc.aio._typing.RequestType</em>) – </p>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>request</strong> (<em>RequestType</em>) – </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1084,11 +1253,11 @@ function will fail. This function is idempotent.</p>
 <dd><p>Returns the async iterable representation that yields messages.</p>
 <p>Under the hood, it is calling the “read” method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>An async iterable object that yields messages.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>AsyncIterable</em>[grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1100,7 +1269,7 @@ function will fail. This function is idempotent.</p>
 <p>After done_writing is called, any additional invocation to the write
 function will fail. This function is idempotent.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1113,12 +1282,12 @@ function will fail. This function is idempotent.</p>
 <p>Read operations must be serialized when called from multiple
 coroutines.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
 stream.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>_EOF</em> | <em>ResponseType</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1128,13 +1297,13 @@ stream.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#StreamStreamCall.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamStreamCall.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes one message to the stream.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
 </dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><p><strong>request</strong> (<em>grpc.aio._typing.RequestType</em>) – </p>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>request</strong> (<em>RequestType</em>) – </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1144,7 +1313,7 @@ stream.</p>
 
 </section>
 <section id="server-side-context">
-<h3>Server-Side Context<a class="headerlink" href="#server-side-context" title="Permalink to this headline">¶</a></h3>
+<h3>Server-Side Context<a class="headerlink" href="#server-side-context" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">ServicerContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext" title="Permalink to this definition">¶</a></dt>
@@ -1156,22 +1325,22 @@ stream.</p>
 <p>The code and details passed as arguments will supercede any existing
 ones.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – A StatusCode object to be sent to the client.
+<li><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a>) – A StatusCode object to be sent to the client.
 It must not be StatusCode.OK.</p></li>
 <li><p><strong>details</strong> (<em>str</em>) – A UTF-8-encodable string to be sent to the client upon
 termination of the RPC.</p></li>
-<li><p><strong>trailing_metadata</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em>) – A sequence of tuple represents the trailing
+<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – A sequence of tuple represents the trailing
 <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>Exception</strong> – An exception is always raised to signal the abortion the
     RPC to the gRPC runtime.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>NoReturn</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1182,11 +1351,11 @@ termination of the RPC.</p></li>
 <dd><p>Registers a callback to be called on RPC termination.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable object will be called with the servicer context
 object as its only argument.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1197,10 +1366,10 @@ object as its only argument.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">auth_context</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.auth_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.auth_context" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the auth context for the call.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A map of strings to an iterable of bytes for each auth property.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>Mapping</em>[str, <em>Iterable</em>[bytes]]</p>
 </dd>
 </dl>
@@ -1213,10 +1382,10 @@ object as its only argument.</p>
 <p>The RPC is cancelled when the cancellation was requested with cancel().</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A bool indicates whether the RPC is cancelled or not.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -1228,7 +1397,7 @@ object as its only argument.</p>
 <dd><p>Accesses the value to be used as status code upon RPC completion.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The StatusCode value for the RPC.</p>
 </dd>
 </dl>
@@ -1240,7 +1409,7 @@ object as its only argument.</p>
 <dd><p>Accesses the value to be used as detail string upon RPC completion.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The details string of the RPC.</p>
 </dd>
 </dl>
@@ -1250,11 +1419,10 @@ object as its only argument.</p>
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext.disable_next_message_compression">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">disable_next_message_compression</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.disable_next_message_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.disable_next_message_compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disables compression for the next response message.</p>
-<p>This is an EXPERIMENTAL method.</p>
 <p>This method will override any compression configuration set during
 server creation or set on the call.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1267,10 +1435,10 @@ server creation or set on the call.</p>
 <p>An RPC is done if the RPC is completed, cancelled or aborted.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A bool indicates if the RPC is done.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
@@ -1281,11 +1449,11 @@ server creation or set on the call.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">invocation_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.invocation_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the metadata sent by the client.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a>]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1295,11 +1463,11 @@ server creation or set on the call.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">peer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.peer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.peer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identifies the peer that invoked the RPC being serviced.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A string identifying the peer that invoked the RPC being serviced.
 The string format is determined by gRPC runtime.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
@@ -1312,12 +1480,12 @@ The string format is determined by gRPC runtime.</p>
 <p>Equivalent to
 servicer_context.auth_context().get(servicer_context.peer_identity_key())</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>An iterable of the identities, or None if the call is not
 authenticated. Each identity is returned as a raw bytes type.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[<em>Iterable</em>[bytes]]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Iterable</em>[bytes] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1329,12 +1497,12 @@ authenticated. Each identity is returned as a raw bytes type.</p>
 <p>For example, “x509_common_name” or “x509_subject_alternative_name” are
 used to identify an SSL peer.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The auth property (string) that indicates the
 peer identity, or None if the call is not authenticated.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[str]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1345,14 +1513,14 @@ peer identity, or None if the call is not authenticated.</p>
 <dd><p>Reads one message from the RPC.</p>
 <p>Only one read operation is allowed simultaneously.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A response message of the RPC.</p>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>An RpcError exception if the read failed.</strong> – </p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>grpc.aio._typing.RequestType</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>RequestType</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1364,10 +1532,10 @@ peer identity, or None if the call is not authenticated.</p>
 <p>This method need not be called by implementations if they have no
 metadata to add to what the gRPC runtime will transmit.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>initial_metadata</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em>) – The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1380,10 +1548,10 @@ metadata to add to what the gRPC runtime will transmit.</p>
 <p>This method need not be called by method implementations if they wish
 the gRPC runtime to determine the status code of the RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>grpc.StatusCode</em></a>) – A StatusCode object to be sent to the client.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a>) – A StatusCode object to be sent to the client.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1393,13 +1561,12 @@ the gRPC runtime to determine the status code of the RPC.</p>
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext.set_compression">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_compression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compression</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.set_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.set_compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the compression algorithm to be used for the entire call.</p>
-<p>This is an EXPERIMENTAL method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a>) – An element of grpc.compression, e.g.
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a>) – An element of grpc.compression, e.g.
 grpc.compression.Gzip.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1412,11 +1579,11 @@ grpc.compression.Gzip.</p>
 <p>This method need not be called by method implementations if they have
 no details to transmit.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>details</strong> (<em>str</em>) – A UTF-8-encodable string to be sent to the client upon
 termination of the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1429,10 +1596,10 @@ termination of the RPC.</p>
 <p>This method need not be called by implementations if they have no
 metadata to add to what the gRPC runtime will transmit.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>trailing_metadata</strong> (<em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em>) – The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
@@ -1443,12 +1610,12 @@ metadata to add to what the gRPC runtime will transmit.</p>
 <span class="sig-name descname"><span class="pre">time_remaining</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.time_remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.time_remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes the length of allowed time remaining for the RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
 remaining for the RPC to complete before it is considered to have
 timed out, or None if no deadline was specified for the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>float</p>
 </dd>
 </dl>
@@ -1460,7 +1627,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <dd><p>Access value to be used as trailing metadata upon RPC completion.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> for the RPC.</p>
 </dd>
 </dl>
@@ -1472,13 +1639,13 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <dd><p>Writes one message to the RPC.</p>
 <p>Only one write operation is allowed simultaneously.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
 </dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><p><strong>message</strong> (<em>grpc.aio._typing.ResponseType</em>) – </p>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>message</strong> (<em>ResponseType</em>) – </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
@@ -1488,22 +1655,21 @@ timed out, or None if no deadline was specified for the RPC.</p>
 
 </section>
 <section id="client-side-interceptor">
-<h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this headline">¶</a></h3>
+<h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.ClientCallDetails">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">ClientCallDetails</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ClientCallDetails"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ClientCallDetails" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes an RPC to be invoked.</p>
 <p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The method name of the RPC.</p></li>
-<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>]</em>) – Optional metadata to be transmitted to the service-side of
+<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow for the RPC.</p></li>
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>None</em>) – Optional metadata to be transmitted to the service-side of
 the RPC.</p></li>
-<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC.</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
-flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1520,13 +1686,13 @@ the interceptor task is finished.</p>
 <span class="sig-name descname"><span class="pre">time_remaining</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#InterceptedUnaryUnaryCall.time_remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.InterceptedUnaryUnaryCall.time_remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes the length of allowed time remaining for the RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
 remaining for the RPC to complete before it is considered to have
 timed out, or None if no deadline was specified for the RPC.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Optional</em>[float]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1548,9 +1714,9 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intercept_unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_call_details</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#UnaryUnaryClientInterceptor.intercept_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryClientInterceptor.intercept_unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a unary-unary invocation asynchronously.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>UnaryUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.
@@ -1558,22 +1724,22 @@ The interceptor can use
 <cite>call = await continuation(client_call_details, request)</cite>
 to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
-<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a>) – A ClientCallDetails object describing the
+<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request</strong> (<em>grpc.aio._typing.RequestType</em>) – The request value for the RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An object with the RPC response.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
 <li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[grpc.aio._call.UnaryUnaryCall, grpc.aio._typing.ResponseType]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>UnaryUnaryCall</em> | <em>ResponseType</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1592,9 +1758,9 @@ outgoing RPC.</p></li>
 iterator, in case of being an asyncrhonous iterator this will
 become the source of the reads done by the caller.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.
@@ -1602,22 +1768,22 @@ The interceptor can use
 <cite>call = await continuation(client_call_details, request)</cite>
 to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
-<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a>) – A ClientCallDetails object describing the
+<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request</strong> (<em>grpc.aio._typing.RequestType</em>) – The request value for the RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The RPC Call or an asynchronous iterator.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
 <li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[<em>AsyncIterable</em>[<em>Any</em>], grpc.aio._call.UnaryStreamCall]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>Any</em>] | <em>UnaryStreamCall</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1637,9 +1803,9 @@ even awaiting the call should be done carefully, since the caller
 could be expecting an untouched call, for example for start writing
 messages to it.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.StreamUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>StreamUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.
@@ -1647,23 +1813,23 @@ The interceptor can use
 <cite>call = await continuation(client_call_details, request_iterator)</cite>
 to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
-<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a>) – A ClientCallDetails object describing the
+<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request_iterator</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – The request iterator that will produce requests
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em>) – The request iterator that will produce requests
 for the RPC.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The RPC Call.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
 <li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>grpc.aio._call.StreamUnaryCall</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>StreamUnaryCall</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1686,9 +1852,9 @@ messages to it.</p>
 iterator, in case of being an asyncrhonous iterator this will
 become the source of the reads done by the caller.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.StreamStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>StreamStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.
@@ -1696,23 +1862,23 @@ The interceptor can use
 <cite>call = await continuation(client_call_details, request_iterator)</cite>
 to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
-<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a>) – A ClientCallDetails object describing the
+<li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request_iterator</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – The request iterator that will produce requests
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em>) – The request iterator that will produce requests
 for the RPC.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The RPC Call or an asynchronous iterator.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
 <li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><em>Union</em>[<em>AsyncIterable</em>[<em>Any</em>], grpc.aio._call.StreamStreamCall]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>Any</em>] | <em>StreamStreamCall</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1721,7 +1887,7 @@ for the RPC.</p></li>
 
 </section>
 <section id="server-side-interceptor">
-<h3>Server-Side Interceptor<a class="headerlink" href="#server-side-interceptor" title="Permalink to this headline">¶</a></h3>
+<h3>Server-Side Interceptor<a class="headerlink" href="#server-side-interceptor" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.ServerInterceptor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">ServerInterceptor</span></span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ServerInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServerInterceptor" title="Permalink to this definition">¶</a></dt>
@@ -1732,22 +1898,22 @@ for the RPC.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intercept_service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler_call_details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ServerInterceptor.intercept_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts incoming RPCs before handing them over to a handler.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>grpc.HandlerCallDetails</em></a><em>]</em><em>, </em><em>Awaitable</em><em>[</em><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler"><em>grpc.RpcMethodHandler</em></a><em>]</em><em>]</em>) – A function that takes a HandlerCallDetails and
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>HandlerCallDetails</em></a><em>]</em><em>, </em><em>Awaitable</em><em>[</em><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler"><em>RpcMethodHandler</em></a><em>]</em><em>]</em>) – A function that takes a HandlerCallDetails and
 proceeds to invoke the next interceptor in the chain, if any,
 or the RPC handler lookup logic, with the call details passed
 as an argument, and returns an RpcMethodHandler instance if
 the RPC is considered serviced, or None otherwise.</p></li>
-<li><p><strong>handler_call_details</strong> (<a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>grpc.HandlerCallDetails</em></a>) – A HandlerCallDetails describing the RPC.</p></li>
+<li><p><strong>handler_call_details</strong> (<a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>HandlerCallDetails</em></a>) – A HandlerCallDetails describing the RPC.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An RpcMethodHandler with which the RPC may be serviced if the
 interceptor chooses to service this RPC, or None otherwise.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler">grpc.RpcMethodHandler</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler"><em>RpcMethodHandler</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1756,7 +1922,7 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 
 </section>
 <section id="multi-callable-interfaces">
-<h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this headline">¶</a></h3>
+<h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.UnaryUnaryMultiCallable">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryMultiCallable</span></span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#UnaryUnaryMultiCallable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
@@ -1766,31 +1932,30 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
-<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
-<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
-flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A UnaryUnaryCall object.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
     raised RpcError will also be a Call for the RPC affording the RPC’s
     metadata, status code, and details.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryCall" title="grpc.aio._base_call.UnaryUnaryCall">grpc.aio._base_call.UnaryUnaryCall</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryCall" title="grpc.aio._base_call.UnaryUnaryCall"><em>UnaryUnaryCall</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1806,31 +1971,30 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
-<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
-<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
-flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A UnaryStreamCall object.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
     raised RpcError will also be a Call for the RPC affording the RPC’s
     metadata, status code, and details.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryStreamCall" title="grpc.aio._base_call.UnaryStreamCall">grpc.aio._base_call.UnaryStreamCall</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryStreamCall" title="grpc.aio._base_call.UnaryStreamCall"><em>UnaryStreamCall</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1846,32 +2010,31 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request_iterator</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional async iterable or iterable of request
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
 messages for the RPC.</p></li>
-<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
-<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
-flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A StreamUnaryCall object.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
     raised RpcError will also be a Call for the RPC affording the RPC’s
     metadata, status code, and details.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamUnaryCall" title="grpc.aio._base_call.StreamUnaryCall">grpc.aio._base_call.StreamUnaryCall</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamUnaryCall" title="grpc.aio._base_call.StreamUnaryCall"><em>StreamUnaryCall</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1887,32 +2050,31 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request_iterator</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em><em>]</em>) – An optional async iterable or iterable of request
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
 messages for the RPC.</p></li>
-<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – An optional duration of time in seconds to allow
+<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>grpc.aio._metadata.Metadata</em></a><em>, </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>bytes</em><em>]</em><em>]</em><em>]</em><em>]</em><em>]</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
-<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>) – An optional CallCredentials for the RPC. Only valid for
+<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – This is an EXPERIMENTAL argument. An optional
-flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>grpc.Compression</em></a><em>]</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A StreamStreamCall object.</p>
 </dd>
-<dt class="field-odd">Raises</dt>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcError" title="grpc.RpcError"><strong>RpcError</strong></a> – Indicates that the RPC terminated with non-OK status. The
     raised RpcError will also be a Call for the RPC affording the RPC’s
     metadata, status code, and details.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamStreamCall" title="grpc.aio._base_call.StreamStreamCall">grpc.aio._base_call.StreamStreamCall</a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamStreamCall" title="grpc.aio._base_call.StreamStreamCall"><em>StreamStreamCall</em></a></p>
 </dd>
 </dl>
 </dd></dl>

@@ -166,6 +166,7 @@ var menudata={children:[
 {text:"g",url:"functions_rela.html#index_g"},
 {text:"i",url:"functions_rela.html#index_i"},
 {text:"m",url:"functions_rela.html#index_m"},
+{text:"o",url:"functions_rela.html#index_o"},
 {text:"p",url:"functions_rela.html#index_p"},
 {text:"s",url:"functions_rela.html#index_s"}]}]}]},
 {text:"Files",url:"files.html",children:[

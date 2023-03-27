@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -88,7 +88,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collection of parameters used to configure client and server endpoints.  <a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> Interface.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,11 +109,14 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a3dfbf75b97bfbb167883cda8553d5702"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">SetDefaultEventEngineFactory</a> (absl::AnyInvocable&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt; factory)</td></tr>
-<tr class="memdesc:a3dfbf75b97bfbb167883cda8553d5702"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">More...</a><br /></td></tr>
-<tr class="separator:a3dfbf75b97bfbb167883cda8553d5702"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94ab619b34c2c1f57c2d068d0c18907c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a94ab619b34c2c1f57c2d068d0c18907c">SetEventEngineFactory</a> (absl::AnyInvocable&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt; factory)</td></tr>
+<tr class="memdesc:a94ab619b34c2c1f57c2d068d0c18907c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a94ab619b34c2c1f57c2d068d0c18907c">More...</a><br /></td></tr>
+<tr class="separator:a94ab619b34c2c1f57c2d068d0c18907c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61848d6441fac572b7c4ef2cc3820342"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a61848d6441fac572b7c4ef2cc3820342">EventEngineFactoryReset</a> ()</td></tr>
+<tr class="memdesc:a61848d6441fac572b7c4ef2cc3820342"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset gRPC's <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factory to the built-in default.  <a href="namespacegrpc__event__engine_1_1experimental.html#a61848d6441fac572b7c4ef2cc3820342">More...</a><br /></td></tr>
+<tr class="separator:a61848d6441fac572b7c4ef2cc3820342"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">CreateEventEngine</a> ()</td></tr>
-<tr class="memdesc:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> using the default factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">More...</a><br /></td></tr>
+<tr class="memdesc:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> using the default factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">More...</a><br /></td></tr>
 <tr class="separator:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
@@ -132,18 +135,38 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> using the default factory. </p>
+<p>Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> using the default factory. </p>
 
 </div>
 </div>
-<a id="a3dfbf75b97bfbb167883cda8553d5702"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3dfbf75b97bfbb167883cda8553d5702">&#9670;&nbsp;</a></span>SetDefaultEventEngineFactory()</h2>
+<a id="a61848d6441fac572b7c4ef2cc3820342"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61848d6441fac572b7c4ef2cc3820342">&#9670;&nbsp;</a></span>EventEngineFactoryReset()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc_event_engine::experimental::SetDefaultEventEngineFactory </td>
+          <td class="memname">void grpc_event_engine::experimental::EventEngineFactoryReset </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reset gRPC's <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factory to the built-in default. </p>
+<p>Applications that have called <em>SetEventEngineFactory</em> can remove their custom factory using this method. The built-in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factories will be used going forward. This has no affect on any EventEngines that were created using the previous factories. </p>
+
+</div>
+</div>
+<a id="a94ab619b34c2c1f57c2d068d0c18907c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94ab619b34c2c1f57c2d068d0c18907c">&#9670;&nbsp;</a></span>SetEventEngineFactory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_event_engine::experimental::SetEventEngineFactory </td>
           <td>(</td>
           <td class="paramtype">absl::AnyInvocable&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt;&#160;</td>
           <td class="paramname"><em>factory</em></td><td>)</td>
@@ -152,16 +175,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory. </p>
-<p>Applications may call <em>SetDefaultEventEngineFactory</em> at any time to replace the default factory used within gRPC. EventEngines will be created when necessary, when they are otherwise not provided by the application.</p>
-<p>To be certain that none of the gRPC-provided built-in EventEngines are created, applications must set a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory method <em>before</em> grpc is initialized. </p>
+<p>Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factory. </p>
+<p>Applications may call <em>SetEventEngineFactory</em> at any time to replace the default factory used within gRPC. EventEngines will be created when necessary, when they are otherwise not provided by the application.</p>
+<p>To be certain that none of the gRPC-provided built-in EventEngines are created, applications must set a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> factory method <em>before</em> grpc is initialized. </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

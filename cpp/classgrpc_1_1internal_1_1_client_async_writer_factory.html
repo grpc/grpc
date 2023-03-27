@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.50.0</span>
+   &#160;<span id="projectnumber">1.53.0</span>
    </div>
   </td>
  </tr>
@@ -73,7 +73,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2channel__interface_8h_source.html">channel_interface.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2channel__interface_8h_source.html">channel_interface.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -152,18 +152,18 @@ template&lt;class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Create a stream object. </p>
-<p>Start the RPC if <em>start</em> is set <em>tag</em> will be notified on <em>cq</em> when the call has been started (i.e. intitial metadata sent) and <em>request</em> has been written out. If <em>start</em> is not set, <em>tag</em> must be nullptr and the actual call must be initiated by StartCall Note that <em>context</em> will be used to fill in custom initial metadata used to send to the server when starting the call. <em>response</em> will be filled in with the single expected response message from the server upon a successful call to the <em>Finish</em> method of this instance. </p>
+<p>Start the RPC if <em>start</em> is set <em>tag</em> will be notified on <em>cq</em> when the call has been started (i.e. initial metadata sent) and <em>request</em> has been written out. If <em>start</em> is not set, <em>tag</em> must be nullptr and the actual call must be initiated by StartCall Note that <em>context</em> will be used to fill in custom initial metadata used to send to the server when starting the call. <em>response</em> will be filled in with the single expected response message from the server upon a successful call to the <em>Finish</em> method of this instance. </p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2channel__interface_8h_source.html">channel_interface.h</a></li>
+<li>include/grpcpp/impl/<a class="el" href="grpcpp_2impl_2channel__interface_8h_source.html">channel_interface.h</a></li>
 <li>include/grpcpp/support/<a class="el" href="grpcpp_2support_2async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

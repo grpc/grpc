@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">28.0.0</span>
+   &#160;<span id="projectnumber">30.1.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a>  </div>
+<a href="#nested-classes">Data Structures</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::internal Namespace Reference</div>  </div>
 </div><!--header-->
@@ -78,11 +79,97 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">MemoryAllocatorImpl</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Underlying memory allocation interface.  <a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_a_00_01_a_01_4.html">SliceCastable&lt; A, A &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01grpc__slice_00_01_mutable_slice_01_4.html">SliceCastable&lt; grpc_slice, MutableSlice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01grpc__slice_00_01_slice_01_4.html">SliceCastable&lt; grpc_slice, Slice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_mutable_slice_00_01grpc__slice_01_4.html">SliceCastable&lt; MutableSlice, grpc_slice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_mutable_slice_00_01_slice_01_4.html">SliceCastable&lt; MutableSlice, Slice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_slice_00_01grpc__slice_01_4.html">SliceCastable&lt; Slice, grpc_slice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_slice_00_01_mutable_slice_01_4.html">SliceCastable&lt; Slice, MutableSlice &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ae60e17e7c4e497b7bc207fc0928fbba4"><td class="memTemplParams" colspan="2">template&lt;typename Result , typename T &gt; </td></tr>
+<tr class="memitem:ae60e17e7c4e497b7bc207fc0928fbba4"><td class="memTemplItemLeft" align="right" valign="top">const Result &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ae60e17e7c4e497b7bc207fc0928fbba4">SliceCast</a> (const T &amp;value, <a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a>&lt; Result, T &gt;={})</td></tr>
+<tr class="separator:ae60e17e7c4e497b7bc207fc0928fbba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb2de92eabb8de7bb8b2dfd3959fc52a"><td class="memTemplParams" colspan="2">template&lt;typename Result , typename T &gt; </td></tr>
+<tr class="memitem:aeb2de92eabb8de7bb8b2dfd3959fc52a"><td class="memTemplItemLeft" align="right" valign="top">Result &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#aeb2de92eabb8de7bb8b2dfd3959fc52a">SliceCast</a> (T &amp;value, <a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a>&lt; Result, T &gt;={})</td></tr>
+<tr class="separator:aeb2de92eabb8de7bb8b2dfd3959fc52a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="ae60e17e7c4e497b7bc207fc0928fbba4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae60e17e7c4e497b7bc207fc0928fbba4">&#9670;&nbsp;</a></span>SliceCast() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Result , typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">const Result&amp; grpc_event_engine::experimental::internal::SliceCast </td>
+          <td>(</td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a>&lt; Result, T &gt;&#160;</td>
+          <td class="paramname"> = <code>{}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aeb2de92eabb8de7bb8b2dfd3959fc52a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeb2de92eabb8de7bb8b2dfd3959fc52a">&#9670;&nbsp;</a></span>SliceCast() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Result , typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Result&amp; grpc_event_engine::experimental::internal::SliceCast </td>
+          <td>(</td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a>&lt; Result, T &gt;&#160;</td>
+          <td class="paramname"> = <code>{}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
