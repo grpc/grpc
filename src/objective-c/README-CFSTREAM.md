@@ -37,4 +37,4 @@ a server but other languages running on iOS do support it).
 
 - Currently we do not support platforms other than iOS, although it is likely that this integration
   can run on MacOS targets with Apple's compiler.
-- Let us know if you meet any issue by filing issue and ping @stanleycheung.
+- Let us know if you meet any issue by filing issue and ping @mikefan1991.
