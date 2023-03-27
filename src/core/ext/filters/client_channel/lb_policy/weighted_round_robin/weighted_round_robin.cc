@@ -99,7 +99,6 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration weight_expiration_period() const {
     return weight_expiration_period_;
   }
-  float error_utilization_penalty() const { return error_utilization_penalty_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -114,21 +113,14 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
                            &WeightedRoundRobinConfig::weight_update_period_)
             .OptionalField("weightExpirationPeriod",
                            &WeightedRoundRobinConfig::weight_expiration_period_)
-            .OptionalField(
-                "errorUtilizationPenalty",
-                &WeightedRoundRobinConfig::error_utilization_penalty_)
             .Finish();
     return loader;
   }
 
-  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors*) {
     // Impose lower bound of 100ms on weightUpdatePeriod.
     weight_update_period_ =
         std::max(weight_update_period_, Duration::Milliseconds(100));
-    if (error_utilization_penalty_ < 0) {
-      ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
-      errors->AddError("must be non-negative");
-    }
   }
 
  private:
@@ -137,7 +129,6 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
   Duration blackout_period_ = Duration::Seconds(10);
   Duration weight_update_period_ = Duration::Seconds(1);
   Duration weight_expiration_period_ = Duration::Minutes(3);
-  float error_utilization_penalty_ = 1.0;
 };
 
 // WRR LB policy.
@@ -158,8 +149,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         : wrr_(std::move(wrr)), key_(std::move(key)) {}
     ~AddressWeight() override;
 
-    void MaybeUpdateWeight(double qps, double eps, double cpu_utilization,
-                           float error_utilization_penalty);
+    void MaybeUpdateWeight(double qps, double cpu_utilization);
 
     float GetWeight(Timestamp now, Duration weight_expiration_period,
                     Duration blackout_period);
@@ -201,17 +191,14 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
    private:
     class OobWatcher : public OobBackendMetricWatcher {
      public:
-      OobWatcher(RefCountedPtr<AddressWeight> weight,
-                 float error_utilization_penalty)
-          : weight_(std::move(weight)),
-            error_utilization_penalty_(error_utilization_penalty) {}
+      explicit OobWatcher(RefCountedPtr<AddressWeight> weight)
+          : weight_(std::move(weight)) {}
 
       void OnBackendMetricReport(
           const BackendMetricData& backend_metric_data) override;
 
      private:
       RefCountedPtr<AddressWeight> weight_;
-      const float error_utilization_penalty_;
     };
 
     // Performs connectivity state updates that need to be done only
@@ -303,10 +290,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     // A call tracker that collects per-call endpoint utilization reports.
     class SubchannelCallTracker : public SubchannelCallTrackerInterface {
      public:
-      SubchannelCallTracker(RefCountedPtr<AddressWeight> weight,
-                            float error_utilization_penalty)
-          : weight_(std::move(weight)),
-            error_utilization_penalty_(error_utilization_penalty) {}
+      explicit SubchannelCallTracker(RefCountedPtr<AddressWeight> weight)
+          : weight_(std::move(weight)) {}
 
       void Start() override {}
 
@@ -314,7 +299,6 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
      private:
       RefCountedPtr<AddressWeight> weight_;
-      const float error_utilization_penalty_;
     };
 
     // Info stored about each subchannel.
@@ -340,7 +324,6 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     const Duration weight_update_period_;
     const Duration weight_expiration_period_;
     const Duration blackout_period_;
-    const float error_utilization_penalty_;
     std::vector<SubchannelInfo> subchannels_;
 
     Mutex scheduler_mu_;
@@ -398,24 +381,16 @@ WeightedRoundRobin::AddressWeight::~AddressWeight() {
 }
 
 void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
-    double qps, double eps, double cpu_utilization,
-    float error_utilization_penalty) {
+    double qps, double cpu_utilization) {
   // Compute weight.
   float weight = 0;
-  if (qps > 0 && cpu_utilization > 0) {
-    double penalty = 0.0;
-    if (eps > 0 && error_utilization_penalty > 0) {
-      penalty = eps / qps * error_utilization_penalty;
-    }
-    weight = qps / (cpu_utilization + penalty);
-  }
+  if (qps > 0 && cpu_utilization > 0) weight = qps / cpu_utilization;
   if (weight == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO,
-              "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f: "
-              "error_util_penalty=%f, weight=%f (not updating)",
-              wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
-              error_utilization_penalty, weight);
+              "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: weight=%f "
+              "(not updating)",
+              wrr_.get(), key_.c_str(), qps, cpu_utilization, weight);
     }
     return;
   }
@@ -424,12 +399,11 @@ void WeightedRoundRobin::AddressWeight::MaybeUpdateWeight(
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f "
-            "error_util_penalty=%f : setting weight=%f weight_=%f now=%s "
-            "last_update_time_=%s non_empty_since_=%s",
-            wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
-            error_utilization_penalty, weight, weight_, now.ToString().c_str(),
-            last_update_time_.ToString().c_str(),
+            "[WRR %p] subchannel %s: qps=%f, cpu_utilization=%f: setting "
+            "weight=%f weight_=%f now=%s last_update_time_=%s "
+            "non_empty_since_=%s",
+            wrr_.get(), key_.c_str(), qps, cpu_utilization, weight, weight_,
+            now.ToString().c_str(), last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
   }
   if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
@@ -482,15 +456,12 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
   auto* backend_metric_data =
       args.backend_metric_accessor->GetBackendMetricData();
   double qps = 0;
-  double eps = 0;
   double cpu_utilization = 0;
   if (backend_metric_data != nullptr) {
     qps = backend_metric_data->qps;
-    eps = backend_metric_data->eps;
     cpu_utilization = backend_metric_data->cpu_utilization;
   }
-  weight_->MaybeUpdateWeight(qps, eps, cpu_utilization,
-                             error_utilization_penalty_);
+  weight_->MaybeUpdateWeight(qps, cpu_utilization);
 }
 
 //
@@ -505,7 +476,6 @@ WeightedRoundRobin::Picker::Picker(
       weight_update_period_(wrr_->config_->weight_update_period()),
       weight_expiration_period_(wrr_->config_->weight_expiration_period()),
       blackout_period_(wrr_->config_->blackout_period()),
-      error_utilization_penalty_(wrr_->config_->error_utilization_penalty()),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     WeightedRoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
@@ -545,8 +515,8 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(
   // Collect per-call utilization data if needed.
   std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
   if (use_per_rpc_utilization_) {
-    subchannel_call_tracker = std::make_unique<SubchannelCallTracker>(
-        subchannel_info.weight, error_utilization_penalty_);
+    subchannel_call_tracker =
+        std::make_unique<SubchannelCallTracker>(subchannel_info.weight);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
@@ -854,9 +824,8 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelList::
 
 void WeightedRoundRobin::WeightedRoundRobinSubchannelData::OobWatcher::
     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
-  weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
-                             backend_metric_data.cpu_utilization,
-                             error_utilization_penalty_);
+  weight_->MaybeUpdateWeight(backend_metric_data.qps,
+                             backend_metric_data.cpu_utilization);
 }
 
 //
@@ -875,10 +844,9 @@ WeightedRoundRobin::WeightedRoundRobinSubchannelData::
   WeightedRoundRobin* p =
       static_cast<WeightedRoundRobin*>(subchannel_list->policy());
   if (p->config_->enable_oob_load_report()) {
-    subchannel()->AddDataWatcher(MakeOobBackendMetricWatcher(
-        p->config_->oob_reporting_period(),
-        std::make_unique<OobWatcher>(weight_,
-                                     p->config_->error_utilization_penalty())));
+    subchannel()->AddDataWatcher(
+        MakeOobBackendMetricWatcher(p->config_->oob_reporting_period(),
+                                    std::make_unique<OobWatcher>(weight_)));
   }
 }
 
@@ -989,14 +957,15 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
+      // priority was mentioned as a policy in the deprecated
+      // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:weighted_round_robin policy "
-          "requires configuration. Please use loadBalancingConfig field of "
-          "service config instead.");
+          "field:loadBalancingPolicy error:priority policy requires "
+          "configuration. Please use loadBalancingConfig field of service "
+          "config instead.");
     }
     return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
-        json, JsonArgs(),
-        "errors validating weighted_round_robin LB policy config");
+        json, JsonArgs(), "errors validating priority LB policy config");
   }
 };
 
