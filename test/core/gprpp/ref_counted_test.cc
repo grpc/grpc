@@ -53,7 +53,7 @@ TEST(RefCounted, ExtraRef) {
   foo->Unref();
 }
 
-class Value : public RefCounted<Value, PolymorphicRefCount, kUnrefNoDelete> {
+class Value : public RefCounted<Value, PolymorphicRefCount, UnrefNoDelete> {
  public:
   Value(int value, std::set<std::unique_ptr<Value>>* registry) : value_(value) {
     registry->emplace(this);
@@ -108,7 +108,7 @@ TEST(RefCounted, NoDeleteUponUnref) {
 
 class ValueInExternalAllocation
     : public RefCounted<ValueInExternalAllocation, PolymorphicRefCount,
-                        kUnrefCallDtor> {
+                        UnrefCallDtor> {
  public:
   explicit ValueInExternalAllocation(int value) : value_(value) {}
 
