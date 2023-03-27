@@ -209,8 +209,6 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
