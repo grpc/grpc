@@ -54,9 +54,9 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
-#include "test/core/util/scoped_env_var.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>
