@@ -19,7 +19,7 @@ extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
-static const char descriptor[2758] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
+static const char descriptor[2755] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
 '/', 'c', 's', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 
 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '\032', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 
 'v', '3', '/', 'c', 'o', 'n', 'f', 'i', 'g', '_', 'd', 'u', 'm', 'p', '_', 's', 'h', 'a', 'r', 'e', 'd', '.', 'p', 'r', 'o', 
@@ -123,13 +123,13 @@ static const char descriptor[2758] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 
 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '.', 'C', 'l', 'i', 'e', 'n', 
 't', 'S', 't', 'a', 't', 'u', 's', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '\"', ',', '\202', '\323', '\344', '\223', '\002', '\035', '\"', '\033', 
 '/', 'v', '3', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', ':', 'c', 'l', 'i', 'e', 'n', 't', '_', 's', 't', 'a', 't', 
-'u', 's', '\202', '\323', '\344', '\223', '\002', '\003', ':', '\001', '*', 'B', '\210', '\001', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 
+'u', 's', '\202', '\323', '\344', '\223', '\002', '\003', ':', '\001', '*', 'B', '\205', '\001', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 
 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 's', 't', 'a', 't', 'u', 's', 
 '.', 'v', '3', 'B', '\t', 'C', 's', 'd', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'G', 'g', 'i', 't', 'h', 'u', 'b', '.', 
 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', 
 '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 
-'u', 's', '/', 'v', '3', ';', 's', 't', 'a', 't', 'u', 's', 'v', '3', '\210', '\001', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 
-'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'u', 's', '/', 'v', '3', ';', 's', 't', 'a', 't', 'u', 's', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 
+'r', 'o', 't', 'o', '3', 
 };
 
 static _upb_DefPool_Init *deps[10] = {
@@ -149,5 +149,5 @@ _upb_DefPool_Init envoy_service_status_v3_csds_proto_upbdefinit = {
   deps,
   &envoy_service_status_v3_csds_proto_upb_file_layout,
   "envoy/service/status/v3/csds.proto",
-  UPB_STRINGVIEW_INIT(descriptor, 2758)
+  UPB_STRINGVIEW_INIT(descriptor, 2755)
 };
