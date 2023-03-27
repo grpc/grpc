@@ -445,7 +445,7 @@ float WeightedRoundRobin::AddressWeight::GetWeight(
     gpr_log(GPR_INFO,
             "[WRR %p] subchannel %s: getting weight: now=%s "
             "weight_expiration_period=%s blackout_period=%s "
-            "last_update_time=%s non_empty_since=%s weight=%f",
+            "last_update_time_=%s non_empty_since_=%s weight_=%f",
             wrr_.get(), key_.c_str(), now.ToString().c_str(),
             weight_expiration_period.ToString().c_str(),
             blackout_period.ToString().c_str(),
