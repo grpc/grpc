@@ -467,6 +467,15 @@ UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_xds_config_tracker_ext
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_xds_config_tracker_extension(const envoy_config_bootstrap_v3_Bootstrap* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(148, 288), const struct envoy_config_core_v3_TypedExtensionConfig*);
 }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_listener_manager(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return _upb_hasbit(msg, 21);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_listener_manager(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(152, 296), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_listener_manager(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(152, 296), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
 
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_node(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_Node* value) {
   _upb_sethas(msg, 1);
@@ -825,6 +834,19 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootst
     sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_config_bootstrap_v3_Bootstrap_set_xds_config_tracker_extension(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_listener_manager(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 21);
+  *UPB_PTR_AT(msg, UPB_SIZE(152, 296), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_mutable_listener_manager(envoy_config_bootstrap_v3_Bootstrap* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_bootstrap_v3_Bootstrap_listener_manager(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_bootstrap_v3_Bootstrap_set_listener_manager(msg, sub);
   }
   return sub;
 }

@@ -25,8 +25,10 @@ typedef struct envoy_extensions_load_balancing_policies_client_side_weighted_rou
 extern const upb_MiniTable envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_msginit;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
+struct google_protobuf_FloatValue;
 extern const upb_MiniTable google_protobuf_BoolValue_msginit;
 extern const upb_MiniTable google_protobuf_Duration_msginit;
+extern const upb_MiniTable google_protobuf_FloatValue_msginit;
 
 
 
@@ -110,6 +112,15 @@ UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_ro
 UPB_INLINE const struct google_protobuf_Duration* envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_weight_update_period(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Duration*);
 }
+UPB_INLINE bool envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_has_error_utilization_penalty(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
+  return _upb_hasbit(msg, 6);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_clear_error_utilization_penalty(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_FloatValue* envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_error_utilization_penalty(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct google_protobuf_FloatValue*);
+}
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_enable_oob_load_report(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 1);
@@ -173,6 +184,19 @@ UPB_INLINE struct google_protobuf_Duration* envoy_extensions_load_balancing_poli
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_weight_update_period(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_error_utilization_penalty(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin *msg, struct google_protobuf_FloatValue* value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct google_protobuf_FloatValue*) = value;
+}
+UPB_INLINE struct google_protobuf_FloatValue* envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_mutable_error_utilization_penalty(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg, upb_Arena* arena) {
+  struct google_protobuf_FloatValue* sub = (struct google_protobuf_FloatValue*)envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_error_utilization_penalty(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_FloatValue*)_upb_Message_New(&google_protobuf_FloatValue_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_error_utilization_penalty(msg, sub);
   }
   return sub;
 }

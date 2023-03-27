@@ -71,6 +71,10 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
     xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
     has_data = true;
   }
+  if (data.eps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_eps(response, data.eps);
+    has_data = true;
+  }
   for (const auto& p : data.request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,
