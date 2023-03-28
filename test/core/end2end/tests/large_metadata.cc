@@ -17,8 +17,6 @@
 //
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <string>
 
@@ -31,7 +29,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
