@@ -312,22 +312,20 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void MatchOrQueue(size_t start_request_queue_index,
                     CallData* calld) override {
-    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
-      size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
-      RequestedCall* rc =
-          reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
-      if (rc != nullptr) {
-        calld->SetState(CallData::CallState::ACTIVATED);
-        calld->Publish(cq_idx, rc);
-        return;
-      }
+    RequestedCall* rc = reinterpret_cast<RequestedCall*>(
+        requests_per_cq_[start_request_queue_index].TryPop());
+    if (rc != nullptr) {
+      calld->SetState(CallData::CallState::ACTIVATED);
+      calld->Publish(start_request_queue_index, rc);
+      return;
     }
+
     // No cq to take the request found; queue it on the slow list.
     // We need to ensure that all the queues are empty.  We do this under
     // the server mu_call_ lock to ensure that if something is added to
     // an empty request queue, it will block until the call is actually
     // added to the pending list.
-    RequestedCall* rc = nullptr;
+    rc = nullptr;
     size_t cq_idx = 0;
     size_t loop_count;
     {
