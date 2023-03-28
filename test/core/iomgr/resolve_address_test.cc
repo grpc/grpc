@@ -34,7 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -548,7 +548,9 @@ int main(int argc, char** argv) {
   } else {
     GPR_ASSERT(0);
   }
-  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = g_resolver_type;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();
