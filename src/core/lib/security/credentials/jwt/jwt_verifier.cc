@@ -128,7 +128,7 @@ static const char* validate_string_field(const Json& json, const char* key) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return nullptr;
   }
-  return json.string_value().c_str();
+  return json.string().c_str();
 }
 
 static gpr_timespec validate_time_field(const Json& json, const char* key) {
@@ -137,7 +137,7 @@ static gpr_timespec validate_time_field(const Json& json, const char* key) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return result;
   }
-  result.tv_sec = strtol(json.string_value().c_str(), nullptr, 10);
+  result.tv_sec = strtol(json.string().c_str(), nullptr, 10);
   return result;
 }
 
@@ -164,8 +164,8 @@ static jose_header* jose_header_from_json(Json json) {
     goto error;
   }
   // Check alg field.
-  it = json.object_value().find("alg");
-  if (it == json.object_value().end()) {
+  it = json.object().find("alg");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing alg field.");
     goto error;
   }
@@ -173,7 +173,7 @@ static jose_header* jose_header_from_json(Json json) {
   // Beware of this if we add HMAC support:
   // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
   //
-  alg_value = it->second.string_value().c_str();
+  alg_value = it->second.string().c_str();
   if (it->second.type() != Json::Type::STRING ||
       strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
@@ -182,14 +182,14 @@ static jose_header* jose_header_from_json(Json json) {
   }
   h->alg = alg_value;
   // Check typ field.
-  it = json.object_value().find("typ");
-  if (it != json.object_value().end()) {
+  it = json.object().find("typ");
+  if (it != json.object().end()) {
     h->typ = validate_string_field(it->second, "typ");
     if (h->typ == nullptr) goto error;
   }
   // Check kid field.
-  it = json.object_value().find("kid");
-  if (it != json.object_value().end()) {
+  it = json.object().find("kid");
+  if (it != json.object().end()) {
     h->kid = validate_string_field(it->second, "kid");
     if (h->kid == nullptr) goto error;
   }
@@ -269,7 +269,7 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
   claims->exp = gpr_inf_future(GPR_CLOCK_REALTIME);
 
   // Per the spec, all fields are optional.
-  for (const auto& p : claims->json->object_value()) {
+  for (const auto& p : claims->json->object()) {
     if (p.first == "sub") {
       claims->sub = validate_string_field(p.second, "sub");
       if (claims->sub == nullptr) goto error;
@@ -445,8 +445,8 @@ static Json json_from_http(const grpc_http_response* response) {
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {
-  auto it = json.object_value().find(name);
-  if (it == json.object_value().end()) {
+  auto it = json.object().find(name);
+  if (it == json.object().end()) {
     return nullptr;
   }
   return &it->second;
@@ -538,15 +538,15 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
     gpr_log(GPR_ERROR, "Could not create rsa key.");
     goto end;
   }
-  it = json.object_value().find("n");
-  if (it == json.object_value().end()) {
+  it = json.object().find("n");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
-  it = json.object_value().find("e");
-  if (it == json.object_value().end()) {
+  it = json.object().find("e");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
@@ -579,7 +579,7 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     // { <kid1>: <x5091>, <kid2>: <x5092>, ... }
     const Json* cur = find_property_by_name(json, header_kid);
     if (cur == nullptr) return nullptr;
-    return extract_pkey_from_x509(cur->string_value().c_str());
+    return extract_pkey_from_x509(cur->string().c_str());
   }
   if (jwt_keys->type() != Json::Type::ARRAY) {
     gpr_log(GPR_ERROR,
@@ -588,21 +588,21 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
   }
   // Key format is specified in:
   // https://tools.ietf.org/html/rfc7518#section-6.
-  for (const Json& jkey : jwt_keys->array_value()) {
+  for (const Json& jkey : jwt_keys->array()) {
     if (jkey.type() != Json::Type::OBJECT) continue;
     const char* alg = nullptr;
-    auto it = jkey.object_value().find("alg");
-    if (it != jkey.object_value().end()) {
+    auto it = jkey.object().find("alg");
+    if (it != jkey.object().end()) {
       alg = validate_string_field(it->second, "alg");
     }
     const char* kid = nullptr;
-    it = jkey.object_value().find("kid");
-    if (it != jkey.object_value().end()) {
+    it = jkey.object().find("kid");
+    if (it != jkey.object().end()) {
       kid = validate_string_field(it->second, "kid");
     }
     const char* kty = nullptr;
-    it = jkey.object_value().find("kty");
-    if (it != jkey.object_value().end()) {
+    it = jkey.object().find("kty");
+    if (it != jkey.object().end()) {
       kty = validate_string_field(it->second, "kty");
     }
     if (alg != nullptr && kid != nullptr && kty != nullptr &&

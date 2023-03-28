@@ -59,7 +59,7 @@ bool ExtractJsonNumber(const Json& json, absl::string_view field_name,
         "field:", field_name, " error:type should be NUMBER or STRING")));
     return false;
   }
-  if (!absl::SimpleAtoi(json.string_value(), output)) {
+  if (!absl::SimpleAtoi(json.string(), output)) {
     error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:failed to parse.")));
     return false;
@@ -81,7 +81,7 @@ bool ExtractJsonString(const Json& json, absl::string_view field_name,
         absl::StrCat("field:", field_name, " error:type should be STRING")));
     return false;
   }
-  *output = json.string_value();
+  *output = json.string();
   return true;
 }
 

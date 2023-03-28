@@ -1060,7 +1060,7 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Parse "type".
   {
-    auto type_field = LoadJsonObjectField<std::string>(json.object_value(),
+    auto type_field = LoadJsonObjectField<std::string>(json.object(),
                                                        args, "type", errors);
     if (type_field.has_value()) {
       if (*type_field == "EDS") {
@@ -1075,14 +1075,14 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "edsServiceName" if type is EDS.
   if (type == DiscoveryMechanismType::EDS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "edsServiceName", errors,
                                                   /*required=*/false);
     if (value.has_value()) eds_service_name = std::move(*value);
   }
   // Parse "dnsHostname" if type is LOGICAL_DNS.
   if (type == DiscoveryMechanismType::LOGICAL_DNS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "dnsHostname", errors);
     if (value.has_value()) dns_hostname = std::move(*value);
   }
@@ -1112,8 +1112,8 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   // Parse "xdsLbPolicy".
   {
     ValidationErrors::ScopedField field(errors, ".xdsLbPolicy");
-    auto it = json.object_value().find("xdsLbPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("xdsLbPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto lb_config = CoreConfiguration::Get()

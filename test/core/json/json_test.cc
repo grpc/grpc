@@ -58,13 +58,13 @@ void ValidateValue(const Json& actual, const Json& expected) {
       break;
     case Json::Type::STRING:
     case Json::Type::NUMBER:
-      EXPECT_EQ(actual.string_value(), expected.string_value());
+      EXPECT_EQ(actual.string(), expected.string());
       break;
     case Json::Type::OBJECT:
-      ValidateObject(actual.object_value(), expected.object_value());
+      ValidateObject(actual.object(), expected.object());
       break;
     case Json::Type::ARRAY:
-      ValidateArray(actual.array_value(), expected.array_value());
+      ValidateArray(actual.array(), expected.array());
       break;
   }
 }

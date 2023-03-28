@@ -114,8 +114,8 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
         GRPC_ERROR_CREATE("Invalid json to construct credentials options.");
     return nullptr;
   }
-  auto it = json.object_value().find("type");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("type");
+  if (it == json.object().end()) {
     *error = GRPC_ERROR_CREATE("type field not present.");
     return nullptr;
   }
@@ -123,13 +123,13 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     *error = GRPC_ERROR_CREATE("type field must be a string.");
     return nullptr;
   }
-  if (it->second.string_value() != GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT) {
+  if (it->second.string() != GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT) {
     *error = GRPC_ERROR_CREATE("Invalid credentials json type.");
     return nullptr;
   }
   options.type = GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT;
-  it = json.object_value().find("audience");
-  if (it == json.object_value().end()) {
+  it = json.object().find("audience");
+  if (it == json.object().end()) {
     *error = GRPC_ERROR_CREATE("audience field not present.");
     return nullptr;
   }
@@ -137,9 +137,9 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     *error = GRPC_ERROR_CREATE("audience field must be a string.");
     return nullptr;
   }
-  options.audience = it->second.string_value();
-  it = json.object_value().find("subject_token_type");
-  if (it == json.object_value().end()) {
+  options.audience = it->second.string();
+  it = json.object().find("subject_token_type");
+  if (it == json.object().end()) {
     *error = GRPC_ERROR_CREATE("subject_token_type field not present.");
     return nullptr;
   }
@@ -147,13 +147,13 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     *error = GRPC_ERROR_CREATE("subject_token_type field must be a string.");
     return nullptr;
   }
-  options.subject_token_type = it->second.string_value();
-  it = json.object_value().find("service_account_impersonation_url");
-  if (it != json.object_value().end()) {
-    options.service_account_impersonation_url = it->second.string_value();
+  options.subject_token_type = it->second.string();
+  it = json.object().find("service_account_impersonation_url");
+  if (it != json.object().end()) {
+    options.service_account_impersonation_url = it->second.string();
   }
-  it = json.object_value().find("token_url");
-  if (it == json.object_value().end()) {
+  it = json.object().find("token_url");
+  if (it == json.object().end()) {
     *error = GRPC_ERROR_CREATE("token_url field not present.");
     return nullptr;
   }
@@ -161,33 +161,33 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     *error = GRPC_ERROR_CREATE("token_url field must be a string.");
     return nullptr;
   }
-  options.token_url = it->second.string_value();
-  it = json.object_value().find("token_info_url");
-  if (it != json.object_value().end()) {
-    options.token_info_url = it->second.string_value();
+  options.token_url = it->second.string();
+  it = json.object().find("token_info_url");
+  if (it != json.object().end()) {
+    options.token_info_url = it->second.string();
   }
-  it = json.object_value().find("credential_source");
-  if (it == json.object_value().end()) {
+  it = json.object().find("credential_source");
+  if (it == json.object().end()) {
     *error = GRPC_ERROR_CREATE("credential_source field not present.");
     return nullptr;
   }
   options.credential_source = it->second;
-  it = json.object_value().find("quota_project_id");
-  if (it != json.object_value().end()) {
-    options.quota_project_id = it->second.string_value();
+  it = json.object().find("quota_project_id");
+  if (it != json.object().end()) {
+    options.quota_project_id = it->second.string();
   }
-  it = json.object_value().find("client_id");
-  if (it != json.object_value().end()) {
-    options.client_id = it->second.string_value();
+  it = json.object().find("client_id");
+  if (it != json.object().end()) {
+    options.client_id = it->second.string();
   }
-  it = json.object_value().find("client_secret");
-  if (it != json.object_value().end()) {
-    options.client_secret = it->second.string_value();
+  it = json.object().find("client_secret");
+  if (it != json.object().end()) {
+    options.client_secret = it->second.string();
   }
-  it = json.object_value().find("workforce_pool_user_project");
-  if (it != json.object_value().end()) {
+  it = json.object().find("workforce_pool_user_project");
+  if (it != json.object().end()) {
     if (MatchWorkforcePoolAudience(options.audience)) {
-      options.workforce_pool_user_project = it->second.string_value();
+      options.workforce_pool_user_project = it->second.string();
     } else {
       *error = GRPC_ERROR_CREATE(
           "workforce_pool_user_project should not be set for non-workforce "
@@ -196,16 +196,16 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     }
   }
   RefCountedPtr<ExternalAccountCredentials> creds;
-  if (options.credential_source.object_value().find("environment_id") !=
-      options.credential_source.object_value().end()) {
+  if (options.credential_source.object().find("environment_id") !=
+      options.credential_source.object().end()) {
     creds = MakeRefCounted<AwsExternalAccountCredentials>(
         std::move(options), std::move(scopes), error);
-  } else if (options.credential_source.object_value().find("file") !=
-             options.credential_source.object_value().end()) {
+  } else if (options.credential_source.object().find("file") !=
+             options.credential_source.object().end()) {
     creds = MakeRefCounted<FileExternalAccountCredentials>(
         std::move(options), std::move(scopes), error);
-  } else if (options.credential_source.object_value().find("url") !=
-             options.credential_source.object_value().end()) {
+  } else if (options.credential_source.object().find("url") !=
+             options.credential_source.object().end()) {
     creds = MakeRefCounted<UrlExternalAccountCredentials>(
         std::move(options), std::move(scopes), error);
   } else {
@@ -401,14 +401,14 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
         "Invalid token exchange response: JSON type is not object"));
     return;
   }
-  auto it = json->object_value().find("access_token");
-  if (it == json->object_value().end() ||
+  auto it = json->object().find("access_token");
+  if (it == json->object().end() ||
       it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid access_token in %s.", response_body)));
     return;
   }
-  std::string access_token = it->second.string_value();
+  std::string access_token = it->second.string();
   absl::StatusOr<URI> uri =
       URI::Parse(options_.service_account_impersonation_url);
   if (!uri.ok()) {
@@ -481,22 +481,22 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
                           "JSON type is not object"));
     return;
   }
-  auto it = json->object_value().find("accessToken");
-  if (it == json->object_value().end() ||
+  auto it = json->object().find("accessToken");
+  if (it == json->object().end() ||
       it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid accessToken in %s.", response_body)));
     return;
   }
-  std::string access_token = it->second.string_value();
-  it = json->object_value().find("expireTime");
-  if (it == json->object_value().end() ||
+  std::string access_token = it->second.string();
+  it = json->object().find("expireTime");
+  if (it == json->object().end() ||
       it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid expireTime in %s.", response_body)));
     return;
   }
-  std::string expire_time = it->second.string_value();
+  std::string expire_time = it->second.string();
   absl::Time t;
   if (!absl::ParseTime(absl::RFC3339_full, expire_time, &t, nullptr)) {
     FinishTokenFetch(GRPC_ERROR_CREATE(

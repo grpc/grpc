@@ -355,9 +355,9 @@ class XdsClientTest : public ::testing::Test {
         absl::StatusOr<ResourceStruct> foo =
             LoadFromJson<ResourceStruct>(*json);
         if (!foo.ok()) {
-          auto it = json->object_value().find("name");
-          if (it != json->object_value().end()) {
-            result.name = it->second.string_value();
+          auto it = json->object().find("name");
+          if (it != json->object().end()) {
+            result.name = it->second.string();
           }
           result.resource = foo.status();
         } else {

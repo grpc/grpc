@@ -60,7 +60,7 @@ bool ExtractJsonArray(const Json& json, absl::string_view field_name,
         absl::StrCat("field:", field_name, " error:type should be ARRAY")));
     return false;
   }
-  *output = &json.array_value();
+  *output = &json.array();
   return true;
 }
 
@@ -73,7 +73,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
         absl::StrCat("field:", field_name, " error:type should be OBJECT")));
     return false;
   }
-  *output = &json.object_value();
+  *output = &json.object();
   return true;
 }
 

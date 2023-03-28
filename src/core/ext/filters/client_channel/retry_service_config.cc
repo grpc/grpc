@@ -56,7 +56,7 @@ const JsonLoaderInterface* RetryGlobalConfig::JsonLoader(const JsonArgs&) {
 void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
                                      ValidationErrors* errors) {
   // Parse maxTokens.
-  auto max_tokens = LoadJsonObjectField<uint32_t>(json.object_value(), args,
+  auto max_tokens = LoadJsonObjectField<uint32_t>(json.object(), args,
                                                   "maxTokens", errors);
   if (max_tokens.has_value()) {
     ValidationErrors::ScopedField field(errors, ".maxTokens");
@@ -69,8 +69,8 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
   // Parse tokenRatio.
   ValidationErrors::ScopedField field(errors, ".tokenRatio");
-  auto it = json.object_value().find("tokenRatio");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("tokenRatio");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -79,7 +79,7 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
     errors->AddError("is not a number");
     return;
   }
-  absl::string_view buf = it->second.string_value();
+  absl::string_view buf = it->second.string();
   uint32_t multiplier = 1;
   uint32_t decimal_value = 0;
   auto decimal_point = buf.find('.');
@@ -171,7 +171,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
   // Parse retryableStatusCodes.
   auto status_code_list = LoadJsonObjectField<std::vector<std::string>>(
-      json.object_value(), args, "retryableStatusCodes", errors,
+      json.object(), args, "retryableStatusCodes", errors,
       /*required=*/false);
   if (status_code_list.has_value()) {
     for (size_t i = 0; i < status_code_list->size(); ++i) {

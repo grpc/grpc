@@ -759,7 +759,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
     return false;
   }
   bool success = true;
-  for (size_t i = 0; i < config->array_value().size(); ++i) {
+  for (size_t i = 0; i < config->array().size(); ++i) {
     Json& child_json = (*config->mutable_array())[i];
     ValidationErrors::ScopedField json_field(errors, absl::StrCat("[", i, "]"));
     if (child_json.type() != Json::Type::OBJECT) {
@@ -2333,7 +2333,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
                                                   ValidationErrors* errors) {
   // Parse grpcKeybuilders.
   auto grpc_keybuilders = LoadJsonObjectField<std::vector<GrpcKeyBuilder>>(
-      json.object_value(), args, "grpcKeybuilders", errors);
+      json.object(), args, "grpcKeybuilders", errors);
   if (grpc_keybuilders.has_value()) {
     ValidationErrors::ScopedField field(errors, ".grpcKeybuilders");
     for (size_t i = 0; i < grpc_keybuilders->size(); ++i) {
@@ -2378,8 +2378,8 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   // Clamp maxAge to the max allowed value.
   if (max_age > kMaxMaxAge) max_age = kMaxMaxAge;
   // If staleAge is set, then maxAge must also be set.
-  if (json.object_value().find("staleAge") != json.object_value().end() &&
-      json.object_value().find("maxAge") == json.object_value().end()) {
+  if (json.object().find("staleAge") != json.object().end() &&
+      json.object().find("maxAge") == json.object().end()) {
     ValidationErrors::ScopedField field(errors, ".maxAge");
     errors->AddError("must be set if staleAge is set");
   }
@@ -2400,8 +2400,8 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   {
     ValidationErrors::ScopedField field(errors, ".defaultTarget");
     if (!errors->FieldHasErrors() &&
-        json.object_value().find("defaultTarget") !=
-            json.object_value().end() &&
+        json.object().find("defaultTarget") !=
+            json.object().end() &&
         default_target.empty()) {
       errors->AddError("must be non-empty if set");
     }
@@ -2423,8 +2423,8 @@ const JsonLoaderInterface* RlsLbConfig::JsonLoader(const JsonArgs&) {
 void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                ValidationErrors* errors) {
   // Parse routeLookupChannelServiceConfig.
-  auto it = json.object_value().find("routeLookupChannelServiceConfig");
-  if (it != json.object_value().end()) {
+  auto it = json.object().find("routeLookupChannelServiceConfig");
+  if (it != json.object().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
     // Don't need to save the result here, just need the errors (if any).
@@ -2442,8 +2442,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   // Parse childPolicy.
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       // Add target to all child policy configs in the list.
@@ -2468,7 +2468,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
           // This slightly optimizes what we need to do later when we update
           // a child policy for a given target.
           for (Json& config : *(child_policy_config_.mutable_array())) {
-            if (config.object_value().begin()->first ==
+            if (config.object().begin()->first ==
                 (*parsed_config)->name()) {
               Json save_config = std::move(config);
               child_policy_config_.mutable_array()->clear();

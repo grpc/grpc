@@ -219,8 +219,8 @@ RbacConfig::RbacPolicy::Rules::Policy::CidrRange::JsonLoader(const JsonArgs&) {
 void RbacConfig::RbacPolicy::Rules::Policy::CidrRange::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   auto address_prefix = LoadJsonObjectField<std::string>(
-      json.object_value(), args, "addressPrefix", errors);
-  auto prefix_len = LoadJsonObjectField<uint32_t>(json.object_value(), args,
+      json.object(), args, "addressPrefix", errors);
+  auto prefix_len = LoadJsonObjectField<uint32_t>(json.object(), args,
                                                   "prefixLen", errors,
                                                   /*required=*/false);
   cidr_range =
@@ -269,10 +269,10 @@ RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonLoader(
 void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
-  std::string name = LoadJsonObjectField<std::string>(json.object_value(), args,
+  std::string name = LoadJsonObjectField<std::string>(json.object(), args,
                                                       "name", errors)
                          .value_or("");
-  bool invert_match = LoadJsonObjectField<bool>(json.object_value(), args,
+  bool invert_match = LoadJsonObjectField<bool>(json.object(), args,
                                                 "invertMatch", errors,
                                                 /*required=*/false)
                           .value_or(false);
@@ -285,7 +285,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
   };
   auto check_match = [&](absl::string_view field_name,
                          HeaderMatcher::Type type) {
-    auto match = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
                                                   field_name, errors,
                                                   /*required=*/false);
     if (match.has_value()) {
@@ -301,7 +301,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
       check_match("containsMatch", HeaderMatcher::Type::kContains)) {
     return;
   }
-  auto present_match = LoadJsonObjectField<bool>(json.object_value(), args,
+  auto present_match = LoadJsonObjectField<bool>(json.object(), args,
                                                  "presentMatch", errors,
                                                  /*required=*/false);
   if (present_match.has_value()) {
@@ -311,7 +311,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
     return;
   }
   auto regex_match = LoadJsonObjectField<SafeRegexMatch>(
-      json.object_value(), args, "safeRegexMatch", errors,
+      json.object(), args, "safeRegexMatch", errors,
       /*required=*/false);
   if (regex_match.has_value()) {
     set_header_matcher(
@@ -319,7 +319,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
                               regex_match->regex, 0, 0, false, invert_match));
     return;
   }
-  auto range_match = LoadJsonObjectField<RangeMatch>(json.object_value(), args,
+  auto range_match = LoadJsonObjectField<RangeMatch>(json.object(), args,
                                                      "rangeMatch", errors,
                                                      /*required=*/false);
   if (range_match.has_value()) {
@@ -349,7 +349,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
   bool ignore_case =
-      LoadJsonObjectField<bool>(json.object_value(), args, "ignoreCase", errors,
+      LoadJsonObjectField<bool>(json.object(), args, "ignoreCase", errors,
                                 /*required=*/false)
           .value_or(false);
   auto set_string_matcher = [&](absl::StatusOr<StringMatcher> string_matcher) {
@@ -361,7 +361,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
   };
   auto check_match = [&](absl::string_view field_name,
                          StringMatcher::Type type) {
-    auto match = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
                                                   field_name, errors,
                                                   /*required=*/false);
     if (match.has_value()) {
@@ -377,7 +377,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
     return;
   }
   auto regex_match = LoadJsonObjectField<SafeRegexMatch>(
-      json.object_value(), args, "safeRegex", errors,
+      json.object(), args, "safeRegex", errors,
       /*required=*/false);
   if (regex_match.has_value()) {
     set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
@@ -450,14 +450,14 @@ RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonLoader(const JsonArgs&) {
 void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
-  auto any = LoadJsonObjectField<bool>(json.object_value(), args, "any", errors,
+  auto any = LoadJsonObjectField<bool>(json.object(), args, "any", errors,
                                        /*required=*/false);
   if (any.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
         Rbac::Permission::MakeAnyPermission());
     return;
   }
-  auto header = LoadJsonObjectField<HeaderMatch>(json.object_value(), args,
+  auto header = LoadJsonObjectField<HeaderMatch>(json.object(), args,
                                                  "header", errors,
                                                  /*required=*/false);
   if (header.has_value()) {
@@ -465,7 +465,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
         Rbac::Permission::MakeHeaderPermission(std::move(header->matcher)));
     return;
   }
-  auto url_path = LoadJsonObjectField<PathMatch>(json.object_value(), args,
+  auto url_path = LoadJsonObjectField<PathMatch>(json.object(), args,
                                                  "urlPath", errors,
                                                  /*required=*/false);
   if (url_path.has_value()) {
@@ -474,7 +474,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
     return;
   }
   auto destination_ip = LoadJsonObjectField<CidrRange>(
-      json.object_value(), args, "destinationIp", errors,
+      json.object(), args, "destinationIp", errors,
       /*required=*/false);
   if (destination_ip.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
@@ -483,14 +483,14 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
     return;
   }
   auto destination_port = LoadJsonObjectField<uint32_t>(
-      json.object_value(), args, "destinationPort", errors,
+      json.object(), args, "destinationPort", errors,
       /*required=*/false);
   if (destination_port.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
         Rbac::Permission::MakeDestPortPermission(*destination_port));
     return;
   }
-  auto metadata = LoadJsonObjectField<Metadata>(json.object_value(), args,
+  auto metadata = LoadJsonObjectField<Metadata>(json.object(), args,
                                                 "metadata", errors,
                                                 /*required=*/false);
   if (metadata.has_value()) {
@@ -499,7 +499,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
     return;
   }
   auto requested_server_name = LoadJsonObjectField<StringMatch>(
-      json.object_value(), args, "requestedServerName", errors,
+      json.object(), args, "requestedServerName", errors,
       /*required=*/false);
   if (requested_server_name.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
@@ -507,7 +507,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
             std::move(requested_server_name->matcher)));
     return;
   }
-  auto rules = LoadJsonObjectField<PermissionList>(json.object_value(), args,
+  auto rules = LoadJsonObjectField<PermissionList>(json.object(), args,
                                                    "andRules", errors,
                                                    /*required=*/false);
   if (rules.has_value()) {
@@ -516,7 +516,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
             MakeRbacPermissionList(std::move(rules->rules))));
     return;
   }
-  rules = LoadJsonObjectField<PermissionList>(json.object_value(), args,
+  rules = LoadJsonObjectField<PermissionList>(json.object(), args,
                                               "orRules", errors,
                                               /*required=*/false);
   if (rules.has_value()) {
@@ -525,7 +525,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
             MakeRbacPermissionList(std::move(rules->rules))));
     return;
   }
-  auto not_rule = LoadJsonObjectField<Permission>(json.object_value(), args,
+  auto not_rule = LoadJsonObjectField<Permission>(json.object(), args,
                                                   "notRule", errors,
                                                   /*required=*/false);
   if (not_rule.has_value()) {
@@ -590,7 +590,7 @@ RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonLoader(const JsonArgs&) {
 void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
-  auto any = LoadJsonObjectField<bool>(json.object_value(), args, "any", errors,
+  auto any = LoadJsonObjectField<bool>(json.object(), args, "any", errors,
                                        /*required=*/false);
   if (any.has_value()) {
     principal =
@@ -598,7 +598,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
     return;
   }
   auto authenticated = LoadJsonObjectField<Authenticated>(
-      json.object_value(), args, "authenticated", errors,
+      json.object(), args, "authenticated", errors,
       /*required=*/false);
   if (authenticated.has_value()) {
     if (authenticated->principal_name.has_value()) {
@@ -612,7 +612,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
     }
     return;
   }
-  auto cidr_range = LoadJsonObjectField<CidrRange>(json.object_value(), args,
+  auto cidr_range = LoadJsonObjectField<CidrRange>(json.object(), args,
                                                    "sourceIp", errors,
                                                    /*required=*/false);
   if (cidr_range.has_value()) {
@@ -621,7 +621,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
             std::move(cidr_range->cidr_range)));
     return;
   }
-  cidr_range = LoadJsonObjectField<CidrRange>(json.object_value(), args,
+  cidr_range = LoadJsonObjectField<CidrRange>(json.object(), args,
                                               "directRemoteIp", errors,
                                               /*required=*/false);
   if (cidr_range.has_value()) {
@@ -630,7 +630,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
             std::move(cidr_range->cidr_range)));
     return;
   }
-  cidr_range = LoadJsonObjectField<CidrRange>(json.object_value(), args,
+  cidr_range = LoadJsonObjectField<CidrRange>(json.object(), args,
                                               "remoteIp", errors,
                                               /*required=*/false);
   if (cidr_range.has_value()) {
@@ -639,7 +639,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
             std::move(cidr_range->cidr_range)));
     return;
   }
-  auto header = LoadJsonObjectField<HeaderMatch>(json.object_value(), args,
+  auto header = LoadJsonObjectField<HeaderMatch>(json.object(), args,
                                                  "header", errors,
                                                  /*required=*/false);
   if (header.has_value()) {
@@ -647,7 +647,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
         Rbac::Principal::MakeHeaderPrincipal(std::move(header->matcher)));
     return;
   }
-  auto url_path = LoadJsonObjectField<PathMatch>(json.object_value(), args,
+  auto url_path = LoadJsonObjectField<PathMatch>(json.object(), args,
                                                  "urlPath", errors,
                                                  /*required=*/false);
   if (url_path.has_value()) {
@@ -655,7 +655,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
         Rbac::Principal::MakePathPrincipal(std::move(url_path->path.matcher)));
     return;
   }
-  auto metadata = LoadJsonObjectField<Metadata>(json.object_value(), args,
+  auto metadata = LoadJsonObjectField<Metadata>(json.object(), args,
                                                 "metadata", errors,
                                                 /*required=*/false);
   if (metadata.has_value()) {
@@ -663,7 +663,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
         Rbac::Principal::MakeMetadataPrincipal(metadata->invert));
     return;
   }
-  auto ids = LoadJsonObjectField<PrincipalList>(json.object_value(), args,
+  auto ids = LoadJsonObjectField<PrincipalList>(json.object(), args,
                                                 "andIds", errors,
                                                 /*required=*/false);
   if (ids.has_value()) {
@@ -672,7 +672,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
             MakeRbacPrincipalList(std::move(ids->ids))));
     return;
   }
-  ids = LoadJsonObjectField<PrincipalList>(json.object_value(), args, "orIds",
+  ids = LoadJsonObjectField<PrincipalList>(json.object(), args, "orIds",
                                            errors,
                                            /*required=*/false);
   if (ids.has_value()) {
@@ -682,7 +682,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
     return;
   }
   auto not_rule =
-      LoadJsonObjectField<Principal>(json.object_value(), args, "notId", errors,
+      LoadJsonObjectField<Principal>(json.object(), args, "notId", errors,
                                      /*required=*/false);
   if (not_rule.has_value()) {
     principal = std::make_unique<Rbac::Principal>(

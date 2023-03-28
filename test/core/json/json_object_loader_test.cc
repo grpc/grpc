@@ -1118,7 +1118,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Load a valid field.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+    auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(),
                                               "int", &errors);
     ASSERT_TRUE(value.has_value()) << errors.status("unexpected errors");
     EXPECT_EQ(*value, 1);
@@ -1127,7 +1127,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // An optional field that is not present.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+    auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(),
                                               "not_present", &errors,
                                               /*required=*/false);
     EXPECT_FALSE(value.has_value());
@@ -1136,7 +1136,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // A required field that is not present.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+    auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(),
                                               "not_present", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status("errors validating JSON");
@@ -1149,7 +1149,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Value has the wrong type.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<std::string>(json->object_value(),
+    auto value = LoadJsonObjectField<std::string>(json->object(),
                                                   JsonArgs(), "int", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status("errors validating JSON");
