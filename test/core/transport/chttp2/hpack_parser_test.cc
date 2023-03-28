@@ -98,7 +98,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     grpc_metadata_batch b(arena.get());
 
     parser_->BeginFrame(
-        &b, 4096, grpc_core::HPackParser::Boundary::None,
+        &b, 4096, 4096, grpc_core::HPackParser::Boundary::None,
         grpc_core::HPackParser::Priority::None,
         grpc_core::HPackParser::LogInfo{
             1, grpc_core::HPackParser::LogInfo::kHeaders, false});

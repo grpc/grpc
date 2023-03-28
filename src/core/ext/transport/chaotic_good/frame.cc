@@ -156,6 +156,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   Arena::PoolPtr<Metadata> metadata;
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
+      std::numeric_limits<uint32_t>::max(),
       is_header ? HPackParser::Boundary::EndOfHeaders
                 : HPackParser::Boundary::EndOfStream,
       HPackParser::Priority::None,

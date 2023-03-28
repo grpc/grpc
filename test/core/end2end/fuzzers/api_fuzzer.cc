@@ -812,7 +812,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
@@ -1208,5 +1207,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_resource_quota_unref(g_resource_quota);
   grpc_shutdown_blocking();
-  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
+  engine->UnsetGlobalHooks();
 }
