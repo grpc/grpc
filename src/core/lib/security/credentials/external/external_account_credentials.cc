@@ -47,6 +47,8 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
@@ -331,7 +333,7 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   Json addtional_options_json(std::move(addtional_options_json_object));
   body_parts.push_back(absl::StrFormat(
-      "options=%s", UrlEncode(addtional_options_json.Dump()).c_str()));
+      "options=%s", UrlEncode(JsonDump(addtional_options_json)).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
   request.body = const_cast<char*>(body.c_str());
   request.body_length = body.size();
@@ -390,7 +392,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(
 void ExternalAccountCredentials::ImpersenateServiceAccount() {
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
-  auto json = Json::Parse(response_body);
+  auto json = JsonParse(response_body);
   if (!json.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrCat(
         "Invalid token exchange response: ", json.status().ToString())));
@@ -467,7 +469,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   }
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
-  auto json = Json::Parse(response_body);
+  auto json = JsonParse(response_body);
   if (!json.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE(
         absl::StrCat("Invalid service account impersonation response: ",
@@ -537,7 +539,7 @@ void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
 
 grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
-  auto json = grpc_core::Json::Parse(json_string);
+  auto json = grpc_core::JsonParse(json_string);
   if (!json.ok()) {
     gpr_log(GPR_ERROR,
             "External account credentials creation failed. Error: %s.",

@@ -26,6 +26,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -72,10 +74,10 @@ void ValidateValue(const Json& actual, const Json& expected) {
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
-  auto json = Json::Parse(input);
+  auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
-  std::string output = json->Dump();
+  std::string output = JsonDump(*json);
   EXPECT_EQ(output, expected_output);
 }
 
@@ -95,7 +97,7 @@ TEST(Json, Utf16) {
 MATCHER(ContainsInvalidUtf8,
         absl::StrCat(negation ? "Contains" : "Does not contain",
                      " invalid UTF-8 characters.")) {
-  auto json = Json::Parse(arg);
+  auto json = JsonParse(arg);
   return json.status().code() == absl::StatusCode::kInvalidArgument &&
          absl::StrContains(json.status().message(), "JSON parsing failed");
 }
@@ -158,8 +160,8 @@ TEST(Json, EscapesAndControlCharactersInKeyStrings) {
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  EXPECT_EQ(Json("abc\xf0\x9d\x24").Dump(), "\"abc\"");
-  EXPECT_EQ(Json("\xff").Dump(), "\"\"");
+  EXPECT_EQ(JsonDump(Json("abc\xf0\x9d\x24")), "\"abc\"");
+  EXPECT_EQ(JsonDump(Json("\xff")), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {
@@ -192,7 +194,7 @@ TEST(Json, Keywords) {
 
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
-  auto json = Json::Parse(input);
+  auto json = JsonParse(input);
   EXPECT_FALSE(json.ok());
 }
 

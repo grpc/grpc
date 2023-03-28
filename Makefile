@@ -1556,7 +1556,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json_object_loader.cc \
+    src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
+    src/core/lib/json/json_writer.cc \
     src/core/lib/load_balancing/lb_policy.cc \
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
@@ -2097,6 +2099,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json_object_loader.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_writer.cc \
     src/core/lib/load_balancing/lb_policy.cc \
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/promise/activity.cc \

@@ -63,6 +63,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -952,11 +953,10 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
        }},
   }};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    std::string json_str = json.Dump(/*indent=*/1);
     gpr_log(
         GPR_INFO,
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
-        this, json_str.c_str());
+        this, JsonDump(json, /*indent=*/1).c_str());
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(

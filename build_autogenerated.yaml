@@ -937,7 +937,9 @@ libs:
   - src/core/lib/json/json_args.h
   - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
+  - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_util.h
+  - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -1709,7 +1711,9 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json_object_loader.cc
+  - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
+  - src/core/lib/json/json_writer.cc
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
@@ -2280,6 +2284,8 @@ libs:
   - src/core/lib/json/json_args.h
   - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
+  - src/core/lib/json/json_reader.h
+  - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -2666,6 +2672,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json_object_loader.cc
+  - src/core/lib/json/json_reader.cc
+  - src/core/lib/json/json_writer.cc
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
@@ -3743,6 +3751,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_reader.h
+  - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -4012,6 +4022,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/json/json_reader.cc
+  - src/core/lib/json/json_writer.cc
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
@@ -7555,6 +7567,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -7808,6 +7821,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/json/json_writer.cc
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc

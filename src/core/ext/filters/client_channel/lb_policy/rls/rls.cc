@@ -86,6 +86,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -798,7 +799,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
         GPR_INFO,
         "[rlslb %p] ChildPolicyWrapper=%p [%s]: validating update, config: %s",
         lb_policy_.get(), this, target_.c_str(),
-        child_policy_config.Dump().c_str());
+        JsonDump(child_policy_config).c_str());
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -1923,7 +1924,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
     gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
-            config_->child_policy_config().Dump().c_str());
+            JsonDump(config_->child_policy_config()).c_str());
   }
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,

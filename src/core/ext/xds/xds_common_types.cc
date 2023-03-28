@@ -48,6 +48,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/json/json_reader.h"
 
 namespace grpc_core {
 
@@ -430,7 +431,7 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
   upb_JsonEncode(resource, msg_def, context.symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  auto json = JsonParse(reinterpret_cast<char*>(buf));
   if (!json.ok()) {
     // This should never happen.
     return absl::InternalError(

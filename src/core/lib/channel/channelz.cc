@@ -39,6 +39,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -59,7 +60,7 @@ BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
 
 std::string BaseNode::RenderJsonString() {
   Json json = RenderJson();
-  return json.Dump();
+  return JsonDump(json);
 }
 
 //
@@ -294,7 +295,7 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
     if (it == child_sockets_.end()) object["end"] = true;
   }
   Json json = std::move(object);
-  return json.Dump();
+  return JsonDump(json);
 }
 
 Json ServerNode::RenderJson() {
