@@ -8473,7 +8473,7 @@ target_link_libraries(client_auth_filter_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  grpc_test_util
 )
 
 
@@ -8516,7 +8516,7 @@ target_link_libraries(client_authority_filter_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  grpc_test_util
 )
 
 
@@ -11063,8 +11063,8 @@ target_link_libraries(filter_test_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_unsecure
+  grpc_test_util
 )
 
 
