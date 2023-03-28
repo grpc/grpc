@@ -1688,7 +1688,6 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
         [self = Ref(DEBUG_LOCATION, "GoawayTimer")] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
-          self->Ref().release();
           self->t_->combiner->Run(
               GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self.get(),
                                 nullptr),
@@ -1733,17 +1732,19 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   static void OnPingAckLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
-    self->t_->event_engine->Cancel(
-        std::exchange(self->timer_handle_, TaskHandle::kInvalid));
+    if (self->timer_handle_ != TaskHandle::kInvalid) {
+      self->t_->event_engine->Cancel(
+          std::exchange(self->timer_handle_, TaskHandle::kInvalid));
+    }
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
   }
 
   static void OnTimerLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
+    // Clearing the handle since the timer has fired and the handle is invalid.
     self->timer_handle_ = TaskHandle::kInvalid;
     self->MaybeSendFinalGoawayLocked();
-    self->Unref();
   }
 
   grpc_chttp2_transport* t_;
