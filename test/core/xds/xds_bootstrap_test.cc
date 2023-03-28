@@ -184,12 +184,12 @@ TEST(XdsBootstrapTest, Basic) {
                       ::testing::Eq("bar"),
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::kNumber),
-                          ::testing::Property(&Json::string_value, "2"))),
+                          ::testing::Property(&Json::string, "2"))),
                   ::testing::Pair(
                       ::testing::Eq("foo"),
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::kNumber),
-                          ::testing::Property(&Json::string_value, "1")))));
+                          ::testing::Property(&Json::string, "1")))));
   EXPECT_EQ(bootstrap->server_listener_resource_name_template(),
             "example/resource");
   UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
