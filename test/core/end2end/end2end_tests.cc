@@ -61,11 +61,11 @@ ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
 }
 
 namespace {
-absl::optional<absl::string_view> FindInMetadataArray(
-    const grpc_metadata_array& md, absl::string_view key) {
+absl::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
+                                                absl::string_view key) {
   for (size_t i = 0; i < md.count; i++) {
     if (key == StringViewFromSlice(md.metadata[i].key)) {
-      return StringViewFromSlice(md.metadata[i].value);
+      return std::string(StringViewFromSlice(md.metadata[i].value));
     }
   }
   return absl::nullopt;
@@ -84,7 +84,7 @@ void CoreEnd2endTest::TearDown() {
   initialized_ = false;
 }
 
-absl::optional<absl::string_view> CoreEnd2endTest::IncomingMetadata::Get(
+absl::optional<std::string> CoreEnd2endTest::IncomingMetadata::Get(
     absl::string_view key) const {
   return FindInMetadataArray(*metadata_, key);
 }
@@ -130,7 +130,7 @@ grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
   return op;
 }
 
-absl::optional<absl::string_view>
+absl::optional<std::string>
 CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(data_->trailing_metadata, key);
@@ -258,8 +258,8 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
                            CqVerifier::tag(tag));
 }
 
-absl::optional<absl::string_view>
-CoreEnd2endTest::IncomingCall::GetInitialMetadata(absl::string_view key) const {
+absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
+    absl::string_view key) const {
   return FindInMetadataArray(impl_->request_metadata, key);
 }
 

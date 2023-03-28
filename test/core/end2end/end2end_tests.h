@@ -172,6 +172,12 @@ struct CoreTestConfiguration {
       create_fixture;
 };
 
+// Base class for e2e tests.
+// Notes:
+// - older compilers fail matching absl::string_view with some gmock matchers on
+//   older compilers, and it's tremendously convenient to be able to do so. So
+//   we use std::string for return types here - performance isn't particularly
+//   important, so an extra copy is fine.
 class CoreEnd2endTest
     : public ::testing::TestWithParam<const CoreTestConfiguration*> {
  public:
@@ -221,7 +227,7 @@ class CoreEnd2endTest
       if (metadata_ != nullptr) grpc_metadata_array_destroy(metadata_.get());
     }
 
-    absl::optional<absl::string_view> Get(absl::string_view key) const;
+    absl::optional<std::string> Get(absl::string_view key) const;
 
     grpc_op MakeOp();
 
@@ -269,13 +275,13 @@ class CoreEnd2endTest
     }
 
     grpc_status_code status() const { return data_->status; }
-    absl::string_view message() const {
-      return data_->status_details.as_string_view();
+    std::string message() const {
+      return std::string(data_->status_details.as_string_view());
     }
-    absl::string_view error_string() const {
+    std::string error_string() const {
       return data_->error_string == nullptr ? "" : data_->error_string;
     }
-    absl::optional<absl::string_view> GetTrailingMetadata(
+    absl::optional<std::string> GetTrailingMetadata(
         absl::string_view key) const;
 
     grpc_op MakeOp();
@@ -434,16 +440,15 @@ class CoreEnd2endTest
     BatchBuilder NewBatch(int tag) { return impl_->call.NewBatch(tag); }
     void Cancel() { impl_->call.Cancel(); }
 
-    absl::string_view method() const {
-      return StringViewFromSlice(impl_->call_details.method);
+    std::string method() const {
+      return std::string(StringViewFromSlice(impl_->call_details.method));
     }
 
-    absl::string_view host() const {
-      return StringViewFromSlice(impl_->call_details.host);
+    std::string host() const {
+      return std::string(StringViewFromSlice(impl_->call_details.host));
     }
 
-    absl::optional<absl::string_view> GetInitialMetadata(
-        absl::string_view key) const;
+    absl::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
     absl::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
