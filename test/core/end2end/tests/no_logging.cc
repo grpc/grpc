@@ -72,7 +72,7 @@ class Verifier {
     std::string message = absl::StrCat("Unwanted log: ", args->message);
     args->message = message.c_str();
     gpr_default_log(args);
-    abort();
+    GTEST_FAIL();
   }
 
   static void NoErrorLog(gpr_log_func_args* args) {
