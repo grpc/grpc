@@ -4,7 +4,7 @@
         "color": "EEEEEE"
     },
     "CHECKS": {
-        "regexp": "^((\\[[^]]+\\])*|Revert) ",
+        "regexp": "^((\\[[^\\]]+\\])+|Revert|Automated fix for) ",
         "regexpFlags": "i",
         "ignoreLabels": []
     },
