@@ -181,7 +181,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gracious"  # @unused
 
-core_version = "30.1.0"  # @unused
+core_version = "31.0.0"  # @unused
 
 version = "1.54.0-dev"  # @unused
 
@@ -3208,7 +3208,10 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "absl/strings",
+        "upb_lib",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
@@ -3221,6 +3224,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:pollset_set",
         "//src/core:slice",
     ],
@@ -3480,6 +3484,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:time",
         "//src/core:upb_utils",

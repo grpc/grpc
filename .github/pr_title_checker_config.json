@@ -1,0 +1,16 @@
+{
+    "LABEL": {
+        "name": "title needs formatting",
+        "color": "EEEEEE"
+    },
+    "CHECKS": {
+        "regexp": "^((\\[[^\\]]+\\])+|Revert|Automated fix for) ",
+        "regexpFlags": "i",
+        "ignoreLabels": []
+    },
+    "MESSAGES": {
+        "success": "All OK",
+        "failure": "Incorrect PR title",
+        "notice": ""
+    }
+}
