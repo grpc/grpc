@@ -28,6 +28,7 @@ grpc_proto_fuzzer(
     proto = "api_fuzzer.proto",
     proto_deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
     ],
     tags = [
         "no_mac",
@@ -45,6 +46,7 @@ grpc_proto_fuzzer(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//test/core/util:fuzz_config_vars",
     ],
 )
 
