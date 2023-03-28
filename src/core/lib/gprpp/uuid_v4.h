@@ -1,5 +1,6 @@
 //
-// Copyright 2019 gRPC authors.
+//
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +14,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+//
 
-// This is similar to the sockaddr resolver, except that it supports a
-// bunch of query args that are useful for dependency injection in tests.
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_UUID_V4_H
+#define GRPC_SRC_CORE_LIB_GPRPP_UUID_V4_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include <stdint.h>
 
-#include "src/core/lib/gprpp/global_config.h"
+#include <string>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_dns_resolver, "",
-    "Declares which DNS resolver to use. The default is ares if gRPC is built "
-    "with c-ares support. Otherwise, the value of this environment variable is "
-    "ignored.")
+namespace grpc_core {
+
+// Generates string in the UUIDv4 form. \a hi and \a lo are expected to be
+// random numbers.
+std::string GenerateUUIDv4(uint64_t hi, uint64_t lo);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_UUID_V4_H

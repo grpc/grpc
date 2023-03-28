@@ -68,6 +68,8 @@ EXTERNAL_DEPS = {
         'absl/debugging:symbolize',
     'absl/flags/flag.h':
         'absl/flags:flag',
+    'absl/flags/marshalling.h':
+        'absl/flags:marshalling',
     'absl/flags/parse.h':
         'absl/flags:parse',
     'absl/functional/any_invocable.h':
@@ -82,9 +84,13 @@ EXTERNAL_DEPS = {
         'absl/memory',
     'absl/meta/type_traits.h':
         'absl/meta:type_traits',
+    'absl/numeric/int128.h':
+        'absl/numeric:int128',
     'absl/random/random.h':
         'absl/random',
     'absl/random/distributions.h':
+        'absl/random:distributions',
+    'absl/random/uniform_int_distribution.h':
         'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',

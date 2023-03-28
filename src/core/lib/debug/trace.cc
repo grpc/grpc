@@ -22,16 +22,16 @@
 
 #include <string.h>
 
+#include <string>
 #include <type_traits>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
-    "how gRPC C core is processing requests via debug logs.");
+#include "src/core/lib/config/config_vars.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -144,8 +144,7 @@ void grpc_tracer_init(const char* env_var_name) {
 }
 
 void grpc_tracer_init() {
-  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
-  parse(value.get());
+  parse(std::string(grpc_core::ConfigVars::Get().Trace()).c_str());
 }
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {

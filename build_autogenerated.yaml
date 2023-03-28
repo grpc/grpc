@@ -177,6 +177,8 @@ libs:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
+  - src/core/lib/config/config_vars.h
+  - src/core/lib/config/load_config.h
   - src/core/lib/event_engine/thread_local.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/string.h
@@ -189,10 +191,6 @@ libs:
   - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
-  - src/core/lib/gprpp/global_config.h
-  - src/core/lib/gprpp/global_config_custom.h
-  - src/core/lib/gprpp/global_config_env.h
-  - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/host_port.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
@@ -204,6 +202,9 @@ libs:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   src:
+  - src/core/lib/config/config_vars.cc
+  - src/core/lib/config/config_vars_non_generated.cc
+  - src/core/lib/config/load_config.cc
   - src/core/lib/event_engine/thread_local.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/android/log.cc
@@ -235,7 +236,6 @@ libs:
   - src/core/lib/gprpp/crash.cc
   - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
-  - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/linux/env.cc
   - src/core/lib/gprpp/mpscq.cc
@@ -251,6 +251,9 @@ libs:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/flags:flag
+  - absl/flags:marshalling
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -372,7 +375,6 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
@@ -769,6 +771,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -953,12 +956,13 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -1028,7 +1032,6 @@ libs:
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
-  - src/core/lib/security/security_connector/ssl_utils_config.h
   - src/core/lib/security/security_connector/tls/tls_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -1062,8 +1065,10 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -1161,7 +1166,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
@@ -1557,6 +1561,7 @@ libs:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
+  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -1714,6 +1719,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
@@ -1779,7 +1785,6 @@ libs:
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
-  - src/core/lib/security/security_connector/ssl_utils_config.cc
   - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -1817,6 +1822,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -1868,7 +1874,6 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
-  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2048,7 +2053,6 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/retry_filter.h
@@ -2116,6 +2120,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -2297,12 +2302,13 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -2377,8 +2383,10 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -2446,7 +2454,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
@@ -2517,6 +2524,7 @@ libs:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
+  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -2671,6 +2679,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
@@ -2743,6 +2752,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -2770,7 +2780,6 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
-  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -3249,7 +3258,6 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
 - name: grpc++_unsecure
@@ -3761,11 +3769,13 @@ libs:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
+  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -3839,7 +3849,9 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -4016,6 +4028,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -4086,6 +4099,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -4105,7 +4119,6 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -4387,7 +4400,6 @@ targets:
   - test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
   deps:
   - absl/algorithm:container
-  - absl/functional:any_invocable
   - absl/types:span
   - benchmark
   - gpr
@@ -5872,7 +5884,6 @@ targets:
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6160,7 +6171,6 @@ targets:
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: completion_queue_threading_test
@@ -6591,7 +6601,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/event_engine/endpoint_config_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -6867,7 +6876,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -7174,7 +7182,6 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7221,7 +7228,6 @@ targets:
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -7273,7 +7279,6 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7307,7 +7312,6 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -7403,6 +7407,7 @@ targets:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -7577,11 +7582,13 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
+  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -7632,7 +7639,9 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker_factory.h
   - src/core/lib/transport/handshaker_registry.h
@@ -7665,6 +7674,7 @@ targets:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -7815,6 +7825,7 @@ targets:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -7862,6 +7873,7 @@ targets:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker_registry.cc
@@ -7879,7 +7891,6 @@ targets:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7896,6 +7907,8 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
@@ -7903,6 +7916,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - grpc_unsecure
@@ -7925,30 +7940,6 @@ targets:
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - grpc++_test_util
-- name: global_config_env_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/global_config_env_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: global_config_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/global_config_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: google_c2p_resolver_test
   gtest: true
   build: test
@@ -8134,7 +8125,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc++_test_config
 - name: grpc_completion_queue_test
@@ -8519,6 +8509,16 @@ targets:
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
   deps:
   - grpc_test_util
+- name: handle_tests
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/handle_tests.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
@@ -8969,7 +8969,6 @@ targets:
   - test/core/promise/interceptor_list_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9183,7 +9182,6 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
@@ -9326,7 +9324,6 @@ targets:
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -9379,7 +9376,6 @@ targets:
   - test/core/promise/map_pipe_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9685,39 +9681,6 @@ targets:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
-- name: observable_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/wait_set.h
-  - test/core/promise/test_wakeup_schedulers.h
-  src:
-  - src/core/lib/promise/activity.cc
-  - test/core/promise/observable_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/utility:utility
-  - gpr
-  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -9884,10 +9847,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/party.h
+  headers: []
   src:
-  - src/core/lib/promise/party.cc
   - test/core/promise/party_test.cc
   deps:
   - grpc_unsecure
@@ -9947,7 +9908,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -10126,7 +10086,6 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
@@ -10417,7 +10376,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/flags:flag
   - absl/flags:parse
   - grpc_test_util
   args:
@@ -10496,7 +10454,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/flags:flag
   - absl/flags:parse
   - grpc_test_util
   args:
@@ -11109,7 +11066,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
   - gpr
@@ -11295,7 +11251,6 @@ targets:
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
   - test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/types:span
   - gpr
   uses_polling: false
@@ -11700,7 +11655,6 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11720,7 +11674,6 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - test/core/event_engine/posix/timer_list_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11752,7 +11705,6 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -11787,7 +11739,6 @@ targets:
   - src/core/lib/gprpp/time.cc
   - test/core/gprpp/time_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -11998,7 +11949,6 @@ targets:
   - test/core/event_engine/thread_pool_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
 - name: thread_quota_test
@@ -12030,6 +11980,34 @@ targets:
   - test/cpp/end2end/thread_stress_test.cc
   deps:
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: thready_posix_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
+  - test/core/event_engine/thready_event_engine/thready_event_engine.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
+  - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
+  - test/core/event_engine/thready_event_engine/thready_event_engine.cc
+  deps:
+  - grpc_unsecure
+  - grpc_test_util
   platforms:
   - linux
   - posix
@@ -12420,6 +12398,18 @@ targets:
   deps:
   - absl/strings:strings
   - absl/types:variant
+  uses_polling: false
+- name: uuid_v4_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/uuid_v4.h
+  src:
+  - src/core/lib/gprpp/uuid_v4.cc
+  - test/core/gprpp/uuid_v4_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: validation_errors_test
   gtest: true
@@ -13005,7 +12995,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -13342,7 +13331,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -13364,7 +13352,6 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
-  - absl/flags:flag
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -13390,7 +13377,6 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
-  - absl/flags:flag
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -13431,7 +13417,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -13477,7 +13462,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -13768,7 +13752,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/flags:flag
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -13886,12 +13869,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a
+  hash: 1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c
+  strip_prefix: data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/
@@ -13907,10 +13890,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: 41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4
+  hash: fcd0b50c013452fda9c5e28c131c287b655ebb361271a76ad3bffc08b3ecd82e
   proto_prefix: third_party/xds/
-  strip_prefix: xds-06c439db220b89134a8a49bad41994560d6537c6
+  strip_prefix: xds-32f1caf87195bf3390061c29f18987e51ca56a88
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
-  - https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz
+  - https://github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz
 tests: []

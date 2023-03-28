@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2019 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,24 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/uuid_v4.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_dns_resolver);
+#include <initializer_list>
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
+#include "absl/strings/str_format.h"
+
+namespace grpc_core {
+
+std::string GenerateUUIDv4(uint64_t hi, uint64_t lo) {
+  uint32_t time_low = hi >> 32;
+  uint16_t time_mid = hi >> 16;
+  uint16_t time_hi_and_version = (hi & 0x0fff) | 0x4000;
+  uint16_t clock_seq_hi_low = ((lo >> 48) & 0x3fff) | 0x8000;
+  uint64_t node = lo & 0xffffffffffff;
+  return absl::StrFormat("%08x-%04x-%04x-%04x-%012x", time_low, time_mid,
+                         time_hi_and_version, clock_seq_hi_low, node);
+}
+
+}  // namespace grpc_core

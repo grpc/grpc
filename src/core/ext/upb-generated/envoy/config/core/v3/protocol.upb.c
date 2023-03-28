@@ -131,13 +131,14 @@ const upb_MiniTable envoy_config_core_v3_HttpProtocolOptions_msginit = {
   UPB_SIZE(32, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_core_v3_Http1ProtocolOptions_submsgs[3] = {
+static const upb_MiniTable_Sub envoy_config_core_v3_Http1ProtocolOptions_submsgs[4] = {
   {.submsg = &google_protobuf_BoolValue_msginit},
   {.submsg = &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
+  {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_core_v3_Http1ProtocolOptions__fields[8] = {
+static const upb_MiniTable_Field envoy_config_core_v3_Http1ProtocolOptions__fields[9] = {
   {1, UPB_SIZE(8, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -146,12 +147,13 @@ static const upb_MiniTable_Field envoy_config_core_v3_Http1ProtocolOptions__fiel
   {6, UPB_SIZE(3, 3), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(24, 40), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(28, 48), UPB_SIZE(4, 4), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_Http1ProtocolOptions_msginit = {
   &envoy_config_core_v3_Http1ProtocolOptions_submsgs[0],
   &envoy_config_core_v3_Http1ProtocolOptions__fields[0],
-  UPB_SIZE(32, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(32, 56), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[2] = {

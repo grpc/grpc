@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2019 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
-#define GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
+#include "test/cpp/ext/filters/logging/library.h"
 
-// This is a placeholder for custom global configuration implementation.
-// To use the custom one, please define following macros here.
-//
-//   GPR_GLOBAL_CONFIG_DEFINE_BOOL
-//   GPR_GLOBAL_CONFIG_DEFINE_INT32
-//   GPR_GLOBAL_CONFIG_DEFINE_STRING
+namespace grpc {
+namespace testing {
 
-#endif  // GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
+TestLoggingSink* g_test_logging_sink = nullptr;
+
+}  // namespace testing
+}  // namespace grpc
