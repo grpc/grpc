@@ -16,8 +16,6 @@
 //
 //
 
-#include <stdlib.h>
-
 #include <atomic>
 #include <string>
 
