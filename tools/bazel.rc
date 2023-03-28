@@ -101,9 +101,6 @@ build:tsan --copt=-fno-omit-frame-pointer
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
-# This is needed to address false positive problem with abseil.
-# https://github.com/google/sanitizers/issues/953
-build:tsan --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:tsan_macos --strip=never
@@ -112,7 +109,6 @@ build:tsan_macos --copt=-fno-omit-frame-pointer
 build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan_macos --copt=-DGRPC_TSAN
 build:tsan_macos --linkopt=-fsanitize=thread
-build:tsan_macos --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 build:tsan_macos --dynamic_mode=off
 
@@ -142,3 +138,6 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check
+
+try-import %workspace%/tools/fuzztest.bazelrc
+build:fuzztest --cxxopt=-std=c++17

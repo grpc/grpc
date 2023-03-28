@@ -1,6 +1,4 @@
-#!/bin/sh
-# Arbitrary shell script runner
-# Copyright 2017 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,5 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-set -ex
-"$@"
+
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+
+licenses(["notice"])
+
+grpc_package(
+    name = "test/core/event_engine/thready_event_engine",
+    visibility = "tests",
+)
+
+grpc_cc_library(
+    name = "thready_event_engine",
+    srcs = ["thready_event_engine.cc"],
+    hdrs = ["thready_event_engine.h"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//src/core:default_event_engine",
+        "//src/core:time",
+    ],
+)

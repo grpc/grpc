@@ -13,24 +13,27 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub xds_data_orca_v3_OrcaLoadReport_submsgs[2] = {
+static const upb_MiniTable_Sub xds_data_orca_v3_OrcaLoadReport_submsgs[3] = {
   {.submsg = &xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msginit},
   {.submsg = &xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit},
+  {.submsg = &xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msginit},
 };
 
-static const upb_MiniTable_Field xds_data_orca_v3_OrcaLoadReport__fields[6] = {
-  {1, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(24, 32), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+static const upb_MiniTable_Field xds_data_orca_v3_OrcaLoadReport__fields[8] = {
+  {1, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 32), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 40), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(32, 40), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(40, 48), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(48, 56), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_msginit = {
   &xds_data_orca_v3_OrcaLoadReport_submsgs[0],
   &xds_data_orca_v3_OrcaLoadReport__fields[0],
-  UPB_SIZE(40, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_data_orca_v3_OrcaLoadReport_RequestCostEntry__fields[2] = {
@@ -55,17 +58,29 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit = {
   UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable_Field xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msginit = {
+  NULL,
+  &xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry__fields[0],
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[4] = {
   &xds_data_orca_v3_OrcaLoadReport_msginit,
   &xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msginit,
   &xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit,
+  &xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msginit,
 };
 
 const upb_MiniTable_File xds_data_orca_v3_orca_load_report_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  3,
+  4,
   0,
   0,
 };

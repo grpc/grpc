@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# File format:
+# Each config var gets a name, and a type (one of string, int, bool).
+# A default value is provided. Defaults prefixed by '$' are read as expressions,
+# otherwise they're assumed literals.
+# A description field must be present.
+# Optionally, a force-load-on-access: true flag can be added to force checking
+# the environment variables every time the value is queried, to match legacy
+# behavior for some environment variables.
+
 - name: experiments
   type: string
   description:
@@ -82,10 +91,12 @@
   type: string
   default:
   description: Custom directory to SSL Roots
+  force-load-on-access: true
 - name: default_ssl_roots_file_path
   type: string
   default:
   description: Path to the default SSL roots file.
+  force-load-on-access: true
 - name: not_use_system_ssl_roots
   type: bool
   default: false

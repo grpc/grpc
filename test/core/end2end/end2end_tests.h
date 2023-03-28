@@ -258,17 +258,22 @@ class CoreEnd2endTest
     IncomingStatusOnClient() = default;
     IncomingStatusOnClient(const IncomingStatusOnClient&) = delete;
     IncomingStatusOnClient& operator=(const IncomingStatusOnClient&) = delete;
+    IncomingStatusOnClient(IncomingStatusOnClient&& other) noexcept = default;
+    IncomingStatusOnClient& operator=(IncomingStatusOnClient&& other) noexcept =
+        default;
     ~IncomingStatusOnClient() {
-      grpc_metadata_array_destroy(&trailing_metadata_);
-      gpr_free(const_cast<char*>(error_string_));
+      if (data_ != nullptr) {
+        grpc_metadata_array_destroy(&data_->trailing_metadata);
+        gpr_free(const_cast<char*>(data_->error_string));
+      }
     }
 
-    grpc_status_code status() const { return status_; }
+    grpc_status_code status() const { return data_->status; }
     absl::string_view message() const {
-      return status_details_.as_string_view();
+      return data_->status_details.as_string_view();
     }
     absl::string_view error_string() const {
-      return error_string_ == nullptr ? "" : error_string_;
+      return data_->error_string == nullptr ? "" : data_->error_string;
     }
     absl::optional<absl::string_view> GetTrailingMetadata(
         absl::string_view key) const;
@@ -276,10 +281,13 @@ class CoreEnd2endTest
     grpc_op MakeOp();
 
    private:
-    grpc_metadata_array trailing_metadata_{0, 0, nullptr};
-    grpc_status_code status_;
-    Slice status_details_;
-    const char* error_string_ = nullptr;
+    struct Data {
+      grpc_metadata_array trailing_metadata{0, 0, nullptr};
+      grpc_status_code status;
+      Slice status_details;
+      const char* error_string = nullptr;
+    };
+    std::unique_ptr<Data> data_ = std::make_unique<Data>();
   };
 
   class IncomingCloseOnServer {

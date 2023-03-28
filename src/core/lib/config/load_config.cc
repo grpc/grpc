@@ -19,9 +19,7 @@
 #include <stdio.h>
 
 #include "absl/flags/marshalling.h"
-#include "absl/strings/ascii.h"
 #include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/env.h"
@@ -29,39 +27,37 @@
 namespace grpc_core {
 
 namespace {
-std::string EnvironmentVarFromVarName(absl::string_view var_name) {
-  return absl::StrCat(absl::AsciiStrToUpper(var_name));
-}
-
-absl::optional<std::string> LoadEnv(absl::string_view var_name) {
-  return GetEnv(EnvironmentVarFromVarName(var_name).c_str());
+absl::optional<std::string> LoadEnv(absl::string_view environment_variable) {
+  return GetEnv(std::string(environment_variable).c_str());
 }
 }  // namespace
 
-std::string LoadConfigFromEnv(absl::string_view var_name,
+std::string LoadConfigFromEnv(absl::string_view environment_variable,
                               const char* default_value) {
-  return LoadEnv(var_name).value_or(default_value);
+  return LoadEnv(environment_variable).value_or(default_value);
 }
 
-int32_t LoadConfigFromEnv(absl::string_view var_name, int32_t default_value) {
-  auto env = LoadEnv(var_name);
+int32_t LoadConfigFromEnv(absl::string_view environment_variable,
+                          int32_t default_value) {
+  auto env = LoadEnv(environment_variable);
   if (env.has_value()) {
     int32_t out;
     if (absl::SimpleAtoi(*env, &out)) return out;
     fprintf(stderr, "Error reading int from %s: '%s' is not a number",
-            EnvironmentVarFromVarName(var_name).c_str(), env->c_str());
+            std::string(environment_variable).c_str(), env->c_str());
   }
   return default_value;
 }
 
-bool LoadConfigFromEnv(absl::string_view var_name, bool default_value) {
-  auto env = LoadEnv(var_name);
+bool LoadConfigFromEnv(absl::string_view environment_variable,
+                       bool default_value) {
+  auto env = LoadEnv(environment_variable);
   if (env.has_value()) {
     bool out;
     std::string error;
     if (absl::ParseFlag(env->c_str(), &out, &error)) return out;
     fprintf(stderr, "Error reading bool from %s: '%s' is not a bool: %s",
-            EnvironmentVarFromVarName(var_name).c_str(), env->c_str(),
+            std::string(environment_variable).c_str(), env->c_str(),
             error.c_str());
   }
   return default_value;

@@ -21,14 +21,10 @@ cd cmake
 mkdir build
 cd build
 
-@rem Workaround a bug where VS150COMNTOOLS is not set due to a bug in VS 2017 installer
-@rem see https://developercommunity.visualstudio.com/t/installing-visualstudio-build-tools-doesnt-add-env/17435
-set "VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
-
-If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2017" (
-  @rem set cl.exe build environment to build with VS2017 tooling
+If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2019" (
+  @rem set cl.exe build environment to build with VS2019 tooling
   @rem this is required for Ninja build to work
-  call "%VS150COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %GRPC_BUILD_VS_TOOLS_ARCHITECTURE%
+  call "%VS160COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %GRPC_BUILD_VS_TOOLS_ARCHITECTURE%
   @rem restore command echo
   echo on
 )

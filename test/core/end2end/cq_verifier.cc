@@ -28,13 +28,16 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -120,6 +123,35 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
   ok = GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b) &&
        0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
                    GRPC_SLICE_LENGTH(a));
+  if (!ok) {
+    gpr_log(GPR_ERROR,
+            "SLICE MISMATCH: left_length=%" PRIuPTR " right_length=%" PRIuPTR,
+            GRPC_SLICE_LENGTH(a), GRPC_SLICE_LENGTH(b));
+    std::string out;
+    const char* a_str = reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(a));
+    const char* b_str = reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(b));
+    for (size_t i = 0; i < std::max(GRPC_SLICE_LENGTH(a), GRPC_SLICE_LENGTH(b));
+         i++) {
+      if (i >= GRPC_SLICE_LENGTH(a)) {
+        absl::StrAppend(&out, "\u001b[36m",  // cyan
+                        absl::CEscape(absl::string_view(&b_str[i], 1)),
+                        "\u001b[0m");
+      } else if (i >= GRPC_SLICE_LENGTH(b)) {
+        absl::StrAppend(&out, "\u001b[35m",  // magenta
+                        absl::CEscape(absl::string_view(&a_str[i], 1)),
+                        "\u001b[0m");
+      } else if (a_str[i] == b_str[i]) {
+        absl::StrAppend(&out, absl::CEscape(absl::string_view(&a_str[i], 1)));
+      } else {
+        absl::StrAppend(&out, "\u001b[31m",  // red
+                        absl::CEscape(absl::string_view(&a_str[i], 1)),
+                        "\u001b[33m",  // yellow
+                        absl::CEscape(absl::string_view(&b_str[i], 1)),
+                        "\u001b[0m");
+      }
+      gpr_log(GPR_ERROR, "%s", out.c_str());
+    }
+  }
   grpc_slice_unref(a);
   grpc_slice_unref(b);
   return ok;

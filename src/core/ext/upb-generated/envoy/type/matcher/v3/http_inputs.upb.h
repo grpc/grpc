@@ -24,14 +24,17 @@ struct envoy_type_matcher_v3_HttpRequestHeaderMatchInput;
 struct envoy_type_matcher_v3_HttpRequestTrailerMatchInput;
 struct envoy_type_matcher_v3_HttpResponseHeaderMatchInput;
 struct envoy_type_matcher_v3_HttpResponseTrailerMatchInput;
+struct envoy_type_matcher_v3_HttpRequestQueryParamMatchInput;
 typedef struct envoy_type_matcher_v3_HttpRequestHeaderMatchInput envoy_type_matcher_v3_HttpRequestHeaderMatchInput;
 typedef struct envoy_type_matcher_v3_HttpRequestTrailerMatchInput envoy_type_matcher_v3_HttpRequestTrailerMatchInput;
 typedef struct envoy_type_matcher_v3_HttpResponseHeaderMatchInput envoy_type_matcher_v3_HttpResponseHeaderMatchInput;
 typedef struct envoy_type_matcher_v3_HttpResponseTrailerMatchInput envoy_type_matcher_v3_HttpResponseTrailerMatchInput;
+typedef struct envoy_type_matcher_v3_HttpRequestQueryParamMatchInput envoy_type_matcher_v3_HttpRequestQueryParamMatchInput;
 extern const upb_MiniTable envoy_type_matcher_v3_HttpRequestHeaderMatchInput_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_HttpRequestTrailerMatchInput_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseHeaderMatchInput_msginit;
 extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseTrailerMatchInput_msginit;
+extern const upb_MiniTable envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit;
 
 
 
@@ -216,6 +219,52 @@ UPB_INLINE upb_StringView envoy_type_matcher_v3_HttpResponseTrailerMatchInput_he
 }
 
 UPB_INLINE void envoy_type_matcher_v3_HttpResponseTrailerMatchInput_set_header_name(envoy_type_matcher_v3_HttpResponseTrailerMatchInput *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+}
+
+/* envoy.type.matcher.v3.HttpRequestQueryParamMatchInput */
+
+UPB_INLINE envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_new(upb_Arena* arena) {
+  return (envoy_type_matcher_v3_HttpRequestQueryParamMatchInput*)_upb_Message_New(&envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit, arena);
+}
+UPB_INLINE envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* ret = envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* ret = envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_serialize(const envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_clear_query_param(const envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_query_param(const envoy_type_matcher_v3_HttpRequestQueryParamMatchInput* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+}
+
+UPB_INLINE void envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_set_query_param(envoy_type_matcher_v3_HttpRequestQueryParamMatchInput *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
 

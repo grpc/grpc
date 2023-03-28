@@ -278,7 +278,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
-        except retryers.RetryError as e:
+        except (retryers.RetryError, k8s.NotFound) as e:
             logger.info('Deployment %s deletion failed: %s', name, e)
             return
 
@@ -290,7 +290,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service %s', name)
         try:
             self.k8s_namespace.delete_service(name)
-        except retryers.RetryError as e:
+        except (retryers.RetryError, k8s.NotFound) as e:
             logger.info('Service %s deletion failed: %s', name, e)
             return
 
@@ -302,7 +302,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service account %s', name)
         try:
             self.k8s_namespace.delete_service_account(name)
-        except retryers.RetryError as e:
+        except (retryers.RetryError, k8s.NotFound) as e:
             logger.info('Service account %s deletion failed: %s', name, e)
             return
 
@@ -314,7 +314,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
-        except retryers.RetryError as e:
+        except (retryers.RetryError, k8s.NotFound) as e:
             logger.info('Namespace %s deletion failed: %s',
                         self.k8s_namespace.name, e)
             return

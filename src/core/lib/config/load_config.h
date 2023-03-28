@@ -27,18 +27,21 @@
 
 namespace grpc_core {
 
-std::string LoadConfigFromEnv(absl::string_view var_name,
+std::string LoadConfigFromEnv(absl::string_view environment_variable,
                               const char* default_value);
-int32_t LoadConfigFromEnv(absl::string_view var_name, int32_t default_value);
-bool LoadConfigFromEnv(absl::string_view var_name, bool default_value);
+int32_t LoadConfigFromEnv(absl::string_view environment_variable,
+                          int32_t default_value);
+bool LoadConfigFromEnv(absl::string_view environment_variable,
+                       bool default_value);
 
 template <typename T, typename D>
 T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
+             absl::string_view environment_variable,
              const absl::optional<T>& override, D default_value) {
   if (override.has_value()) return *override;
   auto from_flag = absl::GetFlag(flag);
   if (from_flag.has_value()) return std::move(*from_flag);
-  return LoadConfigFromEnv(flag.Name(), default_value);
+  return LoadConfigFromEnv(environment_variable, default_value);
 }
 
 }  // namespace grpc_core

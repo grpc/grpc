@@ -159,8 +159,8 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
         ""
     ])
 
-    print("#ifndef GRPC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
-    print("#define GRPC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
+    print("#ifndef GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
+    print("#define GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
@@ -168,7 +168,6 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print("#include <atomic>", file=H)
     print("#include <stdint.h>", file=H)
     print("#include \"absl/strings/string_view.h\"", file=H)
-    print("#include \"absl/strings/str_cat.h\"", file=H)
     print("#include \"absl/types/optional.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -199,21 +198,34 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     for attr in attrs:
         for line in attr['description'].splitlines():
             print("  // %s" % line, file=H)
-        print("  %s %s() const { return %s_; }" %
-              (RETURN_TYPE[attr['type']], snake_to_pascal(
-                  attr['name']), attr['name']),
-              file=H)
+        if attr.get('force-load-on-access', False):
+            print("  %s %s() const;" %
+                  (MEMBER_TYPE[attr['type']], snake_to_pascal(attr['name'])),
+                  file=H)
+        else:
+            print("  %s %s() const { return %s_; }" %
+                  (RETURN_TYPE[attr['type']], snake_to_pascal(
+                      attr['name']), attr['name']),
+                  file=H)
     print(" private:", file=H)
     print("  explicit ConfigVars(const Overrides& overrides);", file=H)
     print("  static const ConfigVars& Load();", file=H)
     print("  static std::atomic<ConfigVars*> config_vars_;", file=H)
     for attr in attrs_in_packing_order:
+        if attr.get('force-load-on-access', False):
+            continue
         print("  %s %s_;" % (MEMBER_TYPE[attr['type']], attr['name']), file=H)
+    for attr in attrs_in_packing_order:
+        if attr.get('force-load-on-access', False) == False:
+            continue
+        print("  absl::optional<%s> override_%s_;" %
+              (MEMBER_TYPE[attr['type']], attr['name']),
+              file=H)
     print("};", file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
-    print("#endif  // GRPC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
+    print("#endif  // GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H", file=H)
 
 with open('src/core/lib/config/config_vars.cc', 'w') as C:
     put_copyright(C)
@@ -243,13 +255,30 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("namespace grpc_core {", file=C)
     print(file=C)
     print("ConfigVars::ConfigVars(const Overrides& overrides) :", file=C)
-    print(",".join("%s_(LoadConfig(FLAGS_grpc_%s, overrides.%s, %s))" %
-                   (attr['name'], attr['name'], attr['name'],
-                    DEFAULT_VALUE[attr['type']](attr['default'], attr['name']))
-                   for attr in attrs_in_packing_order),
-          file=C)
+    initializers = [
+        "%s_(LoadConfig(FLAGS_grpc_%s, \"GRPC_%s\", overrides.%s, %s))" %
+        (attr['name'], attr['name'], attr['name'].upper(), attr['name'],
+         DEFAULT_VALUE[attr['type']](attr['default'], attr['name']))
+        for attr in attrs_in_packing_order
+        if attr.get('force-load-on-access', False) == False
+    ]
+    initializers += [
+        "override_%s_(overrides.%s)" % (attr['name'], attr['name'])
+        for attr in attrs_in_packing_order
+        if attr.get('force-load-on-access', False)
+    ]
+    print(",".join(initializers), file=C)
     print("{}", file=C)
     print(file=C)
+    for attr in attrs:
+        if attr.get('force-load-on-access', False):
+            print(
+                "%s ConfigVars::%s() const { return LoadConfig(FLAGS_grpc_%s, \"GRPC_%s\", override_%s_, %s); }"
+                % (MEMBER_TYPE[attr['type']], snake_to_pascal(attr['name']),
+                   attr['name'], attr['name'].upper(), attr['name'],
+                   DEFAULT_VALUE[attr['type']](attr['default'], attr['name'])),
+                file=C)
+            print(file=C)
     print("std::string ConfigVars::ToString() const {", file=C)
     print("  return absl::StrCat(", file=C)
     for i, attr in enumerate(attrs):
@@ -259,7 +288,9 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
         else:
             print(c_str(attr['name'] + ": "), file=C)
         print(",",
-              TO_STRING[attr['type']].replace("$", attr['name'] + "_"),
+              TO_STRING[attr['type']].replace(
+                  "$",
+                  snake_to_pascal(attr['name']) + "()"),
               file=C)
     print(");}", file=C)
     print(file=C)

@@ -95,11 +95,9 @@ class ConfigVars {
   // past grpc_shutdown()
   bool AbortOnLeaks() const { return abort_on_leaks_; }
   // Custom directory to SSL Roots
-  absl::string_view SystemSslRootsDir() const { return system_ssl_roots_dir_; }
+  std::string SystemSslRootsDir() const;
   // Path to the default SSL roots file.
-  absl::string_view DefaultSslRootsFilePath() const {
-    return default_ssl_roots_file_path_;
-  }
+  std::string DefaultSslRootsFilePath() const;
   // Disable loading system root certificates.
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
@@ -119,9 +117,9 @@ class ConfigVars {
   std::string verbosity_;
   std::string stacktrace_minloglevel_;
   std::string poll_strategy_;
-  std::string system_ssl_roots_dir_;
-  std::string default_ssl_roots_file_path_;
   std::string ssl_cipher_suites_;
+  absl::optional<std::string> override_system_ssl_roots_dir_;
+  absl::optional<std::string> override_default_ssl_roots_file_path_;
 };
 
 }  // namespace grpc_core

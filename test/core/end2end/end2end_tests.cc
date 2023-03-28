@@ -133,18 +133,18 @@ grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
 absl::optional<absl::string_view>
 CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
     absl::string_view key) const {
-  return FindInMetadataArray(trailing_metadata_, key);
+  return FindInMetadataArray(data_->trailing_metadata, key);
 }
 
 grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_;
-  op.data.recv_status_on_client.status = &status_;
+  op.data.recv_status_on_client.trailing_metadata = &data_->trailing_metadata;
+  op.data.recv_status_on_client.status = &data_->status;
   op.data.recv_status_on_client.status_details =
-      const_cast<grpc_slice*>(&status_details_.c_slice());
-  op.data.recv_status_on_client.error_string = &error_string_;
+      const_cast<grpc_slice*>(&data_->status_details.c_slice());
+  op.data.recv_status_on_client.error_string = &data_->error_string;
   return op;
 }
 
