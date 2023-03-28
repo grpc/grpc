@@ -22,6 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 #include "src/core/lib/config/load_config.h"
 
