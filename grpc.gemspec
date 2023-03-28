@@ -1623,6 +1623,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/bdp_estimator.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
   s.files += %w( src/core/lib/transport/connectivity_state.h )
+  s.files += %w( src/core/lib/transport/custom_metadata.h )
   s.files += %w( src/core/lib/transport/error_utils.cc )
   s.files += %w( src/core/lib/transport/error_utils.h )
   s.files += %w( src/core/lib/transport/handshaker.cc )
