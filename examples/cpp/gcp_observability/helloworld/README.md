@@ -21,12 +21,19 @@ GCP Observability configuration value. This is needed by both client and server.
 
 Sample configurations are provided with the example.
 
-1.  To start the observability-enabled example server on its default port of
-    50051, run: `$ export
-    GRPC_GCP_OBSERVABILITY_CONFIG_FILE="$(pwd)/examples/cpp/gcp_observability/helloworld/server_config.json"
-    $ bazel run examples/cpp/gcp_observability/helloworld:greeter_server`
+To start the observability-enabled example server on its default port of 50051,
+run the following from the `grpc` directory:
 
-2.  In a different terminal window, run the observability-enabled example
-    client: `$ export
+```
+$ export
+    GRPC_GCP_OBSERVABILITY_CONFIG_FILE="$(pwd)/examples/cpp/gcp_observability/helloworld/server_config.json"
+$ tools/bazel run examples/cpp/gcp_observability/helloworld:greeter_server
+```
+
+In a different terminal window, run the observability-enabled example client:
+
+```
+$ export
     GRPC_GCP_OBSERVABILITY_CONFIG_FILE="$(pwd)/examples/cpp/gcp_observability/helloworld/client_config.json"
-    $ bazel run examples/cpp/gcp_observability/helloworld:greeter_client`
+$ tools/bazel run examples/cpp/gcp_observability/helloworld:greeter_client
+```
