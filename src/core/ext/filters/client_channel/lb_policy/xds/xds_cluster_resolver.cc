@@ -1060,8 +1060,8 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Parse "type".
   {
-    auto type_field = LoadJsonObjectField<std::string>(json.object(),
-                                                       args, "type", errors);
+    auto type_field =
+        LoadJsonObjectField<std::string>(json.object(), args, "type", errors);
     if (type_field.has_value()) {
       if (*type_field == "EDS") {
         type = DiscoveryMechanismType::EDS;

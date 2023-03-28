@@ -201,8 +201,8 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
   }
   ASSERT_NE(it, object.end());
   ASSERT_EQ(it->second.type(), Json::Type::STRING);
-  int64_t gotten_number = static_cast<int64_t>(
-      strtol(it->second.string().c_str(), nullptr, 0));
+  int64_t gotten_number =
+      static_cast<int64_t>(strtol(it->second.string().c_str(), nullptr, 0));
   EXPECT_EQ(gotten_number, expected);
 }
 
@@ -216,8 +216,7 @@ void ValidateCounters(const std::string& json_str,
   ASSERT_EQ(data.type(), Json::Type::OBJECT);
   ValidateChildInteger(data.object(), "callsStarted", args.calls_started);
   ValidateChildInteger(data.object(), "callsFailed", args.calls_failed);
-  ValidateChildInteger(data.object(), "callsSucceeded",
-                       args.calls_succeeded);
+  ValidateChildInteger(data.object(), "callsSucceeded", args.calls_succeeded);
 }
 
 void ValidateChannel(ChannelNode* channel,

@@ -121,8 +121,8 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
       it->second.type() == Json::Type::STRING) {
     url_ = it->second.string();
   }
-  it = options.credential_source.object().find(
-      "regional_cred_verification_url");
+  it =
+      options.credential_source.object().find("regional_cred_verification_url");
   if (it == options.credential_source.object().end()) {
     *error =
         GRPC_ERROR_CREATE("regional_cred_verification_url field not present.");
@@ -134,8 +134,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     return;
   }
   regional_cred_verification_url_ = it->second.string();
-  it =
-      options.credential_source.object().find("imdsv2_session_token_url");
+  it = options.credential_source.object().find("imdsv2_session_token_url");
   if (it != options.credential_source.object().end() &&
       it->second.type() == Json::Type::STRING) {
     imdsv2_session_token_url_ = it->second.string();
@@ -431,8 +430,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     return;
   }
   auto it = json->object().find("AccessKeyId");
-  if (it != json->object().end() &&
-      it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
     access_key_id_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(
@@ -441,8 +439,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     return;
   }
   it = json->object().find("SecretAccessKey");
-  if (it != json->object().end() &&
-      it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
     secret_access_key_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(
@@ -451,8 +448,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     return;
   }
   it = json->object().find("Token");
-  if (it != json->object().end() &&
-      it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
     token_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(

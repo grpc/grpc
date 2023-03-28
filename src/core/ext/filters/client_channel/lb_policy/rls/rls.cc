@@ -2400,8 +2400,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   {
     ValidationErrors::ScopedField field(errors, ".defaultTarget");
     if (!errors->FieldHasErrors() &&
-        json.object().find("defaultTarget") !=
-            json.object().end() &&
+        json.object().find("defaultTarget") != json.object().end() &&
         default_target.empty()) {
       errors->AddError("must be non-empty if set");
     }
@@ -2468,8 +2467,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
           // This slightly optimizes what we need to do later when we update
           // a child policy for a given target.
           for (Json& config : *(child_policy_config_.mutable_array())) {
-            if (config.object().begin()->first ==
-                (*parsed_config)->name()) {
+            if (config.object().begin()->first == (*parsed_config)->name()) {
               Json save_config = std::move(config);
               child_policy_config_.mutable_array()->clear();
               child_policy_config_.mutable_array()->push_back(

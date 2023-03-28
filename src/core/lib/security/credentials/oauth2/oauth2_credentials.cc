@@ -195,24 +195,21 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       goto end;
     }
     it = json->object().find("access_token");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::STRING) {
+    if (it == json->object().end() || it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid access_token in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     access_token = it->second.string().c_str();
     it = json->object().find("token_type");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::STRING) {
+    if (it == json->object().end() || it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid token_type in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     token_type = it->second.string().c_str();
     it = json->object().find("expires_in");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::NUMBER) {
+    if (it == json->object().end() || it->second.type() != Json::Type::NUMBER) {
       gpr_log(GPR_ERROR, "Missing or invalid expires_in in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;

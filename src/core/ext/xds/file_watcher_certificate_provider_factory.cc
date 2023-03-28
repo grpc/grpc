@@ -97,9 +97,9 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
         "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
         "be specified."));
   }
-  if (!ParseJsonObjectFieldAsDuration(
-          config_json.object(), "refresh_interval",
-          &config->refresh_interval_, &error_list, false)) {
+  if (!ParseJsonObjectFieldAsDuration(config_json.object(), "refresh_interval",
+                                      &config->refresh_interval_, &error_list,
+                                      false)) {
     config->refresh_interval_ = Duration::Minutes(10);  // 10 minutes default
   }
   if (!error_list.empty()) {

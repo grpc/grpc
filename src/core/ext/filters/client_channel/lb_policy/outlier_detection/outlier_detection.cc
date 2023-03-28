@@ -1107,8 +1107,7 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
 
 void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                           ValidationErrors* errors) {
-  if (json.object().find("maxEjectionTime") ==
-      json.object().end()) {
+  if (json.object().find("maxEjectionTime") == json.object().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
   }
   if (max_ejection_percent > 100) {

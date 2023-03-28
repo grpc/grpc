@@ -1118,8 +1118,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Load a valid field.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(),
-                                              "int", &errors);
+    auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(), "int",
+                                              &errors);
     ASSERT_TRUE(value.has_value()) << errors.status("unexpected errors");
     EXPECT_EQ(*value, 1);
     EXPECT_TRUE(errors.ok());
@@ -1149,8 +1149,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Value has the wrong type.
   {
     ValidationErrors errors;
-    auto value = LoadJsonObjectField<std::string>(json->object(),
-                                                  JsonArgs(), "int", &errors);
+    auto value = LoadJsonObjectField<std::string>(json->object(), JsonArgs(),
+                                                  "int", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status("errors validating JSON");
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);

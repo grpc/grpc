@@ -402,8 +402,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
     return;
   }
   auto it = json->object().find("access_token");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::STRING) {
+  if (it == json->object().end() || it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid access_token in %s.", response_body)));
     return;
@@ -482,16 +481,14 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
     return;
   }
   auto it = json->object().find("accessToken");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::STRING) {
+  if (it == json->object().end() || it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid accessToken in %s.", response_body)));
     return;
   }
   std::string access_token = it->second.string();
   it = json->object().find("expireTime");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::STRING) {
+  if (it == json->object().end() || it->second.type() != Json::Type::STRING) {
     FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
         "Missing or invalid expireTime in %s.", response_body)));
     return;
