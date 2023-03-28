@@ -25,6 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/config/config_vars.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -455,6 +456,54 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
       EXPECT_THAT(result.status.error_message(),
                   ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
+}
+
+// This tests the bug described in https://github.com/grpc/grpc/issues/32486.
+TEST_P(EdsTest, LocalityBecomesEmptyWithDeactivatedChildStateUpdate) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has one locality with no endpoints.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // EDS update removes all endpoints from the locality.
+  EdsResourceArgs::Locality empty_locality("locality0", {});
+  args = EdsResourceArgs({std::move(empty_locality)});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait for RPCs to start failing.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) {
+    if (result.status.ok()) return true;
+    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(result.status.error_message(),
+                ::testing::MatchesRegex(kErrorMessage));
+    return false;
+  });
+  // Shut down backend.  This triggers a connectivity state update from the
+  // deactivated child of the weighted_target policy.
+  ShutdownAllBackends();
+  // Now restart the backend.
+  StartAllBackends();
+  // Re-add endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(absl::StrCat(
+                      // The error message we see here depends on whether
+                      // the client sees the EDS update before or after it
+                      // sees the backend come back up.
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "),
+                      "|", kErrorMessage)));
     }
   });
 }
@@ -1678,7 +1727,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

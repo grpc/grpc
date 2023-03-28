@@ -23,12 +23,15 @@ extern "C" {
 struct xds_data_orca_v3_OrcaLoadReport;
 struct xds_data_orca_v3_OrcaLoadReport_RequestCostEntry;
 struct xds_data_orca_v3_OrcaLoadReport_UtilizationEntry;
+struct xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry;
 typedef struct xds_data_orca_v3_OrcaLoadReport xds_data_orca_v3_OrcaLoadReport;
 typedef struct xds_data_orca_v3_OrcaLoadReport_RequestCostEntry xds_data_orca_v3_OrcaLoadReport_RequestCostEntry;
 typedef struct xds_data_orca_v3_OrcaLoadReport_UtilizationEntry xds_data_orca_v3_OrcaLoadReport_UtilizationEntry;
+typedef struct xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry;
 extern const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_msginit;
 extern const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msginit;
 extern const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit;
+extern const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msginit;
 
 
 
@@ -68,22 +71,22 @@ UPB_INLINE char* xds_data_orca_v3_OrcaLoadReport_serialize_ex(const xds_data_orc
   return ptr;
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_cpu_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), double) = 0;
-}
-UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_cpu_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), double);
-}
-UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_mem_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double) = 0;
 }
-UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_mem_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
+UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_cpu_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double);
 }
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_mem_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double) = 0;
+}
+UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_mem_utilization(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double);
+}
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_rps(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = 0;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = 0;
 }
 UPB_INLINE uint64_t xds_data_orca_v3_OrcaLoadReport_rps(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t);
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_has_request_cost(const xds_data_orca_v3_OrcaLoadReport* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
@@ -116,20 +119,41 @@ UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca
   return (const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_msg_map_next(msg, UPB_SIZE(4, 8), iter);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_rps_fractional(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = 0;
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double) = 0;
 }
 UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_rps_fractional(const xds_data_orca_v3_OrcaLoadReport* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double);
+  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double);
+}
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_eps(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double) = 0;
+}
+UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_eps(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double);
+}
+UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_has_named_metrics(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_named_metrics(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE size_t xds_data_orca_v3_OrcaLoadReport_named_metrics_size(const xds_data_orca_v3_OrcaLoadReport* msg) {
+  return _upb_msg_map_size(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_get(const xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double* val) {
+  return _upb_msg_map_get(msg, UPB_SIZE(8, 16), &key, 0, val, sizeof(*val));
+}
+UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* xds_data_orca_v3_OrcaLoadReport_named_metrics_next(const xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
+  return (const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*)_upb_msg_map_next(msg, UPB_SIZE(8, 16), iter);
 }
 
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), double) = value;
-}
-UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double) = value;
 }
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double) = value;
+}
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_rps(xds_data_orca_v3_OrcaLoadReport *msg, uint64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = value;
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_request_cost_clear(xds_data_orca_v3_OrcaLoadReport* msg) { _upb_msg_map_clear(msg, UPB_SIZE(0, 0)); }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_request_cost_set(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double val, upb_Arena* a) {
@@ -152,7 +176,20 @@ UPB_INLINE xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca_v3_Or
   return (xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_msg_map_next(msg, UPB_SIZE(4, 8), iter);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double) = value;
+}
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_eps(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double) = value;
+}
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_named_metrics_clear(xds_data_orca_v3_OrcaLoadReport* msg) { _upb_msg_map_clear(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_set(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double val, upb_Arena* a) {
+  return _upb_msg_map_set(msg, UPB_SIZE(8, 16), &key, 0, &val, sizeof(val), a);
+}
+UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_delete(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key) {
+  return _upb_msg_map_delete(msg, UPB_SIZE(8, 16), &key, 0);
+}
+UPB_INLINE xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* xds_data_orca_v3_OrcaLoadReport_named_metrics_nextmutable(xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
+  return (xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*)_upb_msg_map_next(msg, UPB_SIZE(8, 16), iter);
 }
 
 /* xds.data.orca.v3.OrcaLoadReport.RequestCostEntry */
@@ -186,6 +223,23 @@ UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value(const x
 }
 
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_set_value(xds_data_orca_v3_OrcaLoadReport_UtilizationEntry *msg, double value) {
+  _upb_msg_map_set_value(msg, &value, sizeof(double));
+}
+
+/* xds.data.orca.v3.OrcaLoadReport.NamedMetricsEntry */
+
+UPB_INLINE upb_StringView xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key(const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* msg) {
+  upb_StringView ret;
+  _upb_msg_map_key(msg, &ret, 0);
+  return ret;
+}
+UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value(const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* msg) {
+  double ret;
+  _upb_msg_map_value(msg, &ret, sizeof(ret));
+  return ret;
+}
+
+UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_set_value(xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry *msg, double value) {
   _upb_msg_map_set_value(msg, &value, sizeof(double));
 }
 

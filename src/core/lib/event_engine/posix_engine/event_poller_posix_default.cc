@@ -17,16 +17,11 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_POSIX_SOCKET_TCP
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
-#endif
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -41,10 +36,9 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 }  // namespace
 
 PosixEventPoller* MakeDefaultPoller(Scheduler* scheduler) {
-  static const char* poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy).release();
   PosixEventPoller* poller = nullptr;
-  auto strings = absl::StrSplit(poll_strategy, ',');
+  auto strings =
+      absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',');
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {

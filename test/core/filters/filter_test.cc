@@ -114,7 +114,8 @@ FilterTestBase::Call::Impl::~Impl() {
 void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
   EXPECT_EQ(promise_, absl::nullopt);
   promise_ = channel_->filter->MakeCallPromise(
-      CallArgs{std::move(md), &pipe_server_initial_metadata_.sender,
+      CallArgs{std::move(md), ClientInitialMetadataOutstandingToken::Empty(),
+               &pipe_server_initial_metadata_.sender,
                &pipe_client_to_server_messages_.receiver,
                &pipe_server_to_client_messages_.sender},
       [this](CallArgs args) -> ArenaPromise<ServerMetadataHandle> {
@@ -269,7 +270,7 @@ class FilterTestBase::Call::ScopedContext final
    public:
     explicit TestWakeable(ScopedContext* ctx)
         : tag_(ctx->DebugTag()), impl_(ctx->impl_) {}
-    void Wakeup(void*) override {
+    void Wakeup(WakeupMask) override {
       std::unique_ptr<TestWakeable> self(this);
       auto impl = impl_.lock();
       if (impl == nullptr) return;
@@ -278,8 +279,8 @@ class FilterTestBase::Call::ScopedContext final
         if (impl != nullptr) impl->StepLoop();
       });
     }
-    void Drop(void*) override { delete this; }
-    std::string ActivityDebugTag(void*) const override { return tag_; }
+    void Drop(WakeupMask) override { delete this; }
+    std::string ActivityDebugTag(WakeupMask) const override { return tag_; }
 
    private:
     const std::string tag_;
@@ -294,12 +295,10 @@ class FilterTestBase::Call::ScopedContext final
         impl_(std::move(impl)) {}
 
   void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
-  void ForceImmediateRepoll() override { repoll_ = true; }
-  Waker MakeOwningWaker() override {
-    return Waker(new TestWakeable(this), nullptr);
-  }
+  void ForceImmediateRepoll(WakeupMask) override { repoll_ = true; }
+  Waker MakeOwningWaker() override { return Waker(new TestWakeable(this), 0); }
   Waker MakeNonOwningWaker() override {
-    return Waker(new TestWakeable(this), nullptr);
+    return Waker(new TestWakeable(this), 0);
   }
   std::string DebugTag() const override {
     return absl::StrFormat("FILTER_TEST_CALL[%p]", impl_.get());

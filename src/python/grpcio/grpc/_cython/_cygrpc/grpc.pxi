@@ -727,3 +727,8 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+cdef extern from "src/core/lib/config/config_vars.h" namespace "grpc_core":
+  cdef cppclass ConfigVars:
+    @staticmethod
+    void Reset()

@@ -18,7 +18,8 @@
 
 #include <string.h>
 
-#include <string>
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,41 +27,11 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/test_config.h"
 
 namespace {
-
-struct Chttp2InsecureFullstackFixtureData {
-  std::string localaddr;
-};
-
-grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f;
-  int port = grpc_pick_unused_port_or_die();
-  Chttp2InsecureFullstackFixtureData* ffd =
-      new Chttp2InsecureFullstackFixtureData();
-  memset(&f, 0, sizeof(f));
-  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(nullptr);
-
-  return f;
-}
-
-void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       const grpc_channel_args* client_args) {
-  Chttp2InsecureFullstackFixtureData* ffd =
-      static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
-  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
-  grpc_channel_credentials_release(creds);
-  GPR_ASSERT(f->client);
-}
 
 void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
@@ -70,46 +41,31 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       const grpc_channel_args* server_args) {
-  Chttp2InsecureFullstackFixtureData* ffd =
-      static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
-  if (f->server) {
-    grpc_server_destroy(f->server);
+class InsecureCredsFixture : public InsecureFixture {
+ private:
+  grpc_server_credentials* MakeServerCreds(
+      const grpc_core::ChannelArgs& args) override {
+    auto* creds = grpc_insecure_server_credentials_create();
+    if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
+      grpc_auth_metadata_processor processor = {ProcessAuthFailure, nullptr,
+                                                nullptr};
+      grpc_server_credentials_set_auth_metadata_processor(creds, processor);
+    }
+    return creds;
   }
-  f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  grpc_server_credentials* server_creds =
-      grpc_insecure_server_credentials_create();
-  if (grpc_channel_args_find(server_args, FAIL_AUTH_CHECK_SERVER_ARG_NAME) !=
-      nullptr) {
-    grpc_auth_metadata_processor processor = {ProcessAuthFailure, nullptr,
-                                              nullptr};
-    grpc_server_credentials_set_auth_metadata_processor(server_creds,
-                                                        processor);
-  }
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
-                                        server_creds));
-  grpc_server_credentials_release(server_creds);
-  grpc_server_start(f->server);
-}
-
-void Chttp2TearDownInsecureFullstack(grpc_end2end_test_fixture* f) {
-  Chttp2InsecureFullstackFixtureData* ffd =
-      static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
-  delete ffd;
-}
+};
 
 // All test configurations
-grpc_end2end_test_config configs[] = {
+CoreTestConfiguration configs[] = {
     {"chttp2/insecure_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE,
-     nullptr, Chttp2CreateFixtureInsecureFullstack,
-     Chttp2InitClientInsecureFullstack, Chttp2InitServerInsecureFullstack,
-     Chttp2TearDownInsecureFullstack},
+     nullptr,
+     [](const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+       return std::make_unique<InsecureCredsFixture>();
+     }},
 };
 
 }  // namespace
