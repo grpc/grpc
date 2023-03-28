@@ -350,6 +350,7 @@ def grpc_cc_library(name,
                 inc.add(m.group(1))
     consumes[name] = list(inc)
 
+
 def grpc_proto_library(name, srcs, **kwargs):
     global parsing_path
     assert (parsing_path is not None)

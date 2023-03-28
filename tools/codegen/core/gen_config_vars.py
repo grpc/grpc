@@ -172,8 +172,12 @@ with open('test/core/util/fuzz_config_vars.proto', 'w') as P:
     print(file=P)
     print("message FuzzConfigVars {", file=P)
     for attr in attrs_in_packing_order:
-        if attr.get("fuzz", False) == False: continue
-        print("  optional %s %s = %d;" % (PROTO_TYPE[attr['type']], attr['name'], binascii.crc32(attr['name'].encode('ascii')) & 0x1FFFFFFF), file=P)
+        if attr.get("fuzz", False) == False:
+            continue
+        print("  optional %s %s = %d;" %
+              (PROTO_TYPE[attr['type']], attr['name'],
+               binascii.crc32(attr['name'].encode('ascii')) & 0x1FFFFFFF),
+              file=P)
     print("};", file=P)
 
 with open('test/core/util/fuzz_config_vars.h', 'w') as H:
@@ -193,7 +197,9 @@ with open('test/core/util/fuzz_config_vars.h', 'w') as H:
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    print("void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);", file=H)
+    print(
+        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
+        file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
@@ -213,12 +219,16 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
-    print("void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {", file=C)
+    print(
+        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
+        file=C)
     print("  ConfigVars::Overrides overrides;", file=C)
     for attr in attrs_in_packing_order:
-        if attr.get("fuzz", False) == False: continue
+        if attr.get("fuzz", False) == False:
+            continue
         print("  if (vars.has_%s()) {" % attr['name'], file=C)
-        print("    overrides.%s = vars.%s();" % (attr['name'], attr['name']), file=C)
+        print("    overrides.%s = vars.%s();" % (attr['name'], attr['name']),
+              file=C)
         print("  }", file=C)
     print("  ConfigVars::SetOverrides(overrides);", file=C)
     print("}", file=C)
