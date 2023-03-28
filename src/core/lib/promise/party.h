@@ -219,9 +219,6 @@ class PartySyncUsingAtomics {
   static constexpr size_t kRefShift = 40;
   // One ref count
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
-  // Number of bits reserved for wakeups gives us the maximum number of
-  // participants.
-  static constexpr size_t kMaxParticipants = 16;
 
   std::atomic<uint64_t> state_;
 };
