@@ -240,11 +240,10 @@ void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
 namespace {
 bool IsMaybe(const CqVerifier::ExpectedResult& r) {
   return Match(
-      r, [](bool success) { return false; },
-      [](CqVerifier::Maybe m) { return true; },
-      [](CqVerifier::AnyStatus a) { return false; },
-      [](const CqVerifier::PerformAction& action) { return false; },
-      [](const CqVerifier::MaybePerformAction& action) { return true; });
+      r, [](bool) { return false; }, [](CqVerifier::Maybe) { return true; },
+      [](CqVerifier::AnyStatus) { return false; },
+      [](const CqVerifier::PerformAction&) { return false; },
+      [](const CqVerifier::MaybePerformAction&) { return true; });
 }
 }  // namespace
 

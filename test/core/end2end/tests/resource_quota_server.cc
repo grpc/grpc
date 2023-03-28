@@ -63,7 +63,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.
-  auto requests = MakeVec([](int i) { return RandomSlice(1024 * 1024); });
+  auto requests = MakeVec([](int) { return RandomSlice(1024 * 1024); });
   auto server_calls =
       MakeVec([this](int i) { return RequestCall(kServerRecvBaseTag + i); });
   std::vector<IncomingMetadata> server_metadata(kNumCalls);
@@ -92,7 +92,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
                  .SendInitialMetadata({});
            }});
     Expect(kServerStartBaseTag + i,
-           PerformAction{[&server_calls, &client_close, i](bool success) {
+           PerformAction{[&server_calls, &client_close, i](bool) {
              server_calls[i]
                  .NewBatch(kServerEndBaseTag + i)
                  .RecvCloseOnServer(client_close[i])

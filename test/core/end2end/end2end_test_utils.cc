@@ -21,8 +21,8 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
-const char* get_host_override_string(
-    const char* str, const grpc_core::CoreTestConfiguration& config) {
+const char* get_host_override_string(const char* str,
+                                     const grpc_core::CoreTestConfiguration&) {
   return str;
 }
 
@@ -37,8 +37,7 @@ const grpc_slice* get_host_override_slice(
   return nullptr;
 }
 
-void validate_host_override_string(
-    const char* pattern, grpc_slice str,
-    const grpc_core::CoreTestConfiguration& config) {
+void validate_host_override_string(const char* pattern, grpc_slice str,
+                                   const grpc_core::CoreTestConfiguration&) {
   GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
 }

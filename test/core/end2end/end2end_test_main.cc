@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <inttypes.h>
-#include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
@@ -64,6 +63,8 @@
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+// IWYU pragma: no_include <unistd.h>
 
 #ifdef GRPC_POSIX_SOCKET
 #include <fcntl.h>
@@ -548,6 +549,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         [](const ChannelArgs&, const ChannelArgs&) {
           return std::make_unique<CompressionFixture>();
         }},
+#ifdef GPR_LINUX
     CoreTestConfiguration{
         "Chttp2FullstackLocalAbstractUdsPercentEncoded",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -564,6 +566,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                   unique.fetch_add(1, std::memory_order_relaxed)),
               UDS);
         }},
+#endif
     CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
                           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
@@ -799,6 +802,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
         },
     },
+#ifdef GPR_LINUX
     CoreTestConfiguration{
         "Chttp2FullstackUdsAbstractNamespace",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
@@ -809,6 +813,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               getpid(), now.tv_sec, now.tv_nsec,
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
+#endif
     CoreTestConfiguration{
         "Chttp2FullstackUds",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
