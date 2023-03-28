@@ -3271,12 +3271,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json",
-    srcs = [
-        "lib/json/json_reader.cc",
-        "lib/json/json_writer.cc",
-    ],
     hdrs = [
         "lib/json/json.h",
+    ],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
+    name = "json_reader",
+    srcs = [
+        "lib/json/json_reader.cc",
+    ],
+    hdrs = [
+        "lib/json/json_reader.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3285,7 +3292,25 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "json",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_writer",
+    srcs = [
+        "lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "lib/json/json_writer.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "json",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(

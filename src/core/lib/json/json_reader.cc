@@ -924,7 +924,7 @@ absl::StatusOr<Json> JsonReader::Parse(absl::string_view input) {
 
 }  // namespace
 
-absl::StatusOr<Json> Json::Parse(absl::string_view json_str) {
+absl::StatusOr<Json> JsonParse(absl::string_view json_str) {
   return JsonReader::Parse(json_str);
 }
 

@@ -333,8 +333,8 @@ std::string JsonWriter::Dump(const Json& value, int indent) {
 
 }  // namespace
 
-std::string Json::Dump(int indent) const {
-  return JsonWriter::Dump(*this, indent);
+std::string JsonDump(const Json& json, int indent) const {
+  return JsonWriter::Dump(json, indent);
 }
 
 }  // namespace grpc_core

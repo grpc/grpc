@@ -24,9 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 namespace grpc_core {
 
 // A JSON value, which can be any one of object, array, string,
@@ -42,9 +39,6 @@ class Json {
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
-
-  // Parses JSON string from json_str.
-  static absl::StatusOr<Json> Parse(absl::string_view json_str);
 
   Json() = default;
 
@@ -155,9 +149,6 @@ class Json {
     array_value_ = std::move(array);
     return *this;
   }
-
-  // Dumps JSON from value to string form.
-  std::string Dump(int indent = 0) const;
 
   // Accessor methods.
   Type type() const { return type_; }

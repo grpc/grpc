@@ -1363,10 +1363,8 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_factory.h" role="src" />
