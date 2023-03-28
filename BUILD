@@ -1444,6 +1444,7 @@ grpc_cc_library(
         "config",
         "config_vars",
         "cpp_impl_of",
+        "custom_metadata",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -1533,6 +1534,13 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+    ],
+)
+
+grpc_cc_library(
+    name = "custom_metadata",
+    hdrs = [
+        "//src/core:lib/transport/custom_metadata.h",
     ],
 )
 
