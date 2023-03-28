@@ -119,7 +119,8 @@ TEST_F(ConstantLabelsTest, ConstantAttributesTest) {
   for (const auto& span : recorded_spans) {
     bool found = false;
     for (const auto& attribute : span.attributes()) {
-      if (attribute.first == "key" && attribute.second.string() == "value") {
+      if (attribute.first == "key" &&
+          attribute.second.string_value() == "value") {
         found = true;
         break;
       }
