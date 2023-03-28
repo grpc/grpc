@@ -3208,7 +3208,10 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "absl/strings",
+        "upb_lib",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
@@ -3221,6 +3224,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:pollset_set",
         "//src/core:slice",
     ],
