@@ -19,6 +19,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -41,7 +42,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using ::testing::AnyOf;
@@ -76,12 +76,11 @@ grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
 
 void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
-static const grpc_channel_filter test_filter = {
+const grpc_channel_filter test_filter = {
     grpc_call_next_op,
-    [](grpc_channel_element*, grpc_core::CallArgs,
-       grpc_core::NextPromiseFactory)
-        -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
-      return grpc_core::Immediate(grpc_core::ServerMetadataFromStatus(
+    [](grpc_channel_element*, CallArgs,
+       NextPromiseFactory) -> ArenaPromise<ServerMetadataHandle> {
+      return Immediate(ServerMetadataFromStatus(
           absl::PermissionDeniedError("access denied")));
     },
     grpc_channel_next_op,
