@@ -75,7 +75,7 @@ RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
                                                      grpc_error_handle* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
-  if (config_json.type() != Json::Type::OBJECT) {
+  if (config_json.type() != Json::Type::kObject) {
     *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }

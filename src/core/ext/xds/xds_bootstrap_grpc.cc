@@ -155,12 +155,12 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
     ValidationErrors::ScopedField field(errors, ".server_features");
     auto it = json.object().find("server_features");
     if (it != json.object().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
+      if (it->second.type() != Json::Type::kArray) {
         errors->AddError("is not an array");
       } else {
         const Json::Array& array = it->second.array();
         for (const Json& feature_json : array) {
-          if (feature_json.type() == Json::Type::STRING &&
+          if (feature_json.type() == Json::Type::kString &&
               (feature_json.string() == kServerFeatureIgnoreResourceDeletion)) {
             server_features_.insert(feature_json.string());
           }

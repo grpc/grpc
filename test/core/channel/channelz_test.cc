@@ -66,14 +66,14 @@ namespace {
 std::vector<intptr_t> GetUuidListFromArray(const Json::Array& arr) {
   std::vector<intptr_t> uuids;
   for (const Json& value : arr) {
-    EXPECT_EQ(value.type(), Json::Type::OBJECT);
-    if (value.type() != Json::Type::OBJECT) continue;
+    EXPECT_EQ(value.type(), Json::Type::kObject);
+    if (value.type() != Json::Type::kObject) continue;
     const Json::Object& object = value.object();
     auto it = object.find("ref");
     EXPECT_NE(it, object.end());
     if (it == object.end()) continue;
-    EXPECT_EQ(it->second.type(), Json::Type::OBJECT);
-    if (it->second.type() != Json::Type::OBJECT) continue;
+    EXPECT_EQ(it->second.type(), Json::Type::kObject);
+    if (it->second.type() != Json::Type::kObject) continue;
     const Json::Object& ref_object = it->second.object();
     it = ref_object.find("channelId");
     EXPECT_NE(it, ref_object.end());
@@ -86,9 +86,9 @@ std::vector<intptr_t> GetUuidListFromArray(const Json::Array& arr) {
 
 void ValidateJsonArraySize(const Json& array, size_t expected) {
   if (expected == 0) {
-    ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
+    ASSERT_EQ(array.type(), Json::Type::kNull);
   } else {
-    ASSERT_EQ(array.type(), Json::Type::ARRAY);
+    ASSERT_EQ(array.type(), Json::Type::kArray);
     EXPECT_EQ(array.array().size(), expected);
   }
 }
@@ -97,7 +97,7 @@ void ValidateJsonEnd(const Json& json, bool end) {
   auto it = json.object().find("end");
   if (end) {
     ASSERT_NE(it, json.object().end());
-    EXPECT_EQ(it->second.type(), Json::Type::JSON_TRUE);
+    EXPECT_EQ(it->second.type(), Json::Type::kTrue);
   } else {
     ASSERT_EQ(it, json.object().end());
   }
@@ -109,7 +109,7 @@ void ValidateGetTopChannels(size_t expected_channels) {
       json_str.c_str());
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // This check will naturally have to change when we support pagination.
   // tracked: https://github.com/grpc/grpc/issues/16019.
   ValidateJsonArraySize((*parsed_json->mutable_object())["channel"],
@@ -128,7 +128,7 @@ void ValidateGetServers(size_t expected_servers) {
       json_str.c_str());
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // This check will naturally have to change when we support pagination.
   // tracked: https://github.com/grpc/grpc/issues/16019.
   ValidateJsonArraySize((*parsed_json->mutable_object())["server"],
@@ -200,7 +200,7 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
     return;
   }
   ASSERT_NE(it, object.end());
-  ASSERT_EQ(it->second.type(), Json::Type::STRING);
+  ASSERT_EQ(it->second.type(), Json::Type::kString);
   int64_t gotten_number =
       static_cast<int64_t>(strtol(it->second.string().c_str(), nullptr, 0));
   EXPECT_EQ(gotten_number, expected);
@@ -210,10 +210,10 @@ void ValidateCounters(const std::string& json_str,
                       const ValidateChannelDataArgs& args) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   Json::Object* object = json->mutable_object();
   Json& data = (*object)["data"];
-  ASSERT_EQ(data.type(), Json::Type::OBJECT);
+  ASSERT_EQ(data.type(), Json::Type::kObject);
   ValidateChildInteger(data.object(), "callsStarted", args.calls_started);
   ValidateChildInteger(data.object(), "callsFailed", args.calls_failed);
   ValidateChildInteger(data.object(), "callsSucceeded", args.calls_succeeded);
@@ -361,7 +361,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
       json_str.c_str());
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // 100 is the pagination limit.
   ValidateJsonArraySize((*parsed_json->mutable_object())["channel"], 100);
   ValidateJsonEnd(*parsed_json, false);
@@ -371,7 +371,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
       json_str.c_str());
   parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   ValidateJsonArraySize((*parsed_json->mutable_object())["channel"], 50);
   ValidateJsonEnd(*parsed_json, true);
 }
@@ -384,7 +384,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json& array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array());
@@ -403,7 +403,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   std::string json_str = ChannelzRegistry::GetTopChannels(kMidQuery);
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json& array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels - kMidQuery + 1);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array());
@@ -424,7 +424,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
   std::string json_str = ChannelzRegistry::GetTopChannels(45);
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json& array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 10);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array());
@@ -444,7 +444,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   std::string json_str = ChannelzRegistry::GetTopChannels(2);
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 2);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array());
@@ -453,7 +453,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   json_str = ChannelzRegistry::GetTopChannels(4);
   parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 1);
   uuids = GetUuidListFromArray(array.array());
@@ -475,7 +475,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   auto parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json& array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, kLoopIterations);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array());

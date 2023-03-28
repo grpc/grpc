@@ -33,7 +33,7 @@
 const char* grpc_json_get_string_property(const grpc_core::Json& json,
                                           const char* prop_name,
                                           grpc_error_handle* error) {
-  if (json.type() != grpc_core::Json::Type::OBJECT) {
+  if (json.type() != grpc_core::Json::Type::kObject) {
     if (error != nullptr) {
       *error = GRPC_ERROR_CREATE("JSON value is not an object");
     }
@@ -47,7 +47,7 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
     }
     return nullptr;
   }
-  if (it->second.type() != grpc_core::Json::Type::STRING) {
+  if (it->second.type() != grpc_core::Json::Type::kString) {
     if (error != nullptr) {
       *error = GRPC_ERROR_CREATE(absl::StrCat(
           "Property ", prop_name, " n JSON object is not a string."));

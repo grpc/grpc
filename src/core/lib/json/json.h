@@ -38,15 +38,7 @@ class Json {
   // consider whether there's a better alternative (e.g., maybe storing
   // each numeric type as the native C++ type and automatically converting
   // to string as needed).
-  enum class Type {
-    JSON_NULL,
-    JSON_TRUE,
-    JSON_FALSE,
-    NUMBER,
-    STRING,
-    OBJECT,
-    ARRAY
-  };
+  enum class Type { kNull, kTrue, kFalse, kNumber, kString, kObject, kArray };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
@@ -109,9 +101,9 @@ class Json {
 
   // Construct from bool.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(bool b) : type_(b ? Type::JSON_TRUE : Type::JSON_FALSE) {}
+  Json(bool b) : type_(b ? Type::kTrue : Type::kFalse) {}
   Json& operator=(bool b) {
-    type_ = b ? Type::JSON_TRUE : Type::JSON_FALSE;
+    type_ = b ? Type::kTrue : Type::kFalse;
     return *this;
   }
 
@@ -218,16 +210,16 @@ class Json {
 
   void MoveFrom(Json&& other) {
     type_ = other.type_;
-    other.type_ = Type::JSON_NULL;
+    other.type_ = Type::kNull;
     switch (type_) {
-      case Type::NUMBER:
-      case Type::STRING:
+      case Type::kNumber:
+      case Type::kString:
         string_value_ = std::move(other.string_value_);
         break;
-      case Type::OBJECT:
+      case Type::kObject:
         object_value_ = std::move(other.object_value_);
         break;
-      case Type::ARRAY:
+      case Type::kArray:
         array_value_ = std::move(other.array_value_);
         break;
       default:
@@ -235,7 +227,7 @@ class Json {
     }
   }
 
-  Type type_ = Type::JSON_NULL;
+  Type type_ = Type::kNull;
   std::string string_value_;
   Object object_value_;
   Array array_value_;

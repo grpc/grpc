@@ -80,7 +80,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
