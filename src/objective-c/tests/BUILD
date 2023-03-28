@@ -22,7 +22,6 @@ load(
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
-load("//test/core/end2end:generate_tests.bzl", "grpc_end2end_tests")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
@@ -32,8 +31,6 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
-
-grpc_end2end_tests()
 
 proto_library_objc_wrapper(
     name = "messages_proto",
