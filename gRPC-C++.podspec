@@ -220,6 +220,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/flags/flag', abseil_version
+    ss.dependency 'abseil/flags/marshalling', abseil_version
     ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
@@ -276,7 +278,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -729,7 +730,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression_internal.h',
                       'src/core/lib/compression/message_compress.h',
+                      'src/core/lib/config/config_vars.h',
                       'src/core/lib/config/core_configuration.h',
+                      'src/core/lib/config/load_config.h',
                       'src/core/lib/debug/event_log.h',
                       'src/core/lib/debug/histogram_view.h',
                       'src/core/lib/debug/stats.h',
@@ -797,10 +800,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/env.h',
                       'src/core/lib/gprpp/examine_stack.h',
                       'src/core/lib/gprpp/fork.h',
-                      'src/core/lib/gprpp/global_config.h',
-                      'src/core/lib/gprpp/global_config_custom.h',
-                      'src/core/lib/gprpp/global_config_env.h',
-                      'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/load_file.h',
                       'src/core/lib/gprpp/manual_constructor.h',
@@ -998,7 +997,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                       'src/core/lib/security/security_connector/ssl_utils.h',
-                      'src/core/lib/security/security_connector/ssl_utils_config.h',
                       'src/core/lib/security/security_connector/tls/tls_security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
@@ -1235,7 +1233,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                              'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -1670,7 +1667,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',
+                              'src/core/lib/config/config_vars.h',
                               'src/core/lib/config/core_configuration.h',
+                              'src/core/lib/config/load_config.h',
                               'src/core/lib/debug/event_log.h',
                               'src/core/lib/debug/histogram_view.h',
                               'src/core/lib/debug/stats.h',
@@ -1738,10 +1737,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/env.h',
                               'src/core/lib/gprpp/examine_stack.h',
                               'src/core/lib/gprpp/fork.h',
-                              'src/core/lib/gprpp/global_config.h',
-                              'src/core/lib/gprpp/global_config_custom.h',
-                              'src/core/lib/gprpp/global_config_env.h',
-                              'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/load_file.h',
                               'src/core/lib/gprpp/manual_constructor.h',
@@ -1939,7 +1934,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                               'src/core/lib/security/security_connector/ssl_utils.h',
-                              'src/core/lib/security/security_connector/ssl_utils_config.h',
                               'src/core/lib/security/security_connector/tls/tls_security_connector.h',
                               'src/core/lib/security/transport/auth_filters.h',
                               'src/core/lib/security/transport/secure_endpoint.h',
