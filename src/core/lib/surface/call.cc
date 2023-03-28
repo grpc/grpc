@@ -2013,15 +2013,6 @@ class PromiseBasedCall : public Call,
   using Call::arena;
 
  protected:
-  class ScopedBatchCoalescer : public BatchBuilder,
-                               public promise_detail::Context<BatchBuilder> {
-   public:
-    explicit ScopedBatchCoalescer(PromiseBasedCall* call)
-        : BatchBuilder(&call->batch_payload_),
-          promise_detail::Context<BatchBuilder>(
-              promise_detail::KeepExistingIfPresent{}, this) {}
-  };
-
   class ScopedContext
       : public ScopedActivity,
         public BatchBuilder,
