@@ -53,22 +53,45 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
       "      \"oobReportingPeriod\": true,\n"
       "      \"blackoutPeriod\": [],\n"
       "      \"weightUpdatePeriod\": {},\n"
-      "      \"weightExpirationPeriod\": {}\n"
+      "      \"weightExpirationPeriod\": {},\n"
+      "      \"errorUtilizationPenalty\": []\n"
       "    }\n"
       "  }]\n"
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_FALSE(service_config.ok());
-  EXPECT_EQ(service_config.status(),
-            absl::InvalidArgumentError(
-                "errors validating service config: [field:loadBalancingConfig "
-                "error:errors validating priority LB policy config: ["
-                "field:blackoutPeriod error:is not a string; "
-                "field:enableOobLoadReport error:is not a boolean; "
-                "field:oobReportingPeriod error:is not a string; "
-                "field:weightExpirationPeriod error:is not a string; "
-                "field:weightUpdatePeriod error:is not a string]]"));
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:blackoutPeriod error:is not a string; "
+          "field:enableOobLoadReport error:is not a boolean; "
+          "field:errorUtilizationPenalty error:is not a number; "
+          "field:oobReportingPeriod error:is not a string; "
+          "field:weightExpirationPeriod error:is not a string; "
+          "field:weightUpdatePeriod error:is not a string]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, InvalidValues) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin_experimental\":{\n"
+      "      \"errorUtilizationPenalty\": -1.0\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:errorUtilizationPenalty error:must be non-negative]]"));
 }
 
 }  // namespace

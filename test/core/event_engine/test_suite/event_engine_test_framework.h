@@ -25,11 +25,11 @@
 #include <grpc/support/log.h>
 
 extern absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_ee_factory;
 
 extern absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_oracle_ee_factory;
 
 // Manages the lifetime of the global EventEngine factory.
@@ -37,10 +37,10 @@ class EventEngineTestEnvironment : public testing::Environment {
  public:
   EventEngineTestEnvironment(
       absl::AnyInvocable<
-          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+          std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
           factory,
       absl::AnyInvocable<
-          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+          std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
           oracle_factory)
       : factory_(std::move(factory)),
         oracle_factory_(std::move(oracle_factory)) {}
@@ -57,22 +57,22 @@ class EventEngineTestEnvironment : public testing::Environment {
 
  private:
   absl::AnyInvocable<
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
       factory_;
   absl::AnyInvocable<
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
       oracle_factory_;
 };
 
 class EventEngineTest : public testing::Test {
  protected:
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine>
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewEventEngine() {
     GPR_ASSERT(g_ee_factory != nullptr);
     return (*g_ee_factory)();
   }
 
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine>
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewOracleEventEngine() {
     GPR_ASSERT(g_oracle_ee_factory != nullptr);
     return (*g_oracle_ee_factory)();
@@ -83,10 +83,10 @@ class EventEngineTest : public testing::Test {
 // EventEngine can additionally be specified here.
 void SetEventEngineFactories(
     absl::AnyInvocable<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         ee_factory,
     absl::AnyInvocable<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         oracle_ee_factory);
 
 #endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_FRAMEWORK_H

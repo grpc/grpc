@@ -11,7 +11,6 @@
 #include "envoy/config/trace/v3/opentelemetry.upb.h"
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "udpa/annotations/status.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
