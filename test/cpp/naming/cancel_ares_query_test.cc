@@ -33,8 +33,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -187,7 +187,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.dns_resolver = "ares";
+    grpc_core::ConfigVars::SetOverrides(overrides);
     // Sanity check the time that it takes to run the test
     // including the teardown time (the teardown
     // part of the test involves cancelling the DNS query,

@@ -20,13 +20,15 @@
 
 #include <functional>
 #include <memory>
+#include <string>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
+#include "src/core/lib/config/config_vars.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_ssl_tls_common.h"
 #include "test/core/util/test_config.h"
@@ -48,8 +50,9 @@ int main(int argc, char** argv) {
   size_t i;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
-                        SslTlsFixture::CaCertPath());
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = SslTlsFixture::CaCertPath();
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
 
