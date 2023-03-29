@@ -56,8 +56,8 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -69,7 +69,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -415,8 +414,9 @@ auto ConnectedChannelStream::RecvMessages(
                       Activity::current()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
-            if (cancel_on_error && !status.ok())
+            if (cancel_on_error && !status.ok()) {
               incoming_messages.CloseWithError();
+            }
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
           return If(has_message, std::move(publish_message),
