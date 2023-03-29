@@ -21,6 +21,7 @@ grpc_package(name = "test/core/filters")
 
 grpc_cc_library(
     name = "filter_test",
+    testonly = 1,
     srcs = ["filter_test.cc"],
     hdrs = ["filter_test.h"],
     external_deps = [
