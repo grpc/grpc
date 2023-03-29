@@ -1887,6 +1887,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
