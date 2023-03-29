@@ -56,7 +56,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"

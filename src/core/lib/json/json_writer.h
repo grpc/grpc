@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_WRITER_H
-#define GRPC_SRC_CORE_LIB_JSON_WRITER_H
+#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_WRITER_H
+#define GRPC_SRC_CORE_LIB_JSON_JSON_WRITER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,4 +30,4 @@ std::string JsonDump(const Json& json, int indent = 0);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_WRITER_H
+#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_WRITER_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_READER_H
-#define GRPC_SRC_CORE_LIB_JSON_READER_H
+#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_READER_H
+#define GRPC_SRC_CORE_LIB_JSON_JSON_READER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,4 +31,4 @@ absl::StatusOr<Json> JsonParse(absl::string_view json_str);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_READER_H
+#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_READER_H
