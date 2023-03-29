@@ -1,6 +1,6 @@
 {
     "LABEL": {
-        "name": "title needs formatting",
+        "name": "[pr-title] Should be like this",
         "color": "EEEEEE"
     },
     "CHECKS": {
@@ -10,7 +10,7 @@
     },
     "MESSAGES": {
         "success": "All OK",
-        "failure": "Incorrect PR title",
+        "failure": "PR title should be like this: '[some-tag] Should be like this'",
         "notice": ""
     }
 }
