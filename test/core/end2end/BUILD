@@ -153,7 +153,6 @@ grpc_cc_test(
     name = "end2end_tests",
     srcs = [
         "end2end_test_main.cc",
-        "end2end_test_utils.cc",
         "end2end_tests.cc",
         "tests/bad_ping.cc",
         "tests/binary_metadata.cc",

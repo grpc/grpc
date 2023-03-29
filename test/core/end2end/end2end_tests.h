@@ -735,23 +735,9 @@ class ProxyAuthTest : public CoreEnd2endTest {};
 
 }  // namespace grpc_core
 
+// If this test fixture is being run under minstack, skip the test.
 #define SKIP_IF_MINSTACK()                                 \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
-
-void grpc_end2end_tests_pre_init(void);
-void grpc_end2end_tests(int argc, char** argv,
-                        const grpc_core::CoreTestConfiguration& config);
-
-const char* get_host_override_string(
-    const char* str, const grpc_core::CoreTestConfiguration& config);
-// Returns a pointer to a statically allocated slice: future invocations
-// overwrite past invocations, not threadsafe, etc...
-const grpc_slice* get_host_override_slice(
-    const char* str, const grpc_core::CoreTestConfiguration& config);
-
-void validate_host_override_string(
-    const char* pattern, grpc_slice str,
-    const grpc_core::CoreTestConfiguration& config);
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H
