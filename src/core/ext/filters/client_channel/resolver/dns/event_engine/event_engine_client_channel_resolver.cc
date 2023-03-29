@@ -485,7 +485,7 @@ EventEngineDNSRequestWrapper::OnResolvedLocked() {
         "resolver:%p OnResolved() waiting for results (hostname: %s, "
         "srv: %s, "
         "txt: %s, "
-        "balancer addresses: %zu/%zu complete",
+        "balancer addresses: %" PRIuPTR "/%" PRIuPTR " complete",
         this, hostname_handle_.has_value() ? "waiting" : "done",
         srv_handle_.has_value() ? "waiting" : "done",
         txt_handle_.has_value() ? "waiting" : "done",
