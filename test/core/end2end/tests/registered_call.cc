@@ -26,10 +26,9 @@
 namespace grpc_core {
 namespace {
 
-void SimpleRequestBody(CoreEnd2endTest& test, void* rc) {
-  auto c = test.NewClientCall(CoreEnd2endTest::RegisteredCall{rc})
-               .Timeout(Duration::Seconds(5))
-               .Create();
+void SimpleRequestBody(CoreEnd2endTest& test,
+                       CoreEnd2endTest::RegisteredCall rc) {
+  auto c = test.NewClientCall(rc).Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   c.NewBatch(1)

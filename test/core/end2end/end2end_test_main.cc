@@ -620,8 +620,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                               unique.fetch_add(1, std::memory_order_relaxed)),
               UDS);
         }},
-          #endif
-          CoreTestConfiguration{"Chttp2FullstackNoRetry",
+#endif
+    CoreTestConfiguration{"Chttp2FullstackNoRetry",
                           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                               FEATURE_MASK_IS_HTTP2 |
                               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
@@ -827,7 +827,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               getpid(), now.tv_sec, now.tv_nsec,
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
-          #endif
+#endif
 // TODO(ctiller): these got inadvertently disabled when the project
 // switched to
 // Bazel in 2016, and have not been re-enabled since and are now quite
@@ -864,24 +864,31 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
 #endif
 }};
 
+// A ConfigQuery queries the database above for a set of test configurations
+// that match some criteria.
 class ConfigQuery {
  public:
   ConfigQuery() = default;
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
+  // Enforce that the returned configurations have the given features.
   ConfigQuery& EnforceFeatures(uint32_t features) {
     enforce_features_ |= features;
     return *this;
   }
+  // Envorce that the returned configurations do not have the given features.
   ConfigQuery& ExcludeFeatures(uint32_t features) {
     exclude_features_ |= features;
     return *this;
   }
+  // Enforce that the returned configurations have the given name (regex).
   ConfigQuery& AllowName(const std::string& name) {
     allowed_names_.emplace_back(
         std::regex(name, std::regex_constants::ECMAScript));
     return *this;
   }
+  // Enforce that the returned configurations do not have the given name
+  // (regex).
   ConfigQuery& ExcludeName(const std::string& name) {
     excluded_names_.emplace_back(
         std::regex(name, std::regex_constants::ECMAScript));
