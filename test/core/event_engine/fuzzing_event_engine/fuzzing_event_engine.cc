@@ -175,6 +175,16 @@ void FuzzingEventEngine::Tick() {
   }
 }
 
+void FuzzingEventEngine::TickUntilIdle() {
+  while (true) {
+    {
+      grpc_core::MutexLock lock(&*mu_);
+      if (tasks_by_id_.empty()) return;
+    }
+    Tick();
+  }
+}
+
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
   grpc_core::MutexLock lock(&*mu_);
   return now_;
