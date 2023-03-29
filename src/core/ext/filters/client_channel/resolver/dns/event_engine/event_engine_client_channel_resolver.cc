@@ -416,7 +416,7 @@ EventEngineDNSRequestWrapper::GetResolutionFailureErrorMessageLocked() {
 
 void EventEngineDNSRequestWrapper::MaybePopulateAddressesLocked(
     grpc_core::Resolver::Result& result) {
-  result.addresses = grpc_core::ServerAddressList();
+  result.addresses.emplace();
   if (addresses_.ok()) {
     result.addresses->reserve(addresses_->size());
     for (const auto& addr : *addresses_) {
