@@ -34,8 +34,10 @@ popd
 # location of the "rbe_config_gen" binary as build by the previous step.
 RBE_CONFIGS_GEN_TOOL_PATH="${TEMP_DIR}/bazel-toolchains/rbe_configs_gen"
 
-# the container under which RBE actions will run
-LINUX_RBE_DOCKER_IMAGE=l.gcr.io/google/rbe-ubuntu18-04@sha256:48b67b41118dbcdfc265e7335f454fbefa62681ab8d47200971fc7a52fb32054
+# Actions on RBE will run under a dedicated docker image from our collection of testing docker images.
+LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2004
+# Use the "current version" of the above dockerfile.
+LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
