@@ -27,6 +27,7 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
@@ -406,12 +407,15 @@ void FilterTestBase::Call::FinishNextFilter(ServerMetadataHandle md) {
 FilterTestBase::FilterTestBase()
     : event_engine_(
           []() {
+            grpc_timer_manager_set_threading(false);
             grpc_event_engine::experimental::FuzzingEventEngine::Options
                 options;
             options.final_tick_length = std::chrono::milliseconds(1);
             return options;
           }(),
           fuzzing_event_engine::Actions()) {}
+
+FilterTestBase::~FilterTestBase() { event_engine_.UnsetGlobalHooks(); }
 
 void FilterTestBase::Step() {
   event_engine_.TickUntilIdle();

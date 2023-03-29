@@ -191,6 +191,7 @@ class FilterTestBase : public ::testing::Test {
 
  protected:
   FilterTestBase();
+  ~FilterTestBase() override;
   absl::StatusOr<Channel> MakeChannel(std::unique_ptr<ChannelFilter> filter) {
     return Channel(std::move(filter), this);
   }
