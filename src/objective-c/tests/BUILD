@@ -185,6 +185,7 @@ grpc_objc_testing_library(
     deps = [
         "InteropTests-lib",
         "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//test/core/end2end:cq_verifier",
         "//third_party/objective_c/Cronet:cronet_c_for_grpc",
     ],
 )
