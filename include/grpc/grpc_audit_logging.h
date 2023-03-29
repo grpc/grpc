@@ -39,7 +39,7 @@ typedef struct CoreAuditContext {
 // This base class for audit logger implementations.
 class CoreAuditLogger {
  public:
-  virtual void CoreLog(const CoreAuditContext* audit_context) = 0;
+  virtual void CoreLog(const CoreAuditContext& audit_context) = 0;
 };
 
 // This is the base class for audit logger factory implementations.

@@ -29,17 +29,17 @@ namespace experimental {
 // event.
 class AuditContext {
  public:
-  // Does not take the ownership of the core_context. Callers have to ensure it
+  // Does not take the ownership of core_context. Callers have to ensure it
   // outlives this class.
   explicit AuditContext(
       const grpc_core::experimental::CoreAuditContext* core_context)
       : core_context_(core_context) {}
 
-  grpc::string_ref rpc_method();
-  grpc::string_ref principal();
-  grpc::string_ref policy_name();
-  grpc::string_ref matched_rule();
-  bool authorized();
+  grpc::string_ref rpc_method() const;
+  grpc::string_ref principal() const;
+  grpc::string_ref policy_name() const;
+  grpc::string_ref matched_rule() const;
+  bool authorized() const;
 
  private:
   const grpc_core::experimental::CoreAuditContext* core_context_;
@@ -54,7 +54,7 @@ class AuditLogger : public grpc_core::experimental::CoreAuditLogger {
   // not impact whether the RPC will be rejected or not.
   virtual void Log(const AuditContext& audit_context) = 0;
 
-  void CoreLog(const grpc_core::experimental::CoreAuditContext*) final;
+  void CoreLog(const grpc_core::experimental::CoreAuditContext&) final;
 };
 
 // The base class for audit logger factory implementations.

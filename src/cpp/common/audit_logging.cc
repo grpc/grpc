@@ -32,30 +32,30 @@ using grpc_core::experimental::CoreAuditContext;
 using grpc_core::experimental::CoreAuditLogger;
 using grpc_core::experimental::CoreAuditLoggerFactory;
 
-grpc::string_ref AuditContext::rpc_method() {
+grpc::string_ref AuditContext::rpc_method() const {
   absl::string_view s = core_context_->rpc_method();
   return grpc::string_ref(s.data(), s.length());
 }
 
-grpc::string_ref AuditContext::principal() {
+grpc::string_ref AuditContext::principal() const {
   absl::string_view s = core_context_->principal();
   return grpc::string_ref(s.data(), s.length());
 }
 
-grpc::string_ref AuditContext::policy_name() {
+grpc::string_ref AuditContext::policy_name() const {
   absl::string_view s = core_context_->policy_name();
   return grpc::string_ref(s.data(), s.length());
 }
 
-grpc::string_ref AuditContext::matched_rule() {
+grpc::string_ref AuditContext::matched_rule() const {
   absl::string_view s = core_context_->matched_rule();
   return grpc::string_ref(s.data(), s.length());
 }
 
-bool AuditContext::authorized() { return core_context_->authorized(); }
+bool AuditContext::authorized() const { return core_context_->authorized(); }
 
-void AuditLogger::CoreLog(const CoreAuditContext* core_audit_context) {
-  AuditContext audit_context(core_audit_context);
+void AuditLogger::CoreLog(const CoreAuditContext& core_audit_context) {
+  AuditContext audit_context(&core_audit_context);
   Log(audit_context);
 }
 
