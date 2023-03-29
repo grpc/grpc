@@ -98,89 +98,6 @@ grpc_core::TraceFlag grpc_event_engine_client_channel_resolver_trace(
   }
 
 // ----------------------------------------------------------------------------
-// EventEngineDNSRequestWrapper declaration
-// ----------------------------------------------------------------------------
-class EventEngineClientChannelDNSResolver;
-
-class EventEngineDNSRequestWrapper
-    : public InternallyRefCounted<EventEngineDNSRequestWrapper> {
- public:
-  EventEngineDNSRequestWrapper(
-      RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
-      std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver);
-  ~EventEngineDNSRequestWrapper() override;
-
-  // Note that thread safety cannot be analyzed due to this being invoked from
-  // OrphanablePtr<>, and there's no way to pass the lock annotation through
-  // there.
-  void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
-
-  void OnHostnameResolved(
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
-  void OnSRVResolved(
-      absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-          srv_records);
-  void OnBalancerHostnamesResolved(
-      std::string authority,
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
-  void OnTXTResolved(absl::StatusOr<std::string> service_config);
-
-  // Returns a Result if resolution is complete.
-  // callers must release the lock and call OnRequestComplete if a Result is
-  // returned. This is because OnRequestComplete may Orphan the resolver, which
-  // requires taking the lock.
-  absl::optional<grpc_core::Resolver::Result> OnResolvedLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-
- private:
-  // Helper method for generating the combined resolution status error
-  absl::Status GetResolutionFailureErrorMessageLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-  // Helper method to populate server addresses on resolver result.
-  void MaybePopulateAddressesLocked(grpc_core::Resolver::Result& result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-  // Helper method to populate balancer addresses on resolver result.
-  void MaybePopulateBalancerAddressesLocked(grpc_core::Resolver::Result& result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-  // Helper method to populate service config on resolver result.
-  void MaybePopulateServiceConfigLocked(grpc_core::Resolver::Result& result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-  // Convert empty results into resolution errors.
-  //
-  // TODO(roth): We should someday separate empty results (NXDOMAIN) from actual
-  // DNS resolution errors. For now, they are treated the same so this resolver
-  // behaves similarly to the old c-ares resolver.
-  void NormalizeEmptyResultsToErrorsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-
-  RefCountedPtr<EventEngineClientChannelDNSResolver> resolver_;
-  Mutex on_resolved_mu_;
-  // Lookup callbacks
-  absl::optional<EventEngine::DNSResolver::LookupTaskHandle> hostname_handle_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  absl::optional<EventEngine::DNSResolver::LookupTaskHandle> srv_handle_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  absl::optional<EventEngine::DNSResolver::LookupTaskHandle> txt_handle_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  LookupTaskHandleSet balancer_hostname_handles_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  // Output fields from requests.
-  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  grpc_core::ServerAddressList balancer_addresses_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  grpc_core::ValidationErrors balancer_address_lookup_errors_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  absl::StatusOr<std::string> service_config_json_
-      ABSL_GUARDED_BY(on_resolved_mu_);
-  // Other internal state
-  size_t number_of_balancer_hostnames_resolved_
-      ABSL_GUARDED_BY(on_resolved_mu_) = 0;
-  bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
-  std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
-};
-
-// ----------------------------------------------------------------------------
 // EventEngineClientChannelDNSResolver
 // ----------------------------------------------------------------------------
 class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
@@ -190,7 +107,87 @@ class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
-  friend class EventEngineDNSRequestWrapper;
+  // ----------------------------------------------------------------------------
+  // EventEngineDNSRequestWrapper declaration
+  // ----------------------------------------------------------------------------
+  class EventEngineDNSRequestWrapper
+      : public InternallyRefCounted<EventEngineDNSRequestWrapper> {
+   public:
+    EventEngineDNSRequestWrapper(
+        RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
+        std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver);
+    ~EventEngineDNSRequestWrapper() override;
+
+    // Note that thread safety cannot be analyzed due to this being invoked from
+    // OrphanablePtr<>, and there's no way to pass the lock annotation through
+    // there.
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+    void OnHostnameResolved(
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
+    void OnSRVResolved(
+        absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+            srv_records);
+    void OnBalancerHostnamesResolved(
+        std::string authority,
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
+    void OnTXTResolved(absl::StatusOr<std::string> service_config);
+
+    // Returns a Result if resolution is complete.
+    // callers must release the lock and call OnRequestComplete if a Result is
+    // returned. This is because OnRequestComplete may Orphan the resolver,
+    // which requires taking the lock.
+    absl::optional<grpc_core::Resolver::Result> OnResolvedLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+
+   private:
+    // Helper method for generating the combined resolution status error
+    absl::Status GetResolutionFailureErrorMessageLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+    // Helper method to populate server addresses on resolver result.
+    void MaybePopulateAddressesLocked(grpc_core::Resolver::Result& result)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+    // Helper method to populate balancer addresses on resolver result.
+    void MaybePopulateBalancerAddressesLocked(
+        grpc_core::Resolver::Result& result)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+    // Helper method to populate service config on resolver result.
+    void MaybePopulateServiceConfigLocked(grpc_core::Resolver::Result& result)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+    // Convert empty results into resolution errors.
+    //
+    // TODO(roth): We should someday separate empty results (NXDOMAIN) from
+    // actual DNS resolution errors. For now, they are treated the same so this
+    // resolver behaves similarly to the old c-ares resolver.
+    void NormalizeEmptyResultsToErrorsLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
+
+    RefCountedPtr<EventEngineClientChannelDNSResolver> resolver_;
+    Mutex on_resolved_mu_;
+    // Lookup callbacks
+    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> hostname_handle_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> srv_handle_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> txt_handle_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    LookupTaskHandleSet balancer_hostname_handles_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    // Output fields from requests.
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    grpc_core::ServerAddressList balancer_addresses_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    grpc_core::ValidationErrors balancer_address_lookup_errors_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    absl::StatusOr<std::string> service_config_json_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    // Other internal state
+    size_t number_of_balancer_hostnames_resolved_
+        ABSL_GUARDED_BY(on_resolved_mu_) = 0;
+    bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
+    std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
+  };
 
   /// whether to request the service config
   const bool request_service_config_;
@@ -236,9 +233,10 @@ OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
 // EventEngineDNSRequestWrapper definition
 // ----------------------------------------------------------------------------
 
-EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
-    RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
-    std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver)
+EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    EventEngineDNSRequestWrapper(
+        RefCountedPtr<EventEngineClientChannelDNSResolver> resolver,
+        std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver)
     : resolver_(std::move(resolver)),
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
@@ -271,11 +269,13 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
   }
 }
 
-EventEngineDNSRequestWrapper::~EventEngineDNSRequestWrapper() {
+EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    ~EventEngineDNSRequestWrapper() {
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 
-void EventEngineDNSRequestWrapper::Orphan() {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    Orphan() {
   {
     MutexLock lock(&on_resolved_mu_);
     orphaned_ = true;
@@ -297,8 +297,9 @@ void EventEngineDNSRequestWrapper::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void EventEngineDNSRequestWrapper::OnHostnameResolved(
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnHostnameResolved(
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
   absl::optional<grpc_core::Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
@@ -312,9 +313,10 @@ void EventEngineDNSRequestWrapper::OnHostnameResolved(
   }
 }
 
-void EventEngineDNSRequestWrapper::OnSRVResolved(
-    absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-        srv_records) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnSRVResolved(
+        absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+            srv_records) {
   absl::optional<grpc_core::Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
@@ -347,10 +349,11 @@ void EventEngineDNSRequestWrapper::OnSRVResolved(
   }
 }
 
-void EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved(
-    std::string authority,
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-        new_balancer_addresses) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnBalancerHostnamesResolved(
+        std::string authority,
+        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+            new_balancer_addresses) {
   absl::optional<grpc_core::Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
@@ -380,8 +383,8 @@ void EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved(
   }
 }
 
-void EventEngineDNSRequestWrapper::OnTXTResolved(
-    absl::StatusOr<std::string> service_config) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnTXTResolved(absl::StatusOr<std::string> service_config) {
   absl::optional<grpc_core::Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
@@ -396,8 +399,8 @@ void EventEngineDNSRequestWrapper::OnTXTResolved(
   }
 }
 
-absl::Status
-EventEngineDNSRequestWrapper::GetResolutionFailureErrorMessageLocked() {
+absl::Status EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    GetResolutionFailureErrorMessageLocked() {
   grpc_core::ValidationErrors all_errors;
   if (!addresses_.ok()) {
     all_errors.AddError(absl::StrCat("Error resolving hostname: ",
@@ -417,8 +420,8 @@ EventEngineDNSRequestWrapper::GetResolutionFailureErrorMessageLocked() {
       absl::StatusCode::kUnavailable);
 }
 
-void EventEngineDNSRequestWrapper::MaybePopulateAddressesLocked(
-    grpc_core::Resolver::Result& result) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    MaybePopulateAddressesLocked(grpc_core::Resolver::Result& result) {
   if (addresses_.ok()) {
     result.addresses->reserve(addresses_->size());
     for (const auto& addr : *addresses_) {
@@ -428,16 +431,16 @@ void EventEngineDNSRequestWrapper::MaybePopulateAddressesLocked(
   }
 }
 
-void EventEngineDNSRequestWrapper::MaybePopulateBalancerAddressesLocked(
-    grpc_core::Resolver::Result& result) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    MaybePopulateBalancerAddressesLocked(grpc_core::Resolver::Result& result) {
   if (!balancer_addresses_.empty()) {
     result.args =
         grpc_core::SetGrpcLbBalancerAddresses(result.args, balancer_addresses_);
   }
 }
 
-void EventEngineDNSRequestWrapper::MaybePopulateServiceConfigLocked(
-    grpc_core::Resolver::Result& result) {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    MaybePopulateServiceConfigLocked(grpc_core::Resolver::Result& result) {
   // TODO(roth): We should not ignore errors here, but instead have users of the
   // resolver handle them appropriately. Some test/cpp/naming tests fail.
   if (service_config_json_.ok() && service_config_json_->empty()) {
@@ -468,14 +471,16 @@ void EventEngineDNSRequestWrapper::MaybePopulateServiceConfigLocked(
   }
 }
 
-void EventEngineDNSRequestWrapper::NormalizeEmptyResultsToErrorsLocked() {
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    NormalizeEmptyResultsToErrorsLocked() {
   if (addresses_.ok() && addresses_->empty()) {
     addresses_ = absl::NotFoundError("No addresses found.");
   }
 }
 
 absl::optional<grpc_core::Resolver::Result>
-EventEngineDNSRequestWrapper::OnResolvedLocked() {
+EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnResolvedLocked() {
   if (orphaned_) return absl::nullopt;
   // Wait for all requested queries to return.
   if (hostname_handle_.has_value() || srv_handle_.has_value() ||
