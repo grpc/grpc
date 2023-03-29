@@ -179,7 +179,6 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  gpr_log(GPR_DEBUG, "Using native dns resolver");
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<NativeClientChannelDNSResolverFactory>());
 }
