@@ -23,13 +23,11 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
-class EventEngineClientChannelDNSResolverFactory
-    : public grpc_core::ResolverFactory {
+class EventEngineClientChannelDNSResolverFactory : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
-  bool IsValidUri(const grpc_core::URI& uri) const override;
-  grpc_core::OrphanablePtr<grpc_core::Resolver> CreateResolver(
-      grpc_core::ResolverArgs args) const override;
+  bool IsValidUri(const URI& uri) const override;
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override;
 };
 
 }  // namespace grpc_core

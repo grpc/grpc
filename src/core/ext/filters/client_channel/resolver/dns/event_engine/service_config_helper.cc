@@ -15,19 +15,15 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
-#include <map>
-#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/gethostname.h"

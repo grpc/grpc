@@ -4869,7 +4869,6 @@ grpc_cc_library(
         "json_object_loader",
         "status_helper",
         "validation_errors",
-        "//:debug_location",
         "//:gpr_platform",
         "//:grpc_base",
     ],
@@ -4894,7 +4893,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "event_engine_common",
-        "event_engine_trace",
         "event_engine_utils",
         "grpc_service_config",
         "polling_resolver",
@@ -4925,6 +4923,7 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "experiments",
@@ -4961,7 +4960,6 @@ grpc_cc_library(
         "time",
         "//:backoff",
         "//:config",
-        "//:config_vars",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
