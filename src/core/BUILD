@@ -4866,6 +4866,7 @@ grpc_cc_library(
     deps = [
         "json",
         "status_helper",
+        "validation_errors",
         "//:debug_location",
         "//:gpr_platform",
         "//:grpc_base",
@@ -4895,7 +4896,6 @@ grpc_cc_library(
         "grpc_service_config",
         "polling_resolver",
         "service_config_helper",
-        "status_helper",
         "time",
         "validation_errors",
         "//:backoff",
