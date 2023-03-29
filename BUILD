@@ -2993,6 +2993,7 @@ grpc_cc_library(
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
+        "//src/core:service_config_helper",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
