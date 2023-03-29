@@ -65,6 +65,8 @@ class FuzzingEventEngine : public EventEngine {
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
   // Increment time once and perform any scheduled work.
   void Tick() ABSL_LOCKS_EXCLUDED(mu_);
+  // Repeatedly call Tick() until there is no more work to do.
+  void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,

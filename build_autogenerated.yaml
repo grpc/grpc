@@ -5918,22 +5918,30 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/promise/test_context.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_auth_filter_test.cc
+  - test/core/filters/filter_test.cc
   deps:
-  - grpc
+  - grpc_test_util
   uses_polling: false
 - name: client_authority_filter_test
   gtest: true
   build: test
   language: c++
   headers:
-  - test/core/promise/test_context.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/client_authority_filter_test.cc
+  - test/core/filters/filter_test.cc
   deps:
-  - grpc
+  - grpc_test_util
   uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
@@ -7074,6 +7082,22 @@ targets:
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: filter_test_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/filters/filter_test.cc
+  - test/core/filters/filter_test_test.cc
+  deps:
+  - grpc_unsecure
+  - grpc_test_util
+  uses_polling: false
 - name: flaky_network_test
   gtest: true
   build: test
