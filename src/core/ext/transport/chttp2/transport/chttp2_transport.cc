@@ -1689,9 +1689,9 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           // The ref will be unreffed in the combiner.
-          self.release();
-          self->t_->combiner->Run(
-              GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self.get(),
+          auto* ptr = self.release();
+          ptr->t_->combiner->Run(
+              GRPC_CLOSURE_INIT(&ptr->on_timer_, OnTimerLocked, ptr,
                                 nullptr),
               absl::OkStatus());
         });
