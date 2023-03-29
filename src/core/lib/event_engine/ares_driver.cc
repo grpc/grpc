@@ -175,7 +175,7 @@ class GrpcAresHostnameRequestImpl final : public GrpcAresRequestImpl,
       EventEngine::Duration timeout,
       RegisterAresSocketWithPollerCallback register_cb,
       EventEngine* event_engine);
-  void Start(OnResolveCallback<Result> on_resolve)
+  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
@@ -189,7 +189,8 @@ class GrpcAresHostnameRequestImpl final : public GrpcAresRequestImpl,
   void SortResolvedAddresses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::vector<EventEngine::ResolvedAddress> result_;
-  OnResolveCallback<Result> on_resolve_ ABSL_GUARDED_BY(mu_);
+  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_
+      ABSL_GUARDED_BY(mu_);
 };
 
 class GrpcAresSRVRequestImpl final : public GrpcAresRequestImpl,
@@ -205,14 +206,14 @@ class GrpcAresSRVRequestImpl final : public GrpcAresRequestImpl,
   const char* service_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return service_name_.c_str();
   }
-  void Start(OnResolveCallback<Result> on_resolve)
+  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
   std::string service_name_;
-  OnResolveCallback<Result> on_resolve_;
+  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 
 class GrpcAresTXTRequestImpl : public GrpcAresRequestImpl,
@@ -228,14 +229,14 @@ class GrpcAresTXTRequestImpl : public GrpcAresRequestImpl,
   const char* config_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return config_name_.c_str();
   }
-  void Start(OnResolveCallback<Result> on_resolve)
+  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
   std::string config_name_;
-  OnResolveCallback<Result> on_resolve_;
+  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 
 namespace {
@@ -1025,7 +1026,7 @@ GrpcAresSRVRequestImpl::GrpcAresSRVRequestImpl(
                           event_engine) {}
 
 void GrpcAresSRVRequestImpl::Start(
-    absl::AnyInvocable<void(absl::StatusOr<<Result>)> on_resolve) {
+    absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
