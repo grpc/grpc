@@ -1685,10 +1685,11 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
     timer_handle_ = t_->event_engine->RunAfter(
         grpc_core::Duration::Seconds(20),
-        [self = Ref(DEBUG_LOCATION, "GoawayTimer")] {
+        [self = Ref(DEBUG_LOCATION, "GoawayTimer")]() mutable {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
-          self->Ref().release();
+          // The ref will be unreffed in the combiner.
+          self.release();
           self->t_->combiner->Run(
               GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self.get(),
                                 nullptr),
