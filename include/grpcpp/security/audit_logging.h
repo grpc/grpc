@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPCPP_AUDIT_LOGGING_H
-#define GRPCPP_AUDIT_LOGGING_H
+#ifndef GRPCPP_SECURITY_AUDIT_LOGGING_H
+#define GRPCPP_SECURITY_AUDIT_LOGGING_H
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpcpp/support/string_ref.h>
@@ -103,4 +103,4 @@ void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPCPP_AUDIT_LOGGING_H
+#endif  // GRPCPP_SECURITY_AUDIT_LOGGING_H
