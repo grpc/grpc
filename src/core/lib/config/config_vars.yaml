@@ -13,13 +13,19 @@
 # limitations under the License.
 
 # File format:
+#
 # Each config var gets a name, and a type (one of string, int, bool).
+#
 # A default value is provided. Defaults prefixed by '$' are read as expressions,
 # otherwise they're assumed literals.
 # A description field must be present.
+#
 # Optionally, a force-load-on-access: true flag can be added to force checking
 # the environment variables every time the value is queried, to match legacy
 # behavior for some environment variables.
+#
+# Optionally, fuzz: true can be added to enable fuzzers to explore variations
+# in this config var with their regular fuzzing work.
 
 - name: experiments
   type: string
@@ -27,6 +33,7 @@
     A comma separated list of currently active experiments. Experiments may be
     prefixed with a '-' to disable them.
   default:
+  fuzz: true
 - name: client_channel_backup_poll_interval_ms
   type: int
   default: 5000
@@ -44,12 +51,14 @@
     Declares which DNS resolver to use. The default is ares if gRPC is built
     with c-ares support. Otherwise, the value of this environment variable is
     ignored.
+  fuzz: true
 - name: trace
   type: string
   default:
   description:
     A comma separated list of tracers that provide additional insight into
     how gRPC C core is processing requests via debug logs.
+  fuzz: true
 - name: verbosity
   type: string
   prelude: |
@@ -59,11 +68,13 @@
   default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
     Default gRPC logging verbosity
+  fuzz: true
 - name: stacktrace_minloglevel
   type: string
   default:
   description:
     Messages logged at the same or higher level than this will print stacktrace
+  fuzz: true
 - name: enable_fork_support
   type: bool
   description: Enable fork support
@@ -74,6 +85,7 @@
     #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
     #endif  // GRPC_ENABLE_FORK_SUPPORT
   default: $GRPC_ENABLE_FORK_SUPPORT_DEFAULT
+  fuzz: true
 - name: poll_strategy
   type: string
   description:
