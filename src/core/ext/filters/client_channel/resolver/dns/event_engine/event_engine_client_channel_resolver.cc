@@ -15,6 +15,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -49,7 +50,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
