@@ -100,7 +100,9 @@ class ValidationErrors {
   bool FieldHasErrors() const GPR_ATTRIBUTE_NOINLINE;
 
   // Returns the resulting status of parsing.
-  absl::Status status(absl::string_view prefix) const;
+  absl::Status status(
+      absl::string_view prefix,
+      absl::StatusCode code = absl::StatusCode::kInvalidArgument) const;
 
   // Returns true if there are no errors.
   bool ok() const { return field_errors_.empty(); }

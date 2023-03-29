@@ -36,13 +36,13 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
                              EventEngineClientChannelDNSResolverFactory>());
     return;
   }
+  auto resolver = ConfigVars::Get().DnsResolver();
   // ---- Ares resolver ----
-  if (UseAresDnsResolver()) {
+  if (ShouldUseAresDnsResolver(resolver)) {
     RegisterAresDnsResolver(builder);
     return;
   }
   // ---- Native resolver ----
-  auto resolver = ConfigVars::Get().DnsResolver();
   if (absl::EqualsIgnoreCase(resolver, "native") ||
       !builder->resolver_registry()->HasResolverFactory("dns")) {
     RegisterNativeDnsResolver(builder);

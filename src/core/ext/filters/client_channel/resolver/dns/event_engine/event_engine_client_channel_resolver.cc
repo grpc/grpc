@@ -55,6 +55,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -85,6 +86,16 @@ using grpc_core::Orphanable;
 using grpc_core::OrphanablePtr;
 using grpc_core::RefCountedPtr;
 using grpc_core::ResolverArgs;
+
+grpc_core::TraceFlag grpc_event_engine_client_channel_resolver_trace(
+    false, "event_engine_client_channel_resolver");
+
+#define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                    \
+  if (GRPC_TRACE_FLAG_ENABLED(                                           \
+          grpc_event_engine_client_channel_resolver_trace)) {            \
+    gpr_log(GPR_DEBUG, "(event_engine client channel resolver) " format, \
+            __VA_ARGS__);                                                \
+  }
 
 // ----------------------------------------------------------------------------
 // EventEngineDNSRequestWrapper declaration
@@ -157,7 +168,9 @@ class EventEngineDNSRequestWrapper
   // Output fields from requests.
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_
       ABSL_GUARDED_BY(on_resolved_mu_);
-  absl::StatusOr<grpc_core::ServerAddressList> balancer_addresses_
+  grpc_core::ServerAddressList balancer_addresses_
+      ABSL_GUARDED_BY(on_resolved_mu_);
+  grpc_core::ValidationErrors balancer_address_lookup_errors_
       ABSL_GUARDED_BY(on_resolved_mu_);
   absl::StatusOr<std::string> service_config_json_
       ABSL_GUARDED_BY(on_resolved_mu_);
@@ -199,7 +212,7 @@ EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-                      &grpc_event_engine_dns_trace),
+                      &grpc_event_engine_client_channel_resolver_trace),
       request_service_config_(
           !channel_args()
                .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
@@ -236,7 +249,7 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
                        Ref(DEBUG_LOCATION, "OnHostnameResolved")),
       resolver_->name_to_resolve(), grpc_core::kDefaultSecurePort,
       resolver_->query_timeout_ms_);
-  GRPC_EVENT_ENGINE_DNS_TRACE(
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
       "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
       HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
@@ -245,7 +258,7 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
                          Ref(DEBUG_LOCATION, "OnSRVResolved"),
                          resolver_->name_to_resolve()),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_DNS_TRACE(
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Started resolving SRV. Handle::%s", resolver_.get(),
         HandleToString(*srv_handle_).c_str());
   }
@@ -254,7 +267,7 @@ EventEngineDNSRequestWrapper::EventEngineDNSRequestWrapper(
         absl::bind_front(&EventEngineDNSRequestWrapper::OnTXTResolved,
                          Ref(DEBUG_LOCATION, "OnTXTResolved")),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_DNS_TRACE(
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Started resolving TXT. Handle::%s", resolver_.get(),
         HandleToString(*txt_handle_).c_str());
   }
@@ -311,7 +324,6 @@ void EventEngineDNSRequestWrapper::OnSRVResolved(
     if (orphaned_) return;
     srv_handle_.reset();
     if (srv_records.ok()) {
-      balancer_addresses_ = grpc_core::ServerAddressList();
       // Do a subsequent hostname query if SRV records were returned
       for (const auto& srv_record : *srv_records) {
         balancer_hostname_handles_.insert(
@@ -319,17 +331,17 @@ void EventEngineDNSRequestWrapper::OnSRVResolved(
                 absl::bind_front(
                     &EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved,
                     Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved"),
-                    srv_host),
+                    srv_record.host),
                 srv_record.host, std::to_string(srv_record.port),
                 resolver_->query_timeout_ms_));
-        GRPC_EVENT_ENGINE_DNS_TRACE(
+        GRPC_EVENT_ENGINE_RESOLVER_TRACE(
             "DNSResolver::%p Started resolving balancer hostname %s:%d",
             resolver_.get(), srv_record.host.c_str(), srv_record.port);
       }
       return;
     }
     // An error has occurred, finish resolving.
-    balancer_addresses_ = srv_records.status();
+    balancer_address_lookup_errors_.AddError(srv_records.status().ToString());
     result = OnResolvedLocked();
   }
   if (result.has_value()) {
@@ -347,24 +359,17 @@ void EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved(
     if (orphaned_) return;
     ++number_of_balancer_hostnames_resolved_;
     if (new_balancer_addresses.ok()) {
-      if (!balancer_addresses_.ok()) {
-        GRPC_EVENT_ENGINE_DNS_TRACE(
-            "DNSResolver::%p previous balancer hostname lookup error, ignoring "
-            "%zu found hostnames.",
-            this, new_balancer_addresses->size());
-      }
-      balancer_addresses_->reserve(balancer_addresses_->size() +
-                                   new_balancer_addresses->size());
+      balancer_addresses_.reserve(balancer_addresses_.size() +
+                                  new_balancer_addresses->size());
       auto srv_channel_args =
           resolver_->channel_args().Set(GRPC_ARG_DEFAULT_AUTHORITY, authority);
       for (const auto& addr : *new_balancer_addresses) {
-        balancer_addresses_->emplace_back(CreateGRPCResolvedAddress(addr),
-                                          srv_channel_args);
+        balancer_addresses_.emplace_back(CreateGRPCResolvedAddress(addr),
+                                         srv_channel_args);
       }
     } else {
-      auto tmp_status = balancer_addresses_.status();
-      grpc_core::StatusAddChild(&tmp_status, new_balancer_addresses.status());
-      balancer_addresses_ = tmp_status;
+      balancer_address_lookup_errors_.AddError(
+          new_balancer_addresses.status().ToString());
     }
     result = OnResolvedLocked();
   }
@@ -391,25 +396,22 @@ void EventEngineDNSRequestWrapper::OnTXTResolved(
 
 absl::Status
 EventEngineDNSRequestWrapper::GetResolutionFailureErrorMessageLocked() {
-  std::string error_msg =
-      absl::StrFormat("resolver:%p dns resolution failed.", this);
+  grpc_core::ValidationErrors all_errors;
   if (!addresses_.ok()) {
-    absl::StrAppend(&error_msg, " Hostname lookup error: ",
-                    grpc_core::StatusToString(addresses_.status()));
+    all_errors.AddError(
+        absl::StrCat("Hostname lookup error: ", addresses_.status().message()));
   }
-  if (!balancer_addresses_.ok()) {
-    absl::StrAppend(&error_msg, " SRV lookup error: ",
-                    grpc_core::StatusToString(balancer_addresses_.status()));
+  if (balancer_address_lookup_errors_.FieldHasErrors()) {
+    all_errors.AddError(
+        balancer_address_lookup_errors_.status("SRV lookup error").message());
   }
   if (!service_config_json_.ok()) {
-    absl::StrAppend(&error_msg, " TXT lookup error: ",
-                    grpc_core::StatusToString(service_config_json_.status()));
+    all_errors.AddError(absl::StrCat("TXT lookup error: ",
+                                     service_config_json_.status().message()));
   }
-  auto status = grpc_core::StatusCreate(
-      absl::StatusCode::kUnavailable, error_msg, DEBUG_LOCATION, /*children=*/
-      {addresses_.status(), balancer_addresses_.status(),
-       service_config_json_.status()});
-  return status;
+  return all_errors.status(
+      absl::StrFormat("resolver:%p dns resolution failed.", this),
+      absl::StatusCode::kUnavailable);
 }
 
 void EventEngineDNSRequestWrapper::MaybePopulateAddressesLocked(
@@ -426,9 +428,9 @@ void EventEngineDNSRequestWrapper::MaybePopulateAddressesLocked(
 
 void EventEngineDNSRequestWrapper::MaybePopulateBalancerAddressesLocked(
     grpc_core::Resolver::Result& result) {
-  if (balancer_addresses_.ok()) {
-    result.args = grpc_core::SetGrpcLbBalancerAddresses(result.args,
-                                                        *balancer_addresses_);
+  if (!balancer_addresses_.empty()) {
+    result.args =
+        grpc_core::SetGrpcLbBalancerAddresses(result.args, balancer_addresses_);
   }
 }
 
@@ -436,7 +438,7 @@ void EventEngineDNSRequestWrapper::MaybePopulateServiceConfigLocked(
     grpc_core::Resolver::Result& result) {
   // TODO(roth): We should not ignore errors here, but instead have users of the
   // resolver handle them appropriately. Some test/cpp/naming tests fail.
-  if ((addresses_.ok() || balancer_addresses_.ok()) &&
+  if ((addresses_.ok() || !balancer_addresses_.empty()) &&
       service_config_json_.ok() && service_config_json_->empty()) {
     result.service_config = service_config_json_.status();
   }
@@ -445,9 +447,9 @@ void EventEngineDNSRequestWrapper::MaybePopulateServiceConfigLocked(
     if (!service_config.ok()) {
       result.service_config = absl::UnavailableError(
           absl::StrCat("failed to parse service config: ",
-                       grpc_core::StatusToString(service_config.status())));
+                       service_config.status().message()));
     } else if (!service_config->empty()) {
-      GRPC_EVENT_ENGINE_DNS_TRACE(
+      GRPC_EVENT_ENGINE_RESOLVER_TRACE(
           "resolver:%p selected service config choice: %s", this,
           service_config->c_str());
       result.service_config = grpc_core::ServiceConfigImpl::Create(
@@ -459,14 +461,15 @@ void EventEngineDNSRequestWrapper::MaybePopulateServiceConfigLocked(
       }
     }
   }
+  if (balancer_address_lookup_errors_.FieldHasErrors()) {
+    result.resolution_note = std::string(
+        balancer_address_lookup_errors_.status("SRV Lookup error").message());
+  }
 }
 
 void EventEngineDNSRequestWrapper::NormalizeEmptyResultsToErrorsLocked() {
   if (addresses_.ok() && addresses_->empty()) {
     addresses_ = absl::NotFoundError("No addresses found.");
-  }
-  if (balancer_addresses_.ok() && balancer_addresses_->empty()) {
-    balancer_addresses_ = absl::NotFoundError("No addresses found.");
   }
 }
 
@@ -478,7 +481,7 @@ EventEngineDNSRequestWrapper::OnResolvedLocked() {
       txt_handle_.has_value() ||
       number_of_balancer_hostnames_resolved_ !=
           balancer_hostname_handles_.size()) {
-    GRPC_EVENT_ENGINE_DNS_TRACE(
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "resolver:%p OnResolved() waiting for results (hostname: %s, "
         "srv: %s, "
         "txt: %s, "
@@ -490,16 +493,16 @@ EventEngineDNSRequestWrapper::OnResolvedLocked() {
         balancer_hostname_handles_.size());
     return absl::nullopt;
   }
-  GRPC_EVENT_ENGINE_DNS_TRACE("resolver:%p OnResolvedLocked() proceeding",
-                              this);
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE("resolver:%p OnResolvedLocked() proceeding",
+                                   this);
   grpc_core::Resolver::Result result;
   result.args = resolver_->channel_args();
   NormalizeEmptyResultsToErrorsLocked();
   MaybePopulateServiceConfigLocked(result);
   // If neither A/AAAA or SRV record lookups succeeded, resolution has failed.
-  if (!addresses_.ok() && !balancer_addresses_.ok()) {
+  if (!addresses_.ok() && balancer_addresses_.empty()) {
     absl::Status status = GetResolutionFailureErrorMessageLocked();
-    GRPC_EVENT_ENGINE_DNS_TRACE("%s", status.ToString().c_str());
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.ToString().c_str());
     result.addresses = status;
     return std::move(result);
   }

@@ -809,14 +809,10 @@ class AresDNSResolver : public DNSResolver {
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
-bool ShouldUseAres(absl::string_view resolver_env) {
-  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
-}
-
 }  // namespace
 
-bool UseAresDnsResolver() {
-  return ShouldUseAres(ConfigVars::Get().DnsResolver());
+bool ShouldUseAresDnsResolver(absl::string_view resolver_env) {
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
 }
 
 void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
@@ -827,7 +823,8 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
 }  // namespace grpc_core
 
 void grpc_resolver_dns_ares_init() {
-  if (grpc_core::UseAresDnsResolver()) {
+  if (grpc_core::ShouldUseAresDnsResolver(
+          grpc_core::ConfigVars::Get().DnsResolver())) {
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (!error.ok()) {
@@ -839,7 +836,8 @@ void grpc_resolver_dns_ares_init() {
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  if (grpc_core::UseAresDnsResolver()) {
+  if (grpc_core::ShouldUseAresDnsResolver(
+          grpc_core::ConfigVars::Get().DnsResolver())) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
@@ -848,7 +846,7 @@ void grpc_resolver_dns_ares_shutdown() {
 #else  // GRPC_ARES == 1
 
 namespace grpc_core {
-bool UseAresDnsResolver() { return false; }
+bool ShouldUseAresDnsResolver() { return false; }
 void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 }  // namespace grpc_core
 

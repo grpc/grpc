@@ -4897,6 +4897,7 @@ grpc_cc_library(
         "service_config_helper",
         "status_helper",
         "time",
+        "validation_errors",
         "//:backoff",
         "//:debug_location",
         "//:gpr",

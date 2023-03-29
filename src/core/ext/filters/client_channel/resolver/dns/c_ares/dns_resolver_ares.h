@@ -20,7 +20,7 @@
 
 namespace grpc_core {
 
-bool UseAresDnsResolver();
+bool ShouldUseAresDnsResolver(absl::string_view resolver_env);
 void RegisterAresDnsResolver(CoreConfiguration::Builder*);
 
 }  // namespace grpc_core
