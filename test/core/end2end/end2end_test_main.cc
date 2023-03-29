@@ -589,6 +589,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                             return std::make_unique<LocalTestFixture>(
                                 JoinHostPort("[::1]", port), LOCAL_TCP);
                           }},
+#ifdef GRPC_HAVE_UNIX_SOCKET
     CoreTestConfiguration{
         "Chttp2FullstackLocalUdsPercentEncoded",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -619,7 +620,8 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
                               unique.fetch_add(1, std::memory_order_relaxed)),
               UDS);
         }},
-    CoreTestConfiguration{"Chttp2FullstackNoRetry",
+          #endif
+          CoreTestConfiguration{"Chttp2FullstackNoRetry",
                           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                               FEATURE_MASK_IS_HTTP2 |
                               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
@@ -814,6 +816,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
 #endif
+#ifdef GRPC_HAVE_UNIX_SOCKET
     CoreTestConfiguration{
         "Chttp2FullstackUds",
         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
@@ -824,6 +827,7 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
               getpid(), now.tv_sec, now.tv_nsec,
               unique.fetch_add(1, std::memory_order_relaxed)));
         }},
+          #endif
 // TODO(ctiller): these got inadvertently disabled when the project
 // switched to
 // Bazel in 2016, and have not been re-enabled since and are now quite

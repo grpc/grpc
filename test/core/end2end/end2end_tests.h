@@ -185,14 +185,17 @@ class CoreEnd2endTest
   void TearDown() override;
 
   class Call;
+  struct RegisteredCall {
+    void* p;
+  };
 
   class ClientCallBuilder {
    public:
     ClientCallBuilder(CoreEnd2endTest& test, std::string method)
         : test_(test),
           call_selector_(UnregisteredCall{std::move(method), absl::nullopt}) {}
-    ClientCallBuilder(CoreEnd2endTest& test, void* registered_call)
-        : test_(test), call_selector_(registered_call) {}
+    ClientCallBuilder(CoreEnd2endTest& test, RegisteredCall registered_call)
+        : test_(test), call_selector_(registered_call.p) {}
 
     ClientCallBuilder& Host(std::string host) {
       absl::get<UnregisteredCall>(call_selector_).host = std::move(host);
@@ -484,7 +487,7 @@ class CoreEnd2endTest
   ClientCallBuilder NewClientCall(std::string method) {
     return ClientCallBuilder(*this, std::move(method));
   }
-  ClientCallBuilder NewClientCall(void* registered_method) {
+  ClientCallBuilder NewClientCall(RegisteredCall registered_method) {
     return ClientCallBuilder(*this, registered_method);
   }
   IncomingCall RequestCall(int tag) { return IncomingCall(*this, tag); }
