@@ -109,15 +109,31 @@ WindowsEventEngine::WindowsEventEngine()
 WindowsEventEngine::~WindowsEventEngine() {
   GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
   {
-    grpc_core::MutexLock lock(&task_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                this, HandleToString<EventEngine::TaskHandle>(handle).c_str());
+    task_mu_.Lock();
+    if (!known_handles_.empty()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+        for (auto handle : known_handles_) {
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
+        }
+      }
+      // Allow a small grace period for timers to be run before shutting down.
+      auto deadline =
+          timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
+      while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
+                               known_handles_.size());
+        }
+        task_mu_.Unlock();
+        absl::SleepFor(absl::Milliseconds(200));
+        task_mu_.Lock();
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();

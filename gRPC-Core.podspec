@@ -179,7 +179,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.26'
+    ss.dependency 'BoringSSL-GRPC', '0.0.27'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -1085,6 +1085,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/backoff/random_early_detection.cc',
+                      'src/core/lib/backoff/random_early_detection.h',
                       'src/core/lib/channel/call_finalization.h',
                       'src/core/lib/channel/call_tracer.cc',
                       'src/core/lib/channel/call_tracer.h',
@@ -1496,12 +1498,14 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/status.h',
                       'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
+                      'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/if.h',
                       'src/core/lib/promise/interceptor_list.h',
-                      'src/core/lib/promise/intra_activity_waiter.h',
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
+                      'src/core/lib/promise/party.cc',
+                      'src/core/lib/promise/party.h',
                       'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
                       'src/core/lib/promise/promise.h',
@@ -1708,6 +1712,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
+                      'src/core/lib/transport/batch_builder.cc',
+                      'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/connectivity_state.cc',
@@ -2336,6 +2342,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/backoff/random_early_detection.h',
                               'src/core/lib/channel/call_finalization.h',
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
@@ -2546,12 +2553,13 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/status.h',
                               'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
+                              'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/if.h',
                               'src/core/lib/promise/interceptor_list.h',
-                              'src/core/lib/promise/intra_activity_waiter.h',
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
+                              'src/core/lib/promise/party.h',
                               'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
                               'src/core/lib/promise/promise.h',
@@ -2655,6 +2663,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
+                              'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
