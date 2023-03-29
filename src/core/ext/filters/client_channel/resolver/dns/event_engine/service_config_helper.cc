@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/json/json.h"
 
@@ -58,19 +59,19 @@ absl::StatusOr<std::string> ChooseServiceConfig(
         "Service Config Choices, error: should be of type array");
   }
   const Json* service_config = nullptr;
-  std::vector<absl::Status> error_list;
+  grpc_core::ValidationErrors error_list;
   for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
-      error_list.push_back(absl::FailedPreconditionError(
-          "Service Config Choice, error: should be of type object"));
+      error_list.AddError(
+          "Service Config Choice, error: should be of type object");
       continue;
     }
     // Check client language, if specified.
     auto it = choice.object_value().find("clientLanguage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(absl::FailedPreconditionError(
-            "field:clientLanguage error:should be of type array"));
+        error_list.AddError(
+            "field:clientLanguage error:should be of type array");
       } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
         continue;
       }
@@ -79,8 +80,8 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     it = choice.object_value().find("clientHostname");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(absl::FailedPreconditionError(
-            "field:clientHostname error:should be of type array"));
+        error_list.AddError(
+            "field:clientHostname error:should be of type array");
       } else {
         // TODO(hork): replace with something non-iomgr
         char* hostname = grpc_gethostname();
@@ -94,14 +95,13 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     it = choice.object_value().find("percentage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(absl::FailedPreconditionError(
-            "field:percentage error:should be of type number"));
+        error_list.AddError("field:percentage error:should be of type number");
       } else {
         int random_pct = rand() % 100;
         int percentage;
         if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
-          error_list.push_back(absl::FailedPreconditionError(
-              "field:percentage error:should be of type integer"));
+          error_list.AddError(
+              "field:percentage error:should be of type integer");
         } else if (random_pct > percentage || percentage == 0) {
           continue;
         }
@@ -110,19 +110,16 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     // Found service config.
     it = choice.object_value().find("serviceConfig");
     if (it == choice.object_value().end()) {
-      error_list.push_back(absl::FailedPreconditionError(
-          "field:serviceConfig error:required field missing"));
+      error_list.AddError("field:serviceConfig error:required field missing");
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(absl::FailedPreconditionError(
-          "field:serviceConfig error:should be of type object"));
+      error_list.AddError("field:serviceConfig error:should be of type object");
     } else if (service_config == nullptr) {
       service_config = &it->second;
     }
   }
-  if (!error_list.empty()) {
-    return grpc_core::StatusCreate(absl::StatusCode::kFailedPrecondition,
-                                   "Service Config Choices Parser",
-                                   DEBUG_LOCATION, error_list);
+  if (error_list.FieldHasErrors()) {
+    return error_list.status("Service Config Choices Parser",
+                             absl::StatusCode::kFailedPrecondition);
   }
   if (service_config == nullptr) return "";
   return service_config->Dump();
