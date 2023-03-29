@@ -321,7 +321,8 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   // Returns a promise that implements the receive message loop.
-  auto RecvMessages(PipeSender<MessageHandle>* incoming_messages);
+  auto RecvMessages(PipeSender<MessageHandle>* incoming_messages,
+                    bool cancel_on_error);
   // Returns a promise that implements the send message loop.
   auto SendMessages(PipeReceiver<MessageHandle>* outgoing_messages);
 
@@ -374,12 +375,12 @@ class ConnectedChannelStream : public Orphanable {
 };
 
 auto ConnectedChannelStream::RecvMessages(
-    PipeSender<MessageHandle>* incoming_messages) {
-  return Loop([self = InternalRef(),
+    PipeSender<MessageHandle>* incoming_messages, bool cancel_on_error) {
+  return Loop([self = InternalRef(), cancel_on_error,
                incoming_messages = std::move(*incoming_messages)]() mutable {
     return Seq(
         GetContext<BatchBuilder>()->ReceiveMessage(self->batch_target()),
-        [&incoming_messages](
+        [cancel_on_error, &incoming_messages](
             absl::StatusOr<absl::optional<MessageHandle>> status) mutable {
           bool has_message = status.ok() && status->has_value();
           auto publish_message = [&incoming_messages, &status]() {
@@ -405,7 +406,8 @@ auto ConnectedChannelStream::RecvMessages(
                          return Continue{};
                        });
           };
-          auto publish_close = [&incoming_messages, &status]() mutable {
+          auto publish_close = [cancel_on_error, &incoming_messages,
+                                &status]() mutable {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
@@ -413,7 +415,8 @@ auto ConnectedChannelStream::RecvMessages(
                       Activity::current()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
-            if (!status.ok()) incoming_messages.CloseWithError();
+            if (cancel_on_error && !status.ok())
+              incoming_messages.CloseWithError();
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
           return If(has_message, std::move(publish_message),
@@ -524,14 +527,44 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   // complete (or one fails).
   // Next: receive trailing metadata, and return that up the stack.
   auto recv_messages =
-      stream->RecvMessages(call_args.server_to_client_messages);
-  return Map(TrySeq(TryJoin(std::move(send_initial_metadata),
-                            std::move(recv_messages)),
-                    std::move(recv_trailing_metadata)),
-             [stream = std::move(stream)](ServerMetadataHandle result) {
-               stream->set_finished();
-               return result;
-             });
+      stream->RecvMessages(call_args.server_to_client_messages, false);
+  return Map(
+      [send_initial_metadata = std::move(send_initial_metadata),
+       recv_messages = std::move(recv_messages),
+       recv_trailing_metadata = std::move(recv_trailing_metadata),
+       done_send_initial_metadata = false, done_recv_messages = false,
+       done_recv_trailing_metadata =
+           false]() mutable -> Poll<ServerMetadataHandle> {
+        if (!done_send_initial_metadata) {
+          auto p = send_initial_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_send_initial_metadata = true;
+            if (!r->ok()) return StatusCast<ServerMetadataHandle>(*r);
+          }
+        }
+        if (!done_recv_messages) {
+          auto p = recv_messages();
+          if (auto* r = p.value_if_ready()) {
+            // NOTE: ignore errors here, they'll be collected in the
+            // recv_trailing_metadata.
+            done_recv_messages = true;
+          } else {
+            return Pending{};
+          }
+        }
+        if (!done_recv_trailing_metadata) {
+          auto p = recv_trailing_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_recv_trailing_metadata = true;
+            return std::move(*r);
+          }
+        }
+        return Pending{};
+      },
+      [stream = std::move(stream)](ServerMetadataHandle result) {
+        stream->set_finished();
+        return result;
+      });
 }
 #endif
 
@@ -681,7 +714,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       "recv_messages",
       Race(
           Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
-          Map(stream->RecvMessages(&call_data->client_to_server.sender),
+          Map(stream->RecvMessages(&call_data->client_to_server.sender, true),
               [failure_latch = &call_data->failure_latch](absl::Status status) {
                 if (!status.ok() && !failure_latch->is_set()) {
                   failure_latch->Set(ServerMetadataFromStatus(status));
