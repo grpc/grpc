@@ -368,8 +368,8 @@ void EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved(
                                          srv_channel_args);
       }
     } else {
-      balancer_address_lookup_errors_.AddError(
-          new_balancer_addresses.status().ToString());
+      balancer_address_lookup_errors_.AddError(absl::StrCat(
+          authority, ": ", new_balancer_addresses.status().ToString()));
     }
     result = OnResolvedLocked();
   }
@@ -398,15 +398,16 @@ absl::Status
 EventEngineDNSRequestWrapper::GetResolutionFailureErrorMessageLocked() {
   grpc_core::ValidationErrors all_errors;
   if (!addresses_.ok()) {
-    all_errors.AddError(
-        absl::StrCat("Hostname lookup error: ", addresses_.status().message()));
+    all_errors.AddError(absl::StrCat("Error resolving hostname: ",
+                                     addresses_.status().message()));
   }
   if (balancer_address_lookup_errors_.FieldHasErrors()) {
-    all_errors.AddError(
-        balancer_address_lookup_errors_.status("SRV lookup error").message());
+    all_errors.AddError(balancer_address_lookup_errors_
+                            .status("Errors looking up balancer addresses")
+                            .message());
   }
   if (!service_config_json_.ok()) {
-    all_errors.AddError(absl::StrCat("TXT lookup error: ",
+    all_errors.AddError(absl::StrCat("Error resolving TXT records: ",
                                      service_config_json_.status().message()));
   }
   return all_errors.status(
