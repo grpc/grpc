@@ -32,18 +32,38 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
 namespace {
 
-bool ValueInJsonArray(const Json::Array& array, const char* value) {
-  for (const Json& entry : array) {
-    if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
-      return true;
-    }
+struct ServiceConfigChoice {
+  struct ServiceConfig {};
+
+  std::vector<std::string> client_language;
+  int percentage = -1;
+  std::vector<std::string> client_hostname;
+  Json::Object service_config;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<ServiceConfigChoice>()
+            .OptionalField("clientLanguage",
+                           &ServiceConfigChoice::client_language)
+            .OptionalField("percentage", &ServiceConfigChoice::percentage)
+            .OptionalField("clientHostname",
+                           &ServiceConfigChoice::client_hostname)
+            .Field("serviceConfig", &ServiceConfigChoice::service_config)
+            .Finish();
+    return loader;
   }
-  return false;
+};
+
+template <typename T>
+bool vector_contains(const std::vector<T> v, const T& value) {
+  return std::find(v.begin(), v.end(), value) != v.end();
 }
 
 }  // namespace
@@ -52,75 +72,38 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     absl::string_view service_config_json) {
   auto json = Json::Parse(service_config_json);
   GRPC_RETURN_IF_ERROR(json.status());
-  if (json->type() != Json::Type::ARRAY) {
-    return absl::FailedPreconditionError(
-        "Service Config Choices, error: should be of type array");
-  }
-  const Json* service_config = nullptr;
+  auto choices = LoadFromJson<std::vector<ServiceConfigChoice>>(*json);
+  GRPC_RETURN_IF_ERROR(choices.status());
   ValidationErrors error_list;
-  for (const Json& choice : json->array_value()) {
-    if (choice.type() != Json::Type::OBJECT) {
-      error_list.AddError(
-          "Service Config Choice, error: should be of type object");
+  for (const ServiceConfigChoice& choice : *choices) {
+    // Check client language, if specified.
+    if (!choice.client_language.empty() &&
+        !vector_contains<std::string>(choice.client_language, "c++")) {
       continue;
     }
-    // Check client language, if specified.
-    auto it = choice.object_value().find("clientLanguage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        error_list.AddError(
-            "field:clientLanguage error:should be of type array");
-      } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
+    // Check client hostname, if specified.
+    if (!choice.client_hostname.empty()) {
+      const char* hostname = grpc_gethostname();
+      if (!vector_contains<std::string>(choice.client_hostname, hostname)) {
         continue;
       }
     }
-    // Check client hostname, if specified.
-    it = choice.object_value().find("clientHostname");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        error_list.AddError(
-            "field:clientHostname error:should be of type array");
-      } else {
-        // TODO(hork): replace with something non-iomgr
-        char* hostname = grpc_gethostname();
-        if (hostname == nullptr ||
-            !ValueInJsonArray(it->second.array_value(), hostname)) {
-          continue;
-        }
-      }
-    }
     // Check percentage, if specified.
-    it = choice.object_value().find("percentage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        error_list.AddError("field:percentage error:should be of type number");
-      } else {
-        int random_pct = rand() % 100;
-        int percentage;
-        if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
-          error_list.AddError(
-              "field:percentage error:should be of type integer");
-        } else if (random_pct > percentage || percentage == 0) {
-          continue;
-        }
+    if (choice.percentage != -1) {
+      int random_pct = rand() % 100;
+      if (random_pct > choice.percentage || choice.percentage == 0) {
+        continue;
       }
     }
-    // Found service config.
-    it = choice.object_value().find("serviceConfig");
-    if (it == choice.object_value().end()) {
-      error_list.AddError("field:serviceConfig error:required field missing");
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.AddError("field:serviceConfig error:should be of type object");
-    } else if (service_config == nullptr) {
-      service_config = &it->second;
+    // Found a service config.
+    if (error_list.FieldHasErrors()) {
+      return error_list.status("Service Config Choices Parser",
+                               absl::StatusCode::kFailedPrecondition);
     }
+    return Json(choice.service_config).Dump();
   }
-  if (error_list.FieldHasErrors()) {
-    return error_list.status("Service Config Choices Parser",
-                             absl::StatusCode::kFailedPrecondition);
-  }
-  if (service_config == nullptr) return "";
-  return service_config->Dump();
+  // No matching service config was found
+  return "";
 }
 
 }  // namespace grpc_core

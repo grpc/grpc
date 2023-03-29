@@ -4865,6 +4865,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "json",
+        "json_args",
+        "json_object_loader",
         "status_helper",
         "validation_errors",
         "//:debug_location",
