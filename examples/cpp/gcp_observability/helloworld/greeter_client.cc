@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   // Turn on GCP Observability for the whole binary. Based on the configuration,
   // this will emit observability data (stats, tracing and logging) to GCP
   // backends. Note that this should be done before any other gRPC operation.
-  auto status = grpc::experimental::GcpObservabilityInit();
+  auto status = grpc::GcpObservabilityInit();
   if (!status.ok()) {
     std::cerr << "GcpObservabilityInit() failed: " << status.ToString()
               << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
   std::cout << "Greeter received: " << reply << std::endl;
   // Flush out any pending Observability data
   std::cout << "Closing GCP Observability" << std::endl;
-  grpc::experimental::GcpObservabilityClose();
+  grpc::GcpObservabilityClose();
   std::cout << "Sleeping for 25 seconds to make sure Observability stats and "
                "tracing are flushed. Don't shut off server either."
             << std::endl;
