@@ -22,13 +22,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_core {
 
 absl::StatusOr<std::string> ChooseServiceConfig(
     absl::string_view service_config_json);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_EVENT_ENGINE_SERVICE_CONFIG_HELPER_H

@@ -65,9 +65,7 @@
 
 // IWYU pragma: no_include <ratio>
 
-namespace grpc_event_engine {
-namespace experimental {
-
+namespace grpc_core {
 namespace {
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -76,18 +74,10 @@ namespace {
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
-using grpc_core::BackOff;
-using grpc_core::Duration;
-using grpc_core::InternallyRefCounted;
-using grpc_core::MakeOrphanable;
-using grpc_core::Mutex;
-using grpc_core::MutexLock;
-using grpc_core::Orphanable;
-using grpc_core::OrphanablePtr;
-using grpc_core::RefCountedPtr;
-using grpc_core::ResolverArgs;
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::LookupTaskHandleSet;
 
-grpc_core::TraceFlag grpc_event_engine_client_channel_resolver_trace(
+TraceFlag grpc_event_engine_client_channel_resolver_trace(
     false, "event_engine_client_channel_resolver");
 
 #define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                    \
@@ -100,7 +90,7 @@ grpc_core::TraceFlag grpc_event_engine_client_channel_resolver_trace(
 // ----------------------------------------------------------------------------
 // EventEngineClientChannelDNSResolver
 // ----------------------------------------------------------------------------
-class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
+class EventEngineClientChannelDNSResolver : public PollingResolver {
  public:
   EventEngineClientChannelDNSResolver(ResolverArgs args,
                                       Duration min_time_between_resolutions);
@@ -137,7 +127,7 @@ class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
     // callers must release the lock and call OnRequestComplete if a Result is
     // returned. This is because OnRequestComplete may Orphan the resolver,
     // which requires taking the lock.
-    absl::optional<grpc_core::Resolver::Result> OnResolvedLocked()
+    absl::optional<Resolver::Result> OnResolvedLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
    private:
@@ -145,14 +135,13 @@ class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
     absl::Status GetResolutionFailureErrorMessageLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate server addresses on resolver result.
-    void MaybePopulateAddressesLocked(grpc_core::Resolver::Result& result)
+    void MaybePopulateAddressesLocked(Resolver::Result& result)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate balancer addresses on resolver result.
-    void MaybePopulateBalancerAddressesLocked(
-        grpc_core::Resolver::Result& result)
+    void MaybePopulateBalancerAddressesLocked(Resolver::Result& result)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate service config on resolver result.
-    void MaybePopulateServiceConfigLocked(grpc_core::Resolver::Result& result)
+    void MaybePopulateServiceConfigLocked(Resolver::Result& result)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Convert empty results into resolution errors.
     //
@@ -176,9 +165,8 @@ class EventEngineClientChannelDNSResolver : public grpc_core::PollingResolver {
     // Output fields from requests.
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_
         ABSL_GUARDED_BY(on_resolved_mu_);
-    grpc_core::ServerAddressList balancer_addresses_
-        ABSL_GUARDED_BY(on_resolved_mu_);
-    grpc_core::ValidationErrors balancer_address_lookup_errors_
+    ServerAddressList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
+    ValidationErrors balancer_address_lookup_errors_
         ABSL_GUARDED_BY(on_resolved_mu_);
     absl::StatusOr<std::string> service_config_json_
         ABSL_GUARDED_BY(on_resolved_mu_);
@@ -244,7 +232,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       absl::bind_front(&EventEngineDNSRequestWrapper::OnHostnameResolved,
                        Ref(DEBUG_LOCATION, "OnHostnameResolved")),
-      resolver_->name_to_resolve(), grpc_core::kDefaultSecurePort,
+      resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
       "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
@@ -300,7 +288,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnHostnameResolved(
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
-  absl::optional<grpc_core::Resolver::Result> result;
+  absl::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     if (orphaned_) return;
@@ -317,7 +305,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnSRVResolved(
         absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
             srv_records) {
-  absl::optional<grpc_core::Resolver::Result> result;
+  absl::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -354,7 +342,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
             new_balancer_addresses) {
-  absl::optional<grpc_core::Resolver::Result> result;
+  absl::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -385,7 +373,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTXTResolved(absl::StatusOr<std::string> service_config) {
-  absl::optional<grpc_core::Resolver::Result> result;
+  absl::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     if (orphaned_) return;
@@ -401,7 +389,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 absl::Status EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     GetResolutionFailureErrorMessageLocked() {
-  grpc_core::ValidationErrors all_errors;
+  ValidationErrors all_errors;
   if (!addresses_.ok()) {
     all_errors.AddError(absl::StrCat("Error resolving hostname: ",
                                      addresses_.status().message()));
@@ -421,7 +409,7 @@ absl::Status EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    MaybePopulateAddressesLocked(grpc_core::Resolver::Result& result) {
+    MaybePopulateAddressesLocked(Resolver::Result& result) {
   if (addresses_.ok()) {
     result.addresses->reserve(addresses_->size());
     for (const auto& addr : *addresses_) {
@@ -432,15 +420,14 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    MaybePopulateBalancerAddressesLocked(grpc_core::Resolver::Result& result) {
+    MaybePopulateBalancerAddressesLocked(Resolver::Result& result) {
   if (!balancer_addresses_.empty()) {
-    result.args =
-        grpc_core::SetGrpcLbBalancerAddresses(result.args, balancer_addresses_);
+    result.args = SetGrpcLbBalancerAddresses(result.args, balancer_addresses_);
   }
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    MaybePopulateServiceConfigLocked(grpc_core::Resolver::Result& result) {
+    MaybePopulateServiceConfigLocked(Resolver::Result& result) {
   // TODO(roth): We should not ignore errors here, but instead have users of the
   // resolver handle them appropriately. Some test/cpp/naming tests fail.
   if (service_config_json_.ok() && service_config_json_->empty()) {
@@ -456,8 +443,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       GRPC_EVENT_ENGINE_RESOLVER_TRACE(
           "resolver:%p selected service config choice: %s", this,
           service_config->c_str());
-      result.service_config = grpc_core::ServiceConfigImpl::Create(
-          resolver_->channel_args(), *service_config);
+      result.service_config =
+          ServiceConfigImpl::Create(resolver_->channel_args(), *service_config);
       if (!result.service_config.ok()) {
         result.service_config = absl::UnavailableError(
             absl::StrCat("failed to parse service config: ",
@@ -478,9 +465,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-absl::optional<grpc_core::Resolver::Result>
-EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnResolvedLocked() {
+absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
+    EventEngineDNSRequestWrapper::OnResolvedLocked() {
   if (orphaned_) return absl::nullopt;
   // Wait for all requested queries to return.
   if (hostname_handle_.has_value() || srv_handle_.has_value() ||
@@ -501,7 +487,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
   GRPC_EVENT_ENGINE_RESOLVER_TRACE("resolver:%p OnResolvedLocked() proceeding",
                                    this);
-  grpc_core::Resolver::Result result;
+  Resolver::Result result;
   result.args = resolver_->channel_args();
   NormalizeEmptyResultsToErrorsLocked();
   // If both addresses and balancer addresses failed, return an error for //
@@ -525,7 +511,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }  // namespace
 
 bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
-    const grpc_core::URI& uri) const {
+    const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
     gpr_log(GPR_ERROR, "no server name supplied in dns URI");
     return false;
@@ -533,9 +519,9 @@ bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
   return true;
 }
 
-grpc_core::OrphanablePtr<grpc_core::Resolver>
+OrphanablePtr<Resolver>
 EventEngineClientChannelDNSResolverFactory::CreateResolver(
-    grpc_core::ResolverArgs args) const {
+    ResolverArgs args) const {
   Duration min_time_between_resolutions = std::max(
       Duration::Zero(), args.args
                             .GetDurationFromIntMillis(
@@ -545,5 +531,4 @@ EventEngineClientChannelDNSResolverFactory::CreateResolver(
       std::move(args), min_time_between_resolutions);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core

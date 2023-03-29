@@ -32,8 +32,7 @@ namespace grpc_core {
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
   if (IsEventEngineDnsEnabled()) {
     builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<grpc_event_engine::experimental::
-                             EventEngineClientChannelDNSResolverFactory>());
+        std::make_unique<EventEngineClientChannelDNSResolverFactory>());
     return;
   }
   auto resolver = ConfigVars::Get().DnsResolver();

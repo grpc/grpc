@@ -22,9 +22,7 @@
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-namespace grpc_event_engine {
-namespace experimental {
-
+namespace grpc_core {
 class EventEngineClientChannelDNSResolverFactory
     : public grpc_core::ResolverFactory {
  public:
@@ -34,7 +32,6 @@ class EventEngineClientChannelDNSResolverFactory
       grpc_core::ResolverArgs args) const override;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_EVENT_ENGINE_EVENT_ENGINE_CLIENT_CHANNEL_RESOLVER_H

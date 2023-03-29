@@ -33,11 +33,9 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/json/json.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_core {
 
 namespace {
-using ::grpc_core::Json;
 
 bool ValueInJsonArray(const Json::Array& array, const char* value) {
   for (const Json& entry : array) {
@@ -59,7 +57,7 @@ absl::StatusOr<std::string> ChooseServiceConfig(
         "Service Config Choices, error: should be of type array");
   }
   const Json* service_config = nullptr;
-  grpc_core::ValidationErrors error_list;
+  ValidationErrors error_list;
   for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.AddError(
@@ -125,5 +123,4 @@ absl::StatusOr<std::string> ChooseServiceConfig(
   return service_config->Dump();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core
