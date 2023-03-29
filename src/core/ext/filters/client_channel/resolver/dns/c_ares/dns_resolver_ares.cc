@@ -17,11 +17,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <algorithm>
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -61,8 +59,6 @@
 
 #if GRPC_ARES == 1
 
-#include <stdio.h>
-
 #include <address_sorting/address_sorting.h>
 
 #include "absl/container/flat_hash_set.h"
@@ -75,9 +71,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
