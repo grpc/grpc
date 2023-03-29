@@ -24,7 +24,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/status/status.h"
@@ -131,7 +130,6 @@ class PosixEnginePollerManager
 };
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-class GrpcAresRequest;
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
@@ -161,7 +159,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     EventHandle* CreateEventHandle(int fd);
 
     absl::Mutex mu_;
-    absl::flat_hash_set<intptr_t> inflight_requests_ ABSL_GUARDED_BY(mu_);
+    LookupTaskHandleSet inflight_requests_ ABSL_GUARDED_BY(mu_);
+    std::atomic<intptr_t> aba_token_{0};
     const ResolverOptions options_;
     PosixEnginePollerManager* poller_manager_;
     PosixEventEngine* event_engine_;

@@ -174,6 +174,13 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   }
 }
 
+bool AwsExternalAccountCredentials::ShouldUseMetadataServer() {
+  return !((GetEnv(kRegionEnvVar).has_value() ||
+            GetEnv(kDefaultRegionEnvVar).has_value()) &&
+           (GetEnv(kAccessKeyIdEnvVar).has_value() &&
+            GetEnv(kSecretAccessKeyEnvVar).has_value()));
+}
+
 void AwsExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
@@ -186,7 +193,7 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  if (!imdsv2_session_token_url_.empty()) {
+  if (!imdsv2_session_token_url_.empty() && ShouldUseMetadataServer()) {
     RetrieveImdsV2SessionToken();
   } else if (signer_ != nullptr) {
     BuildSubjectToken();
@@ -381,10 +388,12 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   auto secret_access_key_from_env = GetEnv(kSecretAccessKeyEnvVar);
   auto token_from_env = GetEnv(kSessionTokenEnvVar);
   if (access_key_id_from_env.has_value() &&
-      secret_access_key_from_env.has_value() && token_from_env.has_value()) {
+      secret_access_key_from_env.has_value()) {
     access_key_id_ = std::move(*access_key_id_from_env);
     secret_access_key_ = std::move(*secret_access_key_from_env);
-    token_ = std::move(*token_from_env);
+    if (token_from_env.has_value()) {
+      token_ = std::move(*token_from_env);
+    }
     BuildSubjectToken();
     return;
   }

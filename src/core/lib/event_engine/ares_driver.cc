@@ -856,7 +856,8 @@ GrpcAresHostnameRequestImpl::~GrpcAresHostnameRequestImpl() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
-void GrpcAresHostnameRequestImpl::Start(OnResolveCallback<Result> on_resolve) {
+void GrpcAresHostnameRequestImpl::Start(
+    absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_DEBUG_ASSERT(initialized_);
@@ -869,7 +870,7 @@ void GrpcAresHostnameRequestImpl::Start(OnResolveCallback<Result> on_resolve) {
   if (ResolveAsIPLiteralLocked()) {
     return;
   }
-  // TODO(yijiem): early out if the target is localhost and we are on Windows.
+  // TODO(yijiem): Early out if the target is localhost and we're on Windows.
 
   // We add up pending_queries_ here since ares_gethostbyname may directly
   // invoke the callback inline if there is any error with the input. The
@@ -934,9 +935,8 @@ void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
       // error_ from the other request too.
       SortResolvedAddresses();
       event_engine_->Run([on_resolve = std::move(on_resolve_),
-                          result = std::move(result_),
-                          token = reinterpret_cast<intptr_t>(this)]() mutable {
-        on_resolve(std::move(result), token);
+                          result = std::move(result_)]() mutable {
+        on_resolve(std::move(result));
       });
       return;
     }
@@ -953,9 +953,8 @@ void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
     // Another way might work is to std::move away on_resolve_, result_ or
     // error_ under lock, then unlock and then call on_resolve.
     event_engine_->Run([on_resolve = std::move(on_resolve_),
-                        error = std::move(error_),
-                        token = reinterpret_cast<intptr_t>(this)]() mutable {
-      on_resolve(std::move(error), token);
+                        error = std::move(error_)]() mutable {
+      on_resolve(std::move(error));
     });
   }
 }
@@ -972,9 +971,8 @@ bool GrpcAresHostnameRequestImpl::ResolveAsIPLiteralLocked() {
     Result result;
     result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
     event_engine_->Run([on_resolve = std::move(on_resolve_),
-                        result = std::move(result),
-                        token = reinterpret_cast<intptr_t>(this)]() mutable {
-      on_resolve(std::move(result), token);
+                        result = std::move(result)]() mutable {
+      on_resolve(std::move(result));
     });
     return true;
   }
@@ -1007,7 +1005,7 @@ void GrpcAresHostnameRequestImpl::SortResolvedAddresses() {
     sortables[i].dest_addr.len = result_[i].size();
   }
   address_sorting_rfc_6724_sort(sortables, result_.size());
-  std::vector<EventEngine::ResolvedAddress> sorted;
+  Result sorted;
   sorted.reserve(result_.size());
   for (size_t i = 0; i < result_.size(); i++) {
     sorted.emplace_back(
@@ -1026,17 +1024,16 @@ GrpcAresSRVRequestImpl::GrpcAresSRVRequestImpl(
     : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
                           event_engine) {}
 
-void GrpcAresSRVRequestImpl::Start(OnResolveCallback<Result> on_resolve) {
+void GrpcAresSRVRequestImpl::Start(
+    absl::AnyInvocable<void(absl::StatusOr<<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   // Don't query for SRV records if the target is "localhost"
   if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
-    event_engine_->Run([on_resolve = std::move(on_resolve),
-                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+    event_engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(GRPC_ERROR_CREATE(
-                     "Skip querying for SRV records for localhost target"),
-                 token);
+          "Skip querying for SRV records for localhost target"));
     });
     return;
   }
@@ -1055,9 +1052,8 @@ void GrpcAresSRVRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   shutting_down_ = true;
   CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
-                      result = std::move(result),
-                      token = reinterpret_cast<intptr_t>(this)]() mutable {
-    on_resolve(std::move(result), token);
+                      result = std::move(result)]() mutable {
+    on_resolve(std::move(result));
   });
   Unref(DEBUG_LOCATION, "OnResolve");
 }
@@ -1068,17 +1064,16 @@ GrpcAresTXTRequestImpl::GrpcAresTXTRequestImpl(
     : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
                           event_engine) {}
 
-void GrpcAresTXTRequestImpl::Start(OnResolveCallback<Result> on_resolve) {
+void GrpcAresTXTRequestImpl::Start(
+    absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   // Don't query for TXT records if the target is "localhost"
   if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
-    event_engine_->Run([on_resolve = std::move(on_resolve),
-                        token = reinterpret_cast<intptr_t>(this)]() mutable {
+    event_engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
       on_resolve(
-          GRPC_ERROR_CREATE("Skip querying for TXT records localhost target"),
-          token);
+          GRPC_ERROR_CREATE("Skip querying for TXT records localhost target"));
     });
     return;
   }
@@ -1097,9 +1092,8 @@ void GrpcAresTXTRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   shutting_down_ = true;
   CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
-                      result = std::move(result),
-                      token = reinterpret_cast<intptr_t>(this)]() mutable {
-    on_resolve(std::move(result), token);
+                      result = std::move(result)]() mutable {
+    on_resolve(std::move(result));
   });
   Unref(DEBUG_LOCATION, "OnResolve");
 }

@@ -48,7 +48,6 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     --grpc_python_out="$TOOLS_DIR" \
     "$PROTO_SOURCE_DIR"/test.proto \
     "$PROTO_SOURCE_DIR"/messages.proto \
-    "$PROTO_SOURCE_DIR"/xds/v3/orca_load_report.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
 HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1

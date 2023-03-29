@@ -62,10 +62,6 @@ class GrpcAresRequest : public grpc_core::RefCounted<GrpcAresRequest> {
 
  protected:
   GrpcAresRequest();
-
-  template <typename T>
-  using OnResolveCallback =
-      absl::AnyInvocable<void(absl::StatusOr<T>, intptr_t)>;
 };
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
@@ -75,7 +71,8 @@ class GrpcAresHostnameRequest : public virtual GrpcAresRequest {
   using Result = std::vector<EventEngine::ResolvedAddress>;
 
  public:
-  virtual void Start(OnResolveCallback<Result> on_resolve) = 0;
+  virtual void Start(
+      absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
 GrpcAresHostnameRequest* CreateGrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
@@ -88,7 +85,8 @@ class GrpcAresSRVRequest : public virtual GrpcAresRequest {
   using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
 
  public:
-  virtual void Start(OnResolveCallback<Result> on_resolve) = 0;
+  virtual void Start(
+      absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
 GrpcAresSRVRequest* CreateGrpcAresSRVRequest(
     absl::string_view name, EventEngine::Duration timeout,
@@ -100,7 +98,8 @@ class GrpcAresTXTRequest : public virtual GrpcAresRequest {
   using Result = std::string;
 
  public:
-  virtual void Start(OnResolveCallback<Result> on_resolve) = 0;
+  virtual void Start(
+      absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
 GrpcAresTXTRequest* CreateGrpcAresTXTRequest(
     absl::string_view name, EventEngine::Duration timeout,
