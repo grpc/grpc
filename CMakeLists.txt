@@ -9851,7 +9851,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(end2end_tests
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
-  test/core/end2end/end2end_test_utils.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
