@@ -54,7 +54,7 @@ def generate_resolver_component_tests():
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
                 "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:fake_udp_and_tcp_server",
+                "//test/core/util:fake_udp_and_tcp_server%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
@@ -71,10 +71,10 @@ def generate_resolver_component_tests():
                 "absl/flags:flag",
             ],
             deps = [
-                "//test/cpp/util:test_util",
-                "//test/core/util:grpc_test_util",
-                "//:grpc++",
-                "//:grpc",
+                "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
+                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//:grpc++%s" % unsecure_build_config_suffix,
+                "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
             ],

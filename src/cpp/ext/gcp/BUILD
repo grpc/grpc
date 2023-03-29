@@ -58,6 +58,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_opencensus_plugin",
         "//src/core:logging_filter",
         "//src/core:notification",
@@ -106,6 +107,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/numeric:int128",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -129,6 +131,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:logging_sink",
         "//src/core:time",
+        "//src/core:uuid_v4",
     ],
 )
 

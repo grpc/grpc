@@ -30,10 +30,12 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -41,8 +43,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -61,7 +61,6 @@
 #if GRPC_ARES == 1
 
 #include <stdio.h>
-#include <string.h>
 
 #include <address_sorting/address_sorting.h>
 
@@ -70,12 +69,11 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
@@ -811,21 +809,14 @@ class AresDNSResolver : public DNSResolver {
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
-bool ShouldUseAres(const char* resolver_env) {
-  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
-         gpr_stricmp(resolver_env, "ares") == 0;
+bool ShouldUseAres(absl::string_view resolver_env) {
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
 }
 
 }  // namespace
 
 bool UseAresDnsResolver() {
-  static const bool result = []() {
-    UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-    bool result = ShouldUseAres(resolver.get());
-    if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
-    return result;
-  }();
-  return result;
+  return ShouldUseAres(ConfigVars::Get().DnsResolver());
 }
 
 void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {

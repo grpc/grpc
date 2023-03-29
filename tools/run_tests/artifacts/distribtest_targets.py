@@ -335,7 +335,7 @@ class CppDistribTest(object):
                 self.name,
                 ['test\\distrib\\cpp\\run_distrib_test_%s.bat' % self.testcase],
                 environ={},
-                timeout_seconds=30 * 60,
+                timeout_seconds=45 * 60,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")

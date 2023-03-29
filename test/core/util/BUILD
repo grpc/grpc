@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
 
@@ -151,6 +151,7 @@ grpc_cc_library(
         "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -190,6 +191,7 @@ grpc_cc_library(
         "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -343,6 +345,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fake_udp_and_tcp_server_unsecure",
+    srcs = ["fake_udp_and_tcp_server.cc"],
+    hdrs = ["fake_udp_and_tcp_server.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//:sockaddr_utils",
+        "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
@@ -355,5 +375,23 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//src/core:env",
+    ],
+)
+
+grpc_proto_library(
+    name = "fuzz_config_vars_proto",
+    srcs = ["fuzz_config_vars.proto"],
+    has_services = False,
+)
+
+grpc_cc_library(
+    name = "fuzz_config_vars",
+    srcs = ["fuzz_config_vars.cc"],
+    hdrs = ["fuzz_config_vars.h"],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "fuzz_config_vars_proto",
+        "//:config_vars",
+        "//:gpr_platform",
     ],
 )

@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 
+#include "absl/numeric/int128.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -91,7 +92,7 @@ class LoggingSink {
       uint32_t ip_port = 0;
     };
 
-    uint64_t call_id = 0;
+    absl::uint128 call_id = 0;
     uint64_t sequence_id = 0;
     EventType type = LoggingSink::Entry::EventType::kUnkown;
     Logger logger = LoggingSink::Entry::Logger::kUnkown;
@@ -102,6 +103,10 @@ class LoggingSink {
     std::string service_name;
     std::string method_name;
     Timestamp timestamp;
+    // Optional tracing details
+    std::string trace_id;
+    std::string span_id;
+    bool is_sampled;
   };
 
   virtual ~LoggingSink() = default;

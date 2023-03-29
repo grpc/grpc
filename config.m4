@@ -90,7 +90,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
     src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
@@ -488,6 +487,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
+    src/core/lib/backoff/random_early_detection.cc \
     src/core/lib/channel/call_tracer.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
@@ -504,7 +504,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
+    src/core/lib/config/config_vars.cc \
+    src/core/lib/config/config_vars_non_generated.cc \
     src/core/lib/config/core_configuration.cc \
+    src/core/lib/config/load_config.cc \
     src/core/lib/debug/event_log.cc \
     src/core/lib/debug/histogram_view.cc \
     src/core/lib/debug/stats.cc \
@@ -580,7 +583,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
-    src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/linux/env.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -689,6 +691,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
     src/core/lib/resolver/resolver.cc \
@@ -754,7 +757,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
-    src/core/lib/security/security_connector/ssl_utils_config.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -792,6 +794,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
@@ -876,6 +879,15 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
+    third_party/abseil-cpp/absl/flags/commandlineflag.cc \
+    third_party/abseil-cpp/absl/flags/flag.cc \
+    third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
+    third_party/abseil-cpp/absl/flags/internal/flag.cc \
+    third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
+    third_party/abseil-cpp/absl/flags/internal/program_name.cc \
+    third_party/abseil-cpp/absl/flags/marshalling.cc \
+    third_party/abseil-cpp/absl/flags/reflection.cc \
+    third_party/abseil-cpp/absl/flags/usage_config.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
@@ -1489,6 +1501,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/crc/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)

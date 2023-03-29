@@ -21,6 +21,8 @@
 #include <functional>
 #include <memory>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
@@ -31,17 +33,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
 
 static std::unique_ptr<CoreTestFixture> begin_test(
     const CoreTestConfiguration& config, const char* test_name,
@@ -132,11 +129,8 @@ static void test_keepalive_timeout(const CoreTestConfiguration& config) {
 // that the keepalive ping is never sent.
 static void test_read_delays_keepalive(const CoreTestConfiguration& config) {
 #ifdef GRPC_POSIX_SOCKET
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  // It is hard to get the timing right for the polling engine poll.
-  if ((0 == strcmp(poller.get(), "poll"))) {
-    return;
-  }
+  /* It is hard to get the timing right for the polling engine poll. */
+  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") return;
 #endif  // GRPC_POSIX_SOCKET
   const int kPingIntervalMS = 100;
   grpc_arg keepalive_arg_elems[3];
