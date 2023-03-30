@@ -3296,6 +3296,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["@grpc:json_reader_legacy"],
     deps = [
         "json",
         "//:gpr",
