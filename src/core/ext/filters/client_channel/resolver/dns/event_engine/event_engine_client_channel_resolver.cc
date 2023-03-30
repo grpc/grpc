@@ -129,9 +129,6 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     // which requires taking the lock.
     absl::optional<Resolver::Result> OnResolvedLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
-    // Helper method for generating the combined resolution status error
-    absl::Status GetResolutionFailureErrorMessageLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate server addresses on resolver result.
     void MaybePopulateAddressesLocked(Resolver::Result* result)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
@@ -158,7 +155,8 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
         ABSL_GUARDED_BY(on_resolved_mu_);
     ServerAddressList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
     ValidationErrors errors_ ABSL_GUARDED_BY(on_resolved_mu_);
-    std::string service_config_json_ ABSL_GUARDED_BY(on_resolved_mu_);
+    absl::StatusOr<std::string> service_config_json_
+        ABSL_GUARDED_BY(on_resolved_mu_);
     // Other internal state
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
@@ -382,21 +380,13 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     txt_handle_.reset();
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());
-    } else {
-      service_config_json_ = std::move(*service_config);
     }
+    service_config_json_ = std::move(service_config);
     result = OnResolvedLocked();
   }
   if (result.has_value()) {
     resolver_->OnRequestComplete(std::move(*result));
   }
-}
-
-absl::Status EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    GetResolutionFailureErrorMessageLocked() {
-  return errors_.status(
-      absl::StrCat("dns resolution failed for ", resolver_->name_to_resolve()),
-      absl::StatusCode::kUnavailable);
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -421,11 +411,15 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateServiceConfigLocked(Resolver::Result* result) {
   // This function is called only if we are returning addresses.  In that case,
   // we currently ignore TXT lookup failures.
+  if (!service_config_json_.ok()) {
+    result->service_config = service_config_json_.status();
+    return;
+  }
   // TODO(roth): Consider differentiating between NXDOMAIN and other failures,
   // so that we can return an error in the non-NXDOMAIN case.
-  if (service_config_json_.empty()) return;
+  if (service_config_json_->empty()) return;
   // TXT lookup succeeded, so parse the config.
-  auto service_config = ChooseServiceConfig(service_config_json_);
+  auto service_config = ChooseServiceConfig(*service_config_json_);
   if (!service_config.ok()) {
     result->service_config = absl::UnavailableError(absl::StrCat(
         "failed to parse service config: ", service_config.status().message()));
@@ -471,7 +465,9 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
   // If both addresses and balancer addresses failed, return an error for both
   // addresses and service config.
   if (addresses_.empty() && balancer_addresses_.empty()) {
-    absl::Status status = GetResolutionFailureErrorMessageLocked();
+    absl::Status status = errors_.status(
+        absl::StrCat("errors resolving ", resolver_->name_to_resolve()),
+        absl::StatusCode::kUnavailable);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
     result.addresses = status;
     result.service_config = status;
@@ -479,7 +475,11 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
   }
   if (!errors_.ok()) {
     result.resolution_note =
-        std::string(GetResolutionFailureErrorMessageLocked().message());
+        std::string(errors_
+                        .status(absl::StrCat("errors resolving ",
+                                             resolver_->name_to_resolve()),
+                                absl::StatusCode::kUnavailable)
+                        .message());
   }
   // We have at least one of addresses or balancer addresses, so we're going to
   // return a non-error for addresses.
