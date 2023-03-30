@@ -457,7 +457,9 @@ class CoreEnd2endTest
     std::vector<std::unique_ptr<Thing>> things_;
   };
 
-  // Wrapper around a client call.
+  // Wrapper around a grpc_call.
+  // Instantiated by ClientCallBuilder via NewClientCall for client calls.
+  // Wrapped by IncomingCall for server calls.
   class Call {
    public:
     explicit Call(grpc_call* call) : call_(call) {}
@@ -700,6 +702,11 @@ class CoreEnd2endTest
   int expectations_ = 0;
   bool initialized_ = false;
 };
+
+// Define names for additional test suites.
+// These make no changes to the actual class, but define new names to register
+// tests against. Each new name gets a differing set of configurations in
+// end2end_test_main.cc to customize the set of fixtures the tests run against.
 
 // Test suite for tests that rely on a secure transport
 class SecureEnd2endTest : public CoreEnd2endTest {};
