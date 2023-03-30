@@ -151,6 +151,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "end2end_tests",
+    timeout = "long",
     srcs = [
         "end2end_test_main.cc",
         "end2end_tests.cc",
