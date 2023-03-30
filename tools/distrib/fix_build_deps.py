@@ -351,6 +351,15 @@ def grpc_cc_library(name,
     consumes[name] = list(inc)
 
 
+def grpc_proto_library(name, srcs, **kwargs):
+    global parsing_path
+    assert (parsing_path is not None)
+    name = '//%s:%s' % (parsing_path, name)
+    for src in srcs:
+        proto_hdr = src.replace('.proto', '.pb.h')
+        vendors[_get_filename(proto_hdr, parsing_path)].append(name)
+
+
 def buildozer(cmd, target):
     buildozer_commands.append('%s|%s' % (cmd, target))
 
@@ -437,6 +446,7 @@ for dirname in [
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
+        "test/core/filters",
         "test/core/promise",
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",
@@ -458,6 +468,7 @@ for dirname in [
             'grpc_fuzzer': grpc_cc_library,
             'grpc_fuzz_test': grpc_cc_library,
             'grpc_proto_fuzzer': grpc_cc_library,
+            'grpc_proto_library': grpc_proto_library,
             'select': lambda d: d["//conditions:default"],
             'glob': lambda files: None,
             'grpc_end2end_tests': lambda: None,

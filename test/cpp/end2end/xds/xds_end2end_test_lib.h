@@ -44,6 +44,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -302,6 +303,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
           last_peer_identity_.clear();
           for (const auto& entry : peer_identity) {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
+          }
+        }
+        if (request->has_param() && request->param().has_backend_metrics()) {
+          const auto& request_metrics = request->param().backend_metrics();
+          auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          for (const auto& p : request_metrics.named_metrics()) {
+            char* key = static_cast<char*>(
+                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+            strncpy(key, p.first.data(), p.first.size());
+            key[p.first.size()] = '\0';
+            recorder->RecordNamedMetric(key, p.second);
           }
         }
         return status;
@@ -710,6 +722,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
 
     RpcOptions() {}
 
@@ -766,6 +779,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_server_expected_error(StatusCode code) {
       server_expected_error = code;
+      return *this;
+    }
+
+    RpcOptions& set_backend_metrics(
+        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+      backend_metrics = std::move(metrics);
       return *this;
     }
 
