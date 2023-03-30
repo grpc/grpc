@@ -45,6 +45,7 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
@@ -182,7 +183,7 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json()) << config->config.Dump();
+  EXPECT_EQ(config->config, Json()) << JsonDump(config->config);
 }
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigTypedStruct) {
@@ -310,7 +311,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << config->config.Dump();
+  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
@@ -329,7 +330,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config.Dump(),
+  EXPECT_EQ(JsonDump(config->config),
             "{\"abortCode\":\"UNAVAILABLE\","
             "\"abortPercentageDenominator\":100,"
             "\"abortPercentageNumerator\":75,"
@@ -348,7 +349,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config.Dump(), "{\"abortCode\":\"UNIMPLEMENTED\"}");
+  EXPECT_EQ(JsonDump(config->config), "{\"abortCode\":\"UNIMPLEMENTED\"}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
@@ -361,7 +362,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(
-      config->config.Dump(),
+      JsonDump(config->config),
       "{\"abortCode\":\"OK\","
       "\"abortCodeHeader\":\"x-envoy-fault-abort-grpc-request\","
       "\"abortPercentageHeader\":\"x-envoy-fault-abort-percentage\","
@@ -466,7 +467,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << config->config.Dump();
+  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
@@ -507,7 +508,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << config->config.Dump();
+  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
@@ -576,7 +577,7 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << config->config.Dump();
+  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
 }
 
 TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
@@ -662,7 +663,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config.Dump(),
+  EXPECT_EQ(JsonDump(config->config),
             "{\"rules\":{"
             "\"action\":0,"
             "\"policies\":{"
@@ -788,7 +789,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config.Dump(),
+  EXPECT_EQ(JsonDump(config->config),
             "{\"rules\":{"
             "\"action\":0,"
             "\"policies\":{"
@@ -986,7 +987,7 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object{})) << config->config.Dump();
+  EXPECT_EQ(config->config, Json(Json::Object{})) << JsonDump(config->config);
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
@@ -995,7 +996,7 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
   auto config = filter_->GenerateServiceConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element, Json(Json::Object{{"name", "foo"}}).Dump());
+  EXPECT_EQ(config->element, JsonDump(Json(Json::Object{{"name", "foo"}})));
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigWithOverride) {
@@ -1006,7 +1007,7 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigWithOverride) {
   auto config = filter_->GenerateServiceConfig(hcm_config, &override_config);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element, Json(Json::Object{{"name", "bar"}}).Dump());
+  EXPECT_EQ(config->element, JsonDump(Json(Json::Object{{"name", "bar"}})));
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigTypedStruct) {
@@ -1120,7 +1121,7 @@ TEST_P(XdsStatefulSessionFilterConfigTest, MinimalConfig) {
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
   EXPECT_EQ(config->config, Json(Json::Object{{"name", "foo"}}))
-      << config->config.Dump();
+      << JsonDump(config->config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
@@ -1143,7 +1144,7 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
                                 {"path", "/service/method"},
                                 {"ttl", "3.000000000s"},
                             }))
-      << config->config.Dump();
+      << JsonDump(config->config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {

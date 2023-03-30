@@ -728,8 +728,8 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "childPolicy" field.
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto lb_config = CoreConfiguration::Get()
@@ -745,7 +745,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "dropCategories" field.
   {
     auto value = LoadJsonObjectField<std::vector<DropCategory>>(
-        json.object_value(), args, "dropCategories", errors);
+        json.object(), args, "dropCategories", errors);
     if (value.has_value()) {
       drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
       for (size_t i = 0; i < value->size(); ++i) {
@@ -777,7 +777,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // This policy was configured in the deprecated loadBalancingPolicy
       // field or in the client API.
       return absl::InvalidArgumentError(

@@ -234,8 +234,8 @@ Json* JsonReader::CreateAndLinkValue() {
     value = &root_value_;
   } else {
     Json* parent = stack_.back();
-    if (parent->type() == Json::Type::OBJECT) {
-      if (parent->object_value().find(key_) != parent->object_value().end()) {
+    if (parent->type() == Json::Type::kObject) {
+      if (parent->object().find(key_) != parent->object().end()) {
         if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
           truncated_errors_ = true;
         } else {
@@ -245,7 +245,7 @@ Json* JsonReader::CreateAndLinkValue() {
       }
       value = &(*parent->mutable_object())[std::move(key_)];
     } else {
-      GPR_ASSERT(parent->type() == Json::Type::ARRAY);
+      GPR_ASSERT(parent->type() == Json::Type::kArray);
       parent->mutable_array()->emplace_back();
       value = &parent->mutable_array()->back();
     }
@@ -265,10 +265,10 @@ bool JsonReader::StartContainer(Json::Type type) {
     return false;
   }
   Json* value = CreateAndLinkValue();
-  if (type == Json::Type::OBJECT) {
+  if (type == Json::Type::kObject) {
     *value = Json::Object();
   } else {
-    GPR_ASSERT(type == Json::Type::ARRAY);
+    GPR_ASSERT(type == Json::Type::kArray);
     *value = Json::Array();
   }
   stack_.push_back(value);
@@ -405,9 +405,10 @@ JsonReader::Status JsonReader::Run() {
             if (stack_.empty()) {
               return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == '}' &&
-                       stack_.back()->type() != Json::Type::OBJECT) {
+                       stack_.back()->type() != Json::Type::kObject) {
               return Status::GRPC_JSON_PARSE_ERROR;
-            } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
+            } else if (c == ']' &&
+                       stack_.back()->type() != Json::Type::kArray) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
             if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
@@ -422,10 +423,10 @@ JsonReader::Status JsonReader::Run() {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               if (!stack_.empty() &&
-                  stack_.back()->type() == Json::Type::OBJECT) {
+                  stack_.back()->type() == Json::Type::kObject) {
                 state_ = State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
               } else if (!stack_.empty() &&
-                         stack_.back()->type() == Json::Type::ARRAY) {
+                         stack_.back()->type() == Json::Type::kArray) {
                 state_ = State::GRPC_JSON_STATE_VALUE_BEGIN;
               } else {
                 return Status::GRPC_JSON_PARSE_ERROR;
@@ -434,7 +435,7 @@ JsonReader::Status JsonReader::Run() {
               if (stack_.empty()) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if (c == '}' && stack_.back()->type() != Json::Type::OBJECT) {
+              if (c == '}' && stack_.back()->type() != Json::Type::kObject) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               if (c == '}' &&
@@ -442,7 +443,7 @@ JsonReader::Status JsonReader::Run() {
                   !container_just_begun_) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
+              if (c == ']' && stack_.back()->type() != Json::Type::kArray) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               if (c == ']' && state_ == State::GRPC_JSON_STATE_VALUE_BEGIN &&
@@ -581,7 +582,7 @@ JsonReader::Status JsonReader::Run() {
 
               case '{':
                 container_just_begun_ = true;
-                if (!StartContainer(Json::Type::OBJECT)) {
+                if (!StartContainer(Json::Type::kObject)) {
                   return Status::GRPC_JSON_PARSE_ERROR;
                 }
                 state_ = State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
@@ -589,7 +590,7 @@ JsonReader::Status JsonReader::Run() {
 
               case '[':
                 container_just_begun_ = true;
-                if (!StartContainer(Json::Type::ARRAY)) {
+                if (!StartContainer(Json::Type::kArray)) {
                   return Status::GRPC_JSON_PARSE_ERROR;
                 }
                 break;
@@ -923,7 +924,7 @@ absl::StatusOr<Json> JsonReader::Parse(absl::string_view input) {
 
 }  // namespace
 
-absl::StatusOr<Json> Json::Parse(absl::string_view json_str) {
+absl::StatusOr<Json> JsonParse(absl::string_view json_str) {
   return JsonReader::Parse(json_str);
 }
 

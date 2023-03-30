@@ -58,7 +58,7 @@ void FaultInjectionMethodParsedConfig::FaultInjectionPolicy::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Parse abort_code.
   auto abort_code_string = LoadJsonObjectField<std::string>(
-      json.object_value(), args, "abortCode", errors, /*required=*/false);
+      json.object(), args, "abortCode", errors, /*required=*/false);
   if (abort_code_string.has_value() &&
       !grpc_status_code_from_string(abort_code_string->c_str(), &abort_code)) {
     ValidationErrors::ScopedField field(errors, ".abortCode");

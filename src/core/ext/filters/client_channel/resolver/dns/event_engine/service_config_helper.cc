@@ -30,6 +30,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -64,7 +66,7 @@ bool vector_contains(const std::vector<std::string> v,
 
 absl::StatusOr<std::string> ChooseServiceConfig(
     absl::string_view service_config_json) {
-  auto json = Json::Parse(service_config_json);
+  auto json = JsonParse(service_config_json);
   GRPC_RETURN_IF_ERROR(json.status());
   auto choices = LoadFromJson<std::vector<ServiceConfigChoice>>(*json);
   GRPC_RETURN_IF_ERROR(choices.status());
@@ -88,7 +90,7 @@ absl::StatusOr<std::string> ChooseServiceConfig(
         continue;
       }
     }
-    return Json(choice.service_config).Dump();
+    return JsonDump(choice.service_config);
   }
   // No matching service config was found
   return "";

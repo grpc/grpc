@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.54.0-dev'
+  version = '1.55.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1483,9 +1483,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_object_loader.cc',
                       'src/core/lib/json/json_object_loader.h',
                       'src/core/lib/json/json_reader.cc',
+                      'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_util.cc',
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
+                      'src/core/lib/json/json_writer.h',
                       'src/core/lib/load_balancing/lb_policy.cc',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
@@ -2545,7 +2547,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_args.h',
                               'src/core/lib/json/json_channel_args.h',
                               'src/core/lib/json/json_object_loader.h',
+                              'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/json/json_writer.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

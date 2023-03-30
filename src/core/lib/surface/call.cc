@@ -2739,6 +2739,10 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   // In the latter case real world code sometimes does not sent the initial
   // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
+  // TODO(ctiller): delete when we remove the filter based API (may require some
+  // cleanup in wrapped languages: they depend on this to hold slice refs)
+  ServerMetadataHandle recv_initial_metadata_;
+  ServerMetadataHandle recv_trailing_metadata_;
 };
 
 void ClientPromiseBasedCall::StartPromise(
@@ -2919,6 +2923,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
         }
         ProcessIncomingInitialMetadata(*metadata);
         PublishMetadataArray(metadata.get(), array);
+        recv_initial_metadata_ = std::move(metadata);
         FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
       });
 }
@@ -3000,6 +3005,7 @@ void ClientPromiseBasedCall::StartRecvStatusOnClient(
         }
         PublishMetadataArray(trailing_metadata.get(),
                              op_args.trailing_metadata);
+        recv_trailing_metadata_ = std::move(trailing_metadata);
         FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
       });
 }
