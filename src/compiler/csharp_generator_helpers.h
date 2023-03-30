@@ -37,7 +37,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   // uses common code with protoc. For most file names this will not
   // make a difference (only files with punctuation or numbers in the
   // name.)
-  // Otherwise the behavor remains the same as before.
+  // Otherwise the behavior remains the same as before.
   if (base_namespace.empty()) {
     out_file = grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
   } else {
