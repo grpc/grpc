@@ -704,8 +704,9 @@ class CoreEnd2endTest
 };
 
 // Define names for additional test suites.
-// These make no changes to the actual class, but define new names to register tests against.
-// Each new name gets a differing set of configurations in end2end_test_main.cc to customize the set of fixtures the tests run against.
+// These make no changes to the actual class, but define new names to register
+// tests against. Each new name gets a differing set of configurations in
+// end2end_test_main.cc to customize the set of fixtures the tests run against.
 
 // Test suite for tests that rely on a secure transport
 class SecureEnd2endTest : public CoreEnd2endTest {};
