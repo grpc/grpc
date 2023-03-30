@@ -22,7 +22,6 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "audit_logging.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpcpp/security/audit_logging.h>
