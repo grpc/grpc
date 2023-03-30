@@ -43,7 +43,7 @@ namespace grpc_core {
 //     auto it = json.object().find("foo");
 //     if (it == json.object().end()) {
 //       errors.AddError("field not present");
-//     } else if (it->second.type() != Json::Type::OBJECT) {
+//     } else if (it->second.type() != Json::Type::kObject) {
 //       errors.AddError("must be a JSON object");
 //     } else {
 //       const Json& foo = it->second;
@@ -51,7 +51,7 @@ namespace grpc_core {
 //       auto it = foo.object().find("bar");
 //       if (it == json.object().end()) {
 //         errors.AddError("field not present");
-//       } else if (it->second.type() != Json::Type::STRING) {
+//       } else if (it->second.type() != Json::Type::kString) {
 //         errors.AddError("must be a JSON string");
 //       } else {
 //         return it->second.string();

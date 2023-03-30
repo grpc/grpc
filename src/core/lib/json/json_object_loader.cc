@@ -27,10 +27,10 @@ namespace json_detail {
 
 void LoadScalar::LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                           ValidationErrors* errors) const {
-  // We accept either STRING or NUMBER for numeric values, as per
+  // We accept either kString or kNumber for numeric values, as per
   // https://developers.google.com/protocol-buffers/docs/proto3#json.
-  if (json.type() != Json::Type::STRING &&
-      (!IsNumber() || json.type() != Json::Type::NUMBER)) {
+  if (json.type() != Json::Type::kString &&
+      (!IsNumber() || json.type() != Json::Type::kNumber)) {
     errors->AddError(
         absl::StrCat("is not a ", IsNumber() ? "number" : "string"));
     return;
@@ -91,9 +91,9 @@ bool LoadNumber::IsNumber() const { return true; }
 
 void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
                         ValidationErrors* errors) const {
-  if (json.type() == Json::Type::JSON_TRUE) {
+  if (json.type() == Json::Type::kTrue) {
     *static_cast<bool*>(dst) = true;
-  } else if (json.type() == Json::Type::JSON_FALSE) {
+  } else if (json.type() == Json::Type::kFalse) {
     *static_cast<bool*>(dst) = false;
   } else {
     errors->AddError("is not a boolean");
@@ -103,7 +103,7 @@ void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
                                          void* dst,
                                          ValidationErrors* errors) const {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     errors->AddError("is not an object");
     return;
   }
@@ -113,7 +113,7 @@ void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
 void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
                                         void* dst,
                                         ValidationErrors* errors) const {
-  if (json.type() != Json::Type::ARRAY) {
+  if (json.type() != Json::Type::kArray) {
     errors->AddError("is not an array");
     return;
   }
@@ -122,7 +122,7 @@ void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
 
 void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                           ValidationErrors* errors) const {
-  if (json.type() != Json::Type::ARRAY) {
+  if (json.type() != Json::Type::kArray) {
     errors->AddError("is not an array");
     return;
   }
@@ -138,7 +138,7 @@ void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
 void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
                                              const JsonArgs& args, void* dst,
                                              ValidationErrors* errors) const {
-  if (json.type() != Json::Type::ARRAY) {
+  if (json.type() != Json::Type::kArray) {
     errors->AddError("is not an array");
     return;
   }
@@ -155,7 +155,7 @@ void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
 
 void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                        ValidationErrors* errors) const {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     errors->AddError("is not an object");
     return;
   }
@@ -170,7 +170,7 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
 
 void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                             ValidationErrors* errors) const {
-  if (json.type() == Json::Type::JSON_NULL) return;
+  if (json.type() == Json::Type::kNull) return;
   void* element = Emplace(dst);
   size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
@@ -179,7 +179,7 @@ void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ValidationErrors* errors) {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     errors->AddError("is not an object");
     return false;
   }

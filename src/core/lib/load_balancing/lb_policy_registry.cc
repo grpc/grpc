@@ -94,13 +94,13 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
 absl::StatusOr<Json::Object::const_iterator>
 LoadBalancingPolicyRegistry::ParseLoadBalancingConfigHelper(
     const Json& lb_config_array) const {
-  if (lb_config_array.type() != Json::Type::ARRAY) {
+  if (lb_config_array.type() != Json::Type::kArray) {
     return absl::InvalidArgumentError("type should be array");
   }
   // Find the first LB policy that this client supports.
   std::vector<absl::string_view> policies_tried;
   for (const Json& lb_config : lb_config_array.array()) {
-    if (lb_config.type() != Json::Type::OBJECT) {
+    if (lb_config.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError("child entry should be of type object");
     }
     if (lb_config.object().empty()) {
@@ -110,7 +110,7 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfigHelper(
       return absl::InvalidArgumentError("oneOf violation");
     }
     auto it = lb_config.object().begin();
-    if (it->second.type() != Json::Type::OBJECT) {
+    if (it->second.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError("child entry should be of type object");
     }
     // If we support this policy, then select it.

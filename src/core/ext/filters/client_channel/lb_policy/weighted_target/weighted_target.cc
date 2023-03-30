@@ -764,7 +764,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // weighted_target was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(

@@ -164,7 +164,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
   }
   ClearStsCredentialsOptions(options);
   auto json = grpc_core::Json::Parse(json_string.c_str());
-  if (!json.ok() || json->type() != grpc_core::Json::Type::OBJECT) {
+  if (!json.ok() || json->type() != grpc_core::Json::Type::kObject) {
     return grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,
         absl::StrCat("Invalid json: ", json.status().ToString()));

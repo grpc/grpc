@@ -66,7 +66,7 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
     // object.
     Json::Object config_json;
     if (it != json.object().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
+      if (it->second.type() != Json::Type::kObject) {
         errors->AddError("is not an object");
         return;  // No point parsing config.
       } else {
