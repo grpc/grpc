@@ -24,6 +24,7 @@ grpc_cc_library(
     srcs = ["cq_verifier.cc"],
     hdrs = ["cq_verifier.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:variant",
