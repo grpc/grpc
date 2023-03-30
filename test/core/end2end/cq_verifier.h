@@ -25,12 +25,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 
