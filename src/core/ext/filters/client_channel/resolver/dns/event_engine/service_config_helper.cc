@@ -36,8 +36,6 @@ namespace grpc_core {
 namespace {
 
 struct ServiceConfigChoice {
-  struct ServiceConfig {};
-
   std::vector<std::string> client_language;
   int percentage = -1;
   std::vector<std::string> client_hostname;
@@ -57,8 +55,8 @@ struct ServiceConfigChoice {
   }
 };
 
-template <typename T>
-bool vector_contains(const std::vector<T> v, const T& value) {
+bool vector_contains(const std::vector<std::string> v,
+                     const std::string& value) {
   return std::find(v.begin(), v.end(), value) != v.end();
 }
 
@@ -70,17 +68,16 @@ absl::StatusOr<std::string> ChooseServiceConfig(
   GRPC_RETURN_IF_ERROR(json.status());
   auto choices = LoadFromJson<std::vector<ServiceConfigChoice>>(*json);
   GRPC_RETURN_IF_ERROR(choices.status());
-  ValidationErrors error_list;
   for (const ServiceConfigChoice& choice : *choices) {
     // Check client language, if specified.
     if (!choice.client_language.empty() &&
-        !vector_contains<std::string>(choice.client_language, "c++")) {
+        !vector_contains(choice.client_language, "c++")) {
       continue;
     }
     // Check client hostname, if specified.
     if (!choice.client_hostname.empty()) {
       const char* hostname = grpc_gethostname();
-      if (!vector_contains<std::string>(choice.client_hostname, hostname)) {
+      if (!vector_contains(choice.client_hostname, hostname)) {
         continue;
       }
     }
@@ -90,11 +87,6 @@ absl::StatusOr<std::string> ChooseServiceConfig(
       if (random_pct > choice.percentage || choice.percentage == 0) {
         continue;
       }
-    }
-    // Found a service config.
-    if (error_list.FieldHasErrors()) {
-      return error_list.status("Service Config Choices Parser",
-                               absl::StatusCode::kFailedPrecondition);
     }
     return Json(choice.service_config).Dump();
   }
