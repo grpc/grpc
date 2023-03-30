@@ -3742,7 +3742,6 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
-        "iomgr_timer",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
