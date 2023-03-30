@@ -24,7 +24,7 @@
 
 namespace grpc {
 
-namespace gcp {
+namespace grpc_gcp {
 
 // Initialize GCP Observability for gRPC.
 // This should be called before any other gRPC operations like creating a
@@ -62,6 +62,12 @@ class Observability {
 // used to determine the cause of failure. It is up to the applications to
 // either crash on failure, or continue without GCP observability being enabled.
 //
+// Please look at
+// https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_client.cc
+// and
+// https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_server.cc
+// for sample usage.
+//
 // Note that this is a blocking call which properly sets up gRPC Observability
 // to work with GCP and might take a few seconds to return.  Similarly, the
 // destruction of a non-moved-from `Observability` object is also blocking since
@@ -72,7 +78,7 @@ class Observability {
 // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
 absl::StatusOr<Observability> ObservabilityInit();
 
-}  // namespace gcp
+}  // namespace grpc_gcp
 
 namespace experimental {
 // TODO(yashykt): Delete this after the 1.55 release.

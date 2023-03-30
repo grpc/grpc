@@ -15,20 +15,17 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <stdint.h>
-#include <grpc/grpc.h>
-#include <grpcpp/ext/gcp_observability.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
+
 #include <algorithm>
+#include <chrono>
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <chrono>
-#include <thread>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -42,6 +39,13 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
+
+#include <grpc/grpc.h>
+#include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/cpp/client/client_stats_interceptor.h"
@@ -224,7 +228,7 @@ void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
 
 }  // namespace experimental
 
-namespace gcp {
+namespace grpc_gcp {
 
 //
 // Observability
@@ -248,6 +252,6 @@ absl::StatusOr<Observability> ObservabilityInit() {
   return Observability();
 }
 
-}  // namespace gcp
+}  // namespace grpc_gcp
 
 }  // namespace grpc
