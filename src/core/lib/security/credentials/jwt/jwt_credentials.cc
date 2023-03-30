@@ -140,7 +140,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 
 static char* redact_private_key(const char* json_key) {
   auto json = Json::Parse(json_key);
-  if (!json.ok() || json->type() != Json::Type::OBJECT) {
+  if (!json.ok() || json->type() != Json::Type::kObject) {
     return gpr_strdup("<Json failed to parse.>");
   }
   (*json->mutable_object())["private_key"] = "<redacted>";

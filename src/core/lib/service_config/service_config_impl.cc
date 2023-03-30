@@ -97,7 +97,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
 RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     const ChannelArgs& args, const Json& json, absl::string_view json_string,
     ValidationErrors* errors) {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     errors->AddError("is not an object");
     return nullptr;
   }

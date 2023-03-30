@@ -38,15 +38,7 @@ class Json {
   // consider whether there's a better alternative (e.g., maybe storing
   // each numeric type as the native C++ type and automatically converting
   // to string as needed).
-  enum class Type {
-    JSON_NULL,
-    JSON_TRUE,
-    JSON_FALSE,
-    NUMBER,
-    STRING,
-    OBJECT,
-    ARRAY
-  };
+  enum class Type { kNull, kTrue, kFalse, kNumber, kString, kObject, kArray };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
@@ -71,12 +63,13 @@ class Json {
   }
 
   // Construct from copying a string.
-  // If is_number is true, the type will be NUMBER instead of STRING.
+  // If is_number is true, the type will be kNumber instead of kString.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(const std::string& string, bool is_number = false)
-      : type_(is_number ? Type::NUMBER : Type::STRING), string_value_(string) {}
+      : type_(is_number ? Type::kNumber : Type::kString),
+        string_value_(string) {}
   Json& operator=(const std::string& string) {
-    type_ = Type::STRING;
+    type_ = Type::kString;
     string_value_ = string;
     return *this;
   }
@@ -100,18 +93,18 @@ class Json {
   // Construct by moving a string.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(std::string&& string)
-      : type_(Type::STRING), string_value_(std::move(string)) {}
+      : type_(Type::kString), string_value_(std::move(string)) {}
   Json& operator=(std::string&& string) {
-    type_ = Type::STRING;
+    type_ = Type::kString;
     string_value_ = std::move(string);
     return *this;
   }
 
   // Construct from bool.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(bool b) : type_(b ? Type::JSON_TRUE : Type::JSON_FALSE) {}
+  Json(bool b) : type_(b ? Type::kTrue : Type::kFalse) {}
   Json& operator=(bool b) {
-    type_ = b ? Type::JSON_TRUE : Type::JSON_FALSE;
+    type_ = b ? Type::kTrue : Type::kFalse;
     return *this;
   }
 
@@ -119,19 +112,19 @@ class Json {
   template <typename NumericType>
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(NumericType number)
-      : type_(Type::NUMBER), string_value_(std::to_string(number)) {}
+      : type_(Type::kNumber), string_value_(std::to_string(number)) {}
   template <typename NumericType>
   Json& operator=(NumericType number) {
-    type_ = Type::NUMBER;
+    type_ = Type::kNumber;
     string_value_ = std::to_string(number);
     return *this;
   }
 
   // Construct by copying object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Object& object) : type_(Type::OBJECT), object_value_(object) {}
+  Json(const Object& object) : type_(Type::kObject), object_value_(object) {}
   Json& operator=(const Object& object) {
-    type_ = Type::OBJECT;
+    type_ = Type::kObject;
     object_value_ = object;
     return *this;
   }
@@ -139,27 +132,27 @@ class Json {
   // Construct by moving object.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(Object&& object)
-      : type_(Type::OBJECT), object_value_(std::move(object)) {}
+      : type_(Type::kObject), object_value_(std::move(object)) {}
   Json& operator=(Object&& object) {
-    type_ = Type::OBJECT;
+    type_ = Type::kObject;
     object_value_ = std::move(object);
     return *this;
   }
 
   // Construct by copying array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Array& array) : type_(Type::ARRAY), array_value_(array) {}
+  Json(const Array& array) : type_(Type::kArray), array_value_(array) {}
   Json& operator=(const Array& array) {
-    type_ = Type::ARRAY;
+    type_ = Type::kArray;
     array_value_ = array;
     return *this;
   }
 
   // Construct by moving array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Array&& array) : type_(Type::ARRAY), array_value_(std::move(array)) {}
+  Json(Array&& array) : type_(Type::kArray), array_value_(std::move(array)) {}
   Json& operator=(Array&& array) {
-    type_ = Type::ARRAY;
+    type_ = Type::kArray;
     array_value_ = std::move(array);
     return *this;
   }
@@ -179,14 +172,14 @@ class Json {
   bool operator==(const Json& other) const {
     if (type_ != other.type_) return false;
     switch (type_) {
-      case Type::NUMBER:
-      case Type::STRING:
+      case Type::kNumber:
+      case Type::kString:
         if (string_value_ != other.string_value_) return false;
         break;
-      case Type::OBJECT:
+      case Type::kObject:
         if (object_value_ != other.object_value_) return false;
         break;
-      case Type::ARRAY:
+      case Type::kArray:
         if (array_value_ != other.array_value_) return false;
         break;
       default:
@@ -201,14 +194,14 @@ class Json {
   void CopyFrom(const Json& other) {
     type_ = other.type_;
     switch (type_) {
-      case Type::NUMBER:
-      case Type::STRING:
+      case Type::kNumber:
+      case Type::kString:
         string_value_ = other.string_value_;
         break;
-      case Type::OBJECT:
+      case Type::kObject:
         object_value_ = other.object_value_;
         break;
-      case Type::ARRAY:
+      case Type::kArray:
         array_value_ = other.array_value_;
         break;
       default:
@@ -218,16 +211,16 @@ class Json {
 
   void MoveFrom(Json&& other) {
     type_ = other.type_;
-    other.type_ = Type::JSON_NULL;
+    other.type_ = Type::kNull;
     switch (type_) {
-      case Type::NUMBER:
-      case Type::STRING:
+      case Type::kNumber:
+      case Type::kString:
         string_value_ = std::move(other.string_value_);
         break;
-      case Type::OBJECT:
+      case Type::kObject:
         object_value_ = std::move(other.object_value_);
         break;
-      case Type::ARRAY:
+      case Type::kArray:
         array_value_ = std::move(other.array_value_);
         break;
       default:
@@ -235,7 +228,7 @@ class Json {
     }
   }
 
-  Type type_ = Type::JSON_NULL;
+  Type type_ = Type::kNull;
   std::string string_value_;
   Object object_value_;
   Array array_value_;

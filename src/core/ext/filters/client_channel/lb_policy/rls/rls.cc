@@ -754,7 +754,7 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
 bool InsertOrUpdateChildPolicyField(const std::string& field,
                                     const std::string& value, Json* config,
                                     ValidationErrors* errors) {
-  if (config->type() != Json::Type::ARRAY) {
+  if (config->type() != Json::Type::kArray) {
     errors->AddError("is not an array");
     return false;
   }
@@ -762,7 +762,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
   for (size_t i = 0; i < config->array().size(); ++i) {
     Json& child_json = (*config->mutable_array())[i];
     ValidationErrors::ScopedField json_field(errors, absl::StrCat("[", i, "]"));
-    if (child_json.type() != Json::Type::OBJECT) {
+    if (child_json.type() != Json::Type::kObject) {
       errors->AddError("is not an object");
       success = false;
     } else {
@@ -774,7 +774,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
         ValidationErrors::ScopedField json_field(
             errors, absl::StrCat("[\"", child.begin()->first, "\"]"));
         Json& child_config_json = child.begin()->second;
-        if (child_config_json.type() != Json::Type::OBJECT) {
+        if (child_config_json.type() != Json::Type::kObject) {
           errors->AddError("child policy config is not an object");
           success = false;
         } else {

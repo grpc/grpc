@@ -275,7 +275,7 @@ static grpc_error_handle create_default_creds_from_path(
     }
     json = std::move(*json_or);
   }
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
                                grpc_core::StatusStrProperty::kRawBytes,
                                grpc_core::StringViewFromSlice(creds_data));

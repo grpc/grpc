@@ -52,18 +52,18 @@ void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
 void ValidateValue(const Json& actual, const Json& expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
-    case Json::Type::JSON_NULL:
-    case Json::Type::JSON_TRUE:
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kNull:
+    case Json::Type::kTrue:
+    case Json::Type::kFalse:
       break;
-    case Json::Type::STRING:
-    case Json::Type::NUMBER:
+    case Json::Type::kString:
+    case Json::Type::kNumber:
       EXPECT_EQ(actual.string(), expected.string());
       break;
-    case Json::Type::OBJECT:
+    case Json::Type::kObject:
       ValidateObject(actual.object(), expected.object());
       break;
-    case Json::Type::ARRAY:
+    case Json::Type::kArray:
       ValidateArray(actual.array(), expected.array());
       break;
   }

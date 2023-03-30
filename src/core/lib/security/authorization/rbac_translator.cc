@@ -93,7 +93,7 @@ absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
   std::vector<std::unique_ptr<Rbac::Principal>> principal_names;
   for (size_t i = 0; i < json.array().size(); ++i) {
     const Json& child = json.array().at(i);
-    if (child.type() != Json::Type::STRING) {
+    if (child.type() != Json::Type::kString) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"principals\" ", i, ": is not a string."));
     }
@@ -114,7 +114,7 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
   std::vector<std::unique_ptr<Rbac::Principal>> peer;
   for (const auto& object : json.object()) {
     if (object.first == "principals") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"principals\" is not an array.");
       }
       auto principal_names_or = ParsePrincipalsArray(object.second);
@@ -142,7 +142,7 @@ absl::StatusOr<Rbac::Permission> ParseHeaderValues(
   std::vector<std::unique_ptr<Rbac::Permission>> values;
   for (size_t i = 0; i < json.array().size(); ++i) {
     const Json& child = json.array().at(i);
-    if (child.type() != Json::Type::STRING) {
+    if (child.type() != Json::Type::kString) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"values\" ", i, ": is not a string."));
     }
@@ -163,7 +163,7 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   const Json* values = nullptr;
   for (const auto& object : json.object()) {
     if (object.first == "key") {
-      if (object.second.type() != Json::Type::STRING) {
+      if (object.second.type() != Json::Type::kString) {
         return absl::InvalidArgumentError("\"key\" is not a string.");
       }
       key = object.second.string();
@@ -173,7 +173,7 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
             absl::StrFormat("Unsupported \"key\" %s.", key));
       }
     } else if (object.first == "values") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"values\" is not an array.");
       }
       values = &object.second;
@@ -195,7 +195,7 @@ absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
   std::vector<std::unique_ptr<Rbac::Permission>> headers;
   for (size_t i = 0; i < json.array().size(); ++i) {
     const Json& child = json.array().at(i);
-    if (child.type() != Json::Type::OBJECT) {
+    if (child.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"headers\" ", i, ": is not an object."));
     }
@@ -215,7 +215,7 @@ absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
   std::vector<std::unique_ptr<Rbac::Permission>> paths;
   for (size_t i = 0; i < json.array().size(); ++i) {
     const Json& child = json.array().at(i);
-    if (child.type() != Json::Type::STRING) {
+    if (child.type() != Json::Type::kString) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"paths\" ", i, ": is not a string."));
     }
@@ -235,7 +235,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
   std::vector<std::unique_ptr<Rbac::Permission>> request;
   for (const auto& object : json.object()) {
     if (object.first == "paths") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"paths\" is not an array.");
       }
       auto paths_or = ParsePathsArray(object.second);
@@ -245,7 +245,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
             std::make_unique<Rbac::Permission>(std::move(paths_or.value())));
       }
     } else if (object.first == "headers") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"headers\" is not an array.");
       }
       auto headers_or = ParseHeadersArray(object.second);
@@ -272,20 +272,20 @@ absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
   absl::optional<Rbac::Permission> permissions;
   for (const auto& object : json.object()) {
     if (object.first == "name") {
-      if (object.second.type() != Json::Type::STRING) {
+      if (object.second.type() != Json::Type::kString) {
         return absl::InvalidArgumentError(
             absl::StrCat("\"name\" is not a string."));
       }
       *policy_name = object.second.string();
     } else if (object.first == "source") {
-      if (object.second.type() != Json::Type::OBJECT) {
+      if (object.second.type() != Json::Type::kObject) {
         return absl::InvalidArgumentError("\"source\" is not an object.");
       }
       auto peer_or = ParsePeer(object.second);
       if (!peer_or.ok()) return peer_or.status();
       principals = std::move(*peer_or);
     } else if (object.first == "request") {
-      if (object.second.type() != Json::Type::OBJECT) {
+      if (object.second.type() != Json::Type::kObject) {
         return absl::InvalidArgumentError("\"request\" is not an object.");
       }
       auto request_or = ParseRequest(object.second);
@@ -316,7 +316,7 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
   std::map<std::string, Rbac::Policy> policies;
   for (size_t i = 0; i < json.array().size(); ++i) {
     const Json& child = json.array().at(i);
-    if (child.type() != Json::Type::OBJECT) {
+    if (child.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError(
           absl::StrCat("rules ", i, ": is not an object."));
     }
@@ -357,7 +357,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
         absl::StrCat("Failed to parse gRPC authorization policy. Error: ",
                      json.status().ToString()));
   }
-  if (json->type() != Json::Type::OBJECT) {
+  if (json->type() != Json::Type::kObject) {
     return absl::InvalidArgumentError(
         "SDK authorization policy is not an object.");
   }
@@ -365,7 +365,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   if (it == json->object().end()) {
     return absl::InvalidArgumentError("\"name\" field is not present.");
   }
-  if (it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::kString) {
     return absl::InvalidArgumentError("\"name\" is not a string.");
   }
   absl::string_view name = it->second.string();
@@ -375,7 +375,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     if (object.first == "name") {
       continue;
     } else if (object.first == "deny_rules") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"deny_rules\" is not an array.");
       }
       auto deny_policy_or = ParseDenyRulesArray(object.second, name);
@@ -386,7 +386,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
       }
       rbacs.deny_policy = std::move(*deny_policy_or);
     } else if (object.first == "allow_rules") {
-      if (object.second.type() != Json::Type::ARRAY) {
+      if (object.second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"allow_rules\" is not an array.");
       }
       auto allow_policy_or = ParseAllowRulesArray(object.second, name);

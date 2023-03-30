@@ -211,7 +211,7 @@ TEST(JwtVerifierTest, ClaimsSuccess) {
   grpc_jwt_claims* claims;
   auto json = Json::Parse(claims_without_time_constraint);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
@@ -229,7 +229,7 @@ TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   grpc_jwt_claims* claims;
   auto json = Json::Parse(expired_claims);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
@@ -252,7 +252,7 @@ TEST(JwtVerifierTest, ExpiredClaimsFailure) {
 TEST(JwtVerifierTest, InvalidClaimsFailure) {
   auto json = Json::Parse(invalid_claims);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
   ASSERT_EQ(grpc_jwt_claims_from_json(*json), nullptr);
 }
@@ -261,7 +261,7 @@ TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
   grpc_jwt_claims* claims;
   auto json = Json::Parse(claims_without_time_constraint);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
@@ -274,7 +274,7 @@ TEST(JwtVerifierTest, BadSubjectClaimsFailure) {
   grpc_jwt_claims* claims;
   auto json = Json::Parse(claims_with_bad_subject);
   ASSERT_TRUE(json.ok()) << json.status();
-  ASSERT_EQ(json->type(), Json::Type::OBJECT);
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);

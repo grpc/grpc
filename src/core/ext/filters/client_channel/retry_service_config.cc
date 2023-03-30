@@ -74,8 +74,8 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
     errors->AddError("field not present");
     return;
   }
-  if (it->second.type() != Json::Type::NUMBER &&
-      it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::kNumber &&
+      it->second.type() != Json::Type::kString) {
     errors->AddError("is not a number");
     return;
   }

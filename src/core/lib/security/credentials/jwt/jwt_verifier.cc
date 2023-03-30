@@ -124,7 +124,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
 }
 
 static const char* validate_string_field(const Json& json, const char* key) {
-  if (json.type() != Json::Type::STRING) {
+  if (json.type() != Json::Type::kString) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return nullptr;
   }
@@ -133,7 +133,7 @@ static const char* validate_string_field(const Json& json, const char* key) {
 
 static gpr_timespec validate_time_field(const Json& json, const char* key) {
   gpr_timespec result = gpr_time_0(GPR_CLOCK_REALTIME);
-  if (json.type() != Json::Type::NUMBER) {
+  if (json.type() != Json::Type::kNumber) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return result;
   }
@@ -159,7 +159,7 @@ static jose_header* jose_header_from_json(Json json) {
   const char* alg_value;
   Json::Object::const_iterator it;
   jose_header* h = grpc_core::Zalloc<jose_header>();
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     gpr_log(GPR_ERROR, "JSON value is not an object");
     goto error;
   }
@@ -174,7 +174,7 @@ static jose_header* jose_header_from_json(Json json) {
   // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
   //
   alg_value = it->second.string().c_str();
-  if (it->second.type() != Json::Type::STRING ||
+  if (it->second.type() != Json::Type::kString ||
       strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
@@ -527,7 +527,7 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   BIGNUM* tmp_e = nullptr;
   Json::Object::const_iterator it;
 
-  GPR_ASSERT(json.type() == Json::Type::OBJECT);
+  GPR_ASSERT(json.type() == Json::Type::kObject);
   GPR_ASSERT(kty != nullptr);
   if (strcmp(kty, "RSA") != 0) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
@@ -581,7 +581,7 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     if (cur == nullptr) return nullptr;
     return extract_pkey_from_x509(cur->string().c_str());
   }
-  if (jwt_keys->type() != Json::Type::ARRAY) {
+  if (jwt_keys->type() != Json::Type::kArray) {
     gpr_log(GPR_ERROR,
             "Unexpected value type of keys property in jwks key set.");
     return nullptr;
@@ -589,7 +589,7 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
   // Key format is specified in:
   // https://tools.ietf.org/html/rfc7518#section-6.
   for (const Json& jkey : jwt_keys->array()) {
-    if (jkey.type() != Json::Type::OBJECT) continue;
+    if (jkey.type() != Json::Type::kObject) continue;
     const char* alg = nullptr;
     auto it = jkey.object().find("alg");
     if (it != jkey.object().end()) {
@@ -656,7 +656,7 @@ static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
   grpc_jwt_verifier_status status = GRPC_JWT_VERIFIER_GENERIC_ERROR;
   grpc_jwt_claims* claims = nullptr;
 
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
@@ -702,7 +702,7 @@ static void on_openid_config_retrieved(void* user_data,
   char* path;
 
   // TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time.
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   cur = find_property_by_name(json, "jwks_uri");
   if (cur == nullptr) {
     gpr_log(GPR_ERROR, "Could not find jwks_uri in openid config.");
@@ -894,7 +894,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   header = jose_header_from_json(std::move(json));
   if (header == nullptr) goto error;
 
@@ -902,7 +902,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   claims = grpc_jwt_claims_from_json(std::move(json));
   if (claims == nullptr) goto error;
 

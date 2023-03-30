@@ -98,7 +98,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     *error = GRPC_ERROR_CREATE("environment_id field not present.");
     return;
   }
-  if (it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::kString) {
     *error = GRPC_ERROR_CREATE("environment_id field must be a string.");
     return;
   }
@@ -111,14 +111,14 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     *error = GRPC_ERROR_CREATE("region_url field not present.");
     return;
   }
-  if (it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::kString) {
     *error = GRPC_ERROR_CREATE("region_url field must be a string.");
     return;
   }
   region_url_ = it->second.string();
   it = options.credential_source.object().find("url");
   if (it != options.credential_source.object().end() &&
-      it->second.type() == Json::Type::STRING) {
+      it->second.type() == Json::Type::kString) {
     url_ = it->second.string();
   }
   it =
@@ -128,7 +128,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
         GRPC_ERROR_CREATE("regional_cred_verification_url field not present.");
     return;
   }
-  if (it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::kString) {
     *error = GRPC_ERROR_CREATE(
         "regional_cred_verification_url field must be a string.");
     return;
@@ -136,7 +136,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   regional_cred_verification_url_ = it->second.string();
   it = options.credential_source.object().find("imdsv2_session_token_url");
   if (it != options.credential_source.object().end() &&
-      it->second.type() == Json::Type::STRING) {
+      it->second.type() == Json::Type::kString) {
     imdsv2_session_token_url_ = it->second.string();
   }
 }
@@ -423,14 +423,14 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
                              json.status().ToString())));
     return;
   }
-  if (json->type() != Json::Type::OBJECT) {
+  if (json->type() != Json::Type::kObject) {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE("Invalid retrieve signing keys response: "
                               "JSON type is not object"));
     return;
   }
   auto it = json->object().find("AccessKeyId");
-  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     access_key_id_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(
@@ -439,7 +439,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     return;
   }
   it = json->object().find("SecretAccessKey");
-  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     secret_access_key_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(
@@ -448,7 +448,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     return;
   }
   it = json->object().find("Token");
-  if (it != json->object().end() && it->second.type() == Json::Type::STRING) {
+  if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     token_ = it->second.string();
   } else {
     FinishRetrieveSubjectToken(

@@ -243,7 +243,7 @@ void JsonWriter::EscapeString(const std::string& string) {
 void JsonWriter::ContainerBegins(Json::Type type) {
   if (!got_key_) ValueEnd();
   OutputIndent();
-  OutputChar(type == Json::Type::OBJECT ? '{' : '[');
+  OutputChar(type == Json::Type::kObject ? '{' : '[');
   container_empty_ = true;
   got_key_ = false;
   depth_++;
@@ -253,7 +253,7 @@ void JsonWriter::ContainerEnds(Json::Type type) {
   if (indent_ && !container_empty_) OutputChar('\n');
   depth_--;
   if (!container_empty_) OutputIndent();
-  OutputChar(type == Json::Type::OBJECT ? '}' : ']');
+  OutputChar(type == Json::Type::kObject ? '}' : ']');
   container_empty_ = false;
   got_key_ = false;
 }
@@ -281,43 +281,43 @@ void JsonWriter::ValueString(const std::string& string) {
 }
 
 void JsonWriter::DumpObject(const Json::Object& object) {
-  ContainerBegins(Json::Type::OBJECT);
+  ContainerBegins(Json::Type::kObject);
   for (const auto& p : object) {
     ObjectKey(p.first);
     DumpValue(p.second);
   }
-  ContainerEnds(Json::Type::OBJECT);
+  ContainerEnds(Json::Type::kObject);
 }
 
 void JsonWriter::DumpArray(const Json::Array& array) {
-  ContainerBegins(Json::Type::ARRAY);
+  ContainerBegins(Json::Type::kArray);
   for (const auto& v : array) {
     DumpValue(v);
   }
-  ContainerEnds(Json::Type::ARRAY);
+  ContainerEnds(Json::Type::kArray);
 }
 
 void JsonWriter::DumpValue(const Json& value) {
   switch (value.type()) {
-    case Json::Type::OBJECT:
+    case Json::Type::kObject:
       DumpObject(value.object());
       break;
-    case Json::Type::ARRAY:
+    case Json::Type::kArray:
       DumpArray(value.array());
       break;
-    case Json::Type::STRING:
+    case Json::Type::kString:
       ValueString(value.string());
       break;
-    case Json::Type::NUMBER:
+    case Json::Type::kNumber:
       ValueRaw(value.string());
       break;
-    case Json::Type::JSON_TRUE:
+    case Json::Type::kTrue:
       ValueRaw(std::string("true", 4));
       break;
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kFalse:
       ValueRaw(std::string("false", 5));
       break;
-    case Json::Type::JSON_NULL:
+    case Json::Type::kNull:
       ValueRaw(std::string("null", 4));
       break;
     default:
