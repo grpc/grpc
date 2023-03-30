@@ -26,13 +26,12 @@ namespace grpc {
 
 namespace grpc_gcp {
 
-// Initialize GCP Observability for gRPC.
-// This should be called before any other gRPC operations like creating a
-// channel, server, credentials etc.
-// The most common usage would call this at the top (or near the top) in main().
-// As an implementation detail, this properly initializes the OpenCensus stats
-// and tracing plugin, so applications do not need to perform any additional
-// gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
+// Observability objects follow the RAII idiom and help manage the lifetime of
+// gRPC Observability data exporting to GCP. It is illegal to directly construct
+// objects of this class. `ObservabilityInit()` should be invoked instead to
+// return an `Observability` instance. Observability data is flushed at regular
+// intervals, and also when this instance goes out of scope and its destructor
+// is invoked.
 class Observability {
  public:
   ~Observability();
