@@ -34,12 +34,32 @@ int32_t LoadConfigFromEnv(absl::string_view environment_variable,
 bool LoadConfigFromEnv(absl::string_view environment_variable,
                        bool default_value);
 
+// There exists code that pokes values into the absl flags that we have, and can
+// manage to smuggle an illegal empty string into an absl::optional<std::string>
+// flag.
+// To handle this case, we prove a SanitizeValue function here for each flag
+// type that will massage things into a safe state.
+
+inline absl::optional<std::string> SanitizeValue(
+    absl::optional<std::string> value) {
+  if (value.has_value() && value->empty()) return absl::nullopt;
+  return value;
+}
+
+inline absl::optional<int32_t> SanitizeValue(absl::optional<int32_t> value) {
+  return value;
+}
+
+inline absl::optional<bool> SanitizeValue(absl::optional<bool> value) {
+  return value;
+}
+
 template <typename T, typename D>
 T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
              absl::string_view environment_variable,
              const absl::optional<T>& override, D default_value) {
   if (override.has_value()) return *override;
-  auto from_flag = absl::GetFlag(flag);
+  auto from_flag = SanitizeValue(absl::GetFlag(flag));
   if (from_flag.has_value()) return std::move(*from_flag);
   return LoadConfigFromEnv(environment_variable, default_value);
 }
