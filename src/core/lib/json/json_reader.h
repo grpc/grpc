@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,31 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_READER_H
+#define GRPC_SRC_CORE_LIB_JSON_JSON_READER_H
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 
-bool squelch = true;
-bool leak_check = true;
+namespace grpc_core {
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  auto json = grpc_core::JsonParse(
-      absl::string_view(reinterpret_cast<const char*>(data), size));
-  if (json.ok()) {
-    auto text2 = JsonDump(*json);
-    auto json2 = grpc_core::JsonParse(text2);
-    GPR_ASSERT(json2.ok());
-    GPR_ASSERT(*json == *json2);
-  }
-  return 0;
-}
+// Parses JSON string from json_str.
+absl::StatusOr<Json> JsonParse(absl::string_view json_str);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_READER_H

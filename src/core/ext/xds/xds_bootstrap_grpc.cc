@@ -39,6 +39,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
@@ -211,7 +213,7 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
 
 absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     absl::string_view json_string) {
-  auto json = Json::Parse(json_string);
+  auto json = JsonParse(json_string);
   if (!json.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Failed to parse bootstrap JSON string: ", json.status().ToString()));
@@ -290,10 +292,10 @@ std::string GrpcXdsBootstrap::ToString() const {
                         "},\n",
                         node_->id(), node_->cluster(), node_->locality_region(),
                         node_->locality_zone(), node_->locality_sub_zone(),
-                        Json{node_->metadata()}.Dump()));
+                        JsonDump(Json{node_->metadata()})));
   }
   parts.push_back(
-      absl::StrFormat("servers=[\n%s\n],\n", servers_[0].ToJson().Dump()));
+      absl::StrFormat("servers=[\n%s\n],\n", JsonDump(servers_[0].ToJson())));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",
@@ -313,9 +315,8 @@ std::string GrpcXdsBootstrap::ToString() const {
     if (entry.second.server() != nullptr) {
       parts.push_back(absl::StrFormat(
           "    servers=[\n%s\n],\n",
-          static_cast<const GrpcXdsServer*>(entry.second.server())
-              ->ToJson()
-              .Dump()));
+          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
+                       ->ToJson())));
     }
     parts.push_back("      },\n");
   }

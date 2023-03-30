@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
@@ -86,7 +87,7 @@ void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
                                 size_t num_events_expected) {
   Json json = tracer->RenderJson();
   ASSERT_EQ(json.type(), Json::Type::kObject);
-  std::string json_str = json.Dump();
+  std::string json_str = JsonDump(json);
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str.c_str());
   ValidateChannelTraceData(json, num_events_logged, num_events_expected);
 }

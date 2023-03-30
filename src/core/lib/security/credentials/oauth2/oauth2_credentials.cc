@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -112,7 +113,7 @@ end:
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char* json_string) {
   Json json;
-  auto json_or = Json::Parse(json_string);
+  auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
     gpr_log(GPR_ERROR, "JSON parsing failed: %s",
             json_or.status().ToString().c_str());
@@ -181,7 +182,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const char* token_type = nullptr;
     const char* expires_in = nullptr;
     Json::Object::const_iterator it;
-    auto json = Json::Parse(
+    auto json = grpc_core::JsonParse(
         null_terminated_body != nullptr ? null_terminated_body : "");
     if (!json.ok()) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
