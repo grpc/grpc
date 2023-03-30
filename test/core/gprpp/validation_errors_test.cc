@@ -97,6 +97,24 @@ TEST(ValidationErrors, ErrorsForMultipleFields) {
       << status;
 }
 
+TEST(ValidationErrors, MessageMatchesStatusMessage) {
+  ValidationErrors errors;
+  {
+    ValidationErrors::ScopedField field(&errors, "foo");
+    {
+      ValidationErrors::ScopedField field(&errors, ".bar");
+      errors.AddError("value smells funny");
+    }
+    errors.AddError("too hot");
+  }
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.size(), 2);
+  absl::Status status = errors.status("errors validating config");
+  std::string message = errors.message("errors validating config");
+  EXPECT_EQ(status.message(), message)
+      << status << " does not match " << message;
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
