@@ -102,8 +102,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fixture_support",
-    srcs = ["fixtures/local_util.cc"],
     testonly = 1,
+    srcs = ["fixtures/local_util.cc"],
     hdrs = [
         "end2end_tests.h",
         "fixtures/h2_oauth2_common.h",

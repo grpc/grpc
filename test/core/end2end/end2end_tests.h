@@ -34,7 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "cq_verifier.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
