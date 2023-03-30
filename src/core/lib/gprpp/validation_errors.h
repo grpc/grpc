@@ -104,6 +104,9 @@ class ValidationErrors {
       absl::string_view prefix,
       absl::StatusCode code = absl::StatusCode::kInvalidArgument) const;
 
+  // Returns the resulting error message
+  std::string message(absl::string_view prefix) const;
+
   // Returns true if there are no errors.
   bool ok() const { return field_errors_.empty(); }
 
