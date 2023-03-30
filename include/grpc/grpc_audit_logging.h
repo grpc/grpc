@@ -27,43 +27,42 @@ namespace grpc_core {
 namespace experimental {
 
 // The base struct for audit context.
-typedef struct CoreAuditContext {
+class AuditContext {
  public:
   absl::string_view rpc_method() const;
   absl::string_view principal() const;
   absl::string_view policy_name() const;
   absl::string_view matched_rule() const;
   bool authorized() const;
-} AuditContext;
+};
 
 // This base class for audit logger implementations.
-class CoreAuditLogger {
+class AuditLogger {
  public:
-  virtual void CoreLog(const CoreAuditContext& audit_context) = 0;
+  virtual void Log(const AuditContext& audit_context) = 0;
 };
 
 // This is the base class for audit logger factory implementations.
-class CoreAuditLoggerFactory {
+class AuditLoggerFactory {
  public:
-  class CoreConfig {
+  class Config {
    public:
-    virtual const char* core_name() const = 0;
-    virtual std::string CoreToString() = 0;
+    virtual const char* name() const = 0;
+    virtual std::string ToString() = 0;
   };
-  virtual const char* core_name() const = 0;
+  virtual const char* name() const = 0;
 
   // TODO(lwge): change to grpc_core::Json once it's exposed.
-  virtual absl::StatusOr<std::unique_ptr<CoreConfig>>
-  ParseCoreAuditLoggerConfig(absl::string_view config_json) = 0;
+  virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
+      absl::string_view config_json) = 0;
 
-  virtual std::unique_ptr<CoreAuditLogger> CreateCoreAuditLogger(
-      std::unique_ptr<CoreAuditLoggerFactory::CoreConfig>) = 0;
+  virtual std::unique_ptr<AuditLogger> CreateAuditLogger(
+      std::unique_ptr<AuditLoggerFactory::Config>) = 0;
 };
 
 // Registers an audit logger factory. This should only be called during
 // initialization.
-void RegisterAuditLoggerFactory(
-    std::unique_ptr<CoreAuditLoggerFactory> factory);
+void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 
 }  // namespace experimental
 }  // namespace grpc_core

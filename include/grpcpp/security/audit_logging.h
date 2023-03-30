@@ -29,10 +29,9 @@ namespace experimental {
 // event.
 class AuditContext {
  public:
-  // Does not take the ownership of core_context. Callers have to ensure it
-  // outlives this class.
+  // Callers need to ensure the given reference outlives this class object.
   explicit AuditContext(
-      const grpc_core::experimental::CoreAuditContext* core_context)
+      const grpc_core::experimental::AuditContext& core_context)
       : core_context_(core_context) {}
 
   grpc::string_ref rpc_method() const;
@@ -42,38 +41,31 @@ class AuditContext {
   bool authorized() const;
 
  private:
-  const grpc_core::experimental::CoreAuditContext* core_context_;
+  const grpc_core::experimental::AuditContext& core_context_;
 };
 
 // The base class for audit logger implementations.
 // Users are expected to inherit this class and implement the Log() function.
-class AuditLogger : public grpc_core::experimental::CoreAuditLogger {
+class AuditLogger {
  public:
   // This function will be invoked synchronously when applicable during the
   // RBAC-based authorization process. It does not return anything and thus will
   // not impact whether the RPC will be rejected or not.
   virtual void Log(const AuditContext& audit_context) = 0;
-
-  void CoreLog(const grpc_core::experimental::CoreAuditContext&) final;
 };
 
 // The base class for audit logger factory implementations.
 // Users should inherit this class and implement those declared virtual
 // funcitons.
-class AuditLoggerFactory
-    : public grpc_core::experimental::CoreAuditLoggerFactory {
+class AuditLoggerFactory {
  public:
   // The base class for the audit logger config that the factory parses.
   // Users should inherit this class to define the configuration needed for
   // their custom loggers.
-  class Config
-      : public grpc_core::experimental::CoreAuditLoggerFactory::CoreConfig {
+  class Config {
    public:
     virtual const char* name() const = 0;
     virtual std::string ToString() = 0;
-
-    const char* core_name() const final;
-    std::string CoreToString() final;
   };
   virtual const char* name() const = 0;
 
@@ -82,18 +74,6 @@ class AuditLoggerFactory
 
   virtual std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) = 0;
-
-  const char* core_name() const final;
-
-  absl::StatusOr<std::unique_ptr<
-      grpc_core::experimental::CoreAuditLoggerFactory::CoreConfig>>
-  ParseCoreAuditLoggerConfig(absl::string_view config_json) final;
-
-  std::unique_ptr<grpc_core::experimental::CoreAuditLogger>
-      CreateCoreAuditLogger(
-          std::unique_ptr<
-              grpc_core::experimental::CoreAuditLoggerFactory::CoreConfig>)
-          final;
 };
 
 // Registers an audit logger factory. This should only be called during
