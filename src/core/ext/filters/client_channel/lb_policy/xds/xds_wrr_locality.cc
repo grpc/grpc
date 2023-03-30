@@ -86,8 +86,8 @@ class XdsWrrLocalityLbConfig : public LoadBalancingPolicy::Config {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors) {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
       return;
     }

@@ -39,8 +39,8 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
     }
     return nullptr;
   }
-  auto it = json.object_value().find(prop_name);
-  if (it == json.object_value().end()) {
+  auto it = json.object().find(prop_name);
+  if (it == json.object().end()) {
     if (error != nullptr) {
       *error = GRPC_ERROR_CREATE(
           absl::StrCat("Property ", prop_name, " not found in JSON object."));
@@ -54,7 +54,7 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
     }
     return nullptr;
   }
-  return it->second.string_value().c_str();
+  return it->second.string().c_str();
 }
 
 bool grpc_copy_json_string_property(const grpc_core::Json& json,

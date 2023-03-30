@@ -300,16 +300,16 @@ void JsonWriter::DumpArray(const Json::Array& array) {
 void JsonWriter::DumpValue(const Json& value) {
   switch (value.type()) {
     case Json::Type::OBJECT:
-      DumpObject(value.object_value());
+      DumpObject(value.object());
       break;
     case Json::Type::ARRAY:
-      DumpArray(value.array_value());
+      DumpArray(value.array());
       break;
     case Json::Type::STRING:
-      ValueString(value.string_value());
+      ValueString(value.string());
       break;
     case Json::Type::NUMBER:
-      ValueRaw(value.string_value());
+      ValueRaw(value.string());
       break;
     case Json::Type::JSON_TRUE:
       ValueRaw(std::string("true", 4));

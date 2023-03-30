@@ -853,8 +853,8 @@ void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
                                                      const JsonArgs&,
                                                      ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".config");
-  auto it = json.object_value().find("config");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("config");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }

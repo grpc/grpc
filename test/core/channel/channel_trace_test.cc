@@ -57,7 +57,7 @@ void ValidateJsonArraySize(const Json& array, size_t expected) {
     ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
   } else {
     ASSERT_EQ(array.type(), Json::Type::ARRAY);
-    EXPECT_EQ(array.array_value().size(), expected);
+    EXPECT_EQ(array.array().size(), expected);
   }
 }
 
@@ -65,11 +65,11 @@ void ValidateChannelTraceData(const Json& json,
                               size_t num_events_logged_expected,
                               size_t actual_num_events_expected) {
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  Json::Object object = json.object_value();
+  Json::Object object = json.object();
   Json& num_events_logged_json = object["numEventsLogged"];
   ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
   size_t num_events_logged = static_cast<size_t>(
-      strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
+      strtol(num_events_logged_json.string().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
   Json& start_time_json = object["creationTimestamp"];
   ASSERT_EQ(start_time_json.type(), Json::Type::STRING);

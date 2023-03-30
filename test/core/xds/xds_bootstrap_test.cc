@@ -183,12 +183,12 @@ TEST(XdsBootstrapTest, Basic) {
                       ::testing::Eq("bar"),
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::NUMBER),
-                          ::testing::Property(&Json::string_value, "2"))),
+                          ::testing::Property(&Json::string, "2"))),
                   ::testing::Pair(
                       ::testing::Eq("foo"),
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::NUMBER),
-                          ::testing::Property(&Json::string_value, "1")))));
+                          ::testing::Property(&Json::string, "1")))));
   EXPECT_EQ(bootstrap->server_listener_resource_name_template(),
             "example/resource");
 }
@@ -588,14 +588,14 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
                                   grpc_error_handle* error) override {
     std::vector<grpc_error_handle> error_list;
     EXPECT_EQ(config_json.type(), Json::Type::OBJECT);
-    auto it = config_json.object_value().find("value");
-    if (it == config_json.object_value().end()) {
+    auto it = config_json.object().find("value");
+    if (it == config_json.object().end()) {
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
     } else if (it->second.type() != Json::Type::NUMBER) {
       *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
     } else {
       int value = 0;
-      EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));
+      EXPECT_TRUE(absl::SimpleAtoi(it->second.string(), &value));
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(value);
     }
     return nullptr;
