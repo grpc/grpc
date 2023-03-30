@@ -232,9 +232,12 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
       static_cast<socklen_t>(sizeof(sockaddr_in6)));
 }
 
+#define EXPECT_UNKNOWN_ERROR(result) \
+  EXPECT_EQ((result).status().code(), absl::StatusCode::kUnknown)
+
 }  // namespace
 
-TEST_F(EventEngineDNSTest, QueryHostnameFailed) {
+TEST_F(EventEngineDNSTest, MissingDefaultPort) {
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
       test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
@@ -244,7 +247,26 @@ TEST_F(EventEngineDNSTest, QueryHostnameFailed) {
       [&verified, &dns_resolver_signal](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         ASSERT_FALSE(result.ok());
-        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        EXPECT_UNKNOWN_ERROR(result);
+        verified = true;
+        dns_resolver_signal.Notify();
+      },
+      "localhost", "", std::chrono::seconds(5));
+  dns_resolver_signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, QueryNXHostname) {
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+  grpc_core::Notification dns_resolver_signal;
+  bool verified = false;
+  dns_resolver->LookupHostname(
+      [&verified, &dns_resolver_signal](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+        ASSERT_FALSE(result.ok());
+        EXPECT_UNKNOWN_ERROR(result);
         EXPECT_THAT(grpc_core::StatusGetChildren(result.status()),
                     Pointwise(StatusCodeEq(), {absl::StatusCode::kUnknown}));
         verified = true;
@@ -416,7 +438,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
       [&verified,
        &dns_resolver_signal](absl::StatusOr<std::vector<SRVRecord>> result) {
         ASSERT_FALSE(result.ok());
-        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        EXPECT_UNKNOWN_ERROR(result);
         verified = true;
         dns_resolver_signal.Notify();
       },
@@ -500,7 +522,7 @@ TEST_F(EventEngineDNSTest, TestQueryTimeout) {
   dns_resolver->LookupTXT(
       [&dns_resolver_signal](absl::StatusOr<std::string> result) {
         EXPECT_FALSE(result.ok());
-        EXPECT_EQ(result.status().code(), absl::StatusCode::kUnknown);
+        EXPECT_UNKNOWN_ERROR(result);
         dns_resolver_signal.Notify();
       },
       name, std::chrono::seconds(3));  // timeout in 3 seconds

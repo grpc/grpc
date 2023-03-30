@@ -94,27 +94,24 @@ namespace {
 struct FdNode;
 class FdNodeList;
 
-}  // namespace
-
-class GrpcAresRequestImpl : public virtual GrpcAresRequest {
+class GrpcAresRequestImpl : public grpc_core::RefCounted<GrpcAresRequestImpl> {
  public:
+  explicit GrpcAresRequestImpl(absl::string_view name,
+                               absl::optional<absl::string_view> default_port,
+                               EventEngine::Duration timeout,
+                               RegisterAresSocketWithPollerCallback register_cb,
+                               EventEngine* event_engine);
   ~GrpcAresRequestImpl() override;
 
   absl::Status Initialize(absl::string_view dns_server, bool check_port)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
-  void Cancel() ABSL_LOCKS_EXCLUDED(mu_) override;
+      ABSL_LOCKS_EXCLUDED(mu_);
+  void Cancel() ABSL_LOCKS_EXCLUDED(mu_);
   absl::string_view host() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return host_;
   }
   uint16_t port() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return port_; }
 
  protected:
-  explicit GrpcAresRequestImpl(absl::string_view name,
-                               absl::optional<absl::string_view> default_port,
-                               EventEngine::Duration timeout,
-                               RegisterAresSocketWithPollerCallback register_cb,
-                               EventEngine* event_engine);
-
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void CancelTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -162,27 +159,31 @@ class GrpcAresRequestImpl : public virtual GrpcAresRequest {
   absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mu_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
+  GrpcAresRequest* owner_;
 };
 
-class GrpcAresHostnameRequestImpl final : public GrpcAresRequestImpl,
-                                          public GrpcAresHostnameRequest {
- private:
-  using Result = std::vector<EventEngine::ResolvedAddress>;
-
+class GrpcAresHostnameRequestImpl final : public GrpcAresHostnameRequest,
+                                          public GrpcAresRequestImpl {
  public:
   explicit GrpcAresHostnameRequestImpl(
       absl::string_view name, absl::string_view default_port,
       EventEngine::Duration timeout,
       RegisterAresSocketWithPollerCallback register_cb,
       EventEngine* event_engine);
+  ~GrpcAresHostnameRequestImpl() override;
+
+  // Overhead
+  absl::Status Initialize(absl::string_view dns_server,
+                          bool check_port) override;
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
+  // Overhead
+  void Cancel() override;
   void OnResolve(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
-  ~GrpcAresHostnameRequestImpl() override;
   bool ResolveAsIPLiteralLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void LogResolvedAddressesList(const char* input_output_str)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -193,21 +194,25 @@ class GrpcAresHostnameRequestImpl final : public GrpcAresRequestImpl,
       ABSL_GUARDED_BY(mu_);
 };
 
-class GrpcAresSRVRequestImpl final : public GrpcAresRequestImpl,
-                                     public GrpcAresSRVRequest {
- private:
-  using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
-
+class GrpcAresSRVRequestImpl final : public GrpcAresSRVRequest,
+                                     public GrpcAresRequestImpl {
  public:
   explicit GrpcAresSRVRequestImpl(
       absl::string_view name, EventEngine::Duration timeout,
       RegisterAresSocketWithPollerCallback register_cb,
       EventEngine* event_engine);
+  ~GrpcAresSRVRequestImpl() override;
+
   const char* service_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return service_name_.c_str();
   }
+  // Overhead
+  absl::Status Initialize(absl::string_view dns_server,
+                          bool check_port) override;
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
+  // Overhead
+  void Cancel() override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -216,21 +221,25 @@ class GrpcAresSRVRequestImpl final : public GrpcAresRequestImpl,
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 
-class GrpcAresTXTRequestImpl : public GrpcAresRequestImpl,
-                               public GrpcAresTXTRequest {
- private:
-  using Result = std::string;
-
+class GrpcAresTXTRequestImpl : public GrpcAresTXTRequest,
+                               public GrpcAresRequestImpl {
  public:
   explicit GrpcAresTXTRequestImpl(
       absl::string_view name, EventEngine::Duration timeout,
       RegisterAresSocketWithPollerCallback register_cb,
       EventEngine* event_engine);
+  ~GrpcAresTXTRequestImpl() override;
+
   const char* config_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return config_name_.c_str();
   }
+  // Overhead
+  absl::Status Initialize(absl::string_view dns_server,
+                          bool check_port) override;
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_) override;
+  // Overhead
+  void Cancel() override;
   void OnResolve(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -238,8 +247,6 @@ class GrpcAresTXTRequestImpl : public GrpcAresRequestImpl,
   std::string config_name_;
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
-
-namespace {
 
 struct HostbynameArg {
   GrpcAresHostnameRequestImpl* request;
@@ -512,18 +519,14 @@ class FdNodeList {
   FdNode* head_ = nullptr;
 };
 
-}  // namespace
-
-GrpcAresRequest::GrpcAresRequest()
-    : grpc_core::RefCounted<GrpcAresRequest>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
-                                                          : nullptr) {}
-
 GrpcAresRequestImpl::GrpcAresRequestImpl(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequest(),
+    : grpc_core::RefCounted<GrpcAresRequestImpl>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver)
+              ? "GrpcAresRequestImpl"
+              : nullptr),
       name_(name),
       default_port_(default_port.has_value() ? *default_port : ""),
       timeout_(timeout),
@@ -535,9 +538,9 @@ GrpcAresRequestImpl::GrpcAresRequestImpl(
 GrpcAresRequestImpl::~GrpcAresRequestImpl() {
   if (initialized_) {
     ares_destroy(channel_);
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
     GRPC_ARES_DRIVER_STACK_TRACE();
   }
+  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
 absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
@@ -857,11 +860,22 @@ GrpcAresHostnameRequestImpl::~GrpcAresHostnameRequestImpl() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
+// Overhead
+absl::Status GrpcAresHostnameRequestImpl::Initialize(
+    absl::string_view dns_server, bool check_port) {
+  return GrpcAresRequestImpl::Initialize(dns_server, check_port);
+}
+
+// Overhead
+void GrpcAresHostnameRequestImpl::Cancel() {
+  return GrpcAresRequestImpl::Cancel();
+}
+
 void GrpcAresHostnameRequestImpl::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::MutexLock lock(&mu_);
-  GPR_DEBUG_ASSERT(initialized_);
+  GPR_ASSERT(initialized_);
   on_resolve_ = std::move(on_resolve);
   GRPC_ARES_DRIVER_TRACE_LOG(
       "request:%p c-ares GrpcAresHostnameRequestImpl::Start name=%s, "
@@ -975,6 +989,7 @@ bool GrpcAresHostnameRequestImpl::ResolveAsIPLiteralLocked() {
                         result = std::move(result)]() mutable {
       on_resolve(std::move(result));
     });
+    Unref(DEBUG_LOCATION, "ResolveAsIPLiteralLocked");
     return true;
   }
   return false;
@@ -1025,6 +1040,19 @@ GrpcAresSRVRequestImpl::GrpcAresSRVRequestImpl(
     : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
                           event_engine) {}
 
+GrpcAresSRVRequestImpl::~GrpcAresSRVRequestImpl() {
+  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+}
+
+// Overhead
+absl::Status GrpcAresSRVRequestImpl::Initialize(absl::string_view dns_server,
+                                                bool check_port) {
+  return GrpcAresRequestImpl::Initialize(dns_server, check_port);
+}
+
+// Overhead
+void GrpcAresSRVRequestImpl::Cancel() { return GrpcAresRequestImpl::Cancel(); }
+
 void GrpcAresSRVRequestImpl::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
@@ -1036,6 +1064,7 @@ void GrpcAresSRVRequestImpl::Start(
       on_resolve(GRPC_ERROR_CREATE(
           "Skip querying for SRV records for localhost target"));
     });
+    Unref(DEBUG_LOCATION, "Start");
     return;
   }
   on_resolve_ = std::move(on_resolve);
@@ -1065,6 +1094,19 @@ GrpcAresTXTRequestImpl::GrpcAresTXTRequestImpl(
     : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
                           event_engine) {}
 
+GrpcAresTXTRequestImpl::~GrpcAresTXTRequestImpl() {
+  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+}
+
+// Overhead
+absl::Status GrpcAresTXTRequestImpl::Initialize(absl::string_view dns_server,
+                                                bool check_port) {
+  return GrpcAresRequestImpl::Initialize(dns_server, check_port);
+}
+
+// Overhead
+void GrpcAresTXTRequestImpl::Cancel() { return GrpcAresRequestImpl::Cancel(); }
+
 void GrpcAresTXTRequestImpl::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
@@ -1076,6 +1118,7 @@ void GrpcAresTXTRequestImpl::Start(
       on_resolve(
           GRPC_ERROR_CREATE("Skip querying for TXT records localhost target"));
     });
+    Unref(DEBUG_LOCATION, "Start");
     return;
   }
   on_resolve_ = std::move(on_resolve);
@@ -1098,6 +1141,8 @@ void GrpcAresTXTRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   });
   Unref(DEBUG_LOCATION, "OnResolve");
 }
+
+}  // namespace
 
 GrpcAresHostnameRequest* CreateGrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,

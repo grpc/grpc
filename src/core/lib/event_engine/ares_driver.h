@@ -53,24 +53,23 @@ using PollerHandle = EventHandle*;
 using RegisterAresSocketWithPollerCallback =
     absl::AnyInvocable<PollerHandle(ares_socket_t)>;
 
-// An inflight name service lookup request
-class GrpcAresRequest : public grpc_core::RefCounted<GrpcAresRequest> {
+class GrpcAresRequest {
  public:
   virtual absl::Status Initialize(absl::string_view dns_server,
                                   bool check_port) = 0;
   virtual void Cancel() = 0;
-
- protected:
-  GrpcAresRequest();
+  virtual ~GrpcAresRequest() = default;
 };
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
 // lookup
-class GrpcAresHostnameRequest : public virtual GrpcAresRequest {
+class GrpcAresHostnameRequest : public GrpcAresRequest {
  protected:
   using Result = std::vector<EventEngine::ResolvedAddress>;
 
  public:
+  // on_resolve is guaranteed to be called with Result or failure status and the
+  // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
@@ -80,11 +79,13 @@ GrpcAresHostnameRequest* CreateGrpcAresHostnameRequest(
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine);
 
-class GrpcAresSRVRequest : public virtual GrpcAresRequest {
+class GrpcAresSRVRequest : public GrpcAresRequest {
  protected:
   using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
 
  public:
+  // on_resolve is guaranteed to be called with Result or failure status and the
+  // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
@@ -93,11 +94,13 @@ GrpcAresSRVRequest* CreateGrpcAresSRVRequest(
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine);
 
-class GrpcAresTXTRequest : public virtual GrpcAresRequest {
+class GrpcAresTXTRequest : public GrpcAresRequest {
  protected:
   using Result = std::string;
 
  public:
+  // on_resolve is guaranteed to be called with Result or failure status and the
+  // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };

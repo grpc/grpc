@@ -507,6 +507,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   const absl::Status status =
       request->Initialize(options_.dns_server, /*check_port=*/true);
   if (!status.ok()) {
+    delete request;
     // Report back initialization failure through on_resolve.
     on_resolve(status);
     return LookupTaskHandle{};
@@ -540,6 +541,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   const absl::Status status =
       request->Initialize(options_.dns_server, /*check_port=*/false);
   if (!status.ok()) {
+    delete request;
     // Report back initialization failure through on_resolve.
     on_resolve(status);
     return LookupTaskHandle{};
@@ -574,6 +576,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
   const absl::Status status =
       request->Initialize(options_.dns_server, /*check_port=*/false);
   if (!status.ok()) {
+    delete request;
     // Report back initialization failure through on_resolve.
     on_resolve(status);
     return LookupTaskHandle{};
