@@ -4882,7 +4882,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/container:flat_hash_set",
-        "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
