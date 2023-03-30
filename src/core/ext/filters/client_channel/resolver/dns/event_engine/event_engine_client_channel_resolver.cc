@@ -155,8 +155,7 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     LookupTaskHandleSet balancer_hostname_handles_
         ABSL_GUARDED_BY(on_resolved_mu_);
     // Output fields from requests.
-    std::vector<EventEngine::ResolvedAddress> addresses_
-        ABSL_GUARDED_BY(on_resolved_mu_);
+    ServerAddressList addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
     ServerAddressList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
     ValidationErrors errors_ ABSL_GUARDED_BY(on_resolved_mu_);
     absl::StatusOr<std::string> service_config_json_
@@ -220,6 +219,9 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+      "DNSResolver::%p Started resolving hostname %s", resolver_.get(),
+      resolver_->name_to_resolve().c_str());
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
@@ -227,29 +229,27 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
-      HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+        "DNSResolver::%p Started resolving SRV record %s", resolver_.get(),
+        resolver_->name_to_resolve().c_str());
     srv_handle_ = event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) { self->OnSRVResolved(std::move(srv_records)); },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving SRV. Handle::%s", resolver_.get(),
-        HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+        "DNSResolver::%p Started resolving TXT record %s", resolver_.get(),
+        resolver_->name_to_resolve().c_str());
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::string> service_config) {
           self->OnTXTResolved(std::move(service_config));
         },
-        resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving TXT. Handle::%s", resolver_.get(),
-        HandleToString(*txt_handle_).c_str());
+        absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
+        resolver_->query_timeout_ms_);
   }
 }
 
@@ -282,18 +282,22 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnHostnameResolved(
-        absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+    OnHostnameResolved(absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+                           new_addresses) {
   ValidationErrors::ScopedField field(&errors_, "hostname lookup");
   absl::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     if (orphaned_) return;
     hostname_handle_.reset();
-    if (!addresses.ok()) {
-      errors_.AddError(addresses.status().message());
+    if (!new_addresses.ok()) {
+      errors_.AddError(new_addresses.status().message());
     } else {
-      addresses_ = std::move(*addresses);
+      addresses_.reserve(addresses_.size() + new_addresses->size());
+      for (const auto& addr : *new_addresses) {
+        addresses_.emplace_back(CreateGRPCResolvedAddress(addr),
+                                resolver_->channel_args());
+      }
     }
     result = OnResolvedLocked();
   }
@@ -323,20 +327,20 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     return;
   }
   // Do a subsequent hostname query since SRV records were returned
-  for (const auto& srv_record : *srv_records) {
+  for (auto& srv_record : *srv_records) {
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+        "DNSResolver::%p Started resolving balancer hostname %s:%d",
+        resolver_.get(), srv_record.host.c_str(), srv_record.port);
     balancer_hostname_handles_.insert(event_engine_resolver_->LookupHostname(
-        [host = srv_record.host,
+        [host = std::move(srv_record.host),
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                new_balancer_addresses) {
-          self->OnBalancerHostnamesResolved(host,
+                new_balancer_addresses) mutable {
+          self->OnBalancerHostnamesResolved(std::move(host),
                                             std::move(new_balancer_addresses));
         },
         srv_record.host, std::to_string(srv_record.port),
         resolver_->query_timeout_ms_));
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving balancer hostname %s:%d",
-        resolver_.get(), srv_record.host.c_str(), srv_record.port);
   }
 }
 
@@ -345,7 +349,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
             new_balancer_addresses) {
-  ValidationErrors::ScopedField field(&errors_, "balancer hostname lookup");
+  ValidationErrors::ScopedField field(
+      &errors_,
+      absl::StrCat("balancer hostname lookup, authority: ", authority));
   absl::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
@@ -357,8 +363,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   ++number_of_balancer_hostnames_resolved_;
   if (!new_balancer_addresses.ok()) {
     // An error has occurred, finish resolving.
-    errors_.AddError(absl::StrCat(authority, ": ",
-                                  new_balancer_addresses.status().message()));
+    errors_.AddError(new_balancer_addresses.status().message());
   } else {
     // Capture the addresses and finish resolving.
     balancer_addresses_.reserve(balancer_addresses_.size() +
@@ -384,8 +389,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     txt_handle_.reset();
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());
+      service_config_json_ = service_config.status();
+    } else {
+      service_config_json_ = absl::StrCat("grpc_config=", *service_config);
     }
-    service_config_json_ = std::move(service_config);
     result = OnResolvedLocked();
   }
   if (result.has_value()) {
@@ -396,11 +403,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateAddressesLocked(Resolver::Result* result) {
   if (addresses_.empty()) return;
-  result->addresses->reserve(addresses_.size());
-  for (const auto& addr : addresses_) {
-    result->addresses->emplace_back(CreateGRPCResolvedAddress(addr),
-                                    resolver_->channel_args());
-  }
+  result->addresses = std::move(addresses_);
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -415,10 +418,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateServiceConfigLocked(Resolver::Result* result) {
   // This function is called only if we are returning addresses.  In that case,
   // we currently ignore TXT lookup failures.
-  if (!service_config_json_.ok()) return;
   // TODO(roth): Consider differentiating between NXDOMAIN and other failures,
   // so that we can return an error in the non-NXDOMAIN case.
-  if (service_config_json_->empty()) return;
+  if (!service_config_json_.ok()) return;
   // TXT lookup succeeded, so parse the config.
   auto service_config = ChooseServiceConfig(*service_config_json_);
   if (!service_config.ok()) {
@@ -475,12 +477,8 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     return std::move(result);
   }
   if (!errors_.ok()) {
-    result.resolution_note =
-        std::string(errors_
-                        .status(absl::StrCat("errors resolving ",
-                                             resolver_->name_to_resolve()),
-                                absl::StatusCode::kUnavailable)
-                        .message());
+    result.resolution_note = std::string(errors_.message(
+        absl::StrCat("errors resolving ", resolver_->name_to_resolve())));
   }
   // We have at least one of addresses or balancer addresses, so we're going to
   // return a non-error for addresses.

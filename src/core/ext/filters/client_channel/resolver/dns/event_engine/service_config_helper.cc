@@ -57,7 +57,7 @@ struct ServiceConfigChoice {
   }
 };
 
-bool vector_contains(const std::vector<std::string> v,
+bool vector_contains(const std::vector<std::string>& v,
                      const std::string& value) {
   return std::find(v.begin(), v.end(), value) != v.end();
 }
