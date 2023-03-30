@@ -91,7 +91,11 @@ CoreAuditLoggerFactory::ParseAuditLoggerConfig(absl::string_view config_json) {
       std::move(result.value()));
 };
 
-void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory){};
+void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory) {
+  auto core_factory =
+      std::make_unique<CoreAuditLoggerFactory>(std::move(factory));
+  grpc_core::experimental::RegisterAuditLoggerFactory(std::move(core_factory));
+};
 
 }  // namespace experimental
 }  // namespace grpc
