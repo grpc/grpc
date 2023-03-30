@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -219,7 +220,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   gpr_free(b64);
   EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(slice));
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  auto json = Json::Parse(string);
+  auto json = grpc_core::JsonParse(string);
   grpc_slice_unref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",

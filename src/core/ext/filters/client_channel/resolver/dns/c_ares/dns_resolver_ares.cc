@@ -77,6 +77,8 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -246,7 +248,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error_handle* error) {
-  auto json = Json::Parse(service_config_choice_json);
+  auto json = JsonParse(service_config_choice_json);
   if (!json.ok()) {
     *error = absl_status_to_grpc_error(json.status());
     return "";
@@ -323,7 +325,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
                                            &error_list);
   }
   if (service_config == nullptr) return "";
-  return service_config->Dump();
+  return JsonDump(*service_config);
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(

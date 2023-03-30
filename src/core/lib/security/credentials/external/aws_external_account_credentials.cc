@@ -41,6 +41,8 @@
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -415,7 +417,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
   }
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
-  auto json = Json::Parse(response_body);
+  auto json = JsonParse(response_body);
   if (!json.ok()) {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE(
@@ -498,7 +500,7 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
                       {"method", Json("POST")},
                       {"headers", Json(headers)}};
   Json subject_token_json(object);
-  std::string subject_token = UrlEncode(subject_token_json.Dump());
+  std::string subject_token = UrlEncode(JsonDump(subject_token_json));
   FinishRetrieveSubjectToken(subject_token, absl::OkStatus());
 }
 

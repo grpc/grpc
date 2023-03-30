@@ -34,6 +34,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -351,7 +352,7 @@ absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
 
 absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy) {
-  auto json = Json::Parse(authz_policy);
+  auto json = JsonParse(authz_policy);
   if (!json.ok()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Failed to parse gRPC authorization policy. Error: ",

@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice.h"
@@ -113,7 +114,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  auto json = Json::Parse(string);
+  auto json = grpc_core::JsonParse(string);
   grpc_core::CSliceUnref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -435,8 +436,8 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  auto json =
-      Json::Parse(absl::string_view(response->body, response->body_length));
+  auto json = grpc_core::JsonParse(
+      absl::string_view(response->body, response->body_length));
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null

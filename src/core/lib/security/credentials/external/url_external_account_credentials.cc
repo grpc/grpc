@@ -40,6 +40,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -200,7 +201,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   if (format_type_ == "json") {
-    auto response_json = Json::Parse(response_body);
+    auto response_json = JsonParse(response_body);
     if (!response_json.ok() || response_json->type() != Json::Type::kObject) {
       FinishRetrieveSubjectToken(
           "", GRPC_ERROR_CREATE(

@@ -22,6 +22,8 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 namespace {
@@ -29,7 +31,7 @@ namespace {
 template <typename T>
 absl::StatusOr<T> Parse(absl::string_view json,
                         const JsonArgs& args = JsonArgs()) {
-  auto parsed = Json::Parse(json);
+  auto parsed = JsonParse(json);
   if (!parsed.ok()) return parsed.status();
   return LoadFromJson<T>(*parsed, args);
 }
@@ -535,8 +537,8 @@ TEST(JsonObjectLoader, JsonObjectFields) {
   // Valid object.
   auto test_struct = Parse<TestStruct>("{\"value\": {\"a\":1}}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(Json{test_struct->value}.Dump(), "{\"a\":1}");
-  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "{}");
+  EXPECT_EQ(JsonDump(Json{test_struct->value}), "{\"a\":1}");
+  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "{}");
   EXPECT_FALSE(test_struct->absl_optional_value.has_value());
   // Fails if required field is not present.
   test_struct = Parse<TestStruct>("{}");
@@ -549,12 +551,12 @@ TEST(JsonObjectLoader, JsonObjectFields) {
       "{\"value\": {\"a\":1}, \"optional_value\": {\"b\":2}, "
       "\"absl_optional_value\": {\"c\":3}, \"unique_ptr_value\": {\"d\":4}}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(Json{test_struct->value}.Dump(), "{\"a\":1}");
-  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "{\"b\":2}");
+  EXPECT_EQ(JsonDump(Json{test_struct->value}), "{\"a\":1}");
+  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "{\"b\":2}");
   ASSERT_TRUE(test_struct->absl_optional_value.has_value());
-  EXPECT_EQ(Json{*test_struct->absl_optional_value}.Dump(), "{\"c\":3}");
+  EXPECT_EQ(JsonDump(Json{*test_struct->absl_optional_value}), "{\"c\":3}");
   ASSERT_NE(test_struct->unique_ptr_value, nullptr);
-  EXPECT_EQ(Json{*test_struct->unique_ptr_value}.Dump(), "{\"d\":4}");
+  EXPECT_EQ(JsonDump(Json{*test_struct->unique_ptr_value}), "{\"d\":4}");
   // Wrong JSON type.
   test_struct = Parse<TestStruct>(
       "{\"value\": [], \"optional_value\": true, "
@@ -595,8 +597,8 @@ TEST(JsonObjectLoader, JsonArrayFields) {
   // Valid object.
   auto test_struct = Parse<TestStruct>("{\"value\": [1, \"a\"]}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(Json{test_struct->value}.Dump(), "[1,\"a\"]");
-  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "[]");
+  EXPECT_EQ(JsonDump(Json{test_struct->value}), "[1,\"a\"]");
+  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "[]");
   EXPECT_FALSE(test_struct->absl_optional_value.has_value());
   EXPECT_EQ(test_struct->unique_ptr_value, nullptr);
   // Fails if required field is not present.
@@ -610,12 +612,12 @@ TEST(JsonObjectLoader, JsonArrayFields) {
       "{\"value\": [1, \"a\"], \"optional_value\": [2, \"b\"], "
       "\"absl_optional_value\": [3, \"c\"], \"unique_ptr_value\": [4, \"d\"]}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(Json{test_struct->value}.Dump(), "[1,\"a\"]");
-  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "[2,\"b\"]");
+  EXPECT_EQ(JsonDump(Json{test_struct->value}), "[1,\"a\"]");
+  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "[2,\"b\"]");
   ASSERT_TRUE(test_struct->absl_optional_value.has_value());
-  EXPECT_EQ(Json{*test_struct->absl_optional_value}.Dump(), "[3,\"c\"]");
+  EXPECT_EQ(JsonDump(Json{*test_struct->absl_optional_value}), "[3,\"c\"]");
   ASSERT_NE(test_struct->unique_ptr_value, nullptr);
-  EXPECT_EQ(Json{*test_struct->unique_ptr_value}.Dump(), "[4,\"d\"]");
+  EXPECT_EQ(JsonDump(Json{*test_struct->unique_ptr_value}), "[4,\"d\"]");
   // Wrong JSON type.
   test_struct = Parse<TestStruct>(
       "{\"value\": {}, \"optional_value\": true, "
@@ -1054,7 +1056,7 @@ TEST(JsonObjectLoader, LoadRefCountedFromJson) {
   // Valid.
   {
     absl::string_view json_str = "{\"a\":1}";
-    auto json = Json::Parse(json_str);
+    auto json = JsonParse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
         LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
@@ -1064,7 +1066,7 @@ TEST(JsonObjectLoader, LoadRefCountedFromJson) {
   // Invalid.
   {
     absl::string_view json_str = "{\"a\":\"foo\"}";
-    auto json = Json::Parse(json_str);
+    auto json = JsonParse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
         LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
@@ -1088,7 +1090,7 @@ TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
   // Valid.
   {
     absl::string_view json_str = "{\"a\":1}";
-    auto json = Json::Parse(json_str);
+    auto json = JsonParse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     ValidationErrors errors;
     TestStruct test_struct =
@@ -1099,7 +1101,7 @@ TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
   // Invalid.
   {
     absl::string_view json_str = "{\"a\":\"foo\"}";
-    auto json = Json::Parse(json_str);
+    auto json = JsonParse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     ValidationErrors errors;
     LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
@@ -1113,7 +1115,7 @@ TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
 
 TEST(JsonObjectLoader, LoadJsonObjectField) {
   absl::string_view json_str = "{\"int\":1}";
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   // Load a valid field.
   {

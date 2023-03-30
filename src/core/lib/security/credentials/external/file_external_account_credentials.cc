@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -113,7 +114,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
   }
   absl::string_view content = StringViewFromSlice(content_slice.slice);
   if (format_type_ == "json") {
-    auto content_json = Json::Parse(content);
+    auto content_json = JsonParse(content);
     if (!content_json.ok() || content_json->type() != Json::Type::kObject) {
       cb("", GRPC_ERROR_CREATE(
                  "The content of the file is not a valid json object."));
