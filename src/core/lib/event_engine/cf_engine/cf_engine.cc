@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
     GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p executing callback:%s", engine,
                             HandleToString(handle).c_str());
     {
-      grpc_core::MutexLock lock(&engine->mu_);
+      grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -52,7 +52,7 @@ CFEventEngine::CFEventEngine()
 
 CFEventEngine::~CFEventEngine() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
@@ -98,7 +98,7 @@ CFEventEngine::ConnectionHandle CFEventEngine::Connect(
 
   auto on_connect2 =
       [that = std::static_pointer_cast<CFEventEngine>(shared_from_this()),
-       deadline_timer = std::move(deadline_timer), handle,
+       deadline_timer, handle,
        on_connect = std::move(on_connect)](absl::Status status) mutable {
         // best effort canceling deadline timer
         that->Cancel(deadline_timer);
@@ -174,7 +174,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfter(
 }
 
 bool CFEventEngine::Cancel(TaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
@@ -191,7 +191,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p scheduling callback:%s", this,
