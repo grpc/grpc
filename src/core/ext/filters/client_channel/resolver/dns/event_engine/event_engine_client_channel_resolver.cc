@@ -75,6 +75,10 @@ namespace {
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::LookupTaskHandleSet;
 
+// TODO(yijiem): Investigate adding a resolver test scenario where the first
+// balancer hostname lookup result is an error, and the second contains valid
+// addresses.
+
 // TODO(hork): replace this with `dns_resolver` when all other resolver
 // implementations are removed.
 TraceFlag grpc_event_engine_client_channel_resolver_trace(
