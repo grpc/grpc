@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
+
+int kDefaultReadBufferSize = 8192;
 
 absl::Status CFErrorToStatus(CFTypeUniqueRef<CFErrorRef> cf_error) {
   CFErrorDomain cf_domain = CFErrorGetDomain((cf_error));
@@ -152,6 +154,7 @@ void CFStreamEndpoint::Connect(
 
   switch (type) {
     case kCFStreamEventOpenCompleted:
+      // wait for write stream open completed to signal connection ready
       break;
     case kCFStreamEventHasBytesAvailable:
       ABSL_FALLTHROUGH_INTENDED;
@@ -250,15 +253,14 @@ void CFStreamEndpoint::DoRead(absl::AnyInvocable<void(absl::Status)> on_read,
                               SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("CFStreamEndpoint::DoRead, this: %p", this);
 
-  int buffer_size = 8192;
-  auto buffer_index =
-      buffer->AppendIndexed(Slice(memory_allocator_.MakeSlice(buffer_size)));
+  auto buffer_index = buffer->AppendIndexed(
+      Slice(memory_allocator_.MakeSlice(kDefaultReadBufferSize)));
 
   CFIndex read_size = CFReadStreamRead(
       cf_read_stream_,
       internal::SliceCast<MutableSlice>(buffer->MutableSliceAt(buffer_index))
           .begin(),
-      buffer_size);
+      kDefaultReadBufferSize);
 
   if (read_size < 0) {
     auto status = CFErrorToStatus(CFReadStreamCopyError(cf_read_stream_));

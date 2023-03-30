@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ class CFEventEngine : public EventEngine,
 
   bool CancelConnectInternal(ConnectionHandle handle, absl::Status status);
 
-  grpc_core::Mutex mu_;
-  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+  grpc_core::Mutex task_mu_;
+  TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
   std::atomic<intptr_t> aba_token_{0};
 
   grpc_core::Mutex conn_mu_;
