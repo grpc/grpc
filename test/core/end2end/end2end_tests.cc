@@ -37,7 +37,7 @@ Slice RandomSlice(size_t length) {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   std::vector<char> output;
-  output.reserve(length);
+  output.resize(length);
   for (i = 0; i < length; ++i) {
     output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
