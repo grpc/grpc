@@ -15,15 +15,20 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
-
+#include <grpc/grpc.h>
+#include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -37,13 +42,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/ext/gcp_observability.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/cpp/client/client_stats_interceptor.h"
@@ -56,6 +54,7 @@
 
 namespace grpc {
 
+namespace internal {
 namespace {
 
 grpc::internal::ObservabilityLoggingSink* g_logging_sink = nullptr;
@@ -207,14 +206,48 @@ void GcpObservabilityClose() {
   if (g_logging_sink != nullptr) {
     g_logging_sink->FlushAndClose();
   }
+  // Currently, GcpObservabilityClose() only supports flushing logs. Stats and
+  // tracing get automatically flushed at a regular interval, so sleep for an
+  // interval to make sure that those are flushed too.
+  std::this_thread::sleep_for(std::chrono::seconds(25));
 }
+
+}  // namespace internal
 
 namespace experimental {
 
-absl::Status GcpObservabilityInit() { return grpc::GcpObservabilityInit(); }
+absl::Status GcpObservabilityInit() {
+  return grpc::internal::GcpObservabilityInit();
+}
 
-void GcpObservabilityClose() { return grpc::GcpObservabilityClose(); }
+void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
 
 }  // namespace experimental
+
+namespace gcp {
+
+//
+// Observability
+//
+
+Observability::~Observability() {
+  if (close_on_destruction_) {
+    grpc::internal::GcpObservabilityClose();
+  }
+}
+
+Observability::Observability(Observability&& other) noexcept {
+  other.close_on_destruction_ = false;
+}
+
+absl::StatusOr<Observability> ObservabilityInit() {
+  absl::Status status = grpc::internal::GcpObservabilityInit();
+  if (!status.ok()) {
+    return status;
+  }
+  return Observability();
+}
+
+}  // namespace gcp
 
 }  // namespace grpc

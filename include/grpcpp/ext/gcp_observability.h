@@ -20,8 +20,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc {
+
+namespace gcp {
 
 // Initialize GCP Observability for gRPC.
 // This should be called before any other gRPC operations like creating a
@@ -30,21 +33,52 @@ namespace grpc {
 // As an implementation detail, this properly initializes the OpenCensus stats
 // and tracing plugin, so applications do not need to perform any additional
 // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
-absl::Status GcpObservabilityInit();
+class Observability {
+ public:
+  ~Observability();
 
-// Gracefully shuts down GCP Observability.
-// Note that graceful shutdown for stats and tracing is not yet supported.
-void GcpObservabilityClose();
+  // Move constructor. The moved-from object will no longer be valid and will
+  // not cause GCP Observability stats, tracing and logging data to flush.
+  Observability(Observability&& other) noexcept;
+
+  // Delete copy and copy-assignment operator
+  Observability(const Observability&) = delete;
+  Observability& operator=(const Observability&) = delete;
+
+ private:
+  friend absl::StatusOr<Observability> ObservabilityInit();
+  Observability() = default;
+  bool close_on_destruction_ = true;
+};
+
+// Initialize GCP Observability for gRPC.
+// This should be called before any other gRPC operations like creating a
+// channel, server, credentials etc.
+// The most common usage would call this at the top (or near the top) in main().
+// The return value helps determine whether observability was successfully
+// enabled or not. On success, an object of class `Observability` is returned.
+// When this object goes out of scope, GCP Observability stats, tracing and
+// logging data is flushed. On failure, the status and status message can be
+// used to determine the cause of failure. It is up to the applications to
+// either crash on failure, or continue without GCP observability being enabled.
+//
+// Note that this is a blocking call which properly sets up gRPC Observability
+// to work with GCP and might take a few seconds to return.  Similarly, the
+// destruction of a non-moved-from `Observability` object is also blocking since
+// it flushes the observability data to GCP.
+//
+// As an implementation detail, this properly initializes the OpenCensus stats
+// and tracing plugin, so applications do not need to perform any additional
+// gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
+absl::StatusOr<Observability> ObservabilityInit();
+
+}  // namespace gcp
 
 namespace experimental {
 // TODO(yashykt): Delete this after the 1.55 release.
-GRPC_DEPRECATED(
-    "Use grpc::GcpObservabilityInit instead. The experimental version will be "
-    "deleted after the 1.55 release.")
+GRPC_DEPRECATED("Use grpc::gcp::ObservabilityInit() instead.")
 absl::Status GcpObservabilityInit();
-GRPC_DEPRECATED(
-    "Use grpc::GcpObservabilityClose instead. The experimental version will be "
-    "deleted after the 1.55 release.")
+GRPC_DEPRECATED("Use grpc::gcp::ObservabilityInit() instead.")
 void GcpObservabilityClose();
 }  // namespace experimental
 

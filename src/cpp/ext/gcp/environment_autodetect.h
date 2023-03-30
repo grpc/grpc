@@ -34,9 +34,9 @@
 
 namespace grpc {
 
-absl::Status GcpObservabilityInit();
-
 namespace internal {
+
+absl::Status GcpObservabilityInit();
 
 class EnvironmentAutoDetect {
  public:
@@ -61,7 +61,7 @@ class EnvironmentAutoDetect {
   }
 
  private:
-  friend absl::Status grpc::GcpObservabilityInit();
+  friend absl::Status grpc::internal::GcpObservabilityInit();
 
   // GcpObservabilityInit() is responsible for setting up the singleton with the
   // project_id.
