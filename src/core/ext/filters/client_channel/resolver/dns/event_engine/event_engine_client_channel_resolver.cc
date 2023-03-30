@@ -411,10 +411,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MaybePopulateServiceConfigLocked(Resolver::Result* result) {
   // This function is called only if we are returning addresses.  In that case,
   // we currently ignore TXT lookup failures.
-  if (!service_config_json_.ok()) {
-    result->service_config = service_config_json_.status();
-    return;
-  }
+  if (!service_config_json_.ok()) return;
   // TODO(roth): Consider differentiating between NXDOMAIN and other failures,
   // so that we can return an error in the non-NXDOMAIN case.
   if (service_config_json_->empty()) return;
