@@ -228,27 +228,27 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
+  Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
   hostname_handle_ = event_engine_resolver_->LookupHostname(
-      absl::bind_front(&EventEngineDNSRequestWrapper::OnHostnameResolved,
-                       Ref(DEBUG_LOCATION, "OnHostnameResolved")),
+      absl::bind_front(&EventEngineDNSRequestWrapper::OnHostnameResolved, this),
       resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
       "DNSResolver::%p Started resolving hostname. Handle::%s", resolver_.get(),
       HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
+    Ref(DEBUG_LOCATION, "OnSRVResolved").release();
     srv_handle_ = event_engine_resolver_->LookupSRV(
-        absl::bind_front(&EventEngineDNSRequestWrapper::OnSRVResolved,
-                         Ref(DEBUG_LOCATION, "OnSRVResolved")),
+        absl::bind_front(&EventEngineDNSRequestWrapper::OnSRVResolved, this),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Started resolving SRV. Handle::%s", resolver_.get(),
         HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
+    Ref(DEBUG_LOCATION, "OnTXTResolved").release();
     txt_handle_ = event_engine_resolver_->LookupTXT(
-        absl::bind_front(&EventEngineDNSRequestWrapper::OnTXTResolved,
-                         Ref(DEBUG_LOCATION, "OnTXTResolved")),
+        absl::bind_front(&EventEngineDNSRequestWrapper::OnTXTResolved, this),
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Started resolving TXT. Handle::%s", resolver_.get(),
@@ -298,6 +298,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   if (result.has_value()) {
     resolver_->OnRequestComplete(std::move(*result));
   }
+  Unref(DEBUG_LOCATION, "OnHostnameResolved");
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -309,6 +310,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
     }
+    Unref(DEBUG_LOCATION, "OnSRVResolved");
   });
   {
     MutexLock lock(&on_resolved_mu_);
@@ -322,10 +324,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     }
     // Do a subsequent hostname query since SRV records were returned
     for (const auto& srv_record : *srv_records) {
+      Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved").release();
       balancer_hostname_handles_.insert(event_engine_resolver_->LookupHostname(
           absl::bind_front(
-              &EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved,
-              Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved"),
+              &EventEngineDNSRequestWrapper::OnBalancerHostnamesResolved, this,
               srv_record.host),
           srv_record.host, std::to_string(srv_record.port),
           resolver_->query_timeout_ms_));
@@ -346,6 +348,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
     }
+    Unref(DEBUG_LOCATION, "OnBalancerHostnamesResolved");
   });
   {
     MutexLock lock(&on_resolved_mu_);
@@ -384,6 +387,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   if (result.has_value()) {
     resolver_->OnRequestComplete(std::move(*result));
   }
+  Unref(DEBUG_LOCATION, "OnTXTResolved");
 }
 
 absl::Status EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
