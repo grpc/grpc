@@ -126,7 +126,7 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
                                                    ValidationErrors* errors) {
   // Parse "channel_creds".
   auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
-      json.object_value(), args, "channel_creds", errors);
+      json.object(), args, "channel_creds", errors);
   if (channel_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".channel_creds");
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
@@ -153,17 +153,16 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
   // Parse "server_features".
   {
     ValidationErrors::ScopedField field(errors, ".server_features");
-    auto it = json.object_value().find("server_features");
-    if (it != json.object_value().end()) {
+    auto it = json.object().find("server_features");
+    if (it != json.object().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
         errors->AddError("is not an array");
       } else {
-        const Json::Array& array = it->second.array_value();
+        const Json::Array& array = it->second.array();
         for (const Json& feature_json : array) {
           if (feature_json.type() == Json::Type::STRING &&
-              (feature_json.string_value() ==
-               kServerFeatureIgnoreResourceDeletion)) {
-            server_features_.insert(feature_json.string_value());
+              (feature_json.string() == kServerFeatureIgnoreResourceDeletion)) {
+            server_features_.insert(feature_json.string());
           }
         }
       }

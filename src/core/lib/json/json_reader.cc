@@ -235,7 +235,7 @@ Json* JsonReader::CreateAndLinkValue() {
   } else {
     Json* parent = stack_.back();
     if (parent->type() == Json::Type::OBJECT) {
-      if (parent->object_value().find(key_) != parent->object_value().end()) {
+      if (parent->object().find(key_) != parent->object().end()) {
         if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
           truncated_errors_ = true;
         } else {

@@ -35,7 +35,7 @@ void LoadScalar::LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
         absl::StrCat("is not a ", IsNumber() ? "number" : "string"));
     return;
   }
-  return LoadInto(json.string_value(), dst, errors);
+  return LoadInto(json.string(), dst, errors);
 }
 
 bool LoadString::IsNumber() const { return false; }
@@ -107,7 +107,7 @@ void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
     errors->AddError("is not an object");
     return;
   }
-  *static_cast<Json::Object*>(dst) = json.object_value();
+  *static_cast<Json::Object*>(dst) = json.object();
 }
 
 void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
@@ -117,7 +117,7 @@ void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
     errors->AddError("is not an array");
     return;
   }
-  *static_cast<Json::Array*>(dst) = json.array_value();
+  *static_cast<Json::Array*>(dst) = json.array();
 }
 
 void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
@@ -126,7 +126,7 @@ void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     errors->AddError("is not an array");
     return;
   }
-  const auto& array = json.array_value();
+  const auto& array = json.array();
   const LoaderInterface* element_loader = ElementLoader();
   for (size_t i = 0; i < array.size(); ++i) {
     ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
@@ -142,7 +142,7 @@ void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
     errors->AddError("is not an array");
     return;
   }
-  const auto& array = json.array_value();
+  const auto& array = json.array();
   const LoaderInterface* element_loader = LoaderForType<bool>();
   std::vector<bool>* vec = static_cast<std::vector<bool>*>(dst);
   for (size_t i = 0; i < array.size(); ++i) {
@@ -160,7 +160,7 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     return;
   }
   const LoaderInterface* element_loader = ElementLoader();
-  for (const auto& pair : json.object_value()) {
+  for (const auto& pair : json.object()) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat("[\"", pair.first, "\"]"));
     void* element = Insert(pair.first, dst);
@@ -190,8 +190,8 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
     }
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".", element.name));
-    const auto& it = json.object_value().find(element.name);
-    if (it == json.object_value().end()) {
+    const auto& it = json.object().find(element.name);
+    if (it == json.object().end()) {
       if (element.optional) continue;
       errors->AddError("field not present");
       continue;

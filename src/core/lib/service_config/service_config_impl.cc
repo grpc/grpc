@@ -109,7 +109,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
           args, json, errors);
   // Parse per-method parameters.
   auto method_configs = LoadJsonObjectField<std::vector<Json::Object>>(
-      json.object_value(), JsonArgs(), "methodConfig", errors,
+      json.object(), JsonArgs(), "methodConfig", errors,
       /*required=*/false);
   if (method_configs.has_value()) {
     service_config->parsed_method_config_vectors_storage_.reserve(
