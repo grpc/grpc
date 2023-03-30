@@ -457,7 +457,9 @@ class CoreEnd2endTest
     std::vector<std::unique_ptr<Thing>> things_;
   };
 
-  // Wrapper around a client call.
+  // Wrapper around a grpc_call.
+  // Instantiated by ClientCallBuilder via NewClientCall for client calls.
+  // Wrapped by IncomingCall for server calls.
   class Call {
    public:
     explicit Call(grpc_call* call) : call_(call) {}
