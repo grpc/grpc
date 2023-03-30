@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_AUDIT_LOGGING_H
 #define GRPC_GRPC_AUDIT_LOGGING_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
