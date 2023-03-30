@@ -100,17 +100,10 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
         : delegate_picker_(std::move(delegate_picker)), parent_(parent) {}
 
     PickResult Pick(PickArgs args) override {
-      // Do pick.
-      PickResult result = delegate_picker_->Pick(args);
       args.initial_metadata->Add(kRpcBehaviorMetadataKey,
                                  parent_->rpc_behavior_);
-      // Intercept trailing metadata.
-      auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
-      if (complete_pick != nullptr) {
-        complete_pick->subchannel_call_tracker =
-            std::make_unique<SubchannelCallTracker>();
-      }
-      return result;
+      // Do pick.
+      return delegate_picker_->Pick(args);
     }
 
    private:
@@ -157,15 +150,6 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<RpcBehaviorLbPolicy> parent_;
-  };
-
-  class SubchannelCallTracker : public SubchannelCallTrackerInterface {
-   public:
-    explicit SubchannelCallTracker() {}
-
-    void Start() override {}
-
-    void Finish(FinishArgs args) override {}
   };
 
   void ShutdownLocked() override {
