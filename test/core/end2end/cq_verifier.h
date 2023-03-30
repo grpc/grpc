@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -61,7 +62,22 @@ class CqVerifier {
   using ExpectedResult =
       absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
-  explicit CqVerifier(grpc_completion_queue* cq);
+  struct Failure {
+    SourceLocation location;
+    std::string message;
+    std::vector<std::string> expected;
+  };
+
+  static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGtestFail(const Failure& failure);
+
+  // Allow customizing the failure handler
+  // For legacy tests we should use FailUsingGprCrash (the default)
+  // For gtest based tests we should start migrating to FailUsingGtestFail which
+  // will produce nicer failure messages.
+  explicit CqVerifier(
+      grpc_completion_queue* cq,
+      absl::AnyInvocable<void(Failure)> fail = FailUsingGprCrash);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -84,6 +100,7 @@ class CqVerifier {
               SourceLocation location = SourceLocation());
 
   std::string ToString() const;
+  std::vector<std::string> ToStrings() const;
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -103,6 +120,7 @@ class CqVerifier {
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
+  mutable absl::AnyInvocable<void(Failure)> fail_;
 };
 
 }  // namespace grpc_core

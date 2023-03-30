@@ -20,12 +20,14 @@ grpc_package(name = "test/core/end2end")
 
 grpc_cc_library(
     name = "cq_verifier",
+    testonly = 1,
     srcs = ["cq_verifier.cc"],
     hdrs = ["cq_verifier.h"],
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:variant",
+        "gtest",
     ],
     language = "C++",
     visibility = ["//test:__subpackages__"],
@@ -101,6 +103,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "fixture_support",
     srcs = ["fixtures/local_util.cc"],
+    testonly = 1,
     hdrs = [
         "end2end_tests.h",
         "fixtures/h2_oauth2_common.h",
@@ -150,7 +153,7 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "end2end_tests",
+    name = "core_end2end_tests",
     timeout = "long",
     srcs = [
         "end2end_test_main.cc",

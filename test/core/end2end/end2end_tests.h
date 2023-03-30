@@ -34,6 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "cq_verifier.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
@@ -692,7 +693,8 @@ class CoreEnd2endTest
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
-      cq_verifier_ = absl::make_unique<CqVerifier>(fixture().cq());
+      cq_verifier_ = absl::make_unique<CqVerifier>(
+          fixture().cq(), CqVerifier::FailUsingGtestFail);
     }
     return *cq_verifier_;
   }

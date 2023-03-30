@@ -33,6 +33,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -196,7 +197,9 @@ std::string TagStr(void* tag) {
 
 namespace grpc_core {
 
-CqVerifier::CqVerifier(grpc_completion_queue* cq) : cq_(cq) {}
+CqVerifier::CqVerifier(grpc_completion_queue* cq,
+                       absl::AnyInvocable<void(Failure)> fail)
+    : cq_(cq), fail_(std::move(fail)) {}
 
 CqVerifier::~CqVerifier() { Verify(); }
 
@@ -216,25 +219,47 @@ std::string CqVerifier::Expectation::ToString() const {
           }));
 }
 
-std::string CqVerifier::ToString() const {
+std::vector<std::string> CqVerifier::ToStrings() const {
   std::vector<std::string> expectations;
   expectations.reserve(expectations_.size());
   for (const auto& e : expectations_) {
     expectations.push_back(e.ToString());
   }
-  return absl::StrJoin(expectations, "\n");
+  return expectations;
+}
+
+std::string CqVerifier::ToString() const {
+  return absl::StrJoin(ToStrings(), "\n");
 }
 
 void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
-  Crash(absl::StrFormat("[%s:%d] no event received, but expected:%s",
-                        location.file(), location.line(), ToString().c_str()));
+  fail_(Failure{location, "No event received", ToStrings()});
 }
 
 void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
                                      const SourceLocation& location) const {
-  gpr_log(GPR_ERROR, "[%s:%d] cq returned unexpected event: %s",
-          location.file(), location.line(), grpc_event_string(ev).c_str());
-  Crash(absl::StrFormat("expected tags:\n%s", ToString().c_str()));
+  fail_(Failure{location,
+                absl::StrCat("Unexpected event: ", grpc_event_string(ev)),
+                ToStrings()});
+}
+
+void CqVerifier::FailUsingGprCrash(const Failure& failure) {
+  Crash(absl::StrCat("[", failure.location.file(), ":", failure.location.line(),
+                     "] ", failure.message, "\nexpected:\n",
+                     absl::StrJoin(failure.expected, "\n")));
+}
+
+void CqVerifier::FailUsingGtestFail(const Failure& failure) {
+  std::string message = absl::StrCat("  ", failure.message);
+  if (!failure.expected.empty()) {
+    absl::StrAppend(&message, "\n  expected:\n");
+    for (const auto& line : failure.expected) {
+      absl::StrAppend(&message, "    ", line, "\n");
+    }
+  } else {
+    absl::StrAppend(&message, "\n  expected nothing");
+  }
+  ADD_FAILURE_AT(failure.location.file(), failure.location.line()) << message;
 }
 
 namespace {
