@@ -87,7 +87,10 @@ absl::StatusOr<RefCountedPtr<ServiceConfig>> ServiceConfigImpl::Create(
   if (!json.ok()) return json.status();
   ValidationErrors errors;
   auto service_config = Create(args, *json, json_string, &errors);
-  if (!errors.ok()) return errors.status("errors validating service config");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating service config");
+  }
   return service_config;
 }
 

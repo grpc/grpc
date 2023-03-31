@@ -502,7 +502,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     lds_update.listener = HttpConnectionManagerParse(
         /*is_client=*/true, context, std::move(*extension), &errors);
   }
-  if (!errors.ok()) return errors.status("errors validating ApiListener");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating ApiListener");
+  }
   return std::move(lds_update);
 }
 
@@ -1046,7 +1049,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     }
   }
   // Return result.
-  if (!errors.ok()) return errors.status("errors validating server Listener");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating server Listener");
+  }
   XdsListenerResource lds_update;
   lds_update.listener = std::move(tcp_listener);
   return lds_update;
