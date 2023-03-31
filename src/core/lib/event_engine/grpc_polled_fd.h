@@ -24,9 +24,9 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
 
 #include "src/core/lib/event_engine/ares_driver.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
 // Adapted from
@@ -78,7 +78,7 @@ class GrpcPolledFdFactory {
 // the resulting GrpcPolledFdFactory as well as any GrpcPolledFd
 // returned by the factory.
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RegisterAresSocketWithPollerCallback register_cb, absl::Mutex* mu);
+    RegisterAresSocketWithPollerCallback register_cb, grpc_core::Mutex* mu);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

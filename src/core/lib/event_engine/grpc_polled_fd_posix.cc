@@ -20,7 +20,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
@@ -103,7 +102,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RegisterAresSocketWithPollerCallback register_cb, absl::Mutex* /* mu */) {
+    RegisterAresSocketWithPollerCallback register_cb, grpc_core::Mutex* /* mu */) {
   return std::make_unique<GrpcPolledFdFactoryPosix>(std::move(register_cb));
 }
 

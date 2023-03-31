@@ -33,11 +33,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include "include/grpc/event_engine/event_engine.h"
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_event_engine {
@@ -53,59 +53,65 @@ using PollerHandle = EventHandle*;
 using RegisterAresSocketWithPollerCallback =
     absl::AnyInvocable<PollerHandle(ares_socket_t)>;
 
+extern grpc_core::TraceFlag grpc_trace_ares_driver;
+
+#define GRPC_ARES_DRIVER_TRACE_LOG(format, ...)                \
+  do {                                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver)) {     \
+      gpr_log(GPR_INFO, "(ares driver) " format, __VA_ARGS__); \
+    }                                                          \
+  } while (0)
+
 class GrpcAresRequest {
  public:
-  virtual absl::Status Initialize(absl::string_view dns_server,
-                                  bool check_port) = 0;
-  virtual void Cancel() = 0;
-  virtual ~GrpcAresRequest() = default;
+  virtual bool Cancel() = 0;
 };
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
 // lookup
 class GrpcAresHostnameRequest : public GrpcAresRequest {
- protected:
+ public:
   using Result = std::vector<EventEngine::ResolvedAddress>;
 
- public:
   // on_resolve is guaranteed to be called with Result or failure status and the
   // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
-GrpcAresHostnameRequest* CreateGrpcAresHostnameRequest(
+absl::StatusOr<GrpcAresHostnameRequest*> CreateGrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
+    absl::string_view dns_server, bool check_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine);
 
 class GrpcAresSRVRequest : public GrpcAresRequest {
- protected:
+ public:
   using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
 
- public:
   // on_resolve is guaranteed to be called with Result or failure status and the
   // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
-GrpcAresSRVRequest* CreateGrpcAresSRVRequest(
+absl::StatusOr<GrpcAresSRVRequest*> CreateGrpcAresSRVRequest(
     absl::string_view name, EventEngine::Duration timeout,
+    absl::string_view dns_server, bool check_port,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine);
 
 class GrpcAresTXTRequest : public GrpcAresRequest {
- protected:
+ public:
   using Result = std::string;
 
- public:
   // on_resolve is guaranteed to be called with Result or failure status and the
   // request object's lifetime is managed internally after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
-GrpcAresTXTRequest* CreateGrpcAresTXTRequest(
+absl::StatusOr<GrpcAresTXTRequest*> CreateGrpcAresTXTRequest(
     absl::string_view name, EventEngine::Duration timeout,
+    absl::string_view dns_server, bool check_port,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine);
 

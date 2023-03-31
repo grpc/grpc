@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -139,7 +138,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
-    explicit PosixDNSResolver(ResolverOptions const& options,
+    explicit PosixDNSResolver(const ResolverOptions& options,
                               PosixEnginePollerManager* poller_manager,
                               PosixEventEngine* event_engine);
     ~PosixDNSResolver() override;
@@ -158,7 +157,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
    private:
     EventHandle* CreateEventHandle(int fd);
 
-    absl::Mutex mu_;
+    grpc_core::Mutex mu_;
     LookupTaskHandleSet inflight_requests_ ABSL_GUARDED_BY(mu_);
     std::atomic<intptr_t> aba_token_{0};
     const ResolverOptions options_;

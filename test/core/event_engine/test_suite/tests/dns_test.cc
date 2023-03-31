@@ -88,7 +88,7 @@ class EventEngineDNSTest : public EventEngineTest {
  public:
   static void SetUpTestSuite() {
     // 1. launch dns_server
-    int port = grpc_pick_unused_port();
+    int port = grpc_pick_unused_port_or_die();
     ASSERT_NE(port, 0)
         << "pick unused port failed, maybe the port server is not running? "
            "Start it with tools/run_tests/start_port_server.py";
@@ -148,10 +148,12 @@ class EventEngineDNSTest : public EventEngineTest {
                 GPR_INFO,
                 "DNS server is up! Successfully reached it over UDP and TCP.");
             health_check_succeed = true;
+            gpr_free(tcp_connect);
             break;
           }
         }
       }
+      gpr_free(tcp_connect);
       absl::SleepFor(absl::Seconds(1));
     }
     gpr_free(server_port_str);
