@@ -2888,6 +2888,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "server_address",
