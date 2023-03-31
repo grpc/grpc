@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
@@ -69,7 +70,8 @@ using ::xds::type::v3::TypedStruct;
 
 // Uses XdsLbPolicyRegistry to convert
 // envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
-absl::StatusOr<std::string> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
+absl::StatusOr<std::string> ConvertXdsPolicy(
+    const LoadBalancingPolicyProto& policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::SymbolTable symtab;
@@ -82,9 +84,12 @@ absl::StatusOr<std::string> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
       context, upb_policy, &errors);
-  if (!errors.ok()) return errors.status("validation errors");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "validation errors");
+  }
   EXPECT_EQ(config.size(), 1);
-  return Json{config[0]}.Dump();
+  return JsonDump(Json{config[0]});
 }
 
 // A gRPC LB policy factory for a custom policy.  None of the methods
@@ -144,6 +149,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   wrr.mutable_blackout_period()->set_seconds(2);
   wrr.mutable_weight_expiration_period()->set_seconds(3);
   wrr.mutable_weight_update_period()->set_seconds(4);
+  wrr.mutable_error_utilization_penalty()->set_value(5.0);
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -155,19 +161,21 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "{\"weighted_round_robin_experimental\":{"
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
+            "\"errorUtilizationPenalty\":5.000000,"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
             "}}");
 }
 
-TEST(ClientSideWeightedRoundRobinTest, InvalidDurations) {
+TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   ClientSideWeightedRoundRobin wrr;
   wrr.mutable_oob_reporting_period()->set_seconds(-1);
   wrr.mutable_blackout_period()->set_seconds(-2);
   wrr.mutable_weight_expiration_period()->set_seconds(-3);
   wrr.mutable_weight_update_period()->set_seconds(-4);
+  wrr.mutable_error_utilization_penalty()->set_value(-1);
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -182,6 +190,10 @@ TEST(ClientSideWeightedRoundRobinTest, InvalidDurations) {
             ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
             ".blackout_period.seconds "
             "error:value must be in the range [0, 315576000000]; "
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[envoy.extensions.load_balancing_policies"
+            ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
+            ".error_utilization_penalty error:value must be non-negative; "
             "field:load_balancing_policy.policies[0].typed_extension_config"
             ".typed_config.value[envoy.extensions.load_balancing_policies"
             ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"

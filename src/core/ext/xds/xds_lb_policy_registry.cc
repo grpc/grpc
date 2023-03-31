@@ -124,6 +124,19 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       Duration duration = ParseDuration(duration_proto, errors);
       config["weightExpirationPeriod"] = duration.ToJsonString();
     }
+    // error_utilization_penalty
+    auto* error_utilization_penalty =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_error_utilization_penalty(
+            resource);
+    if (error_utilization_penalty != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".error_utilization_penalty");
+      const float value =
+          google_protobuf_FloatValue_value(error_utilization_penalty);
+      if (value < 0.0) {
+        errors->AddError("value must be non-negative");
+      }
+      config["errorUtilizationPenalty"] = value;
+    }
     return Json::Object{
         {"weighted_round_robin_experimental", std::move(config)}};
   }

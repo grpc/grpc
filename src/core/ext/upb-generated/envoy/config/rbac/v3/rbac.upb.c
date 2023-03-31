@@ -27,18 +27,35 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_submsgs[2] = {
   {.submsg = &envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit},
+  {.submsg = &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC__fields[3] = {
+  {1, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), UPB_SIZE(1, 1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit = {
   &envoy_config_rbac_v3_RBAC_submsgs[0],
   &envoy_config_rbac_v3_RBAC__fields[0],
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+};
+
+static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_AuditLoggingOptions_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+};
+
+static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC_AuditLoggingOptions__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit = {
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_submsgs[0],
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions__fields[0],
   UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
@@ -199,8 +216,9 @@ const upb_MiniTable envoy_config_rbac_v3_Action_msginit = {
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[9] = {
+static const upb_MiniTable *messages_layout[10] = {
   &envoy_config_rbac_v3_RBAC_msginit,
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit,
   &envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit,
   &envoy_config_rbac_v3_Policy_msginit,
   &envoy_config_rbac_v3_Permission_msginit,
@@ -215,7 +233,7 @@ const upb_MiniTable_File envoy_config_rbac_v3_rbac_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  9,
+  10,
   0,
   0,
 };

@@ -48,6 +48,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -500,7 +501,7 @@ XdsHttpRbacFilter::GenerateServiceConfig(
                          ? filter_config_override->config
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"rbacPolicy", policy_json.Dump()};
+  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
 }
 
 }  // namespace grpc_core

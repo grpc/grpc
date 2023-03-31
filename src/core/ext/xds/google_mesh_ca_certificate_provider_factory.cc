@@ -191,13 +191,13 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
     const Json& config_json, grpc_error_handle* error) {
   auto config =
       MakeRefCounted<GoogleMeshCaCertificateProviderFactory::Config>();
-  if (config_json.type() != Json::Type::OBJECT) {
+  if (config_json.type() != Json::Type::kObject) {
     *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
   const Json::Object* server = nullptr;
-  if (ParseJsonObjectField(config_json.object_value(), "server", &server,
+  if (ParseJsonObjectField(config_json.object(), "server", &server,
                            &error_list)) {
     std::vector<grpc_error_handle> error_list_server =
         config->ParseJsonObjectServer(*server);
@@ -207,28 +207,28 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
     }
   }
   if (!ParseJsonObjectFieldAsDuration(
-          config_json.object_value(), "certificate_lifetime",
+          config_json.object(), "certificate_lifetime",
           &config->certificate_lifetime_, &error_list, false)) {
     config->certificate_lifetime_ = Duration::Hours(24);  // 24hrs default
   }
   if (!ParseJsonObjectFieldAsDuration(
-          config_json.object_value(), "renewal_grace_period",
+          config_json.object(), "renewal_grace_period",
           &config->renewal_grace_period_, &error_list, false)) {
     config->renewal_grace_period_ = Duration::Hours(12);  // 12hrs default
   }
   std::string key_type;
-  if (ParseJsonObjectField(config_json.object_value(), "key_type", &key_type,
+  if (ParseJsonObjectField(config_json.object(), "key_type", &key_type,
                            &error_list, false)) {
     if (key_type != "RSA") {
       error_list.push_back(
           GRPC_ERROR_CREATE("field:key_type error:Only RSA is supported."));
     }
   }
-  if (!ParseJsonObjectField(config_json.object_value(), "key_size",
+  if (!ParseJsonObjectField(config_json.object(), "key_size",
                             &config->key_size_, &error_list, false)) {
     config->key_size_ = 2048;  // default 2048 bit key size
   }
-  if (!ParseJsonObjectField(config_json.object_value(), "location",
+  if (!ParseJsonObjectField(config_json.object(), "location",
                             &config->location_, &error_list, false)) {
     // GCE/GKE Metadata server needs to be contacted to get the value.
   }

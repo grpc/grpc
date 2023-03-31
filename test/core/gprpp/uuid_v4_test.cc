@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,17 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
-#define GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
+#include "src/core/lib/gprpp/uuid_v4.h"
 
-// This is a placeholder for custom global configuration implementation.
-// To use the custom one, please define following macros here.
-//
-//   GPR_GLOBAL_CONFIG_DEFINE_BOOL
-//   GPR_GLOBAL_CONFIG_DEFINE_INT32
-//   GPR_GLOBAL_CONFIG_DEFINE_STRING
+#include "gtest/gtest.h"
 
-#endif  // GRPC_SRC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
+namespace grpc_core {
+
+namespace {
+
+TEST(UUIDv4Test, Basic) {
+  EXPECT_EQ(GenerateUUIDv4(0, 0), "00000000-0000-4000-8000-000000000000");
+  EXPECT_EQ(GenerateUUIDv4(0x0123456789abcdef, 0x0123456789abcdef),
+            "01234567-89ab-4def-8123-456789abcdef");
+}
+
+}  // namespace
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

@@ -75,6 +75,7 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/passthru_endpoint.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
@@ -805,6 +806,9 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
+  if (msg.has_config_vars()) {
+    grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  }
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return std::make_unique<FuzzingEventEngine>(
@@ -812,7 +816,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
@@ -1208,5 +1211,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_resource_quota_unref(g_resource_quota);
   grpc_shutdown_blocking();
-  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
+  engine->UnsetGlobalHooks();
 }

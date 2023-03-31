@@ -30,10 +30,12 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -41,8 +43,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -61,7 +61,6 @@
 #if GRPC_ARES == 1
 
 #include <stdio.h>
-#include <string.h>
 
 #include <address_sorting/address_sorting.h>
 
@@ -70,15 +69,16 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -239,7 +239,7 @@ OrphanablePtr<Orphanable> AresClientChannelDNSResolver::StartRequest() {
 
 bool ValueInJsonArray(const Json::Array& array, const char* value) {
   for (const Json& entry : array) {
-    if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
+    if (entry.type() == Json::Type::kString && entry.string() == value) {
       return true;
     }
   }
@@ -248,58 +248,58 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error_handle* error) {
-  auto json = Json::Parse(service_config_choice_json);
+  auto json = JsonParse(service_config_choice_json);
   if (!json.ok()) {
     *error = absl_status_to_grpc_error(json.status());
     return "";
   }
-  if (json->type() != Json::Type::ARRAY) {
+  if (json->type() != Json::Type::kArray) {
     *error = GRPC_ERROR_CREATE(
         "Service Config Choices, error: should be of type array");
     return "";
   }
   const Json* service_config = nullptr;
   std::vector<grpc_error_handle> error_list;
-  for (const Json& choice : json->array_value()) {
-    if (choice.type() != Json::Type::OBJECT) {
+  for (const Json& choice : json->array()) {
+    if (choice.type() != Json::Type::kObject) {
       error_list.push_back(GRPC_ERROR_CREATE(
           "Service Config Choice, error: should be of type object"));
       continue;
     }
     // Check client language, if specified.
-    auto it = choice.object_value().find("clientLanguage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
+    auto it = choice.object().find("clientLanguage");
+    if (it != choice.object().end()) {
+      if (it->second.type() != Json::Type::kArray) {
         error_list.push_back(GRPC_ERROR_CREATE(
             "field:clientLanguage error:should be of type array"));
-      } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
+      } else if (!ValueInJsonArray(it->second.array(), "c++")) {
         continue;
       }
     }
     // Check client hostname, if specified.
-    it = choice.object_value().find("clientHostname");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
+    it = choice.object().find("clientHostname");
+    if (it != choice.object().end()) {
+      if (it->second.type() != Json::Type::kArray) {
         error_list.push_back(GRPC_ERROR_CREATE(
             "field:clientHostname error:should be of type array"));
       } else {
         char* hostname = grpc_gethostname();
         if (hostname == nullptr ||
-            !ValueInJsonArray(it->second.array_value(), hostname)) {
+            !ValueInJsonArray(it->second.array(), hostname)) {
           continue;
         }
       }
     }
     // Check percentage, if specified.
-    it = choice.object_value().find("percentage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
+    it = choice.object().find("percentage");
+    if (it != choice.object().end()) {
+      if (it->second.type() != Json::Type::kNumber) {
         error_list.push_back(GRPC_ERROR_CREATE(
             "field:percentage error:should be of type number"));
       } else {
         int random_pct = rand() % 100;
         int percentage;
-        if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
+        if (sscanf(it->second.string().c_str(), "%d", &percentage) != 1) {
           error_list.push_back(GRPC_ERROR_CREATE(
               "field:percentage error:should be of type integer"));
         } else if (random_pct > percentage || percentage == 0) {
@@ -308,11 +308,11 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
       }
     }
     // Found service config.
-    it = choice.object_value().find("serviceConfig");
-    if (it == choice.object_value().end()) {
+    it = choice.object().find("serviceConfig");
+    if (it == choice.object().end()) {
       error_list.push_back(GRPC_ERROR_CREATE(
           "field:serviceConfig error:required field missing"));
-    } else if (it->second.type() != Json::Type::OBJECT) {
+    } else if (it->second.type() != Json::Type::kObject) {
       error_list.push_back(GRPC_ERROR_CREATE(
           "field:serviceConfig error:should be of type object"));
     } else if (service_config == nullptr) {
@@ -325,7 +325,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
                                            &error_list);
   }
   if (service_config == nullptr) return "";
-  return service_config->Dump();
+  return JsonDump(*service_config);
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
@@ -811,19 +811,12 @@ class AresDNSResolver : public DNSResolver {
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
-bool ShouldUseAres(const char* resolver_env) {
-  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
-         gpr_stricmp(resolver_env, "ares") == 0;
+bool ShouldUseAres(absl::string_view resolver_env) {
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
 }
 
 bool UseAresDnsResolver() {
-  static const bool result = []() {
-    UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-    bool result = ShouldUseAres(resolver.get());
-    if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
-    return result;
-  }();
-  return result;
+  return ShouldUseAres(ConfigVars::Get().DnsResolver());
 }
 
 }  // namespace

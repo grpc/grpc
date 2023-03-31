@@ -225,11 +225,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "011537a28e5a9000a6a46e56d9215590059479254642183fca74a637da6391db",
-            strip_prefix = "boringssl-85db207a482ae4f91f83a6a70d432b9121e48d2d",
+            sha256 = "a8b2c40d5223ca951d463ed73dd810836dccdafd8f948db6fb4fb709b9827ab5",
+            strip_prefix = "boringssl-8872d958b7b07173bf29b8f3b8bf36a1ca8c94a3",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/85db207a482ae4f91f83a6a70d432b9121e48d2d.tar.gz",
-                "https://github.com/google/boringssl/archive/85db207a482ae4f91f83a6a70d432b9121e48d2d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/8872d958b7b07173bf29b8f3b8bf36a1ca8c94a3.tar.gz",
+                "https://github.com/google/boringssl/archive/8872d958b7b07173bf29b8f3b8bf36a1ca8c94a3.tar.gz",
             ],
         )
 
@@ -329,11 +329,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "3ea49a7d97421b88a8c48a0de16c16048e17725c7ec0f1d3ea2683a2a75adc21",
-            strip_prefix = "abseil-cpp-20230125.0",
+            sha256 = "9a2b5752d7bfade0bdeee2701de17c9480620f8b237e1964c1b9967c75374906",
+            strip_prefix = "abseil-cpp-20230125.2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20230125.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20230125.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20230125.2.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20230125.2.tar.gz",
             ],
         )
 
@@ -395,11 +395,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "08f7828a7ae288ef379db9b7f57af73d77a817c22fd0fc42093a95be3e54194a",
-            strip_prefix = "data-plane-api-5962b1204f4b7b0a2ed7622d0149727f602ae74c",
+            sha256 = "1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a",
+            strip_prefix = "data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/5962b1204f4b7b0a2ed7622d0149727f602ae74c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz",
             ],
         )
 
@@ -492,11 +492,11 @@ def grpc_deps():
     if "com_github_cncf_udpa" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_udpa",
-            sha256 = "41ea212940ab44bf7f8a8b4169cfbc612ed2166dafabc0a56a8820ef665fc6a4",
-            strip_prefix = "xds-06c439db220b89134a8a49bad41994560d6537c6",
+            sha256 = "fcd0b50c013452fda9c5e28c131c287b655ebb361271a76ad3bffc08b3ecd82e",
+            strip_prefix = "xds-32f1caf87195bf3390061c29f18987e51ca56a88",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz",
-                "https://github.com/cncf/xds/archive/06c439db220b89134a8a49bad41994560d6537c6.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz",
+                "https://github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz",
             ],
         )
 
