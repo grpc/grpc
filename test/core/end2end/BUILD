@@ -31,7 +31,7 @@ grpc_cc_library(
         "gtest",
     ],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//:debug_location",
         "//:gpr",
