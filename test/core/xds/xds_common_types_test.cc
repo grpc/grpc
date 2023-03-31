@@ -199,9 +199,10 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
     ValidationErrors errors;
     CommonTlsContext common_tls_context =
         CommonTlsContext::Parse(decode_context_, upb_proto, &errors);
-    if (!errors.ok())
+    if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
+    }
     return common_tls_context;
   }
 };
