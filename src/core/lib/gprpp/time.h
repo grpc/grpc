@@ -59,6 +59,13 @@ inline int64_t MillisAdd(int64_t a, int64_t b) {
   return SaturatingAdd(a, b);
 }
 
+inline int64_t MillisSub(int64_t a, int64_t b) {
+  if (b == std::numeric_limits<int64_t>::min()) {
+    return std::numeric_limits<int64_t>::min();
+  }
+  return MillisAdd(a, -b);
+}
+
 constexpr inline int64_t MillisMul(int64_t millis, int64_t mul) {
   return millis >= std::numeric_limits<int64_t>::max() / mul
              ? std::numeric_limits<int64_t>::max()
@@ -293,7 +300,7 @@ inline Duration operator+(Duration lhs, Duration rhs) {
 
 inline Duration operator-(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(
-      time_detail::MillisAdd(lhs.millis(), -rhs.millis()));
+      time_detail::MillisSub(lhs.millis(), rhs.millis()));
 }
 
 inline Timestamp operator+(Timestamp lhs, Duration rhs) {
@@ -302,16 +309,16 @@ inline Timestamp operator+(Timestamp lhs, Duration rhs) {
 }
 
 inline Timestamp operator-(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisAdd(
-      lhs.milliseconds_after_process_epoch(), -rhs.millis()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisSub(
+      lhs.milliseconds_after_process_epoch(), rhs.millis()));
 }
 
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
   return Duration::Milliseconds(
-      time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
-                             -rhs.milliseconds_after_process_epoch()));
+      time_detail::MillisSub(lhs.milliseconds_after_process_epoch(),
+                             rhs.milliseconds_after_process_epoch()));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
