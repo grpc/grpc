@@ -22,8 +22,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-namespace grpc {
-
 namespace grpc_gcp {
 
 // Observability objects follow the RAII idiom and help manage the lifetime of
@@ -34,6 +32,34 @@ namespace grpc_gcp {
 // is invoked.
 class Observability {
  public:
+  // Initialize GCP Observability for gRPC.
+  // This should be called before any other gRPC operations like creating a
+  // channel, server, credentials etc.
+  // The most common usage would call this at the top (or near the top) in
+  // main(). The return value helps determine whether observability was
+  // successfully enabled or not. On success, an object of class `Observability`
+  // is returned. When this object goes out of scope, GCP Observability stats,
+  // tracing and logging data is flushed. On failure, the status and status
+  // message can be used to determine the cause of failure. It is up to the
+  // applications to either crash on failure, or continue without GCP
+  // observability being enabled.
+  //
+  // Please look at
+  // https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_client.cc
+  // and
+  // https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_server.cc
+  // for sample usage.
+  //
+  // Note that this is a blocking call which properly sets up gRPC Observability
+  // to work with GCP and might take a few seconds to return.  Similarly, the
+  // destruction of a non-moved-from `Observability` object is also blocking
+  // since it flushes the observability data to GCP.
+  //
+  // As an implementation detail, this properly initializes the OpenCensus stats
+  // and tracing plugin, so applications do not need to perform any additional
+  // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
+  static absl::StatusOr<Observability> Init();
+
   ~Observability();
 
   // Move constructor. The moved-from object will no longer be valid and will
@@ -45,48 +71,20 @@ class Observability {
   Observability& operator=(const Observability&) = delete;
 
  private:
-  friend absl::StatusOr<Observability> ObservabilityInit();
   Observability() = default;
   bool close_on_destruction_ = true;
 };
 
-// Initialize GCP Observability for gRPC.
-// This should be called before any other gRPC operations like creating a
-// channel, server, credentials etc.
-// The most common usage would call this at the top (or near the top) in main().
-// The return value helps determine whether observability was successfully
-// enabled or not. On success, an object of class `Observability` is returned.
-// When this object goes out of scope, GCP Observability stats, tracing and
-// logging data is flushed. On failure, the status and status message can be
-// used to determine the cause of failure. It is up to the applications to
-// either crash on failure, or continue without GCP observability being enabled.
-//
-// Please look at
-// https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_client.cc
-// and
-// https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_server.cc
-// for sample usage.
-//
-// Note that this is a blocking call which properly sets up gRPC Observability
-// to work with GCP and might take a few seconds to return.  Similarly, the
-// destruction of a non-moved-from `Observability` object is also blocking since
-// it flushes the observability data to GCP.
-//
-// As an implementation detail, this properly initializes the OpenCensus stats
-// and tracing plugin, so applications do not need to perform any additional
-// gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
-absl::StatusOr<Observability> ObservabilityInit();
-
 }  // namespace grpc_gcp
 
+namespace grpc {
 namespace experimental {
 // TODO(yashykt): Delete this after the 1.55 release.
-GRPC_DEPRECATED("Use grpc::gcp::ObservabilityInit() instead.")
+GRPC_DEPRECATED("Use grpc_gcp::Observability::Init() instead.")
 absl::Status GcpObservabilityInit();
-GRPC_DEPRECATED("Use grpc::gcp::ObservabilityInit() instead.")
+GRPC_DEPRECATED("Use grpc_gcp::Observability::Init() instead.")
 void GcpObservabilityClose();
 }  // namespace experimental
-
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H

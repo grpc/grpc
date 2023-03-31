@@ -32,7 +32,7 @@ namespace testing {
 namespace {
 
 TEST(GcpObservabilityTest, Basic) {
-  auto observability = grpc::grpc_gcp::ObservabilityInit();
+  auto observability = grpc_gcp::Observability::Init();
   EXPECT_EQ(observability.status(),
             absl::FailedPreconditionError(
                 "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
@@ -42,7 +42,7 @@ TEST(GcpObservabilityTest, Basic) {
 }
 
 TEST(GcpObservabilityTest, ContinuesWorkingAfterFailure) {
-  auto observability = grpc::grpc_gcp::ObservabilityInit();
+  auto observability = grpc_gcp::Observability::Init();
   EXPECT_FALSE(observability.ok());
 
   // Set up a synchronous server on a different thread to avoid the asynch

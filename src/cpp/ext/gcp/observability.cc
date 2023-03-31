@@ -227,12 +227,21 @@ absl::Status GcpObservabilityInit() {
 void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
 
 }  // namespace experimental
+}  // namespace grpc
 
 namespace grpc_gcp {
 
 //
 // Observability
 //
+
+absl::StatusOr<Observability> Observability::Init() {
+  absl::Status status = grpc::internal::GcpObservabilityInit();
+  if (!status.ok()) {
+    return status;
+  }
+  return Observability();
+}
 
 Observability::~Observability() {
   if (close_on_destruction_) {
@@ -244,14 +253,4 @@ Observability::Observability(Observability&& other) noexcept {
   other.close_on_destruction_ = false;
 }
 
-absl::StatusOr<Observability> ObservabilityInit() {
-  absl::Status status = grpc::internal::GcpObservabilityInit();
-  if (!status.ok()) {
-    return status;
-  }
-  return Observability();
-}
-
 }  // namespace grpc_gcp
-
-}  // namespace grpc

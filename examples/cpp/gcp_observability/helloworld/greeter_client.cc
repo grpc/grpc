@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   // Turn on GCP Observability for the whole binary. Based on the configuration,
   // this will emit observability data (stats, tracing and logging) to GCP
   // backends. Note that this should be done before any other gRPC operation.
-  auto observability = grpc::grpc_gcp::ObservabilityInit();
+  auto observability = grpc_gcp::Observability::Init();
   if (!observability.ok()) {
     std::cerr << "GcpObservabilityInit() failed: "
               << observability.status().ToString() << std::endl;
