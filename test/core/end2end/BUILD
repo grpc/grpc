@@ -153,11 +153,10 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
-    name = "core_end2end_tests",
-    timeout = "long",
+grpc_cc_library(
+    name = "end2end_tests",
+    testonly = 1,
     srcs = [
-        "end2end_test_main.cc",
         "end2end_tests.cc",
         "tests/bad_ping.cc",
         "tests/binary_metadata.cc",
@@ -249,10 +248,8 @@ grpc_cc_test(
         "tests/write_buffering.cc",
         "tests/write_buffering_at_end.cc",
     ],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
+    hdrs = [
+        "end2end_tests.h",
     ],
     external_deps = [
         "absl/memory",
@@ -262,20 +259,17 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "absl/types:variant",
         "gtest",
     ],
-    shard_count = 50,
-    tags = ["core_end2end_test"],
     deps = [
         "cq_verifier",
         "fixture_support",
         "http_proxy",
-        "proxy",
         "//:channel_stack_builder",
         "//:config",
         "//:config_vars",
         "//:debug_location",
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc_authorization_provider",
         "//:grpc_public_hdrs",
@@ -295,7 +289,6 @@ grpc_cc_test(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:grpc_authorization_base",
-        "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
         "//src/core:json",
         "//src/core:lb_policy",
@@ -308,6 +301,47 @@ grpc_cc_test(
         "//src/core:time",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
+    ],
+)
+
+grpc_cc_test(
+    name = "core_end2end_tests",
+    timeout = "long",
+    srcs = [
+        "end2end_test_main.cc",
+    ],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "gtest",
+    ],
+    shard_count = 50,
+    tags = ["core_end2end_test"],
+    deps = [
+        "end2end_tests",
+        "fixture_support",
+        "http_proxy",
+        "proxy",
+        "//:config_vars",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:grpc_unsecure",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:iomgr_port",
+        "//src/core:no_destruct",
+        "//src/core:slice",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
