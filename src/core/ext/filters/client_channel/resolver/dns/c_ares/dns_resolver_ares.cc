@@ -748,7 +748,9 @@ void grpc_resolver_dns_ares_shutdown() {
 #else  // GRPC_ARES == 1
 
 namespace grpc_core {
-bool ShouldUseAresDnsResolver() { return false; }
+bool ShouldUseAresDnsResolver(absl::string_view /* resolver_env */) {
+  return false;
+}
 void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 }  // namespace grpc_core
 
