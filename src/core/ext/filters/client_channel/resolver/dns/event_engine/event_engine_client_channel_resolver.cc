@@ -293,8 +293,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     } else {
       addresses_.reserve(addresses_.size() + new_addresses->size());
       for (const auto& addr : *new_addresses) {
-        addresses_.emplace_back(CreateGRPCResolvedAddress(addr),
-                                resolver_->channel_args());
+        addresses_.emplace_back(CreateGRPCResolvedAddress(addr), ChannelArgs());
       }
     }
     result = OnResolvedLocked();
@@ -348,8 +347,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
             new_balancer_addresses) {
   ValidationErrors::ScopedField field(
-      &errors_,
-      absl::StrCat("balancer hostname lookup, authority: ", authority));
+      &errors_, absl::StrCat("balancer lookup for ", authority));
   absl::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
@@ -367,7 +365,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     balancer_addresses_.reserve(balancer_addresses_.size() +
                                 new_balancer_addresses->size());
     auto srv_channel_args =
-        resolver_->channel_args().Set(GRPC_ARG_DEFAULT_AUTHORITY, authority);
+        ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, authority);
     for (const auto& addr : *new_balancer_addresses) {
       balancer_addresses_.emplace_back(CreateGRPCResolvedAddress(addr),
                                        srv_channel_args);
@@ -467,16 +465,16 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
   // addresses and service config.
   if (addresses_.empty() && balancer_addresses_.empty()) {
     absl::Status status = errors_.status(
-        absl::StrCat("errors resolving ", resolver_->name_to_resolve()),
-        absl::StatusCode::kUnavailable);
+        absl::StatusCode::kUnavailable,
+        absl::StrCat("errors resolving ", resolver_->name_to_resolve()));
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
     result.addresses = status;
     result.service_config = status;
     return std::move(result);
   }
   if (!errors_.ok()) {
-    result.resolution_note = std::string(errors_.message(
-        absl::StrCat("errors resolving ", resolver_->name_to_resolve())));
+    result.resolution_note = errors_.message(
+        absl::StrCat("errors resolving ", resolver_->name_to_resolve()));
   }
   // We have at least one of addresses or balancer addresses, so we're going to
   // return a non-error for addresses.
