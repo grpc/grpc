@@ -79,7 +79,7 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
        metadata != rpc_behavior_metadata.second; metadata++) {
     auto value = metadata->second;
     for (auto behavior :
-         absl::StrSplit(absl::string_view(value.data(), value.length()), ",")) {
+         absl::StrSplit(absl::string_view(value.data(), value.length()), ',')) {
       rpc_behaviors.emplace(behavior);
     }
   }
@@ -113,7 +113,7 @@ class TestServiceImpl : public TestService::Service {
   Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
                    SimpleResponse* response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
-    for (auto rpc_behavior : GetRpcBehaviorMetadata(context)) {
+    for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
       auto maybe_status = GetStatusForRpcBehaviorMetadata(rpc_behavior);
       if (maybe_status.has_value()) {
         return *maybe_status;
