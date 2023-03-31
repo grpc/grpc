@@ -103,7 +103,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override {
       char* rpc_behavior_copy = static_cast<char*>(
           args.call_state->Alloc(rpc_behavior_.length() + 1));
-      strncpy(rpc_behavior_copy, rpc_behavior_.c_str(), rpc_behavior_.length());
+      strcpy(rpc_behavior_copy, rpc_behavior_.c_str());
       args.initial_metadata->Add(kRpcBehaviorMetadataKey, rpc_behavior_copy);
       // Do pick.
       return delegate_picker_->Pick(args);
