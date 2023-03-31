@@ -147,6 +147,8 @@ TEST_P(RetryTest, RetryStreaming) {
       .RecvCloseOnServer(client_close2)
       .SendInitialMetadata({})
       .SendMessage("quux")
+      // Returning a retriable code, but because we are also sending a
+      // message, the client will commit instead of retrying again.
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {});
   Expect(205, true);
   Expect(1, true);

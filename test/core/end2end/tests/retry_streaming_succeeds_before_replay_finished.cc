@@ -122,6 +122,8 @@ TEST_P(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
   s->NewBatch(205)
       .SendInitialMetadata({})
       .SendMessage("qux")
+      // Returning a retriable code, but because we are also sending a
+      // message, the client will commit instead of retrying again.
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {});
   Expect(205, true);
   Expect(1, true);
