@@ -81,9 +81,10 @@ void CoreEnd2endTest::SetUp() {
 }
 
 void CoreEnd2endTest::TearDown() {
-  if (fixture_ != nullptr) grpc_shutdown();
+  const bool do_shutdown = fixture_ != nullptr;
   cq_verifier_.reset();
   fixture_.reset();
+  if (do_shutdown) grpc_shutdown_blocking();
   initialized_ = false;
 }
 
