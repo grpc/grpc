@@ -62,6 +62,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -111,7 +112,7 @@ std::string XdsClusterResource::ToString() const {
             absl::StrJoin(aggregate.prioritized_cluster_names, ", "), "]"));
       });
   contents.push_back(
-      absl::StrCat("lb_policy_config=", Json{lb_policy_config}.Dump()));
+      absl::StrCat("lb_policy_config=", JsonDump(Json{lb_policy_config})));
   if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));

@@ -38,10 +38,10 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
 bool ExtractJsonBool(const Json& json, absl::string_view field_name,
                      bool* output, std::vector<grpc_error_handle>* error_list) {
   switch (json.type()) {
-    case Json::Type::JSON_TRUE:
+    case Json::Type::kTrue:
       *output = true;
       return true;
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kFalse:
       *output = false;
       return true;
     default:
@@ -54,26 +54,26 @@ bool ExtractJsonBool(const Json& json, absl::string_view field_name,
 bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       const Json::Array** output,
                       std::vector<grpc_error_handle>* error_list) {
-  if (json.type() != Json::Type::ARRAY) {
+  if (json.type() != Json::Type::kArray) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:type should be ARRAY")));
     return false;
   }
-  *output = &json.array_value();
+  *output = &json.array();
   return true;
 }
 
 bool ExtractJsonObject(const Json& json, absl::string_view field_name,
                        const Json::Object** output,
                        std::vector<grpc_error_handle>* error_list) {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:type should be OBJECT")));
     return false;
   }
-  *output = &json.object_value();
+  *output = &json.object();
   return true;
 }
 
