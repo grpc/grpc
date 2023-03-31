@@ -743,6 +743,7 @@ class ProxyAuthTest : public CoreEnd2endTest {};
 
 // A ConfigQuery queries a database a set of test configurations
 // that match some criteria.
+template <const NoDestruct<std::vector<CoreTestConfiguration>>* kConfigs>
 class ConfigQuery {
  public:
   ConfigQuery() = default;
@@ -772,10 +773,9 @@ class ConfigQuery {
     return *this;
   }
 
-  auto Run(
-      const NoDestruct<std::vector<CoreTestConfiguration>>& all_configs) const {
+  auto Run() const {
     std::vector<const CoreTestConfiguration*> out;
-    for (const CoreTestConfiguration& config : *all_configs) {
+    for (const CoreTestConfiguration& config : **kConfigs) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();
@@ -816,91 +816,92 @@ inline const char* NameFromConfig(
 // Should only be called from inside namespace grpc_core.
 #define INSTANTIATE_CORE_TEST_SUITES(configs)                                  \
   INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest,                  \
-                           ConfigQuery().Run(configs), NameFromConfig);        \
+                           ConfigQuery<&configs>().Run(), NameFromConfig);     \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       SecureEnd2endTests, SecureEnd2endTest,                                   \
-      ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(configs),      \
+      ConfigQuery<&configs>().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),   \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,              \
-                           ConfigQuery()                                       \
+                           ConfigQuery<&configs>()                             \
                                .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME | \
                                                 FEATURE_MASK_ENABLES_TRACES)   \
-                               .Run(configs),                                  \
+                               .Run(),                                         \
                            NameFromConfig);                                    \
                                                                                \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       CoreDeadlineTests, CoreDeadlineTest,                                     \
-      ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(configs),    \
+      ConfigQuery<&configs>().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(), \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       CoreClientChannelTests, CoreClientChannelTest,                           \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       Http2SingleHopTests, Http2SingleHopTest,                                 \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(FEATURE_MASK_IS_HTTP2)                              \
           .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |            \
                            FEATURE_MASK_ENABLES_TRACES)                        \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       RetryTests, RetryTest,                                                   \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)                \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       WriteBufferingTests, WriteBufferingTest,                                 \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)      \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       Http2Tests, Http2Test,                                                   \
-      ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(configs),       \
+      ConfigQuery<&configs>().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(),    \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       RetryHttp2Tests, RetryHttp2Test,                                         \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |                             \
                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |               \
                            FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)             \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       ResourceQuotaTests, ResourceQuotaTest,                                   \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |            \
                            FEATURE_MASK_1BYTE_AT_A_TIME)                       \
           .ExcludeName("Chttp2.*Uds.*")                                        \
           .ExcludeName("Chttp2HttpProxy")                                      \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       PerCallCredsTests, PerCallCredsTest,                                     \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)         \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,                 \
-      ConfigQuery()                                                            \
+      ConfigQuery<&configs>()                                                  \
           .EnforceFeatures(                                                    \
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)       \
-          .Run(configs),                                                       \
+          .Run(),                                                              \
       NameFromConfig);                                                         \
-  INSTANTIATE_TEST_SUITE_P(                                                    \
-      NoLoggingTests, NoLoggingTest,                                           \
-      ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run(configs), \
-      NameFromConfig);                                                         \
+  INSTANTIATE_TEST_SUITE_P(NoLoggingTests, NoLoggingTest,                      \
+                           ConfigQuery<&configs>()                             \
+                               .ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES)   \
+                               .Run(),                                         \
+                           NameFromConfig);                                    \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       ProxyAuthTests, ProxyAuthTest,                                           \
-      ConfigQuery().AllowName("Chttp2HttpProxy").Run(configs),                 \
+      ConfigQuery<&configs>().AllowName("Chttp2HttpProxy").Run(),              \
       NameFromConfig);
 
 }  // namespace grpc_core
