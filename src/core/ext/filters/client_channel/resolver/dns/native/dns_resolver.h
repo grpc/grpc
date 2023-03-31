@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_NATIVE_DNS_RESOLVER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_NATIVE_DNS_RESOLVER_H
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/config/core_configuration.h"
 
-grpc_core::TraceFlag grpc_event_engine_trace(false, "event_engine");
-grpc_core::TraceFlag grpc_event_engine_dns_trace(false, "event_engine_dns");
-grpc_core::TraceFlag grpc_event_engine_endpoint_trace(false,
-                                                      "event_engine_endpoint");
-grpc_core::TraceFlag grpc_event_engine_endpoint_data_trace(
-    false, "event_engine_endpoint_data");
-grpc_core::TraceFlag grpc_event_engine_poller_trace(false,
-                                                    "event_engine_poller");
+namespace grpc_core {
+void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_NATIVE_DNS_RESOLVER_H
