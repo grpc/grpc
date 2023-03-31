@@ -138,9 +138,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
-    explicit PosixDNSResolver(const ResolverOptions& options,
-                              PosixEnginePollerManager* poller_manager,
-                              PosixEventEngine* event_engine);
+    PosixDNSResolver(const ResolverOptions& options,
+                     PosixEnginePollerManager* poller_manager,
+                     PosixEventEngine* event_engine);
     ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,

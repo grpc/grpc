@@ -102,7 +102,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RegisterAresSocketWithPollerCallback register_cb, grpc_core::Mutex* /* mu */) {
+    RegisterAresSocketWithPollerCallback register_cb,
+    grpc_core::Mutex* /* mu */) {
   return std::make_unique<GrpcPolledFdFactoryPosix>(std::move(register_cb));
 }
 

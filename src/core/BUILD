@@ -2224,6 +2224,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/strings",
@@ -2246,6 +2247,7 @@ grpc_cc_library(
     deps = [
         "error",
         "event_engine_tcp_socket_utils",
+        "event_engine_time_util",
         "examine_stack",
         "grpc_sockaddr",
         "iomgr_port",
