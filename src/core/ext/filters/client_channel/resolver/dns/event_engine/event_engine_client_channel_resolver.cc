@@ -47,6 +47,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -71,6 +72,7 @@ namespace {
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::HandleToString;
 using grpc_event_engine::experimental::LookupTaskHandleSet;
 
 // TODO(yijiem): Investigate adding a resolver test scenario where the first
@@ -218,7 +220,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p Started resolving hostname %s", resolver_.get(),
+      "DNSResolver::%p Starting hostname resolution for %s", resolver_.get(),
       resolver_->name_to_resolve().c_str());
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
@@ -227,20 +229,24 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE("hostname lookup handle: %s",
+                                   HandleToString(hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving SRV record %s", resolver_.get(),
-        resolver_->name_to_resolve().c_str());
+        "DNSResolver::%p Starting SRV record resolution for %s",
+        resolver_.get(), resolver_->name_to_resolve().c_str());
     srv_handle_ = event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) { self->OnSRVResolved(std::move(srv_records)); },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
+                                     HandleToString(srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving TXT record %s", resolver_.get(),
-        resolver_->name_to_resolve().c_str());
+        "DNSResolver::%p Starting TXT record resolution for %s",
+        resolver_.get(), resolver_->name_to_resolve().c_str());
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::string> service_config) {
@@ -248,6 +254,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
         resolver_->query_timeout_ms_);
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE("txt lookup handle: %s",
+                                     HandleToString(txt_handle_).c_str());
   }
 }
 
@@ -326,7 +334,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Started resolving balancer hostname %s:%d",
+        "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
     balancer_hostname_handles_.insert(event_engine_resolver_->LookupHostname(
         [host = std::move(srv_record.host),
@@ -426,8 +434,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
   if (service_config->empty()) return;
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "resolver:%p selected service config choice: %s", this,
-      service_config->c_str());
+      "DNSResolver::%p selected service config choice: %s",
+      event_engine_resolver_.get(), service_config->c_str());
   result->service_config =
       ServiceConfigImpl::Create(resolver_->channel_args(), *service_config);
   if (!result->service_config.ok()) {
@@ -446,7 +454,7 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
       number_of_balancer_hostnames_resolved_ !=
           balancer_hostname_handles_.size()) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "resolver:%p OnResolved() waiting for results (hostname: %s, "
+        "DNSResolver::%p OnResolved() waiting for results (hostname: %s, "
         "srv: %s, "
         "txt: %s, "
         "balancer addresses: %" PRIuPTR "/%" PRIuPTR " complete",
@@ -457,8 +465,8 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
         balancer_hostname_handles_.size());
     return absl::nullopt;
   }
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE("resolver:%p OnResolvedLocked() proceeding",
-                                   this);
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+      "DNSResolver::%p OnResolvedLocked() proceeding", this);
   Resolver::Result result;
   result.args = resolver_->channel_args();
   // If both addresses and balancer addresses failed, return an error for both
