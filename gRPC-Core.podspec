@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.54.0-dev'
+  version = '1.55.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -290,6 +290,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
@@ -297,7 +298,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
@@ -1478,9 +1486,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_object_loader.cc',
                       'src/core/lib/json/json_object_loader.h',
                       'src/core/lib/json/json_reader.cc',
+                      'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_util.cc',
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
+                      'src/core/lib/json/json_writer.h',
                       'src/core/lib/load_balancing/lb_policy.cc',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
@@ -1947,8 +1957,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -2537,7 +2552,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_args.h',
                               'src/core/lib/json/json_channel_args.h',
                               'src/core/lib/json/json_object_loader.h',
+                              'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/json/json_writer.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

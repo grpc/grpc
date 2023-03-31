@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -485,7 +486,7 @@ class Vec<T, 0> {
 
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
-// Returns false if the JSON object was not of type Json::Type::OBJECT.
+// Returns false if the JSON object was not of type Json::Type::kObject.
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ValidationErrors* errors);
 
@@ -589,7 +590,9 @@ absl::StatusOr<T> LoadFromJson(
   ValidationErrors errors;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &errors);
-  if (!errors.ok()) return errors.status(error_prefix);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
+  }
   return std::move(result);
 }
 
@@ -600,7 +603,9 @@ absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
   ValidationErrors errors;
   auto result = MakeRefCounted<T>();
   json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(), &errors);
-  if (!errors.ok()) return errors.status(error_prefix);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
+  }
   return std::move(result);
 }
 

@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
@@ -88,7 +89,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   void* buf = upb_Arena_Malloc(arena, json_size + 1);
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  auto json = JsonParse(reinterpret_cast<char*>(buf));
   GPR_ASSERT(json.ok());
   return Json::Array{Json::Object{
       {"rls_experimental",

@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.54.0-dev'
+  version = '1.55.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -278,8 +278,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -906,7 +911,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_args.h',
                       'src/core/lib/json/json_channel_args.h',
                       'src/core/lib/json/json_object_loader.h',
+                      'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_util.h',
+                      'src/core/lib/json/json_writer.h',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
                       'src/core/lib/load_balancing/lb_policy_registry.h',
@@ -1236,8 +1243,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -1846,7 +1858,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_args.h',
                               'src/core/lib/json/json_channel_args.h',
                               'src/core/lib/json/json_object_loader.h',
+                              'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/json/json_writer.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

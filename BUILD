@@ -181,9 +181,9 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gracious"  # @unused
 
-core_version = "30.1.0"  # @unused
+core_version = "31.0.0"  # @unused
 
-version = "1.54.0-dev"  # @unused
+version = "1.55.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -783,6 +783,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
+        "//src/core:grpc_resolver_dns_plugin",
     ],
 )
 
@@ -907,6 +908,7 @@ grpc_cc_library(
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1499,6 +1501,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
+        "//src/core:json_writer",
         "//src/core:latch",
         "//src/core:loop",
         "//src/core:map",
@@ -1885,6 +1888,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2716,6 +2720,7 @@ grpc_cc_library(
         "//src/core:lib/service_config/service_config_impl.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -2731,6 +2736,8 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:service_config_parser",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -2884,6 +2891,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "server_address",
@@ -2948,6 +2956,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
@@ -2990,10 +2999,10 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
-        "//src/core:json",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
+        "//src/core:service_config_helper",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
@@ -3159,6 +3168,8 @@ grpc_cc_library(
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:time",
@@ -3211,7 +3222,10 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "absl/strings",
+        "upb_lib",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
@@ -3224,6 +3238,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:pollset_set",
         "//src/core:slice",
     ],
@@ -3483,6 +3498,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:time",
         "//src/core:upb_utils",
@@ -3740,7 +3756,6 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
-        "iomgr_timer",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

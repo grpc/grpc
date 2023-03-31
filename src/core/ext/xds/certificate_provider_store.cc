@@ -61,16 +61,16 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   // Parse the config field.
   {
     ValidationErrors::ScopedField field(errors, ".config");
-    auto it = json.object_value().find("config");
+    auto it = json.object().find("config");
     // The config field is optional; if not present, we use an empty JSON
     // object.
     Json::Object config_json;
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kObject) {
         errors->AddError("is not an object");
         return;  // No point parsing config.
       } else {
-        config_json = it->second.object_value();
+        config_json = it->second.object();
       }
     }
     if (factory == nullptr) return;

@@ -39,6 +39,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
@@ -126,7 +128,7 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
                                                    ValidationErrors* errors) {
   // Parse "channel_creds".
   auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
-      json.object_value(), args, "channel_creds", errors);
+      json.object(), args, "channel_creds", errors);
   if (channel_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".channel_creds");
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
@@ -153,17 +155,16 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
   // Parse "server_features".
   {
     ValidationErrors::ScopedField field(errors, ".server_features");
-    auto it = json.object_value().find("server_features");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
+    auto it = json.object().find("server_features");
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kArray) {
         errors->AddError("is not an array");
       } else {
-        const Json::Array& array = it->second.array_value();
+        const Json::Array& array = it->second.array();
         for (const Json& feature_json : array) {
-          if (feature_json.type() == Json::Type::STRING &&
-              (feature_json.string_value() ==
-               kServerFeatureIgnoreResourceDeletion)) {
-            server_features_.insert(feature_json.string_value());
+          if (feature_json.type() == Json::Type::kString &&
+              (feature_json.string() == kServerFeatureIgnoreResourceDeletion)) {
+            server_features_.insert(feature_json.string());
           }
         }
       }
@@ -212,7 +213,7 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
 
 absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     absl::string_view json_string) {
-  auto json = Json::Parse(json_string);
+  auto json = JsonParse(json_string);
   if (!json.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Failed to parse bootstrap JSON string: ", json.status().ToString()));
@@ -291,10 +292,10 @@ std::string GrpcXdsBootstrap::ToString() const {
                         "},\n",
                         node_->id(), node_->cluster(), node_->locality_region(),
                         node_->locality_zone(), node_->locality_sub_zone(),
-                        Json{node_->metadata()}.Dump()));
+                        JsonDump(Json{node_->metadata()})));
   }
   parts.push_back(
-      absl::StrFormat("servers=[\n%s\n],\n", servers_[0].ToJson().Dump()));
+      absl::StrFormat("servers=[\n%s\n],\n", JsonDump(servers_[0].ToJson())));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",
@@ -314,9 +315,8 @@ std::string GrpcXdsBootstrap::ToString() const {
     if (entry.second.server() != nullptr) {
       parts.push_back(absl::StrFormat(
           "    servers=[\n%s\n],\n",
-          static_cast<const GrpcXdsServer*>(entry.second.server())
-              ->ToJson()
-              .Dump()));
+          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
+                       ->ToJson())));
     }
     parts.push_back("      },\n");
   }
