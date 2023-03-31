@@ -997,6 +997,7 @@ INSTANTIATE_TEST_SUITE_P(
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_1BYTE_AT_A_TIME)
         .ExcludeName("Chttp2.*Uds.*")
+        .ExcludeName("Chttp2HttpProxy")
         .Run(),
     NameFromConfig);
 

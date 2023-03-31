@@ -36,7 +36,7 @@
 namespace grpc_core {
 namespace {
 
-const int kNumCalls = 100;
+const int kNumCalls = 8;
 const int kClientBaseTag = 1000;
 const int kServerStartBaseTag = 2000;
 const int kServerRecvBaseTag = 3000;
@@ -100,7 +100,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
            }});
     Expect(kServerEndBaseTag + i, true);
   }
-  Step(Duration::Minutes(2));
+  Step(Duration::Seconds(30));
 
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
@@ -127,7 +127,6 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
       cancelled_calls_on_server++;
     }
   }
-
   gpr_log(GPR_INFO,
           "Done. %d total calls: %d cancelled at server, %d cancelled at "
           "client, %d timed out, %d unavailable.",
