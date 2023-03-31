@@ -829,11 +829,10 @@ const NoDestruct<std::vector<CoreTestConfiguration>> all_configs{std::vector<
         }},
 #endif
 // TODO(ctiller): these got inadvertently disabled when the project
-// switched to
-// Bazel in 2016, and have not been re-enabled since and are now quite
-// broken.
-// We should re-enable them however, as they provide defense in depth
-// that enabling tracers is safe.
+// switched to Bazel in 2016, and have not been re-enabled since and are now
+// quite broken. We should re-enable them however, as they provide defense in
+// depth that enabling tracers is safe. When doing so, we'll need to re-enable
+// the windows setvbuf statement in main().
 #if 0
     CoreTestConfiguration{
         "Chttp2SocketPairWithTrace",
@@ -1028,13 +1027,14 @@ INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  // TODO(ctiller) when re-enabling trace tests, re-enable this
 #ifdef GPR_WINDOWS
   // on Windows, writing logs to stderr is very slow
   // when stderr is redirected to a disk file.
   // The "trace" tests fixtures generates large amount
   // of logs, so setting a buffer for stderr prevents certain
   // test cases from timing out.
-  setvbuf(stderr, NULL, _IOLBF, 1024);
+  // setvbuf(stderr, NULL, _IOLBF, 1024);
 #endif
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
