@@ -1206,7 +1206,6 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
     Status s;
     std::thread echo_thread([this, &s, &context, &request, &response] {
       s = stub_->Echo(&context, request, &response);
-      EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
     });
     if (!GetParam().callback_server()) {
       service_.ClientWaitUntilRpcStarted();
@@ -1233,8 +1232,9 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
     if (GetParam().use_interceptors()) {
       EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
-    break;
+    return;
   }
+  GTEST_FAIL() << "Failed to get cancellation";
 }
 
 // Client cancels request stream after sending two messages
