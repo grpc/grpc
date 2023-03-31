@@ -1583,7 +1583,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               std::move(initial_metadata_outstanding_token_),
+               std::move(initial_metadata_outstanding_token_), nullptr,
                server_initial_metadata_pipe() == nullptr
                    ? nullptr
                    : &server_initial_metadata_pipe()->sender,
@@ -2373,7 +2373,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
-                 ClientInitialMetadataOutstandingToken::Empty(),
+                 ClientInitialMetadataOutstandingToken::Empty(), nullptr,
                  server_initial_metadata_pipe() == nullptr
                      ? nullptr
                      : &server_initial_metadata_pipe()->sender,

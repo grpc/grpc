@@ -2358,16 +2358,7 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
       Party(arena, initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
-    GPR_ASSERT(args.pollset_set_alternative == nullptr &&
-               "Only one of 'cq' and 'pollset_set_alternative' should be "
-               "non-nullptr.");
     GRPC_CQ_INTERNAL_REF(args.cq, "bind");
-    call_context_.pollent_ =
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args.cq));
-  }
-  if (args.pollset_set_alternative != nullptr) {
-    call_context_.pollent_ = grpc_polling_entity_create_from_pollset_set(
-        args.pollset_set_alternative);
   }
 }
 
@@ -2480,8 +2471,6 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
 void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
   cq_ = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
-  call_context_.pollent_ =
-      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
 void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
@@ -2654,6 +2643,17 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
       : PromiseBasedCall(arena, 1, *args) {
     global_stats().IncrementClientCallsCreated();
+    if (args->cq != nullptr) {
+      GPR_ASSERT(args->pollset_set_alternative == nullptr &&
+                 "Only one of 'cq' and 'pollset_set_alternative' should be "
+                 "non-nullptr.");
+      polling_entity_.Set(
+          grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq)));
+    }
+    if (args->pollset_set_alternative != nullptr) {
+      polling_entity_.Set(grpc_polling_entity_create_from_pollset_set(
+          args->pollset_set_alternative));
+    }
     ScopedContext context(this);
     send_initial_metadata_ =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
@@ -2744,6 +2744,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<ServerMetadataHandle> server_initial_metadata_{arena()};
   Latch<ServerMetadataHandle> server_trailing_metadata_;
   Latch<ServerMetadataHandle> cancel_error_;
+  Latch<grpc_polling_entity> polling_entity_;
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_;
@@ -2773,11 +2774,11 @@ void ClientPromiseBasedCall::StartPromise(
        token = std::move(token)]() mutable {
         return Race(
             cancel_error_.Wait(),
-            Map(channel()->channel_stack()->MakeClientCallPromise(
-                    CallArgs{std::move(client_initial_metadata),
-                             std::move(token), &server_initial_metadata_.sender,
-                             &client_to_server_messages_.receiver,
-                             &server_to_client_messages_.sender}),
+            Map(channel()->channel_stack()->MakeClientCallPromise(CallArgs{
+                    std::move(client_initial_metadata), std::move(token),
+                    &polling_entity_, &server_initial_metadata_.sender,
+                    &client_to_server_messages_.receiver,
+                    &server_to_client_messages_.sender}),
                 [this](ServerMetadataHandle trailing_metadata) {
                   // If we're cancelled the transport doesn't get to return
                   // stats.
@@ -3203,7 +3204,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   Spawn("server_promise",
         channel()->channel_stack()->MakeServerCallPromise(
             CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(),
-                     nullptr, nullptr, nullptr}),
+                     nullptr, nullptr, nullptr, nullptr}),
         [this](ServerMetadataHandle result) { Finish(std::move(result)); });
 }
 
@@ -3430,6 +3431,8 @@ ServerCallContext::MakeTopOfServerCallPromise(
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
   call_->SetCompletionQueue(cq);
+  call_args.polling_entity->Set(
+      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)));
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
   call_->client_to_server_messages_ = call_args.client_to_server_messages;
   call_->server_initial_metadata_ = call_args.server_initial_metadata;

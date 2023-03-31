@@ -446,9 +446,13 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   grpc_transport_init_stream(transport, stream->stream(),
                              stream->stream_refcount(), nullptr,
                              GetContext<Arena>());
-  grpc_transport_set_pops(transport, stream->stream(),
-                          GetContext<CallContext>()->polling_entity());
   auto* party = static_cast<Party*>(Activity::current());
+  party->Spawn(
+      "set_polling_entity", call_args.polling_entity->Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
   // Start a loop to send messages from client_to_server_messages to the
   // transport. When the pipe closes and the loop completes, send a trailing
   // metadata batch to close the stream.
@@ -581,9 +585,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       transport, stream->stream(), stream->stream_refcount(),
       GetContext<CallContext>()->server_call_context()->server_stream_data(),
       GetContext<Arena>());
-  grpc_transport_set_pops(transport, stream->stream(),
-                          GetContext<CallContext>()->polling_entity());
-
   auto* party = static_cast<Party*>(Activity::current());
 
   // Arifacts we need for the lifetime of the call.
@@ -592,10 +593,18 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
     Pipe<MessageHandle> client_to_server;
     Pipe<ServerMetadataHandle> server_initial_metadata;
     Latch<ServerMetadataHandle> failure_latch;
+    Latch<grpc_polling_entity> polling_entity_latch;
     bool sent_initial_metadata = false;
     bool sent_trailing_metadata = false;
   };
   auto* call_data = GetContext<Arena>()->ManagedNew<CallData>();
+
+  party->Spawn(
+      "set_polling_entity", call_data->polling_entity_latch.Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
 
   auto server_to_client_empty =
       call_data->server_to_client.receiver.AwaitEmpty();
@@ -614,6 +623,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                auto call_promise = next_promise_factory(CallArgs{
                    std::move(client_initial_metadata),
                    ClientInitialMetadataOutstandingToken::Empty(),
+                   &call_data->polling_entity_latch,
                    &call_data->server_initial_metadata.sender,
                    &call_data->client_to_server.receiver,
                    &call_data->server_to_client.sender,
