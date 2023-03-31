@@ -52,7 +52,7 @@ grpc_cc_library(
     ],
     hdrs = ["data/ssl_test_data.h"],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 grpc_cc_library(
