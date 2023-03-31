@@ -111,8 +111,8 @@ TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   IncomingCloseOnServer client_close2;
   s2.NewBatch(202).RecvMessage(client_message2);
   s2.NewBatch(203)
-      .SendInitialMetadata({})
       .RecvCloseOnServer(client_close2)
+      .SendInitialMetadata({})
       .SendMessage("qux")
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
   // Second call completes.
