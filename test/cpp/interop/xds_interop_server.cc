@@ -76,7 +76,7 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
       context->client_metadata().equal_range(grpc::string_ref(
           kRpcBehaviorMetadataKey.data(), kRpcBehaviorMetadataKey.length()));
   for (auto metadata = rpc_behavior_metadata.first;
-       metadata != rpc_behavior_metadata.second; metadata++) {
+       metadata != rpc_behavior_metadata.second; ++metadata) {
     auto value = metadata->second;
     for (auto behavior :
          absl::StrSplit(absl::string_view(value.data(), value.length()), ',')) {
