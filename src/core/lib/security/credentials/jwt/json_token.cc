@@ -40,6 +40,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -80,7 +82,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
@@ -129,7 +131,7 @@ end:
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
   Json json;
-  auto json_or = Json::Parse(json_string);
+  auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
     gpr_log(GPR_ERROR, "JSON key parsing error: %s",
             json_or.status().ToString().c_str());
@@ -168,7 +170,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
       {"typ", GRPC_JWT_TYPE},
       {"kid", key_id},
   };
-  std::string json_str = json.Dump();
+  std::string json_str = JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -196,7 +198,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   }
 
   Json json(object);
-  std::string json_str = json.Dump();
+  std::string json_str = JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 

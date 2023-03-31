@@ -992,7 +992,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // This policy was configured in the deprecated loadBalancingPolicy
       // field or in the client API.
       return absl::InvalidArgumentError(
@@ -1009,8 +1009,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       // Parse childPolicy manually.
       {
         ValidationErrors::ScopedField field(&errors, ".childPolicy");
-        auto it = json.object_value().find("childPolicy");
-        if (it == json.object_value().end()) {
+        auto it = json.object().find("childPolicy");
+        if (it == json.object().end()) {
           errors.AddError("field not present");
         } else {
           auto child_policy_config = CoreConfiguration::Get()
@@ -1107,8 +1107,7 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
 
 void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                           ValidationErrors* errors) {
-  if (json.object_value().find("maxEjectionTime") ==
-      json.object_value().end()) {
+  if (json.object().find("maxEjectionTime") == json.object().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
   }
   if (max_ejection_percent > 100) {

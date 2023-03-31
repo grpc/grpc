@@ -45,6 +45,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "test/core/util/test_config.h"
@@ -533,7 +534,7 @@ class ChannelzSampler final {
   }
 
   // Dump data in json
-  std::string DumpJson() { return json_.Dump(); }
+  std::string DumpJson() { return JsonDump(json_); }
 
   // Check if one entity has been recorded
   bool CheckID(int64_t id) {

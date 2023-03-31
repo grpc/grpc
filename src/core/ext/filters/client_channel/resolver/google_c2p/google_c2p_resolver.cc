@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -261,7 +262,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       {"node", std::move(node)},
   };
   // Inject bootstrap JSON as fallback config.
-  internal::SetXdsFallbackBootstrapConfig(bootstrap.Dump().c_str());
+  internal::SetXdsFallbackBootstrapConfig(JsonDump(bootstrap).c_str());
   // Now start xDS resolver.
   child_resolver_->StartLocked();
 }

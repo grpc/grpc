@@ -183,7 +183,7 @@ g_stands_for = "gracious"  # @unused
 
 core_version = "31.0.0"  # @unused
 
-version = "1.54.0-dev"  # @unused
+version = "1.55.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -907,6 +907,7 @@ grpc_cc_library(
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1499,6 +1500,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
+        "//src/core:json_writer",
         "//src/core:latch",
         "//src/core:loop",
         "//src/core:map",
@@ -1885,6 +1887,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2731,6 +2734,8 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:service_config_parser",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -2988,6 +2993,8 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
@@ -3156,6 +3163,8 @@ grpc_cc_library(
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:time",
@@ -3742,7 +3751,6 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
-        "iomgr_timer",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

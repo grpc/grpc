@@ -45,6 +45,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -86,8 +87,8 @@ class XdsWrrLocalityLbConfig : public LoadBalancingPolicy::Config {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors) {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
       return;
     }
@@ -226,7 +227,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_wrr_locality_lb %p] generated child policy config: %s", this,
-            child_config_json.Dump(/*indent=*/1).c_str());
+            JsonDump(child_config_json, /*indent=*/1).c_str());
   }
   // Parse config.
   auto child_config =
@@ -345,7 +346,7 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // xds_wrr_locality was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(

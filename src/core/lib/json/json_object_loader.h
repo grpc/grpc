@@ -485,7 +485,7 @@ class Vec<T, 0> {
 
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
-// Returns false if the JSON object was not of type Json::Type::OBJECT.
+// Returns false if the JSON object was not of type Json::Type::kObject.
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ValidationErrors* errors);
 

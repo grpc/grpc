@@ -24,6 +24,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/json/json_reader.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -62,7 +63,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
         "DATA_CENTER": "us-west1-a"
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -103,7 +104,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
 TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   const char* json_str = R"json({
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -126,7 +127,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigMethodIllegalSlashes) {
         ]
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -151,7 +152,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigEmptyMethod) {
         ]
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -177,7 +178,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
         ]
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -208,7 +209,7 @@ TEST(GcpObservabilityConfigJsonParsingTest,
         ]
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
@@ -233,7 +234,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, SamplingRateDefaults) {
         "sampling_rate": 0.05
       }
     })json";
-  auto json = grpc_core::Json::Parse(json_str);
+  auto json = grpc_core::JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(

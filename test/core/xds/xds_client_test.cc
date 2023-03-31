@@ -51,6 +51,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/scoped_env_var.h"
@@ -347,7 +349,7 @@ class XdsClientTest : public ::testing::Test {
     XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
         absl::string_view serialized_resource) const override {
-      auto json = Json::Parse(serialized_resource);
+      auto json = JsonParse(serialized_resource);
       XdsResourceType::DecodeResult result;
       if (!json.ok()) {
         result.resource = json.status();
@@ -355,9 +357,9 @@ class XdsClientTest : public ::testing::Test {
         absl::StatusOr<ResourceStruct> foo =
             LoadFromJson<ResourceStruct>(*json);
         if (!foo.ok()) {
-          auto it = json->object_value().find("name");
-          if (it != json->object_value().end()) {
-            result.name = it->second.string_value();
+          auto it = json->object().find("name");
+          if (it != json->object().end()) {
+            result.name = it->second.string();
           }
           result.resource = foo.status();
         } else {
@@ -705,14 +707,14 @@ class XdsClientTest : public ::testing::Test {
                               GRPC_CUSTOM_JSONUTIL::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
-      auto metadata_json = Json::Parse(metadata_json_str);
+      auto metadata_json = JsonParse(metadata_json_str);
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
       EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
           << location.file() << ":" << location.line() << ":\nexpected: "
-          << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
-          << "\nactual: " << metadata_json->Dump();
+          << JsonDump(Json{xds_client_->bootstrap().node()->metadata()})
+          << "\nactual: " << JsonDump(*metadata_json);
     }
     EXPECT_EQ(request.node().user_agent_name(), "foo agent")
         << location.file() << ":" << location.line();
