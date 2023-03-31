@@ -230,7 +230,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE("hostname lookup handle: %s",
-                                   HandleToString(hostname_handle_).c_str());
+                                   HandleToString(*hostname_handle_).c_str());
   if (resolver_->enable_srv_queries_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting SRV record resolution for %s",
@@ -241,7 +241,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                 srv_records) { self->OnSRVResolved(std::move(srv_records)); },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
-                                     HandleToString(srv_handle_).c_str());
+                                     HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -255,7 +255,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
         resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("txt lookup handle: %s",
-                                     HandleToString(txt_handle_).c_str());
+                                     HandleToString(*txt_handle_).c_str());
   }
 }
 
