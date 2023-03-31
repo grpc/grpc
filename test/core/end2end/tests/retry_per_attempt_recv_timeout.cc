@@ -105,8 +105,8 @@ TEST_P(RetryTest, RetryPerAttemptRecvTimeout) {
   Step();
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), "2");
-  IncomingMessage(client_message);
-  s2.NewBatch(302).RecvMessage(client_message);
+  IncomingMessage client_message2;
+  s2.NewBatch(302).RecvMessage(client_message2);
   // Server sends OK status.
   IncomingCloseOnServer client_close2;
   s2.NewBatch(303)

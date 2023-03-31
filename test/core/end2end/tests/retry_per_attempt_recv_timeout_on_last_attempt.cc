@@ -65,7 +65,9 @@ TEST_P(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
+      .SendMessage("foo")
       .RecvMessage(server_message)
+      .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   // Server gets a call but does not respond to the call.

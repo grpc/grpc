@@ -62,9 +62,11 @@ TEST_P(RetryTest, RetryThrottled) {
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
+      .RecvMessage(server_message)
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);

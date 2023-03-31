@@ -126,6 +126,7 @@ TEST_P(RetryTest, RetryStreaming) {
   s2.NewBatch(202).RecvMessage(client_message3);
   Expect(202, true);
   Step();
+  // Server receives a second message.
   CoreEnd2endTest::IncomingMessage client_message4;
   s2.NewBatch(203).RecvMessage(client_message4);
   Expect(203, true);
@@ -155,6 +156,7 @@ TEST_P(RetryTest, RetryStreaming) {
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_NE(channelz_channel, nullptr);
+  // TODO(roth): consider using a regex check here.
   std::string json = channelz_channel->RenderJsonString();
   EXPECT_THAT(json, HasSubstr("\"trace\""));
   EXPECT_THAT(json, HasSubstr("\"description\":\"Channel created\""));

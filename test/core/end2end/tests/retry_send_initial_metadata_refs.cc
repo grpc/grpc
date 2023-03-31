@@ -107,10 +107,12 @@ TEST_P(RetryTest, RetrySendInitialMetadataRefs) {
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage client_message;
   s2.NewBatch(202).RecvMessage(client_message);
+  IncomingCloseOnServer client_close2;
   s2.NewBatch(203)
-      .SendMessage("bar")
       .SendInitialMetadata({})
-      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+      .SendMessage("bar")
+      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {})
+      .RecvCloseOnServer(client_close2);
   Expect(202, true);
   Expect(203, true);
   Expect(2, true);

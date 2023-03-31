@@ -74,7 +74,7 @@ TEST_P(RetryTest, UnrefBeforeRecv) {
   // Server immediately sends FAILED_PRECONDITION status (not retriable).
   // This forces the retry filter to start a recv_trailing_metadata op
   // internally, since the application hasn't started it yet.
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_FAILED_PRECONDITION, "xyz", {})

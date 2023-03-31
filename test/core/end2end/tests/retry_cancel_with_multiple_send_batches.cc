@@ -71,6 +71,7 @@ void TestRetryCancelWithMultipleSendBatches(
                   "  } ]\n"
                   "}",
                   5 * grpc_test_slowdown_factor()))
+          // TODO(roth): do we need this now?
           .Set(GRPC_ARG_ENABLE_RETRIES, true));
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(3))

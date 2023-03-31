@@ -42,9 +42,9 @@ TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   InitClient(ChannelArgs());
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
@@ -62,9 +62,9 @@ TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // the server comes back up, it stays pending.
   auto c2 =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status2;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata2;
-  CoreEnd2endTest::IncomingMessage server_message2;
+  IncomingStatusOnClient server_status2;
+  IncomingMetadata server_initial_metadata2;
+  IncomingMessage server_message2;
   c2.NewBatch(2)
       .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
       .SendMessage("bar")
@@ -75,9 +75,9 @@ TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Start server shutdown.
   ShutdownServerAndNotify(102);
   // Server handles the first call.
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(103).RecvMessage(client_message);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .RecvCloseOnServer(client_close)
       .SendInitialMetadata({})
@@ -107,10 +107,12 @@ TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // we don't do that for transparent retries.
   EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
   // Server handles the second call.
-  CoreEnd2endTest::IncomingMessage client_message2;
+  IncomingMessage client_message2;
+  IncomingCloseOnServer client_close2;
   s2.NewBatch(202).RecvMessage(client_message2);
   s2.NewBatch(203)
       .SendInitialMetadata({})
+      .RecvCloseOnServer(client_close2)
       .SendMessage("qux")
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
   // Second call completes.

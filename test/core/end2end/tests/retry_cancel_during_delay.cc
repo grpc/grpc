@@ -92,7 +92,8 @@ void TestRetryCancelDuringDelay(
   test.Expect(1, true);
   test.Step();
   auto finish_time = Timestamp::Now();
-  EXPECT_EQ(server_status.status(), cancellation_mode->ExpectedStatus());
+  EXPECT_EQ(server_status.status(), cancellation_mode->ExpectedStatus())
+      << server_status.message();
   EXPECT_FALSE(client_close.was_cancelled());
   // Make sure we didn't wait the full deadline before failing.
   EXPECT_LT(finish_time, expect_finish_before);

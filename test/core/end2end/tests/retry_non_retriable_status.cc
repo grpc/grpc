@@ -60,6 +60,7 @@ TEST_P(RetryTest, RetryNonRetriableStatus) {
       .SendInitialMetadata({})
       .SendMessage("foo")
       .RecvMessage(server_message)
+      .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   auto s = RequestCall(101);

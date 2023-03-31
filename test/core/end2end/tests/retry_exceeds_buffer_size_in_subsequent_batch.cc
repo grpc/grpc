@@ -69,6 +69,7 @@ TEST_P(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
   c.NewBatch(2)
       .SendMessage(std::string(102400, 'a'))
       .RecvMessage(server_message)
+      .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   auto s = RequestCall(101);

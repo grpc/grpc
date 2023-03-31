@@ -64,8 +64,8 @@ TEST_P(RetryTest, RetryDisabled) {
       .SendInitialMetadata({})
       .SendMessage("foo")
       .RecvMessage(server_message)
-      .RecvInitialMetadata(server_initial_metadata)
       .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   auto s = RequestCall(101);
   Expect(101, true);
