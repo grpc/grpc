@@ -75,8 +75,10 @@ using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::HandleToString;
 using grpc_event_engine::experimental::LookupTaskHandleSet;
 
-// TODO(yijiem): Investigate adding a resolver test scenario where the first
+// TODO(hork): Investigate adding a resolver test scenario where the first
 // balancer hostname lookup result is an error, and the second contains valid
+// addresses.
+// TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
 
 // TODO(hork): replace this with `dns_resolver` when all other resolver
@@ -336,7 +338,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
-    balancer_hostname_handles_.insert(event_engine_resolver_->LookupHostname(
+    auto handle = event_engine_resolver_->LookupHostname(
         [host = std::move(srv_record.host),
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -345,7 +347,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                             std::move(new_balancer_addresses));
         },
         srv_record.host, std::to_string(srv_record.port),
-        resolver_->query_timeout_ms_));
+        resolver_->query_timeout_ms_);
+    GRPC_EVENT_ENGINE_RESOLVER_TRACE("balancer hostname lookup handle: %s",
+                                     HandleToString(handle).c_str());
+    balancer_hostname_handles_.insert(handle);
   }
 }
 
