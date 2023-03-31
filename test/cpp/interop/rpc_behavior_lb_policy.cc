@@ -96,19 +96,22 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<SubchannelPicker> delegate_picker,
-           RefCountedPtr<RpcBehaviorLbPolicy> parent)
-        : delegate_picker_(std::move(delegate_picker)), parent_(parent) {}
+           absl::string_view rpc_behavior)
+        : delegate_picker_(std::move(delegate_picker)),
+          rpc_behavior_(rpc_behavior) {}
 
     PickResult Pick(PickArgs args) override {
-      args.initial_metadata->Add(kRpcBehaviorMetadataKey,
-                                 parent_->rpc_behavior_);
+      char* rpc_behavior_copy = static_cast<char*>(
+          args.call_state->Alloc(rpc_behavior_.length() + 1));
+      strncpy(rpc_behavior_copy, rpc_behavior_.c_str(), rpc_behavior_.length());
+      args.initial_metadata->Add(kRpcBehaviorMetadataKey, rpc_behavior_copy);
       // Do pick.
       return delegate_picker_->Pick(args);
     }
 
    private:
     RefCountedPtr<SubchannelPicker> delegate_picker_;
-    RefCountedPtr<RpcBehaviorLbPolicy> parent_;
+    std::string rpc_behavior_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -119,16 +122,16 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
         grpc_core::ServerAddress address,
         const grpc_core::ChannelArgs& args) override {
-      auto subchannel = parent_->channel_control_helper()->CreateSubchannel(
+      return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
-      return subchannel;
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
           state, status,
-          grpc_core::MakeRefCounted<Picker>(std::move(picker), parent_));
+          grpc_core::MakeRefCounted<Picker>(std::move(picker),
+                                            parent_->rpc_behavior_));
     }
 
     void RequestReresolution() override {
@@ -174,12 +177,6 @@ class RpcBehaviorLbPolicyFactory
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:policy requires configuration.");
-    }
     return grpc_core::LoadRefCountedFromJson<RpcBehaviorLbPolicyConfig>(
         json, JsonArgs(), "errors validating LB policy config");
   }

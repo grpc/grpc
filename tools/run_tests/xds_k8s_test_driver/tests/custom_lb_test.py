@@ -41,7 +41,7 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         if config.client_lang == _Lang.JAVA:
             return config.version_gte('v1.47.x')
         if config.client_lang == _Lang.CPP:
-            return config.version_gte('v1.54.x')
+            return config.version_gte('v1.55.x')
         return False
 
     def test_custom_lb_config(self):
