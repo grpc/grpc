@@ -19,17 +19,17 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <chrono>
 #include <map>
 #include <memory>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
@@ -213,7 +213,7 @@ void GcpObservabilityClose() {
   // Currently, GcpObservabilityClose() only supports flushing logs. Stats and
   // tracing get automatically flushed at a regular interval, so sleep for an
   // interval to make sure that those are flushed too.
-  std::this_thread::sleep_for(std::chrono::seconds(25));
+  absl::SleepFor(absl::Seconds(25));
 }
 
 }  // namespace internal
