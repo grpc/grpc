@@ -97,6 +97,7 @@ void TestRetryCancelDuringDelay(
   EXPECT_FALSE(client_close.was_cancelled());
   // Make sure we didn't wait the full deadline before failing.
   EXPECT_LT(finish_time, expect_finish_before);
+  // Shutdown the server to gc the requested call.
   test.ShutdownServerAndNotify(1000);
   test.Expect(1000, true);
   test.Expect(201, false);

@@ -73,9 +73,9 @@ TEST_P(RetryTest, RetryStreaming) {
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch for receiving initial metadata, a message,
   // and trailing metadata.
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .RecvInitialMetadata(server_initial_metadata)
       .RecvMessage(server_message)
@@ -91,7 +91,7 @@ TEST_P(RetryTest, RetryStreaming) {
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Server receives a message.
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).RecvMessage(client_message);
   Expect(102, true);
   Step();
@@ -100,12 +100,12 @@ TEST_P(RetryTest, RetryStreaming) {
   Expect(3, true);
   Step();
   // Server receives the second message.
-  CoreEnd2endTest::IncomingMessage client_message2;
+  IncomingMessage client_message2;
   s.NewBatch(103).RecvMessage(client_message2);
   Expect(103, true);
   Step();
   // Server sends both initial and trailing metadata.
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .RecvCloseOnServer(client_close)
       .SendInitialMetadata({})
@@ -122,12 +122,12 @@ TEST_P(RetryTest, RetryStreaming) {
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Server receives a message.
-  CoreEnd2endTest::IncomingMessage client_message3;
+  IncomingMessage client_message3;
   s2.NewBatch(202).RecvMessage(client_message3);
   Expect(202, true);
   Step();
   // Server receives a second message.
-  CoreEnd2endTest::IncomingMessage client_message4;
+  IncomingMessage client_message4;
   s2.NewBatch(203).RecvMessage(client_message4);
   Expect(203, true);
   Step();
@@ -136,13 +136,13 @@ TEST_P(RetryTest, RetryStreaming) {
   Expect(4, true);
   Step();
   // Server receives a third message.
-  CoreEnd2endTest::IncomingMessage client_message5;
+  IncomingMessage client_message5;
   s2.NewBatch(204).RecvMessage(client_message5);
   Expect(204, true);
   Step();
   // Server receives a close and sends initial metadata, a message, and
   // trailing metadata.
-  CoreEnd2endTest::IncomingCloseOnServer client_close2;
+  IncomingCloseOnServer client_close2;
   s2.NewBatch(205)
       .RecvCloseOnServer(client_close2)
       .SendInitialMetadata({})
