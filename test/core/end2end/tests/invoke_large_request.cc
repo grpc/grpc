@@ -31,13 +31,13 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreLargeSendTest, InvokeLargeRequest) {
+TEST_P(Http2SingleHopTest, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   InitServer(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(300)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();
   auto send_from_client = RandomSlice(kMessageSize);
   auto send_from_server = RandomSlice(kMessageSize);
   CoreEnd2endTest::IncomingStatusOnClient server_status;

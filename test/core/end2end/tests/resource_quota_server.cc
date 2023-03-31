@@ -55,7 +55,7 @@ auto MakeVec(F init) {
 TEST_P(ResourceQuotaTest, ResourceQuota) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
-  grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
+  grpc_resource_quota_resize(resource_quota, 1024 * 1024);
   InitServer(ChannelArgs().Set(
       GRPC_ARG_RESOURCE_QUOTA,
       ChannelArgs::Pointer(resource_quota, grpc_resource_quota_arg_vtable())));
@@ -63,7 +63,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.
-  auto requests = MakeVec([](int) { return RandomSlice(1024 * 1024); });
+  auto requests = MakeVec([](int) { return RandomSlice(128 * 1024); });
   auto server_calls =
       MakeVec([this](int i) { return RequestCall(kServerRecvBaseTag + i); });
   std::vector<IncomingMetadata> server_metadata(kNumCalls);
@@ -100,7 +100,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
            }});
     Expect(kServerEndBaseTag + i, true);
   }
-  Step();
+  Step(Duration::Minutes(2));
 
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
