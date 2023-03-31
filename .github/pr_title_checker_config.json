@@ -1,6 +1,6 @@
 {
     "LABEL": {
-        "name": "[pr-title] Should be like this",
+        "name": "PR title format",
         "color": "EEEEEE"
     },
     "CHECKS": {
