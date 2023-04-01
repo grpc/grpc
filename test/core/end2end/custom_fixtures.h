@@ -15,7 +15,7 @@
 #ifndef GRPC_TEST_CORE_END2END_CUSTOM_FIXTURES_H
 #define GRPC_TEST_CORE_END2END_CUSTOM_FIXTURES_H
 
-#include "end2end_tests.h"
+#include <vector>
 
 #include "test/core/end2end/end2end_tests.h"
 
@@ -29,4 +29,4 @@ inline std::vector<CoreTestConfiguration> CustomFixtures() {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_CUSTOM_FIXTURES_H
