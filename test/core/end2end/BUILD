@@ -156,7 +156,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "end2end_tests",
     testonly = 1,
-    alwayslink = 1,
     srcs = [
         "end2end_tests.cc",
         "tests/bad_ping.cc",
@@ -303,6 +302,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
