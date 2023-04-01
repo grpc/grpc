@@ -818,13 +818,13 @@ inline const char* NameFromConfig(
 // Should only be called from inside namespace grpc_core.
 #define INSTANTIATE_CORE_TEST_SUITES(configs)                                  \
   INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest,                  \
-                           ConfigQuery<&configs>().Run(), NameFromConfig);     \
+                           ConfigQuery<configs>().Run(), NameFromConfig);      \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       SecureEnd2endTests, SecureEnd2endTest,                                   \
-      ConfigQuery<&configs>().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),   \
+      ConfigQuery<configs>().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),    \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,              \
-                           ConfigQuery<&configs>()                             \
+                           ConfigQuery<configs>()                              \
                                .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME | \
                                                 FEATURE_MASK_ENABLES_TRACES)   \
                                .Run(),                                         \
@@ -832,17 +832,17 @@ inline const char* NameFromConfig(
                                                                                \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       CoreDeadlineTests, CoreDeadlineTest,                                     \
-      ConfigQuery<&configs>().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(), \
+      ConfigQuery<configs>().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(),  \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       CoreClientChannelTests, CoreClientChannelTest,                           \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
           .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       Http2SingleHopTests, Http2SingleHopTest,                                 \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(FEATURE_MASK_IS_HTTP2)                              \
           .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |            \
                            FEATURE_MASK_ENABLES_TRACES)                        \
@@ -850,24 +850,24 @@ inline const char* NameFromConfig(
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       RetryTests, RetryTest,                                                   \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)                \
           .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       WriteBufferingTests, WriteBufferingTest,                                 \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)      \
           .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       Http2Tests, Http2Test,                                                   \
-      ConfigQuery<&configs>().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(),    \
+      ConfigQuery<configs>().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(),     \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       RetryHttp2Tests, RetryHttp2Test,                                         \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |                             \
                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)               \
           .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |               \
@@ -876,7 +876,7 @@ inline const char* NameFromConfig(
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       ResourceQuotaTests, ResourceQuotaTest,                                   \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |            \
                            FEATURE_MASK_1BYTE_AT_A_TIME)                       \
           .ExcludeName("Chttp2.*Uds.*")                                        \
@@ -885,25 +885,25 @@ inline const char* NameFromConfig(
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       PerCallCredsTests, PerCallCredsTest,                                     \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)         \
           .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,                 \
-      ConfigQuery<&configs>()                                                  \
+      ConfigQuery<configs>()                                                   \
           .EnforceFeatures(                                                    \
               FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)       \
           .Run(),                                                              \
       NameFromConfig);                                                         \
   INSTANTIATE_TEST_SUITE_P(NoLoggingTests, NoLoggingTest,                      \
-                           ConfigQuery<&configs>()                             \
+                           ConfigQuery<configs>()                              \
                                .ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES)   \
                                .Run(),                                         \
                            NameFromConfig);                                    \
   INSTANTIATE_TEST_SUITE_P(                                                    \
       ProxyAuthTests, ProxyAuthTest,                                           \
-      ConfigQuery<&configs>().AllowName("Chttp2HttpProxy").Run(),              \
+      ConfigQuery<configs>().AllowName("Chttp2HttpProxy").Run(),               \
       NameFromConfig);
 
 }  // namespace grpc_core

@@ -156,6 +156,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "end2end_tests",
     testonly = 1,
+    alwayslink = 1,
     srcs = [
         "end2end_tests.cc",
         "tests/bad_ping.cc",
