@@ -272,8 +272,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
   }
   if (args->expected_service_config_error.empty()) {
-    EXPECT_TRUE(service_config_error.ok())
-        << "Actual error: " << service_config_error.ToString();
+    EXPECT_TRUE(service_config_error.ok());
   } else {
     EXPECT_THAT(service_config_error.ToString(),
                 testing::HasSubstr(args->expected_service_config_error));
