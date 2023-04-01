@@ -876,7 +876,161 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   };
 }
 
-INSTANTIATE_CORE_TEST_SUITES(AllConfigs);
+// A ConfigQuery queries a database a set of test configurations
+// that match some criteria.
+class ConfigQuery {
+ public:
+  ConfigQuery() = default;
+  ConfigQuery(const ConfigQuery&) = delete;
+  ConfigQuery& operator=(const ConfigQuery&) = delete;
+  // Enforce that the returned configurations have the given features.
+  ConfigQuery& EnforceFeatures(uint32_t features) {
+    enforce_features_ |= features;
+    return *this;
+  }
+  // Envorce that the returned configurations do not have the given features.
+  ConfigQuery& ExcludeFeatures(uint32_t features) {
+    exclude_features_ |= features;
+    return *this;
+  }
+  // Enforce that the returned configurations have the given name (regex).
+  ConfigQuery& AllowName(const std::string& name) {
+    allowed_names_.emplace_back(
+        std::regex(name, std::regex_constants::ECMAScript));
+    return *this;
+  }
+  // Enforce that the returned configurations do not have the given name
+  // (regex).
+  ConfigQuery& ExcludeName(const std::string& name) {
+    excluded_names_.emplace_back(
+        std::regex(name, std::regex_constants::ECMAScript));
+    return *this;
+  }
+
+  auto Run() const {
+    static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(
+        AllConfigs());
+    std::vector<const CoreTestConfiguration*> out;
+    for (const CoreTestConfiguration& config : *kConfigs) {
+      if ((config.feature_mask & enforce_features_) == enforce_features_ &&
+          (config.feature_mask & exclude_features_) == 0) {
+        bool allowed = allowed_names_.empty();
+        for (const std::regex& re : allowed_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = true;
+            break;
+          }
+        }
+        for (const std::regex& re : excluded_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = false;
+            break;
+          }
+        }
+        if (allowed) {
+          out.push_back(&config);
+        }
+      }
+    }
+    return ::testing::ValuesIn(out);
+  }
+
+ private:
+  uint32_t enforce_features_ = 0;
+  uint32_t exclude_features_ = 0;
+  std::vector<std::regex> allowed_names_;
+  std::vector<std::regex> excluded_names_;
+};
+
+// Produce a nice name to print next to each test case for gtest.
+inline const char* NameFromConfig(
+    const ::testing::TestParamInfo<const CoreTestConfiguration*>& config) {
+  return config.param->name;
+}
+
+INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest, ConfigQuery().Run(),
+                         NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    SecureEnd2endTests, SecureEnd2endTest,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,
+                         ConfigQuery()
+                             .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
+                                              FEATURE_MASK_ENABLES_TRACES)
+                             .Run(),
+                         NameFromConfig);
+
+INSTANTIATE_TEST_SUITE_P(
+    CoreDeadlineTests, CoreDeadlineTest,
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    CoreClientChannelTests, CoreClientChannelTest,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    Http2SingleHopTests, Http2SingleHopTest,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_ENABLES_TRACES)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    RetryTests, RetryTest,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    WriteBufferingTests, WriteBufferingTest,
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    Http2Tests, Http2Test,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(), NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    RetryHttp2Tests, RetryHttp2Test,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
+                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    ResourceQuotaTests, ResourceQuotaTest,
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_1BYTE_AT_A_TIME)
+        .ExcludeName("Chttp2.*Uds.*")
+        .ExcludeName("Chttp2HttpProxy")
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    PerCallCredsTests, PerCallCredsTest,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
+    ConfigQuery()
+        .EnforceFeatures(
+            FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
+        .Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(
+    NoLoggingTests, NoLoggingTest,
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run(),
+    NameFromConfig);
+INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
+                         ConfigQuery().AllowName("Chttp2HttpProxy").Run(),
+                         NameFromConfig);
 
 }  // namespace grpc_core
 
