@@ -1622,6 +1622,9 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
@@ -2637,6 +2640,9 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
@@ -24462,6 +24468,7 @@ add_executable(xds_interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
   src/cpp/server/admin/admin_services.cc
   src/cpp/server/csds/csds.cc
+  test/cpp/interop/rpc_behavior_lb_policy.cc
   test/cpp/interop/xds_interop_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
