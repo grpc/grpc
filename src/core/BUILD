@@ -3348,7 +3348,6 @@ grpc_cc_library(
     hdrs = ["lib/json/json_object_loader.h"],
     external_deps = [
         "absl/meta:type_traits",
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
