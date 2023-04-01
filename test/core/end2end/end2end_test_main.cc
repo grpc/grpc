@@ -14,13 +14,10 @@
 
 #include <inttypes.h>
 
-#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <initializer_list>
-#include <map>
 #include <memory>
-#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,7 +25,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
@@ -45,7 +41,6 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
