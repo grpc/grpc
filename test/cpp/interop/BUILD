@@ -83,10 +83,10 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":server_helper_lib",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/cpp/util:test_config",
     ],
 )
@@ -244,6 +244,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        ":rpc_behavior_lb_policy",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
@@ -443,6 +444,24 @@ grpc_cc_library(
     deps = [
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "rpc_behavior_lb_policy",
+    srcs = [
+        "rpc_behavior_lb_policy.cc",
+    ],
+    hdrs = [
+        "rpc_behavior_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
     ],
 )

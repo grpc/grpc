@@ -24,26 +24,32 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 
 namespace grpc {
 namespace testing {
 class LoadReportTracker {
  public:
   // A load report, or nullopt if the call had no load report.
-  using LoadReportEntry = absl::optional<xds::data::orca::v3::OrcaLoadReport>;
+  using LoadReportEntry = absl::optional<TestOrcaReport>;
 
   ChannelArguments GetChannelArguments();
   void ResetCollectedLoadReports();
   void RecordPerRpcLoadReport(
       const grpc_core::BackendMetricData* backend_metric_data);
-  // Returns the next load report, or nullopt if the queue is empty.
+  void RecordOobLoadReport(const grpc_core::BackendMetricData& oob_metric_data);
+  // Returns the next per-RPC load report, or nullopt if the queue is empty.
   absl::optional<LoadReportEntry> GetNextLoadReport();
+  LoadReportEntry WaitForOobLoadReport(
+      const std::function<bool(const TestOrcaReport&)>& predicate,
+      absl::Duration poll_timeout, size_t max_attempts);
 
  private:
   std::deque<LoadReportEntry> per_rpc_load_reports_
-      ABSL_GUARDED_BY(per_rpc_load_reports_mu_);
-  absl::Mutex per_rpc_load_reports_mu_;
+      ABSL_GUARDED_BY(load_reports_mu_);
+  std::deque<TestOrcaReport> oob_load_reports_
+      ABSL_GUARDED_BY(load_reports_mu_);
+  absl::Mutex load_reports_mu_;
 };
 
 void RegisterBackendMetricsLbPolicy(

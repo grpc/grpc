@@ -51,6 +51,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
@@ -269,30 +270,6 @@ const char
              "regional_cred_verification_url_{region}\"}";
 
 const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_region_url_host
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://fakeurl.com/url\","
-             "\"url\":\"https://169.254.169.254:5555/url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_url_host
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://fake.com/url\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
-    invalid_aws_external_account_creds_options_credential_source_missing_role_name
-        [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
-             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-             "regional_cred_verification_url_{region}\"}";
-
-const char
     invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
         [] = "{\"environment_id\":\"aws1\","
              "\"region_url\":\"https://169.254.169.254:5555/region_url\","
@@ -301,12 +278,10 @@ const char
              "verification_url\"}";
 
 const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_imdsv2_url_host
+    invalid_aws_external_account_creds_options_credential_source_missing_role_name
         [] = "{\"environment_id\":\"aws1\","
              "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url\","
-             "\"imdsv2_session_token_url\":\"https://foo.com/"
-             "imdsv2_session_token_url\","
+             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
              "\"regional_cred_verification_url\":\"https://foo.com:5555/"
              "regional_cred_verification_url_{region}\"}";
 
@@ -2577,7 +2552,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
+  auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_text);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2614,7 +2589,7 @@ TEST(CredentialsTest,
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
+  auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2648,7 +2623,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
+  auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_json);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2683,7 +2658,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
 TEST(CredentialsTest,
      TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
   auto credential_source =
-      Json::Parse(invalid_url_external_account_creds_options_credential_source);
+      JsonParse(invalid_url_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -2710,7 +2685,7 @@ TEST(CredentialsTest,
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
-  auto credential_source = Json::Parse(absl::StrFormat(
+  auto credential_source = JsonParse(absl::StrFormat(
       "{\"file\":\"%s\"}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
   GPR_ASSERT(credential_source.ok());
@@ -2748,7 +2723,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
-  auto credential_source = Json::Parse(absl::StrFormat(
+  auto credential_source = JsonParse(absl::StrFormat(
       "{\n"
       "\"file\":\"%s\",\n"
       "\"format\":\n"
@@ -2791,7 +2766,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse("{\"file\":\"non_exisiting_file\"}");
+  auto credential_source = JsonParse("{\"file\":\"non_exisiting_file\"}");
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -2826,7 +2801,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   ExecCtx exec_ctx;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
-  auto credential_source = Json::Parse(absl::StrFormat(
+  auto credential_source = JsonParse(absl::StrFormat(
       "{\n"
       "\"file\":\"%s\",\n"
       "\"format\":\n"
@@ -2872,7 +2847,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -2905,7 +2880,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
 
 TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
+  auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2938,9 +2913,94 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST(CredentialsTest,
+     TestAwsImdsv2ExternalAccountCredShouldNotUseMetadataServer) {
+  ExecCtx exec_ctx;
+  SetEnv("AWS_REGION", "test_regionz");
+  SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
+  SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
+  SetEnv("AWS_SESSION_TOKEN", "test_token");
+  auto credential_source = JsonParse(
+      valid_aws_imdsv2_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("AWS_REGION");
+  UnsetEnv("AWS_ACCESS_KEY_ID");
+  UnsetEnv("AWS_SECRET_ACCESS_KEY");
+  UnsetEnv("AWS_SESSION_TOKEN");
+}
+
+TEST(
+    CredentialsTest,
+    TestAwsImdsv2ExternalAccountCredShouldNotUseMetadataServerOptionalTokenMissing) {
+  ExecCtx exec_ctx;
+  SetEnv("AWS_REGION", "test_regionz");
+  SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
+  SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
+  auto credential_source = JsonParse(
+      valid_aws_imdsv2_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("AWS_REGION");
+  UnsetEnv("AWS_ACCESS_KEY_ID");
+  UnsetEnv("AWS_SECRET_ACCESS_KEY");
+}
+
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
   ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
+  auto credential_source = JsonParse(
       valid_aws_external_account_creds_options_credential_source_ipv6);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2977,7 +3037,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3014,7 +3074,7 @@ TEST(CredentialsTest,
   ExecCtx exec_ctx;
   SetEnv("AWS_DEFAULT_REGION", "test_regionz");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3053,7 +3113,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_DEFAULT_REGION", "ERROR_REGION");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3092,7 +3152,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3133,7 +3193,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3178,7 +3238,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3223,7 +3283,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
-      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+      JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3257,193 +3317,6 @@ TEST(CredentialsTest,
   UnsetEnv("AWS_ACCESS_KEY_ID");
   UnsetEnv("AWS_SECRET_ACCESS_KEY");
   UnsetEnv("AWS_SESSION_TOKEN");
-}
-
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds == nullptr);
-  std::string expected_error = "environment_id does not match.";
-  std::string actual_error;
-  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                                &actual_error));
-  GPR_ASSERT(expected_error == actual_error);
-}
-
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
-  ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_missing_role_name);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
-  auto state = RequestMetadataState::NewInstance(expected_error, {});
-  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
-                           aws_external_account_creds_httpcli_post_success,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
-  ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
-  auto state = RequestMetadataState::NewInstance(expected_error, {});
-  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
-                           aws_external_account_creds_httpcli_post_success,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrlHost) {
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_url_host);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds == nullptr);
-  std::string expected_error =
-      "Invalid host for url field, expecting 169.254.169.254 or fd00:ec2::254.";
-  std::string actual_error;
-  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                                &actual_error));
-  GPR_ASSERT(expected_error == actual_error);
-}
-
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrlHost) {
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_region_url_host);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds == nullptr);
-  std::string expected_error =
-      "Invalid host for region_url field, expecting 169.254.169.254 or "
-      "fd00:ec2::254.";
-  std::string actual_error;
-  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                                &actual_error));
-  GPR_ASSERT(expected_error == actual_error);
-}
-
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidImdsv2UrlHost) {
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_imdsv2_url_host);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds == nullptr);
-  std::string expected_error =
-      "Invalid host for imdsv2_session_token_url field, expecting "
-      "169.254.169.254 or fd00:ec2::254.";
-  std::string actual_error;
-  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                                &actual_error));
-  GPR_ASSERT(expected_error == actual_error);
 }
 
 TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
@@ -3498,6 +3371,107 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
       aws_options_string, aws_scopes_string);
   GPR_ASSERT(aws_creds != nullptr);
   aws_creds->Unref();
+}
+
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
+  auto credential_source = JsonParse(
+      invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  std::string expected_error = "environment_id does not match.";
+  std::string actual_error;
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
+  GPR_ASSERT(expected_error == actual_error);
+}
+
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
+  ExecCtx exec_ctx;
+  auto credential_source = JsonParse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
+  ExecCtx exec_ctx;
+  auto credential_source = JsonParse(
+      invalid_aws_external_account_creds_options_credential_source_missing_role_name);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
+                           aws_external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 TEST(CredentialsTest,

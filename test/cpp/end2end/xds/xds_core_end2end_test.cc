@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -31,8 +32,6 @@ namespace testing {
 namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
-
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 //
 // XdsClientTest - basic tests of XdsClient functionality
@@ -688,7 +687,6 @@ INSTANTIATE_TEST_SUITE_P(
 // Bootstrap config default client listener template uses new-style name with
 // authority "xds.example.com".
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -745,7 +743,6 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
 // In bootstrap config, authority has no client listener template, so we use the
 // default.
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
@@ -812,7 +809,6 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // Bootstrap entry for that authority specifies a client listener name template.
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -881,7 +877,6 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
 }
 
 TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -907,7 +902,6 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
 }
 
 TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -951,7 +945,6 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
 }
 
 TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1002,7 +995,6 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
 }
 
 TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1065,7 +1057,6 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
 // Setting server_listener_resource_name_template to start with "xdstp:" and
 // look up xds server under an authority map.
 TEST_P(XdsFederationTest, FederationServer) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -1153,7 +1144,11 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
+// TODO(roth,apolcyn): remove this test when the
+// GRPC_EXPERIMENTAL_XDS_FEDERATION env var is removed.
 TEST_P(XdsFederationDisabledTest, FederationDisabledWithNewStyleNames) {
+  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION",
+                                           "false");
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
@@ -1212,7 +1207,6 @@ INSTANTIATE_TEST_SUITE_P(
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
 TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1366,7 +1360,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

@@ -64,4 +64,8 @@ message ClientSideWeightedRoundRobin {
 
   // How often endpoint weights are recalculated.  Default is 1 second.
   google.protobuf.Duration weight_update_period = 5;
+
+  // The multiplier used to adjust endpoint weights with the error rate
+  // calculated as eps/qps. Default is 1.0.
+  google.protobuf.FloatValue error_utilization_penalty = 6;
 }
