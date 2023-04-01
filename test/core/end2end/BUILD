@@ -154,6 +154,15 @@ grpc_cc_library(
     ],
 )
 
+# This library gets overridden internally to add some extra fixtures.
+grpc_cc_library(
+    name = "custom_fixtures",
+    testonly = 1,
+    srcs = [],
+    hdrs = ["custom_fixtures.h"],
+    deps = ["fixture_support"],
+)
+
 grpc_cc_test(
     name = "core_end2end_tests",
     timeout = "long",
@@ -269,6 +278,7 @@ grpc_cc_test(
     tags = ["core_end2end_test"],
     deps = [
         "cq_verifier",
+        "custom_fixtures",
         "fixture_support",
         "http_proxy",
         "proxy",

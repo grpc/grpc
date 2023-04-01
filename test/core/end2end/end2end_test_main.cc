@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "test/core/end2end/custom_fixtures.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_oauth2_common.h"
 #include "test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h"
@@ -511,7 +512,7 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 #endif
 
 std::vector<CoreTestConfiguration> AllConfigs() {
-  return std::vector<CoreTestConfiguration> {
+  std::vector<CoreTestConfiguration> configs {
 #ifdef GRPC_POSIX_SOCKET
     CoreTestConfiguration{"Chttp2Fd", FEATURE_MASK_IS_HTTP2, nullptr,
                           [](const ChannelArgs&, const ChannelArgs&) {
@@ -874,6 +875,15 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
 #endif
   };
+  auto custom_fixtures = CustomFixtures();
+  for (auto& fixture : custom_fixtures) {
+    configs.emplace_back(std::move(fixture));
+  }
+  std::sort(configs.begin(), configs.end(),
+            [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
+              return strcmp(a.name, b.name) < 0;
+            });
+  return configs;
 }
 
 // A ConfigQuery queries a database a set of test configurations
@@ -950,10 +960,12 @@ inline const char* NameFromConfig(
 
 INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest, ConfigQuery().Run(),
                          NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     SecureEnd2endTests, SecureEnd2endTest,
     ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,
                          ConfigQuery()
                              .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
@@ -965,10 +977,12 @@ INSTANTIATE_TEST_SUITE_P(
     CoreDeadlineTests, CoreDeadlineTest,
     ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     CoreClientChannelTests, CoreClientChannelTest,
     ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     Http2SingleHopTests, Http2SingleHopTest,
     ConfigQuery()
@@ -977,6 +991,7 @@ INSTANTIATE_TEST_SUITE_P(
                          FEATURE_MASK_ENABLES_TRACES)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     RetryTests, RetryTest,
     ConfigQuery()
@@ -984,15 +999,18 @@ INSTANTIATE_TEST_SUITE_P(
         .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     WriteBufferingTests, WriteBufferingTest,
     ConfigQuery()
         .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     Http2Tests, Http2Test,
     ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(), NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     RetryHttp2Tests, RetryHttp2Test,
     ConfigQuery()
@@ -1002,6 +1020,7 @@ INSTANTIATE_TEST_SUITE_P(
                          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaTests, ResourceQuotaTest,
     ConfigQuery()
@@ -1011,12 +1030,14 @@ INSTANTIATE_TEST_SUITE_P(
         .ExcludeName("Chttp2HttpProxy")
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     PerCallCredsTests, PerCallCredsTest,
     ConfigQuery()
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
     ConfigQuery()
@@ -1024,10 +1045,12 @@ INSTANTIATE_TEST_SUITE_P(
             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
         .Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(
     NoLoggingTests, NoLoggingTest,
     ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run(),
     NameFromConfig);
+
 INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
                          ConfigQuery().AllowName("Chttp2HttpProxy").Run(),
                          NameFromConfig);
