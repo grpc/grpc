@@ -515,13 +515,13 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 };
 #endif
 
-static const NoDestruct<std::vector<CoreTestConfiguration>> kConfigs{
-    std::vector<CoreTestConfiguration>{
+std::vector<CoreTestConfiguration> AllConfigs() {
+  return std::vector<CoreTestConfiguration> {
 #ifdef GRPC_POSIX_SOCKET
-        CoreTestConfiguration{"Chttp2Fd", FEATURE_MASK_IS_HTTP2, nullptr,
-                              [](const ChannelArgs&, const ChannelArgs&) {
-                                return std::make_unique<FdFixture>();
-                              }},
+    CoreTestConfiguration{"Chttp2Fd", FEATURE_MASK_IS_HTTP2, nullptr,
+                          [](const ChannelArgs&, const ChannelArgs&) {
+                            return std::make_unique<FdFixture>();
+                          }},
 #endif
         CoreTestConfiguration{
             "Chttp2FakeSecurityFullstack",
@@ -693,15 +693,15 @@ static const NoDestruct<std::vector<CoreTestConfiguration>> kConfigs{
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_3);
             }},
-        CoreTestConfiguration{"Chttp2SimplSslFullstackTls12",
-                              FEATURE_MASK_IS_SECURE |
-                                  FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                  FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
-                              "foo.test.google.fr",
-                              [](const ChannelArgs&, const ChannelArgs&) {
-                                return std::make_unique<SslTlsFixture>(
-                                    grpc_tls_version::TLS1_2);
-                              }},
+        CoreTestConfiguration{
+            "Chttp2SimplSslFullstackTls12",
+            FEATURE_MASK_IS_SECURE |
+                FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
+            "foo.test.google.fr",
+            [](const ChannelArgs&, const ChannelArgs&) {
+              return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
+            }},
         CoreTestConfiguration{
             "Chttp2SimplSslFullstackTls13",
             FEATURE_MASK_IS_SECURE |
@@ -878,9 +878,10 @@ static const NoDestruct<std::vector<CoreTestConfiguration>> kConfigs{
               return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
             }},
 #endif
-    }};
+  };
+}
 
-INSTANTIATE_CORE_TEST_SUITES(kConfigs);
+INSTANTIATE_CORE_TEST_SUITES(AllConfigs);
 
 }  // namespace grpc_core
 

@@ -743,7 +743,7 @@ class ProxyAuthTest : public CoreEnd2endTest {};
 
 // A ConfigQuery queries a database a set of test configurations
 // that match some criteria.
-template <const NoDestruct<std::vector<CoreTestConfiguration>>* kConfigs>
+template <std::vector<CoreTestConfiguration> (*Configs)()>
 class ConfigQuery {
  public:
   ConfigQuery() = default;
@@ -774,8 +774,9 @@ class ConfigQuery {
   }
 
   auto Run() const {
+    static NoDestruct<std::vector<CoreTestConfiguration>> kConfigs(Configs());
     std::vector<const CoreTestConfiguration*> out;
-    for (const CoreTestConfiguration& config : **kConfigs) {
+    for (const CoreTestConfiguration& config : *kConfigs) {
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();
