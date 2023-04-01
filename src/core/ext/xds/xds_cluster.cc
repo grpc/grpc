@@ -656,10 +656,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     }
   }
   // Return result.
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument,
-                         "errors validating Cluster resource");
-  }
+  if (!errors.ok()) return errors.status("errors validating Cluster resource");
   return cds_update;
 }
 
