@@ -13033,6 +13033,7 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
+  test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/h2_ssl_cert_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
