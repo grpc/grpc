@@ -10,7 +10,22 @@ The code for the xDS test server can be found at:
 Server should accept these arguments:
 
 *   --port=PORT
-    *   The port the server will run on.
+    *   The port the test server will run on.
+*   --maintenance_port=PORT
+    *   The port for the maintenance server running health, channelz, and admin(CSDS) services.
+*   --secure_mode=BOOLEAN
+    *   When set to true it uses XdsServerCredentials with the test server for security test cases.
+        In case of secure mode, port and maintenance_port should be different.
+
+In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
+
+ - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before resuming behavior matching and RPC processing.
+ - If the value matches `keep-open`, the server should never respond to the request and behavior matching ends.
+ - If the value matches `error-code-<int>`, the server should respond with the specified status code and behavior matching ends.
+ - If the value matches `success-on-retry-attempt-<int>`, and the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.
+ - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.
+
+The `rpc-behavior` header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple `rpc-behavior` metadata values, each one should be processed that way in order.
 
 ## Client
 
@@ -41,6 +56,8 @@ Clients should accept these arguments:
         implementation.
 *   --rpc_timeout_sec=SEC
     *   The timeout to set on all outbound RPCs. Default is 20.
+*   --secure_mode=BOOLEAN
+    *   When set to true it uses XdsChannelCredentials with the test client for security test cases.
 
 ### XdsUpdateClientConfigureService
 
@@ -69,6 +86,9 @@ message ClientConfigureRequest {
   repeated RpcType types = 1;
   // The collection of custom metadata to be attached to RPCs sent by the client.
   repeated Metadata metadata = 2;
+  // The deadline to use, in seconds, for all RPCs.  If unset or zero, the
+  // client will use the default from the command-line.
+  int32 timeout_sec = 3;
 }
 
 message ClientConfigureResponse {}
@@ -81,7 +101,7 @@ service XdsUpdateClientConfigureService {
 
 The test client changes its behavior right after receiving the
 `ClientConfigureRequest`. Currently it only supports configuring the type(s) 
-of RPCs sent by the test client and metadata attached to each type of RPCs.
+of RPCs sent by the test client, metadata attached to each type of RPCs, and the timeout.
 
 ## Test Driver
 
@@ -105,21 +125,42 @@ message LoadBalancerStatsRequest {
 }
 
 message LoadBalancerStatsResponse {
+  message RpcsByPeer {
+    // The number of completed RPCs for each peer.
+    map<string, int32> rpcs_by_peer = 1;
+  }
   // The number of completed RPCs for each peer.
   map<string, int32> rpcs_by_peer = 1;
   // The number of RPCs that failed to record a remote peer.
   int32 num_failures = 2;
+  map<string, RpcsByPeer> rpcs_by_method = 3;
 }
 
 message LoadBalancerAccumulatedStatsRequest {}
 
 message LoadBalancerAccumulatedStatsResponse {
   // The total number of RPCs have ever issued for each type.
-  map<string, int32> num_rpcs_started_by_method = 1;
+  // Deprecated: use stats_per_method.rpcs_started instead.
+  map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];
   // The total number of RPCs have ever completed successfully for each type.
-  map<string, int32> num_rpcs_succeeded_by_method = 2;
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];
   // The total number of RPCs have ever failed for each type.
-  map<string, int32> num_rpcs_failed_by_method = 3;
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];
+
+  message MethodStats {
+    // The number of RPCs that were started for this method.
+    int32 rpcs_started = 1;
+
+    // The number of RPCs that completed with each status for this method.  The
+    // key is the integral value of a google.rpc.Code; the value is the count.
+    map<int32, int32> result = 2;
+  }
+
+  // Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+  // 'EMPTY_CALL' or 'UNARY_CALL'
+  map<string, MethodStats> stats_per_method = 4;
 }
 
 service LoadBalancerStatsService {
@@ -597,3 +638,197 @@ There are four sub-tests:
       `rpc-behavior: sleep-4`.
    1. Test driver asserts client recieves ~100% status `OK` for EmptyCall
       and ~100% status `DEADLINE_EXCEEDED` for UnaryCall.
+
+### api_listener
+The test case verifies a specific use case where it creates a second TD API 
+listener using the same name as the existing one and then delete the old one. 
+The test driver verifies this is a safe way to update the API listener 
+configuration while keep using the existing name.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with two backends.
+
+Assert:
+
+The test driver configuration steps:
+1. The test driver creates the first set of forwarding rule + target proxy + 
+URL map with a test host name.
+1. Then the test driver creates a second set of forwarding rule + target proxy + 
+URL map with the same test host name.
+1. The test driver deletes the first set of configurations in step 1.
+
+The test driver verifies, at each configuration step, the traffic is always able 
+to reach the designated hosts.
+
+### metadata_filter
+This test case verifies that metadata filter configurations in URL map match 
+rule are effective at Traffic Director for routing selection against downstream
+node metadata.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  Two MIGs in the same zone, each having two backends.
+
+There are four test sub-cases:
+1. Test `MATCH_ALL` metadata filter criteria.
+1. Test `MATCH_ANY` metadata filter criteria.
+1. Test mixed `MATCH_ALL` and `MATCH_ANY` metadata filter criteria.
+1. Test when multiple match rules with metadata filter all match.
+
+Assert:
+
+At each test sub-case described above, the test driver configures
+and verifies:
+
+1. Set default URL map, and verify traffic goes to the original backend hosts. 
+1. Then patch URL map to update the match rule with metadata filter 
+configuration under test added.
+1. Then it verifies traffic switches to alternate backend service hosts. 
+
+This way, we test that TD correctly evaluates both matching and non-matching 
+configuration scenario.
+
+### forwarding_rule_port_match
+This test verifies that request server uri port should match with the GCP 
+forwarding rule configuration port.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with two backends.
+
+Assert:
+1. The test driver configures matching port in the forwarding rule and in the
+request server uri, then verifies traffic reaches backend service instances.
+1. The test driver updates the forwarding rule to use a different port, then 
+verifies that the traffic stops going to those backend service instances.
+
+### forwarding_rule_default_port
+This test verifies that omitting port in the request server uri should only 
+match with the default port(80) configuration in the forwarding rule. 
+In addition, request server uri port should exactly match that in the URL map 
+host rule, as described in 
+[public doc](https://cloud.google.com/traffic-director/docs/proxyless-overview#proxyless-url-map).
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with two backends.
+
+Assert:
+
+Test driver configures and verifies:
+1. No traffic goes to backends when configuring the target URI 
+`xds:///myservice`, the forwarding rule with port *x != 80*, the URL map 
+host rule `myservice::x`.
+1. Traffic goes to backends when configuring the target URI `xds:///myservice`, 
+the forwarding rule port `80` and the URL map host rule `myservice`.
+1. No traffic goes to backends when configuring the target URI
+`xds:///myservice`, the forwarding rule port `80` and the host rule 
+`myservice::80`.
+
+### outlier_detection
+This test verifies that the client applies the outlier detection configuration
+and temporarily drops traffic to a server that fails requests.
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with five backends, with a `backendService` configuration with the
+    following `outlierDetection` entry
+    ```json
+    {
+      "interval": {
+        "seconds": 2,
+        "nanos": 0
+      },
+      "successRateRequestVolume": 20
+    }
+    ```
+Assert:
+
+1.  The test driver asserts that traffic is equally distribted among the
+five backends, and all requests end with the `OK` status.
+2.  The test driver chooses one of the five backends to fail requests, and
+configures the client to send the metadata
+`rpc-behavior: hostname=<chosen backend> error-code-2`. The driver asserts
+that during some 10-second interval, all traffic goes to the other four
+backends and all requests end with the `OK` status.
+3.  The test driver removes the client configuration to send metadata. The
+driver asserts that during some 10-second interval, traffic is equally
+distributed among the five backends, and all requests end with the `OK` status.
+
+### custom_lb
+This test verifies that a custom load balancer policy can be configured in the
+client. It also verifies that when given a list of policies the client can
+ignore a bad one and try the next one on the list until it finds a good one.
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+One MIG with a single backend.
+
+The `backendService` will have the following `localityLbPolicies` entry:
+```json
+[ 
+  {
+    "customPolicy": {
+      "name": "test.ThisLoadBalancerDoesNotExist",
+      "data": "{ \"foo\": \"bar\" }"
+    }
+  },
+  {
+    "customPolicy": {
+      "name": "test.RpcBehaviorLoadBalancer",
+      "data": "{ \"rpcBehavior\": \"error-code-15\" }"
+    }
+  }
+]
+```
+
+The client **should not** implement the `test.ThisLoadBalancerDoesNotExist`, but
+it **should** implement `test.RpcBehaviorLoadBalancer`. The
+`RpcBehaviorLoadBalancer` implementation should set the rpcBehavior request
+header based on the configuration it is provided. The `rpcBehavior` field value
+in the config should be used as the header value.
+
+Assert:
+
+1. The first custom policy is ignored as the client does not have an
+implementation for it.
+2. The second policy, that **is** implemented by the client, has been applied
+by the client. This can be asserted by confirming that each request has
+failed with the configured error code 15 (DATA_LOSS). We should get this error
+because the test server knows to look for the `rpcBehavior` header and fail
+a request with a provided error code.
+
+Note that while this test is for load balancing, we can get by with a single
+backend as our test load balancer does not perform any actual load balancing,
+instead only applying the `rpcBehavior` header to each request.

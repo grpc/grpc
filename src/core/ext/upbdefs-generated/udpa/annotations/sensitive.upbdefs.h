@@ -19,7 +19,7 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init udpa_annotations_sensitive_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_sensitive_proto_upbdefinit;
 
 #ifdef __cplusplus
 }  /* extern "C" */

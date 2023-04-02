@@ -16,12 +16,28 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
-#define GRPC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_api.h"
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #define GRPC_ARG_XDS_CERTIFICATE_PROVIDER \
@@ -34,10 +50,20 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   XdsCertificateProvider();
   ~XdsCertificateProvider() override;
 
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
+  }
+
+  static int ChannelArgsCompare(const XdsCertificateProvider* a,
+                                const XdsCertificateProvider* b) {
+    return QsortCompare(a, b);
+  }
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
+
+  UniqueTypeName type() const override;
 
   bool ProvidesRootCerts(const std::string& cert_name);
   void UpdateRootCertNameAndDistributor(
@@ -124,12 +150,20 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     bool require_client_certificate_ = false;
   };
 
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
+  }
+
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,
                            bool identity_being_watched);
 
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+
   Mutex mu_;
   std::map<std::string /*cert_name*/, std::unique_ptr<ClusterCertificateState>>
-      certificate_state_map_;
+      certificate_state_map_ ABSL_GUARDED_BY(mu_);
 
   // Use a separate mutex for san_matchers_ to avoid deadlocks since
   // san_matchers_ needs to be accessed when a handshake is being done and we
@@ -141,11 +175,9 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   // subject_alternative_names_matchers()
   Mutex san_matchers_mu_;
   std::map<std::string /*cluster_name*/, std::vector<StringMatcher>>
-      san_matcher_map_;
-
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+      san_matcher_map_ ABSL_GUARDED_BY(san_matchers_mu_);
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H

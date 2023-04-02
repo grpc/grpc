@@ -18,8 +18,8 @@ import argparse
 import datetime
 import os
 import re
-import sys
 import subprocess
+import sys
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -33,7 +33,8 @@ argp.add_argument('-o',
                   choices=['list', 'details'])
 argp.add_argument('-s', '--skips', default=0, action='store_const', const=1)
 argp.add_argument('-a', '--ancient', default=0, action='store_const', const=1)
-argp.add_argument('--precommit', default=False, action='store_true')
+argp.add_argument('--precommit', action='store_true')
+argp.add_argument('--fix', action='store_true')
 args = argp.parse_args()
 
 # open the license text
@@ -44,7 +45,7 @@ with open('NOTICE.txt') as f:
 # key is the file extension, value is a format string
 # that given a line of license text, returns what should
 # be in the file
-LICENSE_PREFIX = {
+LICENSE_PREFIX_RE = {
     '.bat': r'@rem\s*',
     '.c': r'\s*(?://|\*)\s*',
     '.cc': r'\s*(?://|\*)\s*',
@@ -62,9 +63,42 @@ LICENSE_PREFIX = {
     '.proto': r'//\s*',
     '.cs': r'//\s*',
     '.mak': r'#\s*',
+    '.bazel': r'#\s*',
+    '.bzl': r'#\s*',
     'Makefile': r'#\s*',
     'Dockerfile': r'#\s*',
     'BUILD': r'#\s*',
+}
+
+# The key is the file extension, while the value is a tuple of fields
+# (header, prefix, footer).
+# For example, for javascript multi-line comments, the header will be '/*', the
+# prefix will be '*' and the footer will be '*/'.
+# If header and footer are irrelevant for a specific file extension, they are
+# set to None.
+LICENSE_PREFIX_TEXT = {
+    '.bat': (None, '@rem', None),
+    '.c': (None, '//', None),
+    '.cc': (None, '//', None),
+    '.h': (None, '//', None),
+    '.m': ('/**', ' *', ' */'),
+    '.mm': ('/**', ' *', ' */'),
+    '.php': ('/**', ' *', ' */'),
+    '.js': ('/**', ' *', ' */'),
+    '.py': (None, '#', None),
+    '.pyx': (None, '#', None),
+    '.pxd': (None, '#', None),
+    '.pxi': (None, '#', None),
+    '.rb': (None, '#', None),
+    '.sh': (None, '#', None),
+    '.proto': (None, '//', None),
+    '.cs': (None, '//', None),
+    '.mak': (None, '#', None),
+    '.bazel': (None, '#', None),
+    '.bzl': (None, '#', None),
+    'Makefile': (None, '#', None),
+    'Dockerfile': (None, '#', None),
+    'BUILD': (None, '#', None),
 }
 
 _EXEMPT = frozenset((
@@ -101,12 +135,61 @@ _EXEMPT = frozenset((
     'src/boringssl/boringssl_prefix_symbols.h',
 ))
 
+_ENFORCE_CPP_STYLE_COMMENT_PATH_PREFIX = tuple([
+    'include/grpc++/',
+    'include/grpcpp/',
+    'src/core/',
+    'src/cpp/',
+    'test/core/',
+    'test/cpp/',
+    'fuzztest/',
+])
+
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
 RE_LICENSE = dict(
-    (k, r'\n'.join(LICENSE_PREFIX[k] +
+    (k, r'\n'.join(LICENSE_PREFIX_RE[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX.items())
+    for k, v in list(LICENSE_PREFIX_RE.items()))
+
+RE_C_STYLE_COMMENT_START = r'^/\*\s*\n'
+RE_C_STYLE_COMMENT_OPTIONAL_LINE = r'(?:\s*\*\s*\n)*'
+RE_C_STYLE_COMMENT_END = r'\s*\*/'
+RE_C_STYLE_COMMENT_LICENSE = RE_C_STYLE_COMMENT_START + RE_C_STYLE_COMMENT_OPTIONAL_LINE + r'\n'.join(
+    r'\s*(?:\*)\s*' + (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+    for line in LICENSE_NOTICE
+) + r'\n' + RE_C_STYLE_COMMENT_OPTIONAL_LINE + RE_C_STYLE_COMMENT_END
+RE_CPP_STYLE_COMMENT_LICENSE = r'\n'.join(
+    r'\s*(?://)\s*' + (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+    for line in LICENSE_NOTICE)
+
+YEAR = datetime.datetime.now().year
+
+LICENSE_YEAR = f'Copyright {YEAR} gRPC authors.'
+
+
+def join_license_text(header, prefix, footer, notice):
+    text = (header + '\n') if header else ""
+
+    def add_prefix(prefix, line):
+        # Don't put whitespace between prefix and empty line to avoid having
+        # trailing whitespaces.
+        return prefix + ('' if len(line) == 0 else ' ') + line
+
+    text += '\n'.join(
+        add_prefix(prefix, (LICENSE_YEAR if re.search(RE_YEAR, line) else line))
+        for line in LICENSE_NOTICE)
+    text += '\n'
+    if footer:
+        text += footer + '\n'
+    return text
+
+
+LICENSE_TEXT = dict(
+    (k,
+     join_license_text(LICENSE_PREFIX_TEXT[k][0], LICENSE_PREFIX_TEXT[k][1],
+                       LICENSE_PREFIX_TEXT[k][2], LICENSE_NOTICE))
+    for k, v in list(LICENSE_PREFIX_TEXT.items()))
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -133,9 +216,31 @@ def log(cond, why, filename):
     if not cond:
         return
     if args.output == 'details':
-        print('%s: %s' % (why, filename))
+        print(('%s: %s' % (why, filename)))
     else:
         print(filename)
+
+
+def write_copyright(license_text, file_text, filename):
+    shebang = ""
+    lines = file_text.split("\n")
+    if lines and lines[0].startswith("#!"):
+        shebang = lines[0] + "\n"
+        file_text = file_text[len(shebang):]
+
+    rewritten_text = shebang + license_text + "\n" + file_text
+    with open(filename, 'w') as f:
+        f.write(rewritten_text)
+
+
+def replace_copyright(license_text, file_text, filename):
+    m = re.search(RE_C_STYLE_COMMENT_LICENSE, text)
+    if m:
+        rewritten_text = license_text + file_text[m.end():]
+        with open(filename, 'w') as f:
+            f.write(rewritten_text)
+        return True
+    return False
 
 
 # scan files, validate the text
@@ -148,6 +253,7 @@ except subprocess.CalledProcessError:
     sys.exit(0)
 
 for filename in filename_list:
+    enforce_cpp_style_comment = False
     if filename in _EXEMPT:
         continue
     # Skip check for upb generated code.
@@ -156,10 +262,18 @@ for filename in filename_list:
         continue
     ext = os.path.splitext(filename)[1]
     base = os.path.basename(filename)
-    if ext in RE_LICENSE:
+    if filename.startswith(_ENFORCE_CPP_STYLE_COMMENT_PATH_PREFIX) and ext in [
+            '.cc', '.h'
+    ]:
+        enforce_cpp_style_comment = True
+        re_license = RE_CPP_STYLE_COMMENT_LICENSE
+        license_text = LICENSE_TEXT[ext]
+    elif ext in RE_LICENSE:
         re_license = RE_LICENSE[ext]
+        license_text = LICENSE_TEXT[ext]
     elif base in RE_LICENSE:
         re_license = RE_LICENSE[base]
+        license_text = LICENSE_TEXT[base]
     else:
         log(args.skips, 'skip', filename)
         continue
@@ -170,8 +284,27 @@ for filename in filename_list:
     m = re.search(re_license, text)
     if m:
         pass
-    elif 'DO NOT EDIT' not in text:
-        log(1, 'copyright missing', filename)
+    elif enforce_cpp_style_comment:
+        log(1, 'copyright missing or does not use cpp-style copyright header',
+            filename)
+        if args.fix:
+            # Attempt fix: search for c-style copyright header and replace it
+            # with cpp-style copyright header. If that doesn't work
+            # (e.g. missing copyright header), write cpp-style copyright header.
+            if not replace_copyright(license_text, text, filename):
+                write_copyright(license_text, text, filename)
         ok = False
+    elif 'DO NOT EDIT' not in text:
+        if args.fix:
+            write_copyright(license_text, text, filename)
+            log(1, 'copyright missing (fixed)', filename)
+        else:
+            log(1, 'copyright missing', filename)
+        ok = False
+
+if not ok and not args.fix:
+    print(
+        'You may use following command to automatically fix copyright headers:')
+    print('    tools/distrib/check_copyright.py --fix')
 
 sys.exit(0 if ok else 1)

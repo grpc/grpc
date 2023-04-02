@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+
 import grpc_version
 
 parser = argparse.ArgumentParser()

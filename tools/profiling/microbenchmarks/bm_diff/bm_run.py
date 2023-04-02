@@ -102,14 +102,11 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
     return jobs_list
 
 
-def create_jobs(name, benchmarks, loops, regex, counters):
+def create_jobs(name, benchmarks, loops, regex):
     jobs_list = []
     for loop in range(0, loops):
         for bm in benchmarks:
             jobs_list += _collect_bm_data(bm, 'opt', name, regex, loop, loops)
-            if counters:
-                jobs_list += _collect_bm_data(bm, 'counters', name, regex, loop,
-                                              loops)
     random.shuffle(jobs_list, random.SystemRandom().random)
     return jobs_list
 

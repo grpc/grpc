@@ -12,32 +12,5 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Performs nuget restore step for C#.
-
-setlocal
-
-set ARCHITECTURE=%1
-
-@rem enter repo root
-cd /d %~dp0\..\..\..
-
-mkdir cmake
-cd cmake
-mkdir build
-cd build
-mkdir %ARCHITECTURE%
-cd %ARCHITECTURE%
-
-cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON ../../.. || goto :error
-
-cd ..\..\..\src\csharp
-
-dotnet restore Grpc.sln || goto :error
-
-endlocal
-
-goto :EOF
-
-:error
-echo Failed!
-exit /b %errorlevel%
+@rem Nothing to do here. C# has been removed from this repository. This script is a placeholder
+@rem to prevent C# tests from becoming red (until they get eventually disabled).

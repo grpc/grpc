@@ -15,13 +15,36 @@
 from __future__ import absolute_import
 
 import importlib
+import os
 import pkgutil
 import re
+import sys
 import unittest
 
 import coverage
 
 TEST_MODULE_REGEX = r'^.*_test$'
+
+
+# Determines the path og a given path relative to the first matching
+# path on sys.path. Useful for determining what a directory's module
+# path will be.
+def _relativize_to_sys_path(path):
+    for sys_path in sys.path:
+        if path.startswith(sys_path):
+            relative = path[len(sys_path):]
+            if not relative:
+                return ""
+            if relative.startswith(os.path.sep):
+                relative = relative[len(os.path.sep):]
+            if not relative.endswith(os.path.sep):
+                relative += os.path.sep
+            return relative
+    raise AssertionError("Failed to relativize {} to sys.path.".format(path))
+
+
+def _relative_path_to_module_prefix(path):
+    return path.replace(os.path.sep, ".")
 
 
 class Loader(object):
@@ -69,9 +92,20 @@ class Loader(object):
       package_paths (list): A list of paths over which to walk through modules
         along.
     """
-        for importer, module_name, is_package in (
-                pkgutil.walk_packages(package_paths)):
-            module = importer.find_module(module_name).load_module(module_name)
+        for path in package_paths:
+            self._walk_package(path)
+
+    def _walk_package(self, package_path):
+        prefix = _relative_path_to_module_prefix(
+            _relativize_to_sys_path(package_path))
+        for importer, module_name, is_package in (pkgutil.walk_packages(
+            [package_path], prefix)):
+            found_module = importer.find_module(module_name)
+            module = None
+            if module_name in sys.modules:
+                module = sys.modules[module_name]
+            else:
+                module = found_module.load_module(module_name)
             self.visit_module(module)
 
     def visit_module(self, module):

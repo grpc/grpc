@@ -12,4 +12,6 @@ exports_files([
     "futures.BUILD",
     "libuv.BUILD",
     "protobuf.patch",
+    "rules_python.patch",
+    "protoc-gen-validate.patch",
 ])

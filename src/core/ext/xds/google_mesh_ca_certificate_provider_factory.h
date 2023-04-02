@@ -16,14 +16,24 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
-#define GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
+#define GRPC_SRC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include <stdint.h>
+
+#include <string>
+#include <vector>
+
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
@@ -52,36 +62,37 @@ class GoogleMeshCaCertificateProviderFactory
 
     const StsConfig& sts_config() const { return sts_config_; }
 
-    grpc_millis timeout() const { return timeout_; }
+    Duration timeout() const { return timeout_; }
 
-    grpc_millis certificate_lifetime() const { return certificate_lifetime_; }
+    Duration certificate_lifetime() const { return certificate_lifetime_; }
 
-    grpc_millis renewal_grace_period() const { return renewal_grace_period_; }
+    Duration renewal_grace_period() const { return renewal_grace_period_; }
 
     uint32_t key_size() const { return key_size_; }
 
     const std::string& location() const { return location_; }
 
     static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error** error);
+                                       grpc_error_handle* error);
 
    private:
     // Helpers for parsing the config
-    std::vector<grpc_error*> ParseJsonObjectStsService(
+    std::vector<grpc_error_handle> ParseJsonObjectStsService(
         const Json::Object& sts_service);
-    std::vector<grpc_error*> ParseJsonObjectCallCredentials(
+    std::vector<grpc_error_handle> ParseJsonObjectCallCredentials(
         const Json::Object& call_credentials);
-    std::vector<grpc_error*> ParseJsonObjectGoogleGrpc(
+    std::vector<grpc_error_handle> ParseJsonObjectGoogleGrpc(
         const Json::Object& google_grpc);
-    std::vector<grpc_error*> ParseJsonObjectGrpcServices(
+    std::vector<grpc_error_handle> ParseJsonObjectGrpcServices(
         const Json::Object& grpc_service);
-    std::vector<grpc_error*> ParseJsonObjectServer(const Json::Object& server);
+    std::vector<grpc_error_handle> ParseJsonObjectServer(
+        const Json::Object& server);
 
     std::string endpoint_;
     StsConfig sts_config_;
-    grpc_millis timeout_;
-    grpc_millis certificate_lifetime_;
-    grpc_millis renewal_grace_period_;
+    Duration timeout_;
+    Duration certificate_lifetime_;
+    Duration renewal_grace_period_;
     uint32_t key_size_;
     std::string location_;
   };
@@ -90,7 +101,7 @@ class GoogleMeshCaCertificateProviderFactory
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override;
+                                  grpc_error_handle* error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
       RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
@@ -101,4 +112,4 @@ class GoogleMeshCaCertificateProviderFactory
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_GOOGLE_MESH_CA_CERTIFICATE_PROVIDER_FACTORY_H

@@ -15,8 +15,8 @@
 
 import collections
 import datetime
-import os
 import logging
+import os
 import threading
 from typing import (Any, AnyStr, Callable, Dict, Iterator, Optional, Sequence,
                     Tuple, TypeVar, Union)

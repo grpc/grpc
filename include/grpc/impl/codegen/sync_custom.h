@@ -19,20 +19,11 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H
 #define GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H
 
-#include <grpc/impl/codegen/port_platform.h>
+// IWYU pragma: private, include <grpc/support/sync.h>
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/support/port_platform.h>
 
-/* Users defining GPR_CUSTOM_SYNC need to define the following macros. */
-
-#ifdef GPR_CUSTOM_SYNC
-
-typedef GPR_CUSTOM_MU_TYPE gpr_mu;
-typedef GPR_CUSTOM_CV_TYPE gpr_cv;
-typedef GPR_CUSTOM_ONCE_TYPE gpr_once;
-
-#define GPR_ONCE_INIT GPR_CUSTOM_ONCE_INIT
-
-#endif
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpc/support/sync_custom.h>
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H */

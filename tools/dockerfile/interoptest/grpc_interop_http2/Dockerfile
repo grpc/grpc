@@ -17,23 +17,15 @@ FROM golang:latest
 # Using login shell removes Go from path, so we add it.
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
-#====================
-# Python dependencies
 
-# Install dependencies
+# Dependencies to run http2_test_server.py
+RUN apt-get update && apt-get install -y python3-all-dev python3-pip
+# pip packages needed to run http2_test_server.py
+# TODO(jtattermusch): revisit which pip packages are actually needed to run http2 interop server/client
+RUN python3 -m pip install --upgrade pip==19.3.1
+RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
 
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
-
-# Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
-
-RUN pip install twisted h2==2.6.1 hyper
+RUN python3 -m pip install twisted h2==2.6.1 hyper
 
 # Define the default command.
 CMD ["bash"]

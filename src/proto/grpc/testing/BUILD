@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
+licenses(["notice"])
 
 grpc_package(
     name = "testing",
@@ -43,6 +42,7 @@ grpc_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
     has_services = False,
+    well_known_protos = True,
     deps = [
         "payloads_proto",
         "stats_proto",
@@ -52,6 +52,9 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
+    deps = [
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -169,9 +172,6 @@ grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
     has_services = False,
-    deps = [
-        "//src/proto/grpc/core:stats_proto",
-    ],
 )
 
 grpc_proto_library(
@@ -254,7 +254,6 @@ py_grpc_library(
 proto_library(
     name = "stats_descriptor",
     srcs = ["stats.proto"],
-    deps = ["//src/proto/grpc/core:stats_descriptor"],
 )
 
 py_proto_library(
@@ -278,10 +277,17 @@ proto_library(
     deps = [
         ":payloads_descriptor",
         ":stats_descriptor",
+        "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
 py_proto_library(
     name = "control_py_pb2",
     deps = [":control_descriptor"],
+)
+
+grpc_proto_library(
+    name = "istio_echo_proto",
+    srcs = ["istio_echo.proto"],
+    well_known_protos = True,
 )

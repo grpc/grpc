@@ -13,11 +13,11 @@
 # limitations under the License.
 """Reference implementation for status mapping in gRPC Python."""
 
+from google.rpc import status_pb2
 from grpc.experimental import aio
 
-from google.rpc import status_pb2
-
-from ._common import code_to_grpc_status_code, GRPC_DETAILS_METADATA_KEY
+from ._common import GRPC_DETAILS_METADATA_KEY
+from ._common import code_to_grpc_status_code
 
 
 async def from_call(call: aio.Call):

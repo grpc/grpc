@@ -10,7 +10,7 @@ Package for gRPC Python.
 
 Supported Python Versions
 -------------------------
-Python >= 3.5
+Python >= 3.7
 
 Installation
 ------------

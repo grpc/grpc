@@ -21,15 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
+#include <stddef.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/connectivity_state.h>  // IWYU pragma: export
+#include <grpc/impl/grpc_types.h>          // IWYU pragma: export
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,16 +47,6 @@ GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array* array);
 
 GRPCAPI void grpc_call_details_init(grpc_call_details* details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details* details);
-
-/** Registers a plugin to be initialized and destroyed with the library.
-
-    The \a init and \a destroy functions will be invoked as part of
-    \a grpc_init() and \a grpc_shutdown(), respectively.
-    Note that these functions can be invoked an arbitrary number of times
-    (and hence so will \a init and \a destroy).
-    It is safe to pass NULL to either argument. Plugins are destroyed in
-    the reverse order they were initialized. */
-GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
 /** Initialize the grpc library.
 
@@ -115,8 +105,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved);
+    grpc_completion_queue_functor* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -296,15 +285,41 @@ GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
     to non-experimental or remove it. */
 GRPCAPI void grpc_channel_reset_connect_backoff(grpc_channel* channel);
 
-/** Create a client channel to 'target'. Additional channel level configuration
-    MAY be provided by grpc_channel_args, though the expectation is that most
-    clients will want to simply pass NULL. The user data in 'args' need only
-    live through the invocation of this function. However, if any args of the
-    'pointer' type are passed, then the referenced vtable must be maintained
-    by the caller until grpc_channel_destroy terminates. See grpc_channel_args
-    definition for more on this. */
-GRPCAPI grpc_channel* grpc_insecure_channel_create(
-    const char* target, const grpc_channel_args* args, void* reserved);
+/** --- grpc_channel_credentials object. ---
+
+   A channel credentials object represents a way to authenticate a client on a
+   channel. Different types of channel credentials are declared in
+   grpc_security.h. */
+
+typedef struct grpc_channel_credentials grpc_channel_credentials;
+
+/** Releases a channel credentials object.
+   The creator of the credentials object is responsible for its release. */
+
+GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
+
+/** --- grpc_server_credentials object. ---
+
+   A server credentials object represents a way to authenticate a server.
+   Different types of server credentials are declared in grpc_security.h. */
+
+typedef struct grpc_server_credentials grpc_server_credentials;
+
+/** Releases a server_credentials object.
+   The creator of the server_credentials object is responsible for its release.
+   */
+GRPCAPI void grpc_server_credentials_release(grpc_server_credentials* creds);
+
+/** Creates a secure channel using the passed-in credentials. Additional
+    channel level configuration MAY be provided by grpc_channel_args, though
+    the expectation is that most clients will want to simply pass NULL. The
+    user data in 'args' need only live through the invocation of this function.
+    However, if any args of the 'pointer' type are passed, then the referenced
+    vtable must be maintained by the caller until grpc_channel_destroy
+    terminates. See grpc_channel_args definition for more on this. */
+GRPCAPI grpc_channel* grpc_channel_create(const char* target,
+                                          grpc_channel_credentials* creds,
+                                          const grpc_channel_args* args);
 
 /** Create a lame client: this client fails every operation attempted on it. */
 GRPCAPI grpc_channel* grpc_lame_client_channel_create(
@@ -340,6 +355,10 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                      grpc_status_code status,
                                                      const char* description,
                                                      void* reserved);
+
+/* Returns whether or not the call's receive message operation failed because of
+ * an error (as opposed to a graceful end-of-stream) */
+GRPCAPI int grpc_call_failed_before_recv_message(const grpc_call* c);
 
 /** Ref a call.
     THREAD SAFETY: grpc_call_ref is thread-compatible */
@@ -411,12 +430,18 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
+// More members might be added in later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  grpc_status_code code;
+  const char* error_message;
+} grpc_serving_status_update;
+
 // There might be more methods added later, so users should take care to memset
 // this to 0 before using it.
 typedef struct {
-  void (*on_serving_status_change)(void* user_data, const char* uri,
-                                   grpc_status_code code,
-                                   const char* error_message);
+  void (*on_serving_status_update)(void* user_data, const char* uri,
+                                   grpc_serving_status_update update);
   void* user_data;
 } grpc_server_xds_status_notifier;
 
@@ -424,7 +449,7 @@ typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
 GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-    grpc_server_xds_status_notifier notifier);
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
 
 /** EXPERIMENTAL.  Destroys a config fetcher. */
 GRPCAPI void grpc_server_config_fetcher_destroy(
@@ -435,11 +460,11 @@ GRPCAPI void grpc_server_config_fetcher_destroy(
 GRPCAPI void grpc_server_set_config_fetcher(
     grpc_server* server, grpc_server_config_fetcher* config_fetcher);
 
-/** Add a HTTP2 over plaintext over tcp listener.
-    Returns bound port number on success, 0 on failure.
-    REQUIRES: server not started */
-GRPCAPI int grpc_server_add_insecure_http2_port(grpc_server* server,
-                                                const char* addr);
+/** Add a HTTP2 over an encrypted link over tcp listener.
+   Returns bound port number on success, 0 on failure.
+   REQUIRES: server not started */
+GRPCAPI int grpc_server_add_http2_port(grpc_server* server, const char* addr,
+                                       grpc_server_credentials* creds);
 
 /** Start a server - tells all listeners to start listening */
 GRPCAPI void grpc_server_start(grpc_server* server);
@@ -507,7 +532,7 @@ GRPCAPI void grpc_resource_quota_set_max_threads(
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
-GRPCAPI grpc_slice grpc_dump_xds_configs();
+GRPCAPI grpc_slice grpc_dump_xds_configs(void);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
@@ -554,6 +579,14 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
 /* Returns a single Socket, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Fetch a vtable for grpc_channel_arg that points to
+ * grpc_authorization_policy_provider.
+ */
+GRPCAPI const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable(void);
 
 #ifdef __cplusplus
 }

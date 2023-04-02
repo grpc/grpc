@@ -1,24 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cinttypes>
 #include <memory>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -31,7 +33,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -39,8 +42,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
-
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -143,21 +144,21 @@ class RawEnd2EndTest : public ::testing::Test {
 
   // For the client application to populate and send to server.
   EchoRequest send_request_;
-  ::grpc::ByteBuffer send_request_buffer_;
+  grpc::ByteBuffer send_request_buffer_;
 
   // For the server to give to gRPC to be populated by incoming request
   // from client.
   EchoRequest recv_request_;
-  ::grpc::ByteBuffer recv_request_buffer_;
+  grpc::ByteBuffer recv_request_buffer_;
 
   // For the server application to populate and send back to client.
   EchoResponse send_response_;
-  ::grpc::ByteBuffer send_response_buffer_;
+  grpc::ByteBuffer send_response_buffer_;
 
   // For the client to give to gRPC to be populated by incoming response
   // from server.
   EchoResponse recv_response_;
-  ::grpc::ByteBuffer recv_response_buffer_;
+  grpc::ByteBuffer recv_response_buffer_;
   Status recv_status_;
 
   // Both sides need contexts
@@ -363,7 +364,7 @@ TEST_F(RawEnd2EndTest, CompileTest) {
 int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

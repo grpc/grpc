@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2017 gRPC authors.
 #
@@ -14,15 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 import collections
 import ctypes
+import json
 import math
 import sys
+
 import yaml
-import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
-    attrs = yaml.load(f.read())
+    attrs = yaml.load(f.read(), Loader=yaml.Loader)
 
 REQUIRED_FIELDS = ['name', 'doc']
 
@@ -33,10 +36,11 @@ def make_type(name, fields):
 
 
 def c_str(s, encoding='ascii'):
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         s = s.encode(encoding)
     result = ''
     for c in s:
+        c = chr(c) if isinstance(c, int) else c
         if not (32 <= ord(c) < 127) or c in ('\\', '"'):
             result += '\\%03o' % ord(c)
         else:
@@ -48,6 +52,7 @@ types = (
     make_type('Counter', []),
     make_type('Histogram', ['max', 'buckets']),
 )
+Shape = collections.namedtuple('Shape', 'max buckets')
 
 inst_map = dict((t[0].__name__, t[1]) for t in types)
 
@@ -70,6 +75,10 @@ def dbl2u64(d):
     return ctypes.c_ulonglong.from_buffer(ctypes.c_double(d)).value
 
 
+def u642dbl(d):
+    return ctypes.c_double.from_buffer(ctypes.c_ulonglong(d)).value
+
+
 def shift_works_until(mapped_bounds, shift_bits):
     for i, ab in enumerate(zip(mapped_bounds, mapped_bounds[1:])):
         a, b = ab
@@ -80,29 +89,25 @@ def shift_works_until(mapped_bounds, shift_bits):
 
 def find_ideal_shift(mapped_bounds, max_size):
     best = None
-    for shift_bits in reversed(range(0, 64)):
+    for shift_bits in reversed(list(range(0, 64))):
         n = shift_works_until(mapped_bounds, shift_bits)
         if n == 0:
             continue
         table_size = mapped_bounds[n - 1] >> shift_bits
         if table_size > max_size:
             continue
-        if table_size > 65535:
-            continue
         if best is None:
             best = (shift_bits, n, table_size)
         elif best[1] < n:
             best = (shift_bits, n, table_size)
-    print best
     return best
 
 
 def gen_map_table(mapped_bounds, shift_data):
+    #print("gen_map_table(%s, %s)" % (mapped_bounds, shift_data))
     tbl = []
     cur = 0
-    print mapped_bounds
     mapped_bounds = [x >> shift_data[0] for x in mapped_bounds]
-    print mapped_bounds
     for i in range(0, mapped_bounds[shift_data[1] - 1]):
         while i > mapped_bounds[cur]:
             cur += 1
@@ -119,7 +124,6 @@ def decl_static_table(values, type):
     for i, vp in enumerate(static_tables):
         if v == vp:
             return i
-    print "ADD TABLE: %s %r" % (type, values)
     r = len(static_tables)
     static_tables.append(v)
     return r
@@ -137,19 +141,30 @@ def type_for_uint_table(table):
         return 'uint64_t'
 
 
-def gen_bucket_code(histogram):
+def merge_cases(cases):
+    l = len(cases)
+    if l == 1:
+        return cases[0][1]
+    left_len = l // 2
+    left = cases[0:left_len]
+    right = cases[left_len:]
+    return 'if (value < %d) {\n%s\n} else {\n%s\n}' % (
+        left[-1][0], merge_cases(left), merge_cases(right))
+
+
+def gen_bucket_code(shape):
     bounds = [0, 1]
     done_trivial = False
     done_unmapped = False
     first_nontrivial = None
     first_unmapped = None
-    while len(bounds) < histogram.buckets + 1:
-        if len(bounds) == histogram.buckets:
-            nextb = int(histogram.max)
+    while len(bounds) < shape.buckets + 1:
+        if len(bounds) == shape.buckets:
+            nextb = int(shape.max)
         else:
             mul = math.pow(
-                float(histogram.max) / bounds[-1],
-                1.0 / (histogram.buckets + 1 - len(bounds)))
+                float(shape.max) / bounds[-1],
+                1.0 / (shape.buckets + 1 - len(bounds)))
             nextb = int(math.ceil(bounds[-1] * mul))
         if nextb <= bounds[-1] + 1:
             nextb = bounds[-1] + 1
@@ -158,57 +173,71 @@ def gen_bucket_code(histogram):
             first_nontrivial = len(bounds)
         bounds.append(nextb)
     bounds_idx = decl_static_table(bounds, 'int')
-    if done_trivial:
-        first_nontrivial_code = dbl2u64(first_nontrivial)
-        code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
-        shift_data = find_ideal_shift(code_bounds[first_nontrivial:],
-                                      256 * histogram.buckets)
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
-    code = 'value = GPR_CLAMP(value, 0, %d);\n' % histogram.max
-    map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
     if first_nontrivial is None:
-        code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n' %
-                 histogram.name.upper())
-    else:
-        code += 'if (value < %d) {\n' % first_nontrivial
-        code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n' %
-                 histogram.name.upper())
-        code += 'return;\n'
-        code += '}'
+        return ('return grpc_core::Clamp(value, 0, %d);\n' % shape.max,
+                bounds_idx)
+    cases = [(0, 'return 0;'), (first_nontrivial, 'return value;')]
+    if done_trivial:
         first_nontrivial_code = dbl2u64(first_nontrivial)
-        if shift_data is not None:
-            map_table_idx = decl_static_table(map_table,
-                                              type_for_uint_table(map_table))
-            code += 'union { double dbl; uint64_t uint; } _val, _bkt;\n'
-            code += '_val.dbl = value;\n'
-            code += 'if (_val.uint < %dull) {\n' % (
-                (map_table[-1] << shift_data[0]) + first_nontrivial_code)
-            code += 'int bucket = '
-            code += 'grpc_stats_table_%d[((_val.uint - %dull) >> %d)] + %d;\n' % (
-                map_table_idx, first_nontrivial_code, shift_data[0],
-                first_nontrivial)
-            code += '_bkt.dbl = grpc_stats_table_%d[bucket];\n' % bounds_idx
-            code += 'bucket -= (_val.uint < _bkt.uint);\n'
-            code += 'GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, bucket);\n' % histogram.name.upper(
-            )
-            code += 'return;\n'
-            code += '}\n'
-        code += 'GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, ' % histogram.name.upper(
-        )
-        code += 'grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_%d, %d));\n' % (
-            bounds_idx, histogram.buckets)
-    return (code, bounds_idx)
+        last_code = first_nontrivial_code
+        while True:
+            code = ''
+            first_nontrivial = u642dbl(first_nontrivial_code)
+            code_bounds_index = None
+            for i, b in enumerate(bounds):
+                if b > first_nontrivial:
+                    code_bounds_index = i
+                    break
+            code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
+            shift_data = find_ideal_shift(code_bounds[code_bounds_index:],
+                                          65536)
+            if not shift_data:
+                break
+            map_table = gen_map_table(code_bounds[code_bounds_index:],
+                                      shift_data)
+            if not map_table:
+                break
+            if map_table[-1] < 5:
+                break
+            map_table_idx = decl_static_table(
+                [x + code_bounds_index for x in map_table],
+                type_for_uint_table(map_table))
+            last_code = (
+                (len(map_table) - 1) << shift_data[0]) + first_nontrivial_code
+            code += 'DblUint val;\n'
+            code += 'val.dbl = value;\n'
+            code += 'const int bucket = '
+            code += 'kStatsTable%d[((val.uint - %dull) >> %d)];\n' % (
+                map_table_idx, first_nontrivial_code, shift_data[0])
+            code += 'return bucket - (value < kStatsTable%d[bucket]);' % bounds_idx
+            cases.append((int(u642dbl(last_code)) + 1, code))
+            first_nontrivial_code = last_code
+        last = u642dbl(last_code) + 1
+        for i, b in enumerate(bounds[:-2]):
+            if bounds[i + 1] < last:
+                continue
+            cases.append((bounds[i + 1], 'return %d;' % i))
+    cases.append((None, 'return %d;' % (len(bounds) - 2)))
+    return (merge_cases(cases), bounds_idx)
 
 
 # utility: print a big comment block into a set of files
 def put_banner(files, banner):
     for f in files:
-        print >> f, '/*'
         for line in banner:
-            print >> f, ' * %s' % line
-        print >> f, ' */'
-        print >> f
+            print('// %s' % line, file=f)
+        print(file=f)
+
+
+shapes = set()
+for histogram in inst_map['Histogram']:
+    shapes.add(Shape(max=histogram.max, buckets=histogram.buckets))
+
+
+def snake_to_pascal(name):
+    return ''.join([x.capitalize() for x in name.split('_')])
 
 
 with open('src/core/lib/debug/stats_data.h', 'w') as H:
@@ -232,77 +261,120 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         [H],
         ["Automatically generated by tools/codegen/core/gen_stats_data.py"])
 
-    print >> H, "#ifndef GRPC_CORE_LIB_DEBUG_STATS_DATA_H"
-    print >> H, "#define GRPC_CORE_LIB_DEBUG_STATS_DATA_H"
-    print >> H
-    print >> H, "#include <grpc/support/port_platform.h>"
-    print >> H
-    print >> H, "#include <inttypes.h>"
-    print >> H, "#include \"src/core/lib/iomgr/exec_ctx.h\""
-    print >> H
+    print("#ifndef GRPC_SRC_CORE_LIB_DEBUG_STATS_DATA_H", file=H)
+    print("#define GRPC_SRC_CORE_LIB_DEBUG_STATS_DATA_H", file=H)
+    print(file=H)
+    print("#include <grpc/support/port_platform.h>", file=H)
+    print("#include <atomic>", file=H)
+    print("#include <memory>", file=H)
+    print("#include <stdint.h>", file=H)
+    print("#include \"src/core/lib/debug/histogram_view.h\"", file=H)
+    print("#include \"absl/strings/string_view.h\"", file=H)
+    print("#include \"src/core/lib/gprpp/per_cpu.h\"", file=H)
+    print(file=H)
+    print("namespace grpc_core {", file=H)
 
-    for typename, instances in sorted(inst_map.items()):
-        print >> H, "typedef enum {"
-        for inst in instances:
-            print >> H, "  GRPC_STATS_%s_%s," % (typename.upper(),
-                                                 inst.name.upper())
-        print >> H, "  GRPC_STATS_%s_COUNT" % (typename.upper())
-        print >> H, "} grpc_stats_%ss;" % (typename.lower())
-        print >> H, "extern const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT];" % (
-            typename.lower(), typename.upper())
-        print >> H, "extern const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT];" % (
-            typename.lower(), typename.upper())
+    for shape in shapes:
+        print("class HistogramCollector_%d_%d;" % (shape.max, shape.buckets),
+              file=H)
+        print("class Histogram_%d_%d {" % (shape.max, shape.buckets), file=H)
+        print(" public:", file=H)
+        print("  static int BucketFor(int value);", file=H)
+        print("  const uint64_t* buckets() const { return buckets_; }", file=H)
+        print(
+            "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right);"
+            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
+               shape.buckets),
+            file=H)
+        print(" private:", file=H)
+        print("  friend class HistogramCollector_%d_%d;" %
+              (shape.max, shape.buckets),
+              file=H)
+        print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
+        print("};", file=H)
+        print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets),
+              file=H)
+        print(" public:", file=H)
+        print("  void Increment(int value) {", file=H)
+        print("    buckets_[Histogram_%d_%d::BucketFor(value)]" %
+              (shape.max, shape.buckets),
+              file=H)
+        print("        .fetch_add(1, std::memory_order_relaxed);", file=H)
+        print("  }", file=H)
+        print("  void Collect(Histogram_%d_%d* result) const;" %
+              (shape.max, shape.buckets),
+              file=H)
+        print(" private:", file=H)
+        print("  std::atomic<uint64_t> buckets_[%d]{};" % shape.buckets, file=H)
+        print("};", file=H)
 
-    histo_start = []
-    histo_buckets = []
-    histo_bucket_boundaries = []
-
-    print >> H, "typedef enum {"
-    first_slot = 0
-    for histogram in inst_map['Histogram']:
-        histo_start.append(first_slot)
-        histo_buckets.append(histogram.buckets)
-        print >> H, "  GRPC_STATS_HISTOGRAM_%s_FIRST_SLOT = %d," % (
-            histogram.name.upper(), first_slot)
-        print >> H, "  GRPC_STATS_HISTOGRAM_%s_BUCKETS = %d," % (
-            histogram.name.upper(), histogram.buckets)
-        first_slot += histogram.buckets
-    print >> H, "  GRPC_STATS_HISTOGRAM_BUCKETS = %d" % first_slot
-    print >> H, "} grpc_stats_histogram_constants;"
-
-    print >> H, "#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)"
+    print("struct GlobalStats {", file=H)
+    print("  enum class Counter {", file=H)
     for ctr in inst_map['Counter']:
-        print >> H, ("#define GRPC_STATS_INC_%s() " +
-                     "GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_%s)") % (
-                         ctr.name.upper(), ctr.name.upper())
-    for histogram in inst_map['Histogram']:
-        print >> H, "#define GRPC_STATS_INC_%s(value) grpc_stats_inc_%s( (int)(value))" % (
-            histogram.name.upper(), histogram.name.lower())
-        print >> H, "void grpc_stats_inc_%s(int x);" % histogram.name.lower()
-
-    print >> H, "#else"
+        print("    k%s," % snake_to_pascal(ctr.name), file=H)
+    print("    COUNT", file=H)
+    print("  };", file=H)
+    print("  enum class Histogram {", file=H)
+    for ctr in inst_map['Histogram']:
+        print("    k%s," % snake_to_pascal(ctr.name), file=H)
+    print("    COUNT", file=H)
+    print("  };", file=H)
+    print("  GlobalStats();", file=H)
+    print(
+        "  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view histogram_name[static_cast<int>(Histogram::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view histogram_doc[static_cast<int>(Histogram::COUNT)];",
+        file=H)
+    print("  union {", file=H)
+    print("    struct {", file=H)
     for ctr in inst_map['Counter']:
-        print >> H, ("#define GRPC_STATS_INC_%s() ") % (ctr.name.upper())
-    for histogram in inst_map['Histogram']:
-        print >> H, "#define GRPC_STATS_INC_%s(value)" % (
-            histogram.name.upper())
-    print >> H, "#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */"
+        print("    uint64_t %s;" % ctr.name, file=H)
+    print("    };", file=H)
+    print("    uint64_t counters[static_cast<int>(Counter::COUNT)];", file=H)
+    print("  };", file=H)
+    for ctr in inst_map['Histogram']:
+        print("  Histogram_%d_%d %s;" % (ctr.max, ctr.buckets, ctr.name),
+              file=H)
+    print("  HistogramView histogram(Histogram which) const;", file=H)
+    print(
+        "  std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;",
+        file=H)
+    print("};", file=H)
+    print("class GlobalStatsCollector {", file=H)
+    print(" public:", file=H)
+    print("  std::unique_ptr<GlobalStats> Collect() const;", file=H)
+    for ctr in inst_map['Counter']:
+        print(
+            "  void Increment%s() { data_.this_cpu().%s.fetch_add(1, std::memory_order_relaxed); }"
+            % (snake_to_pascal(ctr.name), ctr.name),
+            file=H)
+    for ctr in inst_map['Histogram']:
+        print(
+            "  void Increment%s(int value) { data_.this_cpu().%s.Increment(value); }"
+            % (snake_to_pascal(ctr.name), ctr.name),
+            file=H)
+    print(" private:", file=H)
+    print("  struct Data {", file=H)
+    for ctr in inst_map['Counter']:
+        print("    std::atomic<uint64_t> %s{0};" % ctr.name, file=H)
+    for ctr in inst_map['Histogram']:
+        print("    HistogramCollector_%d_%d %s;" %
+              (ctr.max, ctr.buckets, ctr.name),
+              file=H)
+    print("  };", file=H)
+    print("  PerCpu<Data> data_;", file=H)
+    print("};", file=H)
+    print("}", file=H)
 
-    for i, tbl in enumerate(static_tables):
-        print >> H, "extern const %s grpc_stats_table_%d[%d];" % (tbl[0], i,
-                                                                  len(tbl[1]))
-
-    print >> H, "extern const int grpc_stats_histo_buckets[%d];" % len(
-        inst_map['Histogram'])
-    print >> H, "extern const int grpc_stats_histo_start[%d];" % len(
-        inst_map['Histogram'])
-    print >> H, "extern const int *const grpc_stats_histo_bucket_boundaries[%d];" % len(
-        inst_map['Histogram'])
-    print >> H, "extern void (*const grpc_stats_inc_histogram[%d])(int x);" % len(
-        inst_map['Histogram'])
-
-    print >> H
-    print >> H, "#endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */"
+    print(file=H)
+    print("#endif // GRPC_SRC_CORE_LIB_DEBUG_STATS_DATA_H", file=H)
 
 with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     # copy-paste copyright notice from this file
@@ -325,151 +397,118 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         [C],
         ["Automatically generated by tools/codegen/core/gen_stats_data.py"])
 
-    print >> C, "#include <grpc/support/port_platform.h>"
-    print >> C
-    print >> C, "#include \"src/core/lib/debug/stats.h\""
-    print >> C, "#include \"src/core/lib/debug/stats_data.h\""
-    print >> C, "#include \"src/core/lib/gpr/useful.h\""
-    print >> C, "#include \"src/core/lib/iomgr/exec_ctx.h\""
-    print >> C
+    print("#include <grpc/support/port_platform.h>", file=C)
+    print(file=C)
+    print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
+    print("#include <stdint.h>", file=C)
+    print(file=C)
 
     histo_code = []
-    for histogram in inst_map['Histogram']:
-        code, bounds_idx = gen_bucket_code(histogram)
-        histo_bucket_boundaries.append(bounds_idx)
+    histo_bucket_boundaries = {}
+    for shape in shapes:
+        code, bounds_idx = gen_bucket_code(shape)
+        histo_bucket_boundaries[shape] = bounds_idx
         histo_code.append(code)
 
+    print("namespace grpc_core {", file=C)
+    print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
+
+    for shape in shapes:
+        print(
+            "void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result) const {"
+            % (shape.max, shape.buckets, shape.max, shape.buckets),
+            file=C)
+        print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
+        print(
+            "    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);",
+            file=C)
+        print("  }", file=C)
+        print("}", file=C)
+        print(
+            "Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right) {"
+            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
+               shape.buckets),
+            file=C)
+        print("  Histogram_%d_%d result;" % (shape.max, shape.buckets), file=C)
+        print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
+        print("    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];",
+              file=C)
+        print("  }", file=C)
+        print("  return result;", file=C)
+        print("}", file=C)
+
     for typename, instances in sorted(inst_map.items()):
-        print >> C, "const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT] = {" % (
-            typename.lower(), typename.upper())
+        print(
+            "const absl::string_view GlobalStats::%s_name[static_cast<int>(%s::COUNT)] = {"
+            % (typename.lower(), typename),
+            file=C)
         for inst in instances:
-            print >> C, "  %s," % c_str(inst.name)
-        print >> C, "};"
-        print >> C, "const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT] = {" % (
-            typename.lower(), typename.upper())
+            print("  %s," % c_str(inst.name), file=C)
+        print("};", file=C)
+        print(
+            "const absl::string_view GlobalStats::%s_doc[static_cast<int>(%s::COUNT)] = {"
+            % (typename.lower(), typename),
+            file=C)
         for inst in instances:
-            print >> C, "  %s," % c_str(inst.doc)
-        print >> C, "};"
+            print("  %s," % c_str(inst.doc), file=C)
+        print("};", file=C)
 
+    print("namespace {", file=C)
     for i, tbl in enumerate(static_tables):
-        print >> C, "const %s grpc_stats_table_%d[%d] = {%s};" % (
-            tbl[0], i, len(tbl[1]), ','.join('%s' % x for x in tbl[1]))
+        print("const %s kStatsTable%d[%d] = {%s};" %
+              (tbl[0], i, len(tbl[1]), ','.join('%s' % x for x in tbl[1])),
+              file=C)
+    print("}  // namespace", file=C)
 
-    for histogram, code in zip(inst_map['Histogram'], histo_code):
-        print >> C, ("void grpc_stats_inc_%s(int value) {%s}") % (
-            histogram.name.lower(), code)
+    for shape, code in zip(shapes, histo_code):
+        print(("int Histogram_%d_%d::BucketFor(int value) {%s}") %
+              (shape.max, shape.buckets, code),
+              file=C)
 
-    print >> C, "const int grpc_stats_histo_buckets[%d] = {%s};" % (len(
-        inst_map['Histogram']), ','.join('%s' % x for x in histo_buckets))
-    print >> C, "const int grpc_stats_histo_start[%d] = {%s};" % (len(
-        inst_map['Histogram']), ','.join('%s' % x for x in histo_start))
-    print >> C, "const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" % (
-        len(inst_map['Histogram']), ','.join(
-            'grpc_stats_table_%d' % x for x in histo_bucket_boundaries))
-    print >> C, "void (*const grpc_stats_inc_histogram[%d])(int x) = {%s};" % (
-        len(inst_map['Histogram']), ','.join(
-            'grpc_stats_inc_%s' % histogram.name.lower()
-            for histogram in inst_map['Histogram']))
+    print("GlobalStats::GlobalStats() : %s {}" %
+          ",".join("%s{0}" % ctr.name for ctr in inst_map['Counter']),
+          file=C)
 
-# patch qps_test bigquery schema
-RECORD_EXPLICIT_PERCENTILES = [50, 95, 99]
+    print("HistogramView GlobalStats::histogram(Histogram which) const {",
+          file=C)
+    print("  switch (which) {", file=C)
+    print("    default: GPR_UNREACHABLE_CODE(return HistogramView());", file=C)
+    for inst in inst_map['Histogram']:
+        print("    case Histogram::k%s:" % snake_to_pascal(inst.name), file=C)
+        print(
+            "      return HistogramView{&Histogram_%d_%d::BucketFor, kStatsTable%d, %d, %s.buckets()};"
+            % (inst.max, inst.buckets, histo_bucket_boundaries[Shape(
+                inst.max, inst.buckets)], inst.buckets, inst.name),
+            file=C)
+    print("  }", file=C)
+    print("}", file=C)
 
-with open('tools/run_tests/performance/scenario_result_schema.json', 'r') as f:
-    qps_schema = json.loads(f.read())
+    print(
+        "std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {",
+        file=C)
+    print("  auto result = std::make_unique<GlobalStats>();", file=C)
+    print("  for (const auto& data : data_) {", file=C)
+    for ctr in inst_map['Counter']:
+        print("    result->%s += data.%s.load(std::memory_order_relaxed);" %
+              (ctr.name, ctr.name),
+              file=C)
+    for h in inst_map['Histogram']:
+        print("    data.%s.Collect(&result->%s);" % (h.name, h.name), file=C)
+    print("  }", file=C)
+    print("  return result;", file=C)
+    print("}", file=C)
 
+    print(
+        "std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {",
+        file=C)
+    print("  auto result = std::make_unique<GlobalStats>();", file=C)
+    for ctr in inst_map['Counter']:
+        print("  result->%s = %s - other.%s;" % (ctr.name, ctr.name, ctr.name),
+              file=C)
+    for h in inst_map['Histogram']:
+        print("  result->%s = %s - other.%s;" % (h.name, h.name, h.name),
+              file=C)
+    print("  return result;", file=C)
+    print("}", file=C)
 
-def FindNamed(js, name):
-    for el in js:
-        if el['name'] == name:
-            return el
-
-
-def RemoveCoreFields(js):
-    new_fields = []
-    for field in js['fields']:
-        if not field['name'].startswith('core_'):
-            new_fields.append(field)
-    js['fields'] = new_fields
-
-
-RemoveCoreFields(FindNamed(qps_schema, 'clientStats'))
-RemoveCoreFields(FindNamed(qps_schema, 'serverStats'))
-
-
-def AddCoreFields(js):
-    for counter in inst_map['Counter']:
-        js['fields'].append({
-            'name': 'core_%s' % counter.name,
-            'type': 'INTEGER',
-            'mode': 'NULLABLE'
-        })
-    for histogram in inst_map['Histogram']:
-        js['fields'].append({
-            'name': 'core_%s' % histogram.name,
-            'type': 'STRING',
-            'mode': 'NULLABLE'
-        })
-        js['fields'].append({
-            'name': 'core_%s_bkts' % histogram.name,
-            'type': 'STRING',
-            'mode': 'NULLABLE'
-        })
-        for pctl in RECORD_EXPLICIT_PERCENTILES:
-            js['fields'].append({
-                'name': 'core_%s_%dp' % (histogram.name, pctl),
-                'type': 'FLOAT',
-                'mode': 'NULLABLE'
-            })
-
-
-AddCoreFields(FindNamed(qps_schema, 'clientStats'))
-AddCoreFields(FindNamed(qps_schema, 'serverStats'))
-
-with open('tools/run_tests/performance/scenario_result_schema.json', 'w') as f:
-    f.write(json.dumps(qps_schema, indent=2, sort_keys=True))
-
-# and generate a helper script to massage scenario results into the format we'd
-# like to query
-with open('tools/run_tests/performance/massage_qps_stats.py', 'w') as P:
-    with open(sys.argv[0]) as my_source:
-        for line in my_source:
-            if line[0] != '#':
-                break
-        for line in my_source:
-            if line[0] == '#':
-                print >> P, line.rstrip()
-                break
-        for line in my_source:
-            if line[0] != '#':
-                break
-            print >> P, line.rstrip()
-
-    print >> P
-    print >> P, '# Autogenerated by tools/codegen/core/gen_stats_data.py'
-    print >> P
-
-    print >> P, 'import massage_qps_stats_helpers'
-
-    print >> P, 'def massage_qps_stats(scenario_result):'
-    print >> P, '  for stats in scenario_result["serverStats"] + scenario_result["clientStats"]:'
-    print >> P, '    if "coreStats" in stats:'
-    print >> P, '      # Get rid of the "coreStats" element and replace it by statistics'
-    print >> P, '      # that correspond to columns in the bigquery schema.'
-    print >> P, '      core_stats = stats["coreStats"]'
-    print >> P, '      del stats["coreStats"]'
-    for counter in inst_map['Counter']:
-        print >> P, '      stats["core_%s"] = massage_qps_stats_helpers.counter(core_stats, "%s")' % (
-            counter.name, counter.name)
-    for i, histogram in enumerate(inst_map['Histogram']):
-        print >> P, '      h = massage_qps_stats_helpers.histogram(core_stats, "%s")' % histogram.name
-        print >> P, '      stats["core_%s"] = ",".join("%%f" %% x for x in h.buckets)' % histogram.name
-        print >> P, '      stats["core_%s_bkts"] = ",".join("%%f" %% x for x in h.boundaries)' % histogram.name
-        for pctl in RECORD_EXPLICIT_PERCENTILES:
-            print >> P, '      stats["core_%s_%dp"] = massage_qps_stats_helpers.percentile(h.buckets, %d, h.boundaries)' % (
-                histogram.name, pctl, pctl)
-
-with open('src/core/lib/debug/stats_data_bq_schema.sql', 'w') as S:
-    columns = []
-    for counter in inst_map['Counter']:
-        columns.append(('%s_per_iteration' % counter.name, 'FLOAT'))
-    print >> S, ',\n'.join('%s:%s' % x for x in columns)
+    print("}", file=C)

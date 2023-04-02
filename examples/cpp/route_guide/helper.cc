@@ -53,7 +53,7 @@ std::string GetDbFileContent(int argc, char** argv) {
   std::ifstream db_file(db_path);
   if (!db_file.is_open()) {
     std::cout << "Failed to open " << db_path << std::endl;
-    return "";
+    abort();
   }
   std::stringstream db;
   db << db_file.rdbuf();

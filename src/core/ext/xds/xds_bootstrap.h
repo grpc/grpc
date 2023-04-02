@@ -14,107 +14,75 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
-#define GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-#include <set>
 #include <string>
-#include <vector>
 
-#include "absl/container/inlined_vector.h"
-
-#include <grpc/slice.h>
-
-#include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
 
-class XdsClient;
-
-class XdsChannelCredsRegistry {
- public:
-  static bool IsSupported(const std::string& creds_type);
-  static bool IsValidConfig(const std::string& creds_type, const Json& config);
-  static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(
-      const std::string& creds_type, const Json& config);
-};
+bool XdsFederationEnabled();
 
 class XdsBootstrap {
  public:
-  struct Node {
-    std::string id;
-    std::string cluster;
-    std::string locality_region;
-    std::string locality_zone;
-    std::string locality_sub_zone;
-    Json metadata;
+  class Node {
+   public:
+    virtual ~Node() = default;
+
+    virtual const std::string& id() const = 0;
+    virtual const std::string& cluster() const = 0;
+    virtual const std::string& locality_region() const = 0;
+    virtual const std::string& locality_zone() const = 0;
+    virtual const std::string& locality_sub_zone() const = 0;
+    virtual const Json::Object& metadata() const = 0;
   };
 
-  struct XdsServer {
-    std::string server_uri;
-    std::string channel_creds_type;
-    Json channel_creds_config;
-    std::set<std::string> server_features;
+  class XdsServer {
+   public:
+    virtual ~XdsServer() = default;
 
-    bool ShouldUseV3() const;
+    virtual const std::string& server_uri() const = 0;
+    virtual bool IgnoreResourceDeletion() const = 0;
+
+    virtual bool Equals(const XdsServer& other) const = 0;
+
+    friend bool operator==(const XdsServer& a, const XdsServer& b) {
+      return a.Equals(b);
+    }
   };
 
-  // Creates bootstrap object, obtaining the bootstrap JSON as appropriate
-  // for the environment:
-  // - If the GRPC_XDS_BOOTSTRAP env var is set, reads the file it specifies
-  //   to obtain the bootstrap JSON.
-  // - Otherwise, if the GRPC_XDS_BOOTSTRAP_CONFIG env var is set, reads the
-  //   content of that env var to obtain the bootstrap JSON.
-  // - Otherwise, the JSON will be read from fallback_config (if non-null).
-  // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error (e.g., no config found or error reading the file).
-  static std::unique_ptr<XdsBootstrap> Create(XdsClient* client,
-                                              TraceFlag* tracer,
-                                              const char* fallback_config,
-                                              grpc_error** error);
+  class Authority {
+   public:
+    virtual ~Authority() = default;
 
-  // Do not instantiate directly -- use ReadFromFile() above instead.
-  XdsBootstrap(Json json, grpc_error** error);
+    virtual const XdsServer* server() const = 0;
+  };
+
+  virtual ~XdsBootstrap() = default;
+
+  virtual std::string ToString() const = 0;
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
-  const XdsServer& server() const { return servers_[0]; }
-  const Node* node() const { return node_.get(); }
-  const std::string& server_listener_resource_name_template() const {
-    return server_listener_resource_name_template_;
-  }
+  virtual const XdsServer& server() const = 0;
 
-  const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
-      const {
-    return certificate_providers_;
-  }
+  // Returns the node information, or null if not present in the bootstrap
+  // config.
+  virtual const Node* node() const = 0;
 
- private:
-  grpc_error* ParseXdsServerList(Json* json);
-  grpc_error* ParseXdsServer(Json* json, size_t idx);
-  grpc_error* ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error* ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
-  grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
-  grpc_error* ParseNode(Json* json);
-  grpc_error* ParseLocality(Json* json);
-  grpc_error* ParseCertificateProviders(Json* json);
-  grpc_error* ParseCertificateProvider(const std::string& instance_name,
-                                       Json* certificate_provider_json);
+  // Returns a pointer to the specified authority, or null if it does
+  // not exist in this bootstrap config.
+  virtual const Authority* LookupAuthority(const std::string& name) const = 0;
 
-  absl::InlinedVector<XdsServer, 1> servers_;
-  std::unique_ptr<Node> node_;
-  std::string server_listener_resource_name_template_;
-  CertificateProviderStore::PluginDefinitionMap certificate_providers_;
+  // If the server exists in the bootstrap config, returns a pointer to
+  // the XdsServer instance in the config.  Otherwise, returns null.
+  virtual const XdsServer* FindXdsServer(const XdsServer& server) const = 0;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H */
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H

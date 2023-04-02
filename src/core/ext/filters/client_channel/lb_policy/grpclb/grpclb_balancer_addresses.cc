@@ -18,6 +18,10 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 
+#include <stddef.h>
+
+#include <utility>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 
@@ -42,7 +46,7 @@ int BalancerAddressesArgCmp(void* p, void* q) {
   ServerAddressList* address_list1 = static_cast<ServerAddressList*>(p);
   ServerAddressList* address_list2 = static_cast<ServerAddressList*>(q);
   if (address_list1 == nullptr || address_list2 == nullptr) {
-    return GPR_ICMP(address_list1, address_list2);
+    return QsortCompare(address_list1, address_list2);
   }
   if (address_list1->size() > address_list2->size()) return 1;
   if (address_list1->size() < address_list2->size()) return -1;
@@ -68,9 +72,17 @@ grpc_arg CreateGrpclbBalancerAddressesArg(
 }
 
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    const grpc_channel_args& args) {
-  return grpc_channel_args_find_pointer<const ServerAddressList>(
-      &args, const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES));
+    const ChannelArgs& args) {
+  return args.GetPointer<const ServerAddressList>(
+      GRPC_ARG_GRPCLB_BALANCER_ADDRESSES);
+}
+
+ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
+                                       ServerAddressList address_list) {
+  return args.Set(
+      GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
+      ChannelArgs::Pointer(new ServerAddressList(std::move(address_list)),
+                           &kBalancerAddressesArgVtable));
 }
 
 }  // namespace grpc_core

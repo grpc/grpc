@@ -1,22 +1,26 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
+
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -30,13 +34,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/memory/memory.h"
-
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -44,8 +46,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
-
-#include <gtest/gtest.h>
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
@@ -67,7 +67,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-static bool ValidateAddress(const Address& address) {
+bool ValidateAddress(const Address& address) {
   if (address.address_case() != Address::kTcpipAddress) {
     return true;
   }
@@ -77,7 +77,7 @@ static bool ValidateAddress(const Address& address) {
 
 // Proxy service supports N backends. Sends RPC to backend dictated by
 // request->backend_channel_idx().
-class Proxy : public ::grpc::testing::EchoTestService::Service {
+class Proxy : public grpc::testing::EchoTestService::Service {
  public:
   Proxy() {}
 
@@ -115,7 +115,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::vector<std::unique_ptr<::grpc::testing::EchoTestService::Stub>> stubs_;
+  std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs_;
 };
 
 enum class CredentialsType {
@@ -137,12 +137,6 @@ std::string ReadFile(const char* file_path) {
   std::string file_contents(grpc_core::StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return file_contents;
-}
-
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{
-      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
 }
 
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
@@ -189,15 +183,15 @@ std::string RemoveWhitespaces(std::string input) {
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   void SetUp() override {
     // ensure channel server is brought up on all severs we build.
-    ::grpc::channelz::experimental::InitChannelzService();
+    grpc::channelz::experimental::InitChannelzService();
 
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
@@ -213,6 +207,13 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     proxy_server_ = proxy_builder.BuildAndStart();
   }
 
+  void TearDown() override {
+    for (auto& backend : backends_) {
+      backend.server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    }
+    proxy_server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+  }
+
   // Sets the proxy up to have an arbitrary number of backends.
   void ConfigureProxy(size_t num_backends) {
     backends_.resize(num_backends);
@@ -224,7 +225,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        GetServerCredentials(GetParam()));
-      backends_[i].service = absl::make_unique<TestServiceImpl>();
+      backends_[i].service = std::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());
@@ -235,7 +236,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       ChannelArguments args;
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
       args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
-      std::shared_ptr<Channel> channel_to_backend = ::grpc::CreateCustomChannel(
+      std::shared_ptr<Channel> channel_to_backend = grpc::CreateCustomChannel(
           backend_server_address, GetChannelCredentials(GetParam(), &args),
           args);
       proxy_service_.AddChannelToBackend(channel_to_backend);
@@ -247,7 +248,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
-    std::shared_ptr<Channel> channel = ::grpc::CreateCustomChannel(
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
         target, GetChannelCredentials(GetParam(), &args), args);
     channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channel);
     echo_stub_ = grpc::testing::EchoTestService::NewStub(channel);
@@ -260,7 +261,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
-    std::shared_ptr<Channel> channel = ::grpc::CreateCustomChannel(
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
         target, GetChannelCredentials(GetParam(), &args), args);
     return grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -931,7 +932,7 @@ INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

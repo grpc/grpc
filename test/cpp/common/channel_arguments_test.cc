@@ -1,26 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpcpp/support/channel_arguments.h>
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,7 +53,7 @@ bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
 }
 
 int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
-  return GPR_ICMP(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {
@@ -62,7 +62,8 @@ void test_mutator_destroy(grpc_socket_mutator* mutator) {
 }
 
 grpc_socket_mutator_vtable test_mutator_vtable = {
-    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy};
+    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy,
+    nullptr};
 
 //
 // TestSocketMutator implementation
@@ -85,9 +86,9 @@ class ChannelArgumentsTest : public ::testing::Test {
     channel_args.SetChannelArgs(args);
   }
 
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   std::string GetDefaultUserAgentPrefix() {
     std::ostringstream user_agent_prefix;
@@ -98,7 +99,7 @@ class ChannelArgumentsTest : public ::testing::Test {
   void VerifyDefaultChannelArgs() {
     grpc_channel_args args;
     SetChannelArgs(channel_args_, &args);
-    EXPECT_EQ(static_cast<size_t>(1), args.num_args);
+    EXPECT_EQ(1, args.num_args);
     EXPECT_STREQ(GRPC_ARG_PRIMARY_USER_AGENT_STRING, args.args[0].key);
     EXPECT_EQ(GetDefaultUserAgentPrefix(),
               std::string(args.args[0].value.string));
@@ -256,7 +257,7 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

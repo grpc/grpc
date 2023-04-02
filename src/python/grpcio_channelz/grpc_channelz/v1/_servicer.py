@@ -13,13 +13,11 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+from google.protobuf import json_format
 import grpc
 from grpc._cython import cygrpc
-
 import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
-
-from google.protobuf import json_format
 
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):

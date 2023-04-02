@@ -66,7 +66,7 @@
  * The value of this property is nil until all response headers are received, and will change before
  * any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
  */
-@property(atomic, readonly) NSDictionary *responseHeaders;
+@property(atomic, copy, readonly) NSDictionary *responseHeaders;
 
 /**
  * Same as responseHeaders, but populated with the HTTP trailers received from the server before the
@@ -75,7 +75,7 @@
  * The value of this property is nil until all response trailers are received, and will change
  * before -writesFinishedWithError: is sent to the writeable.
  */
-@property(atomic, readonly) NSDictionary *responseTrailers;
+@property(atomic, copy, readonly) NSDictionary *responseTrailers;
 
 /**
  * The request writer has to write NSData objects into the provided Writeable. The server will

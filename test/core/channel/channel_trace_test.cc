@@ -1,43 +1,39 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <stdlib.h>
-#include <string.h>
-
-#include <gtest/gtest.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/channelz_registry.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/surface/channel.h"
-
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/channel_trace_proto_helper.h"
 
 #include <stdlib.h>
-#include <string.h>
+
+#include <string>
+
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/channel_trace_proto_helper.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -59,25 +55,25 @@ namespace {
 
 void ValidateJsonArraySize(const Json& array, size_t expected) {
   if (expected == 0) {
-    ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
+    ASSERT_EQ(array.type(), Json::Type::kNull);
   } else {
-    ASSERT_EQ(array.type(), Json::Type::ARRAY);
-    EXPECT_EQ(array.array_value().size(), expected);
+    ASSERT_EQ(array.type(), Json::Type::kArray);
+    EXPECT_EQ(array.array().size(), expected);
   }
 }
 
 void ValidateChannelTraceData(const Json& json,
                               size_t num_events_logged_expected,
                               size_t actual_num_events_expected) {
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  Json::Object object = json.object_value();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  Json::Object object = json.object();
   Json& num_events_logged_json = object["numEventsLogged"];
-  ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
+  ASSERT_EQ(num_events_logged_json.type(), Json::Type::kString);
   size_t num_events_logged = static_cast<size_t>(
-      strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
+      strtol(num_events_logged_json.string().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
   Json& start_time_json = object["creationTimestamp"];
-  ASSERT_EQ(start_time_json.type(), Json::Type::STRING);
+  ASSERT_EQ(start_time_json.type(), Json::Type::kString);
   ValidateJsonArraySize(object["events"], actual_num_events_expected);
 }
 
@@ -90,8 +86,8 @@ void AddSimpleTrace(ChannelTrace* tracer) {
 void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
                                 size_t num_events_expected) {
   Json json = tracer->RenderJson();
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  std::string json_str = json.Dump();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  std::string json_str = JsonDump(json);
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str.c_str());
   ValidateChannelTraceData(json, num_events_logged, num_events_expected);
 }
@@ -107,8 +103,9 @@ class ChannelFixture {
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
-    channel_ =
-        grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create("fake_target", creds, &client_args);
+    grpc_channel_credentials_release(creds);
   }
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
@@ -126,7 +123,7 @@ const int kEventListMemoryLimit = 1024 * 1024;
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
 TEST(ChannelTracerTest, BasicTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -149,7 +146,7 @@ TEST(ChannelTracerTest, BasicTest) {
 // subchannles. This exercises the ref/unref patterns since the parent tracer
 // and this function will both hold refs to the subchannel.
 TEST(ChannelTracerTest, ComplexTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -196,7 +193,7 @@ TEST(ChannelTracerTest, ComplexTest) {
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
 TEST(ChannelTracerTest, TestNesting) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -243,7 +240,7 @@ TEST(ChannelTracerTest, TestNesting) {
 }
 
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // doesn't make sense, but serves a testing purpose for the channel tracing
   // bookkeeping. All tracing events added should will get immediately garbage
   // collected.
@@ -267,7 +264,7 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
 }
 
 TEST(ChannelTracerTest, TestEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -284,7 +281,7 @@ TEST(ChannelTracerTest, TestEviction) {
 }
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -303,7 +300,7 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
 }
 
 TEST(ChannelTracerTest, TestTotalEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -323,7 +320,7 @@ TEST(ChannelTracerTest, TestTotalEviction) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

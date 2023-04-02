@@ -1,0 +1,32 @@
+actions {
+  create_quota {}
+}
+actions {
+  create_allocator {}
+}
+actions {
+  set_quota_size: 0
+} 
+actions {
+  post_reclaimer {}
+}
+actions {
+  delete_allocator {}
+}
+actions {
+  flush_exec_ctx {}
+}
+actions {
+  allocator: 111 
+  create_allocator {}
+}
+actions {
+  allocator: 111 
+  post_reclaimer {}
+}
+actions {
+  create_allocator {}
+}
+actions {
+  post_reclaimer {}
+}

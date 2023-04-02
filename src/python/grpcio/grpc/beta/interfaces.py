@@ -15,8 +15,6 @@
 
 import abc
 
-import six
-
 import grpc
 
 ChannelConnectivity = grpc.ChannelConnectivity
@@ -59,7 +57,7 @@ GRPCAuthMetadataPluginCallback = grpc.AuthMetadataPluginCallback
 GRPCAuthMetadataPlugin = grpc.AuthMetadataPlugin
 
 
-class GRPCServicerContext(six.with_metaclass(abc.ABCMeta)):
+class GRPCServicerContext(abc.ABC):
     """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
 
     @abc.abstractmethod
@@ -77,7 +75,7 @@ class GRPCServicerContext(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class GRPCInvocationContext(six.with_metaclass(abc.ABCMeta)):
+class GRPCInvocationContext(abc.ABC):
     """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
 
     @abc.abstractmethod
@@ -86,7 +84,7 @@ class GRPCInvocationContext(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Server(six.with_metaclass(abc.ABCMeta)):
+class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod

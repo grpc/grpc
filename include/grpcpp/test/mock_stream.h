@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_TEST_MOCK_STREAM_H
 #define GRPCPP_TEST_MOCK_STREAM_H
@@ -22,7 +22,8 @@
 #include <stdint.h>
 
 #include <gmock/gmock.h>
-#include <grpcpp/impl/codegen/call.h>
+
+#include <grpcpp/impl/call.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/sync_stream.h>
@@ -31,7 +32,7 @@ namespace grpc {
 namespace testing {
 
 template <class R>
-class MockClientReader : public ::grpc::ClientReaderInterface<R> {
+class MockClientReader : public grpc::ClientReaderInterface<R> {
  public:
   MockClientReader() = default;
 
@@ -47,7 +48,7 @@ class MockClientReader : public ::grpc::ClientReaderInterface<R> {
 };
 
 template <class W>
-class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
+class MockClientWriter : public grpc::ClientWriterInterface<W> {
  public:
   MockClientWriter() = default;
 
@@ -62,8 +63,7 @@ class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
 };
 
 template <class W, class R>
-class MockClientReaderWriter
-    : public ::grpc::ClientReaderWriterInterface<W, R> {
+class MockClientReaderWriter : public grpc::ClientReaderWriterInterface<W, R> {
  public:
   MockClientReaderWriter() = default;
 
@@ -86,7 +86,7 @@ class MockClientReaderWriter
 
 template <class R>
 class MockClientAsyncResponseReader
-    : public ::grpc::ClientAsyncResponseReaderInterface<R> {
+    : public grpc::ClientAsyncResponseReaderInterface<R> {
  public:
   MockClientAsyncResponseReader() = default;
 
@@ -111,7 +111,7 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
 };
 
 template <class W>
-class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
+class MockClientAsyncWriter : public grpc::ClientAsyncWriterInterface<W> {
  public:
   MockClientAsyncWriter() = default;
 
@@ -122,7 +122,7 @@ class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD3_T(Write, void(const W&, grpc::WriteOptions, void*));
 
   /// ClientAsyncWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
@@ -141,13 +141,54 @@ class MockClientAsyncReaderWriter
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD3_T(Write, void(const W&, grpc::WriteOptions, void*));
 
   /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
 
   /// ClientAsyncReaderWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
+};
+
+template <class R>
+class MockServerReader : public grpc::ServerReaderInterface<R> {
+ public:
+  MockServerReader() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+};
+
+template <class W>
+class MockServerWriter : public grpc::ServerWriterInterface<W> {
+ public:
+  MockServerWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+};
+
+template <class W, class R>
+class MockServerReaderWriter : public grpc::ServerReaderWriterInterface<W, R> {
+ public:
+  MockServerReaderWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
 };
 
 }  // namespace testing

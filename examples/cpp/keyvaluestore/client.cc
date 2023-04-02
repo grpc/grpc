@@ -21,9 +21,9 @@
 #include <string>
 #include <vector>
 
-#include <grpcpp/grpcpp.h>
-
 #include "caching_interceptor.h"
+
+#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"

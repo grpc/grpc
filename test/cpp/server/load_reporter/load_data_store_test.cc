@@ -1,30 +1,33 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/cpp/server/load_reporter/load_data_store.h"
 
 #include <set>
 #include <vector>
 
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include "src/cpp/server/load_reporter/load_data_store.h"
+#include <grpc/grpc.h>
+
+#include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -154,7 +157,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   load_data_store.ReportStreamClosed(kHostname1, orphaned_lb_id);
   active_lb_ids.erase(orphaned_lb_id);
   // Find which LB is assigned the orphaned store.
-  std::string assigned_lb_id = "";
+  std::string assigned_lb_id;
   for (const auto& lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
@@ -168,7 +171,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // Close 10 more stream, skipping the assigned_lb_id. The assignment of
   // orphaned_lb_id shouldn't change.
   for (size_t _ = 0; _ < 10; ++_) {
-    std::string lb_id_to_close = "";
+    std::string lb_id_to_close;
     for (const auto& lb_id : active_lb_ids) {
       if (lb_id != assigned_lb_id) {
         lb_id_to_close = lb_id;
@@ -475,7 +478,7 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

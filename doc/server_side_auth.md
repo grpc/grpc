@@ -2,8 +2,8 @@ Server-side API for Authenticating Clients
 ==========================================
 
 NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.
-NOTE2: `CallCredentials` class is only valid for secure channels in C-Core. So, for connections under insecure channels, features below might not be available.
 
+NOTE2: `CallCredentials` class is only valid if the security level it requires is less than or equal to the security level of the connection used to transfer it. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more information.
 ## AuthContext
 
 To perform server-side authentication, gRPC exposes the *authentication context* for each call. The context exposes important authentication-related information about the RPC such as the type of security/authentication type being used and the peer identity.
@@ -11,6 +11,9 @@ To perform server-side authentication, gRPC exposes the *authentication context*
 The authentication context is structured as a multi-map of key-value pairs - the *auth properties*. In addition to that, for authenticated RPCs, the set of properties corresponding to a selected key will represent the verified identity of the caller - the *peer identity*.
 
 The contents of the *auth properties* are populated by an *auth interceptor*. The interceptor also chooses which property key will act as the peer identity (e.g. for client certificate authentication this property will be `"x509_common_name"` or `"x509_subject_alternative_name"`).
+
+Note that AuthContext is generally not modifiable, except when used via an AuthMetadataProcessor([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/security/auth_context.h)).
+However, because the AuthContext is a connection-level object, when it is modified via an AuthMetadataProcessor, the modifications will be visible on all subsequent calls on the same connection.
 
 WARNING: AuthContext is the only reliable source of truth when it comes to authenticating RPCs. Using any other call/context properties for authentication purposes is wrong and inherently unsafe.
 

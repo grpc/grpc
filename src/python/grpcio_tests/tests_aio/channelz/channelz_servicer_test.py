@@ -13,13 +13,12 @@
 # limitations under the License.
 """Tests of grpc_channelz.v1.channelz."""
 
-import unittest
-import logging
 import asyncio
+import logging
+import unittest
 
 import grpc
 from grpc.experimental import aio
-
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
@@ -376,21 +375,28 @@ class ChannelzServicerTest(AioTestBase):
         # Subchannel exists
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
-        gsc_resp = await self._channelz_stub.GetSubchannel(
-            channelz_pb2.GetSubchannelRequest(
-                subchannel_id=gc_resp.channel.subchannel_ref[0].subchannel_id))
+        while True:
+            gsc_resp = await self._channelz_stub.GetSubchannel(
+                channelz_pb2.GetSubchannelRequest(
+                    subchannel_id=gc_resp.channel.subchannel_ref[0].
+                    subchannel_id))
+            if gsc_resp.subchannel.data.calls_started == gsc_resp.subchannel.data.calls_succeeded + gsc_resp.subchannel.data.calls_failed:
+                break
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
-        self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         self.assertEqual(gsc_resp.subchannel.data.calls_failed, 0)
+        self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         # Socket exists
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
-        gs_resp = await self._channelz_stub.GetSocket(
-            channelz_pb2.GetSocketRequest(
-                socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
+        while True:
+            gs_resp = await self._channelz_stub.GetSocket(
+                channelz_pb2.GetSocketRequest(
+                    socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
+            if gs_resp.socket.data.streams_started == gs_resp.socket.data.streams_succeeded + gs_resp.socket.data.streams_failed:
+                break
         self.assertEqual(gs_resp.socket.data.streams_started, 1)
-        self.assertEqual(gs_resp.socket.data.streams_succeeded, 1)
         self.assertEqual(gs_resp.socket.data.streams_failed, 0)
+        self.assertEqual(gs_resp.socket.data.streams_succeeded, 1)
         self.assertEqual(gs_resp.socket.data.messages_sent,
                          test_constants.STREAM_LENGTH)
         self.assertEqual(gs_resp.socket.data.messages_received,

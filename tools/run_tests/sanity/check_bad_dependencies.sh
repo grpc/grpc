@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 # Make sure that there is no path from known unsecure libraries and targets
 # to an SSL library. Any failure among these will make the script fail.
@@ -25,7 +25,7 @@ test "$(bazel query 'somepath("//test/cpp/microbenchmarks:helpers", "//external:
 
 # Make sure that core doesn't depend on anything in C++ library
 
-test "$(bazel query 'deps("//:grpc")' 2>/dev/null | grep -Ec 'src/cpp|include/grpcpp')" -eq 0 || exit 1 
+test "$(bazel query 'deps("//:grpc")' 2>/dev/null | grep -Ec 'src/cpp|include/grpcpp')" -eq 0 || exit 1
 
 exit 0
 

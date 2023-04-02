@@ -1,22 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/util/grpc_tool.h"
+
+#include <chrono>
+#include <sstream>
+
+#include <gtest/gtest.h>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -27,14 +35,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <chrono>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
@@ -42,6 +44,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -62,7 +65,8 @@ using grpc::testing::EchoResponse;
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
-  "Unimplemented\n"
+  "Unimplemented\n"               \
+  "UnimplementedBidi\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                          \
   "filename: src/proto/grpc/testing/echo.proto\n"                              \
@@ -88,6 +92,8 @@ using grpc::testing::EchoResponse;
   "grpc.testing.EchoResponse) {}\n"                                            \
   "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
   "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc UnimplementedBidi(stream grpc.testing.EchoRequest) returns (stream "  \
+  "grpc.testing.EchoResponse) {}\n"                                            \
   "}\n"                                                                        \
   "\n"
 
@@ -124,6 +130,7 @@ ABSL_DECLARE_FLAG(std::string, protofiles);
 ABSL_DECLARE_FLAG(std::string, proto_path);
 ABSL_DECLARE_FLAG(std::string, default_service_config);
 ABSL_DECLARE_FLAG(double, timeout);
+ABSL_DECLARE_FLAG(int, max_recv_msg_size);
 
 namespace grpc {
 namespace testing {
@@ -167,7 +174,7 @@ size_t ArraySize(T& a) {
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -931,10 +938,11 @@ TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineUpperBound) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
 
+  std::string output = output_stream.str();
+
   // Expected output: "message: "true""
   // deadline not greater than timeout + current time
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"true\""));
+  EXPECT_TRUE(nullptr != strstr(output.c_str(), "message: \"true\"")) << output;
   ShutdownServer();
 }
 
@@ -1257,10 +1265,10 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
   absl::SetFlag(&FLAGS_protofiles, "src/proto/grpc/testing/echo.proto");
-  char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-  if (test_srcdir != nullptr) {
+  auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+  if (test_srcdir.has_value()) {
     absl::SetFlag(&FLAGS_proto_path,
-                  test_srcdir + std::string("/com_github_grpc_grpc"));
+                  *test_srcdir + std::string("/com_github_grpc_grpc"));
   }
 
   {
@@ -1287,11 +1295,93 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 
   absl::SetFlag(&FLAGS_metadata, "");
   absl::SetFlag(&FLAGS_protofiles, "");
-
-  gpr_free(test_srcdir);
 }
 
-TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=4"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to 4 which is not enough.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 4);
+
+  // This should fail.
+  EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                    std::bind(PrintStream, &output_stream,
+                                              std::placeholders::_1)));
+  // No output expected.
+  EXPECT_TRUE(0 == output_stream.tellp());
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeEnough) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=1048576"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to a large enough number.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 1024 * 1024);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeDefault) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=0"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to gRPC default, which should suffice.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeUnlimited) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=-1"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to unlimited (-1), which should work.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, -1);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, ListCommandOverrideSslHostName) {
   const std::string server_address = SetUpServer(true);
 
   // Test input "grpc_cli ls localhost:<port> --channel_creds_type=ssl
@@ -1340,8 +1430,8 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   return RUN_ALL_TESTS();
 }

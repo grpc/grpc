@@ -26,7 +26,7 @@ module Grpc
     module BenchmarkService
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -48,6 +48,8 @@ module Grpc
         # Two-sided unbounded streaming between server to client
         # Both sides send the content of their own choice to the other
         rpc :StreamingBothWays, stream(::Grpc::Testing::SimpleRequest), stream(::Grpc::Testing::SimpleResponse)
+        # Get the memory usage of process before server is made
+        rpc :GetBeforeSnapshot, ::Grpc::Testing::SimpleRequest, ::Grpc::Testing::MemorySize
       end
 
       Stub = Service.rpc_stub_class

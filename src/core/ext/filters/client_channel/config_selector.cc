@@ -17,7 +17,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -34,7 +36,7 @@ void ConfigSelectorArgDestroy(void* p) {
   config_selector->Unref();
 }
 
-int ConfigSelectorArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ConfigSelectorArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     ConfigSelectorArgCopy, ConfigSelectorArgDestroy, ConfigSelectorArgCmp};

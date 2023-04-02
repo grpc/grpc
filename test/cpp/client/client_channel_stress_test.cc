@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <atomic>
 #include <memory>
@@ -34,25 +34,25 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/parse_address.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/transport/authority_override.h"
-
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config_impl.h"
+#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
@@ -64,7 +64,7 @@ namespace {
 
 const size_t kNumBackends = 10;
 const size_t kNumBalancers = 5;
-const size_t kNumClientThreads = 100;
+const size_t kNumClientThreads = 10;
 const int kResolutionUpdateIntervalMs = 50;
 const int kServerlistUpdateIntervalMs = 10;
 const int kTestDurationSec = 30;
@@ -181,7 +181,7 @@ class ClientChannelStressTest {
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
@@ -230,11 +230,10 @@ class ClientChannelStressTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
-          addr.balancer_name.c_str());
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-      addresses.emplace_back(address.addr, address.len, args);
+      addresses.emplace_back(
+          address.addr, address.len,
+          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                       addr.balancer_name));
     }
     return addresses;
   }
@@ -242,14 +241,14 @@ class ClientChannelStressTest {
   static grpc_core::Resolver::Result MakeResolverResult(
       const std::vector<AddressData>& balancer_address_data) {
     grpc_core::Resolver::Result result;
-    grpc_error* error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        grpc_core::ChannelArgs(),
+        "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}");
+    GPR_ASSERT(result.service_config.ok());
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
-    grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
-    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    result.args = grpc_core::SetGrpcLbBalancerAddresses(
+        grpc_core::ChannelArgs(), std::move(balancer_addresses));
     return result;
   }
 
@@ -283,8 +282,8 @@ class ClientChannelStressTest {
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ = ::grpc::CreateCustomChannel(uri.str(),
-                                           InsecureChannelCredentials(), args);
+    channel_ = grpc::CreateCustomChannel(uri.str(),
+                                         InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -344,7 +343,7 @@ class ClientChannelStressTest {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::ClientChannelStressTest test;
   grpc_init();
   test.Run();

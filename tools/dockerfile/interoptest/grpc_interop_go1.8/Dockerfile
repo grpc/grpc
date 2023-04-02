@@ -18,20 +18,29 @@ FROM golang:1.8
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
 #====================
-# Python dependencies
+# run_tests.py python dependencies
 
-# Install dependencies
-
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
 RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
 
-# Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
+# use pinned version of pip to avoid sudden breakages
+RUN python3 -m pip install --upgrade pip==19.3.1
+
+# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# but since our python2 usage is deprecated, we should get rid of it.
+RUN python3 -m pip install six==1.16.0
+
+# Google Cloud Platform API libraries
+# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+
 
 # Define the default command.
 CMD ["bash"]

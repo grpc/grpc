@@ -17,8 +17,8 @@ import argparse
 import contextlib
 import logging
 
-import grpc
 import _credentials
+import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
     "helloworld.proto")
@@ -48,6 +48,7 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         #     service_url=u'https://localhost:50051/helloworld.Greeter',
         #     method_name=u'SayHello')
         signature = context.method_name[::-1]
+        # NOTE: The metadata keys provided to the callback must be lower-cased.
         callback(((_SIGNATURE_HEADER_KEY, signature),), None)
 
 

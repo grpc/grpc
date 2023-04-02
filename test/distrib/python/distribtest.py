@@ -18,4 +18,4 @@ import grpc
 # which is what we are testing here.
 channel = grpc.insecure_channel('localhost:1000')
 del channel
-print 'Success!'
+print('Success!')

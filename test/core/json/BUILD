@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/json")
 
-licenses(["notice"])  # Apache v2
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+licenses(["notice"])
 
 grpc_fuzzer(
     name = "json_fuzzer",
@@ -40,10 +39,25 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "json_object_loader_test",
+    srcs = ["json_object_loader_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:json_object_loader",
         "//test/core/util:grpc_test_util",
     ],
 )

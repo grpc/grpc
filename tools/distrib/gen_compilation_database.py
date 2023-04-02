@@ -22,10 +22,10 @@ import glob
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shlex
 import subprocess
-from pathlib import Path
 
 RE_INCLUDE_SYSTEM = re.compile("\s*-I\s+/usr/[^ ]+")
 
@@ -85,10 +85,13 @@ def isCompileTarget(target, args):
 def modifyCompileCommand(target, args):
     cc, options = target["command"].split(" ", 1)
 
-    # Workaround for bazel added C++11 options, those doesn't affect build itself but
+    # Workaround for bazel added C++14 options, those doesn't affect build itself but
     # clang-tidy will misinterpret them.
     options = options.replace("-std=c++0x ", "")
-    options = options.replace("-std=c++11 ", "")
+    options = options.replace("-std=c++14 ", "")
+
+    # Add -DNDEBUG so that editors show the correct size information for structs.
+    options += " -DNDEBUG"
 
     if args.vscode:
         # Visual Studio Code doesn't seem to like "-iquote". Replace it with
@@ -103,8 +106,8 @@ def modifyCompileCommand(target, args):
         options += " -Wno-pragma-once-outside-header -Wno-unused-const-variable"
         options += " -Wno-unused-function"
         if not target["file"].startswith("external/"):
-            # *.h file is treated as C header by default while our headers files are all C++11.
-            options = "-x c++ -std=c++11 -fexceptions " + options
+            # *.h file is treated as C header by default while our headers files are all C++14.
+            options = "-x c++ -std=c++14 -fexceptions " + options
 
     target["command"] = " ".join([cc, options])
     return target

@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <deque>
 #include <memory>
@@ -23,6 +21,9 @@
 #include <sstream>
 #include <string>
 #include <thread>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -35,34 +36,34 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/transport/authority_override.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
+#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "test/cpp/util/test_config.h"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
@@ -98,47 +99,15 @@ constexpr char kDefaultServiceConfig[] =
     "  ]\n"
     "}";
 
-template <typename ServiceType>
-class CountedService : public ServiceType {
- public:
-  size_t request_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return request_count_;
-  }
-
-  size_t response_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return response_count_;
-  }
-
-  void IncreaseResponseCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++response_count_;
-  }
-  void IncreaseRequestCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++request_count_;
-  }
-
-  void ResetCounters() {
-    grpc::internal::MutexLock lock(&mu_);
-    request_count_ = 0;
-    response_count_ = 0;
-  }
-
- protected:
-  grpc::internal::Mutex mu_;
-
- private:
-  size_t request_count_ = 0;
-  size_t response_count_ = 0;
-};
-
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
+
+// A test user agent string sent by the client only to the grpclb loadbalancer.
+// The backend should not see this user-agent string.
+constexpr char kGrpclbSpecificUserAgentString[] = "grpc-grpclb-test-user-agent";
 
 class BackendServiceImpl : public BackendService {
  public:
@@ -146,6 +115,12 @@ class BackendServiceImpl : public BackendService {
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    // The backend should not see a test user agent configured at the client
+    // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
+    auto it = context->client_metadata().find("user-agent");
+    if (it != context->client_metadata().end()) {
+      EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
+    }
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
         context->client_metadata().find(g_kCallCredsMdKey);
@@ -175,9 +150,8 @@ class BackendServiceImpl : public BackendService {
     clients_.insert(client);
   }
 
-  grpc::internal::Mutex mu_;
   grpc::internal::Mutex clients_mu_;
-  std::set<std::string> clients_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
 };
 
 std::string Ip4ToPackedString(const char* ip_str) {
@@ -237,6 +211,15 @@ class BalancerServiceImpl : public BalancerService {
       if (serverlist_done_) goto done;
     }
     {
+      // The loadbalancer should see a test user agent because it was
+      // specifically configured at the client using
+      // GRPC_ARG_GRPCLB_CHANNEL_ARGS
+      auto it = context->client_metadata().find("user-agent");
+      EXPECT_TRUE(it != context->client_metadata().end());
+      if (it != context->client_metadata().end()) {
+        EXPECT_THAT(std::string(it->second.data(), it->second.length()),
+                    ::testing::StartsWith(kGrpclbSpecificUserAgentString));
+      }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
@@ -274,8 +257,9 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        grpc::internal::WaitUntil(&serverlist_cond_, &mu_,
-                                  [this] { return serverlist_done_; });
+        while (!serverlist_done_) {
+          serverlist_cond_.Wait(&mu_);
+        }
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -304,7 +288,7 @@ class BalancerServiceImpl : public BalancerService {
           // below from firing before its corresponding wait is executed.
           grpc::internal::MutexLock lock(&mu_);
           load_report_queue_.emplace_back(std::move(load_report));
-          if (load_report_cond_ != nullptr) load_report_cond_->Signal();
+          load_report_cond_.Signal();
         }
       }
     }
@@ -332,12 +316,10 @@ class BalancerServiceImpl : public BalancerService {
 
   ClientStats WaitForLoadReport() {
     grpc::internal::MutexLock lock(&mu_);
-    grpc::internal::CondVar cv;
     if (load_report_queue_.empty()) {
-      load_report_cond_ = &cv;
-      grpc::internal::WaitUntil(load_report_cond_, &mu_,
-                                [this] { return !load_report_queue_.empty(); });
-      load_report_cond_ = nullptr;
+      while (load_report_queue_.empty()) {
+        load_report_cond_.Wait(&mu_);
+      }
     }
     ClientStats load_report = std::move(load_report_queue_.front());
     load_report_queue_.pop_front();
@@ -376,9 +358,9 @@ class BalancerServiceImpl : public BalancerService {
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
-  bool serverlist_done_ = false;
-  grpc::internal::CondVar* load_report_cond_ = nullptr;
-  std::deque<ClientStats> load_report_queue_;
+  bool serverlist_done_ ABSL_GUARDED_BY(mu_) = false;
+  grpc::internal::CondVar load_report_cond_;
+  std::deque<ClientStats> load_report_queue_ ABSL_GUARDED_BY(mu_);
 };
 
 class GrpclbEnd2endTest : public ::testing::Test {
@@ -391,18 +373,20 @@ class GrpclbEnd2endTest : public ::testing::Test {
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
     bool localhost_resolves_to_ipv4 = false;
@@ -444,14 +428,47 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const std::string& expected_targets = "") {
+                 const std::string& expected_targets = "",
+                 int subchannel_cache_delay_ms = 0) {
+    // Send a separate user agent string for the grpclb load balancer alone.
+    grpc_core::ChannelArgs grpclb_channel_args;
+    // Set a special user agent string for the grpclb load balancer. It
+    // will be verified at the load balancer.
+    grpclb_channel_args = grpclb_channel_args.Set(
+        GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+      grpclb_channel_args = grpclb_channel_args.Set(
+          GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
+    if (subchannel_cache_delay_ms > 0) {
+      args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
+                  subchannel_cache_delay_ms * grpc_test_slowdown_factor());
+    }
+    static const grpc_arg_pointer_vtable channel_args_vtable = {
+        // copy
+        [](void* p) -> void* {
+          return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+        },
+        // destroy
+        [](void* p) {
+          grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+        },
+        // compare
+        [](void* p1, void* p2) {
+          return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
+                                           static_cast<grpc_channel_args*>(p2));
+        },
+    };
+    // Specify channel args for the channel to the load balancer.
+    args.SetPointerWithVtable(
+        GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS,
+        const_cast<grpc_channel_args*>(grpclb_channel_args.ToC().get()),
+        &channel_args_vtable);
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
@@ -459,13 +476,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
+        g_kCallCredsMdKey, g_kCallCredsMdValue);
     std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
             channel_creds, call_creds, nullptr)));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(uri.str(), creds, args);
+    channel_ = grpc::CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -495,7 +512,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == "Call dropped by load balancing policy") {
+      if (status.error_message() == "drop directed by grpclb balancer") {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -548,11 +565,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
-          addr.balancer_name.c_str());
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-      addresses.emplace_back(address.addr, address.len, args);
+      addresses.emplace_back(
+          address.addr, address.len,
+          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                       addr.balancer_name));
     }
     return addresses;
   }
@@ -564,14 +580,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses =
         CreateLbAddressesFromAddressDataList(backend_address_data);
-    grpc_error* error = GRPC_ERROR_NONE;
-    result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        grpc_core::ChannelArgs(), service_config_json);
+    GPR_ASSERT(result.service_config.ok());
     grpc_core::ServerAddressList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);
-    grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
-    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    result.args = grpc_core::SetGrpcLbBalancerAddresses(
+        grpc_core::ChannelArgs(), std::move(balancer_addresses));
     return result;
   }
 
@@ -697,7 +712,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
@@ -781,6 +796,52 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SubchannelCaching) {
+  ResetStub(/*fallback_timeout=*/0, /*expected_targets=*/"",
+            /*subchannel_cache_delay_ms=*/1500);
+  SetNextResolutionAllBalancers();
+  // Initially send all backends.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
+  // Then remove backends 0 and 1.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(2), {}), 1000);
+  // Now re-add backend 1.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(1), {}), 1000);
+  // Wait for all backends to come online.
+  WaitForAllBackends();
+  // Send RPCs for long enough to get all responses.
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(3000);
+  do {
+    CheckRpcSendOk();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  // Backend 0 should have received less traffic than the others.
+  // Backend 1 would have received less traffic than 2 and 3.
+  gpr_log(GPR_INFO, "BACKEND 0: %" PRIuPTR " requests",
+          backends_[0]->service_.request_count());
+  EXPECT_GT(backends_[0]->service_.request_count(), 0);
+  for (size_t i = 1; i < backends_.size(); ++i) {
+    gpr_log(GPR_INFO, "BACKEND %" PRIuPTR ": %" PRIuPTR " requests", i,
+            backends_[i]->service_.request_count());
+    EXPECT_GT(backends_[i]->service_.request_count(),
+              backends_[0]->service_.request_count())
+        << "backend " << i;
+    if (i >= 2) {
+      EXPECT_GT(backends_[i]->service_.request_count(),
+                backends_[1]->service_.request_count())
+          << "backend " << i;
+    }
+  }
+  // Backend 1 should never have lost its connection from the client.
+  EXPECT_EQ(1UL, backends_[1]->service_.clients().size());
+  balancers_[0]->service_.NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
+  // And sent 3 responses.
+  EXPECT_EQ(3U, balancers_[0]->service_.response_count());
 }
 
 TEST_F(SingleBalancerTest, ReturnServerStatus) {
@@ -958,23 +1019,10 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
-        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
-      },
-      "");
-}
-
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const int kCallDeadlineMs = kServerlistDelayMs * 2;
+  const int kCallDeadlineMs = kServerlistDelayMs * 10;
   // First response is an empty serverlist, sent right away.
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
@@ -1195,7 +1243,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBalancerThenBackends) {
+       FallbackAfterStartupLoseContactWithBalancerThenBackends) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1248,7 +1296,7 @@ TEST_F(SingleBalancerTest,
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBackendsThenBalancer) {
+       FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1331,7 +1379,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   // Return one balancer and one fallback backend.
@@ -1350,7 +1398,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_AfterFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerAfterFirstServerlist) {
   // Return one balancer and one fallback backend (backend 0).
   std::vector<AddressData> balancer_addresses;
   balancer_addresses.emplace_back(AddressData{balancers_[0]->port_, ""});
@@ -1414,6 +1462,23 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
+}
+
+// This death test is kept separate from the rest to ensure that it's run before
+// any others. See https://github.com/grpc/grpc/pull/32269 for details.
+using SingleBalancerDeathTest = SingleBalancerTest;
+
+TEST_F(SingleBalancerDeathTest, SecureNaming) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {
@@ -1781,7 +1846,7 @@ TEST_F(SingleBalancerTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -1813,7 +1878,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
       0);
   const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 TEST_F(SingleBalancerTest, DropAll) {
@@ -1838,7 +1903,7 @@ TEST_F(SingleBalancerTest, DropAll) {
     status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
@@ -1970,7 +2035,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -2019,7 +2084,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;

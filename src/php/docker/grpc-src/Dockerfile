@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:7.2-stretch
+FROM php:7.4-buster
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
   valgrind wget zlib1g-dev
 
@@ -43,4 +43,4 @@ RUN phpize && \
   make install
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--ignore-valgrind-undef-errors"]

@@ -18,17 +18,15 @@
 
 export LANG=en_US.UTF-8
 
-# Download Docker images from DockerHub
-export DOCKERHUB_ORGANIZATION=grpctesting
-
 git submodule update --init
 
-# Set up gRPC-Go and gRPC-Java to test
-git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
-git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
-git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
-git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart
-git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet
+# Clone repositories for languages tested by the interop test suite
+# Also show the current commit SHA that will be tested.
+git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go && (cd ../grpc-go; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java && (cd ../grpc-java; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node && (cd ../grpc-node; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart && (cd ../grpc-dart; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet && (cd ../grpc-dotnet; git rev-parse HEAD)
 
 # Grab the service account key to run interop tests against prod backends.
 mkdir ~/service_account

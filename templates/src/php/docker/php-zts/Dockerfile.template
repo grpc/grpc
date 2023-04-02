@@ -16,7 +16,7 @@
 
   FROM php:${settings.php_version.php_current_version()}-zts-${settings.php_version.php_debian_version()}
 
-  RUN apt-get -qq update && apt-get -qq install -y ${'\\'}
+  RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y ${'\\'}
     autoconf automake git libtool pkg-config ${'\\'}
     wget zlib1g-dev
 
@@ -29,4 +29,4 @@
 
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+  <%include file="../dockerfile_cmd.include" />

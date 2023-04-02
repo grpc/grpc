@@ -26,6 +26,13 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   # See suggestion in https://github.com/bundler/bundler/issues/3692
   BUNDLE_SPECIFIC_PLATFORM=true bundle install
 else
-  bundle install
+  # TODO(jtattermusch): remove the retry hack
+  # on linux artifact build, multiple instances of "bundle install" run in parallel
+  # in different workspaces. That should work fine since the workspaces
+  # are isolated, but causes occasional
+  # failures (builder/gem bug?). Retrying fixes the issue.
+  # Note that using bundle install --retry is not enough because
+  # that only retries downloading, not installation.
+  bundle install || (sleep 10; bundle install)
 fi
 

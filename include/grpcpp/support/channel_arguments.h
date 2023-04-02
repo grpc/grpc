@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
@@ -70,13 +70,7 @@ class ChannelArguments {
   /// the resolver.
   void SetGrpclbFallbackTimeout(int fallback_timeout);
 
-  /// For client channel's, the socket mutator operates on
-  /// "channel" sockets. For server's, the socket mutator operates
-  /// only on "listen" sockets.
-  /// TODO(apolcyn): allow socket mutators to also operate
-  /// on server "channel" sockets, and adjust the socket mutator
-  /// object to be more speficic about which type of socket
-  /// it should operate on.
+  /// Set a mutator for the underlying socket.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
   /// Set the string to prepend to the user agent.

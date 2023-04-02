@@ -1,0 +1,71 @@
+// Copyright 2023 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.load_balancing_policies.client_side_weighted_round_robin.v3;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+// [#protodoc-title: Client-Side Weighted Round Robin Load Balancing Policy]
+// [#not-implemented-hide:]
+
+// Configuration for the client_side_weighted_round_robin LB policy.
+//
+// This policy differs from the built-in ROUND_ROBIN policy in terms of
+// how the endpoint weights are determined. In the ROUND_ROBIN policy,
+// the endpoint weights are sent by the control plane via EDS. However,
+// in this policy, the endpoint weights are instead determined via
+// qps and CPU utilization metrics sent by the endpoint using the Open
+// Request Cost Aggregation (ORCA) protocol. The weight of a given endpoint
+// is computed as qps / cpu_utilization.
+//
+// See the :ref:`load balancing architecture overview<arch_overview_load_balancing_types>` for more information.
+//
+// [#next-free-field: 6]
+message ClientSideWeightedRoundRobin {
+  // Whether to enable out-of-band utilization reporting collection from
+  // the endpoints. By default, per-request utilization reporting is used.
+  google.protobuf.BoolValue enable_oob_load_report = 1;
+
+  // Load reporting interval to request from the server. Note that the
+  // server may not provide reports as frequently as the client requests.
+  // Used only when enable_oob_load_report is true. Default is 10 seconds.
+  google.protobuf.Duration oob_reporting_period = 2;
+
+  // A given endpoint must report load metrics continuously for at least
+  // this long before the endpoint weight will be used. This avoids
+  // churn when the set of endpoint addresses changes. Takes effect
+  // both immediately after we establish a connection to an endpoint and
+  // after weight_expiration_period has caused us to stop using the most
+  // recent load metrics. Default is 10 seconds.
+  google.protobuf.Duration blackout_period = 3;
+
+  // If a given endpoint has not reported load metrics in this long,
+  // then we stop using the reported weight. This ensures that we do
+  // not continue to use very stale weights. Once we stop using a stale
+  // value, if we later start seeing fresh reports again, the
+  // blackout_period applies. Defaults to 3 minutes.
+  google.protobuf.Duration weight_expiration_period = 4;
+
+  // How often endpoint weights are recalculated.  Default is 1 second.
+  google.protobuf.Duration weight_update_period = 5;
+
+  // The multiplier used to adjust endpoint weights with the error rate
+  // calculated as eps/qps. Default is 1.0.
+  google.protobuf.FloatValue error_utilization_penalty = 6;
+}

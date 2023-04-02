@@ -49,7 +49,7 @@ cdef class CallbackWrapper:
 
     @staticmethod
     cdef void functor_run(
-            grpc_experimental_completion_queue_functor* functor,
+            grpc_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
@@ -60,7 +60,7 @@ cdef class CallbackWrapper:
                 waiter.set_result(None)
         cpython.Py_DECREF(<object>context.callback_wrapper)
 
-    cdef grpc_experimental_completion_queue_functor *c_functor(self):
+    cdef grpc_completion_queue_functor *c_functor(self):
         return &self.context.functor
 
 
@@ -93,7 +93,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        raise ExecuteBatchError("Failed grpc_call_start_batch: {}".format(error))
+        grpc_call_error_string = grpc_call_error_to_string(error).decode()
+        raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
 
     await future
 

@@ -11,7 +11,9 @@ API Reference
 
    grpc
    grpc_asyncio
+   grpc_admin
    grpc_channelz
+   grpc_csds
    grpc_health_checking
    grpc_reflection
    grpc_status

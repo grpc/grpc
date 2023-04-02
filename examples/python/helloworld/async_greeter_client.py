@@ -13,10 +13,10 @@
 # limitations under the License.
 """The Python AsyncIO implementation of the GRPC helloworld.Greeter client."""
 
-import logging
 import asyncio
-import grpc
+import logging
 
+import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 

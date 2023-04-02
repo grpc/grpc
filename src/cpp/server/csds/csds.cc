@@ -20,15 +20,15 @@
 
 #include "src/cpp/server/csds/csds.h"
 
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/slice.h>
-
-#include <string>
-
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
+#include <grpc/slice.h>
+#include <grpcpp/support/interceptor.h>
+#include <grpcpp/support/slice.h>
 
 namespace grpc {
 namespace xds {
@@ -66,7 +66,8 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
         stream->Write(response);
         continue;
       }
-      return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+      return Status(static_cast<StatusCode>(s.status().raw_code()),
+                    s.status().ToString());
     }
     *response.add_config() = std::move(s.value());
     stream->Write(response);
@@ -83,7 +84,8 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
       // If the xDS client is not initialized, return empty response
       return Status::OK;
     }
-    return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+    return Status(static_cast<StatusCode>(s.status().raw_code()),
+                  s.status().ToString());
   }
   *response->add_config() = std::move(s.value());
   return Status::OK;

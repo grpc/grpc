@@ -1,20 +1,21 @@
-# Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.500
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz ${'\\'}
+# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
+RUN DOTNET_DOWNLOAD_VERSION=3.1.415 ${'\\'}
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" ${'\\'}
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz ${'\\'}
     && mkdir -p /usr/share/dotnet ${'\\'}
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
-    && rm dotnet.tar.gz ${'\\'}
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+    && rm dotnet.tar.gz
 
+# Install .NET 6
+RUN DOTNET_DOWNLOAD_VERSION=6.0.100 ${'\\'}
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" ${'\\'}
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz ${'\\'}
+    && mkdir -p /usr/share/dotnet ${'\\'}
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
+    && rm dotnet.tar.gz
 
-# Install .NET Core 1.1.10 runtime (required to run netcoreapp1.1)
-RUN curl -sSL -o dotnet_old.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Runtime/1.1.10/dotnet-debian.9-x64.1.1.10.tar.gz ${'\\'}
-    && mkdir -p dotnet_old ${'\\'}
-    && tar zxf dotnet_old.tar.gz -C dotnet_old ${'\\'}
-    && cp -r dotnet_old/shared/Microsoft.NETCore.App/1.1.10/ /usr/share/dotnet/shared/Microsoft.NETCore.App/ ${'\\'}
-    && rm -rf dotnet_old/ dotnet_old.tar.gz
-RUN apt-get update && apt-get install -y libunwind8 && apt-get clean
-
+# Make sure "dotnet" is on PATH
+RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip

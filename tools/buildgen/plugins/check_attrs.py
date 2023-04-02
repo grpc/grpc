@@ -89,13 +89,20 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'vs_proj_dir': anything(),
         'zlib': one_of((True,)),
     },
+    'external_proto_library': {
+        'destination': anything(),
+        'proto_prefix': anything(),
+        'urls': anything(),
+        'hash': anything(),
+        'strip_prefix': anything(),
+    }
 }
 
 
 def check_attributes(entity, kind, errors):
     attributes = VALID_ATTRIBUTE_KEYS_MAP[kind]
     name = entity.get('name', anything())
-    for key, value in entity.items():
+    for key, value in list(entity.items()):
         if key == 'name':
             continue
         validator = attributes.get(key)
@@ -113,10 +120,10 @@ def check_attributes(entity, kind, errors):
 def mako_plugin(dictionary):
     """The exported plugin code for check_attr.
 
-  This validates that filegroups, libs, and target can have only valid
-  attributes. This is mainly for preventing build.yaml from having
-  unnecessary and misleading attributes accidentally.
-  """
+    This validates that filegroups, libs, and target can have only valid
+    attributes. This is mainly for preventing build.yaml from having
+    unnecessary and misleading attributes accidentally.
+    """
 
     errors = []
     for filegroup in dictionary.get('filegroups', {}):
@@ -125,5 +132,7 @@ def mako_plugin(dictionary):
         check_attributes(lib, 'lib', errors)
     for target in dictionary.get('targets', {}):
         check_attributes(target, 'target', errors)
+    for target in dictionary.get('external_proto_libraries', {}):
+        check_attributes(target, 'external_proto_library', errors)
     if errors:
         raise Exception('\n'.join(errors))

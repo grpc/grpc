@@ -20,7 +20,6 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export DOCKERFILE_DIR=tools/dockerfile/test/php73_zts_stretch_x64
+export DOCKERFILE_DIR=tools/dockerfile/test/php73_zts_debian11_x64
 export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_xds_v3_php_test_in_docker.sh
-export OUTPUT_DIR=reports
 exec tools/run_tests/dockerize/build_and_run_docker.sh

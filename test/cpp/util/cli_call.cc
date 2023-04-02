@@ -1,22 +1,26 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/util/cli_call.h"
+
+#include <cmath>
+#include <iostream>
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -25,9 +29,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/byte_buffer.h>
 
-#include <cmath>
-#include <iostream>
-#include <utility>
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
 namespace testing {
@@ -35,19 +37,15 @@ namespace {
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
+Status CliCall::Call(const std::string& request, std::string* response,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
-  CliCall call(channel, method, metadata);
-  call.Write(request);
-  call.WritesDone();
-  if (!call.Read(response, server_initial_metadata)) {
+  Write(request);
+  WritesDone();
+  if (!Read(response, server_initial_metadata)) {
     fprintf(stderr, "Failed to read response.\n");
   }
-  return call.Finish(server_trailing_metadata);
+  return Finish(server_trailing_metadata);
 }
 
 CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
@@ -95,7 +93,7 @@ void CliCall::Write(const std::string& request) {
   void* got_tag;
   bool ok;
 
-  gpr_slice s = gpr_slice_from_copied_buffer(request.data(), request.size());
+  grpc_slice s = grpc_slice_from_copied_buffer(request.data(), request.size());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
   call_->Write(send_buffer, tag(2));

@@ -14,22 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
-package(default_visibility = ["//visibility:public"])
-
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
+    "grpc_objc_ios_unit_test",
     "grpc_objc_testing_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
+load("//test/core/end2end:generate_tests.bzl", "grpc_end2end_tests")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
+licenses(["notice"])
+
+package(default_visibility = ["//visibility:public"])
+
 exports_files(["LICENSE"])
+
+grpc_end2end_tests()
 
 proto_library_objc_wrapper(
     name = "messages_proto",
@@ -59,7 +63,12 @@ apple_resource_bundle(
 # TestConfigs is added to each grpc_objc_testing_library's deps
 grpc_objc_testing_library(
     name = "TestConfigs",
-    hdrs = ["version.h"],
+    srcs = glob([
+        "Common/**/*.m",
+    ]),
+    hdrs = glob([
+        "Common/**/*.h",
+    ]) + ["version.h"],
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
@@ -73,18 +82,6 @@ objc_library(
     name = "host-lib",
     srcs = glob(["Hosts/ios-host/*.m"]),
     hdrs = glob(["Hosts/ios-host/*.h"]),
-)
-
-ios_application(
-    name = "ios-host",
-    bundle_id = "grpc.objc.tests.ios-host",
-    families = [
-        "iphone",
-        "ipad",
-    ],
-    infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "9.0",
-    deps = ["host-lib"],
 )
 
 tvos_application(
@@ -145,6 +142,11 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "GRPCBasicUnitTests-lib",
+    srcs = ["UnitTests/GRPCCallOptionsTests.m"],
+)
+
+grpc_objc_testing_library(
     name = "APIv2Tests-lib",
     srcs = ["UnitTests/APIv2Tests.m"],
 )
@@ -172,28 +174,133 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-ios_unit_test(
+grpc_objc_testing_library(
+    name = "CronetTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+    ] + glob([
+        "CronetTests/*.m",
+        "CronetTests/*.mm",
+    ]),
+    hdrs = [
+        "ConfigureCronet.h",
+    ],
+    deps = [
+        "InteropTests-lib",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//test/core/end2end:end2end_tests",
+        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "CppCronetTests-lib",
+    srcs = glob([
+        "CppCronetTests/*.m",
+        "CppCronetTests/*.mm",
+    ]),
+    hdrs = glob([
+        "CppCronetTests/*.h",
+    ]),
+    deps = [
+        "//:grpc++_cronet_credentials",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/end2end:end2end_tests",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib-Posix",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsNoCFStreamSSL.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsCFStreamSSL.m",
+        "PerfTests/PerfTestsCronet.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "UnitTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
     deps = [
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
         ":ChannelTests-lib",
+        ":GRPCBasicUnitTests-lib",
         ":GRPCClientTests-lib",
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
 )
 
-ios_unit_test(
-    name = "InteropTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalCleartext",
     deps = [
         ":InteropTestsLocalCleartext-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalSSL",
+    deps = [
         ":InteropTestsLocalSSL-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsRemote",
+    deps = [
         ":InteropTestsRemote-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CronetTests",
+    deps = [
+        "CronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CppCronetTests",
+    deps = [
+        "CppCronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTestsPosix",
+    deps = [
+        "PerfTests-lib-Posix",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTests",
+    env = {
+        "GRPC_CFSTREAM_RUN_LOOP": "1",
+    },
+    deps = [
+        "PerfTests-lib",
     ],
 )
 
@@ -211,7 +318,23 @@ macos_unit_test(
     ],
 )
 
-# bazel run tvos_unit_test is not yet supported by xctestrunner
+grpc_objc_testing_library(
+    name = "CFStreamTests-lib",
+    srcs = glob(["CFStreamTests/*.mm"]),
+    deps = [
+        "//:gpr_platform",
+        "//src/core:iomgr_port",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CFStreamTests",
+    deps = [":CFStreamTests-lib"],
+)
+
+# Note that bazel currently doesn't support running tvos_unit_test
+# See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
@@ -224,4 +347,39 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+# TvTests is not runnable with bazel, so the best we can do is to test
+# that the testsuite builds correctly. This is achieved by having
+# a dummy sh_test depend on :TvTests.
+grpc_sh_test(
+    name = "tvtests_build_test",
+    srcs = [
+        "tvtests_build_test.sh",
+    ],
+    data = [
+        ":TvTests",
+    ],
+    uses_polling = False,
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_test",
+    srcs = ["PluginTest/plugin_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+    ] + glob(["PluginTest/*.proto"]),
+    uses_polling = False,
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_option_test",
+    srcs = ["PluginTest/plugin_option_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+        "@com_google_protobuf//:well_known_type_protos",
+    ] + glob(["RemoteTestClient/*.proto"]),
+    uses_polling = False,
 )

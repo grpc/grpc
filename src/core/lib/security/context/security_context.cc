@@ -1,43 +1,47 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/context/security_context.h"
+
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
+#include <algorithm>
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+
 grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
     false, "auth_context_refcount");
 
-/* --- grpc_call --- */
+// --- grpc_call ---
 
 grpc_call_error grpc_call_set_credentials(grpc_call* call,
                                           grpc_call_credentials* creds) {
@@ -93,7 +97,7 @@ void grpc_auth_context_release(grpc_auth_context* context) {
   context->Unref(DEBUG_LOCATION, "grpc_auth_context_unref");
 }
 
-/* --- grpc_client_security_context --- */
+// --- grpc_client_security_context ---
 grpc_client_security_context::~grpc_client_security_context() {
   auth_context.reset(DEBUG_LOCATION, "client_security_context");
   if (extension.instance != nullptr && extension.destroy != nullptr) {
@@ -108,13 +112,12 @@ grpc_client_security_context* grpc_client_security_context_create(
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* c =
       static_cast<grpc_client_security_context*>(ctx);
   c->~grpc_client_security_context();
 }
 
-/* --- grpc_server_security_context --- */
+// --- grpc_server_security_context ---
 grpc_server_security_context::~grpc_server_security_context() {
   auth_context.reset(DEBUG_LOCATION, "server_security_context");
   if (extension.instance != nullptr && extension.destroy != nullptr) {
@@ -133,7 +136,7 @@ void grpc_server_security_context_destroy(void* ctx) {
   c->~grpc_server_security_context();
 }
 
-/* --- grpc_auth_context --- */
+// --- grpc_auth_context ---
 
 static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 
@@ -195,7 +198,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
         return prop;
       }
     }
-    /* We could not find the name, try another round. */
+    // We could not find the name, try another round.
     return grpc_auth_property_iterator_next(it);
   }
 }
@@ -222,7 +225,7 @@ grpc_auth_property_iterator grpc_auth_context_peer_identity(
 void grpc_auth_context::ensure_capacity() {
   if (properties_.count == properties_.capacity) {
     properties_.capacity =
-        GPR_MAX(properties_.capacity + 8, properties_.capacity * 2);
+        std::max(properties_.capacity + 8, properties_.capacity * 2);
     properties_.array = static_cast<grpc_auth_property*>(gpr_realloc(
         properties_.array, properties_.capacity * sizeof(grpc_auth_property)));
   }
@@ -234,7 +237,9 @@ void grpc_auth_context::add_property(const char* name, const char* value,
   grpc_auth_property* prop = &properties_.array[properties_.count++];
   prop->name = gpr_strdup(name);
   prop->value = static_cast<char*>(gpr_malloc(value_length + 1));
-  memcpy(prop->value, value, value_length);
+  if (value != nullptr) {
+    memcpy(prop->value, value, value_length);
+  }
   prop->value[value_length] = '\0';
   prop->value_length = value_length;
 }
@@ -288,7 +293,9 @@ static void* auth_context_pointer_arg_copy(void* p) {
              : ctx->Ref(DEBUG_LOCATION, "auth_context_pointer_arg").release();
 }
 
-static int auth_context_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int auth_context_pointer_cmp(void* a, void* b) {
+  return grpc_core::QsortCompare(a, b);
+}
 
 static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_arg_copy, auth_context_pointer_arg_destroy,

@@ -15,6 +15,7 @@
 
 import os
 import sys
+
 import yaml
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
@@ -41,7 +42,7 @@ exec(
 
 def main():
     json = {
-        # needed by end2end_tests.cc.template and end2end_nosec_tests.cc.template
+        # needed by end2end_tests.cc.template
         'core_end2end_tests':
             dict((t, END2END_TESTS[t]['secure']) for t in END2END_TESTS.keys())
     }

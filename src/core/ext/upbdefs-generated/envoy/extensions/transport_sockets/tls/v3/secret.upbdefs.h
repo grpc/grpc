@@ -19,21 +19,21 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_GenericSecret_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.GenericSecret");
+UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_GenericSecret_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.GenericSecret");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig");
+UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_Secret_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.Secret");
+UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_Secret_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.Secret");
 }
 
 #ifdef __cplusplus

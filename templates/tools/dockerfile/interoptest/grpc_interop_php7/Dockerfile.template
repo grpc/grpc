@@ -14,8 +14,12 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../debian_jessie_header.include"/>
+  FROM debian:11
   
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../php7_deps.include"/>
-  <%include file="../../run_tests_addons.include"/>
   <%include file="../../php_common_deps.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
+  <%include file="../../run_tests_addons.include"/>

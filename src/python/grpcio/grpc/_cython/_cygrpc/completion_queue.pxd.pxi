@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cdef int g_interrupt_check_period_ms
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *
 
 
 cdef _interpret_event(grpc_event c_event)
 
+cdef class _LatentEventArg:
+  cdef grpc_completion_queue *c_completion_queue
+  cdef object deadline
 
 cdef class CompletionQueue:
 

@@ -26,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Immutable user configurable options for a gRPC call.
+ * Caller can obtain a mutable copy of type \b GRPCMutableCallOptions by calling [option
+ * mutableCopy]
  */
 @interface GRPCCallOptions : NSObject <NSCopying, NSMutableCopying>
 
@@ -38,14 +40,14 @@ NS_ASSUME_NONNULL_BEGIN
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(copy, readonly, nullable) NSString *serverAuthority;
+@property(nonatomic, copy, readonly, nullable) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
  * positive, the gRPC call returns with status GRPCErrorCodeDeadlineExceeded if it is not completed
  * within \a timeout seconds. A negative value is not allowed.
  */
-@property(readonly) NSTimeInterval timeout;
+@property(nonatomic, readonly) NSTimeInterval timeout;
 
 /**
  * Enable flow control of a gRPC call. The option is default to NO. If set to YES, writeData: method
@@ -53,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
  * receiveNextMessage: must be called each time before gRPC call issues a didReceiveMessage
  * callback.
  */
-@property(readonly) BOOL flowControlEnabled;
+@property(nonatomic, readonly) BOOL flowControlEnabled;
 
 /**
  * An array of interceptor factories. When a call starts, interceptors are created
@@ -61,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  * this array. This parameter should not be modified by any interceptor and will
  * not take effect if done so.
  */
-@property(copy, readonly) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
+@property(nonatomic, copy, readonly) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
@@ -70,18 +72,20 @@ NS_ASSUME_NONNULL_BEGIN
  * request's "authorization" header field. This parameter should not be used simultaneously with
  * \a authTokenProvider.
  */
-@property(copy, readonly, nullable) NSString *oauth2AccessToken;
+@property(nonatomic, copy, readonly, nullable) NSString *oauth2AccessToken;
 
 /**
  * The interface to get the OAuth2 access token string. gRPC will attempt to acquire token when
  * initiating the call. This parameter should not be used simultaneously with \a oauth2AccessToken.
  */
-@property(readonly, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
+@property(nonatomic, readonly, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
 
 /**
  * Initial metadata key-value pairs that should be included in the request.
+ * Dictionary key is of type NSString, value should be either NSString or NSData containing binary
+ * bytes data.
  */
-@property(copy, readonly, nullable) NSDictionary *initialMetadata;
+@property(nonatomic, copy, readonly, nullable) GRPCMetadataDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -89,52 +93,70 @@ NS_ASSUME_NONNULL_BEGIN
  * Custom string that is prefixed to a request's user-agent header field before gRPC's internal
  * user-agent string.
  */
-@property(copy, readonly, nullable) NSString *userAgentPrefix;
+@property(nonatomic, copy, readonly, nullable) NSString *userAgentPrefix;
 
 /**
  * Custom string that is suffixed to a request's user-agent header field after gRPC's internal
  * user-agent string.
  */
-@property(copy, readonly, nullable) NSString *userAgentSuffix;
+@property(nonatomic, copy, readonly, nullable) NSString *userAgentSuffix;
 
 /**
  * The size limit for the response received from server. If it is exceeded, an error with status
  * code GRPCErrorCodeResourceExhausted is returned.
  */
-@property(readonly) NSUInteger responseSizeLimit;
+@property(nonatomic, readonly) NSUInteger responseSizeLimit;
 
 /**
  * The compression algorithm to be used by the gRPC call. For more details refer to
  * https://github.com/grpc/grpc/blob/master/doc/compression.md
  */
-@property(readonly) GRPCCompressionAlgorithm compressionAlgorithm;
+@property(nonatomic, readonly) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
  * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
  * refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
-@property(readonly) BOOL retryEnabled;
+@property(nonatomic, readonly) BOOL retryEnabled;
+
+/**
+ * Maximum interval in seconds between two consecutive retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(nonatomic, readonly) NSTimeInterval maxRetryInterval;
+
+/**
+ * Minimum interval in seconds between two consecutive retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(nonatomic, readonly) NSTimeInterval minRetryInterval;
+
+/**
+ * Multiplier used to increase the interval between retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readonly) double retryFactor;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
 // Negative values are not allowed.
-@property(readonly) NSTimeInterval keepaliveInterval;
-@property(readonly) NSTimeInterval keepaliveTimeout;
+@property(nonatomic, readonly) NSTimeInterval keepaliveInterval;
+@property(nonatomic, readonly) NSTimeInterval keepaliveTimeout;
 
 // Parameters for connection backoff. Negative values are not allowed.
 // For details of gRPC's backoff behavior, refer to
 // https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md
-@property(readonly) NSTimeInterval connectMinTimeout;
-@property(readonly) NSTimeInterval connectInitialBackoff;
-@property(readonly) NSTimeInterval connectMaxBackoff;
+@property(nonatomic, readonly) NSTimeInterval connectMinTimeout;
+@property(nonatomic, readonly) NSTimeInterval connectInitialBackoff;
+@property(nonatomic, readonly) NSTimeInterval connectMaxBackoff;
 
 /**
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readonly, nullable) NSDictionary *additionalChannelArgs;
+@property(nonatomic, copy, readonly, nullable) GRPCMetadataDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 
@@ -142,17 +164,17 @@ NS_ASSUME_NONNULL_BEGIN
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readonly, nullable) NSString *PEMRootCertificates;
+@property(nonatomic, copy, readonly, nullable) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readonly, nullable) NSString *PEMPrivateKey;
+@property(nonatomic, copy, readonly, nullable) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readonly, nullable) NSString *PEMCertificateChain;
+@property(nonatomic, copy, readonly, nullable) NSString *PEMCertificateChain;
 
 /**
  * Deprecated: this option is deprecated. Please use the property \a transport
@@ -160,7 +182,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * Select the transport type to be used for this call.
  */
-@property(readonly) GRPCTransportType transportType;
+@property(nonatomic, readonly) GRPCTransportType transportType;
 
 /**
  * The transport to be used for this call. Users may choose a native transport
@@ -170,18 +192,18 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * This is currently an experimental option.
  */
-@property(readonly) GRPCTransportID transport;
+@property(nonatomic, readonly) GRPCTransportID transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.
  */
-@property(copy, readonly, nullable) NSString *hostNameOverride;
+@property(nonatomic, copy, readonly, nullable) NSString *hostNameOverride;
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
  * will not get cached to the same connection.
  */
-@property(copy, readonly, nullable) NSString *channelPoolDomain;
+@property(nonatomic, copy, readonly, nullable) NSString *channelPoolDomain;
 
 /**
  * Channel id allows control of channel caching within a channelPoolDomain. A call with a unique
@@ -189,22 +211,23 @@ NS_ASSUME_NONNULL_BEGIN
  * calls in the same channelPoolDomain using identical channelID are allowed to share connection
  * if other channel options are also the same.
  */
-@property(readonly) NSUInteger channelID;
+@property(nonatomic, readonly) NSUInteger channelID;
+
+/**
+ * Hash for channel options.
+ */
+@property(nonatomic, readonly) NSUInteger channelOptionsHash;
 
 /**
  * Return if the channel options are equal to another object.
  */
 - (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
 
-/**
- * Hash for channel options.
- */
-@property(readonly) NSUInteger channelOptionsHash;
-
 @end
 
 /**
  * Mutable user configurable options for a gRPC call.
+ * Caller can obtain an immutable copy of type \b GRPCCallOptions by calling [option copy]
  */
 @interface GRPCMutableCallOptions : GRPCCallOptions <NSCopying, NSMutableCopying>
 
@@ -217,7 +240,7 @@ NS_ASSUME_NONNULL_BEGIN
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(copy, readwrite, nullable) NSString *serverAuthority;
+@property(nonatomic, copy, readwrite, nullable) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
@@ -225,7 +248,7 @@ NS_ASSUME_NONNULL_BEGIN
  * within \a timeout seconds. Negative value is invalid; setting the parameter to negative value
  * will reset the parameter to 0.
  */
-@property(readwrite) NSTimeInterval timeout;
+@property(nonatomic, readwrite) NSTimeInterval timeout;
 
 /**
  * Enable flow control of a gRPC call. The option is default to NO. If set to YES, writeData: method
@@ -238,7 +261,7 @@ NS_ASSUME_NONNULL_BEGIN
  * assumes their own responsibility of flow control by keeping tracking of the pending writes in
  * the call.
  */
-@property(readwrite) BOOL flowControlEnabled;
+@property(nonatomic, readwrite) BOOL flowControlEnabled;
 
 /**
  * An array of interceptor factories. When a call starts, interceptors are created
@@ -246,7 +269,7 @@ NS_ASSUME_NONNULL_BEGIN
  * this array. This parameter should not be modified by any interceptor and will
  * not take effect if done so.
  */
-@property(copy, readwrite) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
+@property(nonatomic, copy, readwrite) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
@@ -255,18 +278,20 @@ NS_ASSUME_NONNULL_BEGIN
  * request's "authorization" header field. This parameter should not be used simultaneously with
  * \a authTokenProvider.
  */
-@property(copy, readwrite, nullable) NSString *oauth2AccessToken;
+@property(nonatomic, copy, readwrite, nullable) NSString *oauth2AccessToken;
 
 /**
  * The interface to get the OAuth2 access token string. gRPC will attempt to acquire token when
  * initiating the call. This parameter should not be used simultaneously with \a oauth2AccessToken.
  */
-@property(readwrite, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
+@property(nonatomic, readwrite, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
 
 /**
  * Initial metadata key-value pairs that should be included in the request.
+ * Dictionary key is of type NSString, value should be either NSString or NSData containing binary
+ * bytes data.
  */
-@property(copy, readwrite, nullable) NSDictionary *initialMetadata;
+@property(nonatomic, nonatomic, copy, readwrite, nullable) GRPCMetadataDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -274,54 +299,72 @@ NS_ASSUME_NONNULL_BEGIN
  * Custom string that is prefixed to a request's user-agent header field before gRPC's internal
  * user-agent string.
  */
-@property(copy, readwrite, nullable) NSString *userAgentPrefix;
+@property(nonatomic, copy, readwrite, nullable) NSString *userAgentPrefix;
 
 /**
  * Custom string that is suffixed to a request's user-agent header field after gRPC's internal
  * user-agent string.
  */
-@property(copy, readwrite, nullable) NSString *userAgentSuffix;
+@property(nonatomic, copy, readwrite, nullable) NSString *userAgentSuffix;
 
 /**
  * The size limit for the response received from server. If it is exceeded, an error with status
  * code GRPCErrorCodeResourceExhausted is returned.
  */
-@property(readwrite) NSUInteger responseSizeLimit;
+@property(nonatomic, readwrite) NSUInteger responseSizeLimit;
 
 /**
  * The compression algorithm to be used by the gRPC call. For more details refer to
  * https://github.com/grpc/grpc/blob/master/doc/compression.md
  */
-@property(readwrite) GRPCCompressionAlgorithm compressionAlgorithm;
+@property(nonatomic, readwrite) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
  * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
  * refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
-@property(readwrite) BOOL retryEnabled;
+@property(nonatomic, readwrite) BOOL retryEnabled;
+
+/**
+ * Maximum interval in seconds between two consecutive retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(nonatomic, readwrite) NSTimeInterval maxRetryInterval;
+
+/**
+ * Minimum interval in seconds between two consecutive retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(nonatomic, readwrite) NSTimeInterval minRetryInterval;
+
+/**
+ * Multiplier used to increase the interval between retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(nonatomic, readwrite) double retryFactor;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
 // Negative values are invalid; setting these parameters to negative value will reset the
 // corresponding parameter to 0.
-@property(readwrite) NSTimeInterval keepaliveInterval;
-@property(readwrite) NSTimeInterval keepaliveTimeout;
+@property(nonatomic, readwrite) NSTimeInterval keepaliveInterval;
+@property(nonatomic, readwrite) NSTimeInterval keepaliveTimeout;
 
 // Parameters for connection backoff. Negative value is invalid; setting the parameters to negative
 // value will reset corresponding parameter to 0.
 // For details of gRPC's backoff behavior, refer to
 // https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md
-@property(readwrite) NSTimeInterval connectMinTimeout;
-@property(readwrite) NSTimeInterval connectInitialBackoff;
-@property(readwrite) NSTimeInterval connectMaxBackoff;
+@property(nonatomic, readwrite) NSTimeInterval connectMinTimeout;
+@property(nonatomic, readwrite) NSTimeInterval connectInitialBackoff;
+@property(nonatomic, readwrite) NSTimeInterval connectMaxBackoff;
 
 /**
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readwrite, nullable) NSDictionary *additionalChannelArgs;
+@property(nonatomic, copy, readwrite, nullable) GRPCMetadataDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 
@@ -329,17 +372,17 @@ NS_ASSUME_NONNULL_BEGIN
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readwrite, nullable) NSString *PEMRootCertificates;
+@property(nonatomic, copy, readwrite, nullable) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readwrite, nullable) NSString *PEMPrivateKey;
+@property(nonatomic, copy, readwrite, nullable) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readwrite, nullable) NSString *PEMCertificateChain;
+@property(nonatomic, copy, readwrite, nullable) NSString *PEMCertificateChain;
 
 /**
  * Deprecated: this option is deprecated. Please use the property \a transport
@@ -347,7 +390,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * Select the transport type to be used for this call.
  */
-@property(readwrite) GRPCTransportType transportType;
+@property(nonatomic, readwrite) GRPCTransportType transportType;
 
 /**
  * The transport to be used for this call. Users may choose a native transport
@@ -357,12 +400,12 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * An interceptor must not change the value of this option.
  */
-@property(readwrite) GRPCTransportID transport;
+@property(nonatomic, readwrite) GRPCTransportID transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.
  */
-@property(copy, readwrite, nullable) NSString *hostNameOverride;
+@property(nonatomic, copy, readwrite, nullable) NSString *hostNameOverride;
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
@@ -370,13 +413,13 @@ NS_ASSUME_NONNULL_BEGIN
  * domain 'io.grpc.example' so that its calls do not reuse the channel created by other modules in
  * the same process.
  */
-@property(copy, readwrite, nullable) NSString *channelPoolDomain;
+@property(nonatomic, copy, readwrite, nullable) NSString *channelPoolDomain;
 
 /**
  * Channel id allows a call to force creating a new channel (connection) rather than using a cached
  * channel. Calls using distinct channelID's will not get cached to the same channel.
  */
-@property(readwrite) NSUInteger channelID;
+@property(nonatomic, readwrite) NSUInteger channelID;
 
 @end
 

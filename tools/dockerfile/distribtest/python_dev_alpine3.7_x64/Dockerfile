@@ -14,11 +14,11 @@
 
 FROM alpine:3.11
 
-RUN apk add --update build-base linux-headers python python2-dev py2-pip
+RUN apk add --update build-base linux-headers python3 python3-dev py3-pip
 
-RUN pip install --upgrade pip==19.3.1
+RUN python3 -m pip install --upgrade pip==19.3.1
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv
 
 # bash is required for our test script invocation
 # ideally, we want to fix the invocation mechanism

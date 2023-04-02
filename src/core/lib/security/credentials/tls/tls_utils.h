@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_security.h>
+
 namespace grpc_core {
 
 // Matches \a subject_alternative_name with \a matcher. Returns true if there
@@ -33,6 +35,17 @@ namespace grpc_core {
 bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
                                   const std::string& matcher);
 
+// Returns value for the specified property_name from auth context. Here the
+// property is expected to have a single value. Returns empty if multiple values
+// are found.
+absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
+                                       const char* property_name);
+
+// Returns values for the specified property_name from auth context. Here the
+// property can have any number of values.
+std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
+                                                    const char* property_name);
+
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H

@@ -19,9 +19,8 @@ because they're not going well yet on some of our test machinaries or
 platforms it supports. The following is a list of targets that are NOT
 ready to use.
 
-- `absl/synchronization:*`: This will be ready from the LTS version in 2021.
+- `absl/synchronization:*`: Blocked by b/186685878.
 - `absl/random`: [WIP](https://github.com/grpc/grpc/pull/23346).
-- `absl/types:variant`: [WIP](https://github.com/grpc/grpc/pull/22961).
 
 ## Implemetation only
 

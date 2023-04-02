@@ -1,8 +1,33 @@
+# Copyright (c) 2009-2021, Google LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Google LLC nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""lua_proto_library(): a rule for building Lua protos."""
+
 load("@bazel_skylib//lib:paths.bzl", "paths")
 
 # Generic support code #########################################################
-
-_is_bazel = not hasattr(native, "genmpm")
 
 def _get_real_short_path(file):
     # For some reason, files from other archives have short paths that look like:
@@ -32,7 +57,10 @@ def _generate_output_file(ctx, src, extension):
 
 # upb_proto_library / upb_proto_reflection_library shared code #################
 
-_LuaFiles = provider(fields = ["files"])
+_LuaFilesInfo = provider(
+    "A set of lua files generated from .proto files",
+    fields = ["files"],
+)
 
 def _compile_upb_protos(ctx, proto_info, proto_sources):
     files = [_generate_output_file(ctx, name, "_pb.lua") for name in proto_sources]
@@ -59,9 +87,9 @@ def _lua_proto_rule_impl(ctx):
     if len(ctx.attr.deps) != 1:
         fail("only one deps dependency allowed.")
     dep = ctx.attr.deps[0]
-    if _LuaFiles not in dep:
-        fail("proto_library rule must generate _LuaFiles (aspect should have handled this).")
-    files = dep[_LuaFiles].files
+    if _LuaFilesInfo not in dep:
+        fail("proto_library rule must generate _LuaFilesInfo (aspect should have handled this).")
+    files = dep[_LuaFilesInfo].files
     return [
         DefaultInfo(
             files = files,
@@ -73,8 +101,8 @@ def _lua_proto_library_aspect_impl(target, ctx):
     proto_info = target[ProtoInfo]
     files = _compile_upb_protos(ctx, proto_info, proto_info.direct_sources)
     deps = ctx.rule.attr.deps
-    transitive = [dep[_LuaFiles].files for dep in deps if _LuaFiles in dep]
-    return [_LuaFiles(files = depset(direct = files, transitive = transitive))]
+    transitive = [dep[_LuaFilesInfo].files for dep in deps if _LuaFilesInfo in dep]
+    return [_LuaFilesInfo(files = depset(direct = files, transitive = transitive))]
 
 # lua_proto_library() ##########################################################
 
@@ -82,17 +110,17 @@ _lua_proto_library_aspect = aspect(
     attrs = {
         "_upbc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "//upb/bindings/lua:protoc-gen-lua",
         ),
         "_protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "@com_google_protobuf//:protoc",
         ),
     },
     implementation = _lua_proto_library_aspect_impl,
-    provides = [_LuaFiles],
+    provides = [_LuaFilesInfo],
     attr_aspects = ["deps"],
     fragments = ["cpp"],
 )

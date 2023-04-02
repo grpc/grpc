@@ -1,50 +1,59 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <gmock/gmock.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <string>
 
+#include <gmock/gmock.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/naming/dns_test_util.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -56,6 +65,8 @@
 #endif
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -96,7 +107,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -121,11 +132,9 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(args->pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              gpr_inf_future(GPR_CLOCK_REALTIME))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_core::Timestamp::InfFuture()));
     gpr_mu_unlock(args->mu);
   }
 }
@@ -142,26 +151,28 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
-    GPR_ASSERT(false);
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
+    grpc_core::Crash("unreachable");
   }
-
-  void ReturnError(grpc_error* /*error*/) override { GPR_ASSERT(false); }
 
  private:
   ArgsStruct* args_;
 };
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
-  int fake_dns_port = grpc_pick_unused_port_or_die();
-  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
-      fake_dns_port);
+      fake_dns_server.port());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
-          client_target.c_str(), nullptr, args->pollset_set, args->lock,
+      grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
+          client_target.c_str(),
+          grpc_core::ChannelArgs().SetObject(GetDefaultEventEngine()),
+          args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();
@@ -175,8 +186,10 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+  static void SetUpTestSuite() {
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.dns_resolver = "ares";
+    grpc_core::ConfigVars::SetOverrides(overrides);
     // Sanity check the time that it takes to run the test
     // including the teardown time (the teardown
     // part of the test involves cancelling the DNS query,
@@ -185,11 +198,10 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     grpc_shutdown();
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      gpr_log(GPR_ERROR, "Test took too long");
-      abort();
+      grpc_core::Crash("Test took too long");
     }
   }
 
@@ -216,7 +228,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -224,7 +236,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);
@@ -273,16 +285,19 @@ typedef enum {
 void TestCancelDuringActiveQuery(
     cancellation_test_query_timeout_setting query_timeout_setting) {
   // Start up fake non responsive DNS server
-  int fake_dns_port = grpc_pick_unused_port_or_die();
-  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Create a call that will try to use the fake DNS server
-  std::string client_target = absl::StrFormat(
-      "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
-      fake_dns_port);
+  std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
+  std::string client_target =
+      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server.port(), name);
   gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
+  std::string expected_error_message_substring;
   gpr_timespec rpc_deadline;
   if (query_timeout_setting == NONE) {
     // The RPC deadline should go off well before the DNS resolution
@@ -295,6 +310,8 @@ void TestCancelDuringActiveQuery(
     // The DNS resolution timeout should fire well before the
     // RPC's deadline expires.
     expected_status_code = GRPC_STATUS_UNAVAILABLE;
+    expected_error_message_substring =
+        absl::StrCat("DNS resolution failed for ", name);
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
@@ -319,10 +336,12 @@ void TestCancelDuringActiveQuery(
   } else {
     abort();
   }
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* client =
-      grpc_insecure_channel_create(client_target.c_str(), client_args, nullptr);
+      grpc_channel_create(client_target.c_str(), creds, client_args);
+  grpc_channel_credentials_release(creds);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
@@ -368,9 +387,11 @@ void TestCancelDuringActiveQuery(
   grpc_call_error error = grpc_call_start_batch(
       call, ops_base, static_cast<size_t>(op - ops_base), Tag(1), nullptr);
   EXPECT_EQ(GRPC_CALL_OK, error);
-  CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(Tag(1), true);
+  cqv.Verify();
   EXPECT_EQ(status, expected_status_code);
+  EXPECT_THAT(std::string(error_string),
+              testing::HasSubstr(expected_error_message_substring));
   // Teardown
   grpc_channel_args_destroy(client_args);
   grpc_slice_unref(details);
@@ -380,7 +401,6 @@ void TestCancelDuringActiveQuery(
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(call);
-  cq_verifier_destroy(cqv);
   EndTest(client, cq);
 }
 
@@ -404,7 +424,7 @@ TEST_F(
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;

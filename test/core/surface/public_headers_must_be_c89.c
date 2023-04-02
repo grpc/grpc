@@ -30,7 +30,6 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/fork.h>
-#include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
@@ -42,6 +41,11 @@
 #include <grpc/impl/codegen/sync_abseil.h>
 #include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/impl/slice_type.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -68,6 +72,17 @@ int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
+  printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
+  printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
+  printf("%lx", (unsigned long) grpc_byte_buffer_copy);
+  printf("%lx", (unsigned long) grpc_byte_buffer_length);
+  printf("%lx", (unsigned long) grpc_byte_buffer_destroy);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_init);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_destroy);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_next);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_peek);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
+  printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
@@ -81,7 +96,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);
   printf("%lx", (unsigned long) grpc_call_details_destroy);
-  printf("%lx", (unsigned long) grpc_register_plugin);
   printf("%lx", (unsigned long) grpc_init);
   printf("%lx", (unsigned long) grpc_shutdown);
   printf("%lx", (unsigned long) grpc_is_initialized);
@@ -114,11 +128,14 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_get_target);
   printf("%lx", (unsigned long) grpc_channel_get_info);
   printf("%lx", (unsigned long) grpc_channel_reset_connect_backoff);
-  printf("%lx", (unsigned long) grpc_insecure_channel_create);
+  printf("%lx", (unsigned long) grpc_channel_credentials_release);
+  printf("%lx", (unsigned long) grpc_server_credentials_release);
+  printf("%lx", (unsigned long) grpc_channel_create);
   printf("%lx", (unsigned long) grpc_lame_client_channel_create);
   printf("%lx", (unsigned long) grpc_channel_destroy);
   printf("%lx", (unsigned long) grpc_call_cancel);
   printf("%lx", (unsigned long) grpc_call_cancel_with_status);
+  printf("%lx", (unsigned long) grpc_call_failed_before_recv_message);
   printf("%lx", (unsigned long) grpc_call_ref);
   printf("%lx", (unsigned long) grpc_call_unref);
   printf("%lx", (unsigned long) grpc_server_request_call);
@@ -129,7 +146,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_config_fetcher_xds_create);
   printf("%lx", (unsigned long) grpc_server_config_fetcher_destroy);
   printf("%lx", (unsigned long) grpc_server_set_config_fetcher);
-  printf("%lx", (unsigned long) grpc_server_add_insecure_http2_port);
+  printf("%lx", (unsigned long) grpc_server_add_http2_port);
   printf("%lx", (unsigned long) grpc_server_start);
   printf("%lx", (unsigned long) grpc_server_shutdown_and_notify);
   printf("%lx", (unsigned long) grpc_server_cancel_all_calls);
@@ -153,6 +170,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
   printf("%lx", (unsigned long) grpc_channelz_get_socket);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_arg_vtable);
   printf("%lx", (unsigned long) grpc_auth_property_iterator_next);
   printf("%lx", (unsigned long) grpc_auth_context_property_iterator);
   printf("%lx", (unsigned long) grpc_auth_context_peer_identity);
@@ -168,7 +186,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_session_cache_destroy);
   printf("%lx", (unsigned long) grpc_ssl_session_cache_create_channel_arg);
   printf("%lx", (unsigned long) grpc_call_credentials_release);
-  printf("%lx", (unsigned long) grpc_channel_credentials_release);
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create);
@@ -186,8 +203,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_auth_metadata_context_copy);
   printf("%lx", (unsigned long) grpc_auth_metadata_context_reset);
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
-  printf("%lx", (unsigned long) grpc_secure_channel_create);
-  printf("%lx", (unsigned long) grpc_server_credentials_release);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_create);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create);
@@ -196,7 +211,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_options_using_config_fetcher);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_options_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_with_options);
-  printf("%lx", (unsigned long) grpc_server_add_secure_http2_port);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
   printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
@@ -214,36 +228,23 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_release);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_verification_option);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_certificate_provider);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_root_certs);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_root_cert_name);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_identity_key_cert_pairs);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_identity_cert_name);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
-  printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_create);
-  printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_release);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_crl_directory);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_verify_server_cert);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_check_call_host);
+  printf("%lx", (unsigned long) grpc_insecure_credentials_create);
+  printf("%lx", (unsigned long) grpc_insecure_server_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_server_credentials_create);
-  printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
-  printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
-  printf("%lx", (unsigned long) grpc_byte_buffer_copy);
-  printf("%lx", (unsigned long) grpc_byte_buffer_length);
-  printf("%lx", (unsigned long) grpc_byte_buffer_destroy);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_init);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_destroy);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_next);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_peek);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
-  printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
-  printf("%lx", (unsigned long) gpr_log_severity_string);
-  printf("%lx", (unsigned long) gpr_log);
-  printf("%lx", (unsigned long) gpr_should_log);
-  printf("%lx", (unsigned long) gpr_log_message);
-  printf("%lx", (unsigned long) gpr_set_log_verbosity);
-  printf("%lx", (unsigned long) gpr_log_verbosity_init);
-  printf("%lx", (unsigned long) gpr_set_log_function);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_static_data_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_tls_session_key_log_file_path);
   printf("%lx", (unsigned long) grpc_slice_ref);
   printf("%lx", (unsigned long) grpc_slice_unref);
   printf("%lx", (unsigned long) grpc_slice_copy);
@@ -252,7 +253,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_new_with_len);
   printf("%lx", (unsigned long) grpc_slice_malloc);
   printf("%lx", (unsigned long) grpc_slice_malloc_large);
-  printf("%lx", (unsigned long) grpc_slice_intern);
   printf("%lx", (unsigned long) grpc_slice_from_copied_string);
   printf("%lx", (unsigned long) grpc_slice_from_copied_buffer);
   printf("%lx", (unsigned long) grpc_slice_from_static_string);
@@ -263,8 +263,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_split_tail_maybe_ref);
   printf("%lx", (unsigned long) grpc_slice_split_head);
   printf("%lx", (unsigned long) grpc_empty_slice);
-  printf("%lx", (unsigned long) grpc_slice_default_hash_impl);
-  printf("%lx", (unsigned long) grpc_slice_default_eq_impl);
   printf("%lx", (unsigned long) grpc_slice_eq);
   printf("%lx", (unsigned long) grpc_slice_cmp);
   printf("%lx", (unsigned long) grpc_slice_str_cmp);
@@ -272,7 +270,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_rchr);
   printf("%lx", (unsigned long) grpc_slice_chr);
   printf("%lx", (unsigned long) grpc_slice_slice);
-  printf("%lx", (unsigned long) grpc_slice_hash);
   printf("%lx", (unsigned long) grpc_slice_is_equivalent);
   printf("%lx", (unsigned long) grpc_slice_dup);
   printf("%lx", (unsigned long) grpc_slice_to_c_string);
@@ -300,6 +297,14 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_free_aligned);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
+  printf("%lx", (unsigned long) gpr_log_severity_string);
+  printf("%lx", (unsigned long) gpr_log);
+  printf("%lx", (unsigned long) gpr_should_log);
+  printf("%lx", (unsigned long) gpr_log_message);
+  printf("%lx", (unsigned long) gpr_set_log_verbosity);
+  printf("%lx", (unsigned long) gpr_log_verbosity_init);
+  printf("%lx", (unsigned long) gpr_set_log_function);
+  printf("%lx", (unsigned long) gpr_assertion_failed);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
   printf("%lx", (unsigned long) gpr_mu_init);

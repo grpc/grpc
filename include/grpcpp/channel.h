@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_CHANNEL_H
 #define GRPCPP_CHANNEL_H
@@ -22,13 +22,13 @@
 #include <memory>
 
 #include <grpc/grpc.h>
+#include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/config.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/channel_interface.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/support/client_interceptor.h>
+#include <grpcpp/support/config.h>
 
 struct grpc_channel;
 
@@ -51,10 +51,10 @@ void ChannelResetConnectionBackoff(Channel* channel);
 }  // namespace experimental
 
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
-class Channel final : public ::grpc::ChannelInterface,
-                      public ::grpc::internal::CallHook,
+class Channel final : public grpc::ChannelInterface,
+                      public grpc::internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
-                      private ::grpc::GrpcLibraryCodegen {
+                      private grpc::internal::GrpcLibrary {
  public:
   ~Channel() override;
 
@@ -71,38 +71,38 @@ class Channel final : public ::grpc::ChannelInterface,
 
  private:
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::BlockingUnaryCallImpl;
-  friend class ::grpc::testing::ChannelTestPeer;
+  friend class grpc::internal::BlockingUnaryCallImpl;
+  friend class grpc::testing::ChannelTestPeer;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
       const std::string& host, grpc_channel* c_channel,
       std::vector<std::unique_ptr<
-          ::grpc::experimental::ClientInterceptorFactoryInterface>>
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
-  friend class ::grpc::internal::InterceptedChannel;
+  friend class grpc::internal::InterceptedChannel;
   Channel(const std::string& host, grpc_channel* c_channel,
           std::vector<std::unique_ptr<
-              ::grpc::experimental::ClientInterceptorFactoryInterface>>
+              grpc::experimental::ClientInterceptorFactoryInterface>>
               interceptor_creators);
 
-  ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
-                                    ::grpc::ClientContext* context,
-                                    ::grpc::CompletionQueue* cq) override;
-  void PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
-                        ::grpc::internal::Call* call) override;
+  grpc::internal::Call CreateCall(const grpc::internal::RpcMethod& method,
+                                  grpc::ClientContext* context,
+                                  grpc::CompletionQueue* cq) override;
+  void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
+                        grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               ::grpc::CompletionQueue* cq, void* tag) override;
+                               gpr_timespec deadline, grpc::CompletionQueue* cq,
+                               void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
-  ::grpc::CompletionQueue* CallbackCQ() override;
+  grpc::CompletionQueue* CallbackCQ() override;
 
-  ::grpc::internal::Call CreateCallInternal(
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-      ::grpc::CompletionQueue* cq, size_t interceptor_pos) override;
+  grpc::internal::Call CreateCallInternal(
+      const grpc::internal::RpcMethod& method, grpc::ClientContext* context,
+      grpc::CompletionQueue* cq, size_t interceptor_pos) override;
 
   const std::string host_;
   grpc_channel* const c_channel_;  // owned
@@ -114,10 +114,10 @@ class Channel final : public ::grpc::ChannelInterface,
   // with this channel (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the channel; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  ::grpc::CompletionQueue* callback_cq_ = nullptr;
+  std::atomic<CompletionQueue*> callback_cq_{nullptr};
 
   std::vector<
-      std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators_;
 };
 

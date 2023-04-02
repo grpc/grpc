@@ -1,31 +1,35 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 
@@ -35,25 +39,30 @@ namespace grpc_core {
 class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
  public:
   struct Args {
+    // Address to connect to.
+    grpc_resolved_address* address;
     // Set of pollsets interested in this connection.
     grpc_pollset_set* interested_parties;
     // Deadline for connection.
-    grpc_millis deadline;
+    Timestamp deadline;
     // Channel args to be passed to handshakers and transport.
-    const grpc_channel_args* channel_args;
+    ChannelArgs channel_args;
   };
 
   struct Result {
     // The connected transport.
     grpc_transport* transport = nullptr;
     // Channel args to be passed to filters.
-    const grpc_channel_args* channel_args = nullptr;
+    ChannelArgs channel_args;
     // Channelz socket node of the connected transport, if any.
     RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
-      transport = nullptr;
-      channel_args = nullptr;
+      if (transport != nullptr) {
+        grpc_transport_destroy(transport);
+        transport = nullptr;
+      }
+      channel_args = ChannelArgs();
       socket_node.reset();
     }
   };
@@ -66,14 +75,14 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
   // Cancels any in-flight connection attempt and shuts down the
   // connector.
-  virtual void Shutdown(grpc_error* error) = 0;
+  virtual void Shutdown(grpc_error_handle error) = 0;
 
   void Orphan() override {
-    Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));
+    Shutdown(GRPC_ERROR_CREATE("Subchannel disconnected"));
     Unref();
   }
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H

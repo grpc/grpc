@@ -16,11 +16,12 @@
  *
  */
 
+#include "src/compiler/node_generator.h"
+
 #include <map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
-#include "src/compiler/node_generator.h"
 #include "src/compiler/node_generator_helpers.h"
 
 using grpc::protobuf::Descriptor;

@@ -22,13 +22,26 @@ cd cmake
 mkdir build
 cd build
 
-cmake -G "%generator%" -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON ../.. || goto :error
-cmake --build . --target protoc --config Release || goto :error
-cmake --build . --target plugins --config Release || goto :error
+@rem Use externally provided env to determine build parallelism, otherwise use default.
+if "%GRPC_PROTOC_BUILD_COMPILER_JOBS%"=="" (
+  set GRPC_PROTOC_BUILD_COMPILER_JOBS=2
+)
+
+@rem set cl.exe build environment to build with VS2019 tooling
+@rem this is required for Ninja build to work
+call "%VS160COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %ARCHITECTURE%
+@rem restore command echo
+echo on
+
+@rem Select MSVC compiler (cl.exe) explicitly to make sure we don't end up gcc from mingw or cygwin
+@rem (both are on path in kokoro win workers)
+cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_BUILD_TYPE=Release -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON ../../.. || goto :error
+
+ninja -j%GRPC_PROTOC_BUILD_COMPILER_JOBS% protoc plugins || goto :error
 cd ..\..
 
-xcopy /Y cmake\build\third_party\protobuf\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
-xcopy /Y cmake\build\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y cmake\build\third_party\protobuf\protoc.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y cmake\build\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
 
 goto :EOF
 

@@ -33,6 +33,7 @@ service EchoTestService {
   rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
   rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
+  rpc UnimplementedBidi(stream EchoRequest) returns (stream EchoResponse);
 }
 
 service EchoTest1Service {

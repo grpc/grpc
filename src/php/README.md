@@ -141,7 +141,7 @@ v1.8.0 | 3.5.0 | v1.21.3 | 3.7.0
 
 If `protoc` hasn't been installed, you can download the `protoc` binary from
 the protocol buffers
-[Github repository](https://github.com/google/protobuf/releases).
+[Github repository](https://github.com/protocolbuffers/protobuf/releases).
 Then unzip this file and update the environment variable `PATH` to include the
 path to the protoc binary file.
 
@@ -230,7 +230,7 @@ Or require the `google/protobuf` composer package. Add this to your
 
 ### Generate PHP classes from your service definition
 
-With all the above done, now you can define your message and service defintion
+With all the above done, now you can define your message and service definition
 in a `.proto` file and generate the corresponding PHP classes, which you can
 import into your project, with a command similar to the following:
 

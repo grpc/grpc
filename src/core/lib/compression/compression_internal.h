@@ -1,97 +1,93 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
-#define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
+#ifndef GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
+#define GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/compression.h>
-#include <grpc/slice.h>
+#include <stdint.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include <initializer_list>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-typedef enum {
-  GRPC_MESSAGE_COMPRESS_NONE = 0,
-  GRPC_MESSAGE_COMPRESS_DEFLATE,
-  GRPC_MESSAGE_COMPRESS_GZIP,
-  /* TODO(ctiller): snappy */
-  GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT
-} grpc_message_compression_algorithm;
+#include <grpc/impl/compression_types.h>
 
-/** Stream compression algorithms supported by gRPC */
-typedef enum {
-  GRPC_STREAM_COMPRESS_NONE = 0,
-  GRPC_STREAM_COMPRESS_GZIP,
-  GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT
-} grpc_stream_compression_algorithm;
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/slice/slice.h"
 
-/* Interfaces performing transformation between compression algorithms and
- * levels. */
+namespace grpc_core {
 
-grpc_message_compression_algorithm
-grpc_compression_algorithm_to_message_compression_algorithm(
-    grpc_compression_algorithm algo);
+// Given a string naming a compression algorithm, return the corresponding enum
+// or nullopt on error.
+absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+    absl::string_view algorithm);
+// Convert a compression algorithm to a string. Returns nullptr if a name is not
+// known.
+const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
+// Retrieve the default compression algorithm from channel args, return nullopt
+// if not found.
+absl::optional<grpc_compression_algorithm>
+DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args);
 
-grpc_stream_compression_algorithm
-grpc_compression_algorithm_to_stream_compression_algorithm(
-    grpc_compression_algorithm algo);
+// A set of grpc_compression_algorithm values.
+class CompressionAlgorithmSet {
+ public:
+  // Construct from a uint32_t bitmask - bit 0 => algorithm 0, bit 1 =>
+  // algorithm 1, etc.
+  static CompressionAlgorithmSet FromUint32(uint32_t value);
+  // Locate in channel args and construct from the found value.
+  static CompressionAlgorithmSet FromChannelArgs(const ChannelArgs& args);
+  // Parse a string of comma-separated compression algorithms.
+  static CompressionAlgorithmSet FromString(absl::string_view str);
+  // Construct an empty set.
+  CompressionAlgorithmSet();
+  // Construct from a std::initializer_list of grpc_compression_algorithm
+  // values.
+  CompressionAlgorithmSet(
+      std::initializer_list<grpc_compression_algorithm> algorithms);
 
-uint32_t grpc_compression_bitset_to_message_bitset(uint32_t bitset);
+  // Given a compression level, choose an appropriate algorithm from this set.
+  grpc_compression_algorithm CompressionAlgorithmForLevel(
+      grpc_compression_level level) const;
+  // Return true if this set contains algorithm, false otherwise.
+  bool IsSet(grpc_compression_algorithm algorithm) const;
+  // Add algorithm to this set.
+  void Set(grpc_compression_algorithm algorithm);
 
-uint32_t grpc_compression_bitset_to_stream_bitset(uint32_t bitset);
+  // Return a comma separated string of the algorithms in this set.
+  absl::string_view ToString() const;
+  Slice ToSlice() const;
 
-uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
-    uint32_t message_bitset, uint32_t stream_bitset);
+  // Return a bitmask of the algorithms in this set.
+  uint32_t ToLegacyBitmask() const;
 
-int grpc_compression_algorithm_from_message_stream_compression_algorithm(
-    grpc_compression_algorithm* algorithm,
-    grpc_message_compression_algorithm message_algorithm,
-    grpc_stream_compression_algorithm stream_algorithm);
+  bool operator==(const CompressionAlgorithmSet& other) const {
+    return set_ == other.set_;
+  }
 
-/* Interfaces for message compression. */
+ private:
+  BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;
+};
 
-int grpc_message_compression_algorithm_name(
-    grpc_message_compression_algorithm algorithm, const char** name);
+}  // namespace grpc_core
 
-grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
-    grpc_compression_level level, uint32_t accepted_encodings);
-
-int grpc_message_compression_algorithm_parse(
-    grpc_slice value, grpc_message_compression_algorithm* algorithm);
-
-/* Interfaces for stream compression. */
-
-int grpc_stream_compression_algorithm_parse(
-    grpc_slice value, grpc_stream_compression_algorithm* algorithm);
-
-#ifdef __cplusplus
-}
-#endif
-
-inline int grpc_compression_options_is_algorithm_enabled_internal(
-    const grpc_compression_options* opts,
-    grpc_compression_algorithm algorithm) {
-  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
-}
-
-#endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H */
+#endif  // GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H

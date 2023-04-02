@@ -27,6 +27,8 @@
     return False
   def is_cronet_header(hdr):
     return "cronet" in hdr
+  def is_event_engine_header(hdr):
+    return "/event_engine/" in hdr
   hdrs = set()
   pfx = 'include/'
   for lib in libs:
@@ -34,6 +36,7 @@
     for hdr in lib.get('public_headers', []):
       if is_platform_header(hdr): continue
       if is_cronet_header(hdr): continue
+      if is_event_engine_header(hdr): continue
       assert(hdr[0:len(pfx)] == pfx)
       hdrs.add(hdr[len(pfx):])
   hdrs = sorted(list(hdrs))

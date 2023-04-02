@@ -18,15 +18,8 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/internal_ci/linux/run_performance_profile_hourly.sh || FAILED="true"
-
-# kill port_server.py to prevent the build from freezing
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
-
+export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_performance_profile_summary_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

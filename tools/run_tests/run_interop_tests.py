@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +27,15 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:
     from python_utils.upload_test_results import upload_interop_results_to_bq
@@ -64,6 +66,8 @@ _SKIP_ADVANCED = [
 ]
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
+
+_ORCA_TEST_CASES = ['orca_per_rpc', 'orca_oob']
 
 _GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
 
@@ -113,78 +117,14 @@ class CXXLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
         return []
 
     def __str__(self):
         return 'c++'
-
-
-class CSharpLanguage:
-
-    def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/net45'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/net45'
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['mono', 'Grpc.IntegrationTesting.Client.exe'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def server_cmd(self, args):
-        return ['mono', 'Grpc.IntegrationTesting.Server.exe'] + args
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
-
-    def __str__(self):
-        return 'csharp'
-
-
-class CSharpCoreCLRLanguage:
-
-    def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp2.1'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp2.1'
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Client.dll'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def server_cmd(self, args):
-        return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Server.dll'] + args
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
-
-    def __str__(self):
-        return 'csharpcoreclr'
 
 
 class AspNetCoreLanguage:
@@ -208,10 +148,11 @@ class AspNetCoreLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'aspnetcore'
@@ -239,12 +180,13 @@ class DartLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES
 
     def __str__(self):
         return 'dart'
@@ -334,10 +276,12 @@ class GoLanguage:
         return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'go'
@@ -413,8 +357,8 @@ class Http2Client:
 class NodeLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-node'
-        self.server_cwd = '../grpc-node'
+        self.client_cwd = '../../../../home/appuser/grpc-node'
+        self.server_cwd = '../../../../home/appuser/grpc-node'
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -439,12 +383,14 @@ class NodeLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'node'
@@ -453,8 +399,8 @@ class NodeLanguage:
 class NodePureJSLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-node'
-        self.server_cwd = '../grpc-node'
+        self.client_cwd = '../../../../home/appuser/grpc-node'
+        self.server_cwd = '../../../../home/appuser/grpc-node'
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -472,12 +418,13 @@ class NodePureJSLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'nodepurejs'
@@ -487,6 +434,7 @@ class PHP7Language:
 
     def __init__(self):
         self.client_cwd = None
+        self.server_cwd = None
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -495,17 +443,22 @@ class PHP7Language:
     def cloud_to_prod_env(self):
         return {}
 
+    def server_cmd(self, args):
+        return ['src/php/bin/interop_server.sh'] + args
+
     def global_env(self):
         return {}
 
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'php7'
@@ -538,14 +491,16 @@ class ObjcLanguage:
         # and depend upon ObjC test's behavior that it runs all cases even when
         # we tell it to run just one.
         return _TEST_CASES[1:] + \
-            _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_COMPRESSION + \
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'objc'
@@ -578,16 +533,21 @@ class RubyLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'ruby'
+
+
+_PYTHON_BINARY = 'py39/bin/python'
 
 
 class PythonLanguage:
@@ -600,13 +560,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--client', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -615,8 +575,8 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--server', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -627,12 +587,14 @@ class PythonLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'python'
@@ -648,14 +610,13 @@ class PythonAsyncIOLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--client',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -664,9 +625,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--server',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -678,9 +638,10 @@ class PythonAsyncIOLanguage:
     def unimplemented_test_cases(self):
         # TODO(https://github.com/grpc/grpc/issues/21707)
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _AUTH_TEST_CASES + \
-            ['timeout_on_sleeping_server']
+               _SKIP_DATA_FRAME_PADDING + \
+               _AUTH_TEST_CASES + \
+               ['timeout_on_sleeping_server'] + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
         # TODO(https://github.com/grpc/grpc/issues/21749)
@@ -695,8 +656,6 @@ class PythonAsyncIOLanguage:
 
 _LANGUAGES = {
     'c++': CXXLanguage(),
-    'csharp': CSharpLanguage(),
-    'csharpcoreclr': CSharpCoreCLRLanguage(),
     'aspnetcore': AspNetCoreLanguage(),
     'dart': DartLanguage(),
     'go': GoLanguage(),
@@ -713,8 +672,8 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
-    'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio'
+    'c++', 'node', 'aspnetcore', 'java', 'go', 'ruby', 'python', 'dart',
+    'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [
@@ -724,7 +683,8 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message'
+    'unimplemented_service', 'special_status_message', 'orca_per_rpc',
+    'orca_oob'
 ]
 
 _AUTH_TEST_CASES = [
@@ -748,8 +708,8 @@ _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES = {
     'no_df_padding_sanity_test': 'large_unary'
 }
 
-_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys(
-)
+_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = list(
+    _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys())
 
 _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
@@ -770,11 +730,14 @@ DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
     """Wraps given cmdline array to create 'docker run' cmdline from it."""
+
+    # don't use '-t' even when TTY is available, since that would break
+    # the testcases generated by tools/interop_matrix/create_testcases.sh
     docker_cmdline = ['docker', 'run', '-i', '--rm=true']
 
     # turn environ into -e docker args
     if environ:
-        for k, v in environ.items():
+        for k, v in list(environ.items()):
             docker_cmdline += ['-e', '%s=%s' % (k, v)]
 
     # set working directory
@@ -848,8 +811,7 @@ def auth_options(language, test_case, google_default_creds_use_key_file,
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
-                'csharp', 'csharpcoreclr', 'aspnetcore', 'node', 'php7',
-                'python', 'ruby', 'nodepurejs'
+                'aspnetcore', 'node', 'php7', 'python', 'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         else:
@@ -999,6 +961,11 @@ def cloud_to_cloud_jobspec(language,
               (repr(language), client_test_case))
         sys.exit(1)
 
+    if test_case in _ORCA_TEST_CASES:
+        interop_only_options += [
+            '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
+        ]
+
     common_options = [
         '--test_case=%s' % client_test_case,
         '--server_host=%s' % server_host,
@@ -1128,8 +1095,6 @@ def build_interop_image_jobspec(language, tag=None):
         'INTEROP_IMAGE': tag,
         'BASE_NAME': 'grpc_interop_%s' % language.safename
     }
-    if not args.travis:
-        env['TTY_FLAG'] = '-t'
     build_job = jobset.JobSpec(
         cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
         environ=env,
@@ -1200,7 +1165,7 @@ argp.add_argument('--google_default_creds_use_key_file',
                         'google_default_credentials test case, e.g. by '
                         'setting env var GOOGLE_APPLICATION_CREDENTIALS.'))
 argp.add_argument('--prod_servers',
-                  choices=prod_servers.keys(),
+                  choices=list(prod_servers.keys()),
                   default=['default'],
                   nargs='+',
                   help=('The servers to run cloud_to_prod and '
@@ -1231,11 +1196,14 @@ argp.add_argument(
     type=str,
     help='Default GCE service account email to use for some auth interop tests.',
     default='830293263384-compute@developer.gserviceaccount.com')
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
+argp.add_argument(
+    '-t',
+    '--travis',
+    default=False,
+    action='store_const',
+    const=True,
+    help='When set, indicates that the script is running on CI (= not locally).'
+)
 argp.add_argument('-v',
                   '--verbose',
                   default=False,
@@ -1456,7 +1424,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES:
                             for transport_security in args.custom_credentials_type:
                                 # google_default_credentials not yet supported by all languages
                                 if transport_security == 'google_default_credentials' and str(
@@ -1541,7 +1509,7 @@ try:
         (server_host, server_port) = server[1].split(':')
         server_addresses[server_name] = (server_host, server_port)
 
-    for server_name, server_address in server_addresses.items():
+    for server_name, server_address in list(server_addresses.items()):
         (server_host, server_port) = server_address
         server_language = _LANGUAGES.get(server_name, None)
         skip_server = []  # test cases unimplemented by server
@@ -1655,7 +1623,7 @@ try:
 
     report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
 
-    for name, job in resultset.items():
+    for name, job in list(resultset.items()):
         if "http2" in name:
             job[0].http2results = aggregate_http2_results(job[0].message)
 
@@ -1668,7 +1636,7 @@ try:
         sys.exit(0)
 finally:
     # Check if servers are still running.
-    for server, job in server_jobs.items():
+    for server, job in list(server_jobs.items()):
         if not job.is_running():
             print('Server "%s" has exited prematurely.' % server)
 

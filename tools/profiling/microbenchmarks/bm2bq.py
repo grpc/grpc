@@ -17,16 +17,17 @@
 # Convert google-benchmark json output to something that can be uploaded to
 # BigQuery
 
-import sys
-import json
 import csv
-import bm_json
 import json
 import subprocess
+import sys
+
+import bm_json
 
 columns = []
 
 for row in json.loads(
+        # TODO(jtattermusch): make sure the dataset name is not hardcoded
         subprocess.check_output(
             ['bq', '--format=json', 'show',
              'microbenchmarks.microbenchmarks']))['schema']['fields']:
@@ -40,6 +41,8 @@ SANITIZE = {
     'timestamp': str,
 }
 
+# TODO(jtattermusch): add proper argparse argument, rather than trying
+# to emulate with manual argv inspection.
 if sys.argv[1] == '--schema':
     print(',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns))
     sys.exit(0)

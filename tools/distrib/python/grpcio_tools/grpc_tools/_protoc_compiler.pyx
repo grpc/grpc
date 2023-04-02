@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc cimport stdlib
-from libcpp.vector cimport vector
-from libcpp.utility cimport pair
-from libcpp.string cimport string
-
 from cython.operator cimport dereference
+from libc cimport stdlib
+from libcpp.string cimport string
+from libcpp.utility cimport pair
+from libcpp.vector cimport vector
 
 import warnings
+
 
 cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
   cppclass cProtocError "::grpc_tools::ProtocError":

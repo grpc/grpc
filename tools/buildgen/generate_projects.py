@@ -14,16 +14,16 @@
 
 import argparse
 import glob
-import yaml
-import pickle
+import multiprocessing
 import os
+import pickle
 import shutil
 import sys
 import tempfile
-import multiprocessing
-from typing import Union, Dict, List
+from typing import Dict, List, Union
 
 import _utils
+import yaml
 
 PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                             "..")
@@ -71,8 +71,7 @@ def preprocess_build_files() -> _utils.Bunch:
     build_spec = dict()
     for build_file in args.build_files:
         with open(build_file, 'r') as f:
-            _utils.merge_json(build_spec,
-                              yaml.load(f.read(), Loader=yaml.FullLoader))
+            _utils.merge_json(build_spec, yaml.safe_load(f.read()))
     # Executes plugins. Plugins update the build spec in-place.
     for py_file in sorted(glob.glob('tools/buildgen/plugins/*.py')):
         plugin = _utils.import_python_module(py_file)

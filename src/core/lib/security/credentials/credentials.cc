@@ -1,43 +1,38 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-/* -- Common. -- */
+// -- Common. --
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
@@ -59,7 +54,10 @@ static void* credentials_pointer_arg_copy(void* p) {
   return static_cast<grpc_channel_credentials*>(p)->Ref().release();
 }
 
-static int credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int credentials_pointer_cmp(void* a, void* b) {
+  return static_cast<const grpc_channel_credentials*>(a)->cmp(
+      static_cast<const grpc_channel_credentials*>(b));
+}
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
     credentials_pointer_arg_copy, credentials_pointer_arg_destroy,
@@ -127,7 +125,7 @@ static void* server_credentials_pointer_arg_copy(void* p) {
 }
 
 static int server_credentials_pointer_cmp(void* a, void* b) {
-  return GPR_ICMP(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable cred_ptr_vtable = {

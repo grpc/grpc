@@ -19,11 +19,11 @@
 #ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
 #define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
 
-#include "src/compiler/config.h"
-
 #include <algorithm>
 #include <sstream>
 #include <vector>
+
+#include "src/compiler/config.h"
 
 using std::getline;
 using std::transform;

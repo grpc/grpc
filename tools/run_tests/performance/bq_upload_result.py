@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ import os
 import sys
 import time
 import uuid
-import massage_qps_stats
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
@@ -61,14 +60,18 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
         sys.exit(1)
 
 
-def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file):
+def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file,
+                                        metadata_file, node_info_file,
+                                        prometheus_query_results_file):
     with open(result_file, 'r') as f:
         scenario_result = json.loads(f.read())
 
     bq = big_query_utils.create_big_query()
     _create_results_table(bq, dataset_id, table_id)
 
-    if not _insert_result(bq, dataset_id, table_id, scenario_result):
+    if not _insert_scenario_result(bq, dataset_id, table_id, scenario_result,
+                                   metadata_file, node_info_file,
+                                   prometheus_query_results_file):
         print('Error uploading result to bigquery.')
         sys.exit(1)
 
@@ -77,6 +80,25 @@ def _insert_result(bq, dataset_id, table_id, scenario_result, flatten=True):
     if flatten:
         _flatten_result_inplace(scenario_result)
     _populate_metadata_inplace(scenario_result)
+    row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
+    return big_query_utils.insert_rows(bq, _PROJECT_ID, dataset_id, table_id,
+                                       [row])
+
+
+def _insert_scenario_result(bq,
+                            dataset_id,
+                            table_id,
+                            scenario_result,
+                            test_metadata_file,
+                            node_info_file,
+                            prometheus_query_results_file,
+                            flatten=True):
+    if flatten:
+        _flatten_result_inplace(scenario_result)
+    _populate_metadata_from_file(scenario_result, test_metadata_file)
+    _populate_node_metadata_from_file(scenario_result, node_info_file)
+    _populate_prometheus_query_results_from_file(scenario_result,
+                                                 prometheus_query_results_file)
     row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
     return big_query_utils.insert_rows(bq, _PROJECT_ID, dataset_id, table_id,
                                        [row])
@@ -123,7 +145,6 @@ def _flatten_result_inplace(scenario_result):
         'serverCpuUsage', None)
     scenario_result['summary'].pop('successfulRequestsPerSecond', None)
     scenario_result['summary'].pop('failedRequestsPerSecond', None)
-    massage_qps_stats.massage_qps_stats(scenario_result)
 
 
 def _populate_metadata_inplace(scenario_result):
@@ -157,6 +178,118 @@ def _populate_metadata_inplace(scenario_result):
     scenario_result['metadata'] = metadata
 
 
+def _populate_metadata_from_file(scenario_result, test_metadata_file):
+    utc_timestamp = str(calendar.timegm(time.gmtime()))
+    metadata = {'created': utc_timestamp}
+
+    _annotation_to_bq_metadata_key_map = {
+        'ci_' + key: key for key in (
+            'buildNumber',
+            'buildUrl',
+            'jobName',
+            'gitCommit',
+            'gitActualCommit',
+        )
+    }
+
+    if os.access(test_metadata_file, os.R_OK):
+        with open(test_metadata_file, 'r') as f:
+            test_metadata = json.loads(f.read())
+
+        # eliminate managedFields from metadata set
+        if 'managedFields' in test_metadata:
+            del test_metadata['managedFields']
+
+        annotations = test_metadata.get('annotations', {})
+
+        # if use kubectl apply ..., kubectl will append current configuration to
+        # annotation, the field is deleted since it includes a lot of irrelevant
+        # information
+        if 'kubectl.kubernetes.io/last-applied-configuration' in annotations:
+            del annotations['kubectl.kubernetes.io/last-applied-configuration']
+
+        # dump all metadata as JSON to testMetadata field
+        scenario_result['testMetadata'] = json.dumps(test_metadata)
+        for key, value in _annotation_to_bq_metadata_key_map.items():
+            if key in annotations:
+                metadata[value] = annotations[key]
+
+    scenario_result['metadata'] = metadata
+
+
+def _populate_node_metadata_from_file(scenario_result, node_info_file):
+    node_metadata = {'driver': {}, 'servers': [], 'clients': []}
+    _node_info_to_bq_node_metadata_key_map = {
+        'Name': 'name',
+        'PodIP': 'podIP',
+        'NodeName': 'nodeName',
+    }
+
+    if os.access(node_info_file, os.R_OK):
+        with open(node_info_file, 'r') as f:
+            file_metadata = json.loads(f.read())
+        for key, value in _node_info_to_bq_node_metadata_key_map.items():
+            node_metadata['driver'][value] = file_metadata['Driver'][key]
+        for clientNodeInfo in file_metadata['Clients']:
+            node_metadata['clients'].append({
+                value: clientNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
+            })
+        for serverNodeInfo in file_metadata['Servers']:
+            node_metadata['servers'].append({
+                value: serverNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
+            })
+
+    scenario_result['nodeMetadata'] = node_metadata
+
+
+def _populate_prometheus_query_results_from_file(scenario_result,
+                                                 prometheus_query_result_file):
+    """Populate the results from Prometheus query to Bigquery table """
+    if os.access(prometheus_query_result_file, os.R_OK):
+        with open(prometheus_query_result_file, 'r', encoding='utf8') as f:
+            file_query_results = json.loads(f.read())
+
+            scenario_result['testDurationSeconds'] = file_query_results[
+                'testDurationSeconds']
+            clientsPrometheusData = []
+            if 'clients' in file_query_results:
+                for client_name, client_data in file_query_results[
+                        'clients'].items():
+                    clientPrometheusData = {'name': client_name}
+                    containersPrometheusData = []
+                    for container_name, container_data in client_data.items():
+                        containerPrometheusData = {
+                            'name': container_name,
+                            'cpuSeconds': container_data['cpuSeconds'],
+                            'memoryMean': container_data['memoryMean'],
+                        }
+                        containersPrometheusData.append(containerPrometheusData)
+                    clientPrometheusData[
+                        'containers'] = containersPrometheusData
+                    clientsPrometheusData.append(clientPrometheusData)
+                scenario_result['clientsPrometheusData'] = clientsPrometheusData
+
+            serversPrometheusData = []
+            if 'servers' in file_query_results:
+                for server_name, server_data in file_query_results[
+                        'servers'].items():
+                    serverPrometheusData = {'name': server_name}
+                    containersPrometheusData = []
+                    for container_name, container_data in server_data.items():
+                        containerPrometheusData = {
+                            'name': container_name,
+                            'cpuSeconds': container_data['cpuSeconds'],
+                            'memoryMean': container_data['memoryMean'],
+                        }
+                        containersPrometheusData.append(containerPrometheusData)
+                    serverPrometheusData[
+                        'containers'] = containersPrometheusData
+                    serversPrometheusData.append(serverPrometheusData)
+            scenario_result['serversPrometheusData'] = serversPrometheusData
+
+
 argp = argparse.ArgumentParser(description='Upload result to big query.')
 argp.add_argument('--bq_result_table',
                   required=True,
@@ -167,6 +300,18 @@ argp.add_argument('--file_to_upload',
                   default='scenario_result.json',
                   type=str,
                   help='Report file to upload.')
+argp.add_argument('--metadata_file_to_upload',
+                  default='metadata.json',
+                  type=str,
+                  help='Metadata file to upload.')
+argp.add_argument('--node_info_file_to_upload',
+                  default='node_info.json',
+                  type=str,
+                  help='Node information file to upload.')
+argp.add_argument('--prometheus_query_results_to_upload',
+                  default='prometheus_query_result.json',
+                  type=str,
+                  help='Prometheus query result file to upload.')
 argp.add_argument('--file_format',
                   choices=['scenario_result', 'netperf_latency_csv'],
                   default='scenario_result',
@@ -181,5 +326,10 @@ if args.file_format == 'netperf_latency_csv':
                                             args.file_to_upload)
 else:
     _upload_scenario_result_to_bigquery(dataset_id, table_id,
-                                        args.file_to_upload)
-print('Successfully uploaded %s to BigQuery.\n' % args.file_to_upload)
+                                        args.file_to_upload,
+                                        args.metadata_file_to_upload,
+                                        args.node_info_file_to_upload,
+                                        args.prometheus_query_results_to_upload)
+print('Successfully uploaded %s, %s, %s and %s to BigQuery.\n' %
+      (args.file_to_upload, args.metadata_file_to_upload,
+       args.node_info_file_to_upload, args.prometheus_query_results_to_upload))

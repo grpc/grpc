@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -40,8 +43,6 @@ tools/run_tests/run_interop_tests.py -l c++ \
     --service_account_key_file="${KOKORO_KEYSTORE_DIR}/73836_interop_to_prod_tests_service_account_key" \
     --default_service_account="interop-to-prod-tests@grpc-testing.iam.gserviceaccount.com" \
     --skip_compute_engine_creds --internal_ci -t -j 4 || FAILED="true"
-
-tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
 
 if [ "$FAILED" != "" ]
 then

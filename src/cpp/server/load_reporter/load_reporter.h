@@ -1,40 +1,46 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <deque>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config.h>
-
-#include "src/core/lib/gprpp/sync.h"
-#include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include <google/protobuf/repeated_ptr_field.h>
 
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/cpp/server/load_reporter/load_data_store.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -140,13 +146,13 @@ class LoadReporter {
   // all the stats data accumulated between the last report (i.e., the last
   // consumption) and the last fetch from Census (i.e., the last production).
   // Thread-safe.
-  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> GenerateLoads(
+  ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> GenerateLoads(
       const std::string& hostname, const std::string& lb_id);
 
   // The feedback is calculated from the stats data recorded in the sliding
   // window. Outdated records are discarded.
   // Thread-safe.
-  ::grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
+  grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
 
   // Wrapper around LoadDataStore::ReportStreamCreated.
   // Thread-safe.
@@ -209,7 +215,7 @@ class LoadReporter {
 
   // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
   // it to the load.
-  void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
+  void AttachOrphanLoadId(grpc::lb::v1::Load* load,
                           const PerBalancerStore& per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};

@@ -21,6 +21,7 @@ package envoy.extensions.filters.network.http_connection_manager.v3;
 import "google/protobuf/any.proto";
 
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/extension.proto";
 import "src/proto/grpc/testing/xds/v3/protocol.proto";
 import "src/proto/grpc/testing/xds/v3/route.proto";
 
@@ -50,6 +51,32 @@ message HttpConnectionManager {
   // Additional settings for HTTP requests handled by the connection manager. These will be
   // applicable to both HTTP1 and HTTP2 requests.
   config.core.v3.HttpProtocolOptions common_http_protocol_options = 35;
+
+  // The number of additional ingress proxy hops from the right side of the
+  // :ref:`config_http_conn_man_headers_x-forwarded-for` HTTP header to trust when
+  // determining the origin client's IP address. The default is zero if this option
+  // is not specified. See the documentation for
+  // :ref:`config_http_conn_man_headers_x-forwarded-for` for more information.
+  uint32 xff_num_trusted_hops = 19;
+
+  // The configuration for the original IP detection extensions.
+  //
+  // When configured the extensions will be called along with the request headers
+  // and information about the downstream connection, such as the directly connected address.
+  // Each extension will then use these parameters to decide the request's effective remote address.
+  // If an extension fails to detect the original IP address and isn't configured to reject
+  // the request, the HCM will try the remaining extensions until one succeeds or rejects
+  // the request. If the request isn't rejected nor any extension succeeds, the HCM will
+  // fallback to using the remote address.
+  //
+  // .. WARNING::
+  //    Extensions cannot be used in conjunction with :ref:`use_remote_address
+  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+  //    nor :ref:`xff_num_trusted_hops
+  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.xff_num_trusted_hops>`.
+  //
+  // [#extension-category: envoy.http.original_ip_detection]
+  repeated config.core.v3.TypedExtensionConfig original_ip_detection_extensions = 46;
 }
 
 message Rds {

@@ -18,10 +18,16 @@
 
 #include "test/core/util/resolve_localhost_ip46.h"
 
-#include <grpc/support/log.h>
+#include <memory>
+#include <vector>
 
-#include "src/core/lib/iomgr/port.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_core {
@@ -32,20 +38,18 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  grpc_resolved_addresses* addresses;
-  grpc_error* err =
-      grpc_blocking_resolve_address("localhost", "https", &addresses);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  for (size_t i = 0; i < addresses->naddrs; i++) {
-    grpc_sockaddr* addr =
-        reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
-    if (addr->sa_family == GRPC_AF_INET) {
+  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+      GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
+  GPR_ASSERT(addresses_or.ok());
+  for (const auto& addr : *addresses_or) {
+    const grpc_sockaddr* sock_addr =
+        reinterpret_cast<const grpc_sockaddr*>(&addr);
+    if (sock_addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
-    } else if (addr->sa_family == GRPC_AF_INET6) {
+    } else if (sock_addr->sa_family == GRPC_AF_INET6) {
       localhost_to_ipv6 = true;
     }
   }
-  grpc_resolved_addresses_destroy(addresses);
 }
 }  // namespace
 

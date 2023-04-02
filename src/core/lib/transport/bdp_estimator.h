@@ -1,35 +1,37 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
-#define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
+
+#include <string>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/time.h"
 
 extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
 
@@ -37,7 +39,7 @@ namespace grpc_core {
 
 class BdpEstimator {
  public:
-  explicit BdpEstimator(const char* name);
+  explicit BdpEstimator(absl::string_view name);
   ~BdpEstimator() {}
 
   int64_t EstimateBdp() const { return estimate_; }
@@ -50,8 +52,8 @@ class BdpEstimator {
   // transport (but not necessarily started)
   void SchedulePing() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
-              accumulator_, estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64,
+              std::string(name_).c_str(), accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::UNSCHEDULED);
     ping_state_ = PingState::SCHEDULED;
@@ -63,8 +65,8 @@ class BdpEstimator {
   // the ping is on the wire
   void StartPing() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
-              accumulator_, estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64,
+              std::string(name_).c_str(), accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
@@ -72,7 +74,7 @@ class BdpEstimator {
   }
 
   // Completes a previously started ping, returns when to schedule the next one
-  grpc_millis CompletePing();
+  Timestamp CompletePing();
 
   int64_t accumulator() { return accumulator_; }
 
@@ -84,12 +86,12 @@ class BdpEstimator {
   int64_t estimate_;
   // when was the current ping started?
   gpr_timespec ping_start_time_;
-  int inter_ping_delay_;
+  Duration inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;
-  const char* name_;
+  absl::string_view name_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H */
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H

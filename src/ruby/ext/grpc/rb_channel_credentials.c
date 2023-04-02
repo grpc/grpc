@@ -18,18 +18,18 @@
 
 #include <ruby/ruby.h>
 
+#include "rb_channel_credentials.h"
+
 #include <string.h>
 
-#include "rb_channel_credentials.h"
+#include "rb_call_credentials.h"
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include "rb_call_credentials.h"
-#include "rb_grpc.h"
 
 /* grpc_rb_cChannelCredentials is the ruby class that proxies
    grpc_channel_credentials. */

@@ -19,15 +19,25 @@ set -ex
 cd $(dirname $0)/../..
 REPO_ROOT=$(pwd)
 
-if [ "$CLANG_FORMAT_SKIP_DOCKER" == "" ]
-then
+if [ "$CLANG_FORMAT_SKIP_DOCKER" == "" ]; then
+  CLANG_FORMAT_ROOT="/local-code"
   # build clang-format docker image
   docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
+
+  if [ "$CHANGED_FILES" != "" ]; then
+    # ensure the CLANG_FORMAT_ROOT is properly set for any CHANGED_FILES
+    CHANGED_FILES=$(printf "$CLANG_FORMAT_ROOT/%s " $CHANGED_FILES)
+  fi
 
   # run clang-format against the checked out codebase
   # when modifying the checked-out files, the current user will be impersonated
   # so that the updated files don't end up being owned by "root".
-  docker run -e TEST="$TEST" -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_FORMAT_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_format /clang_format_all_the_things.sh
+  docker run -e TEST="$TEST" -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_FORMAT_ROOT=$CLANG_FORMAT_ROOT --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_format /clang_format_all_the_things.sh
 else
-  CLANG_FORMAT_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_format/clang_format_all_the_things.sh
+  export CLANG_FORMAT_ROOT="${REPO_ROOT}"
+  if [ "$CHANGED_FILES" != "" ]; then
+    # ensure the CLANG_FORMAT_ROOT is properly set for any CHANGED_FILES
+    CHANGED_FILES=$(printf "$CLANG_FORMAT_ROOT/%s " $CHANGED_FILES)
+  fi
+  tools/dockerfile/grpc_clang_format/clang_format_all_the_things.sh
 fi

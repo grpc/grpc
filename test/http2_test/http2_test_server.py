@@ -16,19 +16,19 @@
 import argparse
 import logging
 import sys
-import twisted
-import twisted.internet
-import twisted.internet.endpoints
-import twisted.internet.reactor
 
 import http2_base_server
+import test_data_frame_padding
 import test_goaway
 import test_max_streams
 import test_ping
 import test_rst_after_data
 import test_rst_after_header
 import test_rst_during_data
-import test_data_frame_padding
+import twisted
+import twisted.internet
+import twisted.internet.endpoints
+import twisted.internet.reactor
 
 _TEST_CASE_MAPPING = {
     'rst_after_header': test_rst_after_header.TestcaseRstStreamAfterHeader,

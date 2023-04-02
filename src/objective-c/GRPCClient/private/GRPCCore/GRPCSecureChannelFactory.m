@@ -18,6 +18,7 @@
 
 #import "GRPCSecureChannelFactory.h"
 
+#import <GRPCClient/GRPCTypes.h>
 #include <grpc/grpc_security.h>
 
 #import "ChannelArgsUtil.h"
@@ -25,12 +26,13 @@
 
 @implementation GRPCSecureChannelFactory {
   grpc_channel_credentials *_channelCreds;
+  NSString *_sslRootPathStr;
 }
 
 + (instancetype)factoryWithPEMRootCertificates:(NSString *)rootCerts
                                     privateKey:(NSString *)privateKey
                                      certChain:(NSString *)certChain
-                                         error:(NSError **)errorPtr {
+                                         error:(NSError *__autoreleasing *)errorPtr {
   return [[self alloc] initWithPEMRootCerts:rootCerts
                                  privateKey:privateKey
                                   certChain:certChain
@@ -51,7 +53,7 @@
 - (instancetype)initWithPEMRootCerts:(NSString *)rootCerts
                           privateKey:(NSString *)privateKey
                            certChain:(NSString *)certChain
-                               error:(NSError **)errorPtr {
+                               error:(NSError *__autoreleasing *)errorPtr {
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     NSString *rootsPEM = @"roots";
@@ -60,8 +62,20 @@
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSBundle *resourceBundle = [NSBundle
         bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];
-    NSString *path = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
-    setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
+    _sslRootPathStr = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
+    const char *utf8Str = [_sslRootPathStr cStringUsingEncoding:NSUTF8StringEncoding];
+    if (utf8Str != NULL) {
+      setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", utf8Str, 1);
+    } else {
+      if (errorPtr) {
+        *errorPtr = [NSError
+            errorWithDomain:kGRPCErrorDomain
+                       code:GRPCErrorCodeInternal
+                   userInfo:@{
+                     NSLocalizedDescriptionKey : @"Failed to set default ssl root file path."
+                   }];
+      }
+    }
   });
 
   NSData *rootsASCII = nil;
@@ -72,17 +86,18 @@
 
   grpc_channel_credentials *creds = NULL;
   if (privateKey.length == 0 && certChain.length == 0) {
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
+    creds = grpc_ssl_credentials_create((const char *)rootsASCII.bytes, NULL, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
     NSData *privateKeyASCII = [self nullTerminatedDataWithString:privateKey];
     NSData *certChainASCII = [self nullTerminatedDataWithString:certChain];
-    key_cert_pair.private_key = privateKeyASCII.bytes;
-    key_cert_pair.cert_chain = certChainASCII.bytes;
+    key_cert_pair.private_key = (const char *)privateKeyASCII.bytes;
+    key_cert_pair.cert_chain = (const char *)certChainASCII.bytes;
     if (key_cert_pair.private_key == NULL || key_cert_pair.cert_chain == NULL) {
-      creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
+      creds = grpc_ssl_credentials_create((const char *)rootsASCII.bytes, NULL, NULL, NULL);
     } else {
-      creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
+      creds =
+          grpc_ssl_credentials_create((const char *)rootsASCII.bytes, &key_cert_pair, NULL, NULL);
     }
   }
 
@@ -99,7 +114,7 @@
   }
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
-      grpc_secure_channel_create(_channelCreds, host.UTF8String, coreChannelArgs, NULL);
+      grpc_channel_create(host.UTF8String, _channelCreds, coreChannelArgs);
   GRPCFreeChannelArgs(coreChannelArgs);
   return unmanagedChannel;
 }

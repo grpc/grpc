@@ -43,20 +43,23 @@ _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 _GRPC_DEP_NAMES = [
     'upb', 'boringssl', 'zlib', 'com_google_protobuf', 'com_google_googletest',
     'rules_cc', 'com_github_google_benchmark', 'com_github_cares_cares',
-    'com_google_absl', 'io_opencensus_cpp', 'envoy_api', _BAZEL_SKYLIB_DEP_NAME,
-    _BAZEL_TOOLCHAINS_DEP_NAME, _BAZEL_COMPDB_DEP_NAME,
+    'com_google_absl', 'com_google_fuzztest', 'io_opencensus_cpp', 'envoy_api',
+    _BAZEL_SKYLIB_DEP_NAME, _BAZEL_TOOLCHAINS_DEP_NAME, _BAZEL_COMPDB_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME, _YAML_PYYAML_DEP_NAME,
     _TWISTED_INCREMENTAL_DEP_NAME, _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME, 'io_bazel_rules_go',
-    'build_bazel_rules_apple', 'build_bazel_apple_support', 'libuv',
-    'com_googlesource_code_re2', 'bazel_gazelle', 'opencensus_proto',
-    'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis'
+    'build_bazel_rules_apple', 'build_bazel_apple_support',
+    'com_github_libuv_libuv', 'com_googlesource_code_re2', 'bazel_gazelle',
+    'opencensus_proto', 'com_envoyproxy_protoc_gen_validate',
+    'com_google_googleapis', 'com_google_libprotobuf_mutator',
+    'com_github_cncf_udpa'
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
     'upb',  # third_party/upb is checked in locally
     'rules_cc',
     'com_google_absl',
+    'com_google_fuzztest',
     'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
@@ -74,6 +77,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'opencensus_proto',
     'com_envoyproxy_protoc_gen_validate',
     'com_google_googleapis',
+    'com_google_libprotobuf_mutator'
 ]
 
 
@@ -163,10 +167,10 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
-    print("workspace_git_hashes: %s" % workspace_git_hashes)
-    print("git_submodule_hashes: %s" % git_submodule_hashes)
-    print("workspace_git_hashes - git_submodule_hashes: %s" %
-          (workspace_git_hashes - git_submodule_hashes))
+    print(("workspace_git_hashes: %s" % workspace_git_hashes))
+    print(("git_submodule_hashes: %s" % git_submodule_hashes))
+    print(("workspace_git_hashes - git_submodule_hashes: %s" %
+           (workspace_git_hashes - git_submodule_hashes)))
     sys.exit(1)
 
 # Also check that we can override each dependency

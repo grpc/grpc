@@ -19,9 +19,9 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include "src/compiler/config_protobuf.h"
-
 #include <string>
+
+#include "src/compiler/config_protobuf.h"
 
 #ifdef GRPC_CUSTOM_STRING
 #warning GRPC_CUSTOM_STRING is no longer supported. Please use std::string.

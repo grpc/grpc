@@ -12,13 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+grpc_proto_fuzzer(
+    name = "api_fuzzer",
+    size = "enormous",
+    srcs = ["api_fuzzer.cc"],
+    corpus = "api_fuzzer_corpus",
+    language = "C++",
+    proto = "api_fuzzer.proto",
+    proto_deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:slice",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzz_config_vars",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
 
 grpc_fuzzer(
     name = "client_fuzzer",
@@ -26,10 +56,15 @@ grpc_fuzzer(
     corpus = "client_fuzzer_corpus",
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -39,9 +74,13 @@ grpc_fuzzer(
     corpus = "server_fuzzer_corpus",
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

@@ -19,16 +19,16 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_trace_v3_http_tracer_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_http_tracer_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_trace_v3_Tracing_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_trace_v3_http_tracer_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.trace.v3.Tracing");
+UPB_INLINE const upb_MessageDef *envoy_config_trace_v3_Tracing_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_trace_v3_http_tracer_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.trace.v3.Tracing");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_trace_v3_Tracing_Http_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_trace_v3_http_tracer_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.trace.v3.Tracing.Http");
+UPB_INLINE const upb_MessageDef *envoy_config_trace_v3_Tracing_Http_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_trace_v3_http_tracer_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.trace.v3.Tracing.Http");
 }
 
 #ifdef __cplusplus

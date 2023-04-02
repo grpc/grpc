@@ -14,21 +14,15 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/iomgr/load_file.h"
+
+#include <stdio.h>
+
+#include "gtest/gtest.h"
+
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -45,8 +39,7 @@ TEST(STAT, GetTimestampOnTmpFile) {
   fclose(tmp);
   // Check the last modified date is correctly set.
   time_t timestamp = 0;
-  absl::Status status =
-      grpc_core::GetFileModificationTime(tmp_name, &timestamp);
+  absl::Status status = GetFileModificationTime(tmp_name, &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kOk);
   EXPECT_GT(timestamp, 0);
   // Clean up.
@@ -56,8 +49,7 @@ TEST(STAT, GetTimestampOnTmpFile) {
 
 TEST(STAT, GetTimestampOnFailure) {
   time_t timestamp = 0;
-  absl::Status status =
-      grpc_core::GetFileModificationTime("/DOES_NOT_EXIST", &timestamp);
+  absl::Status status = GetFileModificationTime("/DOES_NOT_EXIST", &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
   // Check the last modified date is not set.
   EXPECT_EQ(timestamp, 0);
@@ -68,7 +60,7 @@ TEST(STAT, GetTimestampOnFailure) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -19,17 +19,17 @@
 #include <ruby/ruby.h>
 
 #include "rb_call.h"
+
+#include "rb_byte_buffer.h"
+#include "rb_call_credentials.h"
+#include "rb_completion_queue.h"
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include "rb_byte_buffer.h"
-#include "rb_call_credentials.h"
-#include "rb_completion_queue.h"
-#include "rb_grpc.h"
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
@@ -973,6 +973,7 @@ void Init_grpc_call() {
   grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
   grpc_rb_cMdAry =
       rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cMdAry);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);

@@ -1,34 +1,48 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPCXX_CHANNEL_FILTER_H
-#define GRPCXX_CHANNEL_FILTER_H
+#ifndef GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
+#define GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/config.h>
+#include <stddef.h>
 
 #include <functional>
-#include <vector>
+#include <new>
+#include <string>
+#include <utility>
 
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 /// An interface to define filters.
 ///
@@ -51,52 +65,8 @@ class MetadataBatch {
 
   grpc_metadata_batch* batch() const { return batch_; }
 
-  /// Adds metadata and returns the newly allocated storage.
-  /// The caller takes ownership of the result, which must exist for the
-  /// lifetime of the gRPC call.
-  grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
-
-  class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
-                                              const grpc_mdelem> {
-   public:
-    const grpc_mdelem& operator*() const { return elem_->md; }
-    grpc_mdelem operator->() const { return elem_->md; }
-
-    const_iterator& operator++() {
-      elem_ = elem_->next;
-      return *this;
-    }
-    const_iterator operator++(int) {
-      const_iterator tmp(*this);
-      operator++();
-      return tmp;
-    }
-    const_iterator& operator--() {
-      elem_ = elem_->prev;
-      return *this;
-    }
-    const_iterator operator--(int) {
-      const_iterator tmp(*this);
-      operator--();
-      return tmp;
-    }
-
-    bool operator==(const const_iterator& other) const {
-      return elem_ == other.elem_;
-    }
-    bool operator!=(const const_iterator& other) const {
-      return elem_ != other.elem_;
-    }
-
-   private:
-    friend class MetadataBatch;
-    explicit const_iterator(grpc_linked_mdelem* elem) : elem_(elem) {}
-
-    grpc_linked_mdelem* elem_;
-  };
-
-  const_iterator begin() const { return const_iterator(batch_->list.head); }
-  const_iterator end() const { return const_iterator(nullptr); }
+  /// Adds metadata.
+  void AddMetadata(const string& key, const string& value);
 
  private:
   grpc_metadata_batch* batch_;  // Not owned.
@@ -113,10 +83,10 @@ class TransportOp {
   grpc_transport_op* op() const { return op_; }
 
   // TODO(roth): Add a C++ wrapper for grpc_error?
-  grpc_error* disconnect_with_error() const {
+  grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+  bool send_goaway() const { return !op_->goaway_error.ok(); }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -167,12 +137,6 @@ class TransportStreamOpBatch {
     return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
-  uint32_t* send_initial_metadata_flags() const {
-    return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
-                                             .send_initial_metadata_flags
-                                      : nullptr;
-  }
-
   grpc_closure* recv_initial_metadata_ready() const {
     return op_->recv_initial_metadata
                ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
@@ -182,22 +146,21 @@ class TransportStreamOpBatch {
     op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* send_message() const {
-    return op_->send_message ? &op_->payload->send_message.send_message
+  grpc_core::SliceBuffer* send_message() const {
+    return op_->send_message ? op_->payload->send_message.send_message
                              : nullptr;
   }
-  void set_send_message(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message) {
+
+  void set_send_message(grpc_core::SliceBuffer* send_message) {
     op_->send_message = true;
-    op_->payload->send_message.send_message = std::move(send_message);
+    op_->payload->send_message.send_message = send_message;
   }
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message() const {
+  absl::optional<grpc_core::SliceBuffer>* recv_message() const {
     return op_->recv_message ? op_->payload->recv_message.recv_message
                              : nullptr;
   }
-  void set_recv_message(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) {
+  void set_recv_message(absl::optional<grpc_core::SliceBuffer>* recv_message) {
     op_->recv_message = true;
     op_->payload->recv_message.recv_message = recv_message;
   }
@@ -205,18 +168,6 @@ class TransportStreamOpBatch {
   census_context* get_census_context() const {
     return static_cast<census_context*>(
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
-  }
-
-  const gpr_atm* get_peer_string() const {
-    if (op_->send_initial_metadata &&
-        op_->payload->send_initial_metadata.peer_string != nullptr) {
-      return op_->payload->send_initial_metadata.peer_string;
-    } else if (op_->recv_initial_metadata &&
-               op_->payload->recv_initial_metadata.peer_string != nullptr) {
-      return op_->payload->recv_initial_metadata.peer_string;
-    } else {
-      return nullptr;
-    }
   }
 
  private:
@@ -236,9 +187,9 @@ class ChannelData {
   // TODO(roth): Come up with a more C++-like API for the channel element.
 
   /// Initializes the channel data.
-  virtual grpc_error* Init(grpc_channel_element* /*elem*/,
-                           grpc_channel_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+  virtual grpc_error_handle Init(grpc_channel_element* /*elem*/,
+                                 grpc_channel_element_args* /*args*/) {
+    return absl::OkStatus();
   }
 
   // Called before destruction.
@@ -259,9 +210,9 @@ class CallData {
   // TODO(roth): Come up with a more C++-like API for the call element.
 
   /// Initializes the call data.
-  virtual grpc_error* Init(grpc_call_element* /*elem*/,
-                           const grpc_call_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+  virtual grpc_error_handle Init(grpc_call_element* /*elem*/,
+                                 const grpc_call_element_args* /*args*/) {
+    return absl::OkStatus();
   }
 
   // Called before destruction.
@@ -288,8 +239,8 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static grpc_error* InitChannelElement(grpc_channel_element* elem,
-                                        grpc_channel_element_args* args) {
+  static grpc_error_handle InitChannelElement(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
     // Construct the object in the already-allocated memory.
     ChannelDataType* channel_data = new (elem->channel_data) ChannelDataType();
     return channel_data->Init(elem, args);
@@ -319,8 +270,8 @@ class ChannelFilter final {
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static grpc_error* InitCallElement(grpc_call_element* elem,
-                                     const grpc_call_element_args* args) {
+  static grpc_error_handle InitCallElement(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
     // Construct the object in the already-allocated memory.
     CallDataType* call_data = new (elem->call_data) CallDataType();
     return call_data->Init(elem, args);
@@ -348,16 +299,10 @@ class ChannelFilter final {
   }
 };
 
-struct FilterRecord {
-  grpc_channel_stack_type stack_type;
-  int priority;
-  std::function<bool(const grpc_channel_args&)> include_filter;
-  grpc_channel_filter filter;
-};
-extern std::vector<FilterRecord>* channel_filters;
-
-void ChannelFilterPluginInit();
-void ChannelFilterPluginShutdown();
+void RegisterChannelFilter(
+    grpc_channel_stack_type stack_type, int priority,
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
+    const grpc_channel_filter* filter);
 
 }  // namespace internal
 
@@ -374,29 +319,26 @@ void ChannelFilterPluginShutdown();
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter) {
-  // If we haven't been called before, initialize channel_filters and
-  // call grpc_register_plugin().
-  if (internal::channel_filters == nullptr) {
-    grpc_register_plugin(internal::ChannelFilterPluginInit,
-                         internal::ChannelFilterPluginShutdown);
-    internal::channel_filters = new std::vector<internal::FilterRecord>();
-  }
-  // Add an entry to channel_filters. The filter will be added when the
-  // C-core initialization code calls ChannelFilterPluginInit().
-  typedef internal::ChannelFilter<ChannelDataType, CallDataType> FilterType;
-  internal::FilterRecord filter_record = {
-      stack_type,
-      priority,
-      include_filter,
-      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
-       FilterType::call_data_size, FilterType::InitCallElement,
-       FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
-       FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetChannelInfo, name}};
-  internal::channel_filters->push_back(filter_record);
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter) {
+  using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
+  static const grpc_channel_filter filter = {
+      FilterType::StartTransportStreamOpBatch,
+      nullptr,
+      FilterType::StartTransportOp,
+      FilterType::call_data_size,
+      FilterType::InitCallElement,
+      FilterType::SetPollsetOrPollsetSet,
+      FilterType::DestroyCallElement,
+      FilterType::channel_data_size,
+      FilterType::InitChannelElement,
+      grpc_channel_stack_no_post_init,
+      FilterType::DestroyChannelElement,
+      FilterType::GetChannelInfo,
+      name};
+  grpc::internal::RegisterChannelFilter(stack_type, priority,
+                                        std::move(include_filter), &filter);
 }
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_FILTER_H
+#endif  // GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H

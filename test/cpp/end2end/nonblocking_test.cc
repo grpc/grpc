@@ -1,22 +1,24 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
+
+#include "absl/memory/memory.h"
 
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -25,9 +27,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/memory/memory.h"
-
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -44,7 +43,7 @@
 // non-blocking (not polls from resolver, timer thread, etc), and only when the
 // thread is waiting on polls caused by CompletionQueue::AsyncNext (not for
 // picking a port or other reasons).
-GPR_TLS_DECL(g_is_nonblocking_poll);
+static thread_local bool g_is_nonblocking_poll;
 
 namespace {
 
@@ -52,7 +51,7 @@ int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
                                    int timeout) {
   // Only assert that this poll should have zero timeout if we're in the
   // middle of a zero-timeout CQ Next.
-  if (gpr_tls_get(&g_is_nonblocking_poll)) {
+  if (g_is_nonblocking_poll) {
     GPR_ASSERT(timeout == 0);
   }
   return poll(pfds, nfds, timeout);
@@ -82,15 +81,15 @@ class NonblockingTest : public ::testing::Test {
   bool LoopForTag(void** tag, bool* ok) {
     // Temporarily set the thread-local nonblocking poll flag so that the polls
     // caused by this loop are indeed sent by the library with zero timeout.
-    intptr_t orig_val = gpr_tls_get(&g_is_nonblocking_poll);
-    gpr_tls_set(&g_is_nonblocking_poll, static_cast<intptr_t>(true));
+    bool orig_val = g_is_nonblocking_poll;
+    g_is_nonblocking_poll = true;
     for (;;) {
       auto r = cq_->AsyncNext(tag, ok, gpr_time_0(GPR_CLOCK_REALTIME));
       if (r == CompletionQueue::SHUTDOWN) {
-        gpr_tls_set(&g_is_nonblocking_poll, orig_val);
+        g_is_nonblocking_poll = orig_val;
         return false;
       } else if (r == CompletionQueue::GOT_EVENT) {
-        gpr_tls_set(&g_is_nonblocking_poll, orig_val);
+        g_is_nonblocking_poll = orig_val;
         return true;
       }
     }
@@ -111,8 +110,7 @@ class NonblockingTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = std::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -199,17 +197,16 @@ int main(int argc, char** argv) {
   // Override the poll function before anything else can happen
   grpc_poll_function = maybe_assert_non_blocking_poll;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  gpr_tls_init(&g_is_nonblocking_poll);
 
   // Start the nonblocking poll thread-local variable as false because the
   // thread that issues RPCs starts by picking a port (which has non-zero
   // timeout).
-  gpr_tls_set(&g_is_nonblocking_poll, static_cast<intptr_t>(false));
+  g_is_nonblocking_poll = false;
 
   int ret = RUN_ALL_TESTS();
-  gpr_tls_destroy(&g_is_nonblocking_poll);
+
   return ret;
 #else   // GRPC_POSIX_SOCKET
   (void)argc;

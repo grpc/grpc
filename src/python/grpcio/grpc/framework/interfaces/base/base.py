@@ -26,11 +26,6 @@ import abc
 import enum
 import threading  # pylint: disable=unused-import
 
-import six
-
-# abandonment is referenced from specification in this module.
-from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
-
 # pylint: disable=too-many-arguments
 
 
@@ -84,7 +79,7 @@ class Outcome(object):
         REMOTE_FAILURE = 'remote failure'
 
 
-class Completion(six.with_metaclass(abc.ABCMeta)):
+class Completion(abc.ABC):
     """An aggregate of the values exchanged upon operation completion.
 
   Attributes:
@@ -94,7 +89,7 @@ class Completion(six.with_metaclass(abc.ABCMeta)):
   """
 
 
-class OperationContext(six.with_metaclass(abc.ABCMeta)):
+class OperationContext(abc.ABC):
     """Provides operation-related information and action."""
 
     @abc.abstractmethod
@@ -149,7 +144,7 @@ class OperationContext(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Operator(six.with_metaclass(abc.ABCMeta)):
+class Operator(abc.ABC):
     """An interface through which to participate in an operation."""
 
     @abc.abstractmethod
@@ -173,7 +168,7 @@ class Operator(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class ProtocolReceiver(six.with_metaclass(abc.ABCMeta)):
+class ProtocolReceiver(abc.ABC):
     """A means of receiving protocol values during an operation."""
 
     @abc.abstractmethod
@@ -186,7 +181,7 @@ class ProtocolReceiver(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Subscription(six.with_metaclass(abc.ABCMeta)):
+class Subscription(abc.ABC):
     """Describes customer code's interest in values from the other side.
 
   Attributes:
@@ -213,7 +208,7 @@ class Subscription(six.with_metaclass(abc.ABCMeta)):
         FULL = 'full'
 
 
-class Servicer(six.with_metaclass(abc.ABCMeta)):
+class Servicer(abc.ABC):
     """Interface for service implementations."""
 
     @abc.abstractmethod
@@ -241,7 +236,7 @@ class Servicer(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class End(six.with_metaclass(abc.ABCMeta)):
+class End(abc.ABC):
     """Common type for entry-point objects on both sides of an operation."""
 
     @abc.abstractmethod

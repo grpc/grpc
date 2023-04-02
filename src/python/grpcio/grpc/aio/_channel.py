@@ -15,23 +15,34 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, Optional, Sequence, List
+from typing import Any, Iterable, List, Optional, Sequence
 
 import grpc
-from grpc import _common, _compression, _grpcio_metadata
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 
-from . import _base_call, _base_channel
-from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
-                    UnaryUnaryCall)
-from ._interceptor import (
-    InterceptedUnaryUnaryCall, InterceptedUnaryStreamCall,
-    InterceptedStreamUnaryCall, InterceptedStreamStreamCall, ClientInterceptor,
-    UnaryUnaryClientInterceptor, UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor, StreamStreamClientInterceptor)
+from . import _base_call
+from . import _base_channel
+from ._call import StreamStreamCall
+from ._call import StreamUnaryCall
+from ._call import UnaryStreamCall
+from ._call import UnaryUnaryCall
+from ._interceptor import ClientInterceptor
+from ._interceptor import InterceptedStreamStreamCall
+from ._interceptor import InterceptedStreamUnaryCall
+from ._interceptor import InterceptedUnaryStreamCall
+from ._interceptor import InterceptedUnaryUnaryCall
+from ._interceptor import StreamStreamClientInterceptor
+from ._interceptor import StreamUnaryClientInterceptor
+from ._interceptor import UnaryStreamClientInterceptor
+from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import (ChannelArgumentType, DeserializingFunction,
-                      SerializingFunction, RequestIterableType)
+from ._typing import ChannelArgumentType
+from ._typing import DeserializingFunction
+from ._typing import RequestIterableType
+from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 _USER_AGENT = 'grpc-python-asyncio/{}'.format(_grpcio_metadata.__version__)
@@ -69,6 +80,7 @@ class _BaseMultiCallable:
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[ClientInterceptor]]
+    _references: List[Any]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -79,6 +91,7 @@ class _BaseMultiCallable:
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         interceptors: Optional[Sequence[ClientInterceptor]],
+        references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -87,6 +100,7 @@ class _BaseMultiCallable:
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
+        self._references = references
 
     @staticmethod
     def _init_metadata(
@@ -347,7 +361,7 @@ class Channel(_base_channel.Channel):
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
         if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace, loop=self._loop)
+            await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:
@@ -358,6 +372,11 @@ class Channel(_base_channel.Channel):
 
     async def close(self, grace: Optional[float] = None):
         await self._close(grace)
+
+    def __del__(self):
+        if hasattr(self, '_channel'):
+            if not self._channel.closed():
+                self._channel.close()
 
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
@@ -386,7 +405,7 @@ class Channel(_base_channel.Channel):
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
-                                       self._unary_unary_interceptors,
+                                       self._unary_unary_interceptors, [self],
                                        self._loop)
 
     def unary_stream(
@@ -398,7 +417,7 @@ class Channel(_base_channel.Channel):
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._unary_stream_interceptors,
+                                        self._unary_stream_interceptors, [self],
                                         self._loop)
 
     def stream_unary(
@@ -410,7 +429,7 @@ class Channel(_base_channel.Channel):
         return StreamUnaryMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._stream_unary_interceptors,
+                                        self._stream_unary_interceptors, [self],
                                         self._loop)
 
     def stream_stream(
@@ -423,7 +442,7 @@ class Channel(_base_channel.Channel):
                                          request_serializer,
                                          response_deserializer,
                                          self._stream_stream_interceptors,
-                                         self._loop)
+                                         [self], self._loop)
 
 
 def insecure_channel(
@@ -438,7 +457,7 @@ def insecure_channel(
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
       interceptors: An optional sequence of interceptors that will be executed for
         any call executed with this channel.
 
@@ -462,7 +481,7 @@ def secure_channel(target: str,
       options: An optional list of key-value pairs (:term:`channel_arguments`
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+        used over the lifetime of the channel.
       interceptors: An optional sequence of interceptors that will be executed for
         any call executed with this channel.
 

@@ -1,28 +1,34 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <climits>
+#include <initializer_list>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc {
 
@@ -49,17 +55,16 @@ ThreadManager::WorkerThread::~WorkerThread() {
   thd_.Join();
 }
 
-ThreadManager::ThreadManager(const char* name,
-                             grpc_resource_quota* resource_quota,
+ThreadManager::ThreadManager(const char*, grpc_resource_quota* resource_quota,
                              int min_pollers, int max_pollers)
     : shutdown_(false),
+      thread_quota_(
+          grpc_core::ResourceQuota::FromC(resource_quota)->thread_quota()),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
       num_threads_(0),
-      max_active_threads_sofar_(0) {
-  resource_user_ = grpc_resource_user_create(resource_quota, name);
-}
+      max_active_threads_sofar_(0) {}
 
 ThreadManager::~ThreadManager() {
   {
@@ -67,8 +72,6 @@ ThreadManager::~ThreadManager() {
     GPR_ASSERT(num_threads_ == 0);
   }
 
-  grpc_core::ExecCtx exec_ctx;  // grpc_resource_user_unref needs an exec_ctx
-  grpc_resource_user_unref(resource_user_);
   CleanupCompletedThreads();
 }
 
@@ -109,7 +112,7 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   }
 
   // Give a thread back to the resource quota
-  grpc_resource_user_free_threads(resource_user_, 1);
+  thread_quota_->Release(1);
 }
 
 void ThreadManager::CleanupCompletedThreads() {
@@ -124,12 +127,11 @@ void ThreadManager::CleanupCompletedThreads() {
 }
 
 void ThreadManager::Initialize() {
-  if (!grpc_resource_user_allocate_threads(resource_user_, min_pollers_)) {
-    gpr_log(GPR_ERROR,
-            "No thread quota available to even create the minimum required "
-            "polling threads (i.e %d). Unable to start the thread manager",
-            min_pollers_);
-    abort();
+  if (!thread_quota_->Reserve(min_pollers_)) {
+    grpc_core::Crash(absl::StrFormat(
+        "No thread quota available to even create the minimum required "
+        "polling threads (i.e %d). Unable to start the thread manager",
+        min_pollers_));
   }
 
   {
@@ -171,7 +173,7 @@ void ThreadManager::MainWorkLoop() {
         // quota available to create a new thread, start a new poller thread
         bool resource_exhausted = false;
         if (!shutdown_ && num_pollers_ < min_pollers_) {
-          if (grpc_resource_user_allocate_threads(resource_user_, 1)) {
+          if (thread_quota_->Reserve(1)) {
             // We can allocate a new poller thread
             num_pollers_++;
             num_threads_++;

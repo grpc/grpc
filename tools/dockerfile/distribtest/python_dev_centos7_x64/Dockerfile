@@ -14,14 +14,14 @@
 
 FROM centos:7
 
-RUN yum install -y python
-RUN yum install -y python-devel
+RUN yum install -y python3
+RUN yum install -y python3-devel
 RUN yum install -y epel-release
-RUN yum install -y python-pip
-RUN pip install --upgrade pip==19.3.1
-RUN pip install -U virtualenv
+RUN yum install -y python3-pip
+RUN python3 -m pip install --upgrade pip==19.3.1
+RUN python3 -m pip install -U virtualenv
 
-# The default gcc of CentOS 7 is gcc 4.8 which is older than gcc 4.9,
+# The default gcc of CentOS 7 is gcc 4.8 which is older than gcc 5.1,
 # the minimum supported gcc version for gRPC Core so let's upgrade to
 # the oldest one that can build gRPC on Centos 7.
 RUN yum install -y centos-release-scl

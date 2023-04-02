@@ -1,0 +1,59 @@
+// Copyright 2022 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.load_balancing_policies.ring_hash.v3;
+
+import "google/protobuf/wrappers.proto";
+
+// [#protodoc-title: Ring Hash Load Balancing Policy]
+
+// This configuration allows the built-in RING_HASH LB policy to be configured via the LB policy
+// extension point. See the :ref:`load balancing architecture overview
+// <arch_overview_load_balancing_types>` for more information.
+// [#extension: envoy.clusters.lb_policy]
+// [#next-free-field: 6]
+message RingHash {
+  // The hash function used to hash hosts onto the ketama ring.
+  enum HashFunction {
+    // Currently defaults to XX_HASH.
+    DEFAULT_HASH = 0;
+
+    // Use `xxHash <https://github.com/Cyan4973/xxHash>`_.
+    XX_HASH = 1;
+
+    // Use `MurmurHash2 <https://sites.google.com/site/murmurhash/>`_, this is compatible with
+    // std:hash<string> in GNU libstdc++ 3.4.20 or above. This is typically the case when compiled
+    // on Linux and not macOS.
+    MURMUR_HASH_2 = 2;
+  }
+
+  // The hash function used to hash hosts onto the ketama ring. The value defaults to
+  // :ref:`XX_HASH<envoy_v3_api_enum_value_config.cluster.v3.Cluster.RingHashLbConfig.HashFunction.XX_HASH>`.
+  HashFunction hash_function = 1;
+
+  // Minimum hash ring size. The larger the ring is (that is, the more hashes there are for each
+  // provided host) the better the request distribution will reflect the desired weights. Defaults
+  // to 1024 entries, and limited to 8M entries. See also
+  // :ref:`maximum_ring_size<envoy_v3_api_field_config.cluster.v3.Cluster.RingHashLbConfig.maximum_ring_size>`.
+  google.protobuf.UInt64Value minimum_ring_size = 2;
+
+  // Maximum hash ring size. Defaults to 8M entries, and limited to 8M entries, but can be lowered
+  // to further constrain resource use. See also
+  // :ref:`minimum_ring_size<envoy_v3_api_field_config.cluster.v3.Cluster.RingHashLbConfig.minimum_ring_size>`.
+  google.protobuf.UInt64Value maximum_ring_size = 3;
+}

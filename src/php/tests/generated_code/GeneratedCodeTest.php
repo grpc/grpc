@@ -27,8 +27,8 @@ class GeneratedCodeTest extends AbstractGeneratedCodeTest
                 'credentials' => Grpc\ChannelCredentials::createSsl(
                     file_get_contents(dirname(__FILE__).'/../data/ca.pem')),
                 'grpc.ssl_target_name_override' => 'foo.test.google.fr',
-        
-            ]);
+            ] + self::$clientOptions
+        );
     }
 
     public function tearDown(): void

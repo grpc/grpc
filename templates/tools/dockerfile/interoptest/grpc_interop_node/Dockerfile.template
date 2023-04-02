@@ -14,12 +14,12 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../debian_jessie_header.include"/>
+  FROM debian:jessie
   
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../python_deps.include"/>
-  <%include file="../../node_deps.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../node_deps.include"/>
   # Define the default command.
   CMD ["bash"]
   

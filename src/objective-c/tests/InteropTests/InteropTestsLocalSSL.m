@@ -20,12 +20,13 @@
 #import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
+#import "../Common/TestUtils.h"
 #import "InteropTests.h"
+
 // The server address is derived from preprocessor macro, which is
 // in turn derived from environment variable of the same name.
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kLocalSSLHost = NSStringize(HOST_PORT_LOCALSSL);
 
 // The Protocol Buffers encoding overhead of local interop server. Acquired
 // by experiment. Adjust this when server's proto file changes.
@@ -38,7 +39,7 @@ static int32_t kLocalInteropServerOverhead = 10;
 @implementation InteropTestsLocalSSL
 
 + (NSString *)host {
-  return kLocalSSLHost;
+  return GRPCGetLocalInteropTestServerAddressSSL();
 }
 
 + (NSString *)PEMRootCertificates {
@@ -68,7 +69,9 @@ static int32_t kLocalInteropServerOverhead = 10;
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
   NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
                                          ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
+  [GRPCCall useTestCertsPath:certsPath
+                    testName:@"foo.test.google.fr"
+                     forHost:GRPCGetLocalInteropTestServerAddressSSL()];
 }
 
 - (void)testExceptions {

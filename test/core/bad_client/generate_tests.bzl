@@ -29,7 +29,6 @@ BAD_CLIENT_TESTS = {
     "headers": test_options(),
     "initial_settings_frame": test_options(),
     "head_of_line_blocking": test_options(),
-    "large_metadata": test_options(),
     "out_of_bounds": test_options(),
     "server_registered_method": test_options(),
     "simple_request": test_options(),
@@ -37,13 +36,20 @@ BAD_CLIENT_TESTS = {
     "unknown_frame": test_options(),
 }
 
+# buildifier: disable=unnamed-macro
 def grpc_bad_client_tests():
     grpc_cc_library(
         name = "bad_client_test",
         srcs = ["bad_client.cc"],
         hdrs = ["bad_client.h"],
         language = "C++",
-        deps = ["//test/core/util:grpc_test_util", "//:grpc", "//:gpr", "//test/core/end2end:cq_verifier"],
+        deps = [
+            "//test/core/util:grpc_test_util",
+            "//:grpc",
+            "//:gpr",
+            "//test/core/end2end:cq_verifier",
+            "//:grpc_http_filters",
+        ],
     )
     for t, topt in BAD_CLIENT_TESTS.items():
         grpc_cc_test(

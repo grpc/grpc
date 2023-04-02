@@ -14,11 +14,17 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <string>
+#include <vector>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 namespace grpc_core {
@@ -26,16 +32,17 @@ namespace grpc_core {
 class FileExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<FileExternalAccountCredentials> Create(
-      Options options, std::vector<std::string> scopes, grpc_error** error);
+      Options options, std::vector<std::string> scopes,
+      grpc_error_handle* error);
 
   FileExternalAccountCredentials(Options options,
                                  std::vector<std::string> scopes,
-                                 grpc_error** error);
+                                 grpc_error_handle* error);
 
  private:
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error*)> cb) override;
+      std::function<void(std::string, grpc_error_handle)> cb) override;
 
   // Fields of credential source
   std::string file_;
@@ -45,4 +52,4 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_FILE_EXTERNAL_ACCOUNT_CREDENTIALS_H

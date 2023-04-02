@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import argparse
 import logging
+
 import grpc
 
 from examples.protos import helloworld_pb2

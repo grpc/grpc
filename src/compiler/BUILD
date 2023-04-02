@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
-exports_files(["LICENSE"])
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_proto_plugin",
+)
 
 package(
     default_visibility = ["//visibility:public"],
@@ -26,10 +28,15 @@ package(
     ],
 )
 
-load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
-    "grpc_proto_plugin",
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+grpc_cc_library(
+    name = "proto_parser_helper",
+    srcs = ["proto_parser_helper.cc"],
+    hdrs = ["proto_parser_helper.h"],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -73,6 +80,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "proto_parser_helper",
         "//:grpc++_config_proto",
     ],
 )

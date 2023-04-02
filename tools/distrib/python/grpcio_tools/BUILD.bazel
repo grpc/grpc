@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:cython_library.bzl", "pyx_library")
+load("grpcio_tools.bzl", "internal_copied_filegroup")
+
 package(default_visibility = [
     "//examples/python:__subpackages__",
     "//src/python:__subpackages__",
     "//tools/distrib/python/grpcio_tools:__subpackages__",
 ])
-
-load("//bazel:cython_library.bzl", "pyx_library")
-load("grpcio_tools.bzl", "internal_copied_filegroup")
 
 cc_library(
     name = "protoc_lib",
@@ -40,7 +40,7 @@ pyx_library(
 
 internal_copied_filegroup(
     name = "well_known_protos",
-    srcs = ["@com_google_protobuf//:well_known_protos"],
+    srcs = ["@com_google_protobuf//:well_known_type_protos"],
     dest = "grpc_tools/_proto/",
     strip_prefix = "src/",
 )

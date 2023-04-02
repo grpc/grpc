@@ -1,30 +1,37 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
+#include <stddef.h>
+
+#include <memory>
 #include <string>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -37,43 +44,30 @@ void test_register_method_fail(void) {
   void* method_old;
   method = grpc_server_register_method(server, nullptr, nullptr,
                                        GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == nullptr);
+  ASSERT_EQ(method, nullptr);
   method_old =
       grpc_server_register_method(server, "m", "h", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method_old != nullptr);
+  ASSERT_NE(method_old, nullptr);
   method = grpc_server_register_method(
       server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
-  GPR_ASSERT(method == nullptr);
-  method_old =
-      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
-                                  GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method_old != nullptr);
-  method =
-      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == nullptr);
-  method = grpc_server_register_method(
-      server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-      GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method == nullptr);
+  ASSERT_EQ(method, nullptr);
   grpc_server_destroy(server);
 }
 
 void test_request_call_on_no_server_cq(void) {
   grpc_completion_queue* cc = grpc_completion_queue_create_for_next(nullptr);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_call(server, nullptr, nullptr, nullptr, cc, cc,
-                                      nullptr));
-  GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_registered_call(server, nullptr, nullptr,
-                                                 nullptr, nullptr, nullptr, cc,
-                                                 cc, nullptr));
+  ASSERT_EQ(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
+            grpc_server_request_call(server, nullptr, nullptr, nullptr, cc, cc,
+                                     nullptr));
+  ASSERT_EQ(
+      GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
+      grpc_server_request_registered_call(server, nullptr, nullptr, nullptr,
+                                          nullptr, nullptr, cc, cc, nullptr));
   grpc_completion_queue_destroy(cc);
   grpc_server_destroy(server);
 }
 
-// GRPC_ARG_ALLOW_REUSEPORT isn't supported for custom servers
-#ifndef GRPC_UV
 void test_bind_server_twice(void) {
   grpc_arg a = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ALLOW_REUSEPORT), 0);
@@ -86,15 +80,20 @@ void test_bind_server_twice(void) {
   std::string addr = absl::StrCat("[::]:", port);
   grpc_server_register_completion_queue(server1, cq, nullptr);
   grpc_server_register_completion_queue(server2, cq, nullptr);
-  GPR_ASSERT(0 ==
-             grpc_server_add_secure_http2_port(server2, addr.c_str(), nullptr));
-  GPR_ASSERT(port ==
-             grpc_server_add_insecure_http2_port(server1, addr.c_str()));
-  GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr.c_str()));
+  ASSERT_EQ(0, grpc_server_add_http2_port(server2, addr.c_str(), nullptr));
+  grpc_server_credentials* insecure_creds =
+      grpc_insecure_server_credentials_create();
+  ASSERT_EQ(port,
+            grpc_server_add_http2_port(server1, addr.c_str(), insecure_creds));
+  grpc_server_credentials_release(insecure_creds);
+  grpc_server_credentials* another_insecure_creds =
+      grpc_insecure_server_credentials_create();
+  ASSERT_EQ(0, grpc_server_add_http2_port(server2, addr.c_str(),
+                                          another_insecure_creds));
+  grpc_server_credentials_release(another_insecure_creds);
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
-  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr.c_str(),
-                                                    fake_creds));
+  ASSERT_EQ(0, grpc_server_add_http2_port(server2, addr.c_str(), fake_creds));
   grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server1, cq, nullptr);
   grpc_server_shutdown_and_notify(server2, cq, nullptr);
@@ -104,7 +103,6 @@ void test_bind_server_twice(void) {
   grpc_server_destroy(server2);
   grpc_completion_queue_destroy(cq);
 }
-#endif
 
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
@@ -115,11 +113,14 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   if (secure) {
     grpc_server_credentials* fake_creds =
         grpc_fake_transport_security_server_credentials_create();
-    GPR_ASSERT(
-        grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds));
+    ASSERT_TRUE(grpc_server_add_http2_port(server, addr.c_str(), fake_creds));
     grpc_server_credentials_release(fake_creds);
   } else {
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr.c_str()));
+    grpc_server_credentials* insecure_creds =
+        grpc_insecure_server_credentials_create();
+    ASSERT_TRUE(
+        grpc_server_add_http2_port(server, addr.c_str(), insecure_creds));
+    grpc_server_credentials_release(insecure_creds);
   }
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
@@ -130,15 +131,8 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   grpc_completion_queue_destroy(cq);
 }
 
-static int external_dns_works(const char* host) {
-  grpc_resolved_addresses* res = nullptr;
-  grpc_error* error = grpc_blocking_resolve_address(host, "80", &res);
-  GRPC_ERROR_UNREF(error);
-  if (res != nullptr) {
-    grpc_resolved_addresses_destroy(res);
-    return 1;
-  }
-  return 0;
+static bool external_dns_works(const char* host) {
+  return grpc_core::GetDNSResolver()->LookupHostnameBlocking(host, "80").ok();
 }
 
 static void test_bind_server_to_addrs(const char** addrs, size_t n) {
@@ -148,14 +142,11 @@ static void test_bind_server_to_addrs(const char** addrs, size_t n) {
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+TEST(ServerTest, MainTest) {
   grpc_init();
   test_register_method_fail();
   test_request_call_on_no_server_cq();
-#ifndef GRPC_UV
   test_bind_server_twice();
-#endif
 
   static const char* addrs[] = {
       "::1", "127.0.0.1", "::ffff:127.0.0.1", "localhost", "0.0.0.0", "::",
@@ -171,5 +162,11 @@ int main(int argc, char** argv) {
   }
 
   grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

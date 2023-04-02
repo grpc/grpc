@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # 3-clause BSD
-
-package(default_visibility = ["//visibility:public"])
-
 load("@com_github_grpc_grpc//bazel:objc_grpc_library.bzl", "objc_grpc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
+
+licenses(["notice"])
+
+package(default_visibility = ["//visibility:public"])
 
 objc_grpc_library(
     name = "HelloWorld_grpc_proto",
@@ -98,8 +98,7 @@ objc_library(
     data = glob([
         "route_guide/Misc/Base.lproj/**",
         "route_guide/Misc/Images.xcassets/**",
-        "route_guide/route_guide_db.json",
-    ]),
+    ]) + ["route_guide/route_guide_db.json"],
     includes = ["route_guide/Misc"],
     tags = ["manual"],
     deps = [":RouteGuide"],

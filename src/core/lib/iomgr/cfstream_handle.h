@@ -1,26 +1,26 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* The CFStream handle acts as an event synchronization entity for
- * read/write/open/error/eos events happening on CFStream streams. */
+// The CFStream handle acts as an event synchronization entity for
+// read/write/open/error/eos events happening on CFStream streams.
 
-#ifndef GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
-#define GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -43,7 +43,7 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
  public:
   static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
                                             CFWriteStreamRef write_stream);
-  /** Use CreateStreamHandle function instead of using this directly. */
+  /// Use CreateStreamHandle function instead of using this directly.
   CFStreamHandle(CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
   CFStreamHandle(const CFStreamHandle& ref) = delete;
   CFStreamHandle(CFStreamHandle&& ref) = delete;
@@ -53,7 +53,7 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
   void NotifyOnOpen(grpc_closure* closure);
   void NotifyOnRead(grpc_closure* closure);
   void NotifyOnWrite(grpc_closure* closure);
-  void Shutdown(grpc_error* error);
+  void Shutdown(grpc_error_handle error);
 
   void Ref(const char* file = "", int line = 0, const char* reason = nullptr);
   void Unref(const char* file = "", int line = 0, const char* reason = nullptr);
@@ -87,4 +87,4 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
 
 #endif
 
-#endif /* GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H

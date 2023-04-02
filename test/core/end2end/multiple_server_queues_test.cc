@@ -1,22 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/time.h>
+
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
@@ -27,7 +30,7 @@ int main(int argc, char** argv) {
 
   grpc_server* server;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   attr.version = 1;
@@ -46,14 +49,17 @@ int main(int argc, char** argv) {
 
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq1, nullptr);
-  grpc_server_add_insecure_http2_port(server, "[::]:0");
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server, "[::]:0", server_creds);
+  grpc_server_credentials_release(server_creds);
   grpc_server_register_completion_queue(server, cq2, nullptr);
   grpc_server_register_completion_queue(server, cq3, nullptr);
 
   grpc_server_start(server);
   grpc_server_shutdown_and_notify(server, cq2, nullptr);
   grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME),
-                             nullptr); /* cue queue freeze */
+                             nullptr);  // cue queue freeze
   grpc_completion_queue_shutdown(cq1);
   grpc_completion_queue_shutdown(cq2);
   grpc_completion_queue_shutdown(cq3);

@@ -12,24 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
-# links it with exception handling. It introduces new dependencies.
-cdef extern from "<queue>" namespace "std" nogil:
-    cdef cppclass queue[T]:
-        queue()
-        bint empty()
-        T& front()
-        void pop()
-        void push(T&)
-        size_t size()
-
-
-cdef extern from "<mutex>" namespace "std" nogil:
-    cdef cppclass mutex:
-        mutex()
-        void lock()
-        void unlock()
-
 
 ctypedef queue[grpc_event] cpp_event_queue
 
@@ -68,9 +50,3 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     cdef void _poll(self) nogil
     cdef shutdown(self)
-
-
-cdef class CallbackCompletionQueue(BaseCompletionQueue):
-    cdef object _shutdown_completed  # asyncio.Future
-    cdef CallbackWrapper _wrapper
-    cdef object _loop

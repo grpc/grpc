@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps_json_driver_batch")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/qps")
 
@@ -52,7 +52,6 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
@@ -159,10 +158,12 @@ json_run_localhost_batch()
 grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )

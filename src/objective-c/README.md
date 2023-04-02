@@ -176,8 +176,8 @@ This will download and run the [gRPC install script][].
 ### Install _protoc_ and the gRPC plugin without using Homebrew
 
 First install v3 of the Protocol Buffers compiler (_protoc_), by cloning
-[its Git repository](https://github.com/google/protobuf) and following these
-[installation instructions](https://github.com/google/protobuf#c-installation---unix)
+[its Git repository](https://github.com/protocolbuffers/protobuf) and following these
+[installation instructions](https://github.com/protocolbuffers/protobuf#c-installation---unix)
 (the ones titled C++; don't miss the note for Mac users).
 
 Then clone this repository and execute the following commands from the root directory where it was
@@ -212,7 +212,7 @@ files:
 
 * [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
 library. This can be tedious to configure manually.
-* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
+* [Podspec](https://github.com/protocolbuffers/protobuf/blob/master/Protobuf.podspec) for the
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/

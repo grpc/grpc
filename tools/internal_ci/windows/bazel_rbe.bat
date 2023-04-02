@@ -12,25 +12,27 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem TODO(jtattermusch): make this generate less output
-@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
-choco install bazel -y --version 3.7.1 --limit-output
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
 
 cd github/grpc
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 
-@rem Generate a random UUID and store in "bazel_invocation_ids" artifact file
-powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
-set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-@rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
-bazel --bazelrc=tools/remote_build/windows.bazelrc test --invocation_id="%BAZEL_INVOCATION_ID%" %BAZEL_FLAGS% --workspace_status_command=tools/remote_build/workspace_status_kokoro.bat //test/...
-set BAZEL_EXITCODE=%errorlevel%
+@rem Install bazel
+@rem Side effect of the tools/bazel script is that it downloads the correct version of bazel binary.
+mkdir C:\bazel
+bash -c "tools/bazel --version && cp tools/bazel-*.exe /c/bazel/bazel.exe"
+set PATH=C:\bazel;%PATH%
+bazel --version
 
-if not "%UPLOAD_TEST_RESULTS%"=="" (
-  @rem Sleep to let ResultStore finish writing results before querying
-  timeout /t 60 /nobreak
-  python ./tools/run_tests/python_utils/upload_rbe_results.py
-)
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
-exit /b %BAZEL_EXITCODE%
+call bazel_rbe/bazel_wrapper.bat --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test %BAZEL_FLAGS% -- //test/... || exit /b 1

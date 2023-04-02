@@ -19,7 +19,10 @@ load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
 licenses(["notice"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["-layering_check"],
+)
 
 exports_files(["LICENSE"])
 
@@ -233,6 +236,18 @@ grpc_objc_library(
         ":grpc_objc_interface_legacy",
         ":rx_library",
         "//:grpc_objc",
+    ],
+)
+
+grpc_objc_library(
+    name = "grpc_objc_client_core_cronet_testing",
+    srcs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.m"]),
+    hdrs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.h"]),
+    deps = [
+        ":grpc_objc_client_core_internal_testing",
+        "//:grpc_cronet_hdrs",
+        "//src/core/ext/transport/cronet:grpc_transport_cronet_client_secure",
+        "@CronetFramework",
     ],
 )
 

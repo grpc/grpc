@@ -25,15 +25,12 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
-INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
-
-[ -d Tests.xcworkspace ] || {
-    ./build_tests.sh
-}
+INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
 
 [ -f $INTEROP ] || {
-    BAZEL build //test/cpp/interop:interop_server
+    $BAZEL build //test/cpp/interop:interop_server
 }
+[ -f $INTEROP ] || exit 1
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
     echo >&2 "Can't find the port server. Start port server with tools/run_tests/start_port_server.py."
@@ -48,4 +45,7 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
-../../../tools/bazel run $SCHEME
+time $BAZEL test --ios_multi_cpus=x86_64,sim_arm64 \
+    --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+    --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+    $SCHEME

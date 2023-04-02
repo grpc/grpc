@@ -16,17 +16,18 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <deque>
+#include <list>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
-
-#include <deque>
-#include <list>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -131,31 +132,23 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
                                              std::move(updated_identity));
     }
 
-    void OnError(grpc_error* root_cert_error,
-                 grpc_error* identity_cert_error) override {
+    void OnError(grpc_error_handle root_cert_error,
+                 grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);
-      GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
-                 identity_cert_error != GRPC_ERROR_NONE);
+      GPR_ASSERT(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
-      if (root_cert_error != GRPC_ERROR_NONE) {
-        grpc_slice root_error_slice;
+      if (!root_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(
-            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_slice));
-        root_error_str = std::string(StringViewFromSlice(root_error_slice));
+            root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
-      if (identity_cert_error != GRPC_ERROR_NONE) {
-        grpc_slice identity_error_slice;
+      if (!identity_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                      GRPC_ERROR_STR_DESCRIPTION,
-                                      &identity_error_slice));
-        identity_error_str =
-            std::string(StringViewFromSlice(identity_error_slice));
+                                      StatusStrProperty::kDescription,
+                                      &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
     }
 
    private:
@@ -183,7 +176,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     // The TlsCertificatesTestWatcher dtor will set WatcherState::watcher back
     // to nullptr to indicate that it's been destroyed.
     auto watcher =
-        absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
+        std::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
     distributor_->WatchTlsCertificates(std::move(watcher),
                                        std::move(root_cert_name),
                                        std::move(identity_cert_name));
@@ -399,9 +392,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedBothCerts) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
@@ -433,7 +426,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
@@ -466,8 +459,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedIdentityCerts) {
   // Create temporary files and copy cert data into it.
   TmpFile tmp_root_cert(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
@@ -495,12 +488,66 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-}  // namespace testing
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 0);
+  ASSERT_THAT(provider.TestOnlyGetRefreshIntervalSecond(), 1);
+}
 
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Private key string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, /*cert_chain=*/"");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Certificate string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, "invalid_certificate");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to X509 failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FailedKeyCertMatchOnInvalidPrivateKeyFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch("invalid_private_key", cert_chain_2_);
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to EVP_PKEY failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(*status);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_FALSE(*status);
+}
+
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

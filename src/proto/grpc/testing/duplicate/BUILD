@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
+licenses(["notice"])
 
 grpc_package(
     name = "duplicate",

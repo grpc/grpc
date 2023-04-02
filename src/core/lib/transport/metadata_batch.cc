@@ -1,419 +1,308 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 
-#include <stdbool.h>
 #include <string.h>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/str_join.h"
+#include <algorithm>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
-static void assert_valid_list(grpc_mdelem_list* list) {
-#ifndef NDEBUG
-  grpc_linked_mdelem* l;
+namespace grpc_core {
+namespace metadata_detail {
 
-  GPR_ASSERT((list->head == nullptr) == (list->tail == nullptr));
-  if (!list->head) return;
-  GPR_ASSERT(list->head->prev == nullptr);
-  GPR_ASSERT(list->tail->next == nullptr);
-  GPR_ASSERT((list->head == list->tail) == (list->head->next == nullptr));
-
-  size_t verified_count = 0;
-  for (l = list->head; l; l = l->next) {
-    GPR_ASSERT(!GRPC_MDISNULL(l->md));
-    GPR_ASSERT((l->prev == nullptr) == (l == list->head));
-    GPR_ASSERT((l->next == nullptr) == (l == list->tail));
-    if (l->next) GPR_ASSERT(l->next->prev == l);
-    if (l->prev) GPR_ASSERT(l->prev->next == l);
-    verified_count++;
-  }
-  GPR_ASSERT(list->count == verified_count);
-#else
-  // Avoid unused-parameter warning for debug-only parameter
-  (void)list;
-#endif /* NDEBUG */
+void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
+  if (!out_.empty()) out_.append(", ");
+  absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
 }
 
-static void assert_valid_callouts(grpc_metadata_batch* batch) {
-#ifndef NDEBUG
-  for (grpc_linked_mdelem* l = batch->list.head; l != nullptr; l = l->next) {
-    grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
-    grpc_metadata_batch_callouts_index callout_idx =
-        GRPC_BATCH_INDEX_OF(key_interned);
-    if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
-      GPR_ASSERT(batch->idx.array[callout_idx] == l);
+void UnknownMap::Append(absl::string_view key, Slice value) {
+  unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
+}
+
+void UnknownMap::Remove(absl::string_view key) {
+  unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
+                                 [key](const std::pair<Slice, Slice>& p) {
+                                   return p.first.as_string_view() == key;
+                                 }));
+}
+
+absl::optional<absl::string_view> UnknownMap::GetStringValue(
+    absl::string_view key, std::string* backing) const {
+  absl::optional<absl::string_view> out;
+  for (const auto& p : unknown_) {
+    if (p.first.as_string_view() == key) {
+      if (!out.has_value()) {
+        out = p.second.as_string_view();
+      } else {
+        out = *backing = absl::StrCat(*out, ",", p.second.as_string_view());
+      }
     }
-    grpc_slice_unref_internal(key_interned);
   }
-#else
-  // Avoid unused-parameter warning for debug-only parameter
-  (void)batch;
-#endif
-}
-
-#ifndef NDEBUG
-void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
-  assert_valid_list(&batch->list);
-}
-#endif /* NDEBUG */
-
-void grpc_metadata_batch_init(grpc_metadata_batch* batch) {
-  memset(batch, 0, sizeof(*batch));
-  batch->deadline = GRPC_MILLIS_INF_FUTURE;
-}
-
-void grpc_metadata_batch_destroy(grpc_metadata_batch* batch) {
-  grpc_linked_mdelem* l;
-  for (l = batch->list.head; l; l = l->next) {
-    GRPC_MDELEM_UNREF(l->md);
-  }
-}
-
-grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md) {
-  grpc_error* out = grpc_error_set_str(
-      grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
-                         grpc_slice_ref_internal(GRPC_MDKEY(md))),
-      GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
   return out;
 }
 
-static grpc_error* GPR_ATTRIBUTE_NOINLINE error_with_md(grpc_mdelem md) {
-  return grpc_attach_md_to_error(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"), md);
-}
+}  // namespace metadata_detail
 
-static grpc_error* link_callout(grpc_metadata_batch* batch,
-                                grpc_linked_mdelem* storage,
-                                grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(idx >= 0 && idx < GRPC_BATCH_CALLOUTS_COUNT);
-  if (GPR_LIKELY(batch->idx.array[idx] == nullptr)) {
-    ++batch->list.default_count;
-    batch->idx.array[idx] = storage;
-    return GRPC_ERROR_NONE;
-  }
-  return error_with_md(storage->md);
-}
-
-static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
-                                      grpc_linked_mdelem* storage)
-    GRPC_MUST_USE_RESULT;
-
-static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
-                                      grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
-    return GRPC_ERROR_NONE;
-  }
-  return link_callout(batch, storage, idx);
-}
-
-static void maybe_unlink_callout(grpc_metadata_batch* batch,
-                                 grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
-    return;
-  }
-  --batch->list.default_count;
-  GPR_DEBUG_ASSERT(batch->idx.array[idx] != nullptr);
-  batch->idx.array[idx] = nullptr;
-}
-
-grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
-                                         grpc_linked_mdelem* storage,
-                                         grpc_mdelem elem_to_add) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return grpc_metadata_batch_link_head(batch, storage);
-}
-
-static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
-  assert_valid_list(list);
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
-  storage->prev = nullptr;
-  storage->next = list->head;
-  storage->reserved = nullptr;
-  if (list->head != nullptr) {
-    list->head->prev = storage;
+ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  auto value_string = value.as_string_view();
+  if (value_string == "application/grpc") {
+    out = kApplicationGrpc;
+  } else if (absl::StartsWith(value_string, "application/grpc;")) {
+    out = kApplicationGrpc;
+  } else if (absl::StartsWith(value_string, "application/grpc+")) {
+    out = kApplicationGrpc;
+  } else if (value_string.empty()) {
+    out = kEmpty;
   } else {
-    list->tail = storage;
+    on_error("invalid value", value);
   }
-  list->head = storage;
-  list->count++;
-  assert_valid_list(list);
+  return out;
 }
 
-grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
-                                          grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  grpc_error* err = maybe_link_callout(batch, storage);
-  if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
-    return err;
+StaticSlice ContentTypeMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kEmpty:
+      return StaticSlice::FromStaticString("");
+    case kApplicationGrpc:
+      return StaticSlice::FromStaticString("application/grpc");
+    case kInvalid:
+      return StaticSlice::FromStaticString("application/grpc+unknown");
   }
-  link_head(&batch->list, storage);
-  assert_valid_callouts(batch);
-  return GRPC_ERROR_NONE;
+  GPR_UNREACHABLE_CODE(
+      return StaticSlice::FromStaticString("unrepresentable value"));
 }
 
-// TODO(arjunroy): Need to revisit this and see what guarantees exist between
-// C-core and the internal-metadata subsystem. E.g. can we ensure a particular
-// metadata is never added twice, even in the presence of user supplied data?
-grpc_error* grpc_metadata_batch_link_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  assert_valid_callouts(batch);
-  grpc_error* err = link_callout(batch, storage, idx);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    assert_valid_callouts(batch);
-    return err;
+const char* ContentTypeMetadata::DisplayValue(ValueType content_type) {
+  switch (content_type) {
+    case ValueType::kApplicationGrpc:
+      return "application/grpc";
+    case ValueType::kEmpty:
+      return "";
+    default:
+      return "<discarded-invalid-value>";
   }
-  link_head(&batch->list, storage);
-  assert_valid_callouts(batch);
-  return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
-                                         grpc_linked_mdelem* storage,
-                                         grpc_mdelem elem_to_add) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return grpc_metadata_batch_link_tail(batch, storage);
+GrpcTimeoutMetadata::MementoType GrpcTimeoutMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto timeout = ParseTimeout(value);
+  if (!timeout.has_value()) {
+    on_error("invalid value", value);
+    return Duration::Infinity();
+  }
+  return *timeout;
 }
 
-static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
-  assert_valid_list(list);
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
-  storage->prev = list->tail;
-  storage->next = nullptr;
-  storage->reserved = nullptr;
-  if (list->tail != nullptr) {
-    list->tail->next = storage;
+GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
+    MementoType timeout) {
+  if (timeout == Duration::Infinity()) {
+    return Timestamp::InfFuture();
+  }
+  return Timestamp::Now() + timeout;
+}
+
+Slice GrpcTimeoutMetadata::Encode(ValueType x) {
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
+}
+
+TeMetadata::MementoType TeMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  if (value == "trailers") {
+    out = kTrailers;
   } else {
-    list->head = storage;
+    on_error("invalid value", value);
   }
-  list->tail = storage;
-  list->count++;
-  assert_valid_list(list);
+  return out;
 }
 
-grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
-                                          grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  grpc_error* err = maybe_link_callout(batch, storage);
-  if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
-    return err;
+const char* TeMetadata::DisplayValue(ValueType te) {
+  switch (te) {
+    case ValueType::kTrailers:
+      return "trailers";
+    default:
+      return "<discarded-invalid-value>";
   }
-  link_tail(&batch->list, storage);
-  assert_valid_callouts(batch);
-  return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_metadata_batch_link_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  assert_valid_callouts(batch);
-  grpc_error* err = link_callout(batch, storage, idx);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    assert_valid_callouts(batch);
-    return err;
+HttpSchemeMetadata::ValueType HttpSchemeMetadata::Parse(
+    absl::string_view value, MetadataParseErrorFn on_error) {
+  if (value == "http") {
+    return kHttp;
+  } else if (value == "https") {
+    return kHttps;
   }
-  link_tail(&batch->list, storage);
-  assert_valid_callouts(batch);
-  return GRPC_ERROR_NONE;
+  on_error("invalid value", Slice::FromCopiedBuffer(value));
+  return kInvalid;
 }
 
-static void unlink_storage(grpc_mdelem_list* list,
-                           grpc_linked_mdelem* storage) {
-  assert_valid_list(list);
-  if (storage->prev != nullptr) {
-    storage->prev->next = storage->next;
+StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kHttp:
+      return StaticSlice::FromStaticString("http");
+    case kHttps:
+      return StaticSlice::FromStaticString("https");
+    default:
+      abort();
+  }
+}
+
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x) {
+  switch (x) {
+    case HttpSchemeMetadata::kHttp:
+      return 4;
+    case HttpSchemeMetadata::kHttps:
+      return 5;
+    default:
+      return 0;
+  }
+}
+
+const char* HttpSchemeMetadata::DisplayValue(ValueType content_type) {
+  switch (content_type) {
+    case kHttp:
+      return "http";
+    case kHttps:
+      return "https";
+    default:
+      return "<discarded-invalid-value>";
+  }
+}
+
+HttpMethodMetadata::MementoType HttpMethodMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  auto value_string = value.as_string_view();
+  if (value_string == "POST") {
+    out = kPost;
+  } else if (value_string == "PUT") {
+    out = kPut;
+  } else if (value_string == "GET") {
+    out = kGet;
   } else {
-    list->head = storage->next;
+    on_error("invalid value", value);
   }
-  if (storage->next != nullptr) {
-    storage->next->prev = storage->prev;
-  } else {
-    list->tail = storage->prev;
-  }
-  list->count--;
-  assert_valid_list(list);
+  return out;
 }
 
-void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  maybe_unlink_callout(batch, storage);
-  unlink_storage(&batch->list, storage);
-  GRPC_MDELEM_UNREF(storage->md);
-  assert_valid_callouts(batch);
-}
-
-void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                grpc_metadata_batch_callouts_index idx) {
-  assert_valid_callouts(batch);
-  grpc_linked_mdelem* storage = batch->idx.array[idx];
-  GPR_DEBUG_ASSERT(storage != nullptr);
-  --batch->list.default_count;
-  batch->idx.array[idx] = nullptr;
-  unlink_storage(&batch->list, storage);
-  GRPC_MDELEM_UNREF(storage->md);
-  assert_valid_callouts(batch);
-}
-
-void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   const grpc_slice& value) {
-  grpc_mdelem old_mdelem = storage->md;
-  grpc_mdelem new_mdelem = grpc_mdelem_from_slices(
-      grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);
-  storage->md = new_mdelem;
-  GRPC_MDELEM_UNREF(old_mdelem);
-}
-
-absl::optional<absl::string_view> grpc_metadata_batch_get_value(
-    grpc_metadata_batch* batch, absl::string_view target_key,
-    std::string* concatenated_value) {
-  // Find all values for the specified key.
-  GPR_DEBUG_ASSERT(batch != nullptr);
-  absl::InlinedVector<absl::string_view, 1> values;
-  for (grpc_linked_mdelem* md = batch->list.head; md != nullptr;
-       md = md->next) {
-    absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md->md));
-    absl::string_view value =
-        grpc_core::StringViewFromSlice(GRPC_MDVALUE(md->md));
-    if (target_key == key) values.push_back(value);
-  }
-  // If none found, no match.
-  if (values.empty()) return absl::nullopt;
-  // If exactly one found, return it as-is.
-  if (values.size() == 1) return values.front();
-  // If more than one found, concatenate the values, using
-  // *concatenated_values as a temporary holding place for the
-  // concatenated string.
-  *concatenated_value = absl::StrJoin(values, ",");
-  return *concatenated_value;
-}
-
-grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
-                                           grpc_linked_mdelem* storage,
-                                           grpc_mdelem new_mdelem) {
-  assert_valid_callouts(batch);
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_mdelem old_mdelem = storage->md;
-  if (!grpc_slice_eq(GRPC_MDKEY(new_mdelem), GRPC_MDKEY(old_mdelem))) {
-    maybe_unlink_callout(batch, storage);
-    storage->md = new_mdelem;
-    error = maybe_link_callout(batch, storage);
-    if (error != GRPC_ERROR_NONE) {
-      unlink_storage(&batch->list, storage);
-      GRPC_MDELEM_UNREF(storage->md);
-    }
-  } else {
-    storage->md = new_mdelem;
-  }
-  GRPC_MDELEM_UNREF(old_mdelem);
-  assert_valid_callouts(batch);
-  return error;
-}
-
-void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
-  grpc_metadata_batch_destroy(batch);
-  grpc_metadata_batch_init(batch);
-}
-
-bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return batch->list.head == nullptr &&
-         batch->deadline == GRPC_MILLIS_INF_FUTURE;
-}
-
-size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
-  size_t size = 0;
-  for (grpc_linked_mdelem* elem = batch->list.head; elem != nullptr;
-       elem = elem->next) {
-    size += GRPC_MDELEM_LENGTH(elem->md);
-  }
-  return size;
-}
-
-static void add_error(grpc_error** composite, grpc_error* error,
-                      const char* composite_error_string) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(composite_error_string);
-  }
-  *composite = grpc_error_add_child(*composite, error);
-}
-
-grpc_error* grpc_metadata_batch_filter(grpc_metadata_batch* batch,
-                                       grpc_metadata_batch_filter_func func,
-                                       void* user_data,
-                                       const char* composite_error_string) {
-  grpc_linked_mdelem* l = batch->list.head;
-  grpc_error* error = GRPC_ERROR_NONE;
-  while (l) {
-    grpc_linked_mdelem* next = l->next;
-    grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
-    add_error(&error, new_mdelem.error, composite_error_string);
-    if (GRPC_MDISNULL(new_mdelem.md)) {
-      grpc_metadata_batch_remove(batch, l);
-    } else if (new_mdelem.md.payload != l->md.payload) {
-      grpc_metadata_batch_substitute(batch, l, new_mdelem.md);
-    }
-    l = next;
-  }
-  return error;
-}
-
-void grpc_metadata_batch_copy(grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst,
-                              grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_init(dst);
-  dst->deadline = src->deadline;
-  size_t i = 0;
-  for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
-       elem = elem->next) {
-    // Error unused in non-debug builds.
-    grpc_error* GRPC_UNUSED error = grpc_metadata_batch_add_tail(
-        dst, &storage[i++], GRPC_MDELEM_REF(elem->md));
-    // The only way that grpc_metadata_batch_add_tail() can fail is if
-    // there's a duplicate entry for a callout.  However, that can't be
-    // the case here, because we would not have been allowed to create
-    // a source batch that had that kind of conflict.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+StaticSlice HttpMethodMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kPost:
+      return StaticSlice::FromStaticString("POST");
+    case kPut:
+      return StaticSlice::FromStaticString("PUT");
+    case kGet:
+      return StaticSlice::FromStaticString("GET");
+    default:
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 
-void grpc_metadata_batch_move(grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst) {
-  *dst = *src;
-  grpc_metadata_batch_init(src);
+const char* HttpMethodMetadata::DisplayValue(ValueType content_type) {
+  switch (content_type) {
+    case kPost:
+      return "POST";
+    case kGet:
+      return "GET";
+    case kPut:
+      return "PUT";
+    default:
+      return "<discarded-invalid-value>";
+  }
 }
+
+CompressionAlgorithmBasedMetadata::MementoType
+CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
+                                                MetadataParseErrorFn on_error) {
+  auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
+  if (!algorithm.has_value()) {
+    on_error("invalid value", value);
+    return GRPC_COMPRESS_NONE;
+  }
+  return *algorithm;
+}
+
+Duration GrpcRetryPushbackMsMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  int64_t out;
+  if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+    on_error("not an integer", value);
+    return Duration::NegativeInfinity();
+  }
+  return Duration::Milliseconds(out);
+}
+
+Slice LbCostBinMetadata::Encode(const ValueType& x) {
+  auto slice =
+      MutableSlice::CreateUninitialized(sizeof(double) + x.name.length());
+  memcpy(slice.data(), &x.cost, sizeof(double));
+  memcpy(slice.data() + sizeof(double), x.name.data(), x.name.length());
+  return Slice(std::move(slice));
+}
+
+std::string LbCostBinMetadata::DisplayValue(ValueType x) {
+  return absl::StrCat(x.name, ":", x.cost);
+}
+
+LbCostBinMetadata::MementoType LbCostBinMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  if (value.length() < sizeof(double)) {
+    on_error("too short", value);
+    return {0, ""};
+  }
+  MementoType out;
+  memcpy(&out.cost, value.data(), sizeof(double));
+  out.name =
+      std::string(reinterpret_cast<const char*>(value.data()) + sizeof(double),
+                  value.length() - sizeof(double));
+  return out;
+}
+
+std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
+  switch (x) {
+    case kNotSentOnWire:
+      return "not sent on wire";
+    case kNotSeenByServer:
+      return "not seen by server";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown value");
+}
+
+std::string PeerString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
+const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
+  return x;
+}
+
+std::string WaitForReady::DisplayValue(ValueType x) {
+  return absl::StrCat(x.value ? "true" : "false",
+                      x.explicitly_set ? " (explicit)" : "");
+}
+
+}  // namespace grpc_core

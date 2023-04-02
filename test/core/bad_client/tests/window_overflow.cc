@@ -1,29 +1,29 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2023 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include "test/core/bad_client/bad_client.h"
-
+#include <stdint.h>
 #include <string.h>
+
+#include <algorithm>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
@@ -44,7 +44,7 @@
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
-  while (server->core_server->HasOpenConnections()) {
+  while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
@@ -57,7 +57,7 @@ size_t g_count = 0;
 
 static void addbuf(const void* data, size_t len) {
   if (g_count + len > g_cap) {
-    g_cap = GPR_MAX(g_count + len, g_cap * 2);
+    g_cap = std::max(g_count + len, g_cap * 2);
     g_buffer = static_cast<char*>(gpr_realloc(g_buffer, g_cap));
   }
   memcpy(g_buffer + g_count, data, len);
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 #define FRAME_SIZE (MESSAGES_PER_FRAME * 5)
 #define SEND_SIZE (4 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);

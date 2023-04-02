@@ -8,34 +8,15 @@
 
 #include "upb/def.h"
 #include "envoy/config/overload/v3/overload.upbdefs.h"
+#include "envoy/config/overload/v3/overload.upb.h"
 
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_overload_v3_ResourceMonitor_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ThresholdTrigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaledTrigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_Trigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit;
-extern const upb_msglayout envoy_config_overload_v3_OverloadAction_msginit;
-extern const upb_msglayout envoy_config_overload_v3_OverloadManager_msginit;
-
-static const upb_msglayout *layouts[8] = {
-  &envoy_config_overload_v3_ResourceMonitor_msginit,
-  &envoy_config_overload_v3_ThresholdTrigger_msginit,
-  &envoy_config_overload_v3_ScaledTrigger_msginit,
-  &envoy_config_overload_v3_Trigger_msginit,
-  &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit,
-  &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit,
-  &envoy_config_overload_v3_OverloadAction_msginit,
-  &envoy_config_overload_v3_OverloadManager_msginit,
-};
-
-static const char descriptor[2145] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '/', 'v', 
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[2435] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '/', 'v', 
 '3', '/', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', '\032', '\033', 'e', 'n', 'v', 'o', 'y', '/', 
 't', 'y', 'p', 'e', '/', 'v', '3', '/', 'p', 'e', 'r', 'c', 'e', 'n', 't', '.', 'p', 'r', 'o', 't', 'o', '\032', '\031', 'g', 'o', 
@@ -105,25 +86,37 @@ static const char descriptor[2145] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 
 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'A', 'n', 'y', 'R', '\013', 't', 'y', 'p', 'e', 
 'd', 'C', 'o', 'n', 'f', 'i', 'g', ':', '3', '\232', '\305', '\210', '\036', '.', '\n', ',', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 
 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '2', 'a', 'l', 'p', 'h', 'a', '.', 'O', 'v', 'e', 'r', 
-'l', 'o', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\"', '\263', '\002', '\n', '\017', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'M', 'a', 
-'n', 'a', 'g', 'e', 'r', '\022', 'D', '\n', '\020', 'r', 'e', 'f', 'r', 'e', 's', 'h', '_', 'i', 'n', 't', 'e', 'r', 'v', 'a', 'l', 
-'\030', '\001', ' ', '\001', '(', '\013', '2', '\031', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 
-'D', 'u', 'r', 'a', 't', 'i', 'o', 'n', 'R', '\017', 'r', 'e', 'f', 'r', 'e', 's', 'h', 'I', 'n', 't', 'e', 'r', 'v', 'a', 'l', 
-'\022', '`', '\n', '\021', 'r', 'e', 's', 'o', 'u', 'r', 'c', 'e', '_', 'm', 'o', 'n', 'i', 't', 'o', 'r', 's', '\030', '\002', ' ', '\003', 
-'(', '\013', '2', ')', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 
-'d', '.', 'v', '3', '.', 'R', 'e', 's', 'o', 'u', 'r', 'c', 'e', 'M', 'o', 'n', 'i', 't', 'o', 'r', 'B', '\010', '\372', 'B', '\005', 
-'\222', '\001', '\002', '\010', '\001', 'R', '\020', 'r', 'e', 's', 'o', 'u', 'r', 'c', 'e', 'M', 'o', 'n', 'i', 't', 'o', 'r', 's', '\022', 'B', 
-'\n', '\007', 'a', 'c', 't', 'i', 'o', 'n', 's', '\030', '\003', ' ', '\003', '(', '\013', '2', '(', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
-'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', '.', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 
-'d', 'A', 'c', 't', 'i', 'o', 'n', 'R', '\007', 'a', 'c', 't', 'i', 'o', 'n', 's', ':', '4', '\232', '\305', '\210', '\036', '/', '\n', '-', 
-'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '2', 'a', 
-'l', 'p', 'h', 'a', '.', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'M', 'a', 'n', 'a', 'g', 'e', 'r', 'B', 'A', '\n', '&', 'i', 
-'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', 
-'.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', 'B', '\r', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'P', 'r', 'o', 
-'t', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'l', 'o', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', '\"', 'p', '\n', '\023', 'B', 'u', 'f', 'f', 'e', 'r', 'F', 'a', 'c', 't', 'o', 
+'r', 'y', 'C', 'o', 'n', 'f', 'i', 'g', '\022', 'Y', '\n', '%', 'm', 'i', 'n', 'i', 'm', 'u', 'm', '_', 'a', 'c', 'c', 'o', 'u', 
+'n', 't', '_', 't', 'o', '_', 't', 'r', 'a', 'c', 'k', '_', 'p', 'o', 'w', 'e', 'r', '_', 'o', 'f', '_', 't', 'w', 'o', '\030', 
+'\001', ' ', '\001', '(', '\r', 'B', '\t', '\372', 'B', '\006', '*', '\004', '\030', '8', '(', '\n', 'R', '\037', 'm', 'i', 'n', 'i', 'm', 'u', 'm', 
+'A', 'c', 'c', 'o', 'u', 'n', 't', 'T', 'o', 'T', 'r', 'a', 'c', 'k', 'P', 'o', 'w', 'e', 'r', 'O', 'f', 'T', 'w', 'o', '\"', 
+'\226', '\003', '\n', '\017', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'M', 'a', 'n', 'a', 'g', 'e', 'r', '\022', 'D', '\n', '\020', 'r', 'e', 
+'f', 'r', 'e', 's', 'h', '_', 'i', 'n', 't', 'e', 'r', 'v', 'a', 'l', '\030', '\001', ' ', '\001', '(', '\013', '2', '\031', '.', 'g', 'o', 
+'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'D', 'u', 'r', 'a', 't', 'i', 'o', 'n', 'R', '\017', 'r', 
+'e', 'f', 'r', 'e', 's', 'h', 'I', 'n', 't', 'e', 'r', 'v', 'a', 'l', '\022', '`', '\n', '\021', 'r', 'e', 's', 'o', 'u', 'r', 'c', 
+'e', '_', 'm', 'o', 'n', 'i', 't', 'o', 'r', 's', '\030', '\002', ' ', '\003', '(', '\013', '2', ')', '.', 'e', 'n', 'v', 'o', 'y', '.', 
+'c', 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', '.', 'R', 'e', 's', 'o', 'u', 'r', 
+'c', 'e', 'M', 'o', 'n', 'i', 't', 'o', 'r', 'B', '\010', '\372', 'B', '\005', '\222', '\001', '\002', '\010', '\001', 'R', '\020', 'r', 'e', 's', 'o', 
+'u', 'r', 'c', 'e', 'M', 'o', 'n', 'i', 't', 'o', 'r', 's', '\022', 'B', '\n', '\007', 'a', 'c', 't', 'i', 'o', 'n', 's', '\030', '\003', 
+' ', '\003', '(', '\013', '2', '(', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 
+'o', 'a', 'd', '.', 'v', '3', '.', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'A', 'c', 't', 'i', 'o', 'n', 'R', '\007', 'a', 'c', 
+'t', 'i', 'o', 'n', 's', '\022', 'a', '\n', '\025', 'b', 'u', 'f', 'f', 'e', 'r', '_', 'f', 'a', 'c', 't', 'o', 'r', 'y', '_', 'c', 
+'o', 'n', 'f', 'i', 'g', '\030', '\004', ' ', '\001', '(', '\013', '2', '-', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
+'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', '.', 'B', 'u', 'f', 'f', 'e', 'r', 'F', 'a', 'c', 't', 'o', 
+'r', 'y', 'C', 'o', 'n', 'f', 'i', 'g', 'R', '\023', 'b', 'u', 'f', 'f', 'e', 'r', 'F', 'a', 'c', 't', 'o', 'r', 'y', 'C', 'o', 
+'n', 'f', 'i', 'g', ':', '4', '\232', '\305', '\210', '\036', '/', '\n', '-', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', 
+'.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '2', 'a', 'l', 'p', 'h', 'a', '.', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 
+'d', 'M', 'a', 'n', 'a', 'g', 'e', 'r', 'B', '\215', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
+'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', 
+'3', 'B', '\r', 'O', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 
+'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 
+'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'o', 'v', 'e', 
+'r', 'l', 'o', 'a', 'd', '/', 'v', '3', ';', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', 
+'\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_type_v3_percent_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
@@ -133,9 +126,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_overload_v3_overload_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_overload_v3_overload_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_overload_v3_overload_proto_upb_file_layout,
   "envoy/config/overload/v3/overload.proto",
-  UPB_STRVIEW_INIT(descriptor, 2145)
+  UPB_STRINGVIEW_INIT(descriptor, 2435)
 };

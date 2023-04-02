@@ -59,7 +59,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getPayload()
     {
-        return isset($this->payload) ? $this->payload : null;
+        return $this->payload;
     }
 
     public function hasPayload()
@@ -98,7 +98,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getExpectCompressed()
     {
-        return isset($this->expect_compressed) ? $this->expect_compressed : null;
+        return $this->expect_compressed;
     }
 
     public function hasExpectCompressed()

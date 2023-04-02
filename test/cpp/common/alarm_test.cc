@@ -1,30 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 
@@ -95,13 +95,13 @@ TEST(AlarmTest, CallbackRegularExpiry) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.experimental().Set(
-      std::chrono::system_clock::now() + std::chrono::seconds(1), [c](bool ok) {
-        EXPECT_TRUE(ok);
-        std::lock_guard<std::mutex> l(c->mu);
-        c->completed = true;
-        c->cv.notify_one();
-      });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
+            [c](bool ok) {
+              EXPECT_TRUE(ok);
+              std::lock_guard<std::mutex> l(c->mu);
+              c->completed = true;
+              c->cv.notify_one();
+            });
 
   std::unique_lock<std::mutex> l(c->mu);
   EXPECT_TRUE(c->cv.wait_until(
@@ -113,7 +113,7 @@ TEST(AlarmTest, CallbackZeroExpiry) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.experimental().Set(grpc_timeout_seconds_to_deadline(0), [c](bool ok) {
+  alarm.Set(grpc_timeout_seconds_to_deadline(0), [c](bool ok) {
     EXPECT_TRUE(ok);
     std::lock_guard<std::mutex> l(c->mu);
     c->completed = true;
@@ -130,14 +130,13 @@ TEST(AlarmTest, CallbackNegativeExpiry) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.experimental().Set(
-      std::chrono::system_clock::now() + std::chrono::seconds(-1),
-      [c](bool ok) {
-        EXPECT_TRUE(ok);
-        std::lock_guard<std::mutex> l(c->mu);
-        c->completed = true;
-        c->cv.notify_one();
-      });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(-1),
+            [c](bool ok) {
+              EXPECT_TRUE(ok);
+              std::lock_guard<std::mutex> l(c->mu);
+              c->completed = true;
+              c->cv.notify_one();
+            });
 
   std::unique_lock<std::mutex> l(c->mu);
   EXPECT_TRUE(c->cv.wait_until(
@@ -267,6 +266,30 @@ TEST(AlarmTest, NegativeExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+// Infinite past or unix epoch should fire immediately.
+TEST(AlarmTest, InfPastExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+  alarm.Set(&cq, gpr_inf_past(GPR_CLOCK_REALTIME), junk);
+
+  void* output_tag;
+  bool ok;
+  CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+
+  alarm.Set(&cq, std::chrono::system_clock::time_point(), junk);
+  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
 TEST(AlarmTest, Cancellation) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
@@ -288,14 +311,13 @@ TEST(AlarmTest, CallbackCancellation) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.experimental().Set(
-      std::chrono::system_clock::now() + std::chrono::seconds(10),
-      [c](bool ok) {
-        EXPECT_FALSE(ok);
-        std::lock_guard<std::mutex> l(c->mu);
-        c->completed = true;
-        c->cv.notify_one();
-      });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
+            [c](bool ok) {
+              EXPECT_FALSE(ok);
+              std::lock_guard<std::mutex> l(c->mu);
+              c->completed = true;
+              c->cv.notify_one();
+            });
   alarm.Cancel();
 
   std::unique_lock<std::mutex> l(c->mu);
@@ -308,14 +330,13 @@ TEST(AlarmTest, CallbackCancellationLocked) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.experimental().Set(
-      std::chrono::system_clock::now() + std::chrono::seconds(10),
-      [c](bool ok) {
-        EXPECT_FALSE(ok);
-        std::lock_guard<std::mutex> l(c->mu);
-        c->completed = true;
-        c->cv.notify_one();
-      });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
+            [c](bool ok) {
+              EXPECT_FALSE(ok);
+              std::lock_guard<std::mutex> l(c->mu);
+              c->completed = true;
+              c->cv.notify_one();
+            });
   std::unique_lock<std::mutex> l(c->mu);
   alarm.Cancel();
 
@@ -346,14 +367,13 @@ TEST(AlarmTest, CallbackSetDestruction) {
   auto c = std::make_shared<Completion>();
   {
     Alarm alarm;
-    alarm.experimental().Set(
-        std::chrono::system_clock::now() + std::chrono::seconds(10),
-        [c](bool ok) {
-          EXPECT_FALSE(ok);
-          std::lock_guard<std::mutex> l(c->mu);
-          c->completed = true;
-          c->cv.notify_one();
-        });
+    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
+              [c](bool ok) {
+                EXPECT_FALSE(ok);
+                std::lock_guard<std::mutex> l(c->mu);
+                c->completed = true;
+                c->cv.notify_one();
+              });
   }
 
   std::unique_lock<std::mutex> l(c->mu);
@@ -371,7 +391,7 @@ TEST(AlarmTest, UnsetDestruction) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

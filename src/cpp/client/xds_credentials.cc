@@ -16,10 +16,16 @@
 //
 //
 
+#include <memory>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpcpp/security/credentials.h>
+
 #include "src/cpp/client/secure_credentials.h"
 
 namespace grpc {
-namespace experimental {
 
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
@@ -35,6 +41,13 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
     return internal::WrapChannelCredentials(grpc_xds_credentials_create(
         fallback_creds->AsSecureCredentials()->GetRawCreds()));
   }
+}
+
+namespace experimental {
+
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds) {
+  return grpc::XdsCredentials(fallback_creds);
 }
 
 }  // namespace experimental

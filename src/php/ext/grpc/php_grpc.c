@@ -22,11 +22,13 @@
 #include "channel.h"
 #include "server.h"
 #include "timeval.h"
+#include "version.h"
 #include "channel_credentials.h"
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
 #include <inttypes.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -109,11 +111,12 @@ void create_new_channel(
     grpc_channel_args args,
     wrapped_grpc_channel_credentials *creds) {
   if (creds == NULL) {
-    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
-                                                             NULL);
+    grpc_channel_credentials *insecure_creds = grpc_insecure_credentials_create();
+    channel->wrapper->wrapped = grpc_channel_create(target, insecure_creds, &args);
+    grpc_channel_credentials_release(insecure_creds);
   } else {
     channel->wrapper->wrapped =
-        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+        grpc_channel_create(target, creds->wrapped, &args);
   }
 }
 
@@ -541,6 +544,10 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
+  /** grpc version string */
+  REGISTER_STRING_CONSTANT("Grpc\\VERSION", PHP_GRPC_VERSION,
+                           CONST_CS | CONST_PERSISTENT);
+  
   grpc_init_call(TSRMLS_C);
   GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);

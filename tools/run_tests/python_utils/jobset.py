@@ -13,6 +13,7 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
+import errno
 import logging
 import multiprocessing
 import os
@@ -23,7 +24,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import errno
 
 # cpu cost measurement
 measure_cpu_costs = False
@@ -44,7 +44,7 @@ def strip_non_ascii_chars(s):
 
 def sanitized_environment(env):
     sanitized = {}
-    for key, value in env.items():
+    for key, value in list(env.items()):
         sanitized[strip_non_ascii_chars(key)] = strip_non_ascii_chars(value)
     return sanitized
 
@@ -126,19 +126,22 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         return
     message.old_tag = tag
     message.old_msg = msg
+    if explanatory_text:
+        if isinstance(explanatory_text, bytes):
+            explanatory_text = explanatory_text.decode('utf8', errors='replace')
     while True:
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text.decode('utf8'))
+                    logging.info(explanatory_text)
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
                     '%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' %
                     (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' %
-                     explanatory_text.decode('utf8') if explanatory_text
-                     is not None else '', _COLORS[_TAG_COLOR[tag]][1],
-                     _COLORS[_TAG_COLOR[tag]][0], tag, msg, '\n'
+                     explanatory_text if explanatory_text is not None else '',
+                     _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
+                     tag, msg, '\n'
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
@@ -221,7 +224,7 @@ class JobSpec(object):
 
     def __str__(self):
         return '%s: %s %s' % (self.shortname, ' '.join(
-            '%s=%s' % kv for kv in self.environ.items()), ' '.join(
+            '%s=%s' % kv for kv in list(self.environ.items())), ' '.join(
                 self.cmdline))
 
 
@@ -357,7 +360,7 @@ class Job(object):
                 if measure_cpu_costs:
                     m = re.search(
                         r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)',
-                        stdout())
+                        (stdout()).decode('utf8', errors='replace'))
                     real = float(m.group(1))
                     user = float(m.group(2))
                     sys = float(m.group(3))

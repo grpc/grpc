@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
@@ -46,9 +46,9 @@ int GetIntValueFromMetadata(
 }
 }  // namespace
 
-experimental::ServerUnaryReactor* CallbackStreamingTestService::Echo(
-    experimental::CallbackServerContext* context,
-    const EchoRequest* /*request*/, EchoResponse* response) {
+ServerUnaryReactor* CallbackStreamingTestService::Echo(
+    CallbackServerContext* context, const EchoRequest* /*request*/,
+    EchoResponse* response) {
   int response_msgs_size = GetIntValueFromMetadata(
       kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
@@ -57,17 +57,15 @@ experimental::ServerUnaryReactor* CallbackStreamingTestService::Echo(
     response->set_message("");
   }
   auto* reactor = context->DefaultReactor();
-  reactor->Finish(::grpc::Status::OK);
+  reactor->Finish(grpc::Status::OK);
   return reactor;
 }
 
-experimental::ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream(
-    experimental::CallbackServerContext* context) {
-  class Reactor
-      : public experimental::ServerBidiReactor<EchoRequest, EchoResponse> {
+ServerBidiReactor<EchoRequest, EchoResponse>*
+CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
+  class Reactor : public ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(experimental::CallbackServerContext* context) {
+    explicit Reactor(CallbackServerContext* context) {
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);
@@ -80,7 +78,7 @@ CallbackStreamingTestService::BidiStream(
     void OnReadDone(bool ok) override {
       if (!ok) {
         // Stream is over
-        Finish(::grpc::Status::OK);
+        Finish(grpc::Status::OK);
         finished_ = true;
         return;
       }

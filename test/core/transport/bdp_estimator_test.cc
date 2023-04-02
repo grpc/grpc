@@ -1,33 +1,33 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <atomic>
+
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include <gtest/gtest.h>
-#include <limits.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
@@ -36,17 +36,17 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 0;
+std::atomic<int> g_clock{123};
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
   gpr_timespec ts;
-  ts.tv_sec = g_clock;
+  ts.tv_sec = g_clock.load();
   ts.tv_nsec = 0;
   ts.clock_type = clock_type;
   return ts;
 }
 
-void inc_time(void) { g_clock += 30; }
+void inc_time(void) { g_clock.fetch_add(30); }
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }
@@ -60,7 +60,7 @@ namespace {
 void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
@@ -68,7 +68,7 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_core::ExecCtx::Get()->InvalidateNow();
+  ExecCtx::Get()->InvalidateNow();
   estimator->CompletePing();
 }
 
@@ -125,7 +125,7 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
     if (sample > max) max = sample;
     AddSample(&est, sample);
     if (i >= 3) {
-      EXPECT_LE(est.EstimateBdp(), GPR_MAX(65536, 2 * NextPow2(max)))
+      EXPECT_LE(est.EstimateBdp(), std::max(int64_t(65536), 2 * NextPow2(max)))
           << " min:" << min << " max:" << max << " sample:" << sample;
     }
   }
@@ -139,7 +139,7 @@ INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();
   grpc_timer_manager_set_threading(false);

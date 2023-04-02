@@ -13,8 +13,8 @@
 # limitations under the License.
 """The Python AsyncIO example of utilizing Channelz feature."""
 
-import asyncio
 import argparse
+import asyncio
 import logging
 import random
 

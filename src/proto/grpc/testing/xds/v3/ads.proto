@@ -40,6 +40,6 @@ service AggregatedDiscoveryService {
 }
 
 // [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
-// services: https://github.com/google/protobuf/issues/4221
+// services: https://github.com/protocolbuffers/protobuf/issues/4221
 message AdsPhony {
 }

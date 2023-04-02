@@ -7,72 +7,88 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "google/protobuf/struct.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const google_protobuf_Struct_submsgs[1] = {
-  &google_protobuf_Struct_FieldsEntry_msginit,
+static const upb_MiniTable_Sub google_protobuf_Struct_submsgs[1] = {
+  {.submsg = &google_protobuf_Struct_FieldsEntry_msginit},
 };
 
-static const upb_msglayout_field google_protobuf_Struct__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_LABEL_MAP},
+static const upb_MiniTable_Field google_protobuf_Struct__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_protobuf_Struct_msginit = {
+const upb_MiniTable google_protobuf_Struct_msginit = {
   &google_protobuf_Struct_submsgs[0],
   &google_protobuf_Struct__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *const google_protobuf_Struct_FieldsEntry_submsgs[1] = {
-  &google_protobuf_Value_msginit,
+static const upb_MiniTable_Sub google_protobuf_Struct_FieldsEntry_submsgs[1] = {
+  {.submsg = &google_protobuf_Value_msginit},
 };
 
-static const upb_msglayout_field google_protobuf_Struct_FieldsEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+static const upb_MiniTable_Field google_protobuf_Struct_FieldsEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_protobuf_Struct_FieldsEntry_msginit = {
+const upb_MiniTable google_protobuf_Struct_FieldsEntry_msginit = {
   &google_protobuf_Struct_FieldsEntry_submsgs[0],
   &google_protobuf_Struct_FieldsEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const google_protobuf_Value_submsgs[2] = {
-  &google_protobuf_ListValue_msginit,
-  &google_protobuf_Struct_msginit,
+static const upb_MiniTable_Sub google_protobuf_Value_submsgs[2] = {
+  {.submsg = &google_protobuf_Struct_msginit},
+  {.submsg = &google_protobuf_ListValue_msginit},
 };
 
-static const upb_msglayout_field google_protobuf_Value__fields[6] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, 1},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 1, 1},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 8, 1},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 1, 11, 1},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 11, 1},
+static const upb_MiniTable_Field google_protobuf_Value__fields[6] = {
+  {1, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(8, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_protobuf_Value_msginit = {
+const upb_MiniTable google_protobuf_Value_msginit = {
   &google_protobuf_Value_submsgs[0],
   &google_protobuf_Value__fields[0],
-  UPB_SIZE(16, 32), 6, false, 255,
+  UPB_SIZE(16, 24), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout *const google_protobuf_ListValue_submsgs[1] = {
-  &google_protobuf_Value_msginit,
+static const upb_MiniTable_Sub google_protobuf_ListValue_submsgs[1] = {
+  {.submsg = &google_protobuf_Value_msginit},
 };
 
-static const upb_msglayout_field google_protobuf_ListValue__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+static const upb_MiniTable_Field google_protobuf_ListValue__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_protobuf_ListValue_msginit = {
+const upb_MiniTable google_protobuf_ListValue_msginit = {
   &google_protobuf_ListValue_submsgs[0],
   &google_protobuf_ListValue__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[4] = {
+  &google_protobuf_Struct_msginit,
+  &google_protobuf_Struct_FieldsEntry_msginit,
+  &google_protobuf_Value_msginit,
+  &google_protobuf_ListValue_msginit,
+};
+
+const upb_MiniTable_File google_protobuf_struct_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  4,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

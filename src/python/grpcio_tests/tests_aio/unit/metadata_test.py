@@ -22,8 +22,8 @@ import unittest
 import grpc
 from grpc.experimental import aio
 
-from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit import _common
+from tests_aio.unit._test_base import AioTestBase
 
 _TEST_CLIENT_TO_SERVER = '/test/TestClientToServer'
 _TEST_SERVER_TO_CLIENT = '/test/TestServerToClient'
@@ -33,6 +33,7 @@ _TEST_GENERIC_HANDLER = '/test/TestGenericHandler'
 _TEST_UNARY_STREAM = '/test/TestUnaryStream'
 _TEST_STREAM_UNARY = '/test/TestStreamUnary'
 _TEST_STREAM_STREAM = '/test/TestStreamStream'
+_TEST_INSPECT_CONTEXT = '/test/TestInspectContext'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -75,6 +76,9 @@ _INVALID_METADATA_TEST_CASES = (
     ),
 )
 
+_NON_OK_CODE = grpc.StatusCode.NOT_FOUND
+_DETAILS = 'Test details!'
+
 
 class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
 
@@ -95,6 +99,8 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
                 grpc.stream_unary_rpc_method_handler(self._test_stream_unary),
             _TEST_STREAM_STREAM:
                 grpc.stream_stream_rpc_method_handler(self._test_stream_stream),
+            _TEST_INSPECT_CONTEXT:
+                grpc.unary_unary_rpc_method_handler(self._test_inspect_context),
         }
 
     @staticmethod
@@ -152,6 +158,19 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
 
         yield _RESPONSE
         context.set_trailing_metadata(_TRAILING_METADATA)
+
+    @staticmethod
+    async def _test_inspect_context(request, context):
+        assert _REQUEST == request
+        context.set_code(_NON_OK_CODE)
+        context.set_details(_DETAILS)
+        context.set_trailing_metadata(_TRAILING_METADATA)
+
+        # ensure that we can read back the data we set on the context
+        assert context.get_code() == _NON_OK_CODE
+        assert context.get_details() == _DETAILS
+        assert context.get_trailing_metadata() == _TRAILING_METADATA
+        return _RESPONSE
 
     def service(self, handler_call_details):
         return self._routing_table.get(handler_call_details.method)
@@ -290,6 +309,15 @@ class TestMetadata(AioTestBase):
         self.assertEqual(expected_sum, metadata_obj + (('third', '3'),))
         self.assertEqual(expected_sum, metadata_obj + aio.Metadata(
             ('third', '3')))
+
+    async def test_inspect_context(self):
+        multicallable = self._client.unary_unary(_TEST_INSPECT_CONTEXT)
+        call = multicallable(_REQUEST)
+        with self.assertRaises(grpc.RpcError) as exc_data:
+            await call
+
+        err = exc_data.exception
+        self.assertEqual(_NON_OK_CODE, err.code())
 
 
 if __name__ == '__main__':

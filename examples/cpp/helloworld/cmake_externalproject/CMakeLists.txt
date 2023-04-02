@@ -20,7 +20,7 @@
 # including the "helloworld" project itself.
 # See https://blog.kitware.com/cmake-superbuilds-git-submodules/
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.8)
 
 # Project
 project(HelloWorld-SuperBuild C CXX)
@@ -54,7 +54,7 @@ ExternalProject_Add(c-ares
 # Builds protobuf project from the git submodule.
 ExternalProject_Add(protobuf
   PREFIX protobuf
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/protobuf/cmake"
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/protobuf"
   CMAKE_CACHE_ARGS
         -Dprotobuf_BUILD_TESTS:BOOL=OFF
         -Dprotobuf_WITH_ZLIB:BOOL=OFF
@@ -100,6 +100,7 @@ ExternalProject_Add(grpc
   CMAKE_CACHE_ARGS
         -DgRPC_INSTALL:BOOL=ON
         -DgRPC_BUILD_TESTS:BOOL=OFF
+        -DgRPC_BUILD_MSVC_MP_COUNT:STRING=-1
         -DgRPC_PROTOBUF_PROVIDER:STRING=package
         -DgRPC_PROTOBUF_PACKAGE_TYPE:STRING=CONFIG
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}

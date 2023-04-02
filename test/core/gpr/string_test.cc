@@ -1,58 +1,53 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/gpr/string.h"
 
 #include <limits.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "gtest/gtest.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
-
-static void test_strdup(void) {
+TEST(StringTest, Strdup) {
   static const char* src1 = "hello world";
   char* dst1;
 
-  LOG_TEST_NAME("test_strdup");
-
   dst1 = gpr_strdup(src1);
-  GPR_ASSERT(0 == strcmp(src1, dst1));
+  ASSERT_STREQ(src1, dst1);
   gpr_free(dst1);
 
-  GPR_ASSERT(nullptr == gpr_strdup(nullptr));
+  ASSERT_EQ(nullptr, gpr_strdup(nullptr));
 }
 
 static void expect_dump(const char* buf, size_t len, uint32_t flags,
                         const char* result) {
   char* got = gpr_dump(buf, len, flags);
-  GPR_ASSERT(0 == strcmp(got, result));
+  ASSERT_STREQ(got, result);
   gpr_free(got);
 }
 
-static void test_dump(void) {
-  LOG_TEST_NAME("test_dump");
+TEST(StringTest, Dump) {
   expect_dump("\x01", 1, GPR_DUMP_HEX, "01");
   expect_dump("\x01", 1, GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
   expect_dump("\x01\x02", 2, GPR_DUMP_HEX, "01 02");
@@ -63,18 +58,16 @@ static void test_dump(void) {
 
 static void test_pu32_fail(const char* s) {
   uint32_t out;
-  GPR_ASSERT(!gpr_parse_bytes_to_uint32(s, strlen(s), &out));
+  ASSERT_FALSE(gpr_parse_bytes_to_uint32(s, strlen(s), &out));
 }
 
 static void test_pu32_succeed(const char* s, uint32_t want) {
   uint32_t out;
-  GPR_ASSERT(gpr_parse_bytes_to_uint32(s, strlen(s), &out));
-  GPR_ASSERT(out == want);
+  ASSERT_TRUE(gpr_parse_bytes_to_uint32(s, strlen(s), &out));
+  ASSERT_EQ(out, want);
 }
 
-static void test_parse_uint32(void) {
-  LOG_TEST_NAME("test_parse_uint32");
-
+TEST(StringTest, ParseUint32) {
   test_pu32_fail("-1");
   test_pu32_fail("a");
   test_pu32_fail("");
@@ -106,208 +99,179 @@ static void test_parse_uint32(void) {
   test_pu32_fail("4294967299");
 }
 
-static void test_asprintf(void) {
+TEST(StringTest, Asprintf) {
   char* buf;
   int i, j;
 
-  LOG_TEST_NAME("test_asprintf");
-
-  /* Print an empty string. */
-  GPR_ASSERT(gpr_asprintf(&buf, "%s", "") == 0);
-  GPR_ASSERT(buf[0] == '\0');
+  // Print an empty string.
+  ASSERT_EQ(gpr_asprintf(&buf, "%s", ""), 0);
+  ASSERT_EQ(buf[0], '\0');
   gpr_free(buf);
 
-  /* Print strings of various lengths. */
+  // Print strings of various lengths.
   for (i = 1; i < 100; i++) {
-    GPR_ASSERT(gpr_asprintf(&buf, "%0*d", i, 1) == i);
+    ASSERT_EQ(gpr_asprintf(&buf, "%0*d", i, 1), i);
 
-    /* The buffer should resemble "000001\0". */
+    // The buffer should resemble "000001\0".
     for (j = 0; j < i - 2; j++) {
-      GPR_ASSERT(buf[j] == '0');
+      ASSERT_EQ(buf[j], '0');
     }
-    GPR_ASSERT(buf[i - 1] == '1');
-    GPR_ASSERT(buf[i] == '\0');
+    ASSERT_EQ(buf[i - 1], '1');
+    ASSERT_EQ(buf[i], '\0');
     gpr_free(buf);
   }
 }
 
-static void test_strjoin(void) {
+TEST(StringTest, Strjoin) {
   const char* parts[4] = {"one", "two", "three", "four"};
   size_t joined_len;
   char* joined;
 
-  LOG_TEST_NAME("test_strjoin");
-
   joined = gpr_strjoin(parts, 4, &joined_len);
-  GPR_ASSERT(0 == strcmp("onetwothreefour", joined));
+  ASSERT_STREQ("onetwothreefour", joined);
   gpr_free(joined);
 
   joined = gpr_strjoin(parts, 0, &joined_len);
-  GPR_ASSERT(0 == strcmp("", joined));
+  ASSERT_STREQ("", joined);
   gpr_free(joined);
 
   joined = gpr_strjoin(parts, 1, &joined_len);
-  GPR_ASSERT(0 == strcmp("one", joined));
+  ASSERT_STREQ("one", joined);
   gpr_free(joined);
 }
 
-static void test_strjoin_sep(void) {
+TEST(StringTest, StrjoinSep) {
   const char* parts[4] = {"one", "two", "three", "four"};
   size_t joined_len;
   char* joined;
 
-  LOG_TEST_NAME("test_strjoin_sep");
-
   joined = gpr_strjoin_sep(parts, 4, ", ", &joined_len);
-  GPR_ASSERT(0 == strcmp("one, two, three, four", joined));
+  ASSERT_STREQ("one, two, three, four", joined);
   gpr_free(joined);
 
-  /* empty separator */
+  // empty separator
   joined = gpr_strjoin_sep(parts, 4, "", &joined_len);
-  GPR_ASSERT(0 == strcmp("onetwothreefour", joined));
+  ASSERT_STREQ("onetwothreefour", joined);
   gpr_free(joined);
 
-  /* degenerated case specifying zero input parts */
+  // degenerated case specifying zero input parts
   joined = gpr_strjoin_sep(parts, 0, ", ", &joined_len);
-  GPR_ASSERT(0 == strcmp("", joined));
+  ASSERT_STREQ("", joined);
   gpr_free(joined);
 
-  /* single part should have no separator */
+  // single part should have no separator
   joined = gpr_strjoin_sep(parts, 1, ", ", &joined_len);
-  GPR_ASSERT(0 == strcmp("one", joined));
+  ASSERT_STREQ("one", joined);
   gpr_free(joined);
 }
 
-static void test_ltoa() {
+TEST(StringTest, Ltoa) {
   char* str;
   char buf[GPR_LTOA_MIN_BUFSIZE];
 
-  LOG_TEST_NAME("test_ltoa");
+  // zero
+  ASSERT_EQ(1, gpr_ltoa(0, buf));
+  ASSERT_STREQ("0", buf);
 
-  /* zero */
-  GPR_ASSERT(1 == gpr_ltoa(0, buf));
-  GPR_ASSERT(0 == strcmp("0", buf));
+  // positive number
+  ASSERT_EQ(3, gpr_ltoa(123, buf));
+  ASSERT_STREQ("123", buf);
 
-  /* positive number */
-  GPR_ASSERT(3 == gpr_ltoa(123, buf));
-  GPR_ASSERT(0 == strcmp("123", buf));
+  // negative number
+  ASSERT_EQ(6, gpr_ltoa(-12345, buf));
+  ASSERT_STREQ("-12345", buf);
 
-  /* negative number */
-  GPR_ASSERT(6 == gpr_ltoa(-12345, buf));
-  GPR_ASSERT(0 == strcmp("-12345", buf));
-
-  /* large negative - we don't know the size of long in advance */
-  GPR_ASSERT(gpr_asprintf(&str, "%lld", (long long)LONG_MIN));
-  GPR_ASSERT(strlen(str) == (size_t)gpr_ltoa(LONG_MIN, buf));
-  GPR_ASSERT(0 == strcmp(str, buf));
+  // large negative - we don't know the size of long in advance
+  ASSERT_TRUE(gpr_asprintf(&str, "%lld", (long long)LONG_MIN));
+  ASSERT_EQ(strlen(str), (size_t)gpr_ltoa(LONG_MIN, buf));
+  ASSERT_STREQ(str, buf);
   gpr_free(str);
 }
 
-static void test_int64toa() {
+TEST(StringTest, Int64Toa) {
   char buf[GPR_INT64TOA_MIN_BUFSIZE];
 
-  LOG_TEST_NAME("test_int64toa");
+  // zero
+  ASSERT_EQ(1, int64_ttoa(0, buf));
+  ASSERT_STREQ("0", buf);
 
-  /* zero */
-  GPR_ASSERT(1 == int64_ttoa(0, buf));
-  GPR_ASSERT(0 == strcmp("0", buf));
+  // positive
+  ASSERT_EQ(3, int64_ttoa(123, buf));
+  ASSERT_STREQ("123", buf);
 
-  /* positive */
-  GPR_ASSERT(3 == int64_ttoa(123, buf));
-  GPR_ASSERT(0 == strcmp("123", buf));
+  // large positive
+  ASSERT_EQ(19, int64_ttoa(9223372036854775807LL, buf));
+  ASSERT_STREQ("9223372036854775807", buf);
 
-  /* large positive */
-  GPR_ASSERT(19 == int64_ttoa(9223372036854775807LL, buf));
-  GPR_ASSERT(0 == strcmp("9223372036854775807", buf));
-
-  /* large negative */
-  GPR_ASSERT(20 == int64_ttoa(-9223372036854775807LL - 1, buf));
-  GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
+  // large negative
+  ASSERT_EQ(20, int64_ttoa(-9223372036854775807LL - 1, buf));
+  ASSERT_STREQ("-9223372036854775808", buf);
 }
 
-static void test_leftpad() {
+TEST(StringTest, Leftpad) {
   char* padded;
 
-  LOG_TEST_NAME("test_leftpad");
-
   padded = gpr_leftpad("foo", ' ', 5);
-  GPR_ASSERT(0 == strcmp("  foo", padded));
+  ASSERT_STREQ("  foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", ' ', 4);
-  GPR_ASSERT(0 == strcmp(" foo", padded));
+  ASSERT_STREQ(" foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", ' ', 3);
-  GPR_ASSERT(0 == strcmp("foo", padded));
+  ASSERT_STREQ("foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", ' ', 2);
-  GPR_ASSERT(0 == strcmp("foo", padded));
+  ASSERT_STREQ("foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", ' ', 1);
-  GPR_ASSERT(0 == strcmp("foo", padded));
+  ASSERT_STREQ("foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", ' ', 0);
-  GPR_ASSERT(0 == strcmp("foo", padded));
+  ASSERT_STREQ("foo", padded);
   gpr_free(padded);
 
   padded = gpr_leftpad("foo", '0', 5);
-  GPR_ASSERT(0 == strcmp("00foo", padded));
+  ASSERT_STREQ("00foo", padded);
   gpr_free(padded);
 }
 
-static void test_stricmp(void) {
-  LOG_TEST_NAME("test_stricmp");
-
-  GPR_ASSERT(0 == gpr_stricmp("hello", "hello"));
-  GPR_ASSERT(0 == gpr_stricmp("HELLO", "hello"));
-  GPR_ASSERT(gpr_stricmp("a", "b") < 0);
-  GPR_ASSERT(gpr_stricmp("b", "a") > 0);
+TEST(StringTest, Stricmp) {
+  ASSERT_EQ(0, gpr_stricmp("hello", "hello"));
+  ASSERT_EQ(0, gpr_stricmp("HELLO", "hello"));
+  ASSERT_LT(gpr_stricmp("a", "b"), 0);
+  ASSERT_GT(gpr_stricmp("b", "a"), 0);
 }
 
-static void test_memrchr(void) {
-  LOG_TEST_NAME("test_memrchr");
-
-  GPR_ASSERT(nullptr == gpr_memrchr(nullptr, 'a', 0));
-  GPR_ASSERT(nullptr == gpr_memrchr("", 'a', 0));
-  GPR_ASSERT(nullptr == gpr_memrchr("hello", 'b', 5));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'h', 5), "hello"));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'o', 5), "o"));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
+TEST(StringTest, Memrchr) {
+  ASSERT_EQ(nullptr, gpr_memrchr(nullptr, 'a', 0));
+  ASSERT_EQ(nullptr, gpr_memrchr("", 'a', 0));
+  ASSERT_EQ(nullptr, gpr_memrchr("hello", 'b', 5));
+  ASSERT_STREQ((const char*)gpr_memrchr("hello", 'h', 5), "hello");
+  ASSERT_STREQ((const char*)gpr_memrchr("hello", 'o', 5), "o");
+  ASSERT_STREQ((const char*)gpr_memrchr("hello", 'l', 5), "lo");
 }
 
-static void test_parse_bool_value(void) {
-  LOG_TEST_NAME("test_parse_bool_value");
-
+TEST(StringTest, ParseBoolValue) {
   bool ret;
-  GPR_ASSERT(true == gpr_parse_bool_value("truE", &ret) && true == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("falsE", &ret) && false == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("1", &ret) && true == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("0", &ret) && false == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("Yes", &ret) && true == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("No", &ret) && false == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("Y", &ret) && true == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("N", &ret) && false == ret);
-  GPR_ASSERT(false == gpr_parse_bool_value(nullptr, &ret));
-  GPR_ASSERT(false == gpr_parse_bool_value("", &ret));
+  ASSERT_TRUE(true == gpr_parse_bool_value("truE", &ret) && true == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("falsE", &ret) && false == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("1", &ret) && true == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("0", &ret) && false == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("Yes", &ret) && true == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("No", &ret) && false == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("Y", &ret) && true == ret);
+  ASSERT_TRUE(true == gpr_parse_bool_value("N", &ret) && false == ret);
+  ASSERT_EQ(false, gpr_parse_bool_value(nullptr, &ret));
+  ASSERT_EQ(false, gpr_parse_bool_value("", &ret));
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  test_strdup();
-  test_dump();
-  test_parse_uint32();
-  test_asprintf();
-  test_strjoin();
-  test_strjoin_sep();
-  test_ltoa();
-  test_int64toa();
-  test_leftpad();
-  test_stricmp();
-  test_memrchr();
-  test_parse_bool_value();
-  return 0;
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

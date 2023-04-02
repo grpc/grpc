@@ -25,9 +25,10 @@
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
-                             std::string* file_name_or_error) {
-  *file_name_or_error =
-      grpc_generator::FileNameInUpperCamel(file, false) + "Grpc.cs";
+                             const std::string& file_suffix,
+                             std::string& out_file_name_or_error) {
+  out_file_name_or_error =
+      grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
   return true;
 }
 

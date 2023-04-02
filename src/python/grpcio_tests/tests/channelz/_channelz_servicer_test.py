@@ -13,12 +13,11 @@
 # limitations under the License.
 """Tests of grpc_channelz.v1.channelz."""
 
+from concurrent import futures
+import sys
 import unittest
 
-from concurrent import futures
-
 import grpc
-
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
@@ -92,6 +91,8 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class ChannelzServicerTest(unittest.TestCase):
 
     def _send_successful_unary_unary(self, idx):
@@ -373,18 +374,25 @@ class ChannelzServicerTest(unittest.TestCase):
         # Subchannel exists
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
-        gsc_resp = self._channelz_stub.GetSubchannel(
-            channelz_pb2.GetSubchannelRequest(
-                subchannel_id=gc_resp.channel.subchannel_ref[0].subchannel_id))
+        while True:
+            gsc_resp = self._channelz_stub.GetSubchannel(
+                channelz_pb2.GetSubchannelRequest(
+                    subchannel_id=gc_resp.channel.subchannel_ref[0].
+                    subchannel_id))
+            if gsc_resp.subchannel.data.calls_started == gsc_resp.subchannel.data.calls_succeeded + gsc_resp.subchannel.data.calls_failed:
+                break
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
-        self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         self.assertEqual(gsc_resp.subchannel.data.calls_failed, 0)
+        self.assertEqual(gsc_resp.subchannel.data.calls_succeeded, 1)
         # Socket exists
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
-        gs_resp = self._channelz_stub.GetSocket(
-            channelz_pb2.GetSocketRequest(
-                socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
+        while True:
+            gs_resp = self._channelz_stub.GetSocket(
+                channelz_pb2.GetSocketRequest(
+                    socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
+            if gs_resp.socket.data.streams_started == gs_resp.socket.data.streams_succeeded + gs_resp.socket.data.streams_failed:
+                break
         self.assertEqual(gs_resp.socket.data.streams_started, 1)
         self.assertEqual(gs_resp.socket.data.streams_succeeded, 1)
         self.assertEqual(gs_resp.socket.data.streams_failed, 0)

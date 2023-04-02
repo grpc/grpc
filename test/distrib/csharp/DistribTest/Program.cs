@@ -20,7 +20,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Helloworld;
+using GrpcCsharpDistribtest.Helloworld;
 
 namespace TestGrpcPackage
 {
@@ -28,30 +28,19 @@ namespace TestGrpcPackage
     {
         public static void Main(string[] args)
         {
-            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
-            Server server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
-            {
-                Services = { Greeter.BindService(new GreeterImpl()) },
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
-            };
-            server.Start();
+            CheckGreeterProtobufCodegenWorks();
+            CheckGreeterGrpcProtobufPluginCodegenWorks();
+            CheckDuplicateProtoFilesAreOk();
+        }
 
-            Channel channel = new Channel("localhost", server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
+        private static object CheckGreeterProtobufCodegenWorks()
+        {
+            return new HelloRequest { Name = "ABC" };
+        }
 
-            try
-            {
-                var client = new Greeter.GreeterClient(channel);
-                String user = "you";
-
-                var reply = client.SayHello(new HelloRequest { Name = user });
-                Console.WriteLine("Greeting: " + reply.Message);
-                Console.WriteLine("Success!");
-            }
-            finally
-            {
-                channel.ShutdownAsync().Wait();
-                server.ShutdownAsync().Wait();
-            }
+        private static object CheckGreeterGrpcProtobufPluginCodegenWorks()
+        {
+            return typeof(GreeterImpl);
         }
 
         // Test that codegen works well in case the .csproj has .proto files
@@ -59,7 +48,7 @@ namespace TestGrpcPackage
         // This method doesn't need to be used, it is enough to check that it builds.
         private static object CheckDuplicateProtoFilesAreOk()
         {
-            return new DuplicateProto.MessageFromDuplicateProto();
+            return new GrpcCsharpDistribtest.DuplicateProto.MessageFromDuplicateProto();
         }
     }
 

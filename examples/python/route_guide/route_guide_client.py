@@ -15,11 +15,10 @@
 
 from __future__ import print_function
 
-import random
 import logging
+import random
 
 import grpc
-
 import route_guide_pb2
 import route_guide_pb2_grpc
 import route_guide_resources

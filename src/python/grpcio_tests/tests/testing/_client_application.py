@@ -19,13 +19,12 @@ import threading
 import time
 
 import grpc
-from tests.unit.framework.common import test_constants
 
+from tests.testing import _application_common
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 from tests.testing.proto import services_pb2_grpc
-
-from tests.testing import _application_common
+from tests.unit.framework.common import test_constants
 
 
 @enum.unique

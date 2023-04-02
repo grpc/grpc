@@ -20,6 +20,7 @@
 #define GRPC_RB_SERVER_CREDENTIALS_H_
 
 #include <ruby/ruby.h>
+
 #include <stdbool.h>
 
 #include <grpc/grpc_security.h>

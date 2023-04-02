@@ -21,8 +21,8 @@ try:
 except ImportError:
     pass
 
-import unittest
 import logging
+import unittest
 
 import grpc
 

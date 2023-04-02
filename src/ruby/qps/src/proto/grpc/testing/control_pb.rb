@@ -5,6 +5,8 @@ require 'google/protobuf'
 
 require 'src/proto/grpc/testing/payloads_pb'
 require 'src/proto/grpc/testing/stats_pb'
+require 'google/protobuf/timestamp_pb'
+
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("src/proto/grpc/testing/control.proto", :syntax => :proto3) do
     add_message "grpc.testing.PoissonParams" do
@@ -127,6 +129,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :server_polls_per_request, :double, 16
       optional :server_queries_per_cpu_sec, :double, 17
       optional :client_queries_per_cpu_sec, :double, 18
+      optional :start_time, :message, 19, "google.protobuf.Timestamp"
+      optional :end_time, :message, 20, "google.protobuf.Timestamp"
     end
     add_message "grpc.testing.ScenarioResult" do
       optional :scenario, :message, 1, "grpc.testing.Scenario"

@@ -1,20 +1,22 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+#include <grpc/support/port_platform.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -24,23 +26,26 @@
 #include <string>
 #include <thread>
 
-#include "grpc/grpc.h"
-#include "grpc/support/alloc.h"
-#include "grpc/support/port_platform.h"
-#include "grpcpp/channel.h"
-#include "grpcpp/client_context.h"
-#include "grpcpp/create_channel.h"
-#include "grpcpp/ext/channelz_service_plugin.h"
-#include "grpcpp/grpcpp.h"
-#include "grpcpp/security/credentials.h"
-#include "grpcpp/security/server_credentials.h"
-#include "grpcpp/server.h"
-#include "grpcpp/server_builder.h"
-#include "grpcpp/server_context.h"
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/gpr/env.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/ext/channelz_service_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
+#include "src/core/lib/gprpp/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -64,7 +69,7 @@ std::string output_json("output.json");
 
 // Creata an echo server
 class EchoServerImpl final : public grpc::testing::TestService::Service {
-  Status EmptyCall(::grpc::ServerContext* /*context*/,
+  Status EmptyCall(ServerContext* /*context*/,
                    const grpc::testing::Empty* /*request*/,
                    grpc::testing::Empty* /*response*/) override {
     return Status::OK;
@@ -111,9 +116,9 @@ bool WaitForConnection(int wait_server_seconds) {
 // Test the channelz sampler
 TEST(ChannelzSamplerTest, SimpleTest) {
   // start server
-  ::grpc::channelz::experimental::InitChannelzService();
+  grpc::channelz::experimental::InitChannelzService();
   EchoServerImpl service;
-  grpc::ServerBuilder builder;
+  ServerBuilder builder;
   auto server_creds =
       grpc::testing::GetCredentialsProvider()->GetServerCredentials(
           custom_credentials_type);
@@ -162,7 +167,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   std::string me = argv[0];
   auto lslash = me.rfind('/');
@@ -171,6 +176,9 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
+
+  /// ensures the target address is unique even if this test is run in parallel
+  server_address = absl::StrCat("0.0.0.0:", grpc_pick_unused_port_or_die());
   int ret = RUN_ALL_TESTS();
   return ret;
 }

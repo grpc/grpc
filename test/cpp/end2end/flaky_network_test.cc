@@ -1,35 +1,22 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <condition_variable>
@@ -38,10 +25,26 @@
 #include <random>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -49,8 +52,6 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 #ifdef GPR_LINUX
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -181,7 +182,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     // ip6-looopback, but ipv6 support is not enabled by default in docker.
     port_ = SERVER_PORT;
 
-    server_ = absl::make_unique<ServerData>(port_, GetParam().credentials_type);
+    server_ = std::make_unique<ServerData>(port_, GetParam().credentials_type);
     server_->Start(server_host_);
   }
   void StopServer() { server_->Shutdown(); }
@@ -207,7 +208,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       int timeout_ms = 0, bool wait_for_ready = false) {
-    auto response = absl::make_unique<EchoResponse>();
+    auto response = std::make_unique<EchoResponse>();
     EchoRequest request;
     auto& msg = GetParam().message_content;
     request.set_message(msg);
@@ -249,7 +250,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
@@ -544,7 +545,7 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;
 }

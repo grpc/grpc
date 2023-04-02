@@ -15,34 +15,14 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
-export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
-export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-# install cython for all python versions
-python2.7 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.5 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.6 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
-python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
-
-# needed to build ruby artifacts
-time bash tools/distrib/build_ruby_environment_macos.sh
-
-gem install rubygems-update
-update_rubygems
-
-tools/run_tests/task_runner.py -f artifact macos || FAILED="true"
-
-tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+echo "The grpc_build_artifacts -> grpc_build_packages -> grpc_distribtests build flow has been deprecated."
+echo "To build the packages for a grpc release, use the grpc_build_all_packages job."
+echo "(which relies on the per-language distribtests jobs to build and test the packages)."

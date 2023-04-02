@@ -46,8 +46,6 @@ class _NoOpCommand(setuptools.Command):
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
@@ -55,6 +53,8 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -63,12 +63,13 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.6.0',
+    'protobuf>=4.21.6',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 
 try:
     import health_commands as _health_commands
+
     # we are in the build environment, otherwise the above import fails
     SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
         version=grpc_version.VERSION),)
@@ -96,6 +97,7 @@ setuptools.setup(name='grpcio-health-checking',
                  classifiers=CLASSIFIERS,
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  setup_requires=SETUP_REQUIRES,
                  cmdclass=COMMAND_CLASS)

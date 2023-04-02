@@ -1,40 +1,46 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <string.h>
-
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/cpp/common/channel_filter.h"
 
-#include <grpcpp/impl/codegen/slice.h>
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc {
 
 // MetadataBatch
 
-grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
-                                               const string& value) {
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
-                                        SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
-                    grpc_metadata_batch_link_head(batch_, storage));
-  return storage;
+void MetadataBatch::AddMetadata(const string& key, const string& value) {
+  batch_->Append(key, grpc_core::Slice::FromCopiedString(value),
+                 [&](absl::string_view error, const grpc_core::Slice&) {
+                   gpr_log(GPR_INFO, "%s",
+                           absl::StrCat("MetadataBatch::AddMetadata error:",
+                                        error, " key=", key, " value=", value)
+                               .c_str());
+                 });
 }
 
 // ChannelData
@@ -61,37 +67,29 @@ void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,
   grpc_call_stack_ignore_set_pollset_or_pollset_set(elem, pollent);
 }
 
-// internal code used by RegisterChannelFilter()
-
 namespace internal {
 
-// Note: Implicitly initialized to nullptr due to static lifetime.
-std::vector<FilterRecord>* channel_filters;
-
-namespace {
-
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
-  const FilterRecord& filter = *static_cast<FilterRecord*>(arg);
-  if (filter.include_filter) {
-    const grpc_channel_args* args =
-        grpc_channel_stack_builder_get_channel_arguments(builder);
-    if (!filter.include_filter(*args)) return true;
-  }
-  return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
-                                                   nullptr, nullptr);
+void RegisterChannelFilter(
+    grpc_channel_stack_type stack_type, int priority,
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
+    const grpc_channel_filter* filter) {
+  auto maybe_add_filter = [include_filter,
+                           filter](grpc_core::ChannelStackBuilder* builder) {
+    if (include_filter != nullptr) {
+      if (!include_filter(builder->channel_args())) {
+        return true;
+      }
+    }
+    builder->PrependFilter(filter);
+    return true;
+  };
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [stack_type, priority,
+       maybe_add_filter](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->channel_init()->RegisterStage(stack_type, priority,
+                                               maybe_add_filter);
+      });
 }
-
-}  // namespace
-
-void ChannelFilterPluginInit() {
-  for (size_t i = 0; i < channel_filters->size(); ++i) {
-    FilterRecord& filter = (*channel_filters)[i];
-    grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, &filter);
-  }
-}
-
-void ChannelFilterPluginShutdown() {}
 
 }  // namespace internal
 

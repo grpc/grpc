@@ -8,40 +8,11 @@
 
 #include "upb/def.h"
 #include "google/api/expr/v1alpha1/checked.upbdefs.h"
+#include "google/api/expr/v1alpha1/checked.upb.h"
 
-extern upb_def_init google_api_expr_v1alpha1_syntax_proto_upbdefinit;
-extern upb_def_init google_protobuf_empty_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Type_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Type_ListType_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Type_MapType_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Type_FunctionType_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Type_AbstractType_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Decl_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Decl_IdentDecl_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Decl_FunctionDecl_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit;
-extern const upb_msglayout google_api_expr_v1alpha1_Reference_msginit;
-
-static const upb_msglayout *layouts[13] = {
-  &google_api_expr_v1alpha1_CheckedExpr_msginit,
-  &google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit,
-  &google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit,
-  &google_api_expr_v1alpha1_Type_msginit,
-  &google_api_expr_v1alpha1_Type_ListType_msginit,
-  &google_api_expr_v1alpha1_Type_MapType_msginit,
-  &google_api_expr_v1alpha1_Type_FunctionType_msginit,
-  &google_api_expr_v1alpha1_Type_AbstractType_msginit,
-  &google_api_expr_v1alpha1_Decl_msginit,
-  &google_api_expr_v1alpha1_Decl_IdentDecl_msginit,
-  &google_api_expr_v1alpha1_Decl_FunctionDecl_msginit,
-  &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit,
-  &google_api_expr_v1alpha1_Reference_msginit,
-};
-
+extern _upb_DefPool_Init google_api_expr_v1alpha1_syntax_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_empty_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 static const char descriptor[3089] = {'\n', '&', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i', '/', 'e', 'x', 'p', 'r', '/', 'v', '1', 'a', 'l', 'p', 'h', 'a', 
 '1', '/', 'c', 'h', 'e', 'c', 'k', 'e', 'd', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'a', 
 'p', 'i', '.', 'e', 'x', 'p', 'r', '.', 'v', '1', 'a', 'l', 'p', 'h', 'a', '1', '\032', '%', 'g', 'o', 'o', 'g', 'l', 'e', '/', 
@@ -168,16 +139,16 @@ static const char descriptor[3089] = {'\n', '&', 'g', 'o', 'o', 'g', 'l', 'e', '
 'x', 'p', 'r', '\370', '\001', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &google_api_expr_v1alpha1_syntax_proto_upbdefinit,
   &google_protobuf_empty_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
   NULL
 };
 
-upb_def_init google_api_expr_v1alpha1_checked_proto_upbdefinit = {
+_upb_DefPool_Init google_api_expr_v1alpha1_checked_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_api_expr_v1alpha1_checked_proto_upb_file_layout,
   "google/api/expr/v1alpha1/checked.proto",
-  UPB_STRVIEW_INIT(descriptor, 3089)
+  UPB_STRINGVIEW_INIT(descriptor, 3089)
 };

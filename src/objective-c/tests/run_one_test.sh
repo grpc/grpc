@@ -16,20 +16,20 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -ex
 
 cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
-INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
 
 [ -d Tests.xcworkspace ] || {
     ./build_tests.sh
 }
 
 [ -f $INTEROP ] || {
-    BAZEL build //test/cpp/interop:interop_server
+    $BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -40,54 +40,45 @@ INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
+# start interop_server for plaintext and interop_server for TLS on random ports obtained
+# from the port server.
 $INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
 $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
-# Create loopback aliases for iOS performance tests
-if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
-for ((i=2;i<11;i++))
-do
-    sudo ifconfig lo0 alias 127.0.0.$i up
-done
-fi
-
 function finish {
-    if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
-    for ((i=2;i<11;i++))
-    do
-        sudo ifconfig lo0 -alias 127.0.0.$i
-    done
-    fi
     kill -9 `jobs -p`
     echo "EXIT TIME:  $(date)"
 }
 trap finish EXIT
 
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
+set -o pipefail  # preserve xcodebuild exit code when piping output
 
 if [ -z $PLATFORM ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == ios ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
 elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
+XCODEBUILD_FLAGS="
+  IPHONEOS_DEPLOYMENT_TARGET=10
+"
 
-xcodebuild \
+XCODEBUILD_FILTER_OUTPUT_SCRIPT="./xcodebuild_filter_output.sh"
+
+TEST_DEFS="HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+GCC_OPTIMIZATION_LEVEL=s"
+
+time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
-    -destination "$DESTINATION" \
-    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    -destination "${DESTINATION}" \
+    GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS'" $TEST_DEFS" \
     test \
-    | ./verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

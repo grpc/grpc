@@ -18,18 +18,8 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-CPUS=`python3 -c 'import multiprocessing; print(multiprocessing.cpu_count())'`
-
-./tools/run_tests/start_port_server.py || true
-
-tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload || FAILED="true"
-
-# kill port_server.py to prevent the build from freezing
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_performance_profile_summary_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

@@ -1,30 +1,31 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_MPSCQ_H
-#define GRPC_CORE_LIB_GPRPP_MPSCQ_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H
+#define GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <atomic>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -35,12 +36,12 @@ class MultiProducerSingleConsumerQueue {
  public:
   // List node.  Application node types can inherit from this.
   struct Node {
-    Atomic<Node*> next;
+    std::atomic<Node*> next{nullptr};
   };
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
   ~MultiProducerSingleConsumerQueue() {
-    GPR_ASSERT(head_.Load(MemoryOrder::RELAXED) == &stub_);
+    GPR_ASSERT(head_.load(std::memory_order_relaxed) == &stub_);
     GPR_ASSERT(tail_ == &stub_);
   }
 
@@ -61,7 +62,7 @@ class MultiProducerSingleConsumerQueue {
   // make sure head & tail don't share a cacheline
   union {
     char padding_[GPR_CACHELINE_SIZE];
-    Atomic<Node*> head_;
+    std::atomic<Node*> head_{nullptr};
   };
   Node* tail_;
   Node stub_;
@@ -95,4 +96,4 @@ class LockedMultiProducerSingleConsumerQueue {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_MPSCQ_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H

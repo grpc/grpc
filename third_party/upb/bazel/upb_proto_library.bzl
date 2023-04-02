@@ -1,3 +1,28 @@
+# Copyright (c) 2009-2021, Google LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Google LLC nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """Public rules for using upb protos:
   - upb_proto_library()
   - upb_proto_reflection_library()
@@ -5,11 +30,16 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")  # copybara:strip_for_google3
 
 # Generic support code #########################################################
 
-_is_bazel = True  # copybara:replace_for_google3 _is_bazel = False
+# begin:github_only
+_is_google3 = False
+# end:github_only
+
+# begin:google_only
+# _is_google3 = True
+# end:google_only
 
 def _get_real_short_path(file):
     # For some reason, files from other archives have short paths that look like:
@@ -72,7 +102,7 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, dep_ccinfos):
 
     blaze_only_args = {}
 
-    if not _is_bazel:
+    if _is_google3:
         blaze_only_args["grep_includes"] = ctx.file._grep_includes
 
     (compilation_context, compilation_outputs) = cc_common.compile(
@@ -180,6 +210,7 @@ def _compile_upb_protos(ctx, generator, proto_info, proto_sources):
                     ] +
                     [_get_real_short_path(file) for file in proto_sources],
         progress_message = "Generating upb protos for :" + ctx.label.name,
+        mnemonic = "GenUpbProtos",
     )
     return GeneratedSrcsInfo(srcs = srcs, hdrs = hdrs)
 
@@ -225,7 +256,7 @@ def _upb_proto_aspect_impl(target, ctx, generator, cc_provider, file_provider):
     dep_ccinfos += [dep[_UpbDefsWrappedCcInfo].cc_info for dep in deps if _UpbDefsWrappedCcInfo in dep]
     if generator == "upbdefs":
         if _UpbWrappedCcInfo not in target:
-            fail("Target should have _UpbDefsWrappedCcInfo provider")
+            fail("Target should have _UpbWrappedCcInfo provider")
         dep_ccinfos += [target[_UpbWrappedCcInfo].cc_info]
     cc_info = _cc_library_func(
         ctx = ctx,
@@ -244,11 +275,11 @@ def _upb_proto_reflection_library_aspect_impl(target, ctx):
     return _upb_proto_aspect_impl(target, ctx, "upbdefs", _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo)
 
 def _maybe_add(d):
-    if not _is_bazel:
+    if _is_google3:
         d["_grep_includes"] = attr.label(
             allow_single_file = True,
-            cfg = "host",
-            default = "//tools/cpp:grep-includes",
+            cfg = "exec",
+            default = "@bazel_tools//tools/cpp:grep-includes",
         )
     return d
 
@@ -261,12 +292,12 @@ _upb_proto_library_aspect = aspect(
         ),
         "_gen_upb": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "//upbc:protoc-gen-upb",
         ),
         "_protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "@com_google_protobuf//:protoc",
         ),
         "_cc_toolchain": attr.label(
@@ -274,7 +305,6 @@ _upb_proto_library_aspect = aspect(
         ),
         "_upb": attr.label_list(default = [
             "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-            "//:upb",
         ]),
         "_fasttable_enabled": attr.label(default = "//:fasttable_enabled"),
     }),
@@ -310,12 +340,12 @@ _upb_proto_reflection_library_aspect = aspect(
         ),
         "_gen_upbdefs": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "//upbc:protoc-gen-upbdefs",
         ),
         "_protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "@com_google_protobuf//:protoc",
         ),
         "_cc_toolchain": attr.label(
@@ -323,8 +353,7 @@ _upb_proto_reflection_library_aspect = aspect(
         ),
         "_upbdefs": attr.label_list(
             default = [
-                "//:upb",
-                "//:reflection",
+                "//:generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ],
         ),
     }),

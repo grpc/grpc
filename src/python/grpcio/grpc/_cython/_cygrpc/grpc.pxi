@@ -25,6 +25,37 @@ ctypedef unsigned short     uint16_t
 ctypedef unsigned int       uint32_t
 ctypedef unsigned long long uint64_t
 
+# C++ Utilities
+
+# NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
+# links it with exception handling. It introduces new dependencies.
+cdef extern from "<queue>" namespace "std" nogil:
+    cdef cppclass queue[T]:
+        queue()
+        bint empty()
+        T& front()
+        T& back()
+        void pop()
+        void push(T&)
+        size_t size()
+
+
+cdef extern from "<mutex>" namespace "std" nogil:
+    cdef cppclass mutex:
+        mutex()
+        void lock()
+        void unlock()
+
+    cdef cppclass unique_lock[Mutex]:
+      unique_lock(Mutex&)
+
+cdef extern from "<condition_variable>" namespace "std" nogil:
+  cdef cppclass condition_variable:
+    condition_variable()
+    void notify_all()
+    void wait(unique_lock[mutex]&)
+
+# gRPC Core Declarations
 
 cdef extern from "grpc/support/alloc.h":
 
@@ -42,8 +73,8 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
-    ctypedef struct grpc_experimental_completion_queue_functor:
-        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+    ctypedef struct grpc_completion_queue_functor:
+        void (*functor_run)(grpc_completion_queue_functor*, int);
 
 
 cdef extern from "grpc/grpc.h":
@@ -236,6 +267,7 @@ cdef extern from "grpc/grpc.h":
     int version
     grpc_cq_completion_type cq_completion_type
     grpc_cq_polling_type cq_polling_type
+    void* cq_shutdown_cb
 
   ctypedef enum grpc_connectivity_state:
     GRPC_CHANNEL_IDLE
@@ -358,12 +390,13 @@ cdef extern from "grpc/grpc.h":
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
   grpc_completion_queue *grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
+    grpc_completion_queue_functor* shutdown_callback,
     void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
       grpc_call *call, const grpc_op *ops, size_t nops, void *tag,
       void *reserved) nogil
+  const char* grpc_call_error_to_string(grpc_call_error error) nogil
   grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) nogil
   grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                grpc_status_code status,
@@ -372,9 +405,6 @@ cdef extern from "grpc/grpc.h":
   char *grpc_call_get_peer(grpc_call *call) nogil
   void grpc_call_unref(grpc_call *call) nogil
 
-  grpc_channel *grpc_insecure_channel_create(const char *target,
-                                             const grpc_channel_args *args,
-                                             void *reserved) nogil
   grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, grpc_slice method,
@@ -405,17 +435,16 @@ cdef extern from "grpc/grpc.h":
        grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
 
   ctypedef struct grpc_server_xds_status_notifier:
-    void (*on_serving_status_change)(void* user_data, const char* uri,
+    void (*on_serving_status_update)(void* user_data, const char* uri,
                                    grpc_status_code code,
                                    const char* error_message)
     void* user_data;
 
   grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-       grpc_server_xds_status_notifier notifier) nogil
+       grpc_server_xds_status_notifier notifier,
+       const grpc_channel_args* args) nogil
 
 
-  int grpc_server_add_insecure_http2_port(
-      grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
   void grpc_server_shutdown_and_notify(
       grpc_server *server, grpc_completion_queue *cq, void *tag) nogil
@@ -431,6 +460,8 @@ cdef extern from "grpc/grpc.h":
   char* grpc_channelz_get_channel(intptr_t channel_id)
   char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
   char* grpc_channelz_get_socket(intptr_t socket_id)
+
+  grpc_slice grpc_dump_xds_configs() nogil
 
 
 cdef extern from "grpc/grpc_security.h":
@@ -556,9 +587,9 @@ cdef extern from "grpc/grpc_security.h":
       void *reserved) nogil
   void grpc_call_credentials_release(grpc_call_credentials *creds) nogil
 
-  grpc_channel *grpc_secure_channel_create(
-      grpc_channel_credentials *creds, const char *target,
-      const grpc_channel_args *args, void *reserved) nogil
+  grpc_channel *grpc_channel_create(
+      const char *target, grpc_channel_credentials *creds,
+      const grpc_channel_args *args) nogil
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
@@ -566,7 +597,7 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
-  int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+  int grpc_server_add_http2_port(grpc_server *server, const char *addr,
                                         grpc_server_credentials *creds) nogil
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
@@ -583,7 +614,7 @@ cdef extern from "grpc/grpc_security.h":
 
   ctypedef void (*grpc_credentials_plugin_metadata_cb)(
       void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
-      grpc_status_code status, const char *error_details)
+      grpc_status_code status, const char *error_details) nogil
 
   ctypedef struct grpc_metadata_credentials_plugin:
     int (*get_metadata)(
@@ -696,3 +727,8 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+cdef extern from "src/core/lib/config/config_vars.h" namespace "grpc_core":
+  cdef cppclass ConfigVars:
+    @staticmethod
+    void Reset()

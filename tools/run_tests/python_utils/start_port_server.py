@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +14,6 @@
 
 from __future__ import print_function
 
-from . import jobset
-
-import six.moves.urllib.request as request
 import logging
 import os
 import socket
@@ -25,6 +21,11 @@ import subprocess
 import sys
 import tempfile
 import time
+
+import six.moves.urllib.request as request
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import jobset
 
 # must be synchronized with test/core/util/port_server_client.h
 _PORT_SERVER_PORT = 32766
@@ -50,7 +51,7 @@ def start_port_server():
                 sys.executable,  # use the same python binary as this process
                 os.path.abspath('tools/run_tests/python_utils/port_server.py'),
                 'dump_version'
-            ]))
+            ]).decode())
         logging.info('my port server is version %d', current_version)
         running = (version >= current_version)
         if not running:

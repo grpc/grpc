@@ -1,25 +1,29 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
+
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 constexpr size_t kMaxDataSize = 1024;
@@ -27,7 +31,7 @@ constexpr size_t kMaxSlices = 10;
 constexpr size_t kSealRepeatTimes = 5;
 constexpr size_t kTagLength = 16;
 
-/* Test fixtures for each test cases.  */
+// Test fixtures for each test cases.
 struct alts_iovec_record_protocol_test_fixture {
   alts_iovec_record_protocol* client_protect;
   alts_iovec_record_protocol* client_unprotect;
@@ -35,7 +39,7 @@ struct alts_iovec_record_protocol_test_fixture {
   alts_iovec_record_protocol* server_unprotect;
 };
 
-/* Test variables for protect/unprotect operations.  */
+// Test variables for protect/unprotect operations.
 struct alts_iovec_record_protocol_test_var {
   uint8_t* header_buf;
   size_t header_length;
@@ -53,7 +57,7 @@ struct alts_iovec_record_protocol_test_var {
   iovec_t unprotected_iovec;
 };
 
-/* --- Test utility functions. --- */
+// --- Test utility functions. ---
 
 static void randomly_slice(uint8_t* input, size_t input_length,
                            iovec_t** output, size_t* output_length) {
@@ -77,7 +81,7 @@ static void randomly_slice(uint8_t* input, size_t input_length,
 }
 
 static size_t alter_random_byte(uint8_t* buf, size_t buf_length) {
-  GPR_ASSERT(buf != nullptr);
+  EXPECT_NE(buf, nullptr);
   uint32_t offset =
       gsec_test_bias_random_uint32(static_cast<uint32_t>(buf_length));
   (*(buf + offset))++;
@@ -85,7 +89,7 @@ static size_t alter_random_byte(uint8_t* buf, size_t buf_length) {
 }
 
 static void revert_back_alter(uint8_t* buf, size_t offset) {
-  GPR_ASSERT(buf != nullptr);
+  ASSERT_NE(buf, nullptr);
   (*(buf + offset))--;
 }
 
@@ -100,39 +104,42 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
   gsec_aead_crypter* crypter = nullptr;
-  /* Create client record protocol for protect.  */
-  GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
-  GPR_ASSERT(alts_iovec_record_protocol_create(
-                 crypter, overflow_size, /*is_client=*/true, integrity_only,
-                 /*is_protect=*/true, &fixture->client_protect,
-                 nullptr) == GRPC_STATUS_OK);
-  /* Create client record protocol for unprotect.  */
-  GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
-  GPR_ASSERT(alts_iovec_record_protocol_create(
-                 crypter, overflow_size, /*is_client=*/true, integrity_only,
-                 /*is_protect=*/false, &fixture->client_unprotect,
-                 nullptr) == GRPC_STATUS_OK);
-  /* Create server record protocol for protect.  */
-  GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
-  GPR_ASSERT(alts_iovec_record_protocol_create(
-                 crypter, overflow_size, /*is_client=*/false, integrity_only,
-                 /*is_protect=*/true, &fixture->server_protect,
-                 nullptr) == GRPC_STATUS_OK);
-  /* Create server record protocol for unprotect.  */
-  GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
-  GPR_ASSERT(alts_iovec_record_protocol_create(
-                 crypter, overflow_size, /*is_client=*/false, integrity_only,
-                 /*is_protect=*/false, &fixture->server_unprotect,
-                 nullptr) == GRPC_STATUS_OK);
-
+  // Create client record protocol for protect.
+  EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
+                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                &crypter, nullptr),
+            GRPC_STATUS_OK);
+  EXPECT_EQ(alts_iovec_record_protocol_create(
+                crypter, overflow_size, /*is_client=*/true, integrity_only,
+                /*is_protect=*/true, &fixture->client_protect, nullptr),
+            GRPC_STATUS_OK);
+  // Create client record protocol for unprotect.
+  EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
+                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                &crypter, nullptr),
+            GRPC_STATUS_OK);
+  EXPECT_EQ(alts_iovec_record_protocol_create(
+                crypter, overflow_size, /*is_client=*/true, integrity_only,
+                /*is_protect=*/false, &fixture->client_unprotect, nullptr),
+            GRPC_STATUS_OK);
+  // Create server record protocol for protect.
+  EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
+                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                &crypter, nullptr),
+            GRPC_STATUS_OK);
+  EXPECT_EQ(alts_iovec_record_protocol_create(
+                crypter, overflow_size, /*is_client=*/false, integrity_only,
+                /*is_protect=*/true, &fixture->server_protect, nullptr),
+            GRPC_STATUS_OK);
+  // Create server record protocol for unprotect.
+  EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
+                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                &crypter, nullptr),
+            GRPC_STATUS_OK);
+  EXPECT_EQ(alts_iovec_record_protocol_create(
+                crypter, overflow_size, /*is_client=*/false, integrity_only,
+                /*is_protect=*/false, &fixture->server_unprotect, nullptr),
+            GRPC_STATUS_OK);
   gpr_free(key);
   return fixture;
 }
@@ -153,17 +160,17 @@ static alts_iovec_record_protocol_test_var*
 alts_iovec_record_protocol_test_var_create() {
   auto* var = static_cast<alts_iovec_record_protocol_test_var*>(
       gpr_zalloc(sizeof(alts_iovec_record_protocol_test_var)));
-  /* Sets header buffer.  */
+  // Sets header buffer.
   var->header_length = alts_iovec_record_protocol_get_header_length();
   var->header_buf = static_cast<uint8_t*>(gpr_malloc(var->header_length));
   var->header_iovec.iov_base = var->header_buf;
   var->header_iovec.iov_len = var->header_length;
-  /* Sets tag buffer.  */
+  // Sets tag buffer.
   var->tag_length = kTagLength;
   var->tag_buf = static_cast<uint8_t*>(gpr_malloc(var->tag_length));
   var->tag_iovec.iov_base = var->tag_buf;
   var->tag_iovec.iov_len = var->tag_length;
-  /* Randomly sets data buffer and duplicates to dup_buf.  */
+  // Randomly sets data buffer and duplicates to dup_buf.
   var->data_length = gsec_test_bias_random_uint32(kMaxDataSize) + 1;
   var->data_buf = static_cast<uint8_t*>(gpr_malloc(var->data_length));
   gsec_test_random_bytes(var->data_buf, var->data_length);
@@ -172,13 +179,13 @@ alts_iovec_record_protocol_test_var_create() {
   var->data_iovec_length = 0;
   randomly_slice(var->data_buf, var->data_length, &var->data_iovec,
                  &var->data_iovec_length);
-  /* Sets protected iovec.  */
+  // Sets protected iovec.
   size_t protected_buf_length =
       var->header_length + var->data_length + var->tag_length;
   var->protected_buf = static_cast<uint8_t*>(gpr_malloc(protected_buf_length));
   var->protected_iovec.iov_base = var->protected_buf;
   var->protected_iovec.iov_len = protected_buf_length;
-  /* Unprotected iovec points to data_buf.  */
+  // Unprotected iovec points to data_buf.
   var->unprotected_iovec.iov_base = var->data_buf;
   var->unprotected_iovec.iov_len = var->data_length;
   return var;
@@ -198,29 +205,29 @@ static void alts_iovec_record_protocol_test_var_destroy(
   gpr_free(var);
 }
 
-/* --- Integrity-only protect/unprotect tests. --- */
+// --- Integrity-only protect/unprotect tests. ---
 
 static void integrity_only_random_seal_unseal(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_iovec_record_protocol_test_var* var =
         alts_iovec_record_protocol_test_var_create();
-    /* Seals and then unseals.  */
+    // Seals and then unseals.
     grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
         sender, var->data_iovec, var->data_iovec_length, var->header_iovec,
         var->tag_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
     gpr_free(var->data_iovec);
-    /* Randomly slices data buffer again.  */
+    // Randomly slices data buffer again.
     randomly_slice(var->data_buf, var->data_length, &var->data_iovec,
                    &var->data_iovec_length);
     status = alts_iovec_record_protocol_integrity_only_unprotect(
         receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
         var->tag_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
-    /* Makes sure data buffer has not been modified during
-     * seal/unseal.  */
-    GPR_ASSERT(memcmp(var->data_buf, var->dup_buf, var->data_length) == 0);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
+    // Makes sure data buffer has not been modified during
+    // seal/unseal.
+    ASSERT_EQ(memcmp(var->data_buf, var->dup_buf, var->data_length), 0);
     alts_iovec_record_protocol_test_var_destroy(var);
   }
 }
@@ -230,39 +237,39 @@ static void integrity_only_empty_seal_unseal(
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_iovec_record_protocol_test_var* var =
         alts_iovec_record_protocol_test_var_create();
-    /* Seals and then unseals empty payload.  */
+    // Seals and then unseals empty payload.
     grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
         sender, nullptr, 0, var->header_iovec, var->tag_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
     status = alts_iovec_record_protocol_integrity_only_unprotect(
         receiver, nullptr, 0, var->header_iovec, var->tag_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
     alts_iovec_record_protocol_test_var_destroy(var);
   }
 }
 
 static void integrity_only_unsync_seal_unseal(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
-  /* Seals once.  */
+  // Seals once.
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
       sender, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   alts_iovec_record_protocol_test_var_destroy(var);
-  /* Seals again.  */
+  // Seals again.
   var = alts_iovec_record_protocol_test_var_create();
   status = alts_iovec_record_protocol_integrity_only_protect(
       sender, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  /* Unseals the second frame.  */
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  // Unseals the second frame.
   char* error_message = nullptr;
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Frame tag verification failed."));
   gpr_free(error_message);
@@ -271,61 +278,61 @@ static void integrity_only_unsync_seal_unseal(
 
 static void integrity_only_corrupted_data(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
-  /* Seals the data first.  */
+  // Seals the data first.
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
       sender, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  /* Alter frame length field.  */
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  // Alter frame length field.
   char* error_message = nullptr;
   size_t offset =
       alter_random_byte(var->header_buf, kZeroCopyFrameLengthFieldSize);
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message, "Bad frame length."));
   gpr_free(error_message);
   revert_back_alter(var->header_buf, offset);
-  /* Alter message type field.  */
+  // Alter message type field.
   offset = alter_random_byte(var->header_buf + kZeroCopyFrameLengthFieldSize,
                              kZeroCopyFrameMessageTypeFieldSize);
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Unsupported message type."));
   gpr_free(error_message);
   revert_back_alter(var->header_buf + kZeroCopyFrameLengthFieldSize, offset);
-  /* Alter data.  */
+  // Alter data.
   offset = alter_random_byte(var->data_buf, var->data_length);
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Frame tag verification failed."));
   gpr_free(error_message);
   revert_back_alter(var->data_buf, offset);
-  /* Alter tag.  */
+  // Alter tag.
   offset = alter_random_byte(var->tag_buf, var->tag_length);
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Frame tag verification failed."));
   gpr_free(error_message);
   revert_back_alter(var->tag_buf, offset);
-  /* Reverted protected data should be verified correctly.  */
+  // Reverted protected data should be verified correctly.
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       receiver, var->data_iovec, var->data_iovec_length, var->header_iovec,
       var->tag_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(var->data_buf, var->dup_buf, var->data_length) == 0);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(var->data_buf, var->dup_buf, var->data_length), 0);
   alts_iovec_record_protocol_test_var_destroy(var);
 }
 
@@ -333,40 +340,40 @@ static void integrity_only_protect_input_check(alts_iovec_record_protocol* rp) {
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   char* error_message = nullptr;
-  /* Header buffer is nullptr.  */
+  // Header buffer is nullptr.
   iovec_t header_iovec = {nullptr, var->header_length};
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
       rp, var->data_iovec, var->data_iovec_length, header_iovec, var->tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header is nullptr."));
   gpr_free(error_message);
-  /* Header buffer length is 0.  */
+  // Header buffer length is 0.
   header_iovec.iov_base = var->header_buf;
   header_iovec.iov_len = 0;
   status = alts_iovec_record_protocol_integrity_only_protect(
       rp, var->data_iovec, var->data_iovec_length, header_iovec, var->tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header length is incorrect."));
   gpr_free(error_message);
-  /* Tag buffer is nullptr.  */
+  // Tag buffer is nullptr.
   iovec_t tag_iovec = {nullptr, var->tag_length};
   status = alts_iovec_record_protocol_integrity_only_protect(
       rp, var->data_iovec, var->data_iovec_length, var->header_iovec, tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "Tag is nullptr."));
   gpr_free(error_message);
-  /* Tag buffer length is 0.  */
+  // Tag buffer length is 0.
   tag_iovec.iov_base = var->tag_buf;
   tag_iovec.iov_len = 0;
   status = alts_iovec_record_protocol_integrity_only_protect(
       rp, var->data_iovec, var->data_iovec_length, var->header_iovec, tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Tag length is incorrect."));
   gpr_free(error_message);
@@ -378,71 +385,71 @@ static void integrity_only_unprotect_input_check(
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   char* error_message = nullptr;
-  /* Header buffer is nullptr.  */
+  // Header buffer is nullptr.
   iovec_t header_iovec = {nullptr, var->header_length};
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_unprotect(
       rp, var->data_iovec, var->data_iovec_length, header_iovec, var->tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header is nullptr."));
   gpr_free(error_message);
-  /* Header buffer length is 0.  */
+  // Header buffer length is 0.
   header_iovec.iov_base = var->header_buf;
   header_iovec.iov_len = 0;
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       rp, var->data_iovec, var->data_iovec_length, header_iovec, var->tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header length is incorrect."));
   gpr_free(error_message);
-  /* Tag buffer is nullptr.  */
+  // Tag buffer is nullptr.
   iovec_t tag_iovec = {nullptr, var->tag_length};
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       rp, var->data_iovec, var->data_iovec_length, var->header_iovec, tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "Tag is nullptr."));
   gpr_free(error_message);
-  /* Tag buffer length is 0.  */
+  // Tag buffer length is 0.
   tag_iovec.iov_base = var->tag_buf;
   tag_iovec.iov_len = 0;
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       rp, var->data_iovec, var->data_iovec_length, var->header_iovec, tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Tag length is incorrect."));
   gpr_free(error_message);
   alts_iovec_record_protocol_test_var_destroy(var);
 }
 
-/* --- Privacy-integrity protect/unprotect tests. --- */
+// --- Privacy-integrity protect/unprotect tests. ---
 
 static void privacy_integrity_random_seal_unseal(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_iovec_record_protocol_test_var* var =
         alts_iovec_record_protocol_test_var_create();
-    /* Seals and then unseals.  */
+    // Seals and then unseals.
     grpc_status_code status =
         alts_iovec_record_protocol_privacy_integrity_protect(
             sender, var->data_iovec, var->data_iovec_length,
             var->protected_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
     iovec_t header_iovec = {var->protected_buf, var->header_length};
     gpr_free(var->data_iovec);
-    /* Randomly slices protected buffer, excluding the header.  */
+    // Randomly slices protected buffer, excluding the header.
     randomly_slice(var->protected_buf + var->header_length,
                    var->data_length + var->tag_length, &var->data_iovec,
                    &var->data_iovec_length);
     status = alts_iovec_record_protocol_privacy_integrity_unprotect(
         receiver, header_iovec, var->data_iovec, var->data_iovec_length,
         var->unprotected_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
-    /* Makes sure unprotected data are the same as the original.  */
-    GPR_ASSERT(memcmp(var->data_buf, var->dup_buf, var->data_length) == 0);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
+    // Makes sure unprotected data are the same as the original.
+    ASSERT_EQ(memcmp(var->data_buf, var->dup_buf, var->data_length), 0);
     alts_iovec_record_protocol_test_var_destroy(var);
   }
 }
@@ -458,15 +465,15 @@ static void privacy_integrity_empty_seal_unseal(
     iovec_t protected_iovec = {protected_buf, empty_payload_frame_size};
     iovec_t unprotected_iovec = {nullptr, 0};
     iovec_t data_iovec = {protected_buf + var->header_length, var->tag_length};
-    /* Seals and then unseals empty payload.  */
+    // Seals and then unseals empty payload.
     grpc_status_code status =
         alts_iovec_record_protocol_privacy_integrity_protect(
             sender, nullptr, 0, protected_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
     iovec_t header_iovec = {protected_buf, var->header_length};
     status = alts_iovec_record_protocol_privacy_integrity_unprotect(
         receiver, header_iovec, &data_iovec, 1, unprotected_iovec, nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
   }
   gpr_free(protected_buf);
   alts_iovec_record_protocol_test_var_destroy(var);
@@ -474,22 +481,22 @@ static void privacy_integrity_empty_seal_unseal(
 
 static void privacy_integrity_unsync_seal_unseal(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
-  /* Seals once.  */
+  // Seals once.
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_protect(
           sender, var->data_iovec, var->data_iovec_length, var->protected_iovec,
           nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   alts_iovec_record_protocol_test_var_destroy(var);
-  /* Seals again.  */
+  // Seals again.
   var = alts_iovec_record_protocol_test_var_create();
   status = alts_iovec_record_protocol_privacy_integrity_protect(
       sender, var->data_iovec, var->data_iovec_length, var->protected_iovec,
       nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  /* Unseals the second frame.  */
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  // Unseals the second frame.
   char* error_message = nullptr;
   iovec_t header_iovec = {var->protected_buf, var->header_length};
   iovec_t protected_iovec = {var->protected_buf + var->header_length,
@@ -497,7 +504,7 @@ static void privacy_integrity_unsync_seal_unseal(
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       receiver, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message, "Frame decryption failed."));
   gpr_free(error_message);
   alts_iovec_record_protocol_test_var_destroy(var);
@@ -505,57 +512,57 @@ static void privacy_integrity_unsync_seal_unseal(
 
 static void privacy_integrity_corrupted_data(
     alts_iovec_record_protocol* sender, alts_iovec_record_protocol* receiver) {
-  /* Seals the data first.  */
+  // Seals the data first.
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_protect(
           sender, var->data_iovec, var->data_iovec_length, var->protected_iovec,
           nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   char* error_message = nullptr;
   uint8_t* header_buf = var->protected_buf;
   size_t header_length = var->header_length;
   iovec_t header_iovec = {header_buf, header_length};
-  /* The following protected_buf and protected_length excludes header.  */
+  // The following protected_buf and protected_length excludes header.
   uint8_t* protected_buf = var->protected_buf + var->header_length;
   size_t protected_length = var->data_length + var->tag_length;
   iovec_t protected_iovec = {protected_buf, protected_length};
-  /* Alter frame length field.  */
+  // Alter frame length field.
   size_t offset = alter_random_byte(header_buf, kZeroCopyFrameLengthFieldSize);
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       receiver, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message, "Bad frame length."));
   gpr_free(error_message);
   revert_back_alter(header_buf, offset);
-  /* Alter message type field.  */
+  // Alter message type field.
   offset = alter_random_byte(header_buf + kZeroCopyFrameLengthFieldSize,
                              kZeroCopyFrameMessageTypeFieldSize);
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       receiver, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Unsupported message type."));
   gpr_free(error_message);
   revert_back_alter(header_buf + kZeroCopyFrameLengthFieldSize, offset);
-  /* Alter protected data.  */
+  // Alter protected data.
   offset = alter_random_byte(protected_buf, protected_length);
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       receiver, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message, "Frame decryption failed."));
   gpr_free(error_message);
   revert_back_alter(protected_buf, offset);
-  /* Reverted protected data should be verified correctly.  */
+  // Reverted protected data should be verified correctly.
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       receiver, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(var->data_buf, var->dup_buf, var->data_length) == 0);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(var->data_buf, var->dup_buf, var->data_length), 0);
   alts_iovec_record_protocol_test_var_destroy(var);
 }
 
@@ -564,23 +571,23 @@ static void privacy_integrity_protect_input_check(
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   char* error_message = nullptr;
-  /* Protected output buffer is nullptr.  */
+  // Protected output buffer is nullptr.
   iovec_t protected_iovec = {nullptr, var->protected_iovec.iov_len};
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_protect(
           rp, var->data_iovec, var->data_iovec_length, protected_iovec,
           &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Protected frame is nullptr."));
   gpr_free(error_message);
-  /* Protected output buffer length incorrect.  */
+  // Protected output buffer length incorrect.
   protected_iovec.iov_base = var->protected_buf;
   protected_iovec.iov_len = var->header_length + var->data_length;
   status = alts_iovec_record_protocol_privacy_integrity_protect(
       rp, var->data_iovec, var->data_iovec_length, protected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Protected frame size is incorrect."));
   gpr_free(error_message);
@@ -592,7 +599,7 @@ static void privacy_integrity_unprotect_input_check(
   alts_iovec_record_protocol_test_var* var =
       alts_iovec_record_protocol_test_var_create();
   char* error_message = nullptr;
-  /* Header buffer is nullptr.  */
+  // Header buffer is nullptr.
   iovec_t header_iovec = {var->protected_buf, var->header_length};
   iovec_t protected_iovec = {var->protected_buf + var->header_length,
                              var->data_length + var->tag_length};
@@ -601,33 +608,33 @@ static void privacy_integrity_unprotect_input_check(
       alts_iovec_record_protocol_privacy_integrity_unprotect(
           rp, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
           &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header is nullptr."));
   gpr_free(error_message);
   header_iovec.iov_base = var->protected_buf;
-  /* Header buffer length is 0.  */
+  // Header buffer length is 0.
   header_iovec.iov_len = 0;
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       rp, header_iovec, &protected_iovec, 1, var->unprotected_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Header length is incorrect."));
   gpr_free(error_message);
   header_iovec.iov_len = var->header_length;
-  /* Unprotected output buffer length is incorrect.  */
+  // Unprotected output buffer length is incorrect.
   iovec_t unprotected_iovec = {var->data_buf, var->data_length - 1};
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       rp, header_iovec, &protected_iovec, 1, unprotected_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Unprotected data size is incorrect."));
   gpr_free(error_message);
   alts_iovec_record_protocol_test_var_destroy(var);
 }
 
-/* --- Integrity-only and privacy-integrity mixed. --- */
+// --- Integrity-only and privacy-integrity mixed. ---
 
 static void record_protocol_wrong_mode(
     alts_iovec_record_protocol* integrity_only_protect_rp,
@@ -638,35 +645,35 @@ static void record_protocol_wrong_mode(
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status;
   char* error_message = nullptr;
-  /* Call integrity-only protect on privacy-integrity record protocol.  */
+  // Call integrity-only protect on privacy-integrity record protocol.
   status = alts_iovec_record_protocol_integrity_only_protect(
       privacy_integrity_protect_rp, var->data_iovec, var->data_iovec_length,
       var->header_iovec, var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Integrity-only operations are not allowed for this object."));
   gpr_free(error_message);
-  /* Call integrity-only unprotect on privacy-integrity record protocol.  */
+  // Call integrity-only unprotect on privacy-integrity record protocol.
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       privacy_integrity_unprotect_rp, var->data_iovec, var->data_iovec_length,
       var->header_iovec, var->tag_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Integrity-only operations are not allowed for this object."));
   gpr_free(error_message);
-  /* Call privacy-integrity protect on integrity-only record protocol.  */
+  // Call privacy-integrity protect on integrity-only record protocol.
   status = alts_iovec_record_protocol_privacy_integrity_protect(
       integrity_only_protect_rp, var->data_iovec, var->data_iovec_length,
       var->protected_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Privacy-integrity operations are not allowed for this object."));
   gpr_free(error_message);
-  /* Call privacy-integrity unprotect on integrity-only record protocol.  */
+  // Call privacy-integrity unprotect on integrity-only record protocol.
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       integrity_only_unprotect_rp, var->header_iovec, var->data_iovec,
       var->data_iovec_length, var->unprotected_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Privacy-integrity operations are not allowed for this object."));
   gpr_free(error_message);
@@ -680,12 +687,12 @@ static void integrity_seal_privacy_unseal(
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status;
   char* error_message = nullptr;
-  /* Seals with integrity-only protect.  */
+  // Seals with integrity-only protect.
   status = alts_iovec_record_protocol_integrity_only_protect(
       integrity_only_sender, var->data_iovec, var->data_iovec_length,
       var->header_iovec, var->tag_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  /* Unseal with privacy-integrity unprotect.  */
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  // Unseal with privacy-integrity unprotect.
   memcpy(var->protected_buf, var->data_buf, var->data_length);
   memcpy(var->protected_buf + var->data_length, var->tag_buf, var->tag_length);
   iovec_t protected_iovec = {var->protected_buf,
@@ -693,7 +700,7 @@ static void integrity_seal_privacy_unseal(
   status = alts_iovec_record_protocol_privacy_integrity_unprotect(
       privacy_integrity_receiver, var->header_iovec, &protected_iovec, 1,
       var->unprotected_iovec, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message, "Frame decryption failed."));
   gpr_free(error_message);
   alts_iovec_record_protocol_test_var_destroy(var);
@@ -706,12 +713,12 @@ static void privacy_seal_integrity_unseal(
       alts_iovec_record_protocol_test_var_create();
   grpc_status_code status;
   char* error_message = nullptr;
-  /* Seals with privacy-integrity protect.  */
+  // Seals with privacy-integrity protect.
   status = alts_iovec_record_protocol_privacy_integrity_protect(
       privacy_integrity_sender, var->data_iovec, var->data_iovec_length,
       var->protected_iovec, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  /* Unseal with integrity-only unprotect.  */
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  // Unseal with integrity-only unprotect.
   iovec_t header_iovec = {var->protected_buf, var->header_length};
   iovec_t data_iovec = {var->protected_buf + var->header_length,
                         var->data_length};
@@ -721,16 +728,17 @@ static void privacy_seal_integrity_unseal(
   status = alts_iovec_record_protocol_integrity_only_unprotect(
       integrity_only_receiver, &data_iovec, 1, header_iovec, tag_iovec,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INTERNAL, error_message,
       "Frame tag verification failed."));
   gpr_free(error_message);
   alts_iovec_record_protocol_test_var_destroy(var);
 }
 
-/* --- Test cases. --- */
+// --- Test cases. ---
 
-static void alts_iovec_record_protocol_random_seal_unseal_tests() {
+TEST(AltsIovecRecordProtocolTest,
+     AltsIovecRecordProtocolRandomSealUnsealTests) {
   alts_iovec_record_protocol_test_fixture* fixture =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -765,7 +773,7 @@ static void alts_iovec_record_protocol_random_seal_unseal_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture);
 }
 
-static void alts_iovec_record_protocol_empty_seal_unseal_tests() {
+TEST(AltsIovecRecordProtocolTest, AltsIovecRecordProtocolEmptySealUnsealTests) {
   alts_iovec_record_protocol_test_fixture* fixture =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -800,7 +808,8 @@ static void alts_iovec_record_protocol_empty_seal_unseal_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture);
 }
 
-static void alts_iovec_record_protocol_unsync_seal_unseal_tests() {
+TEST(AltsIovecRecordProtocolTest,
+     AltsIovecRecordProtocolUnsyncSealUnsealTests) {
   alts_iovec_record_protocol_test_fixture* fixture =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -835,7 +844,7 @@ static void alts_iovec_record_protocol_unsync_seal_unseal_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture);
 }
 
-static void alts_iovec_record_protocol_corrupted_data_tests() {
+TEST(AltsIovecRecordProtocolTest, AltsIovecRecordProtocolCorruptedDataTests) {
   alts_iovec_record_protocol_test_fixture* fixture =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -870,7 +879,7 @@ static void alts_iovec_record_protocol_corrupted_data_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture);
 }
 
-static void alts_iovec_record_protocol_input_check_tests() {
+TEST(AltsIovecRecordProtocolTest, AltsIovecRecordProtocolInputCheckTests) {
   alts_iovec_record_protocol_test_fixture* fixture =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -897,7 +906,7 @@ static void alts_iovec_record_protocol_input_check_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture);
 }
 
-static void alts_iovec_record_protocol_mix_operations_tests() {
+TEST(AltsIovecRecordProtocolTest, AltsIovecRecordProtocolMixOperationsTests) {
   alts_iovec_record_protocol_test_fixture* fixture_1 =
       alts_iovec_record_protocol_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true);
@@ -917,12 +926,7 @@ static void alts_iovec_record_protocol_mix_operations_tests() {
   alts_iovec_record_protocol_test_fixture_destroy(fixture_2);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
-  alts_iovec_record_protocol_random_seal_unseal_tests();
-  alts_iovec_record_protocol_empty_seal_unseal_tests();
-  alts_iovec_record_protocol_unsync_seal_unseal_tests();
-  alts_iovec_record_protocol_corrupted_data_tests();
-  alts_iovec_record_protocol_input_check_tests();
-  alts_iovec_record_protocol_mix_operations_tests();
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

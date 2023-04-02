@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H
-#define GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H
+#define GRPC_SRC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H
 
-/* Lock free event notification for file descriptors */
+// Lock free event notification for file descriptors
 
 #include <grpc/support/port_platform.h>
 
@@ -56,7 +56,7 @@ class LockfreeEvent {
 
   // Sets the shutdown state. If a closure had been provided by NotifyOn and has
   // not yet been scheduled, it will be scheduled with \a shutdown_error.
-  bool SetShutdown(grpc_error* shutdown_error);
+  bool SetShutdown(grpc_error_handle shutdown_error);
 
   // Signals that the event has been received.
   void SetReady();
@@ -69,4 +69,4 @@ class LockfreeEvent {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H

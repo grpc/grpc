@@ -6,23 +6,32 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
+      annotations:
+        security.cloud.google.com/use-workload-certificates: ""
     spec:
       serviceAccountName: ${service_account_name}
       containers:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
+        startupProbe:
+          tcpSocket:
+            port: ${stats_port}
+          periodSeconds: 3
         args:
           - "--server=${server_target}"
           - "--stats_port=${stats_port}"
@@ -43,9 +52,6 @@ spec:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
             readOnly: true
-          - mountPath: /var/run/gke-spiffe/certs
-            name: gke-spiffe-certs-volume
-            readOnly: true
         resources:
           limits:
             cpu: 800m
@@ -63,8 +69,9 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
-            - "--include-v3-features-experimental"
-            - "--include-psm-security-experimental"
+            % if config_mesh:
+            - "--config-mesh-experimental=${config_mesh}"
+            % endif
           resources:
             limits:
               cpu: 100m
@@ -79,7 +86,4 @@ spec:
         - name: grpc-td-conf
           emptyDir:
             medium: Memory
-        - name: gke-spiffe-certs-volume
-          csi:
-            driver: certs.spiffe.gke.io
 ...

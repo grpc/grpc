@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable
+import logging
 import threading
+import time
+from typing import Iterable
 
-import grpc
 from google.protobuf.json_format import MessageToJson
+import grpc
 
 import phone_pb2
 import phone_pb2_grpc

@@ -9,7 +9,7 @@ from specific releases/tag, are used to test version compatibility between gRPC 
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
 - Add (or update) an entry in `./client_matrix.py` file to reference the github tag for the release.
 - Build new client docker image(s).  For example, for C and wrapper languages release `v1.9.9`, do
-  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx csharp python ruby php`
+  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx python ruby php`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
   - `gcloud container images list --repository gcr.io/grpc-testing` lists available images.
   - `gcloud container images list-tags gcr.io/grpc-testing/grpc_interop_java` should show an image entry with tag `v1.9.9`.
@@ -17,7 +17,9 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
   - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java:v1.9.9` followed by
   - `docker_image=gcr.io/grpc-testing/grpc_interop_java:v1.9.9 tools/interop_matrix/testcases/java__master`
-- git commit the change and merge it to upstream/master.
+- Commit the change and create a PR to upstream/master.
+- Trigger an adhoc run of interop matrix tests: https://fusion.corp.google.com/projectanalysis/summary/KOKORO/prod:grpc%2Fcore%2Fexperimental%2Flinux%2Fgrpc_interop_matrix_adhoc
+- Once tests pass, request a PR review.
 - (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
 For more details on each step, refer to sections below.
 

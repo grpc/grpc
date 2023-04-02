@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import threading
 from typing import Iterator
-from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 
@@ -66,9 +66,9 @@ class CallMaker:
         logging.info("Call toward [%s] enters [%s] state", self._phone_number,
                      phone_pb2.CallState.State.Name(call_state))
         self._call_state = call_state
-        if call_state is phone_pb2.CallState.State.ACTIVE:
+        if call_state == phone_pb2.CallState.State.ACTIVE:
             self._peer_responded.set()
-        if call_state is phone_pb2.CallState.State.ENDED:
+        if call_state == phone_pb2.CallState.State.ENDED:
             self._peer_responded.set()
             self._call_finished.set()
 
@@ -80,13 +80,13 @@ class CallMaker:
         self._consumer_future = self._executor.submit(self._response_watcher,
                                                       response_iterator)
 
-    def wait_peer(self) -> None:
+    def wait_peer(self) -> bool:
         logging.info("Waiting for peer to connect [%s]...", self._phone_number)
         self._peer_responded.wait(timeout=None)
         if self._consumer_future.done():
             # If the future raises, forwards the exception here
             self._consumer_future.result()
-        return self._call_state is phone_pb2.CallState.State.ACTIVE
+        return self._call_state == phone_pb2.CallState.State.ACTIVE
 
     def audio_session(self) -> None:
         assert self._audio_session_link is not None

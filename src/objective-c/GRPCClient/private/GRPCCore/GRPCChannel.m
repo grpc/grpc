@@ -291,8 +291,11 @@
 }
 
 - (void)dealloc {
-  if (_unmanagedChannel) {
-    grpc_channel_destroy(_unmanagedChannel);
+  @synchronized(self) {
+    if (_unmanagedChannel) {
+      grpc_channel_destroy(_unmanagedChannel);
+      _unmanagedChannel = NULL;
+    }
   }
 }
 

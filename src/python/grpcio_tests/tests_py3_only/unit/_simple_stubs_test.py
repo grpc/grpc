@@ -29,17 +29,18 @@ import contextlib
 import datetime
 import inspect
 import logging
-import threading
-import unittest
 import sys
+import threading
 import time
 from typing import Callable, Optional
+import unittest
 
-from tests.unit import test_common
-from tests.unit.framework.common import get_socket
-from tests.unit import resources
 import grpc
 import grpc.experimental
+
+from tests.unit import resources
+from tests.unit import test_common
+from tests.unit.framework.common import get_socket
 
 _REQUEST = b"0000"
 
@@ -61,6 +62,7 @@ _BLACK_HOLE = "/test/BlackHole"
 @contextlib.contextmanager
 def _env(key: str, value: str):
     os.environ[key] = value
+    grpc._cython.cygrpc.reset_grpc_config_vars()
     yield
     del os.environ[key]
 

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <chrono>
 #include <memory>
@@ -33,7 +33,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/interarrival.h"
@@ -96,7 +96,7 @@ class SynchronousClient
           return true;
         } else {
           gpr_sleep_until(one_sec_delay);
-          if (gpr_atm_acq_load(&thread_pool_done_) != static_cast<gpr_atm>(0)) {
+          if (gpr_atm_acq_load(&thread_pool_done_) != gpr_atm{0}) {
             return false;
           }
         }
@@ -125,7 +125,6 @@ class SynchronousUnaryClient final : public SynchronousClient {
     }
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = UsageTimer::Now();
-    GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
@@ -243,7 +242,6 @@ class SynchronousStreamingPingPongClient final
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
-    GPR_TIMER_SCOPE("SynchronousStreamingPingPongClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
@@ -304,7 +302,6 @@ class SynchronousStreamingFromClientClient final
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
-    GPR_TIMER_SCOPE("SynchronousStreamingFromClientClient::ThreadFunc", 0);
     if (stream_[thread_idx]->Write(request_)) {
       double now = UsageTimer::Now();
       entry->set_value((now - last_issue_[thread_idx]) * 1e9);
@@ -350,7 +347,6 @@ class SynchronousStreamingFromServerClient final
   }
 
   bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
-    GPR_TIMER_SCOPE("SynchronousStreamingFromServerClient::ThreadFunc", 0);
     if (stream_[thread_idx]->Read(&responses_[thread_idx])) {
       double now = UsageTimer::Now();
       entry->set_value((now - last_recv_[thread_idx]) * 1e9);

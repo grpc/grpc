@@ -14,11 +14,11 @@
 """Tests of the wait-for-ready example."""
 
 import asyncio
-import unittest
 import logging
+import unittest
 
-from examples.python.wait_for_ready import wait_for_ready_example
 from examples.python.wait_for_ready import asyncio_wait_for_ready_example
+from examples.python.wait_for_ready import wait_for_ready_example
 
 
 class WaitForReadyExampleTest(unittest.TestCase):

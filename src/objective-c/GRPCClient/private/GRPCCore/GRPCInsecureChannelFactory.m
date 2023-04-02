@@ -18,6 +18,8 @@
 
 #import "GRPCInsecureChannelFactory.h"
 
+#include <grpc/grpc_security.h>
+
 #import "ChannelArgsUtil.h"
 #import "GRPCChannel.h"
 
@@ -34,8 +36,9 @@
 
 - (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs(args);
-  grpc_channel *unmanagedChannel =
-      grpc_insecure_channel_create(host.UTF8String, coreChannelArgs, NULL);
+  grpc_channel_credentials *creds = grpc_insecure_credentials_create();
+  grpc_channel *unmanagedChannel = grpc_channel_create(host.UTF8String, creds, coreChannelArgs);
+  grpc_channel_credentials_release(creds);
   GRPCFreeChannelArgs(coreChannelArgs);
   return unmanagedChannel;
 }

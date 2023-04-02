@@ -1,306 +1,394 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/http/httpcli.h"
 
-#include <string.h>
+#include <limits.h>
 
+#include <initializer_list>
 #include <string>
+#include <utility>
 
+#include "absl/functional/bind_front.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/handshaker_registry.h"
+#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
-struct internal_request {
-  grpc_slice request_text;
-  grpc_http_parser parser;
-  grpc_resolved_addresses* addresses;
-  size_t next_address;
-  grpc_endpoint* ep;
-  char* host;
-  char* ssl_host_override;
-  grpc_millis deadline;
-  int have_read_byte;
-  const grpc_httpcli_handshaker* handshaker;
-  grpc_closure* on_done;
-  grpc_httpcli_context* context;
-  grpc_polling_entity* pollent;
-  grpc_iomgr_object iomgr_obj;
-  grpc_slice_buffer incoming;
-  grpc_slice_buffer outgoing;
-  grpc_closure on_read;
-  grpc_closure done_write;
-  grpc_closure connected;
-  grpc_error* overall_error;
-  grpc_resource_quota* resource_quota;
-};
-static grpc_httpcli_get_override g_get_override = nullptr;
-static grpc_httpcli_post_override g_post_override = nullptr;
+namespace grpc_core {
 
-static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                const char* /*host*/, grpc_millis /*deadline*/,
-                                void (*on_done)(void* arg,
-                                                grpc_endpoint* endpoint)) {
-  on_done(arg, endpoint);
-}
+namespace {
 
-const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
-                                                        plaintext_handshake};
+grpc_httpcli_get_override g_get_override;
+grpc_httpcli_post_override g_post_override;
+grpc_httpcli_put_override g_put_override;
+void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
-void grpc_httpcli_context_init(grpc_httpcli_context* context) {
-  context->pollset_set = grpc_pollset_set_create();
-}
+}  // namespace
 
-void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
-  grpc_pollset_set_destroy(context->pollset_set);
-}
-
-static void next_address(internal_request* req, grpc_error* due_to_error);
-
-static void finish(internal_request* req, grpc_error* error) {
-  grpc_polling_entity_del_from_pollset_set(req->pollent,
-                                           req->context->pollset_set);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
-  grpc_http_parser_destroy(&req->parser);
-  if (req->addresses != nullptr) {
-    grpc_resolved_addresses_destroy(req->addresses);
+OrphanablePtr<HttpRequest> HttpRequest::Get(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_get_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      // Note that capturing request here assumes it will remain alive
+      // until after Start is called. This avoids making a copy as this
+      // code path is only used for test mocks.
+      g_get_override(request, uri.authority().c_str(), uri.path().c_str(),
+                     deadline, on_done, response);
+    };
   }
-  if (req->ep != nullptr) {
-    grpc_endpoint_destroy(req->ep);
+  std::string name =
+      absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_get_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
+}
+
+OrphanablePtr<HttpRequest> HttpRequest::Post(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_post_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      g_post_override(request, uri.authority().c_str(), uri.path().c_str(),
+                      request->body, request->body_length, deadline, on_done,
+                      response);
+    };
   }
-  grpc_slice_unref_internal(req->request_text);
-  gpr_free(req->host);
-  gpr_free(req->ssl_host_override);
-  grpc_iomgr_unregister_object(&req->iomgr_obj);
-  grpc_slice_buffer_destroy_internal(&req->incoming);
-  grpc_slice_buffer_destroy_internal(&req->outgoing);
-  GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_unref_internal(req->resource_quota);
-  gpr_free(req);
+  std::string name =
+      absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_post_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
 }
 
-static void append_error(internal_request* req, grpc_error* error) {
-  if (req->overall_error == GRPC_ERROR_NONE) {
-    req->overall_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
+OrphanablePtr<HttpRequest> HttpRequest::Put(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_put_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
+                     request->body, request->body_length, deadline, on_done,
+                     response);
+    };
   }
-  grpc_resolved_address* addr = &req->addresses->addrs[req->next_address - 1];
-  std::string addr_text = grpc_sockaddr_to_uri(addr);
-  req->overall_error = grpc_error_add_child(
-      req->overall_error,
-      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(addr_text))));
+  std::string name =
+      absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_put_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
 }
 
-static void do_read(internal_request* req) {
-  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
+void HttpRequest::SetOverride(grpc_httpcli_get_override get,
+                              grpc_httpcli_post_override post,
+                              grpc_httpcli_put_override put) {
+  g_get_override = get;
+  g_post_override = post;
+  g_put_override = put;
 }
 
-static void on_read(void* user_data, grpc_error* error) {
-  internal_request* req = static_cast<internal_request*>(user_data);
-  size_t i;
+void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
+    void (*intercept)(HttpRequest* req)) {
+  g_test_only_on_handshake_done_intercept = intercept;
+}
 
-  for (i = 0; i < req->incoming.count; i++) {
-    if (GRPC_SLICE_LENGTH(req->incoming.slices[i])) {
-      req->have_read_byte = 1;
-      grpc_error* err = grpc_http_parser_parse(
-          &req->parser, req->incoming.slices[i], nullptr);
-      if (err != GRPC_ERROR_NONE) {
-        finish(req, err);
+HttpRequest::HttpRequest(
+    URI uri, const grpc_slice& request_text, grpc_http_response* response,
+    Timestamp deadline, const grpc_channel_args* channel_args,
+    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+    absl::optional<std::function<void()>> test_only_generate_response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds)
+    : uri_(std::move(uri)),
+      request_text_(request_text),
+      deadline_(deadline),
+      channel_args_(CoreConfiguration::Get()
+                        .channel_args_preconditioning()
+                        .PreconditionChannelArgs(channel_args)
+                        .ToC()
+                        .release()),
+      channel_creds_(std::move(channel_creds)),
+      on_done_(on_done),
+      resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
+      pollent_(pollent),
+      pollset_set_(grpc_pollset_set_create()),
+      test_only_generate_response_(std::move(test_only_generate_response)),
+      resolver_(GetDNSResolver()) {
+  grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
+  grpc_slice_buffer_init(&incoming_);
+  grpc_slice_buffer_init(&outgoing_);
+  grpc_iomgr_register_object(&iomgr_obj_, name);
+  GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_,
+                    ContinueOnReadAfterScheduleOnExecCtx, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
+                    ContinueDoneWriteAfterScheduleOnExecCtx, this,
+                    grpc_schedule_on_exec_ctx);
+  GPR_ASSERT(pollent);
+  grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+}
+
+HttpRequest::~HttpRequest() {
+  grpc_channel_args_destroy(channel_args_);
+  grpc_http_parser_destroy(&parser_);
+  if (own_endpoint_ && ep_ != nullptr) {
+    grpc_endpoint_destroy(ep_);
+  }
+  CSliceUnref(request_text_);
+  grpc_iomgr_unregister_object(&iomgr_obj_);
+  grpc_slice_buffer_destroy(&incoming_);
+  grpc_slice_buffer_destroy(&outgoing_);
+  grpc_pollset_set_destroy(pollset_set_);
+}
+
+void HttpRequest::Start() {
+  MutexLock lock(&mu_);
+  if (test_only_generate_response_.has_value()) {
+    test_only_generate_response_.value()();
+    return;
+  }
+  Ref().release();  // ref held by pending DNS resolution
+  dns_request_handle_ = resolver_->LookupHostname(
+      absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
+      uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
+      /*name_server=*/"");
+}
+
+void HttpRequest::Orphan() {
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(!cancelled_);
+    cancelled_ = true;
+    // cancel potentially pending DNS resolution.
+    if (dns_request_handle_.has_value() &&
+        resolver_->Cancel(dns_request_handle_.value())) {
+      Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
+      Unref();
+    }
+    if (handshake_mgr_ != nullptr) {
+      // Shutdown will cancel any ongoing tcp connect.
+      handshake_mgr_->Shutdown(
+          GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
+    }
+    if (own_endpoint_ && ep_ != nullptr) {
+      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE("HTTP request cancelled"));
+    }
+  }
+  Unref();
+}
+
+void HttpRequest::AppendError(grpc_error_handle error) {
+  if (overall_error_.ok()) {
+    overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
+  }
+  const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
+  auto addr_text = grpc_sockaddr_to_uri(addr);
+  overall_error_ = grpc_error_add_child(
+      overall_error_,
+      grpc_error_set_str(
+          error, StatusStrProperty::kTargetAddress,
+          addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
+}
+
+void HttpRequest::OnReadInternal(grpc_error_handle error) {
+  for (size_t i = 0; i < incoming_.count; i++) {
+    if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
+      have_read_byte_ = 1;
+      grpc_error_handle err =
+          grpc_http_parser_parse(&parser_, incoming_.slices[i], nullptr);
+      if (!err.ok()) {
+        Finish(err);
         return;
       }
     }
   }
-
-  if (error == GRPC_ERROR_NONE) {
-    do_read(req);
-  } else if (!req->have_read_byte) {
-    next_address(req, GRPC_ERROR_REF(error));
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP1 request cancelled during read",
+                                         &overall_error_, 1));
+  } else if (error.ok()) {
+    DoRead();
+  } else if (!have_read_byte_) {
+    NextAddress(error);
   } else {
-    finish(req, grpc_http_parser_eof(&req->parser));
+    Finish(grpc_http_parser_eof(&parser_));
   }
 }
 
-static void on_written(internal_request* req) { do_read(req); }
-
-static void done_write(void* arg, grpc_error* error) {
-  internal_request* req = static_cast<internal_request*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    on_written(req);
+void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
+    void* arg, grpc_error_handle error) {
+  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
+  MutexLock lock(&req->mu_);
+  if (error.ok() && !req->cancelled_) {
+    req->OnWritten();
   } else {
-    next_address(req, GRPC_ERROR_REF(error));
+    req->NextAddress(error);
   }
 }
 
-static void start_write(internal_request* req) {
-  grpc_slice_ref_internal(req->request_text);
-  grpc_slice_buffer_add(&req->outgoing, req->request_text);
-  grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write, nullptr);
+void HttpRequest::StartWrite() {
+  CSliceRef(request_text_);
+  grpc_slice_buffer_add(&outgoing_, request_text_);
+  Ref().release();  // ref held by pending write
+  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
-static void on_handshake_done(void* arg, grpc_endpoint* ep) {
-  internal_request* req = static_cast<internal_request*>(arg);
-
-  if (!ep) {
-    next_address(req, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "Unexplained handshake failure"));
+void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
+  auto* args = static_cast<HandshakerArgs*>(arg);
+  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
+  if (g_test_only_on_handshake_done_intercept != nullptr) {
+    // Run this testing intercept before the lock so that it has a chance to
+    // do things like calling Orphan on the request
+    g_test_only_on_handshake_done_intercept(req.get());
+  }
+  MutexLock lock(&req->mu_);
+  req->own_endpoint_ = true;
+  if (!error.ok()) {
+    req->handshake_mgr_.reset();
+    req->NextAddress(error);
     return;
   }
-
-  req->ep = ep;
-  start_write(req);
-}
-
-static void on_connected(void* arg, grpc_error* error) {
-  internal_request* req = static_cast<internal_request*>(arg);
-
-  if (!req->ep) {
-    next_address(req, GRPC_ERROR_REF(error));
+  // Handshake completed, so we own fields in args
+  grpc_slice_buffer_destroy(args->read_buffer);
+  gpr_free(args->read_buffer);
+  req->ep_ = args->endpoint;
+  req->handshake_mgr_.reset();
+  if (req->cancelled_) {
+    req->NextAddress(
+        GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     return;
   }
-  req->handshaker->handshake(
-      req, req->ep, req->ssl_host_override ? req->ssl_host_override : req->host,
-      req->deadline, on_handshake_done);
+  req->StartWrite();
 }
 
-static void next_address(internal_request* req, grpc_error* error) {
-  grpc_resolved_address* addr;
-  if (error != GRPC_ERROR_NONE) {
-    append_error(req, error);
-  }
-  if (req->next_address == req->addresses->naddrs) {
-    finish(req,
-           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-               "Failed HTTP requests to all targets", &req->overall_error, 1));
+void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
+  // Create the security connector using the credentials and target name.
+  ChannelArgs args = ChannelArgs::FromC(channel_args_);
+  RefCountedPtr<grpc_channel_security_connector> sc =
+      channel_creds_->create_security_connector(
+          nullptr /*call_creds*/, uri_.authority().c_str(), &args);
+  if (sc == nullptr) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("failed to create security connector",
+                                         &overall_error_, 1));
     return;
   }
-  addr = &req->addresses->addrs[req->next_address++];
-  GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
-                    grpc_schedule_on_exec_ctx);
-  grpc_arg arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), req->resource_quota,
-      grpc_resource_quota_arg_vtable());
-  grpc_channel_args args = {1, &arg};
-  grpc_tcp_client_connect(&req->connected, &req->ep, req->context->pollset_set,
-                          &args, addr, req->deadline);
-}
-
-static void on_resolved(void* arg, grpc_error* error) {
-  internal_request* req = static_cast<internal_request*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    finish(req, GRPC_ERROR_REF(error));
+  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(addr);
+  if (!address.ok()) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed to extract URI from address",
+                                         &overall_error_, 1));
     return;
   }
-  req->next_address = 0;
-  next_address(req, GRPC_ERROR_NONE);
+  args = args.SetObject(std::move(sc))
+             .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
+  // Start the handshake
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
+  Ref().release();  // ref held by pending handshake
+  grpc_endpoint* ep = ep_;
+  ep_ = nullptr;
+  own_endpoint_ = false;
+  handshake_mgr_->DoHandshake(ep, args, deadline_,
+                              /*acceptor=*/nullptr, OnHandshakeDone,
+                              /*user_data=*/this);
 }
 
-static void internal_request_begin(grpc_httpcli_context* context,
-                                   grpc_polling_entity* pollent,
-                                   grpc_resource_quota* resource_quota,
-                                   const grpc_httpcli_request* request,
-                                   grpc_millis deadline, grpc_closure* on_done,
-                                   grpc_httpcli_response* response,
-                                   const char* name,
-                                   const grpc_slice& request_text) {
-  internal_request* req =
-      static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
-  memset(req, 0, sizeof(*req));
-  req->request_text = request_text;
-  grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);
-  req->on_done = on_done;
-  req->deadline = deadline;
-  req->handshaker =
-      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
-  req->context = context;
-  req->pollent = pollent;
-  req->overall_error = GRPC_ERROR_NONE;
-  req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
-  GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
-                    grpc_schedule_on_exec_ctx);
-  grpc_slice_buffer_init(&req->incoming);
-  grpc_slice_buffer_init(&req->outgoing);
-  grpc_iomgr_register_object(&req->iomgr_obj, name);
-  req->host = gpr_strdup(request->host);
-  req->ssl_host_override = gpr_strdup(request->ssl_host_override);
-
-  GPR_ASSERT(pollent);
-  grpc_polling_entity_add_to_pollset_set(req->pollent,
-                                         req->context->pollset_set);
-  grpc_resolve_address(
-      request->host, req->handshaker->default_port, req->context->pollset_set,
-      GRPC_CLOSURE_CREATE(on_resolved, req, grpc_schedule_on_exec_ctx),
-      &req->addresses);
-}
-
-void grpc_httpcli_get(grpc_httpcli_context* context,
-                      grpc_polling_entity* pollent,
-                      grpc_resource_quota* resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response) {
-  if (g_get_override && g_get_override(request, deadline, on_done, response)) {
+void HttpRequest::NextAddress(grpc_error_handle error) {
+  if (!error.ok()) {
+    AppendError(error);
+  }
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP request was cancelled",
+                                         &overall_error_, 1));
     return;
   }
-  std::string name =
-      absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(context, pollent, resource_quota, request, deadline,
-                         on_done, response, name.c_str(),
-                         grpc_httpcli_format_get_request(request));
-}
-
-void grpc_httpcli_post(grpc_httpcli_context* context,
-                       grpc_polling_entity* pollent,
-                       grpc_resource_quota* resource_quota,
-                       const grpc_httpcli_request* request,
-                       const char* body_bytes, size_t body_size,
-                       grpc_millis deadline, grpc_closure* on_done,
-                       grpc_httpcli_response* response) {
-  if (g_post_override && g_post_override(request, body_bytes, body_size,
-                                         deadline, on_done, response)) {
+  if (next_address_ == addresses_.size()) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
+                                         &overall_error_, 1));
     return;
   }
-  std::string name =
-      absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
-  internal_request_begin(
-      context, pollent, resource_quota, request, deadline, on_done, response,
-      name.c_str(),
-      grpc_httpcli_format_post_request(request, body_bytes, body_size));
+  const grpc_resolved_address* addr = &addresses_[next_address_++];
+  DoHandshake(addr);
 }
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override get,
-                               grpc_httpcli_post_override post) {
-  g_get_override = get;
-  g_post_override = post;
+void HttpRequest::OnResolved(
+    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+  RefCountedPtr<HttpRequest> unreffer(this);
+  MutexLock lock(&mu_);
+  dns_request_handle_.reset();
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
+    return;
+  }
+  if (!addresses_or.ok()) {
+    Finish(absl_status_to_grpc_error(addresses_or.status()));
+    return;
+  }
+  addresses_ = std::move(*addresses_or);
+  next_address_ = 0;
+  NextAddress(absl::OkStatus());
 }
+
+}  // namespace grpc_core

@@ -5,17 +5,12 @@ Package for gRPC Python tools.
 
 Supported Python Versions
 -------------------------
-Python >= 3.5
-
-Deprecated Python Versions
---------------------------
-Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
+Python >= 3.6
 
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, Mac OS X, and Windows
-running Python 2.7.
+The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -144,7 +139,7 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 
 ::
 
-  $ python -m grpc.tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
+  $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
 
 To use as a build step in distutils-based projects, you may use the provided
 command class in your :code:`setup.py`:
@@ -154,7 +149,7 @@ command class in your :code:`setup.py`:
   setuptools.setup(
     # ...
     cmdclass={
-      'build_proto_modules': grpc.tools.command.BuildPackageProtos,
+      'build_proto_modules': grpc_tools.command.BuildPackageProtos,
     }
     # ...
   )
@@ -165,7 +160,7 @@ Invocation of the command will walk the project tree and transpile every
 Note that this particular approach requires :code:`grpcio-tools` to be
 installed on the machine before the setup script is invoked (i.e. no
 combination of :code:`setup_requires` or :code:`install_requires` will provide
-access to :code:`grpc.tools.command.BuildPackageProtos` if it isn't already
+access to :code:`grpc_tools.command.BuildPackageProtos` if it isn't already
 installed). One way to work around this can be found in our
 :code:`grpcio-health-checking`
 `package <https://pypi.python.org/pypi/grpcio-health-checking>`_:
@@ -176,7 +171,7 @@ installed). One way to work around this can be found in our
     """Command to generate project *_pb2.py modules from proto files."""
     # ...
     def run(self):
-      from grpc.tools import command
+      from grpc_tools import command
       command.build_package_protos(self.distribution.package_dir[''])
 
 Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the

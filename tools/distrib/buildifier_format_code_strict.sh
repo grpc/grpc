@@ -17,4 +17,4 @@
 dir=$(dirname "${0}")
 buildifier_format_script="${dir}/buildifier_format_code.sh"
 
-${buildifier_format_script} -lint warn
+${buildifier_format_script} -lint fix

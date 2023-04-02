@@ -1,28 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/slice_splitter.h"
 
+#include <stdint.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include <algorithm>
 
-#include "src/core/lib/gpr/useful.h"
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
 
 const char* grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
   switch (mode) {
@@ -95,7 +97,7 @@ void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
   size_t i;
   grpc_split_slices(mode, src_slices, src_slice_count, &slices, &nslices);
   for (i = 0; i < nslices; i++) {
-    /* add indexed to avoid re-merging split slices */
+    // add indexed to avoid re-merging split slices
     grpc_slice_buffer_add_indexed(dst, slices[i]);
   }
   gpr_free(slices);
@@ -114,7 +116,7 @@ grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices) {
 
   for (i = 0; i < nslices; i++) {
     if (GRPC_SLICE_LENGTH(slices[i]) + length > capacity) {
-      capacity = GPR_MAX(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
+      capacity = std::max(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
       out = static_cast<uint8_t*>(gpr_realloc(out, capacity));
     }
     memcpy(out + length, GRPC_SLICE_START_PTR(slices[i]),

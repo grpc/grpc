@@ -1,39 +1,39 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <grpcpp/impl/codegen/config.h>
+#include <memory>
+
 #include <gtest/gtest.h>
 
+#include <grpc/grpc.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include <grpc/grpc.h>
-#include <memory>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* This test does a sanity check that grpc_socket_mutator's
- * are used by servers. It's meant to protect code and end-to-end
- * tests that rely on this functionality but which live outside
- * of the grpc github repo. */
+// This test does a sanity check that grpc_socket_mutator's
+// are used by servers. It's meant to protect code and end-to-end
+// tests that rely on this functionality but which live outside
+// of the grpc github repo.
 
 namespace grpc {
 namespace {
@@ -46,6 +46,7 @@ const grpc_socket_mutator_vtable mock_socket_mutator_vtable = {
     mock_socket_mutator_mutate_fd,
     mock_socket_mutator_compare,
     mock_socket_mutator_destroy,
+    nullptr,
 };
 
 class MockSocketMutator : public grpc_socket_mutator {
@@ -90,9 +91,9 @@ class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
 
 class ServerBuilderWithSocketMutatorTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 TEST_F(ServerBuilderWithSocketMutatorTest, CreateServerWithSocketMutator) {
@@ -117,7 +118,7 @@ TEST_F(ServerBuilderWithSocketMutatorTest, CreateServerWithSocketMutator) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -29,3 +29,13 @@ message Int64Range {
   // end of the range (exclusive)
   int64 end = 2;
 }
+
+// Specifies the int32 start and end of the range using half-open interval semantics [start,
+// end).
+message Int32Range {
+  // start of the range (inclusive)
+  int32 start = 1;
+
+  // end of the range (exclusive)
+  int32 end = 2;
+}

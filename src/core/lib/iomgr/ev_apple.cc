@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// Event engine based on Apple's CFRunLoop API family. If the CFRunLoop engine
 /// is enabled (see iomgr_posix_cfstream.cc), a global thread is started to
@@ -219,11 +219,12 @@ static void pollset_global_shutdown(void) {
 /// The Apple pollset simply waits on a condition variable until it is kicked.
 /// The network events are handled in the global run loop thread. Processing of
 /// these events will eventually trigger the kick.
-static grpc_error* pollset_work(grpc_pollset* pollset,
-                                grpc_pollset_worker** worker,
-                                grpc_millis deadline) {
+static grpc_error_handle pollset_work(grpc_pollset* pollset,
+                                      grpc_pollset_worker** worker,
+                                      grpc_core::Timestamp deadline) {
   GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
-                     pollset, worker, deadline);
+                     pollset, worker,
+                     deadline.milliseconds_after_process_epoch());
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
   GrpcAppleWorker actual_worker;
@@ -241,8 +242,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
       if (actual_worker.cv.WaitWithDeadline(
-              &apple_pollset->mu, grpc_core::ToAbslTime(grpc_millis_to_timespec(
-                                      deadline, GPR_CLOCK_REALTIME)))) {
+              &apple_pollset->mu, grpc_core::ToAbslTime(deadline.as_timespec(
+                                      GPR_CLOCK_REALTIME)))) {
         // timed out
         break;
       }
@@ -255,11 +256,11 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     // callback will be called.
     if (apple_pollset->is_shutdown && apple_pollset->workers.empty()) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, apple_pollset->shutdown_closure,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /// Kick a specific worker. The caller must acquire the lock GrpcApplePollset.mu
@@ -272,8 +273,8 @@ static void kick_worker(GrpcAppleWorker* worker) {
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this
 /// function. The kick action simply signals the condition variable of the
 /// worker.
-static grpc_error* pollset_kick(grpc_pollset* pollset,
-                                grpc_pollset_worker* specific_worker) {
+static grpc_error_handle pollset_kick(grpc_pollset* pollset,
+                                      grpc_pollset_worker* specific_worker) {
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
 
@@ -296,7 +297,7 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
     kick_worker(actual_worker);
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
@@ -313,11 +314,11 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
   apple_pollset->is_shutdown = true;
-  pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  (void)pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
   // If there is any worker blocked, shutdown will be done asynchronously.
   if (apple_pollset->workers.empty()) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
     apple_pollset->shutdown_closure = closure;
   }

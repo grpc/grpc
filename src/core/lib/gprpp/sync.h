@@ -1,40 +1,42 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_SYNC_H
-#define GRPC_CORE_LIB_GPRPP_SYNC_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_SYNC_H
+#define GRPC_SRC_CORE_LIB_GPRPP_SYNC_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
-#include <grpc/impl/codegen/sync.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
+
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
+#ifndef GPR_ABSEIL_SYNC
 #include "src/core/lib/gprpp/time_util.h"
+#endif
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
 // Make sure any change to this file is also reflected in
-// include/grpcpp/impl/codegen/sync.h.
+// include/grpcpp/impl/sync.h.
 //
-// Whenever possible, prefer using this file over <grpcpp/impl/codegen/sync.h>
+// Whenever possible, prefer using this file over <grpcpp/impl/sync.h>
 // since this file doesn't rely on g_core_codegen_interface and hence does not
 // pay the costs of virtual function calls.
 
@@ -69,6 +71,7 @@ class ABSL_LOCKABLE Mutex {
   bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     return gpr_mu_trylock(&mu_) != 0;
   }
+  void AssertHeld() ABSL_ASSERT_EXCLUSIVE_LOCK() {}
 
  private:
   gpr_mu mu_;
@@ -145,33 +148,6 @@ class CondVar {
 
 #endif  // GPR_ABSEIL_SYNC
 
-template <typename Predicate>
-static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
-  while (!pred()) {
-    cv->Wait(mu);
-  }
-}
-
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
-                                 absl::Duration timeout) {
-  while (!pred()) {
-    if (cv->WaitWithTimeout(mu, timeout)) return true;
-  }
-  return false;
-}
-
-// Returns true iff we timed-out
-template <typename Predicate>
-static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred,
-                                  absl::Time deadline) {
-  while (!pred()) {
-    if (cv->WaitWithDeadline(mu, deadline)) return true;
-  }
-  return false;
-}
-
 // Deprecated. Prefer MutexLock
 class MutexLockForGprMu {
  public:
@@ -221,4 +197,4 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_SYNC_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_SYNC_H

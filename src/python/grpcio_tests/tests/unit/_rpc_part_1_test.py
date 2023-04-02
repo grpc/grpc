@@ -13,20 +13,26 @@
 # limitations under the License.
 """Test of RPCs made against gRPC Python's application-layer API."""
 
+from concurrent import futures
 import itertools
+import logging
 import threading
 import unittest
-import logging
-from concurrent import futures
 
 import grpc
 from grpc.framework.foundation import logging_pool
 
-from tests.unit._rpc_test_helpers import (
-    TIMEOUT_SHORT, Callback, unary_unary_multi_callable,
-    unary_stream_multi_callable, unary_stream_non_blocking_multi_callable,
-    stream_unary_multi_callable, stream_stream_multi_callable,
-    stream_stream_non_blocking_multi_callable, BaseRPCTest)
+from tests.unit._rpc_test_helpers import BaseRPCTest
+from tests.unit._rpc_test_helpers import Callback
+from tests.unit._rpc_test_helpers import TIMEOUT_SHORT
+from tests.unit._rpc_test_helpers import \
+    stream_stream_non_blocking_multi_callable
+from tests.unit._rpc_test_helpers import \
+    unary_stream_non_blocking_multi_callable
+from tests.unit._rpc_test_helpers import stream_stream_multi_callable
+from tests.unit._rpc_test_helpers import stream_unary_multi_callable
+from tests.unit._rpc_test_helpers import unary_stream_multi_callable
+from tests.unit._rpc_test_helpers import unary_unary_multi_callable
 from tests.unit.framework.common import test_constants
 
 
@@ -108,10 +114,8 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
         # sanity checks on to make sure returned string contains default members
         # of the error
         debug_error_string = exception_context.exception.debug_error_string()
-        self.assertIn('created', debug_error_string)
-        self.assertIn('description', debug_error_string)
-        self.assertIn('file', debug_error_string)
-        self.assertIn('file_line', debug_error_string)
+        self.assertIn('grpc_status', debug_error_string)
+        self.assertIn('grpc_message', debug_error_string)
 
     def testFailedUnaryRequestFutureUnaryResponse(self):
         request = b'\x37\x17'
@@ -229,4 +233,4 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

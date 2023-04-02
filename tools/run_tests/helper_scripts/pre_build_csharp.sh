@@ -15,14 +15,5 @@
 
 set -ex
 
-# cd to repository root
-cd "$(dirname "$0")/../../.."
-
-mkdir -p cmake/build
-cd cmake/build
-
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" ../..
-
-cd ../../src/csharp
-
-dotnet restore Grpc.sln
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

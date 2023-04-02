@@ -17,6 +17,7 @@ import threading
 import unittest
 
 from grpc._cython import cygrpc
+
 from tests.unit._cython import test_utilities
 
 _EMPTY_FLAGS = 0

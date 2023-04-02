@@ -16,7 +16,7 @@
 // of the same name, but under different directories (see #17672).
 syntax = "proto3";
 
-package duplicate_proto;
+package grpc_csharp_distribtest.duplicate_proto;
 
 message MessageFromDuplicateProto {
   string name = 1;

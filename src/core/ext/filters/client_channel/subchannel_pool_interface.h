@@ -1,30 +1,36 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/avl/avl.h"
+#include <string>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
@@ -35,26 +41,24 @@ extern TraceFlag grpc_subchannel_pool_trace;
 // A key that can uniquely identify a subchannel.
 class SubchannelKey {
  public:
-  explicit SubchannelKey(const grpc_channel_args* args);
-  ~SubchannelKey();
+  SubchannelKey(const grpc_resolved_address& address, const ChannelArgs& args);
 
-  // Copyable.
-  SubchannelKey(const SubchannelKey& other);
-  SubchannelKey& operator=(const SubchannelKey& other);
-  // Movable
-  SubchannelKey(SubchannelKey&&) noexcept;
-  SubchannelKey& operator=(SubchannelKey&&) noexcept;
+  SubchannelKey(const SubchannelKey& other) = default;
+  SubchannelKey& operator=(const SubchannelKey& other) = default;
+  SubchannelKey(SubchannelKey&& other) noexcept = default;
+  SubchannelKey& operator=(SubchannelKey&& other) noexcept = default;
 
   bool operator<(const SubchannelKey& other) const;
 
- private:
-  // Initializes the subchannel key with the given \a args and the function to
-  // copy channel args.
-  void Init(
-      const grpc_channel_args* args,
-      grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
+  const grpc_resolved_address& address() const { return address_; }
+  const ChannelArgs& args() const { return args_; }
 
-  const grpc_channel_args* args_;
+  // Human-readable string suitable for logging.
+  std::string ToString() const;
+
+ private:
+  grpc_resolved_address address_;
+  ChannelArgs args_;
 };
 
 // Interface for subchannel pool.
@@ -68,6 +72,12 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
                        ? "SubchannelPoolInterface"
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}
+
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const SubchannelPoolInterface* a,
+                                const SubchannelPoolInterface* b) {
+    return QsortCompare(a, b);
+  }
 
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
@@ -83,15 +93,8 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // if no such channel exists. Thread-safe.
   virtual RefCountedPtr<Subchannel> FindSubchannel(
       const SubchannelKey& key) = 0;
-
-  // Creates a channel arg from \a subchannel pool.
-  static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);
-
-  // Gets the subchannel pool from the channel args.
-  static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
-      const grpc_channel_args* args);
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H

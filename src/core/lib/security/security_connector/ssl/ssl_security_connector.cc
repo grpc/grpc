@@ -1,27 +1,33 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
-#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <initializer_list>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -29,38 +35,44 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace {
-grpc_error* ssl_check_peer(
+grpc_error_handle ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
-  grpc_error* error = grpc_ssl_check_alpn(peer);
-  if (error != GRPC_ERROR_NONE) {
+  grpc_error_handle error = grpc_ssl_check_alpn(peer);
+  if (!error.ok()) {
     return error;
   }
-  /* Check the peer name if specified. */
+  // Check the peer name if specified.
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
-            .c_str());
+    return GRPC_ERROR_CREATE(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 class grpc_ssl_channel_security_connector final
@@ -120,7 +132,7 @@ class grpc_ssl_channel_security_connector final
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
@@ -129,7 +141,8 @@ class grpc_ssl_channel_security_connector final
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
-        &tsi_hs);
+        /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -140,19 +153,19 @@ class grpc_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     const char* target_name = overridden_target_name_.empty()
                                   ? target_name_.c_str()
                                   : overridden_target_name_.c_str();
-    grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
-    if (error == GRPC_ERROR_NONE &&
-        verify_options_->verify_peer_callback != nullptr) {
+    grpc_error_handle error = ssl_check_peer(target_name, &peer, auth_context);
+    if (error.ok() && verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
       if (p == nullptr) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cannot check peer: missing pem cert property.");
+        error =
+            GRPC_ERROR_CREATE("Cannot check peer: missing pem cert property.");
       } else {
         char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
         memcpy(peer_pem, p->value.data, p->value.length);
@@ -162,16 +175,17 @@ class grpc_ssl_channel_security_connector final
             verify_options_->verify_peer_callback_userdata);
         gpr_free(peer_pem);
         if (callback_status) {
-          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat("Verify peer callback returned a failure (%d)",
-                              callback_status)
-                  .c_str());
+          error = GRPC_ERROR_CREATE(absl::StrFormat(
+              "Verify peer callback returned a failure (%d)", callback_status));
         }
       }
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
@@ -183,17 +197,11 @@ class grpc_ssl_channel_security_connector final
     return overridden_target_name_.compare(other->overridden_target_name_);
   }
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
-    return grpc_ssl_check_call_host(host, target_name_.c_str(),
-                                    overridden_target_name_.c_str(),
-                                    auth_context, error);
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
-    GRPC_ERROR_UNREF(error);
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override {
+    return grpc_core::Immediate(
+        SslCheckCallHost(host, target_name_.c_str(),
+                         overridden_target_name_.c_str(), auth_context));
   }
 
  private:
@@ -268,14 +276,15 @@ class grpc_ssl_server_security_connector
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, &tsi_hs);
+        server_handshaker_factory_, /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -286,12 +295,16 @@ class grpc_ssl_server_security_connector
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error_handle error = ssl_check_peer(nullptr, &peer, auth_context);
     tsi_peer_destruct(&peer);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override {
     return server_security_connector_cmp(
@@ -299,9 +312,9 @@ class grpc_ssl_server_security_connector
   }
 
  private:
-  /* Attempts to fetch the server certificate config if a callback is available.
-   * Current certificate config will continue to be used if the callback returns
-   * an error. Returns true if new credentials were successfully loaded. */
+  // Attempts to fetch the server certificate config if a callback is available.
+  // Current certificate config will continue to be used if the callback returns
+  // an error. Returns true if new credentials were successfully loaded.
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
@@ -331,10 +344,10 @@ class grpc_ssl_server_security_connector
     return status;
   }
 
-  /* Attempts to replace the server_handshaker_factory with a new factory using
-   * the provided grpc_ssl_server_certificate_config. Should new factory
-   * creation fail, the existing factory will not be replaced. Returns true on
-   * success (new factory created). */
+  // Attempts to replace the server_handshaker_factory with a new factory using
+  // the provided grpc_ssl_server_certificate_config. Should new factory
+  // creation fail, the existing factory will not be replaced. Returns true on
+  // success (new factory created).
   bool try_replace_server_handshaker_factory(
       const grpc_ssl_server_certificate_config* config) {
     if (config == nullptr) {

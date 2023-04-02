@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ import tempfile
 import time
 import traceback
 import uuid
+
 import six
 
 import performance.scenario_config as scenario_config
@@ -168,12 +169,12 @@ def create_netperf_jobspec(server_host='localhost',
         # If netperf is running remotely, the env variables populated by Jenkins
         # won't be available on the client, but we need them for uploading results
         # to BigQuery.
-        jenkins_job_name = os.getenv('JOB_NAME')
+        jenkins_job_name = os.getenv('KOKORO_JOB_NAME')
         if jenkins_job_name:
-            cmd += 'JOB_NAME="%s" ' % jenkins_job_name
-        jenkins_build_number = os.getenv('BUILD_NUMBER')
+            cmd += 'KOKORO_JOB_NAME="%s" ' % jenkins_job_name
+        jenkins_build_number = os.getenv('KOKORO_BUILD_NUMBER')
         if jenkins_build_number:
-            cmd += 'BUILD_NUMBER="%s" ' % jenkins_build_number
+            cmd += 'KOKORO_BUILD_NUMBER="%s" ' % jenkins_build_number
 
     cmd += 'tools/run_tests/performance/run_netperf.sh'
     if client_host:
@@ -252,7 +253,7 @@ def prepare_remote_hosts(hosts, prepare_local=False):
 
 
 def build_on_remote_hosts(hosts,
-                          languages=scenario_config.LANGUAGES.keys(),
+                          languages=list(scenario_config.LANGUAGES.keys()),
                           build_local=False):
     """Builds performance worker on remote hosts (and maybe also locally)."""
     build_timeout = 45 * 60
@@ -354,7 +355,8 @@ def create_scenarios(languages,
                      server_cpu_load=0):
     """Create jobspecs for scenarios to run."""
     all_workers = [
-        worker for workers in workers_by_lang.values() for worker in workers
+        worker for workers in list(workers_by_lang.values())
+        for worker in workers
     ]
     scenarios = []
     _NO_WORKERS = []

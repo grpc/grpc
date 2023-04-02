@@ -15,9 +15,9 @@
 
 set -e
 
-BUILDIFIER_VERSION="0.29.0"
+BUILDIFIER_VERSION="4.2.2"
 TEMP_BUILDIFIER_PATH="/tmp/buildifier"
-EXTRA_BUILDIFIER_FLAGS=$*
+EXTRA_BUILDIFIER_FLAGS="$*"
 
 function error_handling() {
     error=$1

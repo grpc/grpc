@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -24,8 +24,6 @@
 
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gprpp/sync.h"
 
@@ -54,7 +52,7 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
   // Record the drop.
   MutexLock lock(&drop_count_mu_);
   if (drop_token_counts_ == nullptr) {
-    drop_token_counts_ = absl::make_unique<DroppedCallCounts>();
+    drop_token_counts_ = std::make_unique<DroppedCallCounts>();
   }
   for (size_t i = 0; i < drop_token_counts_->size(); ++i) {
     if (strcmp((*drop_token_counts_)[i].token.get(), token) == 0) {
@@ -63,8 +61,7 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
     }
   }
   // Not found, so add a new entry.
-  drop_token_counts_->emplace_back(
-      grpc_core::UniquePtr<char>(gpr_strdup(token)), 1);
+  drop_token_counts_->emplace_back(UniquePtr<char>(gpr_strdup(token)), 1);
 }
 
 namespace {

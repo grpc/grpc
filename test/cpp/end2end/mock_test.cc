@@ -1,22 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <climits>
+#include <iostream>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -28,25 +34,15 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/test/default_reactor_test_peer.h>
+#include <grpcpp/test/mock_stream.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_mock.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#include <grpcpp/test/mock_stream.h>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
-
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
 using std::vector;
 using ::testing::_;
 using ::testing::AtLeast;
@@ -109,7 +105,7 @@ class FakeClient {
     std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
         stub_->ResponseStream(&context, request);
 
-    std::string exp = "";
+    std::string exp;
     EXPECT_TRUE(cstream->Read(&response));
     exp.append(response.message() + " ");
 
@@ -160,12 +156,11 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
     // mocked service should just use the original service methods, but we are
@@ -189,36 +184,38 @@ class MockCallbackTest : public ::testing::Test {
 };
 
 TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
-  grpc::internal::Mutex mu;
-  grpc::internal::CondVar cv;
-  grpc::Status status;
-  bool status_set = false;
-  DefaultReactorTestPeer peer(&ctx, [&](::grpc::Status s) {
-    grpc::internal::MutexLock l(&mu);
-    status_set = true;
-    status = std::move(s);
-    cv.Signal();
+  struct {
+    grpc::internal::Mutex mu;
+    grpc::internal::CondVar cv;
+    absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
+  } status;
+  DefaultReactorTestPeer peer(&ctx, [&](grpc::Status s) {
+    grpc::internal::MutexLock l(&status.mu);
+    status.status = std::move(s);
+    status.cv.Signal();
   });
 
   req.set_message("mock 1");
   auto* reactor = service_.Echo(&ctx, &req, &resp);
-  grpc::internal::WaitUntil(&cv, &mu, [&] {
-    grpc::internal::MutexLock l(&mu);
-    return status_set;
-  });
+
+  grpc::internal::MutexLock l(&status.mu);
+  while (!status.status.has_value()) {
+    status.cv.Wait(&status.mu);
+  }
+
   EXPECT_EQ(reactor, peer.reactor());
   EXPECT_TRUE(peer.test_status_set());
   EXPECT_TRUE(peer.test_status().ok());
-  EXPECT_TRUE(status_set);
-  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(status.status.has_value());
+  EXPECT_TRUE(status.status.value().ok());
   EXPECT_EQ(req.message(), resp.message());
 }
 
 TEST_F(MockCallbackTest, MockedCallSucceeds) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
@@ -231,7 +228,7 @@ TEST_F(MockCallbackTest, MockedCallSucceeds) {
 }
 
 TEST_F(MockCallbackTest, MockedCallFails) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
@@ -254,7 +251,7 @@ class TestServiceImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
-    std::string resp("");
+    std::string resp;
     while (reader->Read(&request)) {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       resp.append(request.message());
@@ -289,7 +286,7 @@ class TestServiceImpl : public EchoTestService::Service {
 
  private:
   vector<std::string> split(const std::string& input) {
-    std::string buff("");
+    std::string buff;
     vector<std::string> result;
 
     for (auto n : input) {
@@ -426,7 +423,7 @@ TEST_F(MockTest, BidiStream) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

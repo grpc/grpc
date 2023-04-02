@@ -19,77 +19,11 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_H
 #define GRPC_IMPL_CODEGEN_ATM_H
 
-/** This interface provides atomic operations and barriers.
-   It is internal to gpr support code and should not be used outside it.
+// IWYU pragma: private, include <grpc/support/atm.h>
 
-   If an operation with acquire semantics precedes another memory access by the
-   same thread, the operation will precede that other access as seen by other
-   threads.
+#include <grpc/support/port_platform.h>
 
-   If an operation with release semantics follows another memory access by the
-   same thread, the operation will follow that other access as seen by other
-   threads.
-
-   Routines with "acq" or "full" in the name have acquire semantics.  Routines
-   with "rel" or "full" in the name have release semantics.  Routines with
-   "no_barrier" in the name have neither acquire not release semantics.
-
-   The routines may be implemented as macros.
-
-   // Atomic operations act on an intergral_type gpr_atm that is guaranteed to
-   // be the same size as a pointer.
-   typedef intptr_t gpr_atm;
-
-   // A memory barrier, providing both acquire and release semantics, but not
-   // otherwise acting on memory.
-   void gpr_atm_full_barrier(void);
-
-   // Atomically return *p, with acquire semantics.
-   gpr_atm gpr_atm_acq_load(gpr_atm *p);
-   gpr_atm gpr_atm_no_barrier_load(gpr_atm *p);
-
-   // Atomically set *p = value, with release semantics.
-   void gpr_atm_rel_store(gpr_atm *p, gpr_atm value);
-
-   // Atomically add delta to *p, and return the old value of *p, with
-   // the barriers specified.
-   gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p, gpr_atm delta);
-   gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta);
-
-   // Atomically, if *p==o, set *p=n and return non-zero otherwise return 0,
-   // with the barriers specified if the operation succeeds.
-   int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
-   int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
-   int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
-   int gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
-
-   // Atomically, set *p=n and return the old value of *p
-   gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n);
-*/
-
-#include <grpc/impl/codegen/port_platform.h>
-
-#if defined(GPR_GCC_ATOMIC)
-#include <grpc/impl/codegen/atm_gcc_atomic.h>
-#elif defined(GPR_GCC_SYNC)
-#include <grpc/impl/codegen/atm_gcc_sync.h>
-#elif defined(GPR_WINDOWS_ATOMIC)
-#include <grpc/impl/codegen/atm_windows.h>
-#else
-#error could not determine platform for atm
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/** Adds \a delta to \a *value, clamping the result to the range specified
-    by \a min and \a max.  Returns the new value. */
-gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,
-                                       gpr_atm min, gpr_atm max);
-
-#ifdef __cplusplus
-}
-#endif
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpc/support/atm.h>
 
 #endif /* GRPC_IMPL_CODEGEN_ATM_H */

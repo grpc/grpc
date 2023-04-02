@@ -1,34 +1,34 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/lib/json/json.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/json/json.h"
-
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -55,19 +55,19 @@ void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
 void ValidateValue(const Json& actual, const Json& expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
-    case Json::Type::JSON_NULL:
-    case Json::Type::JSON_TRUE:
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kNull:
+    case Json::Type::kTrue:
+    case Json::Type::kFalse:
       break;
-    case Json::Type::STRING:
-    case Json::Type::NUMBER:
-      EXPECT_EQ(actual.string_value(), expected.string_value());
+    case Json::Type::kString:
+    case Json::Type::kNumber:
+      EXPECT_EQ(actual.string(), expected.string());
       break;
-    case Json::Type::OBJECT:
-      ValidateObject(actual.object_value(), expected.object_value());
+    case Json::Type::kObject:
+      ValidateObject(actual.object(), expected.object());
       break;
-    case Json::Type::ARRAY:
-      ValidateArray(actual.array_value(), expected.array_value());
+    case Json::Type::kArray:
+      ValidateArray(actual.array(), expected.array());
       break;
   }
 }
@@ -75,11 +75,10 @@ void ValidateValue(const Json& actual, const Json& expected) {
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
-  grpc_error* error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(input, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  ValidateValue(json, expected);
-  std::string output = json.Dump();
+  auto json = JsonParse(input);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ValidateValue(*json, expected);
+  std::string output = JsonDump(*json);
   EXPECT_EQ(output, expected_output);
 }
 
@@ -96,6 +95,14 @@ TEST(Json, Utf16) {
                  "\" \\\\\\u0010\\n\\r\"");
 }
 
+MATCHER(ContainsInvalidUtf8,
+        absl::StrCat(negation ? "Contains" : "Does not contain",
+                     " invalid UTF-8 characters.")) {
+  auto json = JsonParse(arg);
+  return json.status().code() == absl::StatusCode::kInvalidArgument &&
+         absl::StrContains(json.status().message(), "JSON parsing failed");
+}
+
 TEST(Json, Utf8) {
   RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
@@ -109,6 +116,29 @@ TEST(Json, Utf8) {
   RunSuccessTest("{\"\\ud834\\udd1e\":0}",
                  Json::Object{{"\xf0\x9d\x84\x9e", 0}},
                  "{\"\\ud834\\udd1e\":0}");
+
+  /// For UTF-8 characters with length of 1 byte, the range of it is [0x00,
+  /// 0x7f].
+  EXPECT_THAT("\"\xa0\"", ContainsInvalidUtf8());
+
+  /// For UTF-8 characters with length of 2 bytes, the range of the first byte
+  /// is [0xc2, 0xdf], and the range of the second byte is [0x80, 0xbf].
+  EXPECT_THAT("\"\xc0\xbc\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xbc\xc0\"", ContainsInvalidUtf8());
+
+  /// Corner cases for UTF-8 characters with length of 3 bytes.
+  /// If the first byte is 0xe0, the range of second byte is [0xa0, 0xbf].
+  EXPECT_THAT("\"\xe0\x80\x80\"", ContainsInvalidUtf8());
+  /// If the first byte is 0xed, the range of second byte is [0x80, 0x9f].
+  EXPECT_THAT("\"\xed\xa0\x80\"", ContainsInvalidUtf8());
+
+  /// Corner cases for UTF-8 characters with length of 4 bytes.
+  /// If the first byte is 0xf0, the range of second byte is [0x90, 0xbf].
+  EXPECT_THAT("\"\xf0\x80\x80\x80\"", ContainsInvalidUtf8());
+  /// If the first byte is 0xf4, the range of second byte is [0x80, 0x8f].
+  EXPECT_THAT("\"\xf4\x90\x80\x80\"", ContainsInvalidUtf8());
+  /// The range of the first bytes is [0xf0, 0xf4].
+  EXPECT_THAT("\"\xf5\x80\x80\x80\"", ContainsInvalidUtf8());
 }
 
 TEST(Json, NestedEmptyContainers) {
@@ -131,8 +161,8 @@ TEST(Json, EscapesAndControlCharactersInKeyStrings) {
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  RunSuccessTest("\"abc\xf0\x9d\x24\"", "abc\xf0\x9d\x24", "\"abc\"");
-  RunSuccessTest("\"\xff\"", "\xff", "\"\"");
+  EXPECT_EQ(JsonDump(Json("abc\xf0\x9d\x24")), "\"abc\"");
+  EXPECT_EQ(JsonDump(Json("\xff")), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {
@@ -165,11 +195,8 @@ TEST(Json, Keywords) {
 
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
-  grpc_error* error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(input, &error);
-  gpr_log(GPR_INFO, "error: %s", grpc_error_string(error));
-  EXPECT_NE(error, GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
+  auto json = JsonParse(input);
+  EXPECT_FALSE(json.ok());
 }
 
 TEST(Json, InvalidInput) {
@@ -289,7 +316,7 @@ TEST(Json, Equality) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

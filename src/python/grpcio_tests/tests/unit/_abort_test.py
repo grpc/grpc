@@ -13,10 +13,10 @@
 # limitations under the License.
 """Tests server context abort mechanism"""
 
-import unittest
 import collections
 import gc
 import logging
+import unittest
 import weakref
 
 import grpc

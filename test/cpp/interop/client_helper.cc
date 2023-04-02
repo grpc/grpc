@@ -1,22 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/interop/client_helper.h"
+
+#include <fstream>
+#include <memory>
+#include <sstream>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -25,28 +33,24 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_DECLARE_FLAG(bool, use_alts);
-ABSL_DECLARE_FLAG(bool, use_tls);
 ABSL_DECLARE_FLAG(std::string, custom_credentials_type);
-ABSL_DECLARE_FLAG(bool, use_test_ca);
-ABSL_DECLARE_FLAG(int32_t, server_port);
+ABSL_DECLARE_FLAG(std::string, default_service_account);
+ABSL_DECLARE_FLAG(std::string, oauth_scope);
+ABSL_DECLARE_FLAG(std::string, service_account_key_file);
 ABSL_DECLARE_FLAG(std::string, server_host);
 ABSL_DECLARE_FLAG(std::string, server_host_override);
+ABSL_DECLARE_FLAG(int32_t, server_port);
 ABSL_DECLARE_FLAG(std::string, test_case);
-ABSL_DECLARE_FLAG(std::string, default_service_account);
-ABSL_DECLARE_FLAG(std::string, service_account_key_file);
-ABSL_DECLARE_FLAG(std::string, oauth_scope);
+ABSL_DECLARE_FLAG(bool, use_alts);
+ABSL_DECLARE_FLAG(bool, use_test_ca);
+ABSL_DECLARE_FLAG(bool, use_tls);
 
 namespace grpc {
 namespace testing {
@@ -83,7 +87,8 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators) {
+        interceptor_creators,
+    ChannelArguments channel_args) {
   std::string server_uri = absl::GetFlag(FLAGS_server_host);
   int32_t port = absl::GetFlag(FLAGS_server_port);
   if (port != 0) {
@@ -109,7 +114,6 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                 ? nullptr
                 : AccessTokenCredentials(GetOauth2AccessToken());
   } else if (test_case == "pick_first_unary") {
-    ChannelArguments channel_args;
     // allow the LB policy to be configured with service config
     channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
     return CreateTestChannel(
@@ -122,20 +126,63 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
         absl::GetFlag(FLAGS_use_alts)
             ? ALTS
             : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
-    return CreateTestChannel(server_uri,
-                             absl::GetFlag(FLAGS_server_host_override),
-                             security_type, !absl::GetFlag(FLAGS_use_test_ca),
-                             creds, std::move(interceptor_creators));
+    return CreateTestChannel(
+        server_uri, absl::GetFlag(FLAGS_server_host_override), security_type,
+        !absl::GetFlag(FLAGS_use_test_ca), creds, channel_args,
+        std::move(interceptor_creators));
   } else {
     if (interceptor_creators.empty()) {
-      return CreateTestChannel(
-          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds);
-    } else {
       return CreateTestChannel(server_uri,
-                               absl::GetFlag(FLAGS_custom_credentials_type),
-                               creds, std::move(interceptor_creators));
+                               absl::GetFlag(FLAGS_custom_credentials_type), "",
+                               false, creds, channel_args);
+    } else {
+      return CreateTestChannel(
+          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds,
+          std::move(interceptor_creators), channel_args);
     }
   }
+}
+
+static void log_metadata_entry(const std::string& prefix,
+                               const grpc::string_ref& key,
+                               const grpc::string_ref& value) {
+  auto key_str = std::string(key.begin(), key.end());
+  auto value_str = std::string(value.begin(), value.end());
+  if (absl::EndsWith(key_str, "-bin")) {
+    auto converted =
+        grpc_base64_encode(value_str.c_str(), value_str.length(), 0, 0);
+    value_str = std::string(converted);
+    gpr_free(converted);
+  }
+  gpr_log(GPR_ERROR, "%s %s: %s", prefix.c_str(), key_str.c_str(),
+          value_str.c_str());
+}
+
+void MetadataAndStatusLoggerInterceptor::Intercept(
+    experimental::InterceptorBatchMethods* methods) {
+  if (methods->QueryInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+    auto initial_metadata = methods->GetRecvInitialMetadata();
+
+    for (const auto& entry : *initial_metadata) {
+      log_metadata_entry("GRPC_INITIAL_METADATA", entry.first, entry.second);
+    }
+  }
+
+  if (methods->QueryInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
+    auto trailing_metadata = methods->GetRecvTrailingMetadata();
+    for (const auto& entry : *trailing_metadata) {
+      log_metadata_entry("GRPC_TRAILING_METADATA", entry.first, entry.second);
+    }
+
+    auto status = methods->GetRecvStatus();
+    gpr_log(GPR_ERROR, "GRPC_STATUS %d", status->error_code());
+    gpr_log(GPR_ERROR, "GRPC_ERROR_MESSAGE %s",
+            status->error_message().c_str());
+  }
+
+  methods->Proceed();
 }
 
 }  // namespace testing

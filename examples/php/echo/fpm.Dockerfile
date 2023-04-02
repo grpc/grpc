@@ -18,21 +18,22 @@ FROM composer:1.8.6 as composer
 FROM grpc-php/base as grpc-base
 
 
-FROM php:7.2-fpm-stretch
+FROM php:7.4-fpm-buster
 
 RUN apt-get -qq update && apt-get -qq install -y git
 
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-COPY --from=grpc-base /usr/local/bin/protoc /usr/local/bin/protoc
+COPY --from=grpc-base /github/grpc/cmake/build/third_party/protobuf/protoc \
+  /usr/local/bin/protoc
 
-COPY --from=grpc-base /github/grpc/bins/opt/grpc_php_plugin \
+COPY --from=grpc-base /github/grpc/cmake/build/grpc_php_plugin \
   /usr/local/bin/protoc-gen-grpc
 
 COPY --from=grpc-base \
-  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so \
-  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so
+  /usr/local/lib/php/extensions/no-debug-non-zts-20190902/grpc.so \
+  /usr/local/lib/php/extensions/no-debug-non-zts-20190902/grpc.so
 
 
 RUN docker-php-ext-enable grpc

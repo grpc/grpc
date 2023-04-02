@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
 
 grpc_package(
     name = "test/core/network_benchmarks",
@@ -22,7 +22,7 @@ grpc_package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_binary(
     name = "low_level_ping_pong",
@@ -33,5 +33,6 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

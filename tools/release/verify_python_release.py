@@ -30,8 +30,9 @@ import argparse
 import collections
 import hashlib
 import os
-import requests
 import sys
+
+import requests
 
 _DEFAULT_PACKAGES = [
     "grpcio",
@@ -41,6 +42,8 @@ _DEFAULT_PACKAGES = [
     "grpcio-reflection",
     "grpcio-channelz",
     "grpcio-testing",
+    "grpcio-admin",
+    "grpcio-csds",
 ]
 
 Artifact = collections.namedtuple("Artifact", ("filename", "checksum"))
@@ -68,9 +71,11 @@ def _get_remote_artifacts_for_package(package, version):
     experience, it has taken a minute on average to be fresh.
     """
     artifacts = set()
-    payload = requests.get("https://pypi.org/pypi/{}/{}/json".format(
-        package, version)).json()
-    for download_info in payload['releases'][version]:
+    payload_resp = requests.get("https://pypi.org/pypi/{}/{}/json".format(
+        package, version))
+    payload_resp.raise_for_status()
+    payload = payload_resp.json()
+    for download_info in payload['urls']:
         artifacts.add(
             Artifact(download_info['filename'], download_info['md5_digest']))
     return artifacts

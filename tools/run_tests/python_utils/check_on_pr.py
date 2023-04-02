@@ -13,15 +13,16 @@
 # limitations under the License.
 
 from __future__ import print_function
+
+import datetime
+import json
 import os
 import sys
-import json
 import time
-import datetime
 import traceback
 
-import requests
 import jwt
+import requests
 
 _GITHUB_API_PREFIX = 'https://api.github.com'
 _GITHUB_REPO = 'grpc/grpc'
@@ -31,6 +32,20 @@ _INSTALLATION_ID = 519109
 _ACCESS_TOKEN_CACHE = None
 _ACCESS_TOKEN_FETCH_RETRIES = 6
 _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 15
+
+_CHANGE_LABELS = {
+    -1: 'improvement',
+    0: 'none',
+    1: 'low',
+    2: 'medium',
+    3: 'high',
+}
+
+_INCREASE_DECREASE = {
+    -1: 'decrease',
+    0: 'neutral',
+    1: 'increase',
+}
 
 
 def _jwt_token():
@@ -121,6 +136,12 @@ def check_on_pr(name, summary, success=True):
     if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
         print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
         return
+    MAX_SUMMARY_LEN = 65400
+    if len(summary) > MAX_SUMMARY_LEN:
+        # Drop some hints to the log should someone come looking for what really happened!
+        print('Clipping too long summary')
+        print(summary)
+        summary = summary[:MAX_SUMMARY_LEN] + '\n\n\n... CLIPPED (too long)'
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
     resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,
@@ -138,3 +159,51 @@ def check_on_pr(name, summary, success=True):
                  })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))
+
+
+def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
+    """Add a label to the PR indicating the significance of the check.
+
+    Requires environment variable 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' to indicate which pull request
+    should be updated.
+
+    Args:
+      name: The name of the label.
+      value: A str in Markdown to be used as the detail information of the label.
+    """
+    if change < min(list(labels.keys())):
+        change = min(list(labels.keys()))
+    if change > max(list(labels.keys())):
+        change = max(list(labels.keys()))
+    value = labels[change]
+    if 'KOKORO_GIT_COMMIT' not in os.environ:
+        print('Missing KOKORO_GIT_COMMIT env var: not checking')
+        return
+    if 'KOKORO_KEYSTORE_DIR' not in os.environ:
+        print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
+        return
+    if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
+        print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
+        return
+    existing = _call(
+        '/repos/%s/issues/%s/labels' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
+        method='GET').json()
+    print('Result of fetching labels on PR:', existing)
+    new = [x['name'] for x in existing if not x['name'].startswith(name + '/')]
+    new.append(name + '/' + value)
+    resp = _call(
+        '/repos/%s/issues/%s/labels' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
+        method='PUT',
+        json=new)
+    print('Result of setting labels on PR:', resp.text)
+
+
+def label_increase_decrease_on_pr(name, change, significant):
+    if change <= -significant:
+        label_significance_on_pr(name, -1, _INCREASE_DECREASE)
+    elif change >= significant:
+        label_significance_on_pr(name, 1, _INCREASE_DECREASE)
+    else:
+        label_significance_on_pr(name, 0, _INCREASE_DECREASE)

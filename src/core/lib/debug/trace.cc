@@ -1,36 +1,37 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 
 #include <string.h>
+
+#include <string>
 #include <type_traits>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
-    "how gRPC C core is processing requests via debug logs.");
+#include "src/core/lib/config/config_vars.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -63,7 +64,7 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     // check for unknowns, but ignore "", to allow to GRPC_TRACE=
     if (!found && 0 != strcmp(name, "")) {
       gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
-      return false; /* early return */
+      return false;  // early return
     }
   }
   return true;
@@ -143,11 +144,8 @@ void grpc_tracer_init(const char* env_var_name) {
 }
 
 void grpc_tracer_init() {
-  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
-  parse(value.get());
+  parse(std::string(grpc_core::ConfigVars::Get().Trace()).c_str());
 }
-
-void grpc_tracer_shutdown(void) {}
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {
   return grpc_core::TraceFlagList::Set(name, enabled != 0);

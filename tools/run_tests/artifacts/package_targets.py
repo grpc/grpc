@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,14 +29,14 @@ def create_docker_jobspec(name,
                           timeout_retries=0):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
-    environ['RUN_COMMAND'] = shell_command
 
     docker_args = []
-    for k, v in environ.items():
+    for k, v in list(environ.items()):
         docker_args += ['-e', '%s=%s' % (k, v)]
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
         'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
+        'DOCKER_RUN_SCRIPT_COMMAND': shell_command,
         'OUTPUT_DIR': 'artifacts'
     }
     jobspec = jobset.JobSpec(
@@ -74,28 +74,36 @@ def create_jobspec(name,
 class CSharpPackage:
     """Builds C# packages."""
 
-    def __init__(self, unity=False):
-        self.unity = unity
-        self.labels = ['package', 'csharp', 'linux']
-        if unity:
-            self.name = 'csharp_package_unity_linux'
-            self.labels += ['unity']
-        else:
-            self.name = 'csharp_package_nuget_linux'
-            self.labels += ['nuget']
+    def __init__(self, platform):
+        self.platform = platform
+        self.labels = ['package', 'csharp', self.platform]
+        self.name = 'csharp_package_nuget_%s' % self.platform
+        self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
-        if self.unity:
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as there is little opportunity for parallelizing
+        environ = {
+            'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
+                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
+        }
+
+        build_script = 'src/csharp/build_nuget.sh'
+
+        if self.platform == 'linux':
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
-                'src/csharp/build_unitypackage.sh')
+                self.name,
+                'tools/dockerfile/test/csharp_debian11_x64',
+                build_script,
+                environ=environ)
         else:
-            return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
-                'src/csharp/build_nuget.sh')
+            repo_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '..', '..', '..')
+            environ['EXTERNAL_GIT_ROOT'] = repo_root
+            return create_jobspec(self.name, ['bash', build_script],
+                                  environ=environ)
 
     def __str__(self):
         return self.name
@@ -111,7 +119,8 @@ class RubyPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_ruby.sh')
@@ -127,7 +136,8 @@ class PythonPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         # since the python package build does very little, we can use virtually
         # any image that has new-enough python, so reusing one of the images used
         # for artifact building seems natural.
@@ -148,7 +158,8 @@ class PHPPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_php.sh')
@@ -157,8 +168,9 @@ class PHPPackage:
 def targets():
     """Gets list of supported targets"""
     return [
-        CSharpPackage(),
-        CSharpPackage(unity=True),
+        CSharpPackage('linux'),
+        CSharpPackage('macos'),
+        CSharpPackage('windows'),
         RubyPackage(),
         PythonPackage(),
         PHPPackage()

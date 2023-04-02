@@ -1,20 +1,25 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include <mutex>
+#include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -28,12 +33,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <mutex>
-#include <thread>
-
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -70,8 +72,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{server_has_port="
              << (scenario.server_has_port ? "true" : "false")
              << ", queue_pending_data="
@@ -148,7 +149,7 @@ class TestTcpServer {
     self->OnConnect(tcp, accepting_pollset, acceptor);
   }
 
-  static void OnFdReleased(void* arg, grpc_error* err) {
+  static void OnFdReleased(void* arg, grpc_error_handle err) {
     auto* self = static_cast<TestTcpServer*>(arg);
     self->OnFdReleased(err);
   }
@@ -165,8 +166,8 @@ class TestTcpServer {
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
 
-  void OnFdReleased(grpc_error* err) {
-    EXPECT_EQ(GRPC_ERROR_NONE, err);
+  void OnFdReleased(grpc_error_handle err) {
+    EXPECT_EQ(absl::OkStatus(), err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;
     p.fd = fd_;
@@ -294,7 +295,7 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   int first_picked_port_;
 };
 
-static void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
+void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");
@@ -313,7 +314,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -368,7 +369,7 @@ INSTANTIATE_TEST_SUITE_P(PortSharingEnd2end, PortSharingEnd2endTest,
 #endif  // GRPC_POSIX_SOCKET_TCP_SERVER
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

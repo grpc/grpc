@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
@@ -22,18 +22,20 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <string>
-#include <thread>
-
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
@@ -42,6 +44,7 @@ namespace testing {
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const char* const kServerTryCancelRequest = "server_try_cancel";
+const char* const kClientTryCancelRequest = "client_try_cancel";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";
@@ -58,10 +61,10 @@ typedef enum {
 namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(experimental::ServerContextBase* context,
-                       const EchoRequest* request, EchoResponse* response);
+void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
+                       EchoResponse* response);
 
-void CheckServerAuthContext(const experimental::ServerContextBase* context,
+void CheckServerAuthContext(const ServerContextBase* context,
                             const std::string& expected_transport_security_type,
                             const std::string& expected_client_identity);
 
@@ -130,10 +133,11 @@ class TestMultipleServiceImpl : public RpcService {
 
     // A bit of sleep to make sure that short deadline tests fail
     if (request->has_param() && request->param().server_sleep_us() > 0) {
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                       gpr_time_from_micros(request->param().server_sleep_us(),
-                                            GPR_TIMESPAN)));
+      gpr_sleep_until(gpr_time_add(
+          gpr_now(GPR_CLOCK_MONOTONIC),
+          gpr_time_from_micros(
+              request->param().server_sleep_us() * grpc_test_slowdown_factor(),
+              GPR_TIMESPAN)));
     }
 
     if (request->has_param() && request->param().server_die()) {
@@ -160,6 +164,11 @@ class TestMultipleServiceImpl : public RpcService {
     internal::MaybeEchoDeadline(context, request, response);
     if (host_) {
       response->mutable_param()->set_host(*host_);
+    } else if (request->has_param() &&
+               request->param().echo_host_from_authority_header()) {
+      auto authority = context->ExperimentalGetAuthority();
+      std::string authority_str(authority.data(), authority.size());
+      response->mutable_param()->set_host(std::move(authority_str));
     }
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
@@ -170,7 +179,8 @@ class TestMultipleServiceImpl : public RpcService {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
+            gpr_time_from_micros(request->param().client_cancel_after_us() *
+                                     grpc_test_slowdown_factor(),
                                  GPR_TIMESPAN)));
       }
       {
@@ -182,7 +192,8 @@ class TestMultipleServiceImpl : public RpcService {
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
+          gpr_time_from_micros(request->param().server_cancel_after_us() *
+                                   grpc_test_slowdown_factor(),
                                GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else if (!request->has_param() ||
@@ -376,6 +387,9 @@ class TestMultipleServiceImpl : public RpcService {
     int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
+    int client_try_cancel = static_cast<bool>(internal::GetIntValueFromMetadata(
+        kClientTryCancelRequest, context->client_metadata(), 0));
+
     EchoRequest request;
     EchoResponse response;
 
@@ -402,9 +416,14 @@ class TestMultipleServiceImpl : public RpcService {
       response.set_message(request.message());
       if (read_counts == server_write_last) {
         stream->WriteLast(response, WriteOptions());
+        break;
       } else {
         stream->Write(response);
       }
+    }
+
+    if (client_try_cancel) {
+      EXPECT_TRUE(context->IsCancelled());
     }
 
     if (server_try_cancel_thd != nullptr) {
@@ -442,30 +461,28 @@ class TestMultipleServiceImpl : public RpcService {
 };
 
 class CallbackTestServiceImpl
-    : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
+    : public grpc::testing::EchoTestService::CallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
   explicit CallbackTestServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override;
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override;
 
-  experimental::ServerUnaryReactor* CheckClientInitialMetadata(
-      experimental::CallbackServerContext* context, const SimpleRequest*,
-      SimpleResponse*) override;
+  ServerUnaryReactor* CheckClientInitialMetadata(CallbackServerContext* context,
+                                                 const SimpleRequest*,
+                                                 SimpleResponse*) override;
 
-  experimental::ServerReadReactor<EchoRequest>* RequestStream(
-      experimental::CallbackServerContext* context,
-      EchoResponse* response) override;
+  ServerReadReactor<EchoRequest>* RequestStream(
+      CallbackServerContext* context, EchoResponse* response) override;
 
-  experimental::ServerWriteReactor<EchoResponse>* ResponseStream(
-      experimental::CallbackServerContext* context,
-      const EchoRequest* request) override;
+  ServerWriteReactor<EchoResponse>* ResponseStream(
+      CallbackServerContext* context, const EchoRequest* request) override;
 
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
-      experimental::CallbackServerContext* context) override;
+  ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {
@@ -483,7 +500,7 @@ class CallbackTestServiceImpl
 };
 
 using TestServiceImpl =
-    TestMultipleServiceImpl<::grpc::testing::EchoTestService::Service>;
+    TestMultipleServiceImpl<grpc::testing::EchoTestService::Service>;
 
 }  // namespace testing
 }  // namespace grpc

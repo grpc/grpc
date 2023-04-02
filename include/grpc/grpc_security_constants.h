@@ -25,14 +25,31 @@ extern "C" {
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
+#define GRPC_TLS_TRANSPORT_SECURITY_TYPE "tls"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
+#define GRPC_X509_SUBJECT_PROPERTY_NAME "x509_subject"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+// Please note that internally, we just faithfully pass whatever value we got by
+// calling SSL_get_peer_cert_chain() in OpenSSL/BoringSSL. This will mean in
+// OpenSSL, the following conditions might apply:
+// 1. On the client side, this property returns the full certificate chain. On
+// the server side, this property will return the certificate chain without the
+// leaf certificate. Application can use GRPC_X509_PEM_CERT_PROPERTY_NAME to
+// get the peer leaf certificate.
+// 2. If the session is resumed, this property could be empty for OpenSSL (but
+// not for BoringSSL).
+// For more, please refer to the official OpenSSL manual:
+// https://www.openssl.org/docs/man1.1.0/man3/SSL_get_peer_cert_chain.html.
 #define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
+#define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
+#define GRPC_PEER_URI_PROPERTY_NAME "peer_uri"
+#define GRPC_PEER_EMAIL_PROPERTY_NAME "peer_email"
+#define GRPC_PEER_IP_PROPERTY_NAME "peer_ip"
 
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -118,20 +135,6 @@ typedef enum {
   GRPC_PRIVACY_AND_INTEGRITY,
   GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY,
 } grpc_security_level;
-
-typedef enum {
-  /** Default option: performs server certificate verification and hostname
-     verification. */
-  GRPC_TLS_SERVER_VERIFICATION,
-  /** Performs server certificate verification, but skips hostname verification
-     Client is responsible for verifying server's identity via
-     server authorization check callback. */
-  GRPC_TLS_SKIP_HOSTNAME_VERIFICATION,
-  /** Skips both server certificate and hostname verification.
-     Client is responsible for verifying server's identity and
-     server's certificate via server authorization check callback. */
-  GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION
-} grpc_tls_server_verification_option;
 
 /**
  * Type of local connections for which local channel/server credentials will be

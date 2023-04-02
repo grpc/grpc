@@ -12,19 +12,21 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Boringssl build no longer supports yasm
-choco uninstall yasm -y --limit-output
-choco install nasm -y --limit-output
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
 
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-python tools/run_tests/task_runner.py -f artifact windows -j 4
-set RUNTESTS_EXITCODE=%errorlevel%
-
-bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
-
-exit /b %RUNTESTS_EXITCODE%
+echo "The grpc_build_artifacts -> grpc_build_packages -> grpc_distribtests build flow has been deprecated."
+echo "To build the packages for a grpc release, use the grpc_build_all_packages job."
+echo "(which relies on the per-language distribtests jobs to build and test the packages)."

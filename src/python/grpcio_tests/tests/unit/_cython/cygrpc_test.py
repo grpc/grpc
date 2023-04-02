@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-import threading
-import unittest
 import platform
+import threading
+import time
+import unittest
 
 from grpc._cython import cygrpc
-from tests.unit._cython import test_utilities
-from tests.unit import test_common
+
 from tests.unit import resources
+from tests.unit import test_common
+from tests.unit._cython import test_utilities
 
 _SSL_HOST_OVERRIDE = b'foo.test.google.fr'
 _CALL_CREDENTIALS_METADATA_KEY = 'call-creds-key'
@@ -226,6 +227,15 @@ class ServerClientMixin(object):
 
         server_call_tag = object()
         server_call = request_event.call
+        server_start_batch_result = server_call.start_server_batch([
+            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+        ], server_call_tag)
+        self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
+
+        server_message_event = self.server_completion_queue.poll(
+            deadline=DEADLINE)
+
+        server_call_tag = object()
         server_initial_metadata = ((
             SERVER_INITIAL_METADATA_KEY,
             SERVER_INITIAL_METADATA_VALUE,
@@ -237,7 +247,6 @@ class ServerClientMixin(object):
         server_start_batch_result = server_call.start_server_batch([
             cygrpc.SendInitialMetadataOperation(server_initial_metadata,
                                                 _EMPTY_FLAGS),
-            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
             cygrpc.SendMessageOperation(RESPONSE, _EMPTY_FLAGS),
             cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
             cygrpc.SendStatusFromServerOperation(
@@ -281,7 +290,21 @@ class ServerClientMixin(object):
                 cygrpc.OperationType.receive_status_on_client
             ]), found_client_op_types)
 
-        self.assertEqual(5, len(server_event.batch_operations))
+        self.assertEqual(1, len(server_message_event.batch_operations))
+        found_server_op_types = set()
+        for server_result in server_message_event.batch_operations:
+            self.assertNotIn(server_result.type(), found_server_op_types)
+            found_server_op_types.add(server_result.type())
+            if server_result.type() == cygrpc.OperationType.receive_message:
+                self.assertEqual(REQUEST, server_result.message())
+            elif server_result.type(
+            ) == cygrpc.OperationType.receive_close_on_server:
+                self.assertFalse(server_result.cancelled())
+        self.assertEqual(set([
+            cygrpc.OperationType.receive_message,
+        ]), found_server_op_types)
+
+        self.assertEqual(4, len(server_event.batch_operations))
         found_server_op_types = set()
         for server_result in server_event.batch_operations:
             self.assertNotIn(server_result.type(), found_server_op_types)
@@ -294,7 +317,6 @@ class ServerClientMixin(object):
         self.assertEqual(
             set([
                 cygrpc.OperationType.send_initial_metadata,
-                cygrpc.OperationType.receive_message,
                 cygrpc.OperationType.send_message,
                 cygrpc.OperationType.receive_close_on_server,
                 cygrpc.OperationType.send_status_from_server

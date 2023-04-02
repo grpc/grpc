@@ -8,19 +8,10 @@
 
 #include "upb/def.h"
 #include "udpa/annotations/migrate.upbdefs.h"
+#include "udpa/annotations/migrate.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern const upb_msglayout udpa_annotations_MigrateAnnotation_msginit;
-extern const upb_msglayout udpa_annotations_FieldMigrateAnnotation_msginit;
-extern const upb_msglayout udpa_annotations_FileMigrateAnnotation_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &udpa_annotations_MigrateAnnotation_msginit,
-  &udpa_annotations_FieldMigrateAnnotation_msginit,
-  &udpa_annotations_FileMigrateAnnotation_msginit,
-};
-
-static const char descriptor[855] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
+static const char descriptor[893] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 
 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
 '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 
 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\"', '+', '\n', '\021', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 'n', 'n', 'o', 't', 
@@ -53,18 +44,19 @@ static const char descriptor[855] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a',
 'r', 'a', 't', 'e', '\022', '\034', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 
 'l', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\216', '\343', '\377', 'Q', ' ', '\001', '(', '\013', '2', '\'', '.', 'u', 'd', 'p', 'a', 
 '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 'F', 'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'A', 
-'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\013', 'f', 'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'b', '\006', 'p', 
-'r', 'o', 't', 'o', '3', 
+'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 'R', '\013', 'f', 'i', 'l', 'e', 'M', 'i', 'g', 'r', 'a', 't', 'e', 'B', '$', 'Z', 
+'\"', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'c', 'n', 'c', 'f', '/', 'x', 'd', 's', '/', 'g', 'o', '/', 'a', 
+'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init udpa_annotations_migrate_proto_upbdefinit = {
+_upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit = {
   deps,
-  layouts,
+  &udpa_annotations_migrate_proto_upb_file_layout,
   "udpa/annotations/migrate.proto",
-  UPB_STRVIEW_INIT(descriptor, 855)
+  UPB_STRINGVIEW_INIT(descriptor, 893)
 };

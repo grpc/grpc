@@ -29,7 +29,12 @@ module PLATFORM
   end
 
   def PLATFORM.architecture
-    case RbConfig::CONFIG['host_cpu']
+    host_cpu = RbConfig::CONFIG['host_cpu']
+
+    # When we're on arm in macOS, we can rely on Rosetta and use the x86_64 binary
+    return 'x86_64' if RbConfig::CONFIG['host_os'] =~ /darwin/ && host_cpu =~ /arm|aarch/
+
+    case host_cpu
       when /x86_64/
         'x86_64'
       else

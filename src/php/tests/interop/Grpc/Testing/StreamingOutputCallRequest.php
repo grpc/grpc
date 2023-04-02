@@ -54,7 +54,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      *           If response_type is RANDOM, the payload from each response in the stream
      *           might be of different types. This is to simulate a mixed type of payload
      *           stream.
-     *     @type \Grpc\Testing\ResponseParameters[]|\Google\Protobuf\Internal\RepeatedField $response_parameters
+     *     @type array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $response_parameters
      *           Configuration for each expected response message.
      *     @type \Grpc\Testing\Payload $payload
      *           Optional input payload sent along with the request.
@@ -114,7 +114,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Configuration for each expected response message.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ResponseParameters response_parameters = 2;</code>
-     * @param \Grpc\Testing\ResponseParameters[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setResponseParameters($var)
@@ -133,7 +133,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getPayload()
     {
-        return isset($this->payload) ? $this->payload : null;
+        return $this->payload;
     }
 
     public function hasPayload()
@@ -169,7 +169,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseStatus()
     {
-        return isset($this->response_status) ? $this->response_status : null;
+        return $this->response_status;
     }
 
     public function hasResponseStatus()

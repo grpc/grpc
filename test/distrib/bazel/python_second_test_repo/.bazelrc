@@ -1,0 +1,4 @@
+# bazelrc file
+
+build --cxxopt='-std=c++14'
+build --host_cxxopt='-std=c++14'

@@ -17,9 +17,10 @@ from __future__ import print_function
 
 import os
 import sys
-import zipfile
-import requests
 import tempfile
+import zipfile
+
+import requests
 
 
 def main():

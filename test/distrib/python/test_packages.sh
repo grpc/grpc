@@ -35,7 +35,7 @@ REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-reflection-[0-9
 TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-testing-[0-9]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
-virtualenv "$VIRTUAL_ENV"
+python3 -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
 "$PYTHON" -m pip install --upgrade six pip wheel
 
@@ -83,6 +83,6 @@ at_least_one_installs "${TESTING_ARCHIVES[@]}"
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-"$PYTHON" -m grpc.tools.protoc --help
+"$PYTHON" -m grpc_tools.protoc --help
 
 "$PYTHON" distribtest.py

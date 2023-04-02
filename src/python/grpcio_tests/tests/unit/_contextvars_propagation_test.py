@@ -16,7 +16,9 @@
 import contextlib
 import logging
 import os
+import queue
 import sys
+import threading
 import unittest
 
 import grpc
@@ -73,7 +75,11 @@ if contextvars_supported():
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
         def __call__(self, context, callback):
-            if test_var.get() != _EXPECTED_VALUE:
+            if test_var.get(
+            ) != _EXPECTED_VALUE and not test_common.running_under_gevent():
+                # contextvars do not work under gevent, but the rest of this
+                # test is still valuable as a test of concurrent runs of the
+                # metadata credentials code path.
                 raise AssertionError("{} != {}".format(test_var.get(),
                                                        _EXPECTED_VALUE))
             callback((), None)
@@ -111,6 +117,48 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 stub = channel.unary_unary(_UNARY_UNARY)
                 response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
+
+    def test_concurrent_propagation(self):
+        _THREAD_COUNT = 32
+        _RPC_COUNT = 32
+
+        set_up_expected_context()
+        with _server() as port:
+            target = "localhost:{}".format(port)
+            local_credentials = grpc.local_channel_credentials()
+            test_call_credentials = TestCallCredentials()
+            call_credentials = grpc.metadata_call_credentials(
+                test_call_credentials, "test call credentials")
+            composite_credentials = grpc.composite_channel_credentials(
+                local_credentials, call_credentials)
+            wait_group = test_common.WaitGroup(_THREAD_COUNT)
+
+            def _run_on_thread(exception_queue):
+                try:
+                    with grpc.secure_channel(target,
+                                             composite_credentials) as channel:
+                        stub = channel.unary_unary(_UNARY_UNARY)
+                        wait_group.done()
+                        wait_group.wait()
+                        for i in range(_RPC_COUNT):
+                            response = stub(_REQUEST, wait_for_ready=True)
+                            self.assertEqual(_REQUEST, response)
+                except Exception as e:  # pylint: disable=broad-except
+                    exception_queue.put(e)
+
+            threads = []
+
+            for _ in range(_THREAD_COUNT):
+                q = queue.Queue()
+                thread = threading.Thread(target=_run_on_thread, args=(q,))
+                thread.setDaemon(True)
+                thread.start()
+                threads.append((thread, q))
+
+            for thread, q in threads:
+                thread.join()
+                if not q.empty():
+                    raise q.get()
 
 
 if __name__ == '__main__':

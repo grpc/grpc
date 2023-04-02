@@ -17,7 +17,7 @@
   FROM golang:1.8
   
   <%include file="../../go_path.include"/>
-  <%include file="../../python_deps.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
   # Define the default command.
   CMD ["bash"]
   

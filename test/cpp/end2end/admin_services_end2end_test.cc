@@ -21,15 +21,13 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#ifndef DISABLED_XDS_PROTO_IN_CC
-#include <grpcpp/ext/admin_services.h>
 
 namespace grpc {
 namespace testing {
@@ -43,7 +41,7 @@ class AdminServicesTest : public ::testing::Test {
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     builder.AddListeningPort(address, InsecureServerCredentials());
-    ::grpc::AddAdminServices(&builder);
+    grpc::AddAdminServices(&builder);
     server_ = builder.BuildAndStart();
     // Create channel
     auto reflection_stub = reflection::v1alpha::ServerReflection::NewStub(
@@ -73,34 +71,30 @@ class AdminServicesTest : public ::testing::Test {
       stream_;
 };
 
-#ifndef GRPC_NO_XDS
-// The ifndef conflicts with TEST_F and EXPECT_THAT macros, so we better isolate
-// the condition at test case level.
-TEST_F(AdminServicesTest, XdsEnabled) {
+TEST_F(AdminServicesTest, ValidateRegisteredServices) {
+  // Using Contains here, because the server builder might register other
+  // services in certain environments.
+  EXPECT_THAT(
+      GetServiceList(),
+      ::testing::AllOf(
+          ::testing::Contains("grpc.channelz.v1.Channelz"),
+          ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
+#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
   EXPECT_THAT(GetServiceList(),
-              ::testing::UnorderedElementsAre(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService",
-                  "grpc.channelz.v1.Channelz",
-                  "grpc.reflection.v1alpha.ServerReflection"));
-}
-#endif  // GRPC_NO_XDS
-
-#ifdef GRPC_NO_XDS
-TEST_F(AdminServicesTest, XdsDisabled) {
+              ::testing::Not(::testing::Contains(
+                  "envoy.service.status.v3.ClientStatusDiscoveryService")));
+#else
   EXPECT_THAT(GetServiceList(),
-              ::testing::UnorderedElementsAre(
-                  "grpc.channelz.v1.Channelz",
-                  "grpc.reflection.v1alpha.ServerReflection"));
+              ::testing::Contains(
+                  "envoy.service.status.v3.ClientStatusDiscoveryService"));
+#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 }
-#endif  // GRPC_NO_XDS
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

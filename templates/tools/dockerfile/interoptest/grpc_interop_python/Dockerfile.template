@@ -14,7 +14,15 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../python_stretch.include"/>
+  FROM debian:11
+  
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../run_tests_addons.include"/>
 
-  RUN apt-get update && apt-get -t stable install -y python3.7 python3-all-dev
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+  RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
+  RUN ln -s $(which python3) /usr/bin/python
+
+  <%include file="../../gcp_api_libraries.include"/>
+
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>

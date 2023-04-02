@@ -23,7 +23,7 @@ RUN apt-get update && apt-get -y install libgtest-dev
 
 # Get the protobuf source from GitHub.
 RUN mkdir -p /var/local/git
-RUN git clone https://github.com/google/protobuf.git /var/local/git/protobuf
+RUN git clone https://github.com/protocolbuffers/protobuf.git /var/local/git/protobuf
 
 # Build the protobuf library statically and install to /tmp/protoc_static.
 WORKDIR /var/local/git/protobuf

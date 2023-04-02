@@ -14,11 +14,11 @@
 # limitations under the License.
 """Utility functions for build file generation scripts."""
 
+import importlib.util
 import os
 import sys
 import types
-import importlib.util
-from typing import Any, Union, Mapping, List
+from typing import Any, List, Mapping, Union
 
 
 def import_python_module(path: str) -> types.ModuleType:
@@ -45,7 +45,7 @@ def to_bunch(var: Any) -> Any:
         return [to_bunch(i) for i in var]
     if isinstance(var, dict):
         ret = {}
-        for k, v in var.items():
+        for k, v in list(var.items()):
             if isinstance(v, (list, dict)):
                 v = to_bunch(v)
             ret[k] = v
@@ -57,7 +57,7 @@ def to_bunch(var: Any) -> Any:
 def merge_json(dst: Union[Mapping, List], add: Union[Mapping, List]) -> None:
     """Merges JSON objects recursively."""
     if isinstance(dst, dict) and isinstance(add, dict):
-        for k, v in add.items():
+        for k, v in list(add.items()):
             if k in dst:
                 if k.startswith('#'):
                     continue

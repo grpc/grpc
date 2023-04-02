@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_package", "grpc_sh_test")
+
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/codegen")
 
@@ -24,6 +24,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",
@@ -37,6 +38,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",
@@ -51,6 +53,7 @@ grpc_cc_test(
         "gtest",
         "protobuf",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",
@@ -97,4 +100,5 @@ grpc_sh_test(
         ":compiler_test_mock_golden",
         ":golden_file_test",
     ],
+    uses_polling = False,
 )

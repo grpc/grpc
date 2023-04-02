@@ -27,8 +27,6 @@
 #import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
 #endif
 
-#import "CacheInterceptor.h"
-
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
@@ -58,7 +56,7 @@ static NSString *const kService = @"TestService";
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
                                           path:kUnaryCallMethod.HTTPPath
-                                        safety:GRPCCallSafetyCacheableRequest];
+                                        safety:GRPCCallSafetyDefault];
 
   GRPCCall2 *call = [[GRPCCall2 alloc] initWithRequestOptions:requestOptions
                                               responseHandler:self

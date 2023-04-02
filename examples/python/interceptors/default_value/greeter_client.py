@@ -14,13 +14,13 @@
 """The Python implementation of the gRPC helloworld.Greeter client."""
 
 from __future__ import print_function
+
 import logging
 
+import default_value_client_interceptor
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
-import default_value_client_interceptor
 
 
 def run():

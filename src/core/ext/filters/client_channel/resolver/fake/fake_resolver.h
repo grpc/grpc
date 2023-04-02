@@ -14,15 +14,21 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resolver/resolver.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
@@ -42,6 +48,8 @@ class FakeResolver;
 class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
+  static const grpc_arg_pointer_vtable kChannelArgPointerVtable;
+
   FakeResolverResponseGenerator();
   ~FakeResolverResponseGenerator() override;
 
@@ -69,11 +77,21 @@ class FakeResolverResponseGenerator
   void SetFailureOnReresolution();
 
   // Returns a channel arg containing \a generator.
+  // TODO(roth): When we have time, make this a non-static method.
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
   static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
       const grpc_channel_args* args);
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  }
+
+  static int ChannelArgsCompare(const FakeResolverResponseGenerator* a,
+                                const FakeResolverResponseGenerator* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   friend class FakeResolver;
@@ -89,4 +107,4 @@ class FakeResolverResponseGenerator
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H

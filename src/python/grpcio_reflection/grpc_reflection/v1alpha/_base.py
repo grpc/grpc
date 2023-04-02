@@ -13,10 +13,9 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
-import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
-
+import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/handshake")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_test(
     name = "client_ssl_test",
@@ -26,6 +26,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -55,6 +56,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -73,29 +75,33 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
 
-grpc_cc_test(
-    name = "handshake_verify_peer_options_test",
-    srcs = ["verify_peer_options.cc"],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+# Disabled as per b/178094682
+#grpc_cc_test(
+#    name = "handshake_verify_peer_options_test",
+#    srcs = ["verify_peer_options.cc"],
+#    data = [
+#        "//src/core/tsi/test_creds:ca.pem",
+#        "//src/core/tsi/test_creds:server1.key",
+#        "//src/core/tsi/test_creds:server1.pem",
+#    ],
+#    language = "C++",
+#    tags = ["no_mac", no_windows"],
+#    deps = [
+#        "//:gpr",
+#        "//:grpc",
+#        "//test/core/util:grpc_test_util",
+#    ],
+#)

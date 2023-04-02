@@ -1,25 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <atomic>
 #include <chrono>
@@ -36,12 +31,21 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
@@ -126,7 +130,7 @@ struct AsyncClientCall {
       simple_response_reader;
 };
 
-/** Records the remote peer distribution for a given range of RPCs. */
+/// Records the remote peer distribution for a given range of RPCs.
 class XdsStatsWatcher {
  public:
   XdsStatsWatcher(int start_id, int end_id)
@@ -463,12 +467,15 @@ class XdsUpdateClientConfigureServiceImpl
 void RunTestLoop(std::chrono::duration<double> duration_per_query,
                  StatsWatchers* stats_watchers,
                  RpcConfigurationsQueue* rpc_configs_queue) {
+  grpc::ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   TestClient client(
-      grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                          absl::GetFlag(FLAGS_secure_mode)
-                              ? grpc::experimental::XdsCredentials(
-                                    grpc::InsecureChannelCredentials())
-                              : grpc::InsecureChannelCredentials()),
+      grpc::CreateCustomChannel(
+          absl::GetFlag(FLAGS_server),
+          absl::GetFlag(FLAGS_secure_mode)
+              ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
+              : grpc::InsecureChannelCredentials(),
+          channel_args),
       stats_watchers);
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
@@ -501,7 +508,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       }
     }
   }
-  thread.join();
+  GPR_UNREACHABLE_CODE(thread.join());
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
@@ -513,9 +520,11 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   LoadBalancerStatsServiceImpl stats_service(stats_watchers);
   XdsUpdateClientConfigureServiceImpl client_config_service(rpc_configs_queue);
 
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
+  grpc::AddAdminServices(&builder);
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
@@ -572,7 +581,9 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      grpc::testing::RegisterRpcBehaviorLbPolicy);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.
   grpc_status_code code;

@@ -8,12 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/timestamp.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_Timestamp_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &google_protobuf_Timestamp_msginit,
-};
+#include "google/protobuf/timestamp.upb.h"
 
 static const char descriptor[255] = {'\n', '\037', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 't', 'i', 'm', 'e', 's', 't', 'a', 
 'm', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', 
@@ -28,13 +23,13 @@ static const char descriptor[255] = {'\n', '\037', 'g', 'o', 'o', 'g', 'l', 'e',
 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[1] = {
+static _upb_DefPool_Init *deps[1] = {
   NULL
 };
 
-upb_def_init google_protobuf_timestamp_proto_upbdefinit = {
+_upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_timestamp_proto_upb_file_layout,
   "google/protobuf/timestamp.proto",
-  UPB_STRVIEW_INIT(descriptor, 255)
+  UPB_STRINGVIEW_INIT(descriptor, 255)
 };

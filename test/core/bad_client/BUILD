@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
+load(":generate_tests.bzl", "grpc_bad_client_tests")
 
 grpc_package(name = "test/core/bad_client")
 
-licenses(["notice"])  # Apache v2
-
-load(":generate_tests.bzl", "grpc_bad_client_tests")
+licenses(["notice"])
 
 grpc_bad_client_tests()

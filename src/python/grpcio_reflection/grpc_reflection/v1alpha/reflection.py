@@ -14,11 +14,10 @@
 """Reference implementation for reflection in gRPC Python."""
 
 import sys
-import grpc
 
+import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
-
 from grpc_reflection.v1alpha._base import BaseReflectionServicer
 
 SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[
@@ -64,8 +63,9 @@ Args:
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncReflectionServicer as public API.
-    from . import _async as aio
     from grpc.experimental import aio as grpc_aio  # pylint: disable=ungrouped-imports
+
+    from . import _async as aio
 
     def enable_server_reflection(service_names, server, pool=None):
         if isinstance(server, grpc_aio.Server):

@@ -26,7 +26,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "google.golang.org/grpc/balancer/grpclb/grpc_lb_v1";
 option java_multiple_files = true;
 option java_outer_classname = "LoadBalancerProto";
-option java_package = "io.grpc.grpclb";
+option java_package = "io.grpc.lb.v1";
 
 service LoadBalancer {
   // Bidirectional rpc to get a list of servers.
@@ -97,18 +97,14 @@ message LoadBalanceResponse {
 
     // If this field is set, then the client should eagerly enter fallback
     // mode (even if there are existing, healthy connections to backends).
-    // See go/grpclb-explicit-fallback for more details.
     FallbackResponse fallback_response = 3;
   }
 }
 
+message FallbackResponse {}
+
 message InitialLoadBalanceResponse {
-  // This is an application layer redirect that indicates the client should use
-  // the specified server for load balancing. When this field is non-empty in
-  // the response, the client should open a separate connection to the
-  // load_balancer_delegate and call the BalanceLoad method. Its length should
-  // be less than 64 bytes.
-  string load_balancer_delegate = 1;
+  reserved 1; // never-used load_balancer_delegate
 
   // This interval defines how often the client should send the client stats
   // to the load balancer. Stats should only be reported when the duration is
@@ -153,5 +149,3 @@ message Server {
 
   reserved 5;
 }
-
-message FallbackResponse {}

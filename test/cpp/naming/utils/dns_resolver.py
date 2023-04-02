@@ -17,9 +17,10 @@
 import argparse
 import threading
 import time
+
+import twisted.internet.reactor as reactor
 import twisted.internet.task as task
 import twisted.names.client as client
-import twisted.internet.reactor as reactor
 
 
 def main():

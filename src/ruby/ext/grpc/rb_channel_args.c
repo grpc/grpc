@@ -19,11 +19,11 @@
 #include <ruby/ruby.h>
 
 #include "rb_channel_args.h"
+
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
-
-#include "rb_grpc.h"
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
@@ -111,6 +111,7 @@ typedef struct channel_convert_params {
 static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   ID id_size = rb_intern("size");
   VALUE grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cChannelArgs);
   channel_convert_params* params = (channel_convert_params*)as_value;
   size_t num_args = 0;
 

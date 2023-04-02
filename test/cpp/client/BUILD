@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/client")
 
@@ -34,6 +34,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:tls_test_utils",
     ],
 )
 
@@ -52,6 +53,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -70,11 +72,15 @@ grpc_cc_test(
     name = "destroy_grpclb_channel_with_active_connect_stress_test",
     srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
     external_deps = ["gtest"],
+    tags = [
+        "nomsan",  # 4/22/22 - seems to tickle the RBE compiler badly causing timeouts
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

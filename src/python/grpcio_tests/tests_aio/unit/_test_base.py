@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import functools
 import asyncio
+import functools
+import logging
 from typing import Callable
 import unittest
+
 from grpc.experimental import aio
 
 __all__ = 'AioTestBase'

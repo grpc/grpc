@@ -21,7 +21,6 @@ set -ex
 # Params:
 #  INTEROP_IMAGE - name of tag of the final interop image
 #  BASE_NAME - base name used to locate the base Dockerfile and build script
-#  TTY_FLAG - optional -t flag to make docker allocate tty
 #  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
 #    docker run command
 #  GRPC_ROOT - grpc base directory, default to top of this tree.
@@ -80,22 +79,16 @@ then
   MOUNT_ARGS+=" -v $HOME/service_account:/var/local/jenkins/service_account:ro"
 fi
 
-# Use image name based on Dockerfile checksum
-# on OSX use md5 instead of sha1sum
-if command -v sha1sum > /dev/null;
-then
-  BASE_IMAGE=${BASE_NAME}:$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
-else
-  BASE_IMAGE=${BASE_NAME}:$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
-fi
+BASE_IMAGE_DIR="tools/dockerfile/interoptest/$BASE_NAME"
+# The exact base docker image to use and its version is determined by the corresponding .current_version file
+BASE_IMAGE="$(cat "${BASE_IMAGE_DIR}.current_version")"
 
-if [ "$DOCKERHUB_ORGANIZATION" != "" ]
-then
-  BASE_IMAGE=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
-  time docker pull "$BASE_IMAGE"
+# If TTY is available, the running container can be conveniently terminated with Ctrl+C.
+if [[ -t 0 ]]; then
+  DOCKER_TTY_ARGS=("-it")
 else
-  # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
+  # The input device on kokoro is not a TTY, so -it does not work.
+  DOCKER_TTY_ARGS=()
 fi
 
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
@@ -104,14 +97,11 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 # TODO: Figure out if is safe to eliminate the suppression. It's currently here
 # because $MOUNT_ARGS and $BUILD_INTEROP_DOCKER_EXTRA_ARGS can have legitimate
 # spaces, but the "correct" way to do this is to utilize proper arrays.
-# Same for $TTY_FLAG
 # shellcheck disable=SC2086
 (docker run \
   --cap-add SYS_PTRACE \
-  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
-  -e THIS_IS_REALLY_NEEDED_ONCE_AGAIN='For issue 4835. See https://github.com/docker/docker/issues/14203 for why docker is awful' \
-  -i \
-  $TTY_FLAG \
+  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
+  "${DOCKER_TTY_ARGS[@]}" \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
   --name="$CONTAINER_NAME" \

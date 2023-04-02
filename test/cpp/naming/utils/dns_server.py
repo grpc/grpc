@@ -15,26 +15,29 @@
 """Starts a local DNS server for use in tests"""
 
 import argparse
-import sys
-import yaml
-import signal
 import os
+import platform
+import signal
+import sys
 import threading
 import time
 
 import twisted
 import twisted.internet
-import twisted.internet.reactor
-import twisted.internet.threads
 import twisted.internet.defer
 import twisted.internet.protocol
+import twisted.internet.reactor
+import twisted.internet.threads
 import twisted.names
+from twisted.names import authority
+from twisted.names import client
+from twisted.names import common
+from twisted.names import dns
+from twisted.names import server
 import twisted.names.client
 import twisted.names.dns
 import twisted.names.server
-from twisted.names import client, server, common, authority, dns
-import argparse
-import platform
+import yaml
 
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp'  # missing end '.' for twisted syntax
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
@@ -73,7 +76,7 @@ def start_local_dns_server(args):
         _push_record(name, dns.Record_TXT(*txt_data_list, ttl=r_ttl))
 
     with open(args.records_config_path) as config:
-        test_records_config = yaml.load(config)
+        test_records_config = yaml.safe_load(config)
     common_zone_name = test_records_config['resolver_tests_common_zone_name']
     for group in test_records_config['resolver_component_tests']:
         for name in group['records'].keys():

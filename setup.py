@@ -13,13 +13,14 @@
 # limitations under the License.
 """A setup module for the GRPC Python package."""
 
-# setuptools need to be imported before distutils. Otherwise it might lead to
-# undesirable behaviors or errors.
-import setuptools
+# NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
+# patch distutils
+import setuptools  # isort:skip
 
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
+
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
 
@@ -28,18 +29,19 @@ from distutils import extension as _extension
 from distutils import util
 import os
 import os.path
-import pkg_resources
+import pathlib
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
+import _metadata
+import pkg_resources
 from setuptools.command import egg_info
-
-import subprocess
-from subprocess import PIPE
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
@@ -54,6 +56,7 @@ ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting',
                                         'include'),)
 CARES_INCLUDE = (
+    os.path.join('third_party', 'cares', 'cares', 'include'),
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),
 )
@@ -84,8 +87,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
-import commands
 import grpc_core_dependencies
+
+import commands
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
@@ -96,14 +100,12 @@ LICENSE = 'Apache License 2.0'
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -154,12 +156,17 @@ BUILD_WITH_SYSTEM_CARES = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 
+# Export this variable to use the system installation of abseil. You need to
+# have the header files installed (in /usr/include/absl) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_ABSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ABSL', False)
+
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
 # This option is useful when crosscompiling wheels for aarch64 where
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
@@ -198,8 +205,8 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cxx = os.environ.get('CXX', 'c++')
-    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+    cxx = shlex.split(os.environ.get('CXX', 'c++'))
+    cpp_test = subprocess.Popen(cxx + ['-x', 'c++', '-std=c++14', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)
@@ -208,11 +215,11 @@ def check_linker_need_libatomic():
         return False
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
-    cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE)
+    cpp_test = subprocess.Popen(cxx +
+                                ['-x', 'c++', '-std=c++14', '-', '-latomic'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
@@ -227,7 +234,7 @@ def check_linker_need_libatomic():
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
+    EXTRA_ENV_COMPILE_ARGS = ' -std=c++14'
     if 'win32' in sys.platform:
         if sys.version_info < (3, 5):
             EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
@@ -244,9 +251,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
             # available dynamically
             EXTRA_ENV_COMPILE_ARGS += ' /MT'
     elif "linux" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
+        EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv -fno-exceptions'
     elif "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
+        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions -DHAVE_UNISTD_H'
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ''
@@ -260,7 +267,7 @@ if EXTRA_ENV_LINK_ARGS is None:
             ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
             ' -static -lshlwapi'.format(msvcr=msvcr))
     if "linux" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
+        EXTRA_ENV_LINK_ARGS += ' -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -296,6 +303,11 @@ if BUILD_WITH_SYSTEM_RE2:
     CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
+if BUILD_WITH_SYSTEM_ABSL:
+    CORE_C_FILES = filter(lambda x: 'third_party/abseil-cpp' not in x,
+                          CORE_C_FILES)
+    ABSL_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
@@ -311,8 +323,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -325,9 +338,28 @@ if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ('re2',)
+if BUILD_WITH_SYSTEM_ABSL:
+    EXTENSION_LIBRARIES += tuple(
+        lib.stem[3:] for lib in pathlib.Path('/usr').glob('lib*/libabsl_*.so'))
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
+
+
+# Quotes on Windows build macros are evaluated differently from other platforms,
+# so we must apply quotes asymmetrically in order to yield the proper result in
+# the binary.
+def _quote_build_define(argument):
+    if "win32" in sys.platform:
+        return '"\\\"{}\\\""'.format(argument)
+    return '"{}"'.format(argument)
+
+
+DEFINE_MACROS += (
+    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
+    ("GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
+     _quote_build_define(_metadata.__version__)),
+)
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
@@ -343,7 +375,9 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     elif LINUX_AARCH64 == boringssl_asm_platform:
         asm_key = 'crypto_linux_aarch64'
     elif "mac" in boringssl_asm_platform and "x86_64" in boringssl_asm_platform:
-        asm_key = 'crypto_mac_x86_64'
+        asm_key = 'crypto_apple_x86_64'
+    elif "mac" in boringssl_asm_platform and "arm64" in boringssl_asm_platform:
+        asm_key = 'crypto_apple_aarch64'
     else:
         print("ASM Builds for BoringSSL currently not supported on:",
               boringssl_asm_platform)
@@ -449,19 +483,14 @@ PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
-)
+INSTALL_REQUIRES = ()
+
 EXTRAS_REQUIRES = {
     'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'Sphinx~=1.8.1',
-    'six>=1.10',
-) if ENABLE_DOCUMENTATION_BUILD else ()
+    'Sphinx~=1.8.1',) if ENABLE_DOCUMENTATION_BUILD else ()
 
 try:
     import Cython
@@ -512,13 +541,20 @@ setuptools.setup(
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
+    project_urls={
+        "Source Code": "https://github.com/grpc/grpc",
+        "Bug Tracker": "https://github.com/grpc/grpc/issues",
+        'Documentation': 'https://grpc.github.io/grpc/python',
+    },
     license=LICENSE,
     classifiers=CLASSIFIERS,
+    long_description_content_type='text/x-rst',
     long_description=open(README).read(),
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
+    python_requires='>=3.7',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

@@ -23,11 +23,12 @@ let package = Package(
     .package(
       name: "abseil",
       url: "https://github.com/firebase/abseil-cpp-SwiftPM.git",
-      .revision("05d8107f2971a37e6c77245b7c4c6b0a7e97bc99")
+      "0.20220203.0"..<"0.20220204.0"
     ),
-    .package(name: "BoringSSL-GRPC",
+    .package(
+      name: "BoringSSL-GRPC",
       url: "https://github.com/firebase/boringssl-SwiftPM.git",
-      .branch("7bcafa2660bc58715c39637494550d1ed7cd7229")
+      "0.9.0"..<"0.10.0"
     ),
   ],
 
@@ -40,22 +41,13 @@ let package = Package(
       ],
       path: ".",
       exclude: [
-        "src/core/ext/filters/load_reporting/",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
-        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/load_reporting/",
         "src/core/ext/transport/cronet/",
-        "src/core/ext/upb-generated/third_party/",
-        "src/core/ext/upbdefs-generated/envoy/config/rbac/",
-        "src/core/ext/upbdefs-generated/google/api/expr/",
-        "src/core/ext/upbdefs-generated/src/",
-        "src/core/ext/upbdefs-generated/third_party/",
-        "src/core/ext/upbdefs-generated/udpa/data/",
+        "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
+        "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
         "src/core/lib/surface/init_unsecure.cc",
-        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
-        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
-        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
-        "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h",
-        "src/core/lib/security/authorization/mock_cel/statusor.h",
+        "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
         "third_party/re2/re2/testing/",
         "third_party/re2/re2/fuzzing/",
@@ -63,8 +55,7 @@ let package = Package(
         "third_party/re2/util/test.cc",
         "third_party/re2/util/fuzz.cc",
         "third_party/upb/upb/bindings/",
-        "third_party/upb/upb/json/",
-        "third_party/upb/upb/pb/",
+        "third_party/upb/upb/msg_test.cc",
       ],
       sources: [
         "src/core/ext/filters/",
@@ -78,6 +69,7 @@ let package = Package(
         "third_party/re2/re2/",
         "third_party/re2/util/",
         "third_party/upb/upb/",
+        "third_party/xxhash/xxhash.h",
       ],
       publicHeadersPath: "spm-core-include",
       cSettings: [
@@ -85,10 +77,14 @@ let package = Package(
         .headerSearchPath("include/"),
         .headerSearchPath("third_party/re2/"),
         .headerSearchPath("third_party/upb/"),
+        .headerSearchPath("third_party/xxhash/"),
         .headerSearchPath("src/core/ext/upb-generated/"),
         .headerSearchPath("src/core/ext/upbdefs-generated/"),
         .define("GRPC_ARES", to: "0"),
-        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
+      ],
+      linkerSettings: [
+        .linkedFramework("CoreFoundation"),
+        .linkedLibrary("z"),
       ]
     ),
     .target(
@@ -100,12 +96,18 @@ let package = Package(
       path: ".",
       exclude: [
         "src/cpp/client/cronet_credentials.cc",
+        "src/cpp/client/channel_test_peer.cc",
+        "src/cpp/common/alts_util.cc",
+        "src/cpp/common/alts_context.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
-        "src/cpp/ext/",
+        "src/cpp/server/admin/",
         "src/cpp/server/channelz/",
+        "src/cpp/server/csds/",
         "src/cpp/server/load_reporter/",
+        "src/cpp/ext/",
         "src/cpp/util/core_stats.cc",
         "src/cpp/util/core_stats.h",
+        "src/cpp/util/error_details.cc",
       ],
       sources: [
         "src/cpp/",
@@ -116,10 +118,16 @@ let package = Package(
         .headerSearchPath("include/"),
         .headerSearchPath("third_party/upb/"),
         .headerSearchPath("src/core/ext/upb-generated"),
-        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ]
+    ),
+    .testTarget(
+      name: "build-test",
+      dependencies: [
+        "gRPC-cpp",
+      ],
+      path: "test/spm_build"
     ),
   ],
   cLanguageStandard: .gnu11,
-  cxxLanguageStandard: .cxx11
+  cxxLanguageStandard: .cxx14
 )

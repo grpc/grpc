@@ -50,5 +50,27 @@ class ServerContext
         return $this->event->method;
     }
 
+    public function setInitialMetadata($initialMetadata)
+    {
+        $this->initialMetadata_ = $initialMetadata;
+    }
+
+    public function initialMetadata()
+    {
+        return $this->initialMetadata_;
+    }
+
+    public function setStatus($status)
+    {
+        $this->status_ = $status;
+    }
+
+    public function status()
+    {
+        return $this->status_;
+    }
+
     private $event;
+    private $initialMetadata_;
+    private $status_;
 }

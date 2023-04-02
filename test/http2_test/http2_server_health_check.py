@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import argparse
-import hyper
 import sys
+
+import hyper
 
 # Utility to healthcheck the http2 server. Used when starting the server to
 # verify that the server is live before tests begin.

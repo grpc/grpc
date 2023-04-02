@@ -28,44 +28,51 @@ namespace Grpc;
 
 class ServerCallWriter
 {
-    public function __construct($call)
+    public function __construct($call, $serverContext)
     {
         $this->call_ = $call;
+        $this->serverContext_ = $serverContext;
     }
 
     public function start(
-        array $initialMetadata,
         $data = null,
         array $options = []
     ) {
         $batch = [];
-        $this->addSendInitialMetadataOpIfNotSent($batch, $initialMetadata);
+        $this->addSendInitialMetadataOpIfNotSent(
+            $batch,
+            $this->serverContext_->initialMetadata()
+        );
         $this->addSendMessageOpIfHasData($batch, $data, $options);
         $this->call_->startBatch($batch);
     }
 
     public function write(
         $data,
-        array $options = [],
-        array $initialMetadata = null
+        array $options = []
     ) {
         $batch = [];
-        $this->addSendInitialMetadataOpIfNotSent($batch, $initialMetadata);
+        $this->addSendInitialMetadataOpIfNotSent(
+            $batch,
+            $this->serverContext_->initialMetadata()
+        );
         $this->addSendMessageOpIfHasData($batch, $data, $options);
         $this->call_->startBatch($batch);
     }
 
     public function finish(
-        array $status = null,
-        array $initialMetadata = null,
         $data = null,
         array $options = []
     ) {
         $batch = [
-            OP_SEND_STATUS_FROM_SERVER => $status ?? Status::ok(),
+            OP_SEND_STATUS_FROM_SERVER =>
+            $this->serverContext_->status() ?? Status::ok(),
             OP_RECV_CLOSE_ON_SERVER => true,
         ];
-        $this->addSendInitialMetadataOpIfNotSent($batch, $initialMetadata);
+        $this->addSendInitialMetadataOpIfNotSent(
+            $batch,
+            $this->serverContext_->initialMetadata()
+        );
         $this->addSendMessageOpIfHasData($batch, $data, $options);
         $this->call_->startBatch($batch);
     }
@@ -98,4 +105,5 @@ class ServerCallWriter
 
     private $call_;
     private $initialMetadataSent_ = false;
+    private $serverContext_;
 }

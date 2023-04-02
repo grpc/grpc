@@ -31,20 +31,19 @@ Core by extension, support for server certificate rotation.
 
 import abc
 import collections
+from concurrent import futures
+import logging
 import os
-import six
 import threading
 import unittest
-import logging
-
-from concurrent import futures
 
 import grpc
-from tests.unit import resources
-from tests.unit import test_common
+
 from tests.testing import _application_common
 from tests.testing import _server_application
 from tests.testing.proto import services_pb2_grpc
+from tests.unit import resources
+from tests.unit import test_common
 
 CA_1_PEM = resources.cert_hier_1_root_ca_cert()
 CA_2_PEM = resources.cert_hier_2_root_ca_cert()
@@ -118,8 +117,7 @@ class CertConfigFetcher(object):
                 return self._cert_config
 
 
-class _ServerSSLCertReloadTest(
-        six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
+class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
 
     def __init__(self, *args, **kwargs):
         super(_ServerSSLCertReloadTest, self).__init__(*args, **kwargs)

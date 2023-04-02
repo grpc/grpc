@@ -30,29 +30,29 @@ namespace testing {
 namespace {
 
 StringMatcher ExactMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::EXACT, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kExact, string).value();
 }
 
 StringMatcher PrefixMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::PREFIX, string,
+  return StringMatcher::Create(StringMatcher::Type::kPrefix, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher SuffixMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::SUFFIX, string,
+  return StringMatcher::Create(StringMatcher::Type::kSuffix, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher ContainsMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::CONTAINS, string,
+  return StringMatcher::Create(StringMatcher::Type::kContains, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher SafeRegexMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::SAFE_REGEX, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kSafeRegex, string).value();
 }
 
 TEST(XdsSanMatchingTest, EmptySansList) {
@@ -289,6 +289,29 @@ TEST(XdsSanMatchingTest, RegexMatch) {
       sans.data(), sans.size(), {SafeRegexMatcher("(abc|xyz).example.com")}));
 }
 
+TEST(XdsCertificateVerifierTest, CompareSuccess) {
+  XdsCertificateVerifier verifier_1(nullptr, "");
+  XdsCertificateVerifier verifier_2(nullptr, "");
+  EXPECT_EQ(verifier_1.Compare(&verifier_2), 0);
+  EXPECT_EQ(verifier_2.Compare(&verifier_1), 0);
+}
+
+TEST(XdsCertificateVerifierTest, CompareFailureDifferentCertificateProviders) {
+  XdsCertificateVerifier verifier_1(MakeRefCounted<XdsCertificateProvider>(),
+                                    "");
+  XdsCertificateVerifier verifier_2(MakeRefCounted<XdsCertificateProvider>(),
+                                    "");
+  EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
+  EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
+}
+
+TEST(XdsCertificateVerifierTest, CompareFailureDifferentClusterNames) {
+  XdsCertificateVerifier verifier_1(nullptr, "cluster1");
+  XdsCertificateVerifier verifier_2(nullptr, "cluster2");
+  EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
+  EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
+}
+
 }  // namespace
 
 }  // namespace testing
@@ -296,7 +319,7 @@ TEST(XdsSanMatchingTest, RegexMatch) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

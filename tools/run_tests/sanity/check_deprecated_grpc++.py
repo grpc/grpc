@@ -55,9 +55,7 @@ expected_files = [
     "include/grpc++/impl/codegen/channel_interface.h",
     "include/grpc++/impl/codegen/config_protobuf.h",
     "include/grpc++/impl/codegen/status.h",
-    "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/codegen/config.h",
-    "include/grpc++/impl/codegen/core_codegen_interface.h",
     "include/grpc++/impl/codegen/status_code_enum.h",
     "include/grpc++/impl/codegen/metadata_map.h",
     "include/grpc++/impl/codegen/rpc_method.h",
@@ -68,7 +66,6 @@ expected_files = [
     "include/grpc++/impl/codegen/call.h",
     "include/grpc++/impl/codegen/client_context.h",
     "include/grpc++/impl/codegen/service_type.h",
-    "include/grpc++/impl/codegen/grpc_library.h",
     "include/grpc++/impl/codegen/async_stream.h",
     "include/grpc++/impl/codegen/slice.h",
     "include/grpc++/impl/codegen/client_unary_call.h",
@@ -92,23 +89,23 @@ expected_files = [
     "include/grpc++/test/server_context_test_spouse.h"
 ]
 
-file_template = '''/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+file_template = '''//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 // DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
 // headers in include/grpcpp instead. This header exists only for backwards
@@ -134,9 +131,9 @@ if path_files.sort() != expected_files.sort():
     diff_plus = [file for file in path_files if file not in expected_files]
     diff_minus = [file for file in expected_files if file not in path_files]
     for file in diff_minus:
-        print('- ', file)
+        print(('- ', file))
     for file in diff_plus:
-        print('+ ', file)
+        print(('+ ', file))
     errors += 1
 
 if errors > 0:
@@ -161,7 +158,7 @@ for path_file in expected_files:
         fo.write(expected_content)
 
     if 0 != os.system('diff %s %s' % (path_file_expected, path_file)):
-        print('Difference found in file:', path_file)
+        print(('Difference found in file:', path_file))
         errors += 1
 
     os.remove(path_file_expected)
@@ -177,9 +174,9 @@ for root, dirs, files in os.walk('src'):
                     with open(path_file, "r") as fi:
                         content = fi.read()
                         if '#include <grpc++/' in content:
-                            print(
+                            print((
                                 'Failed: invalid include of deprecated headers in include/grpc++ in %s'
-                                % path_file)
+                                % path_file))
                             errors += 1
                 except IOError:
                     pass

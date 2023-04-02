@@ -15,10 +15,11 @@
 
 import asyncio
 import enum
+from functools import partial
 import inspect
 import logging
-from functools import partial
-from typing import AsyncIterable, Optional, Tuple
+import traceback
+from typing import AsyncIterator, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -26,9 +27,13 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._metadata import Metadata
-from ._typing import (DeserializingFunction, DoneCallbackType, MetadatumType,
-                      RequestIterableType, RequestType, ResponseType,
-                      SerializingFunction)
+from ._typing import DeserializingFunction
+from ._typing import DoneCallbackType
+from ._typing import MetadatumType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
 
 __all__ = 'AioRpcError', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
 
@@ -81,7 +86,7 @@ class AioRpcError(grpc.RpcError):
           trailing_metadata: Optional metadata that could be sent by the Server.
         """
 
-        super().__init__(self)
+        super().__init__()
         self._code = code
         self._details = details
         self._initial_metadata = initial_metadata
@@ -160,7 +165,7 @@ class Call:
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _metadata: Tuple[MetadatumType]
+    _metadata: Tuple[MetadatumType, ...]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
 
@@ -289,7 +294,7 @@ class _UnaryResponseMixin(Call):
 
 
 class _StreamResponseMixin(Call):
-    _message_aiter: AsyncIterable[ResponseType]
+    _message_aiter: AsyncIterator[ResponseType]
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
@@ -320,7 +325,7 @@ class _StreamResponseMixin(Call):
         # If the read operation failed, Core should explain why.
         await self._raise_for_status()
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         self._update_response_style(_APIStyle.ASYNC_GENERATOR)
         if self._message_aiter is None:
             self._message_aiter = self._fetch_stream_responses()
@@ -336,7 +341,7 @@ class _StreamResponseMixin(Call):
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
@@ -366,7 +371,7 @@ class _StreamRequestMixin(Call):
 
     def _init_stream_request_mixin(
             self, request_iterator: Optional[RequestIterableType]):
-        self._metadata_sent = asyncio.Event(loop=self._loop)
+        self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
         # If user passes in an async iterator, create a consumer Task.
@@ -399,18 +404,31 @@ class _StreamRequestMixin(Call):
             if inspect.isasyncgen(request_iterator) or hasattr(
                     request_iterator, '__aiter__'):
                 async for request in request_iterator:
-                    await self._write(request)
+                    try:
+                        await self._write(request)
+                    except AioRpcError as rpc_error:
+                        _LOGGER.debug(
+                            'Exception while consuming the request_iterator: %s',
+                            rpc_error)
+                        return
             else:
                 for request in request_iterator:
-                    await self._write(request)
+                    try:
+                        await self._write(request)
+                    except AioRpcError as rpc_error:
+                        _LOGGER.debug(
+                            'Exception while consuming the request_iterator: %s',
+                            rpc_error)
+                        return
 
             await self._done_writing()
-        except AioRpcError as rpc_error:
-            # Rpc status should be exposed through other API. Exceptions raised
-            # within this Task won't be retrieved by another coroutine. It's
-            # better to suppress the error than spamming users' screen.
-            _LOGGER.debug('Exception while consuming the request_iterator: %s',
-                          rpc_error)
+        except:  # pylint: disable=bare-except
+            # Client iterators can raise exceptions, which we should handle by
+            # cancelling the RPC and logging the client's error. No exceptions
+            # should escape this function.
+            _LOGGER.debug('Client request_iterator raised exception:\n%s',
+                          traceback.format_exc())
+            self.cancel()
 
     async def _write(self, request: RequestType) -> None:
         if self.done():
@@ -426,10 +444,12 @@ class _StreamRequestMixin(Call):
                                                self._request_serializer)
         try:
             await self._cython_call.send_serialized_message(serialized_request)
+        except cygrpc.InternalError:
+            await self._raise_for_status()
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            await self._raise_for_status()
+            raise
 
     async def _done_writing(self) -> None:
         if self.done():
@@ -443,7 +463,7 @@ class _StreamRequestMixin(Call):
             except asyncio.CancelledError:
                 if not self.cancelled():
                     self.cancel()
-                await self._raise_for_status()
+                raise
 
     async def write(self, request: RequestType) -> None:
         self._raise_for_different_style(_APIStyle.READER_WRITER)
@@ -582,6 +602,7 @@ class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
+            raise
 
         if self._cython_call.is_ok():
             return _common.deserialize(serialized_response,

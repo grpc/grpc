@@ -1,60 +1,66 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+#include <stddef.h>
 
+#include <atomic>
+#include <cstdint>
+#include <map>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
   "grpc.channelz_is_internal_channel"
 
-/** This is the default value for whether or not to enable channelz. If
- * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+/// This is the default value for whether or not to enable channelz. If
+/// GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value.
 #define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
-/** This is the default value for the maximum amount of memory used by trace
- * events per channel trace node. If
- * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
- * this default value. */
+/// This is the default value for the maximum amount of memory used by trace
+/// events per channel trace node. If
+/// GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+/// this default value.
 #define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
@@ -134,19 +140,19 @@ class CallCountingHelper {
     // Define the ctors so that we can use this structure in InlinedVector.
     AtomicCounterData() = default;
     AtomicCounterData(const AtomicCounterData& that)
-        : calls_started(that.calls_started.Load(MemoryOrder::RELAXED)),
-          calls_succeeded(that.calls_succeeded.Load(MemoryOrder::RELAXED)),
-          calls_failed(that.calls_failed.Load(MemoryOrder::RELAXED)),
+        : calls_started(that.calls_started.load(std::memory_order_relaxed)),
+          calls_succeeded(that.calls_succeeded.load(std::memory_order_relaxed)),
+          calls_failed(that.calls_failed.load(std::memory_order_relaxed)),
           last_call_started_cycle(
-              that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
+              that.last_call_started_cycle.load(std::memory_order_relaxed)) {}
 
-    Atomic<int64_t> calls_started{0};
-    Atomic<int64_t> calls_succeeded{0};
-    Atomic<int64_t> calls_failed{0};
-    Atomic<gpr_cycle_counter> last_call_started_cycle{0};
+    std::atomic<int64_t> calls_started{0};
+    std::atomic<int64_t> calls_succeeded{0};
+    std::atomic<int64_t> calls_failed{0};
+    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
     // Make sure the size is exactly one cache line.
-    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
-                    sizeof(Atomic<gpr_cycle_counter>)];
+    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(std::atomic<intptr_t>) -
+                    sizeof(std::atomic<gpr_cycle_counter>)];
   };
   // TODO(soheilhy,veblush): Revist this after abseil integration.
   // This has a problem when using abseil inlined_vector because it
@@ -165,8 +171,7 @@ class CallCountingHelper {
   // collects the sharded data into one CounterData struct.
   void CollectData(CounterData* out);
 
-  // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  std::vector<AtomicCounterData> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -175,6 +180,10 @@ class ChannelNode : public BaseNode {
  public:
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
+  }
 
   // Returns the string description of the given connectivity state.
   static const char* GetChannelConnectivityStateChangeString(
@@ -220,7 +229,7 @@ class ChannelNode : public BaseNode {
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
-  Atomic<int> connectivity_state_{0};
+  std::atomic<int> connectivity_state_{0};
 
   Mutex child_mu_;  // Guards sets below.
   std::set<intptr_t> child_channels_;
@@ -276,6 +285,9 @@ class SocketNode : public BaseNode {
  public:
   struct Security : public RefCounted<Security> {
     struct Tls {
+      // This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=50346
+      Tls() {}
+
       enum class NameType { kUnset = 0, kStandardName = 1, kOtherName = 2 };
       NameType type = NameType::kUnset;
       // Holds the value of standard_name or other_names if type is not kUnset.
@@ -292,6 +304,14 @@ class SocketNode : public BaseNode {
 
     Json RenderJson();
 
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_CHANNELZ_SECURITY;
+    }
+
+    static int ChannelArgsCompare(const Security* a, const Security* b) {
+      return QsortCompare(a, b);
+    }
+
     grpc_arg MakeChannelArg() const;
 
     static RefCountedPtr<Security> GetFromChannelArgs(
@@ -307,30 +327,30 @@ class SocketNode : public BaseNode {
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
   void RecordStreamSucceeded() {
-    streams_succeeded_.FetchAdd(1, MemoryOrder::RELAXED);
+    streams_succeeded_.fetch_add(1, std::memory_order_relaxed);
   }
   void RecordStreamFailed() {
-    streams_failed_.FetchAdd(1, MemoryOrder::RELAXED);
+    streams_failed_.fetch_add(1, std::memory_order_relaxed);
   }
   void RecordMessagesSent(uint32_t num_sent);
   void RecordMessageReceived();
   void RecordKeepaliveSent() {
-    keepalives_sent_.FetchAdd(1, MemoryOrder::RELAXED);
+    keepalives_sent_.fetch_add(1, std::memory_order_relaxed);
   }
 
   const std::string& remote() { return remote_; }
 
  private:
-  Atomic<int64_t> streams_started_{0};
-  Atomic<int64_t> streams_succeeded_{0};
-  Atomic<int64_t> streams_failed_{0};
-  Atomic<int64_t> messages_sent_{0};
-  Atomic<int64_t> messages_received_{0};
-  Atomic<int64_t> keepalives_sent_{0};
-  Atomic<gpr_cycle_counter> last_local_stream_created_cycle_{0};
-  Atomic<gpr_cycle_counter> last_remote_stream_created_cycle_{0};
-  Atomic<gpr_cycle_counter> last_message_sent_cycle_{0};
-  Atomic<gpr_cycle_counter> last_message_received_cycle_{0};
+  std::atomic<int64_t> streams_started_{0};
+  std::atomic<int64_t> streams_succeeded_{0};
+  std::atomic<int64_t> streams_failed_{0};
+  std::atomic<int64_t> messages_sent_{0};
+  std::atomic<int64_t> messages_received_{0};
+  std::atomic<int64_t> keepalives_sent_{0};
+  std::atomic<gpr_cycle_counter> last_local_stream_created_cycle_{0};
+  std::atomic<gpr_cycle_counter> last_remote_stream_created_cycle_{0};
+  std::atomic<gpr_cycle_counter> last_message_sent_cycle_{0};
+  std::atomic<gpr_cycle_counter> last_message_received_cycle_{0};
   std::string local_;
   std::string remote_;
   RefCountedPtr<Security> const security_;
@@ -351,4 +371,4 @@ class ListenSocketNode : public BaseNode {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNELZ_H */
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H

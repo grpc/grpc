@@ -16,14 +16,13 @@
 # This file is auto-generated
 
 import argparse
-import sys
-import subprocess
-import tempfile
 import os
-import time
-import signal
 import platform
-
+import signal
+import subprocess
+import sys
+import tempfile
+import time
 
 argp = argparse.ArgumentParser(description='Run c-ares resolver tests')
 argp.add_argument('--test_bin_path', default=None, type=str,

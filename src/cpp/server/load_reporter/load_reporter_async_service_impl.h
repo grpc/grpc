@@ -1,33 +1,45 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
-#define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
+#ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
+#define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
 
 #include <grpc/support/port_platform.h>
+
+#include <stdint.h>
+
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
 
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/async_stream.h>
+#include <grpcpp/support/interceptor.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
+#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -142,14 +154,14 @@ class LoadReporterAsyncServiceImpl
 
     // The data for RPC communication with the load reportee.
     ServerContext ctx_;
-    ::grpc::lb::v1::LoadReportRequest request_;
+    grpc::lb::v1::LoadReportRequest request_;
 
     // The members passed down from LoadReporterAsyncServiceImpl.
     ServerCompletionQueue* cq_;
     LoadReporterAsyncServiceImpl* service_;
     LoadReporter* load_reporter_;
-    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
-                            ::grpc::lb::v1::LoadReportRequest>
+    ServerAsyncReaderWriter<grpc::lb::v1::LoadReportResponse,
+                            grpc::lb::v1::LoadReportRequest>
         stream_;
 
     // The status of the RPC progress.
@@ -184,7 +196,7 @@ class LoadReporterAsyncServiceImpl
   // don't enqueue new tags into cq_ after it is already shut down.
   grpc_core::Mutex cq_shutdown_mu_;
   std::atomic_bool shutdown_{false};
-  std::unique_ptr<::grpc_core::Thread> thread_;
+  std::unique_ptr<grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
   std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };
@@ -192,4 +204,4 @@ class LoadReporterAsyncServiceImpl
 }  // namespace load_reporter
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
+#endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
