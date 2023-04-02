@@ -6165,7 +6165,6 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/end2end/custom_fixtures.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
@@ -8487,6 +8486,7 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/h2_ssl_cert_test.cc
   deps:
