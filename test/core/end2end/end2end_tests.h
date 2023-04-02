@@ -26,7 +26,6 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
-#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -50,7 +49,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"

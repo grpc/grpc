@@ -489,7 +489,6 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//src/core:bitset",
         "//src/core:channel_args",
-        "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
         "//test/core/util:grpc_test_util",

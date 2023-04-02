@@ -13,11 +13,15 @@
 // limitations under the License.
 
 #include <inttypes.h>
+#include <string.h>
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <initializer_list>
+#include <map>
 #include <memory>
+#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,6 +45,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -1053,15 +1058,6 @@ INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  // TODO(ctiller) when re-enabling trace tests, re-enable this
-#ifdef GPR_WINDOWS
-  // on Windows, writing logs to stderr is very slow
-  // when stderr is redirected to a disk file.
-  // The "trace" tests fixtures generates large amount
-  // of logs, so setting a buffer for stderr prevents certain
-  // test cases from timing out.
-  // setvbuf(stderr, NULL, _IOLBF, 1024);
-#endif
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // TODO(ctiller): make this per fixture?
