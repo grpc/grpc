@@ -46,7 +46,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "test/core/end2end/custom_fixtures.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_oauth2_common.h"
 #include "test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h"
@@ -875,10 +874,6 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
 #endif
   };
-  auto custom_fixtures = CustomFixtures();
-  for (auto& fixture : custom_fixtures) {
-    configs.emplace_back(std::move(fixture));
-  }
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;

@@ -102,11 +102,43 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "end2end_test_lib",
+    testonly = 1,
+    srcs = [
+        "end2end_tests.cc",
+    ],
+    hdrs = [
+        "end2end_tests.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/random",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+        "gtest",
+    ],
+    deps = [
+        "cq_verifier",
+        "//:config",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//src/core:bitset",
+        "//src/core:channel_args",
+        "//src/core:no_destruct",
+        "//src/core:slice",
+        "//src/core:time",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_library(
     name = "fixture_support",
     testonly = 1,
     srcs = ["fixtures/local_util.cc"],
     hdrs = [
-        "end2end_tests.h",
         "fixtures/h2_oauth2_common.h",
         "fixtures/h2_ssl_cred_reload_fixture.h",
         "fixtures/h2_ssl_tls_common.h",
@@ -118,19 +150,15 @@ grpc_cc_library(
         "tests/cancel_test_helpers.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
     language = "C++",
     deps = [
-        "cq_verifier",
+        "end2end_test_lib",
         "//:config",
-        "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -138,7 +166,6 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_transport_chttp2",
         "//:ref_counted_ptr",
-        "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
@@ -146,21 +173,10 @@ grpc_cc_library(
         "//src/core:grpc_ssl_credentials",
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
-        "//src/core:no_destruct",
         "//src/core:slice",
-        "//src/core:time",
         "//src/core:transport_fwd",
         "//test/core/util:grpc_test_util",
     ],
-)
-
-# This library gets overridden internally to add some extra fixtures.
-grpc_cc_library(
-    name = "custom_fixtures",
-    testonly = 1,
-    srcs = [],
-    hdrs = ["custom_fixtures.h"],
-    deps = ["fixture_support"],
 )
 
 grpc_cc_test(
@@ -168,7 +184,6 @@ grpc_cc_test(
     timeout = "long",
     srcs = [
         "end2end_test_main.cc",
-        "end2end_tests.cc",
         "tests/bad_ping.cc",
         "tests/binary_metadata.cc",
         "tests/call_creds.cc",
@@ -265,8 +280,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
-        "absl/memory",
-        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -278,7 +291,7 @@ grpc_cc_test(
     tags = ["core_end2end_test"],
     deps = [
         "cq_verifier",
-        "custom_fixtures",
+        "end2end_test_lib",
         "fixture_support",
         "http_proxy",
         "proxy",
@@ -465,6 +478,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "end2end_test_lib",
         "fixture_support",
         "ssl_test_data",
         "//:config_vars",
