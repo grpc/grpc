@@ -47,6 +47,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/lib/transport/simple_slice_based_metadata.h"
 
 namespace grpc_core {
 
@@ -226,22 +227,6 @@ struct GrpcAcceptEncodingMetadata {
   static absl::string_view DisplayValue(ValueType x) { return x.ToString(); }
   static absl::string_view DisplayMemento(MementoType x) {
     return DisplayValue(x);
-  }
-};
-
-struct SimpleSliceBasedMetadata {
-  using ValueType = Slice;
-  using MementoType = Slice;
-  static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
-    return value.TakeOwned();
-  }
-  static ValueType MementoToValue(MementoType value) { return value; }
-  static Slice Encode(const ValueType& x) { return x.Ref(); }
-  static absl::string_view DisplayValue(const ValueType& value) {
-    return value.as_string_view();
-  }
-  static absl::string_view DisplayMemento(const MementoType& value) {
-    return value.as_string_view();
   }
 };
 
