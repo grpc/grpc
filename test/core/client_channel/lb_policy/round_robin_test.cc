@@ -86,31 +86,14 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
     }
   }
 
-  // Picker should return each address in any order.
-  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
-                             absl::Span<const absl::string_view> uris,
-                             size_t iterations_per_uri = 3,
-                             SourceLocation location = SourceLocation()) {
-    absl::optional<size_t> expected;
-    for (size_t i = 0; i < iterations_per_uri * uris.size(); ++i) {
-      auto address = ExpectPickComplete(picker);
-      ASSERT_TRUE(address.has_value())
-          << location.file() << ":" << location.line();
-      auto index = std::find(uris.begin(), uris.end(), *address) - uris.begin();
-      ASSERT_LT(index, uris.size())
-          << "Missing " << *address << "\n"
-          << location.file() << ":" << location.line();
-      if (expected.has_value()) {
-        EXPECT_EQ(index, *expected)
-            << "Got " << *address << ", expected " << uris[index] << "\n"
-            << location.file() << ":" << location.line();
-      }
-      expected = (index + 1) % uris.size();
-    }
-  }
-
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
+
+TEST_F(RoundRobinTest, Basic) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  ExpectStartup(kAddresses);
+}
 
 TEST_F(RoundRobinTest, SingleAddress) {
   auto status =
@@ -298,12 +281,6 @@ TEST_F(RoundRobinTest, AddressListChange) {
   picker = WaitForConnected();
   ExpectRoundRobinPicks(picker.get(),
                         {"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"});
-}
-
-TEST_F(RoundRobinTest, Basic) {
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  ExpectStartup(kAddresses);
 }
 
 TEST_F(RoundRobinTest, AddressUpdates) {
