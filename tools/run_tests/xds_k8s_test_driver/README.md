@@ -30,6 +30,11 @@ changes to this codebase at the moment.
 
 `kubectl` can be installed via `gcloud components install kubectl`, or system package manager: https://kubernetes.io/docs/tasks/tools/#kubectl
 
+Python3 venv tool may need to be installed from APT on some Ubuntu systems:
+```shell
+sudo apt-get install python3-venv
+```
+
 ##### Getting Started
 
 1. If you haven't, [initialize](https://cloud.google.com/sdk/docs/install-sdk) gcloud SDK
@@ -175,12 +180,6 @@ export KUBE_CONTEXT="$(kubectl config current-context)"
 ```shell
 # Create python virtual environment
 python3 -m venv venv
-
-# On some Ubuntu systems previous command may fail with the message saying:
-#   "Error: name 'cmd' is not defined"
-# Run the commands below if this error is printed:
-# sudo apt-get install python3-venv
-# python3 -m venv venv
 
 # Activate virtual environment
 . ./venv/bin/activate
