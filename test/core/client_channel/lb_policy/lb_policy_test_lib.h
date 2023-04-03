@@ -201,7 +201,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << location.file() << ":" << location.line();
           break;
         case GRPC_CHANNEL_READY:
-          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+          ASSERT_THAT(to_state,
+                      ::testing::AnyOf(GRPC_CHANNEL_IDLE,
+                                       GRPC_CHANNEL_TRANSIENT_FAILURE))
               << ConnectivityStateName(from_state) << "=>"
               << ConnectivityStateName(to_state) << "\n"
               << location.file() << ":" << location.line();
@@ -226,12 +228,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                               const absl::Status& status = absl::OkStatus(),
                               SourceLocation location = SourceLocation()) {
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        EXPECT_FALSE(status.ok())
-            << "bug in test: TRANSIENT_FAILURE must have non-OK status";
+        EXPECT_FALSE(status.ok()) << "bug in test: TRANSIENT_FAILURE must have "
+                                  << "non-OK status\n"
+                                  << location.file() << ":" << location.line();
       } else {
         EXPECT_TRUE(status.ok())
             << "bug in test: " << ConnectivityStateName(state)
-            << " must have OK status: " << status;
+            << " must have OK status: " << status << "\n"
+            << location.file() << ":" << location.line();
       }
       MutexLock lock(&mu_);
       AssertValidConnectivityStateTransition(state_tracker_.state(), state,
@@ -370,6 +374,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       ReresolutionRequested result = *reresolution;
       queue_.pop_front();
       return result;
+    }
+
+    // Returns the most recent event from the LB policy, or nullopt if
+    // there have been no events.
+    absl::optional<absl::variant<StateUpdate, ReresolutionRequested>>
+    GetEvent() {
+      MutexLock lock(&mu_);
+      if (queue_.empty()) return absl::nullopt;
+      Event event = std::move(queue_.front());
+      queue_.pop_front();
+      return std::move(event);
     }
 
    private:
@@ -738,6 +753,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return retval;
   }
 
+  bool WaitForConnectionFailedWithStatus(
+      const absl::Status& expected_status,
+      SourceLocation location = SourceLocation()) {
+    return WaitForConnectionFailed(
+        [&](const absl::Status& status) {
+          EXPECT_EQ(status, expected_status)
+              << location.file() << ":" << location.line();
+        },
+        location);
+  }
+
   // Expects a state update for the specified state and status, and then
   // expects the resulting picker to queue picks.
   void ExpectStateAndQueuingPicker(
@@ -927,7 +953,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
-                                  const ChannelArgs& args = ChannelArgs()) {
+                                  ChannelArgs args = ChannelArgs()) {
     SubchannelKey key(MakeAddress(address), args);
     auto it = subchannel_pool_.find(key);
     if (it == subchannel_pool_.end()) return nullptr;

@@ -16,18 +16,28 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <array>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -76,8 +86,219 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
     }
   }
 
+  // Picker should return each address in any order.
+  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
+                             absl::Span<const absl::string_view> uris,
+                             size_t iterations_per_uri = 3,
+                             SourceLocation location = SourceLocation()) {
+    absl::optional<size_t> expected;
+    for (size_t i = 0; i < iterations_per_uri * uris.size(); ++i) {
+      auto address = ExpectPickComplete(picker);
+      ASSERT_TRUE(address.has_value())
+          << location.file() << ":" << location.line();
+      auto index = std::find(uris.begin(), uris.end(), *address) - uris.begin();
+      ASSERT_LT(index, uris.size())
+          << "Missing " << *address << "\n"
+          << location.file() << ":" << location.line();
+      if (expected.has_value()) {
+        EXPECT_EQ(index, *expected)
+            << "Got " << *address << ", expected " << uris[index] << "\n"
+            << location.file() << ":" << location.line();
+      }
+      expected = (index + 1) % uris.size();
+    }
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
+
+TEST_F(RoundRobinTest, SingleAddress) {
+  auto status =
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  auto subchannel = FindSubchannel("ipv4:127.0.0.1:441");
+  ASSERT_NE(subchannel, nullptr);
+  // LB policy should have requested a connection on this subchannel.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // Subchannel is ready
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  // Picker should return the same subchannel repeatedly.
+  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  ExpectConnectingUpdate();
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate();
+  // There's a failure
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("a test"));
+  auto expected_status = absl::UnavailableError(
+      "connections to all backends failing; "
+      "last error: UNAVAILABLE: a test");
+  ExpectReresolutionRequest();
+  WaitForConnectionFailedWithStatus(expected_status);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  WaitForConnectionFailedWithStatus(expected_status);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  WaitForConnectionFailedWithStatus(expected_status);
+  // ... and a recovery!
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
+}
+
+TEST_F(RoundRobinTest, ThreeAddresses) {
+  std::array<absl::string_view, 3> addresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto status = ApplyUpdate(BuildUpdate(addresses), lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  ExpectConnectingUpdate();
+  std::vector<SubchannelState*> subchannels;
+  for (const auto& address : addresses) {
+    auto subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr) << address;
+    subchannels.push_back(subchannel);
+    EXPECT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  }
+  for (size_t i = 0; i < subchannels.size(); i++) {
+    subchannels[i]->SetConnectivityState(GRPC_CHANNEL_READY);
+    // For the first subchannel, we use WaitForConnected() to drain any queued
+    // CONNECTING updates.  For each successive subchannel, we can read just
+    // one READY update at a time.
+    auto picker = i == 0 ? WaitForConnected() : ExpectState(GRPC_CHANNEL_READY);
+    ASSERT_NE(picker, nullptr);
+    ExpectRoundRobinPicks(
+        picker.get(),
+        absl::Span<const absl::string_view>(addresses).subspan(0, i + 1));
+  }
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  auto picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {addresses[0], addresses[2]});
+  EXPECT_TRUE(subchannels[1]->ConnectionRequested());
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = WaitForConnected();
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                       absl::UnknownError("This is a test"));
+  ExpectReresolutionRequest();
+  picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {addresses[0], addresses[2]});
+}
+
+TEST_F(RoundRobinTest, OneChannelReady) {
+  auto subchannel = CreateSubchannel("ipv4:127.0.0.1:441");
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto status = ApplyUpdate(BuildUpdate({
+                                "ipv4:127.0.0.1:441",
+                                "ipv4:127.0.0.1:442",
+                                "ipv4:127.0.0.1:443",
+                            }),
+                            lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  ExpectConnectingUpdate();
+  ExpectState(GRPC_CHANNEL_READY);
+  ExpectState(GRPC_CHANNEL_READY);
+  ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
+                        {"ipv4:127.0.0.1:441"});
+}
+
+TEST_F(RoundRobinTest, AllTransientFailure) {
+  auto status = ApplyUpdate(BuildUpdate({
+                                "ipv4:127.0.0.1:441",
+                                "ipv4:127.0.0.1:442",
+                                "ipv4:127.0.0.1:443",
+                            }),
+                            lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  ExpectConnectingUpdate();
+  for (auto address : {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}) {
+    auto subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    WaitForConnected();
+    subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                     absl::UnknownError("error1"));
+    ExpectReresolutionRequest();
+    ExpectConnectingUpdate();
+  }
+  auto third_subchannel = FindSubchannel("ipv4:127.0.0.1:443");
+  ASSERT_NE(third_subchannel, nullptr);
+  third_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  third_subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  WaitForConnected();
+  third_subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                         absl::UnknownError("error2"));
+  ExpectReresolutionRequest();
+  WaitForConnectionFailedWithStatus(
+      absl::UnavailableError("connections to all backends failing; "
+                             "last error: UNKNOWN: error2"));
+}
+
+TEST_F(RoundRobinTest, EmptyAddressList) {
+  LoadBalancingPolicy::UpdateArgs update_args;
+  update_args.resolution_note = "This is a test";
+  update_args.addresses.emplace();
+  absl::Status status = ApplyUpdate(std::move(update_args), lb_policy_.get());
+  EXPECT_EQ(status,
+            absl::UnavailableError("empty address list: This is a test"));
+  WaitForConnectionFailedWithStatus(
+      absl::UnavailableError("empty address list: This is a test"));
+  // Fixes memory leaks. Will debug at a later point.
+  EXPECT_TRUE(
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get()).ok());
+  ExpectConnectingUpdate();
+}
+
+TEST_F(RoundRobinTest, AddressListChange) {
+  std::array<SubchannelState*, 3> subchannels = {
+      CreateSubchannel("ipv4:127.0.0.1:441"),
+      CreateSubchannel("ipv4:127.0.0.1:442"),
+      CreateSubchannel("ipv4:127.0.0.1:443"),
+  };
+  for (auto subchannel : subchannels) {
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  }
+  // A subchannel that is ready. Gets picked all the time.
+  auto status =
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  ExpectConnectingUpdate();
+  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
+  // A second subchannel added, connecting. Only the first subchannel gets
+  // picked still
+  status =
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
+                  lb_policy_.get());
+  ASSERT_TRUE(status.ok()) << status;
+  picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
+  // Second subchannel ready. Both subchannels are now picked.
+  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(),
+                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"});
+  // First address removed, third added and made ready. First subchannel should
+  // not show up.
+  status =
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"}),
+                  lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  subchannels[2]->SetConnectivityState(GRPC_CHANNEL_READY, {});
+  WaitForConnected();
+  picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(),
+                        {"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"});
+}
 
 TEST_F(RoundRobinTest, Basic) {
   const std::array<absl::string_view, 3> kAddresses = {
