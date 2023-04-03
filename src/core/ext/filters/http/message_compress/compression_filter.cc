@@ -111,7 +111,7 @@ CompressionFilter::CompressionFilter(const ChannelArgs& args)
 MessageHandle CompressionFilter::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-    gpr_log(GPR_ERROR, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
+    gpr_log(GPR_INFO, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
             message->payload()->Length(), algorithm, message->flags());
   }
   auto* call_context = GetContext<grpc_call_context_element>();
@@ -169,7 +169,7 @@ MessageHandle CompressionFilter::CompressMessage(
 absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
     MessageHandle message, DecompressArgs args) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-    gpr_log(GPR_ERROR, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
+    gpr_log(GPR_INFO, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
             message->payload()->Length(),
             args.max_recv_message_length.value_or(-1), args.algorithm);
   }
