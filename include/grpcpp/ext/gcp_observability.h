@@ -39,10 +39,12 @@ class Observability {
   // main(). The return value helps determine whether observability was
   // successfully enabled or not. On success, an object of class `Observability`
   // is returned. When this object goes out of scope, GCP Observability stats,
-  // tracing and logging data is flushed. On failure, the status and status
-  // message can be used to determine the cause of failure. It is up to the
-  // applications to either crash on failure, or continue without GCP
-  // observability being enabled.
+  // tracing and logging data is flushed. On failure, the status message can be
+  // used to determine the cause of failure. It is up to the applications to
+  // either crash on failure, or continue without GCP observability being
+  // enabled. The status codes do not have any special meaning at present, and
+  // users should not make any assumptions based on the status code, other than
+  // a non-OK status code meaning that observability initialization failed.
   //
   // Please look at
   // https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_client.cc
