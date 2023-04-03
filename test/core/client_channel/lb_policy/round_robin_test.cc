@@ -237,49 +237,6 @@ TEST_F(RoundRobinTest, EmptyAddressList) {
   ExpectConnectingUpdate();
 }
 
-TEST_F(RoundRobinTest, AddressListChange) {
-  std::array<SubchannelState*, 3> subchannels = {
-      CreateSubchannel("ipv4:127.0.0.1:441"),
-      CreateSubchannel("ipv4:127.0.0.1:442"),
-      CreateSubchannel("ipv4:127.0.0.1:443"),
-  };
-  for (auto subchannel : subchannels) {
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  }
-  // A subchannel that is ready. Gets picked all the time.
-  auto status =
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get());
-  ASSERT_TRUE(status.ok()) << status;
-  ExpectConnectingUpdate();
-  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_READY);
-  auto picker = WaitForConnected();
-  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
-  // A second subchannel added, connecting. Only the first subchannel gets
-  // picked still
-  status =
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
-                  lb_policy_.get());
-  ASSERT_TRUE(status.ok()) << status;
-  picker = WaitForConnected();
-  ExpectRoundRobinPicks(picker.get(), {"ipv4:127.0.0.1:441"});
-  // Second subchannel ready. Both subchannels are now picked.
-  subchannels[1]->SetConnectivityState(GRPC_CHANNEL_READY);
-  picker = WaitForConnected();
-  ExpectRoundRobinPicks(picker.get(),
-                        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"});
-  // First address removed, third added and made ready. First subchannel should
-  // not show up.
-  status =
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"}),
-                  lb_policy_.get());
-  EXPECT_TRUE(status.ok()) << status;
-  subchannels[2]->SetConnectivityState(GRPC_CHANNEL_READY, {});
-  WaitForConnected();
-  picker = WaitForConnected();
-  ExpectRoundRobinPicks(picker.get(),
-                        {"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"});
-}
-
 TEST_F(RoundRobinTest, AddressUpdates) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
