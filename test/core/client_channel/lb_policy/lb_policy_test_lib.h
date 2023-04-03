@@ -376,17 +376,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return result;
     }
 
-    // Returns the most recent event from the LB policy, or nullopt if
-    // there have been no events.
-    absl::optional<absl::variant<StateUpdate, ReresolutionRequested>>
-    GetEvent() {
-      MutexLock lock(&mu_);
-      if (queue_.empty()) return absl::nullopt;
-      Event event = std::move(queue_.front());
-      queue_.pop_front();
-      return std::move(event);
-    }
-
    private:
     // Represents an event reported by the LB policy.
     using Event = absl::variant<StateUpdate, ReresolutionRequested>;
@@ -953,7 +942,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
-                                  ChannelArgs args = ChannelArgs()) {
+                                  const ChannelArgs& args = ChannelArgs()) {
     SubchannelKey key(MakeAddress(address), args);
     auto it = subchannel_pool_.find(key);
     if (it == subchannel_pool_.end()) return nullptr;
