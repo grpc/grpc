@@ -15,13 +15,17 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_SIMPLE_SLICE_BASED_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_SIMPLE_SLICE_BASED_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
 namespace grpc_core {
 
 // Models grpc metadata (as per the rules for MetadataMap) for a metadata
-// element that consists of a grpc_core::Slice.
+// element that consists of a Slice.
 // Use by deriving from this class and adding `kRepeatable` and `key()`.
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
@@ -41,4 +45,4 @@ struct SimpleSliceBasedMetadata {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_SIMPLE_SLICE_BASED_METADATA_H
