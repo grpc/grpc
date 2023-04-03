@@ -18,24 +18,23 @@
 
 #include <algorithm>
 #include <array>
-#include <map>
-#include <memory>
+#include <initializer_list>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
