@@ -34,7 +34,7 @@ inline std::string GetCommentsHelper(const DescriptorType* desc, bool leading,
   return grpc_generator::GetPrefixedComments(desc, leading, prefix);
 }
 
-class ProtoBufMethod : public grpc_generator::Method {
+class ProtoBufMethod implements grpc_generator::Method {
  public:
   ProtoBufMethod(const grpc::protobuf::MethodDescriptor* method)
       : method_(method) {}
@@ -102,7 +102,7 @@ class ProtoBufMethod : public grpc_generator::Method {
   const grpc::protobuf::MethodDescriptor* method_;
 };
 
-class ProtoBufService : public grpc_generator::Service {
+class ProtoBufService implements grpc_generator::Service {
  public:
   ProtoBufService(const grpc::protobuf::ServiceDescriptor* service)
       : service_(service) {}
@@ -131,7 +131,7 @@ class ProtoBufService : public grpc_generator::Service {
   const grpc::protobuf::ServiceDescriptor* service_;
 };
 
-class ProtoBufPrinter : public grpc_generator::Printer {
+class ProtoBufPrinter implements grpc_generator::Printer {
  public:
   ProtoBufPrinter(std::string* str)
       : output_stream_(str), printer_(&output_stream_, '$') {}
@@ -151,7 +151,7 @@ class ProtoBufPrinter : public grpc_generator::Printer {
   grpc::protobuf::io::Printer printer_;
 };
 
-class ProtoBufFile : public grpc_generator::File {
+class ProtoBufFile implements grpc_generator::File {
  public:
   ProtoBufFile(const grpc::protobuf::FileDescriptor* file) : file_(file) {}
 

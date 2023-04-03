@@ -285,7 +285,7 @@ class PartySyncUsingMutex {
 };
 
 // A Party is an Activity with multiple participant promises.
-class Party : public Activity, private Wakeable {
+class Party implements Activity, private Wakeable {
  private:
   // Non-owning wakeup handle.
   class Handle;
@@ -369,7 +369,7 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(Arena* arena, size_t initial_refs)
+  explicit Party(Arena * arena, size_t initial_refs)
       : sync_(initial_refs), arena_(arena) {}
   ~Party() override;
 
@@ -394,7 +394,7 @@ class Party : public Activity, private Wakeable {
   // Concrete implementation of a participant for some promise & oncomplete
   // type.
   template <typename SuppliedFactory, typename OnComplete>
-  class ParticipantImpl final : public Participant {
+  class ParticipantImpl final implements Participant {
     using Factory = promise_detail::OncePromiseFactory<void, SuppliedFactory>;
     using Promise = typename Factory::Promise;
 
@@ -458,7 +458,7 @@ class Party : public Activity, private Wakeable {
   // Organize to wake up some participants.
   void ScheduleWakeup(WakeupMask mask);
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
-  void AddParticipants(Participant** participant, size_t count);
+  void AddParticipants(Participant * *participant, size_t count);
 
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;

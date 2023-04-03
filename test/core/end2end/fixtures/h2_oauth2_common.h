@@ -32,7 +32,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 
-class Oauth2Fixture : public SecureFixture {
+class Oauth2Fixture implements SecureFixture {
  public:
   explicit Oauth2Fixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}

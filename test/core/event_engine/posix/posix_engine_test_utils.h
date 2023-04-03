@@ -26,7 +26,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class TestScheduler : public Scheduler {
+class TestScheduler implements Scheduler {
  public:
   explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}

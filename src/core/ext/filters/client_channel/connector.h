@@ -36,7 +36,7 @@ namespace grpc_core {
 // Interface for connection-establishment functionality.
 // Each transport that supports client channels (e.g., not inproc) must
 // supply an implementation of this.
-class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
+class SubchannelConnector implements InternallyRefCounted<SubchannelConnector> {
  public:
   struct Args {
     // Address to connect to.

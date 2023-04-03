@@ -66,7 +66,7 @@ inline void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-class TlsFixture : public SecureFixture {
+class TlsFixture implements SecureFixture {
  public:
   TlsFixture(SecurityPrimitives::TlsVersion tls_version,
              SecurityPrimitives::ProviderType provider_type,

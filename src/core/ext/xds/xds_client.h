@@ -54,13 +54,14 @@ namespace grpc_core {
 extern TraceFlag grpc_xds_client_trace;
 extern TraceFlag grpc_xds_client_refcount_trace;
 
-class XdsClient : public DualRefCounted<XdsClient> {
+class XdsClient implements DualRefCounted<XdsClient> {
  public:
   // Resource watcher interface.  Implemented by callers.
   // Note: Most callers will not use this API directly but rather via a
   // resource-type-specific wrapper API provided by the relevant
   // XdsResourceType implementation.
-  class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
+  class ResourceWatcherInterface implements
+      RefCounted<ResourceWatcherInterface> {
    public:
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
@@ -171,7 +172,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  class ChannelState : public DualRefCounted<ChannelState> {
+  class ChannelState implements DualRefCounted<ChannelState> {
    public:
     template <typename T>
     class RetryableCall;

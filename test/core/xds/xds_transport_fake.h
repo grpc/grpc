@@ -41,7 +41,7 @@
 
 namespace grpc_core {
 
-class FakeXdsTransportFactory : public XdsTransportFactory {
+class FakeXdsTransportFactory implements XdsTransportFactory {
  private:
   class FakeXdsTransport;
 
@@ -52,7 +52,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   static constexpr char kLrsMethod[] =
       "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
 
-  class FakeStreamingCall : public XdsTransport::StreamingCall {
+  class FakeStreamingCall implements XdsTransport::StreamingCall {
    public:
     FakeStreamingCall(
         RefCountedPtr<FakeXdsTransport> transport, const char* method,
@@ -85,7 +85,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool Orphaned();
 
    private:
-    class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
+    class RefCountedEventHandler implements RefCounted<RefCountedEventHandler> {
      public:
       explicit RefCountedEventHandler(
           std::unique_ptr<StreamingCall::EventHandler> event_handler)
@@ -154,7 +154,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   void Orphan() override { Unref(); }
 
  private:
-  class FakeXdsTransport : public XdsTransport {
+  class FakeXdsTransport implements XdsTransport {
    public:
     FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_failure,
                      bool auto_complete_messages_from_client,

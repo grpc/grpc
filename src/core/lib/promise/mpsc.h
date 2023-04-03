@@ -43,7 +43,7 @@ namespace mpscpipe_detail {
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
 template <typename T>
-class Center : public RefCounted<Center<T>> {
+class Center implements RefCounted<Center<T>> {
  public:
   // Construct the center with a maximum queue size.
   explicit Center(size_t max_queued) : max_queued_(max_queued) {}

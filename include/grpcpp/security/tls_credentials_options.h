@@ -122,7 +122,7 @@ class TlsCredentialsOptions {
 // in the system default locations, and assume client won't provide any
 // identity certificates(single side TLS).
 // It is used for experimental purposes for now and it is subject to change.
-class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
+class TlsChannelCredentialsOptions final implements TlsCredentialsOptions {
  public:
   // Sets the decision of whether to do a crypto check on the server certs.
   // The default is true.
@@ -133,7 +133,7 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
 
 // Contains configurable options on the server side.
 // It is used for experimental purposes for now and it is subject to change.
-class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
+class TlsServerCredentialsOptions final implements TlsCredentialsOptions {
  public:
   // Server side is required to use a provider, because server always needs to
   // use identity certs.

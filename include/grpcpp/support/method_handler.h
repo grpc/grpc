@@ -96,7 +96,7 @@ void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
 template <class ServiceType, class RequestType, class ResponseType,
           class BaseRequestType = RequestType,
           class BaseResponseType = ResponseType>
-class RpcMethodHandler : public grpc::internal::MethodHandler {
+class RpcMethodHandler implements grpc::internal::MethodHandler {
  public:
   RpcMethodHandler(
       std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
@@ -138,7 +138,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
 
 /// A wrapper class of an application provided client streaming handler.
 template <class ServiceType, class RequestType, class ResponseType>
-class ClientStreamingHandler : public grpc::internal::MethodHandler {
+class ClientStreamingHandler implements grpc::internal::MethodHandler {
  public:
   ClientStreamingHandler(
       std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
@@ -186,7 +186,7 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
 
 /// A wrapper class of an application provided server streaming handler.
 template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler : public grpc::internal::MethodHandler {
+class ServerStreamingHandler implements grpc::internal::MethodHandler {
  public:
   ServerStreamingHandler(std::function<grpc::Status(
                              ServiceType*, grpc::ServerContext*,
@@ -257,7 +257,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
 /// Instead, it is expected to be an implicitly-captured argument of func
 /// (through bind or something along those lines)
 template <class Streamer, bool WriteNeeded>
-class TemplatedBidiStreamingHandler : public grpc::internal::MethodHandler {
+class TemplatedBidiStreamingHandler implements grpc::internal::MethodHandler {
  public:
   explicit TemplatedBidiStreamingHandler(
       std::function<grpc::Status(grpc::ServerContext*, Streamer*)> func)
@@ -353,7 +353,7 @@ class SplitServerStreamingHandler
 /// General method handler class for errors that prevent real method use
 /// e.g., handle unknown method by returning UNIMPLEMENTED error.
 template <grpc::StatusCode code>
-class ErrorMethodHandler : public grpc::internal::MethodHandler {
+class ErrorMethodHandler implements grpc::internal::MethodHandler {
  public:
   explicit ErrorMethodHandler(const std::string& message) : message_(message) {}
 

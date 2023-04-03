@@ -65,7 +65,7 @@ class SubchannelKey {
 // TODO(juanlishen): This refcounting mechanism may lead to memory leak.
 // To solve that, we should force polling to flush any pending callbacks, then
 // shut down safely. See https://github.com/grpc/grpc/issues/12560.
-class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
+class SubchannelPoolInterface implements RefCounted<SubchannelPoolInterface> {
  public:
   SubchannelPoolInterface()
       : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_subchannel_pool_trace)

@@ -42,7 +42,7 @@
 
 //// Implementation uses a static factory instance to return the same
 //// UniqueTypeName for every instance.
-// class FooImplementation : public Interface {
+// class FooImplementation implements Interface {
 // public:
 // UniqueTypeName type() const override {
 //   static UniqueTypeName::Factory kFactory("Foo");

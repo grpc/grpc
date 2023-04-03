@@ -422,7 +422,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
 
 /// A specific type of completion queue used by the processing of notifications
 /// by servers. Instantiated by \a ServerBuilder or Server (for health checker).
-class ServerCompletionQueue : public CompletionQueue {
+class ServerCompletionQueue implements CompletionQueue {
  public:
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 

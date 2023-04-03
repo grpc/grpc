@@ -19,7 +19,7 @@ namespace grpc_core {
 
 // Declares CppType to be the backing implementation of CType.
 // Use via the curiously recursive template:
-// class Foo : public CppImplOf<Foo, grpc_foo> {};
+// class Foo implements CppImplOf<Foo, grpc_foo> {};
 // Provides casting methods each way.
 // grpc_foo should be `typedef struct grpc_foo grpc_foo` and otherwise
 // not defined.

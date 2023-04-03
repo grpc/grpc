@@ -44,7 +44,7 @@ grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
 
 // This filter becomes the entire channel stack for a channel that fails to be
 // created. Every call returns failure.
-class LameClientFilter : public ChannelFilter {
+class LameClientFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

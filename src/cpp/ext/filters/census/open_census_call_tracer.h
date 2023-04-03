@@ -62,9 +62,9 @@
 namespace grpc {
 namespace internal {
 
-class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
+class OpenCensusCallTracer implements grpc_core::ClientCallTracer {
  public:
-  class OpenCensusCallAttemptTracer : public CallAttemptTracer {
+  class OpenCensusCallAttemptTracer implements CallAttemptTracer {
    public:
     OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
                                 uint64_t attempt_num, bool is_transparent_retry,

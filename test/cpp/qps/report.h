@@ -71,7 +71,7 @@ class Reporter {
 };
 
 /// A composite for all reporters to be considered.
-class CompositeReporter : public Reporter {
+class CompositeReporter implements Reporter {
  public:
   CompositeReporter() : Reporter("CompositeReporter") {}
 
@@ -91,7 +91,7 @@ class CompositeReporter : public Reporter {
 };
 
 /// Reporter to gpr_log(GPR_INFO).
-class GprLogReporter : public Reporter {
+class GprLogReporter implements Reporter {
  public:
   explicit GprLogReporter(const string& name) : Reporter(name) {}
 
@@ -106,7 +106,7 @@ class GprLogReporter : public Reporter {
 };
 
 /// Dumps the report to a JSON file.
-class JsonReporter : public Reporter {
+class JsonReporter implements Reporter {
  public:
   JsonReporter(const string& name, const string& report_file)
       : Reporter(name), report_file_(report_file) {}
@@ -123,7 +123,7 @@ class JsonReporter : public Reporter {
   const string report_file_;
 };
 
-class RpcReporter : public Reporter {
+class RpcReporter implements Reporter {
  public:
   RpcReporter(const string& name, const std::shared_ptr<grpc::Channel>& channel)
       : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}

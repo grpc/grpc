@@ -167,7 +167,7 @@ class IntraActivityWaiter {
 // Activity execution may be cancelled by simply deleting the activity. In such
 // a case, if execution had not already finished, the done callback would be
 // called with absl::CancelledError().
-class Activity : public Orphanable {
+class Activity implements Orphanable {
  public:
   // Force wakeup from the outside.
   // This should be rarely needed, and usages should be accompanied with a note
@@ -279,12 +279,12 @@ template <typename HeldContext>
 using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
 
 template <typename... Contexts>
-class ActivityContexts : public ContextHolder<Contexts>... {
+class ActivityContexts implements ContextHolder<Contexts>... {
  public:
   explicit ActivityContexts(Contexts&&... contexts)
       : ContextHolder<Contexts>(std::forward<Contexts>(contexts))... {}
 
-  class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
+  class ScopedContext implements Context<ContextTypeFromHeld<Contexts>>... {
    public:
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
@@ -307,7 +307,7 @@ class ActivityContexts : public ContextHolder<Contexts>... {
 // everywhere. So we use inheritance to provide the Wakeable interface: this
 // makes it zero sized, and we make the inheritance private to prevent
 // accidental casting.
-class FreestandingActivity : public Activity, private Wakeable {
+class FreestandingActivity implements Activity, private Wakeable {
  public:
   Waker MakeOwningWaker() final {
     Ref();

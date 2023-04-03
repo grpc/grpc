@@ -34,7 +34,7 @@ struct ContextType;  // IWYU pragma: keep
 namespace promise_detail {
 
 template <typename T>
-class Context : public ContextType<T> {
+class Context implements ContextType<T> {
  public:
   explicit Context(T* p) : old_(current_) { current_ = p; }
   ~Context() { current_ = old_; }

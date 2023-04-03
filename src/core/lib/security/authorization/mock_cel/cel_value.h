@@ -86,7 +86,7 @@ class CelValue {
 };
 
 // CelMap implementation that uses STL map container as backing storage.
-class ContainerBackedMapImpl : public CelMap {
+class ContainerBackedMapImpl implements CelMap {
  public:
   ContainerBackedMapImpl() = default;
 

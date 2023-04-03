@@ -81,7 +81,7 @@ class MethodHandler {
 };
 
 /// Server side rpc method class
-class RpcServiceMethod : public RpcMethod {
+class RpcServiceMethod implements RpcMethod {
  public:
   /// Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,

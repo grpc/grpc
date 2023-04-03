@@ -33,7 +33,7 @@ class Call;
 /// and as it is-a CompletionQueueTag, also massages the final
 /// completion into the correct form for consumption in the C++
 /// API.
-class CallOpSetInterface : public CompletionQueueTag {
+class CallOpSetInterface implements CompletionQueueTag {
  public:
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.

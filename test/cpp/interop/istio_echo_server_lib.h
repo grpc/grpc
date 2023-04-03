@@ -22,7 +22,7 @@
 namespace grpc {
 namespace testing {
 
-class EchoTestServiceImpl : public proto::EchoTestService::Service {
+class EchoTestServiceImpl implements proto::EchoTestService::Service {
  public:
   EchoTestServiceImpl(std::string hostname, std::string service_version,
                       std::string forwarding_address);

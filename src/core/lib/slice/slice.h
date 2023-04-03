@@ -238,8 +238,8 @@ struct StaticConstructors {
 
 }  // namespace slice_detail
 
-class StaticSlice : public slice_detail::BaseSlice,
-                    public slice_detail::StaticConstructors<StaticSlice> {
+class StaticSlice implements slice_detail::BaseSlice,
+    public slice_detail::StaticConstructors<StaticSlice> {
  public:
   StaticSlice() = default;
   explicit StaticSlice(const grpc_slice& slice)
@@ -253,7 +253,7 @@ class StaticSlice : public slice_detail::BaseSlice,
     SetCSlice(other.c_slice());
     return *this;
   }
-  StaticSlice(StaticSlice&& other) noexcept
+  StaticSlice(StaticSlice && other) noexcept
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
   StaticSlice& operator=(StaticSlice&& other) noexcept {
     Swap(&other);

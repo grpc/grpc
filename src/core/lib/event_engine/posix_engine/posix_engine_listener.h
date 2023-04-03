@@ -122,7 +122,7 @@ class PosixEngineListenerImpl
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
   };
-  class ListenerAsyncAcceptors : public ListenerSocketsContainer {
+  class ListenerAsyncAcceptors implements ListenerSocketsContainer {
    public:
     explicit ListenerAsyncAcceptors(PosixEngineListenerImpl* listener)
         : listener_(listener){};
@@ -192,7 +192,7 @@ class PosixEngineListenerImpl
       memory_allocator_factory_;
 };
 
-class PosixEngineListener : public PosixListenerWithFdSupport {
+class PosixEngineListener implements PosixListenerWithFdSupport {
  public:
   PosixEngineListener(
       PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
@@ -238,7 +238,7 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #include "src/core/lib/gprpp/crash.h"
 
-class PosixEngineListener : public PosixListenerWithFdSupport {
+class PosixEngineListener implements PosixListenerWithFdSupport {
  public:
   PosixEngineListener() = default;
   ~PosixEngineListener() override = default;

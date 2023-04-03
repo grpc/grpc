@@ -39,7 +39,7 @@
 namespace grpc_core {
 
 // Handles calling out to credentials to fill in metadata per call.
-class ClientAuthFilter final : public ChannelFilter {
+class ClientAuthFilter final implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -62,7 +62,7 @@ class ClientAuthFilter final : public ChannelFilter {
   grpc_call_credentials::GetRequestMetadataArgs args_;
 };
 
-class ServerAuthFilter final : public ChannelFilter {
+class ServerAuthFilter final implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

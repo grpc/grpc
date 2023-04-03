@@ -33,7 +33,7 @@ namespace grpc_core {
 
 // The global subchannel pool. It shares subchannels among channels. There
 // should be only one instance of this class.
-class GlobalSubchannelPool final : public SubchannelPoolInterface {
+class GlobalSubchannelPool final implements SubchannelPoolInterface {
  public:
   // Gets the singleton instance.
   static RefCountedPtr<GlobalSubchannelPool> instance();

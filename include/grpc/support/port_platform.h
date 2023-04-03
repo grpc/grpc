@@ -764,7 +764,8 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 /* MSVC doesn't do the empty base class optimization in debug builds by default,
  * and because of ABI likely won't.
  * This enables it for specific types, use as:
- * class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Foo : public A, public B, public C
+ * class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Foo implements A, public B, public
+ * C
  * {}; */
 #ifndef GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND
 #ifdef GPR_WINDOWS

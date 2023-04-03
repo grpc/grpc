@@ -117,7 +117,7 @@ class TestServiceSignaller {
 };
 
 template <typename RpcService>
-class TestMultipleServiceImpl : public RpcService {
+class TestMultipleServiceImpl implements RpcService {
  public:
   TestMultipleServiceImpl() : signal_client_(false), host_() {}
   explicit TestMultipleServiceImpl(const std::string& host)

@@ -29,7 +29,7 @@
 
 namespace grpc {
 
-class ChannelzService final : public channelz::v1::Channelz::Service {
+class ChannelzService final implements channelz::v1::Channelz::Service {
  private:
   // implementation of GetTopChannels rpc
   Status GetTopChannels(

@@ -26,7 +26,7 @@
 
 namespace grpc_binder {
 
-class WireReader : public grpc_core::InternallyRefCounted<WireReader> {
+class WireReader implements grpc_core::InternallyRefCounted<WireReader> {
  public:
   ~WireReader() override = default;
   virtual std::shared_ptr<WireWriter> SetupTransport(

@@ -68,7 +68,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   grpc_core::UniqueTypeName type() const override;
 
  private:
-  class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
+  class PendingRequest implements grpc_core::RefCounted<PendingRequest> {
    public:
     PendingRequest(grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
                    grpc_core::ClientMetadataHandle initial_metadata,

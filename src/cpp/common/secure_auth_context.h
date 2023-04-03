@@ -31,7 +31,7 @@
 
 namespace grpc {
 
-class SecureAuthContext final : public AuthContext {
+class SecureAuthContext final implements AuthContext {
  public:
   explicit SecureAuthContext(grpc_auth_context* ctx)
       : ctx_(ctx != nullptr ? ctx->Ref() : nullptr) {}

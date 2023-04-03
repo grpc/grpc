@@ -94,7 +94,7 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 /// returned by \a interested_parties().
 // TODO(roth): Once we move to EventManager-based polling, remove the
 // interested_parties() hooks from the API.
-class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
+class LoadBalancingPolicy implements InternallyRefCounted<LoadBalancingPolicy> {
  public:
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
@@ -260,7 +260,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Currently, pickers are always accessed from within the
   /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
-  class SubchannelPicker : public DualRefCounted<SubchannelPicker> {
+  class SubchannelPicker implements DualRefCounted<SubchannelPicker> {
    public:
     SubchannelPicker();
 
@@ -309,7 +309,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Interface for configuration data used by an LB policy implementation.
   /// Individual implementations will create a subclass that adds methods to
   /// return the parameters they need.
-  class Config : public RefCounted<Config> {
+  class Config implements RefCounted<Config> {
    public:
     ~Config() override = default;
 
@@ -384,7 +384,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
-  class QueuePicker : public SubchannelPicker {
+  class QueuePicker implements SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
@@ -399,7 +399,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PickResult::Fail for all picks.
-  class TransientFailurePicker : public SubchannelPicker {
+  class TransientFailurePicker implements SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 

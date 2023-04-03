@@ -33,7 +33,8 @@
 
 namespace grpc_core {
 
-class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
+class UrlExternalAccountCredentials final implements
+    ExternalAccountCredentials {
  public:
   static RefCountedPtr<UrlExternalAccountCredentials> Create(
       Options options, std::vector<std::string> scopes,

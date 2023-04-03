@@ -51,7 +51,7 @@ namespace grpc_core {
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// work_serializer passed to the constructor.
-class Resolver : public InternallyRefCounted<Resolver> {
+class Resolver implements InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
   struct Result {

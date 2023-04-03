@@ -37,7 +37,7 @@ namespace grpc_core {
 // CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy().
 // Once instantiated, this object will automatically take care of constructing
 // the child policy as needed upon receiving an update.
-class ChildPolicyHandler : public LoadBalancingPolicy {
+class ChildPolicyHandler implements LoadBalancingPolicy {
  public:
   ChildPolicyHandler(Args args, TraceFlag* tracer)
       : LoadBalancingPolicy(std::move(args)), tracer_(tracer) {}

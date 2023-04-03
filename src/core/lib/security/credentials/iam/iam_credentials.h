@@ -35,7 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 
-class grpc_google_iam_credentials : public grpc_call_credentials {
+class grpc_google_iam_credentials implements grpc_call_credentials {
  public:
   grpc_google_iam_credentials(const char* token,
                               const char* authority_selector);

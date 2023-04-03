@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-class MockAuthorizationEndpoint : public grpc_endpoint {
+class MockAuthorizationEndpoint implements grpc_endpoint {
  public:
   MockAuthorizationEndpoint(absl::string_view local_uri,
                             absl::string_view peer_uri)

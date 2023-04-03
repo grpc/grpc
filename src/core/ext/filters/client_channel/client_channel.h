@@ -179,7 +179,8 @@ class ClientChannel {
 
   // Represents a pending connectivity callback from an external caller
   // via grpc_client_channel_watch_connectivity_state().
-  class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
+  class ExternalConnectivityWatcher implements
+      ConnectivityStateWatcherInterface {
    public:
     ExternalConnectivityWatcher(ClientChannel* chand,
                                 grpc_polling_entity pollent,

@@ -109,8 +109,8 @@ class TlsChannelSecurityConnector final
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
   // |security_connector_|.
-  class TlsChannelCertificateWatcher : public grpc_tls_certificate_distributor::
-                                           TlsCertificatesWatcherInterface {
+  class TlsChannelCertificateWatcher implements
+      grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
    public:
     explicit TlsChannelCertificateWatcher(
         TlsChannelSecurityConnector* security_connector)
@@ -174,7 +174,8 @@ class TlsChannelSecurityConnector final
 };
 
 // Server security connector using TLS as transport security protocol.
-class TlsServerSecurityConnector final : public grpc_server_security_connector {
+class TlsServerSecurityConnector final implements
+    grpc_server_security_connector {
  public:
   // static factory method to create a TLS server security connector.
   static RefCountedPtr<grpc_server_security_connector>
@@ -219,8 +220,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
   // |security_connector_|.
-  class TlsServerCertificateWatcher : public grpc_tls_certificate_distributor::
-                                          TlsCertificatesWatcherInterface {
+  class TlsServerCertificateWatcher implements
+      grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
    public:
     explicit TlsServerCertificateWatcher(
         TlsServerSecurityConnector* security_connector)

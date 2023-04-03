@@ -40,7 +40,7 @@ class ExecutionPath {
 
 // Implementation of the CelExpression that utilizes flattening
 // of the expression tree.
-class CelExpressionFlatImpl : public CelExpression {
+class CelExpressionFlatImpl implements CelExpression {
   // Constructs CelExpressionFlatImpl instance.
   // path is flat execution path that is based upon
   // flattened AST tree. Max iterations dictates the maximum number of

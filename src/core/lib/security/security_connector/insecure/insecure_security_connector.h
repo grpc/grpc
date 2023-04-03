@@ -77,7 +77,8 @@ class InsecureChannelSecurityConnector
   int cmp(const grpc_security_connector* other_sc) const override;
 };
 
-class InsecureServerSecurityConnector : public grpc_server_security_connector {
+class InsecureServerSecurityConnector implements
+    grpc_server_security_connector {
  public:
   explicit InsecureServerSecurityConnector(
       RefCountedPtr<grpc_server_credentials> server_creds)

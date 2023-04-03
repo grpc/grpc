@@ -42,7 +42,7 @@ namespace grpc_core {
 #define GRPC_ARG_PARSE_RBAC_METHOD_CONFIG \
   "grpc.internal.parse_rbac_method_config"
 
-class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
+class RbacMethodParsedConfig implements ServiceConfigParser::ParsedConfig {
  public:
   explicit RbacMethodParsedConfig(std::vector<Rbac> rbac_policies) {
     for (auto& rbac_policy : rbac_policies) {
@@ -65,7 +65,7 @@ class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
   std::vector<GrpcAuthorizationEngine> authorization_engines_;
 };
 
-class RbacServiceConfigParser : public ServiceConfigParser::Parser {
+class RbacServiceConfigParser implements ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for rbac filter.

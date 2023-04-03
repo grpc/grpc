@@ -37,7 +37,7 @@ namespace grpc_core {
 UniqueTypeName XdsOverrideHostTypeName();
 
 // A filter to provide cookie-based stateful session affinity.
-class StatefulSessionFilter : public ChannelFilter {
+class StatefulSessionFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

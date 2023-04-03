@@ -29,7 +29,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class IOCP final : public Poller {
+class IOCP final implements Poller {
  public:
   explicit IOCP(Executor* executor) noexcept;
   ~IOCP();

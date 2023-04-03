@@ -42,14 +42,14 @@ namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for
 // LB policies to access internal call attributes.
-class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
+class ClientChannelLbCallState implements LoadBalancingPolicy::CallState {
  public:
   virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Provides access to the
 // CallDispatchController.
-class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
+class ClientChannelServiceConfigCallData implements ServiceConfigCallData {
  public:
   ClientChannelServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,

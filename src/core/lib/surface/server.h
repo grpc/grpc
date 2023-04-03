@@ -70,8 +70,8 @@ namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
-class Server : public InternallyRefCounted<Server>,
-               public CppImplOf<Server, grpc_server> {
+class Server implements InternallyRefCounted<Server>,
+    public CppImplOf<Server, grpc_server> {
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
@@ -104,7 +104,7 @@ class Server : public InternallyRefCounted<Server>,
   /// Interface for listeners.
   /// Implementations must override the Orphan() method, which should stop
   /// listening and initiate destruction of the listener.
-  class ListenerInterface : public Orphanable {
+  class ListenerInterface implements Orphanable {
    public:
     ~ListenerInterface() override = default;
 

@@ -32,7 +32,7 @@
 
 namespace grpc_core {
 
-class HttpClientFilter : public ChannelFilter {
+class HttpClientFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

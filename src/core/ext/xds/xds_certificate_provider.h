@@ -45,7 +45,7 @@
 
 namespace grpc_core {
 
-class XdsCertificateProvider : public grpc_tls_certificate_provider {
+class XdsCertificateProvider implements grpc_tls_certificate_provider {
  public:
   XdsCertificateProvider();
   ~XdsCertificateProvider() override;

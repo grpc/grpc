@@ -42,10 +42,10 @@ namespace experimental {
 
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
 // EventEngine is shut down before we shut down iomgr.
-class WindowsEventEngine : public EventEngine,
-                           public grpc_core::KeepsGrpcInitialized {
+class WindowsEventEngine implements EventEngine,
+    public grpc_core::KeepsGrpcInitialized {
  public:
-  class WindowsDNSResolver : public EventEngine::DNSResolver {
+  class WindowsDNSResolver implements EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
@@ -71,21 +71,20 @@ class WindowsEventEngine : public EventEngine,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-  ConnectionHandle Connect(OnConnectCallback on_connect,
-                           const ResolvedAddress& addr,
-                           const EndpointConfig& args,
-                           MemoryAllocator memory_allocator,
-                           Duration timeout) override;
+  ConnectionHandle Connect(
+      OnConnectCallback on_connect, const ResolvedAddress& addr,
+      const EndpointConfig& args, MemoryAllocator memory_allocator,
+      Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
-  void Run(Closure* closure) override;
+  void Run(Closure * closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
-  TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override;
+  TaskHandle RunAfter(Duration when, Closure * closure) override;
+  TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure)
+      override;
   bool Cancel(TaskHandle handle) override;
 
   // Retrieve the base executor.
@@ -114,7 +113,7 @@ class WindowsEventEngine : public EventEngine,
   };
 
   // A poll worker which schedules itself unless kicked
-  class IOCPWorkClosure : public EventEngine::Closure {
+  class IOCPWorkClosure implements EventEngine::Closure {
    public:
     explicit IOCPWorkClosure(Executor* executor, IOCP* iocp);
     void Run() override;
@@ -132,12 +131,12 @@ class WindowsEventEngine : public EventEngine,
   // CancelConnect called from within the deadline timer.
   // In this case, the connection_state->mu is already locked, and timer
   // cancellation is not possible.
-  bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
+  bool CancelConnectFromDeadlineTimer(ConnectionState * connection_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
   // Completes the connection cancellation logic after checking handle validity
   // and optionally cancelling deadline timers.
-  bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
+  bool CancelConnectInternalStateLocked(ConnectionState * connection_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
   struct TimerClosure;

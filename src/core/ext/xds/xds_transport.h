@@ -32,13 +32,13 @@
 namespace grpc_core {
 
 // A factory for creating new XdsTransport instances.
-class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
+class XdsTransportFactory implements InternallyRefCounted<XdsTransportFactory> {
  public:
   // Represents a transport for xDS communication (e.g., a gRPC channel).
-  class XdsTransport : public InternallyRefCounted<XdsTransport> {
+  class XdsTransport implements InternallyRefCounted<XdsTransport> {
    public:
     // Represents a bidi streaming RPC call.
-    class StreamingCall : public InternallyRefCounted<StreamingCall> {
+    class StreamingCall implements InternallyRefCounted<StreamingCall> {
      public:
       // An interface for handling events on a streaming call.
       class EventHandler {

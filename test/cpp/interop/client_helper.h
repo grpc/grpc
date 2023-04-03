@@ -68,7 +68,7 @@ class InteropClientContextInspector {
   const grpc::ClientContext& context_;
 };
 
-class AdditionalMetadataInterceptor : public experimental::Interceptor {
+class AdditionalMetadataInterceptor implements experimental::Interceptor {
  public:
   explicit AdditionalMetadataInterceptor(
       std::multimap<std::string, std::string> additional_metadata)
@@ -105,7 +105,7 @@ class AdditionalMetadataInterceptorFactory
   const std::multimap<std::string, std::string> additional_metadata_;
 };
 
-class MetadataAndStatusLoggerInterceptor : public experimental::Interceptor {
+class MetadataAndStatusLoggerInterceptor implements experimental::Interceptor {
  public:
   explicit MetadataAndStatusLoggerInterceptor() {}
 

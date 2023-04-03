@@ -39,7 +39,7 @@ struct GeneratorConfiguration {
   std::vector<std::string> prefixes_to_filter;
 };
 
-class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class PythonGrpcGenerator implements grpc::protobuf::compiler::CodeGenerator {
  public:
   PythonGrpcGenerator(const GeneratorConfiguration& config);
   ~PythonGrpcGenerator();

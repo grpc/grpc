@@ -35,7 +35,7 @@
 namespace grpc {
 namespace internal {
 
-class OpenCensusClientFilter : public grpc_core::ChannelFilter {
+class OpenCensusClientFilter implements grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

@@ -37,7 +37,7 @@ namespace mock_cel {
 
 // CelExpressionBuilder implementation.
 // Builds instances of CelExpressionFlatImpl.
-class FlatExprBuilder : public CelExpressionBuilder {
+class FlatExprBuilder implements CelExpressionBuilder {
  public:
   FlatExprBuilder() = default;
 

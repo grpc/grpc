@@ -141,7 +141,7 @@ namespace promise_filter_detail {
 
 // Proxy channel filter for initialization failure, since we must leave a
 // valid filter in place.
-class InvalidChannelFilter : public ChannelFilter {
+class InvalidChannelFilter implements ChannelFilter {
  public:
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs, NextPromiseFactory) override {
@@ -150,7 +150,7 @@ class InvalidChannelFilter : public ChannelFilter {
 };
 
 // Call data shared between all implementations of promise-based filters.
-class BaseCallData : public Activity, private Wakeable {
+class BaseCallData implements Activity, private Wakeable {
  protected:
   // Hook to allow interception of messages on the send/receive path by
   // PipeSender and PipeReceiver, as appropriate according to whether we're
@@ -166,7 +166,7 @@ class BaseCallData : public Activity, private Wakeable {
     virtual ~Interceptor() = default;
   };
 
-  BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args,
+  BaseCallData(grpc_call_element * elem, const grpc_call_element_args* args,
                uint8_t flags,
                absl::FunctionRef<Interceptor*()> make_send_interceptor,
                absl::FunctionRef<Interceptor*()> make_recv_interceptor);
@@ -174,7 +174,7 @@ class BaseCallData : public Activity, private Wakeable {
  public:
   ~BaseCallData() override;
 
-  void set_pollent(grpc_polling_entity* pollent) {
+  void set_pollent(grpc_polling_entity * pollent) {
     GPR_ASSERT(nullptr ==
                pollent_.exchange(pollent, std::memory_order_release));
   }
@@ -190,7 +190,7 @@ class BaseCallData : public Activity, private Wakeable {
     finalization_.Run(final_info);
   }
 
-  virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
+  virtual void StartBatch(grpc_transport_stream_op_batch * batch) = 0;
 
  protected:
   class ScopedContext
@@ -284,13 +284,13 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static Arena::PoolPtr<grpc_metadata_batch> WrapMetadata(
-      grpc_metadata_batch* p) {
+  static Arena::PoolPtr<grpc_metadata_batch> WrapMetadata(grpc_metadata_batch *
+                                                          p) {
     return Arena::PoolPtr<grpc_metadata_batch>(p,
                                                Arena::PooledDeleter(nullptr));
   }
 
-  class ReceiveInterceptor final : public Interceptor {
+  class ReceiveInterceptor final implements Interceptor {
    public:
     explicit ReceiveInterceptor(Arena* arena) : pipe_{arena} {}
 
@@ -317,7 +317,7 @@ class BaseCallData : public Activity, private Wakeable {
     PipeReceiver<MessageHandle>* receiver_ = nullptr;
   };
 
-  class SendInterceptor final : public Interceptor {
+  class SendInterceptor final implements Interceptor {
    public:
     explicit SendInterceptor(Arena* arena) : pipe_{arena} {}
 
@@ -538,7 +538,7 @@ class BaseCallData : public Activity, private Wakeable {
            elem_;
   }
 
-  virtual void WakeInsideCombiner(Flusher* flusher) = 0;
+  virtual void WakeInsideCombiner(Flusher * flusher) = 0;
 
   virtual absl::string_view ClientOrServerString() const = 0;
   std::string LogTag() const;
@@ -565,7 +565,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
-class ClientCallData : public BaseCallData {
+class ClientCallData implements BaseCallData {
  public:
   ClientCallData(grpc_call_element* elem, const grpc_call_element_args* args,
                  uint8_t flags);
@@ -678,7 +678,7 @@ class ClientCallData : public BaseCallData {
   ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
-class ServerCallData : public BaseCallData {
+class ServerCallData implements BaseCallData {
  public:
   ServerCallData(grpc_call_element* elem, const grpc_call_element_args* args,
                  uint8_t flags);
@@ -795,14 +795,14 @@ class CallData;
 
 // Client implementation of call data.
 template <>
-class CallData<FilterEndpoint::kClient> : public ClientCallData {
+class CallData<FilterEndpoint::kClient> implements ClientCallData {
  public:
   using ClientCallData::ClientCallData;
 };
 
 // Server implementation of call data.
 template <>
-class CallData<FilterEndpoint::kServer> : public ServerCallData {
+class CallData<FilterEndpoint::kServer> implements ServerCallData {
  public:
   using ServerCallData::ServerCallData;
 };
@@ -903,7 +903,7 @@ struct ChannelFilterWithFlagsMethods {
 }  // namespace promise_filter_detail
 
 // F implements ChannelFilter and :
-// class SomeChannelFilter : public ChannelFilter {
+// class SomeChannelFilter implements ChannelFilter {
 //  public:
 //   static absl::StatusOr<SomeChannelFilter> Create(
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);

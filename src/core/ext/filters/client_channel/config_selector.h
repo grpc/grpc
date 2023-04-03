@@ -48,7 +48,7 @@ namespace grpc_core {
 
 // Internal API used to allow resolver implementations to override
 // MethodConfig and provide input to LB policies on a per-call basis.
-class ConfigSelector : public RefCounted<ConfigSelector> {
+class ConfigSelector implements RefCounted<ConfigSelector> {
  public:
   // An interface to be used by the channel when dispatching calls.
   class CallDispatchController {
@@ -117,7 +117,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
-class DefaultConfigSelector : public ConfigSelector {
+class DefaultConfigSelector implements ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {

@@ -33,7 +33,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class WindowsEventEngineListener : public EventEngine::Listener {
+class WindowsEventEngineListener implements EventEngine::Listener {
  public:
   WindowsEventEngineListener(
       IOCP* iocp, AcceptCallback accept_cb,
@@ -73,7 +73,7 @@ class WindowsEventEngineListener : public EventEngine::Listener {
    private:
     struct AsyncIOState;
 
-    class OnAcceptCallbackWrapper : public EventEngine::Closure {
+    class OnAcceptCallbackWrapper implements EventEngine::Closure {
      public:
       void Run() override;
       void Prime(std::shared_ptr<AsyncIOState> io_state);

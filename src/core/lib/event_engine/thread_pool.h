@@ -41,7 +41,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class ThreadPool final : public Forkable, public Executor {
+class ThreadPool final implements Forkable, public Executor {
  public:
   ThreadPool();
   // Asserts Quiesce was called.
@@ -51,7 +51,7 @@ class ThreadPool final : public Forkable, public Executor {
 
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
-  void Run(EventEngine::Closure* closure) override;
+  void Run(EventEngine::Closure * closure) override;
 
   // Forkable
   // Ensures that the thread pool is empty before forking.

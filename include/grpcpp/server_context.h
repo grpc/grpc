@@ -494,7 +494,7 @@ class ServerContextBase {
   ContextAllocator* context_allocator_ = nullptr;
   experimental::CallMetricRecorder* call_metric_recorder_ = nullptr;
 
-  class Reactor : public grpc::ServerUnaryReactor {
+  class Reactor implements grpc::ServerUnaryReactor {
    public:
     void OnCancel() override {}
     void OnDone() override {}
@@ -514,7 +514,7 @@ class ServerContextBase {
   }
   grpc::Status test_status() const { return test_unary_->status(); }
 
-  class TestServerCallbackUnary : public grpc::ServerCallbackUnary {
+  class TestServerCallbackUnary implements grpc::ServerCallbackUnary {
    public:
     TestServerCallbackUnary(ServerContextBase* ctx,
                             std::function<void(grpc::Status)> func)
@@ -568,7 +568,7 @@ class ServerContextBase {
 /// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
 ///
 /// \warning ServerContext instances should \em not be reused across rpcs.
-class ServerContext : public ServerContextBase {
+class ServerContext implements ServerContextBase {
  public:
   ServerContext() {}  // for async calls
 
@@ -608,7 +608,7 @@ class ServerContext : public ServerContextBase {
   ServerContext& operator=(const ServerContext&) = delete;
 };
 
-class CallbackServerContext : public ServerContextBase {
+class CallbackServerContext implements ServerContextBase {
  public:
   /// Public constructors are for direct use only by mocking tests. In practice,
   /// these objects will be owned by the library.

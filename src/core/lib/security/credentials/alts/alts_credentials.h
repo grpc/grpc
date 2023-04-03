@@ -32,7 +32,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 // Main struct for grpc ALTS channel credential.
-class grpc_alts_credentials final : public grpc_channel_credentials {
+class grpc_alts_credentials final implements grpc_channel_credentials {
  public:
   grpc_alts_credentials(const grpc_alts_credentials_options* options,
                         const char* handshaker_service_url);
@@ -61,7 +61,7 @@ class grpc_alts_credentials final : public grpc_channel_credentials {
 };
 
 // Main struct for grpc ALTS server credential.
-class grpc_alts_server_credentials final : public grpc_server_credentials {
+class grpc_alts_server_credentials final implements grpc_server_credentials {
  public:
   grpc_alts_server_credentials(const grpc_alts_credentials_options* options,
                                const char* handshaker_service_url);

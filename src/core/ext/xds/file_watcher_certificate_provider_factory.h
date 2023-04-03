@@ -36,7 +36,7 @@ namespace grpc_core {
 class FileWatcherCertificateProviderFactory
     : public CertificateProviderFactory {
  public:
-  class Config : public CertificateProviderFactory::Config {
+  class Config implements CertificateProviderFactory::Config {
    public:
     static RefCountedPtr<Config> Parse(const Json& config_json,
                                        grpc_error_handle* error);

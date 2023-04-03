@@ -36,7 +36,7 @@ namespace load_reporter {
 
 // The plugin that registers and starts load reporting service when starting a
 // server.
-class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
+class LoadReportingServiceServerBuilderPlugin implements ServerBuilderPlugin {
  public:
   ~LoadReportingServiceServerBuilderPlugin() override = default;
   std::string name() override { return "load_reporting_service"; }

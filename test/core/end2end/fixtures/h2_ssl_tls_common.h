@@ -31,7 +31,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 
-class SslTlsFixture : public SecureFixture {
+class SslTlsFixture implements SecureFixture {
  public:
   explicit SslTlsFixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}

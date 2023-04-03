@@ -32,7 +32,7 @@
 namespace grpc_core {
 
 // Config for stateful session LB policy.
-class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
+class XdsOverrideHostLbConfig implements LoadBalancingPolicy::Config {
  public:
   XdsOverrideHostLbConfig() = default;
 

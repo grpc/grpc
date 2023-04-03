@@ -35,7 +35,7 @@ namespace experimental {
 
 // RPC service implementation for supplying out-of-band backend
 // utilization metrics to clients.
-class OrcaService : public Service {
+class OrcaService implements Service {
  public:
   struct Options {
     // Minimum report interval.  If a client requests an interval lower

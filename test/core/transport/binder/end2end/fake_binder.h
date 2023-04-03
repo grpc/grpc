@@ -80,7 +80,7 @@ using FakeData = std::vector<
 // It simulates the functionalities of a real writable parcel and stores all
 // written data in memory. The data can then be transferred by calling
 // MoveData().
-class FakeWritableParcel final : public WritableParcel {
+class FakeWritableParcel final implements WritableParcel {
  public:
   int32_t GetDataSize() const override;
   absl::Status WriteInt32(int32_t data) override;
@@ -100,7 +100,7 @@ class FakeWritableParcel final : public WritableParcel {
 //
 // It takes in the data transferred from a FakeWritableParcel and provides
 // methods to retrieve those data in the receiving end.
-class FakeReadableParcel final : public ReadableParcel {
+class FakeReadableParcel final implements ReadableParcel {
  public:
   explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {
     for (auto& d : data_) {
@@ -158,7 +158,7 @@ class PersistentFakeTransactionReceiver;
 //
 // It also provides a Receive() function to simulate the on-transaction
 // callback of a real Android binder.
-class FakeTransactionReceiver : public TransactionReceiver {
+class FakeTransactionReceiver implements TransactionReceiver {
  public:
   FakeTransactionReceiver(grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
                           TransactionReceiver::OnTransactCb cb);
@@ -198,7 +198,7 @@ class PersistentFakeTransactionReceiver {
 // The sending part of a binders pair. It provides a FakeWritableParcel to the
 // user, and when Transact() is called, it transfers the written data to the
 // other end of the tunnel by following the information in its endpoint.
-class FakeBinder final : public Binder {
+class FakeBinder final implements Binder {
  public:
   explicit FakeBinder(FakeEndpoint* endpoint) : endpoint_(endpoint) {}
 

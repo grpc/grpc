@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-class ClientAuthorityFilter final : public ChannelFilter {
+class ClientAuthorityFilter final implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

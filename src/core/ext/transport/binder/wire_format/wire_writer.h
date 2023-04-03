@@ -39,7 +39,7 @@ class WireWriter {
   virtual void OnAckReceived(int64_t num_bytes) = 0;
 };
 
-class WireWriterImpl : public WireWriter {
+class WireWriterImpl implements WireWriter {
  public:
   explicit WireWriterImpl(std::unique_ptr<Binder> binder);
   ~WireWriterImpl() override;

@@ -27,7 +27,7 @@
 
 namespace grpc {
 
-class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
+class HealthCheckServiceServerBuilderOption implements ServerBuilderOption {
  public:
   /// The ownership of \a hc will be taken and transferred to the grpc server.
   /// To explicitly disable default service, pass in a nullptr.

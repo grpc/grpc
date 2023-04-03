@@ -30,7 +30,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
-class TlsCredentials final : public grpc_channel_credentials {
+class TlsCredentials final implements grpc_channel_credentials {
  public:
   explicit TlsCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
@@ -51,7 +51,7 @@ class TlsCredentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
-class TlsServerCredentials final : public grpc_server_credentials {
+class TlsServerCredentials final implements grpc_server_credentials {
  public:
   explicit TlsServerCredentials(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);

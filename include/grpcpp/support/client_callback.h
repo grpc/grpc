@@ -235,7 +235,7 @@ class ClientCallbackUnary {
 
 /// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
-class ClientBidiReactor : public internal::ClientReactor {
+class ClientBidiReactor implements internal::ClientReactor {
  public:
   /// Activate the RPC and initiate any reads or writes that have been Start'ed
   /// before this call. All streaming RPCs issued by the client MUST have
@@ -369,7 +369,7 @@ class ClientBidiReactor : public internal::ClientReactor {
 /// \a ClientReadReactor is the interface for a server-streaming RPC.
 /// All public methods behave as in ClientBidiReactor.
 template <class Response>
-class ClientReadReactor : public internal::ClientReactor {
+class ClientReadReactor implements internal::ClientReactor {
  public:
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
@@ -394,7 +394,7 @@ class ClientReadReactor : public internal::ClientReactor {
 /// \a ClientWriteReactor is the interface for a client-streaming RPC.
 /// All public methods behave as in ClientBidiReactor.
 template <class Request>
-class ClientWriteReactor : public internal::ClientReactor {
+class ClientWriteReactor implements internal::ClientReactor {
  public:
   void StartCall() { writer_->StartCall(); }
   void StartWrite(const Request* req) { StartWrite(req, grpc::WriteOptions()); }
@@ -436,7 +436,7 @@ class ClientWriteReactor : public internal::ClientReactor {
 /// call (that is part of the unary call itself) and there is no reactor object
 /// being created as a result of this call, we keep a consistent 2-phase
 /// initiation API among all the reactor flavors.
-class ClientUnaryReactor : public internal::ClientReactor {
+class ClientUnaryReactor implements internal::ClientReactor {
  public:
   void StartCall() { call_->StartCall(); }
   void OnDone(const grpc::Status& /*s*/) override {}
@@ -721,7 +721,7 @@ class ClientCallbackReaderWriterFactory {
 };
 
 template <class Response>
-class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
+class ClientCallbackReaderImpl implements ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -880,7 +880,7 @@ class ClientCallbackReaderFactory {
 };
 
 template <class Request>
-class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
+class ClientCallbackWriterImpl implements ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -1108,7 +1108,7 @@ class ClientCallbackWriterFactory {
   }
 };
 
-class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
+class ClientCallbackUnaryImpl final implements ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {

@@ -42,16 +42,16 @@ namespace grpc {
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
-class DefaultHealthCheckService final : public HealthCheckServiceInterface {
+class DefaultHealthCheckService final implements HealthCheckServiceInterface {
  public:
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
 
   // The service impl to register with the server.
-  class HealthCheckServiceImpl : public Service {
+  class HealthCheckServiceImpl implements Service {
    public:
     // Reactor for handling Watch streams.
-    class WatchReactor : public ServerWriteReactor<ByteBuffer>,
-                         public grpc_core::RefCounted<WatchReactor> {
+    class WatchReactor implements ServerWriteReactor<ByteBuffer>,
+        public grpc_core::RefCounted<WatchReactor> {
      public:
       WatchReactor(HealthCheckServiceImpl* service, const ByteBuffer* request);
 

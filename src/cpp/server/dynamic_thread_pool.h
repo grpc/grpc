@@ -29,7 +29,7 @@
 
 namespace grpc {
 
-class DynamicThreadPool final : public ThreadPoolInterface {
+class DynamicThreadPool final implements ThreadPoolInterface {
  public:
   void Add(const std::function<void()>& callback) override {
     event_engine_->Run(callback);

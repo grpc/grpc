@@ -67,7 +67,7 @@ Reactor* CatchingReactorGetter(Func&& func, Args&&... args) {
 // constructed and then fired at exactly one point. There is no expectation
 // that they can be reused without reconstruction.
 
-class CallbackWithStatusTag : public grpc_completion_queue_functor {
+class CallbackWithStatusTag implements grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -133,7 +133,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
 /// CallbackWithSuccessTag can be reused multiple times, and will be used in
 /// this fashion for streaming operations. As a result, it shouldn't clear
 /// anything up until its destructor
-class CallbackWithSuccessTag : public grpc_completion_queue_functor {
+class CallbackWithSuccessTag implements grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {

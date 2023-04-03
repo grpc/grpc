@@ -76,7 +76,7 @@ class ChannelNodePeer;
 }  // namespace testing
 
 // base class for all channelz entities
-class BaseNode : public RefCounted<BaseNode> {
+class BaseNode implements RefCounted<BaseNode> {
  public:
   // There are only four high level channelz entities. However, to support
   // GetTopChannelsRequest, we split the Channel entity into two different
@@ -176,7 +176,7 @@ class CallCountingHelper {
 };
 
 // Handles channelz bookkeeping for channels
-class ChannelNode : public BaseNode {
+class ChannelNode implements BaseNode {
  public:
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
@@ -237,7 +237,7 @@ class ChannelNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for servers
-class ServerNode : public BaseNode {
+class ServerNode implements BaseNode {
  public:
   explicit ServerNode(size_t channel_tracer_max_nodes);
 
@@ -281,7 +281,7 @@ class ServerNode : public BaseNode {
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
 
 // Handles channelz bookkeeping for sockets
-class SocketNode : public BaseNode {
+class SocketNode implements BaseNode {
  public:
   struct Security : public RefCounted<Security> {
     struct Tls {
@@ -357,7 +357,7 @@ class SocketNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for listen sockets
-class ListenSocketNode : public BaseNode {
+class ListenSocketNode implements BaseNode {
  public:
   ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}

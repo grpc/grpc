@@ -109,7 +109,7 @@ class Next;
 // Center sits between a sender and a receiver to provide a one-deep buffer of
 // Ts
 template <typename T>
-class Center : public InterceptorList<T> {
+class Center implements InterceptorList<T> {
  public:
   // Initialize with one send ref (held by PipeSender) and one recv ref (held by
   // PipeReceiver)

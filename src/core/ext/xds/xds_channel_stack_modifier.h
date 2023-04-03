@@ -40,7 +40,7 @@ namespace grpc_core {
 // channel stack. It is registered to mutate the
 // `ChannelStackBuilder` object via
 // ChannelInit::Builder::RegisterStage.
-class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
+class XdsChannelStackModifier implements RefCounted<XdsChannelStackModifier> {
  public:
   explicit XdsChannelStackModifier(
       std::vector<const grpc_channel_filter*> filters)

@@ -42,7 +42,7 @@ namespace grpc_core {
 // A base class for polling-based resolvers.
 // Handles cooldown and backoff timers.
 // Implementations need only to implement StartRequest().
-class PollingResolver : public Resolver {
+class PollingResolver implements Resolver {
  public:
   PollingResolver(ResolverArgs args, Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);

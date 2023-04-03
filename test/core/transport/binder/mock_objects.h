@@ -25,7 +25,7 @@
 
 namespace grpc_binder {
 
-class MockWritableParcel : public WritableParcel {
+class MockWritableParcel implements WritableParcel {
  public:
   MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, WriteInt32, (int32_t), (override));
@@ -38,7 +38,7 @@ class MockWritableParcel : public WritableParcel {
   MockWritableParcel();
 };
 
-class MockReadableParcel : public ReadableParcel {
+class MockReadableParcel implements ReadableParcel {
  public:
   MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (override));
@@ -50,7 +50,7 @@ class MockReadableParcel : public ReadableParcel {
   MockReadableParcel();
 };
 
-class MockBinder : public Binder {
+class MockBinder implements Binder {
  public:
   MOCK_METHOD(void, Initialize, (), (override));
   MOCK_METHOD(absl::Status, PrepareTransaction, (), (override));
@@ -73,7 +73,7 @@ class MockBinder : public Binder {
 
 // TODO(waynetu): Implement transaction injection later for more thorough
 // testing.
-class MockTransactionReceiver : public TransactionReceiver {
+class MockTransactionReceiver implements TransactionReceiver {
  public:
   explicit MockTransactionReceiver(OnTransactCb transact_cb,
                                    BinderTransportTxCode code,
@@ -91,7 +91,7 @@ class MockTransactionReceiver : public TransactionReceiver {
   MOCK_METHOD(void*, GetRawBinder, (), (override));
 };
 
-class MockWireWriter : public WireWriter {
+class MockWireWriter implements WireWriter {
  public:
   MOCK_METHOD(absl::Status, RpcCall, (std::unique_ptr<Transaction>),
               (override));
@@ -99,7 +99,7 @@ class MockWireWriter : public WireWriter {
   MOCK_METHOD(void, OnAckReceived, (int64_t), (override));
 };
 
-class MockTransportStreamReceiver : public TransportStreamReceiver {
+class MockTransportStreamReceiver implements TransportStreamReceiver {
  public:
   MOCK_METHOD(void, RegisterRecvInitialMetadata,
               (StreamIdentifier, InitialMetadataCallbackType), (override));

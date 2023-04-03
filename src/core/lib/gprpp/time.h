@@ -86,7 +86,7 @@ class Timestamp {
     ~Source() = default;
   };
 
-  class ScopedSource : public Source {
+  class ScopedSource implements Source {
    public:
     ScopedSource() : previous_(thread_local_time_source_) {
       thread_local_time_source_ = this;
@@ -163,7 +163,7 @@ class Timestamp {
   static thread_local Timestamp::Source* thread_local_time_source_;
 };
 
-class ScopedTimeCache final : public Timestamp::ScopedSource {
+class ScopedTimeCache final implements Timestamp::ScopedSource {
  public:
   Timestamp Now() override;
 

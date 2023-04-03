@@ -46,18 +46,18 @@ struct ServerMetricRecorder::BackendMetricDataState {
 
 }  // namespace experimental
 
-class BackendMetricState : public grpc_core::BackendMetricProvider,
-                           public experimental::CallMetricRecorder {
+class BackendMetricState implements grpc_core::BackendMetricProvider,
+    public experimental::CallMetricRecorder {
  public:
   // `server_metric_recorder` is optional. When set, GetBackendMetricData()
   // merges metrics from `server_metric_recorder` with metrics recorded to this.
-  explicit BackendMetricState(
-      experimental::ServerMetricRecorder* server_metric_recorder)
+  explicit BackendMetricState(experimental::ServerMetricRecorder *
+                              server_metric_recorder)
       : server_metric_recorder_(server_metric_recorder) {}
-  experimental::CallMetricRecorder& RecordCpuUtilizationMetric(
-      double value) override;
-  experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(
-      double value) override;
+  experimental::CallMetricRecorder& RecordCpuUtilizationMetric(double value)
+      override;
+  experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(double value)
+      override;
   experimental::CallMetricRecorder& RecordQpsMetric(double value) override;
   experimental::CallMetricRecorder& RecordEpsMetric(double value) override;
   experimental::CallMetricRecorder& RecordUtilizationMetric(

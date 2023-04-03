@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsTransportFactory : public XdsTransportFactory {
+class GrpcXdsTransportFactory implements XdsTransportFactory {
  public:
   class GrpcXdsTransport;
 

@@ -44,7 +44,7 @@
 
 namespace grpc_core {
 
-class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
+class XdsCertificateVerifier implements grpc_tls_certificate_verifier {
  public:
   XdsCertificateVerifier(
       RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
@@ -64,7 +64,7 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   std::string cluster_name_;
 };
 
-class XdsCredentials final : public grpc_channel_credentials {
+class XdsCredentials final implements grpc_channel_credentials {
  public:
   explicit XdsCredentials(
       RefCountedPtr<grpc_channel_credentials> fallback_credentials)
@@ -87,7 +87,7 @@ class XdsCredentials final : public grpc_channel_credentials {
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
 };
 
-class XdsServerCredentials final : public grpc_server_credentials {
+class XdsServerCredentials final implements grpc_server_credentials {
  public:
   explicit XdsServerCredentials(
       RefCountedPtr<grpc_server_credentials> fallback_credentials)

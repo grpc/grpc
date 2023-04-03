@@ -106,8 +106,8 @@ struct CallRegistrationTable {
   int method_registration_attempts ABSL_GUARDED_BY(mu) = 0;
 };
 
-class Channel : public RefCounted<Channel>,
-                public CppImplOf<Channel, grpc_channel> {
+class Channel implements RefCounted<Channel>,
+    public CppImplOf<Channel, grpc_channel> {
  public:
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       const char* target, ChannelArgs args,

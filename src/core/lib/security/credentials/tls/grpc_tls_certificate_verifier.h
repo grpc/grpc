@@ -79,7 +79,7 @@ namespace grpc_core {
 
 // A verifier that will transform grpc_tls_certificate_verifier_external to a
 // verifier that extends grpc_tls_certificate_verifier.
-class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
+class ExternalCertificateVerifier implements grpc_tls_certificate_verifier {
  public:
   explicit ExternalCertificateVerifier(
       grpc_tls_certificate_verifier_external* external_verifier)
@@ -125,7 +125,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 // Note: using this solely without any other authentication mechanisms on the
 // peer identity will leave your applications to the MITM(Man-In-The-Middle)
 // attacks. Users should avoid doing so in production environments.
-class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
+class NoOpCertificateVerifier implements grpc_tls_certificate_verifier {
  public:
   bool Verify(grpc_tls_custom_verification_check_request*,
               std::function<void(absl::Status)>, absl::Status*) override {
@@ -145,7 +145,7 @@ class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
 };
 
 // An internal verifier that will perform hostname verification check.
-class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
+class HostNameCertificateVerifier implements grpc_tls_certificate_verifier {
  public:
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)> callback,

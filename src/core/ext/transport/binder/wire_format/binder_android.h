@@ -36,7 +36,7 @@ ndk_util::SpAIBinder FromJavaBinder(JNIEnv* jni_env, jobject binder);
 
 class BinderAndroid;
 
-class WritableParcelAndroid final : public WritableParcel {
+class WritableParcelAndroid final implements WritableParcel {
  public:
   WritableParcelAndroid() = default;
   explicit WritableParcelAndroid(ndk_util::AParcel* parcel) : parcel_(parcel) {}
@@ -55,7 +55,7 @@ class WritableParcelAndroid final : public WritableParcel {
   friend class BinderAndroid;
 };
 
-class ReadableParcelAndroid final : public ReadableParcel {
+class ReadableParcelAndroid final implements ReadableParcel {
  public:
   ReadableParcelAndroid() = default;
   // TODO(waynetu): Get rid of the const_cast.
@@ -76,7 +76,7 @@ class ReadableParcelAndroid final : public ReadableParcel {
   friend class BinderAndroid;
 };
 
-class BinderAndroid final : public Binder {
+class BinderAndroid final implements Binder {
  public:
   explicit BinderAndroid(ndk_util::SpAIBinder binder)
       : binder_(binder),
@@ -102,7 +102,7 @@ class BinderAndroid final : public Binder {
   std::unique_ptr<WritableParcelAndroid> input_parcel_;
 };
 
-class TransactionReceiverAndroid final : public TransactionReceiver {
+class TransactionReceiverAndroid final implements TransactionReceiver {
  public:
   TransactionReceiverAndroid(
       grpc_core::RefCountedPtr<WireReader> wire_reader_ref,

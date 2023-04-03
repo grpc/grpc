@@ -29,7 +29,7 @@
 namespace grpc_core {
 
 // Tracks the amount of threads in a resource quota.
-class ThreadQuota : public RefCounted<ThreadQuota> {
+class ThreadQuota implements RefCounted<ThreadQuota> {
  public:
   ThreadQuota();
   ~ThreadQuota() override;

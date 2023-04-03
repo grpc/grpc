@@ -178,7 +178,7 @@ class XdsTestType {
 // the indexes in the range [start_index, stop_index).  If stop_index
 // is 0, backends_.size() is used.  Backends may or may not be
 // xDS-enabled, at the discretion of the test.
-class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
+class XdsEnd2endTest implements ::testing::TestWithParam<XdsTestType> {
  protected:
   using Cluster = ::envoy::config::cluster::v3::Cluster;
   using ClusterLoadAssignment =
@@ -278,7 +278,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // A server thread for a backend server.
-  class BackendServerThread : public ServerThread {
+  class BackendServerThread implements ServerThread {
    public:
     // A wrapper around the backend echo test service impl that counts
     // requests and responses.
@@ -390,7 +390,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // A server thread for the xDS server.
-  class BalancerServerThread : public ServerThread {
+  class BalancerServerThread implements ServerThread {
    public:
     explicit BalancerServerThread(XdsEnd2endTest* test_obj);
 
@@ -518,7 +518,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // Client-side impl.
-  class ClientHcmAccessor : public HcmAccessor {
+  class ClientHcmAccessor implements HcmAccessor {
    public:
     HttpConnectionManager Unpack(const Listener& listener) const override;
     void Pack(const HttpConnectionManager& hcm,
@@ -526,7 +526,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // Server-side impl.
-  class ServerHcmAccessor : public HcmAccessor {
+  class ServerHcmAccessor implements HcmAccessor {
    public:
     HttpConnectionManager Unpack(const Listener& listener) const override;
     void Pack(const HttpConnectionManager& hcm,

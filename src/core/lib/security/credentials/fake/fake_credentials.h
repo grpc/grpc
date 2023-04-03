@@ -64,7 +64,7 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
 // --  Metadata-only Test credentials. --
 
-class grpc_md_only_test_credentials : public grpc_call_credentials {
+class grpc_md_only_test_credentials implements grpc_call_credentials {
  public:
   grpc_md_only_test_credentials(const char* md_key, const char* md_value)
       : grpc_call_credentials(GRPC_SECURITY_NONE),

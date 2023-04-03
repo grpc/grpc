@@ -34,7 +34,7 @@ namespace testing {
 
 const char* const kServerMessageSize = "server_message_size";
 
-class CallbackStreamingTestService : public EchoTestService::CallbackService {
+class CallbackStreamingTestService implements EchoTestService::CallbackService {
  public:
   CallbackStreamingTestService() {}
 

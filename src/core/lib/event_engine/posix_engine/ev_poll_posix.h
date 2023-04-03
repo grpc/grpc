@@ -38,7 +38,7 @@ namespace experimental {
 class PollEventHandle;
 
 // Definition of poll based poller.
-class PollPoller : public PosixEventPoller {
+class PollPoller implements PosixEventPoller {
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);

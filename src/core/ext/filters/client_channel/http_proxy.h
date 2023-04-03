@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-class HttpProxyMapper : public ProxyMapperInterface {
+class HttpProxyMapper implements ProxyMapperInterface {
  public:
   absl::optional<std::string> MapName(absl::string_view server_uri,
                                       ChannelArgs* args) override;

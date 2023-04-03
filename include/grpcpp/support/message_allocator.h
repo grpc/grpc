@@ -36,7 +36,7 @@ class RpcAllocatorState {
 // grpc library will call the methods to get request/response pointers and to
 // release the object when it is done.
 template <typename RequestT, typename ResponseT>
-class MessageHolder : public RpcAllocatorState {
+class MessageHolder implements RpcAllocatorState {
  public:
   // Release this object. For example, if the custom allocator's
   // AllocateMessasge creates an instance of a subclass with new, the Release()

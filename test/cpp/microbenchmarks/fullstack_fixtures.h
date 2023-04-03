@@ -68,7 +68,7 @@ class BaseFixture {
   virtual ~BaseFixture() = default;
 };
 
-class FullstackFixture : public BaseFixture {
+class FullstackFixture implements BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
@@ -108,7 +108,7 @@ class FullstackFixture : public BaseFixture {
   std::shared_ptr<Channel> channel_;
 };
 
-class TCP : public FullstackFixture {
+class TCP implements FullstackFixture {
  public:
   explicit TCP(Service* service,
                const FixtureConfiguration& fixture_configuration =
@@ -128,7 +128,7 @@ class TCP : public FullstackFixture {
   }
 };
 
-class UDS : public FullstackFixture {
+class UDS implements FullstackFixture {
  public:
   explicit UDS(Service* service,
                const FixtureConfiguration& fixture_configuration =
@@ -149,7 +149,7 @@ class UDS : public FullstackFixture {
   }
 };
 
-class InProcess : public FullstackFixture {
+class InProcess implements FullstackFixture {
  public:
   explicit InProcess(Service* service,
                      const FixtureConfiguration& fixture_configuration =
@@ -158,7 +158,7 @@ class InProcess : public FullstackFixture {
   ~InProcess() override {}
 };
 
-class EndpointPairFixture : public BaseFixture {
+class EndpointPairFixture implements BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
                       const FixtureConfiguration& fixture_configuration)
@@ -244,7 +244,7 @@ class EndpointPairFixture : public BaseFixture {
   std::shared_ptr<Channel> channel_;
 };
 
-class SockPair : public EndpointPairFixture {
+class SockPair implements EndpointPairFixture {
  public:
   explicit SockPair(Service* service,
                     const FixtureConfiguration& fixture_configuration =
@@ -258,7 +258,7 @@ class SockPair : public EndpointPairFixture {
 // is here only to be able to initialize both the base class and stats_ with the
 // same stats instance without accessing the stats_ fields before the object is
 // properly initialized.
-class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
+class InProcessCHTTP2WithExplicitStats implements EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(
       Service* service, grpc_passthru_endpoint_stats* stats,
@@ -283,7 +283,7 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
   }
 };
 
-class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
+class InProcessCHTTP2 implements InProcessCHTTP2WithExplicitStats {
  public:
   explicit InProcessCHTTP2(Service* service,
                            const FixtureConfiguration& fixture_configuration =
@@ -296,7 +296,7 @@ class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
 ////////////////////////////////////////////////////////////////////////////////
 // Minimal stack fixtures
 
-class MinStackConfiguration : public FixtureConfiguration {
+class MinStackConfiguration implements FixtureConfiguration {
   void ApplyCommonChannelArguments(ChannelArguments* a) const override {
     a->SetInt(GRPC_ARG_MINIMAL_STACK, 1);
     FixtureConfiguration::ApplyCommonChannelArguments(a);
@@ -309,7 +309,7 @@ class MinStackConfiguration : public FixtureConfiguration {
 };
 
 template <class Base>
-class MinStackize : public Base {
+class MinStackize implements Base {
  public:
   explicit MinStackize(Service* service)
       : Base(service, MinStackConfiguration()) {}

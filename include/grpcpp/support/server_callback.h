@@ -158,7 +158,7 @@ class ServerCallbackCall {
 };
 
 template <class Request, class Response>
-class DefaultMessageHolder : public MessageHolder<Request, Response> {
+class DefaultMessageHolder implements MessageHolder<Request, Response> {
  public:
   DefaultMessageHolder() {
     this->set_request(&request_obj_);
@@ -188,7 +188,7 @@ class ServerBidiReactor;
 // NOTE: The actual call/stream object classes are provided as API only to
 // support mocking. There are no implementations of these class interfaces in
 // the API.
-class ServerCallbackUnary : public internal::ServerCallbackCall {
+class ServerCallbackUnary implements internal::ServerCallbackCall {
  public:
   ~ServerCallbackUnary() override {}
   virtual void Finish(grpc::Status s) = 0;
@@ -204,7 +204,7 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
 };
 
 template <class Request>
-class ServerCallbackReader : public internal::ServerCallbackCall {
+class ServerCallbackReader implements internal::ServerCallbackCall {
  public:
   ~ServerCallbackReader() override {}
   virtual void Finish(grpc::Status s) = 0;
@@ -218,7 +218,7 @@ class ServerCallbackReader : public internal::ServerCallbackCall {
 };
 
 template <class Response>
-class ServerCallbackWriter : public internal::ServerCallbackCall {
+class ServerCallbackWriter implements internal::ServerCallbackCall {
  public:
   ~ServerCallbackWriter() override {}
 
@@ -235,7 +235,7 @@ class ServerCallbackWriter : public internal::ServerCallbackCall {
 };
 
 template <class Request, class Response>
-class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
+class ServerCallbackReaderWriter implements internal::ServerCallbackCall {
  public:
   ~ServerCallbackReaderWriter() override {}
 
@@ -265,7 +265,7 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
 
 /// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
-class ServerBidiReactor : public internal::ServerReactor {
+class ServerBidiReactor implements internal::ServerReactor {
  public:
   // NOTE: Initializing stream_ as a constructor initializer rather than a
   //       default initializer because gcc-4.x requires a copy constructor for
@@ -487,7 +487,7 @@ class ServerBidiReactor : public internal::ServerReactor {
 
 /// \a ServerReadReactor is the interface for a client-streaming RPC.
 template <class Request>
-class ServerReadReactor : public internal::ServerReactor {
+class ServerReadReactor implements internal::ServerReactor {
  public:
   ServerReadReactor() : reader_(nullptr) {}
   ~ServerReadReactor() override = default;
@@ -575,7 +575,7 @@ class ServerReadReactor : public internal::ServerReactor {
 
 /// \a ServerWriteReactor is the interface for a server-streaming RPC.
 template <class Response>
-class ServerWriteReactor : public internal::ServerReactor {
+class ServerWriteReactor implements internal::ServerReactor {
  public:
   ServerWriteReactor() : writer_(nullptr) {}
   ~ServerWriteReactor() override = default;
@@ -694,7 +694,7 @@ class ServerWriteReactor : public internal::ServerReactor {
   PreBindBacklog backlog_ ABSL_GUARDED_BY(writer_mu_);
 };
 
-class ServerUnaryReactor : public internal::ServerReactor {
+class ServerUnaryReactor implements internal::ServerReactor {
  public:
   ServerUnaryReactor() : call_(nullptr) {}
   ~ServerUnaryReactor() override = default;
@@ -765,7 +765,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
 namespace internal {
 
 template <class Base>
-class FinishOnlyReactor : public Base {
+class FinishOnlyReactor implements Base {
  public:
   explicit FinishOnlyReactor(grpc::Status s) { this->Finish(std::move(s)); }
   void OnDone() override { this->~FinishOnlyReactor(); }

@@ -39,7 +39,7 @@ namespace experimental {
 // deal with OS details.
 // This event engine is intended to be used for testing with TSAN to maximize
 // its visibility into race conditions in the calling code.
-class ThreadyEventEngine final : public EventEngine {
+class ThreadyEventEngine final implements EventEngine {
  public:
   explicit ThreadyEventEngine(std::shared_ptr<EventEngine> impl)
       : impl_(std::move(impl)) {}
@@ -74,7 +74,7 @@ class ThreadyEventEngine final : public EventEngine {
   bool Cancel(TaskHandle handle) override;
 
  private:
-  class ThreadyDNSResolver final : public DNSResolver {
+  class ThreadyDNSResolver final implements DNSResolver {
    public:
     explicit ThreadyDNSResolver(std::unique_ptr<DNSResolver> impl)
         : impl_(std::move(impl)) {}

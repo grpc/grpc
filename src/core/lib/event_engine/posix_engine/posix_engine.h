@@ -133,10 +133,10 @@ class PosixEnginePollerManager
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
 // EventEngine is shut down before we shut down iomgr.
-class PosixEventEngine final : public PosixEventEngineWithFdSupport,
-                               public grpc_core::KeepsGrpcInitialized {
+class PosixEventEngine final implements PosixEventEngineWithFdSupport,
+    public grpc_core::KeepsGrpcInitialized {
  public:
-  class PosixDNSResolver : public EventEngine::DNSResolver {
+  class PosixDNSResolver implements EventEngine::DNSResolver {
    public:
     ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
@@ -156,8 +156,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // Constructs an EventEngine which does not own the poller. Do not call this
   // constructor directly. Instead use the MakeTestOnlyPosixEventEngine static
   // method. Its expected to be used only in tests.
-  explicit PosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* poller);
+  explicit PosixEventEngine(grpc_event_engine::experimental::PosixEventPoller *
+                            poller);
   PosixEventEngine();
 #else   // GRPC_POSIX_SOCKET_TCP
   PosixEventEngine();
@@ -166,8 +166,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   ~PosixEventEngine() override;
 
   std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
-      int fd, const EndpointConfig& config,
-      MemoryAllocator memory_allocator) override;
+      int fd, const EndpointConfig& config, MemoryAllocator memory_allocator)
+      override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -184,21 +184,20 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-  ConnectionHandle Connect(OnConnectCallback on_connect,
-                           const ResolvedAddress& addr,
-                           const EndpointConfig& args,
-                           MemoryAllocator memory_allocator,
-                           Duration timeout) override;
+  ConnectionHandle Connect(
+      OnConnectCallback on_connect, const ResolvedAddress& addr,
+      const EndpointConfig& args, MemoryAllocator memory_allocator,
+      Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
-  void Run(Closure* closure) override;
+  void Run(Closure * closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
-  TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override;
+  TaskHandle RunAfter(Duration when, Closure * closure) override;
+  TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure)
+      override;
   bool Cancel(TaskHandle handle) override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -208,7 +207,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // EventEngine will also not attempt to shutdown the poller since it does not
   // own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* test_only_poller) {
+      grpc_event_engine::experimental::PosixEventPoller * test_only_poller) {
     return std::make_shared<PosixEventEngine>(test_only_poller);
   }
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -232,7 +231,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   ConnectionHandle ConnectInternal(
       grpc_event_engine::experimental::PosixSocketWrapper sock,
       OnConnectCallback on_connect, ResolvedAddress addr,
-      MemoryAllocator&& allocator,
+      MemoryAllocator && allocator,
       const grpc_event_engine::experimental::PosixTcpOptions& options,
       Duration timeout);
 

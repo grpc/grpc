@@ -33,7 +33,7 @@
 namespace grpc_core {
 
 // The interface for subchannels that is exposed to LB policy implementations.
-class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
+class SubchannelInterface implements DualRefCounted<SubchannelInterface> {
  public:
   class ConnectivityStateWatcherInterface {
    public:
@@ -101,7 +101,7 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
 // A class that delegates to another subchannel, to be used in cases
 // where an LB policy needs to wrap a subchannel.
-class DelegatingSubchannel : public SubchannelInterface {
+class DelegatingSubchannel implements SubchannelInterface {
  public:
   explicit DelegatingSubchannel(RefCountedPtr<SubchannelInterface> subchannel)
       : wrapped_subchannel_(std::move(subchannel)) {}

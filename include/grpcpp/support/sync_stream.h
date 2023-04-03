@@ -146,8 +146,8 @@ class WriterInterface {
 
 /// Client-side interface for streaming reads of message of type \a R.
 template <class R>
-class ClientReaderInterface : public internal::ClientStreamingInterface,
-                              public internal::ReaderInterface<R> {
+class ClientReaderInterface implements internal::ClientStreamingInterface,
+    public internal::ReaderInterface<R> {
  public:
   /// Block to wait for initial metadata from server. The received metadata
   /// can only be accessed after this call returns. Should only be called before
@@ -174,7 +174,7 @@ class ClientReaderFactory {
 /// where the stream of messages coming from the server has messages
 /// of type \a R.
 template <class R>
-class ClientReader final : public ClientReaderInterface<R> {
+class ClientReader final implements ClientReaderInterface<R> {
  public:
   /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
   /// semantics.
@@ -268,8 +268,8 @@ class ClientReader final : public ClientReaderInterface<R> {
 
 /// Client-side interface for streaming writes of message type \a W.
 template <class W>
-class ClientWriterInterface : public internal::ClientStreamingInterface,
-                              public internal::WriterInterface<W> {
+class ClientWriterInterface implements internal::ClientStreamingInterface,
+    public internal::WriterInterface<W> {
  public:
   /// Half close writing from the client. (signal that the stream of messages
   /// coming from the client is complete).
@@ -297,7 +297,7 @@ class ClientWriterFactory {
 /// where the outgoing message stream coming from the client has messages of
 /// type \a W.
 template <class W>
-class ClientWriter : public ClientWriterInterface<W> {
+class ClientWriter implements ClientWriterInterface<W> {
  public:
   /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
   /// semantics.
@@ -410,9 +410,8 @@ class ClientWriter : public ClientWriterInterface<W> {
 /// client-to-server stream messages of type \a W and
 /// server-to-client stream messages of type \a R.
 template <class W, class R>
-class ClientReaderWriterInterface : public internal::ClientStreamingInterface,
-                                    public internal::WriterInterface<W>,
-                                    public internal::ReaderInterface<R> {
+class ClientReaderWriterInterface implements internal::ClientStreamingInterface,
+    public internal::WriterInterface<W>, public internal::ReaderInterface<R> {
  public:
   /// Block to wait for initial metadata from server. The received metadata
   /// can only be accessed after this call returns. Should only be called before
@@ -446,7 +445,7 @@ class ClientReaderWriterFactory {
 /// type \a W, and the incoming messages stream coming from the server has
 /// messages of type \a R.
 template <class W, class R>
-class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
+class ClientReaderWriter final implements ClientReaderWriterInterface<W, R> {
  public:
   /// Block waiting to read initial metadata from the server.
   /// This call is optional, but if it is used, it cannot be used concurrently
@@ -570,14 +569,14 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
 
 /// Server-side interface for streaming reads of message of type \a R.
 template <class R>
-class ServerReaderInterface : public internal::ServerStreamingInterface,
-                              public internal::ReaderInterface<R> {};
+class ServerReaderInterface implements internal::ServerStreamingInterface,
+    public internal::ReaderInterface<R>{};
 
 /// Synchronous (blocking) server-side API for doing client-streaming RPCs,
 /// where the incoming message stream coming from the client has messages of
 /// type \a R.
 template <class R>
-class ServerReader final : public ServerReaderInterface<R> {
+class ServerReader final implements ServerReaderInterface<R> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
@@ -626,14 +625,14 @@ class ServerReader final : public ServerReaderInterface<R> {
 
 /// Server-side interface for streaming writes of message of type \a W.
 template <class W>
-class ServerWriterInterface : public internal::ServerStreamingInterface,
-                              public internal::WriterInterface<W> {};
+class ServerWriterInterface implements internal::ServerStreamingInterface,
+    public internal::WriterInterface<W>{};
 
 /// Synchronous (blocking) server-side API for doing for doing a
 /// server-streaming RPCs, where the outgoing message stream coming from the
 /// server has messages of type \a W.
 template <class W>
-class ServerWriter final : public ServerWriterInterface<W> {
+class ServerWriter final implements ServerWriterInterface<W> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics.
@@ -700,9 +699,8 @@ class ServerWriter final : public ServerWriterInterface<W> {
 
 /// Server-side interface for bi-directional streaming.
 template <class W, class R>
-class ServerReaderWriterInterface : public internal::ServerStreamingInterface,
-                                    public internal::WriterInterface<W>,
-                                    public internal::ReaderInterface<R> {};
+class ServerReaderWriterInterface implements internal::ServerStreamingInterface,
+    public internal::WriterInterface<W>, public internal::ReaderInterface<R>{};
 
 /// Actual implementation of bi-directional streaming
 namespace internal {
@@ -782,7 +780,7 @@ class ServerReaderWriterBody final {
 /// messages of type \a R, and the outgoing message streaming coming from
 /// the server has messages of type \a W.
 template <class W, class R>
-class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
+class ServerReaderWriter final implements ServerReaderWriterInterface<W, R> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the

@@ -46,7 +46,7 @@ namespace grpc {
 namespace internal {
 
 // Interface for a logging sink that will be used by the logging filter.
-class ObservabilityLoggingSink : public grpc_core::LoggingSink {
+class ObservabilityLoggingSink implements grpc_core::LoggingSink {
  public:
   ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
                            std::string project_id,

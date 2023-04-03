@@ -87,7 +87,7 @@ class LoaderInterface {
 };
 
 // Loads a scalar (string or number).
-class LoadScalar : public LoaderInterface {
+class LoadScalar implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
@@ -106,7 +106,7 @@ class LoadScalar : public LoaderInterface {
 };
 
 // Load a string.
-class LoadString : public LoadScalar {
+class LoadString implements LoadScalar {
  protected:
   ~LoadString() = default;
 
@@ -117,7 +117,7 @@ class LoadString : public LoadScalar {
 };
 
 // Load a Duration.
-class LoadDuration : public LoadScalar {
+class LoadDuration implements LoadScalar {
  protected:
   ~LoadDuration() = default;
 
@@ -128,7 +128,7 @@ class LoadDuration : public LoadScalar {
 };
 
 // Load a number.
-class LoadNumber : public LoadScalar {
+class LoadNumber implements LoadScalar {
  protected:
   ~LoadNumber() = default;
 
@@ -138,7 +138,7 @@ class LoadNumber : public LoadScalar {
 
 // Load a signed number of type T.
 template <typename T>
-class TypedLoadSignedNumber : public LoadNumber {
+class TypedLoadSignedNumber implements LoadNumber {
  protected:
   ~TypedLoadSignedNumber() = default;
 
@@ -153,7 +153,7 @@ class TypedLoadSignedNumber : public LoadNumber {
 
 // Load an unsigned number of type T.
 template <typename T>
-class TypedLoadUnsignedNumber : public LoadNumber {
+class TypedLoadUnsignedNumber implements LoadNumber {
  protected:
   ~TypedLoadUnsignedNumber() = default;
 
@@ -167,7 +167,7 @@ class TypedLoadUnsignedNumber : public LoadNumber {
 };
 
 // Load a float.
-class LoadFloat : public LoadNumber {
+class LoadFloat implements LoadNumber {
  protected:
   ~LoadFloat() = default;
 
@@ -181,7 +181,7 @@ class LoadFloat : public LoadNumber {
 };
 
 // Load a double.
-class LoadDouble : public LoadNumber {
+class LoadDouble implements LoadNumber {
  protected:
   ~LoadDouble() = default;
 
@@ -195,7 +195,7 @@ class LoadDouble : public LoadNumber {
 };
 
 // Load a bool.
-class LoadBool : public LoaderInterface {
+class LoadBool implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
@@ -205,7 +205,7 @@ class LoadBool : public LoaderInterface {
 };
 
 // Loads an unprocessed JSON object value.
-class LoadUnprocessedJsonObject : public LoaderInterface {
+class LoadUnprocessedJsonObject implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
@@ -215,7 +215,7 @@ class LoadUnprocessedJsonObject : public LoaderInterface {
 };
 
 // Loads an unprocessed JSON array value.
-class LoadUnprocessedJsonArray : public LoaderInterface {
+class LoadUnprocessedJsonArray implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
@@ -225,7 +225,7 @@ class LoadUnprocessedJsonArray : public LoaderInterface {
 };
 
 // Load a vector of some type.
-class LoadVector : public LoaderInterface {
+class LoadVector implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
@@ -239,7 +239,7 @@ class LoadVector : public LoaderInterface {
 };
 
 // Load a map of string->some type.
-class LoadMap : public LoaderInterface {
+class LoadMap implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
@@ -253,7 +253,7 @@ class LoadMap : public LoaderInterface {
 };
 
 // Load an optional of some type.
-class LoadOptional : public LoaderInterface {
+class LoadOptional implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
@@ -276,7 +276,7 @@ const LoaderInterface* LoaderForType();
 // Classes that load from objects should provide a:
 // static const JsonLoaderInterface* JsonLoader();
 template <typename T>
-class AutoLoader final : public LoaderInterface {
+class AutoLoader final implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override {
@@ -289,64 +289,64 @@ class AutoLoader final : public LoaderInterface {
 
 // Specializations of AutoLoader for basic types.
 template <>
-class AutoLoader<std::string> final : public LoadString {
+class AutoLoader<std::string> final implements LoadString {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<Duration> final : public LoadDuration {
+class AutoLoader<Duration> final implements LoadDuration {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<int32_t> final : public TypedLoadSignedNumber<int32_t> {
+class AutoLoader<int32_t> final implements TypedLoadSignedNumber<int32_t> {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<int64_t> final : public TypedLoadSignedNumber<int64_t> {
+class AutoLoader<int64_t> final implements TypedLoadSignedNumber<int64_t> {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<uint32_t> final : public TypedLoadUnsignedNumber<uint32_t> {
+class AutoLoader<uint32_t> final implements TypedLoadUnsignedNumber<uint32_t> {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<uint64_t> final : public TypedLoadUnsignedNumber<uint64_t> {
+class AutoLoader<uint64_t> final implements TypedLoadUnsignedNumber<uint64_t> {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<float> final : public LoadFloat {
+class AutoLoader<float> final implements LoadFloat {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<double> final : public LoadDouble {
+class AutoLoader<double> final implements LoadDouble {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<bool> final : public LoadBool {
+class AutoLoader<bool> final implements LoadBool {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {
+class AutoLoader<Json::Object> final implements LoadUnprocessedJsonObject {
  private:
   ~AutoLoader() = default;
 };
 template <>
-class AutoLoader<Json::Array> final : public LoadUnprocessedJsonArray {
+class AutoLoader<Json::Array> final implements LoadUnprocessedJsonArray {
  private:
   ~AutoLoader() = default;
 };
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
-class AutoLoader<std::vector<T>> final : public LoadVector {
+class AutoLoader<std::vector<T>> final implements LoadVector {
  private:
   ~AutoLoader() = default;
   void* EmplaceBack(void* dst) const final {
@@ -364,7 +364,7 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
 // technique of returning a void* from Emplace() for the generic vector loader
 // doesn't work.
 template <>
-class AutoLoader<std::vector<bool>> final : public LoaderInterface {
+class AutoLoader<std::vector<bool>> final implements LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
@@ -375,7 +375,7 @@ class AutoLoader<std::vector<bool>> final : public LoaderInterface {
 
 // Specializations of AutoLoader for maps.
 template <typename T>
-class AutoLoader<std::map<std::string, T>> final : public LoadMap {
+class AutoLoader<std::map<std::string, T>> final implements LoadMap {
  private:
   void* Insert(const std::string& name, void* dst) const final {
     return &static_cast<std::map<std::string, T>*>(dst)
@@ -391,7 +391,7 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 
 // Specializations of AutoLoader for absl::optional<>.
 template <typename T>
-class AutoLoader<absl::optional<T>> final : public LoadOptional {
+class AutoLoader<absl::optional<T>> final implements LoadOptional {
  public:
   void* Emplace(void* dst) const final {
     return &static_cast<absl::optional<T>*>(dst)->emplace();
@@ -409,7 +409,7 @@ class AutoLoader<absl::optional<T>> final : public LoadOptional {
 
 // Specializations of AutoLoader for std::unique_ptr<>.
 template <typename T>
-class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
+class AutoLoader<std::unique_ptr<T>> final implements LoadOptional {
  public:
   void* Emplace(void* dst) const final {
     auto& p = *static_cast<std::unique_ptr<T>*>(dst);
@@ -492,7 +492,7 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
 // Adaptor type - takes a compile time computed list of elements and
 // implements LoaderInterface by calling LoadObject.
 template <typename T, size_t kElemCount, typename Hidden = void>
-class FinishedJsonObjectLoader final : public LoaderInterface {
+class FinishedJsonObjectLoader final implements LoaderInterface {
  public:
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
       : elements_(elements) {}

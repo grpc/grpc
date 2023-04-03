@@ -37,7 +37,7 @@ namespace grpc_core {
 class CertificateProviderFactory {
  public:
   // Interface for configs for CertificateProviders.
-  class Config : public RefCounted<Config> {
+  class Config implements RefCounted<Config> {
    public:
     ~Config() override = default;
 

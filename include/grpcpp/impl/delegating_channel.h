@@ -26,7 +26,7 @@
 namespace grpc {
 namespace experimental {
 
-class DelegatingChannel : public grpc::ChannelInterface {
+class DelegatingChannel implements grpc::ChannelInterface {
  public:
   ~DelegatingChannel() override {}
 

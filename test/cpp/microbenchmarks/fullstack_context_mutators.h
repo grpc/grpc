@@ -99,7 +99,7 @@ class RandomAsciiMetadata {
 };
 
 template <class Generator, int kNumKeys>
-class Client_AddMetadata : public NoOpMutator {
+class Client_AddMetadata implements NoOpMutator {
  public:
   explicit Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
@@ -109,7 +109,7 @@ class Client_AddMetadata : public NoOpMutator {
 };
 
 template <class Generator, int kNumKeys>
-class Server_AddInitialMetadata : public NoOpMutator {
+class Server_AddInitialMetadata implements NoOpMutator {
  public:
   explicit Server_AddInitialMetadata(ServerContext* context)
       : NoOpMutator(context) {

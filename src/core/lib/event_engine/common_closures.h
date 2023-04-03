@@ -26,7 +26,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class AnyInvocableClosure : public EventEngine::Closure {
+class AnyInvocableClosure implements EventEngine::Closure {
  public:
   explicit AnyInvocableClosure(absl::AnyInvocable<void()> cb)
       : cb_(std::move(cb)) {}
@@ -36,7 +36,7 @@ class AnyInvocableClosure : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb_;
 };
 
-class SelfDeletingClosure : public EventEngine::Closure {
+class SelfDeletingClosure implements EventEngine::Closure {
  public:
   // Creates a SelfDeletingClosure.
   // The closure will be deleted after Run is called.

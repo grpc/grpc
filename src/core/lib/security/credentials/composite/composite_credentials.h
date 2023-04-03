@@ -43,7 +43,7 @@
 
 // -- Composite channel credentials. --
 
-class grpc_composite_channel_credentials : public grpc_channel_credentials {
+class grpc_composite_channel_credentials implements grpc_channel_credentials {
  public:
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -90,7 +90,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
 // -- Composite call credentials. --
 
-class grpc_composite_call_credentials : public grpc_call_credentials {
+class grpc_composite_call_credentials implements grpc_call_credentials {
  public:
   using CallCredentialsList =
       std::vector<grpc_core::RefCountedPtr<grpc_call_credentials>>;

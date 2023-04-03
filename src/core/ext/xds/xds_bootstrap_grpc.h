@@ -41,9 +41,9 @@
 
 namespace grpc_core {
 
-class GrpcXdsBootstrap : public XdsBootstrap {
+class GrpcXdsBootstrap implements XdsBootstrap {
  public:
-  class GrpcNode : public Node {
+  class GrpcNode implements Node {
    public:
     const std::string& id() const override { return id_; }
     const std::string& cluster() const override { return cluster_; }
@@ -73,7 +73,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     Json::Object metadata_;
   };
 
-  class GrpcXdsServer : public XdsServer {
+  class GrpcXdsServer implements XdsServer {
    public:
     const std::string& server_uri() const override { return server_uri_; }
 
@@ -107,7 +107,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     std::set<std::string> server_features_;
   };
 
-  class GrpcAuthority : public Authority {
+  class GrpcAuthority implements Authority {
    public:
     const XdsServer* server() const override {
       return servers_.empty() ? nullptr : &servers_[0];

@@ -66,7 +66,7 @@
 
 namespace grpc_core {
 
-class ServiceConfigImpl final : public ServiceConfig {
+class ServiceConfigImpl final implements ServiceConfig {
  public:
   /// Creates a new service config from parsing \a json_string.
   static absl::StatusOr<RefCountedPtr<ServiceConfig>> Create(

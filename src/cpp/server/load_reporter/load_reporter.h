@@ -90,7 +90,7 @@ class CensusViewProvider {
 };
 
 // The default implementation fetches the real stats from Census.
-class CensusViewProviderDefaultImpl : public CensusViewProvider {
+class CensusViewProviderDefaultImpl implements CensusViewProvider {
  public:
   CensusViewProviderDefaultImpl();
 
@@ -114,7 +114,7 @@ class CpuStatsProvider {
 
 // The default implementation reads CPU jiffies from the system to calculate CPU
 // utilization.
-class CpuStatsProviderDefaultImpl : public CpuStatsProvider {
+class CpuStatsProviderDefaultImpl implements CpuStatsProvider {
  public:
   CpuStatsSample GetCpuStats() override;
 };

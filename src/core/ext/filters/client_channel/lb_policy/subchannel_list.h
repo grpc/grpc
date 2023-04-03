@@ -176,7 +176,7 @@ class SubchannelData {
 
 // A list of subchannels.
 template <typename SubchannelListType, typename SubchannelDataType>
-class SubchannelList : public DualRefCounted<SubchannelListType> {
+class SubchannelList implements DualRefCounted<SubchannelListType> {
  public:
   // Starts watching the connectivity state of all subchannels.
   // Must be called immediately after instantiation.

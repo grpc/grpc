@@ -86,7 +86,7 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
-class PosixEventPoller : public grpc_event_engine::experimental::Poller {
+class PosixEventPoller implements grpc_event_engine::experimental::Poller {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,

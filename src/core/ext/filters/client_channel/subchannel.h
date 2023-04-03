@@ -66,7 +66,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel implements RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const ChannelArgs& args,
@@ -165,7 +165,7 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel : public DualRefCounted<Subchannel> {
+class Subchannel implements DualRefCounted<Subchannel> {
  public:
   // TODO(roth): Once we remove pollset_set, consider whether this can
   // just use the normal AsyncConnectivityStateWatcherInterface API.
@@ -183,7 +183,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // A base class for producers of subchannel-specific data.
   // Implementations will typically add their own methods as needed.
-  class DataProducerInterface : public DualRefCounted<DataProducerInterface> {
+  class DataProducerInterface implements DualRefCounted<DataProducerInterface> {
    public:
     // A unique identifier for this implementation.
     // Only one producer may be registered under a given type name on a

@@ -42,7 +42,7 @@
 
 namespace grpc_core {
 
-class DynamicFilters : public RefCounted<DynamicFilters> {
+class DynamicFilters implements RefCounted<DynamicFilters> {
  public:
   // Implements the interface of RefCounted<>.
   class Call {

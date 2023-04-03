@@ -61,7 +61,7 @@ namespace grpc_core {
 /// the aforementioned 'grpc-encoding' metadata value, data will pass through
 /// uncompressed.
 
-class CompressionFilter : public ChannelFilter {
+class CompressionFilter implements ChannelFilter {
  protected:
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
@@ -104,7 +104,7 @@ class CompressionFilter : public ChannelFilter {
   bool enable_decompression_;
 };
 
-class ClientCompressionFilter final : public CompressionFilter {
+class ClientCompressionFilter final implements CompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -119,7 +119,7 @@ class ClientCompressionFilter final : public CompressionFilter {
   using CompressionFilter::CompressionFilter;
 };
 
-class ServerCompressionFilter final : public CompressionFilter {
+class ServerCompressionFilter final implements CompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 

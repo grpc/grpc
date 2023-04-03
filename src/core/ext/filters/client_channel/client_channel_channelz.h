@@ -41,7 +41,7 @@
 namespace grpc_core {
 namespace channelz {
 
-class SubchannelNode : public BaseNode {
+class SubchannelNode implements BaseNode {
  public:
   SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;

@@ -43,7 +43,7 @@
 
 namespace grpc_core {
 
-class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
+class MessageSizeParsedConfig implements ServiceConfigParser::ParsedConfig {
  public:
   absl::optional<uint32_t> max_send_size() const { return max_send_size_; }
   absl::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
@@ -67,7 +67,7 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
   absl::optional<uint32_t> max_recv_size_;
 };
 
-class MessageSizeParser : public ServiceConfigParser::Parser {
+class MessageSizeParser implements ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
 
@@ -86,7 +86,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
 absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
 absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
-class MessageSizeFilter : public ChannelFilter {
+class MessageSizeFilter implements ChannelFilter {
  protected:
   explicit MessageSizeFilter(const ChannelArgs& args)
       : limits_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
@@ -99,7 +99,7 @@ class MessageSizeFilter : public ChannelFilter {
   MessageSizeParsedConfig limits_;
 };
 
-class ServerMessageSizeFilter final : public MessageSizeFilter {
+class ServerMessageSizeFilter final implements MessageSizeFilter {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -114,7 +114,7 @@ class ServerMessageSizeFilter final : public MessageSizeFilter {
   using MessageSizeFilter::MessageSizeFilter;
 };
 
-class ClientMessageSizeFilter final : public MessageSizeFilter {
+class ClientMessageSizeFilter final implements MessageSizeFilter {
  public:
   static const grpc_channel_filter kFilter;
 

@@ -41,7 +41,7 @@ class SecurityPolicy {
 
 // EXPERIMENTAL Allows all connection. Anything on the Android device will be
 // able to connect, use with caution!
-class UntrustedSecurityPolicy : public SecurityPolicy {
+class UntrustedSecurityPolicy implements SecurityPolicy {
  public:
   UntrustedSecurityPolicy();
   ~UntrustedSecurityPolicy() override;
@@ -50,7 +50,7 @@ class UntrustedSecurityPolicy : public SecurityPolicy {
 
 // EXPERIMENTAL Only allows the connections from processes with the same UID. In
 // most cases this means "from the same APK".
-class InternalOnlySecurityPolicy : public SecurityPolicy {
+class InternalOnlySecurityPolicy implements SecurityPolicy {
  public:
   InternalOnlySecurityPolicy();
   ~InternalOnlySecurityPolicy() override;
@@ -61,7 +61,7 @@ class InternalOnlySecurityPolicy : public SecurityPolicy {
 
 // EXPERIMENTAL Only allows the connections from the APK that have the same
 // signature.
-class SameSignatureSecurityPolicy : public SecurityPolicy {
+class SameSignatureSecurityPolicy implements SecurityPolicy {
  public:
   // `context` is required for getting PackageManager Java class
   SameSignatureSecurityPolicy(JavaVM* jvm, jobject context);

@@ -36,7 +36,7 @@
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
-class grpc_ssl_credentials : public grpc_channel_credentials {
+class grpc_ssl_credentials implements grpc_channel_credentials {
  public:
   grpc_ssl_credentials(const char* pem_root_certs,
                        grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
@@ -83,7 +83,7 @@ struct grpc_ssl_server_certificate_config_fetcher {
   void* user_data;
 };
 
-class grpc_ssl_server_credentials final : public grpc_server_credentials {
+class grpc_ssl_server_credentials final implements grpc_server_credentials {
  public:
   explicit grpc_ssl_server_credentials(
       const grpc_ssl_server_credentials_options& options);

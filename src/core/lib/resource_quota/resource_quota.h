@@ -37,8 +37,8 @@ class ResourceQuota;
 
 using ResourceQuotaRefPtr = RefCountedPtr<ResourceQuota>;
 
-class ResourceQuota : public RefCounted<ResourceQuota>,
-                      public CppImplOf<ResourceQuota, grpc_resource_quota> {
+class ResourceQuota implements RefCounted<ResourceQuota>,
+    public CppImplOf<ResourceQuota, grpc_resource_quota> {
  public:
   explicit ResourceQuota(std::string name);
   ~ResourceQuota() override;

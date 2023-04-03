@@ -32,7 +32,7 @@
 namespace grpc_core {
 
 // Processes metadata on the server side for HTTP2 transports
-class HttpServerFilter : public ChannelFilter {
+class HttpServerFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

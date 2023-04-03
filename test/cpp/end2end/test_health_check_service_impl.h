@@ -31,7 +31,7 @@ namespace testing {
 
 // A sample sync implementation of the health checking service. This does the
 // same thing as the default one.
-class HealthCheckServiceImpl : public health::v1::Health::Service {
+class HealthCheckServiceImpl implements health::v1::Health::Service {
  public:
   Status Check(ServerContext* context,
                const health::v1::HealthCheckRequest* request,

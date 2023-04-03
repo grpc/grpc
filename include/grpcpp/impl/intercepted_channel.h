@@ -32,7 +32,7 @@ class InterceptorBatchMethodsImpl;
 /// InterceptedChannel is unique to an interceptor, and when an RPC is started
 /// on this channel, only those interceptors that come after this interceptor
 /// see the RPC.
-class InterceptedChannel : public ChannelInterface {
+class InterceptedChannel implements ChannelInterface {
  public:
   ~InterceptedChannel() override { channel_ = nullptr; }
 

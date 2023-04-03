@@ -247,7 +247,7 @@ struct UnrefCallDtor {
 // When the refcount reaches 0, executes the specified UnrefBehavior.
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
-// e.g., class MyClass : public RefCounted<MyClass>
+// e.g., class MyClass implements RefCounted<MyClass>
 //
 // Use PolymorphicRefCount and NonPolymorphicRefCount to select between
 // different implementations of RefCounted.
@@ -262,15 +262,15 @@ struct UnrefCallDtor {
 // The following example is illegal, because calling Unref() will not call
 // the dtor of Child.
 //
-//    class Parent : public RefCounted<Parent, NonPolymorphicRefCount> {}
-//    class Child : public Parent {}
+//    class Parent implements RefCounted<Parent, NonPolymorphicRefCount> {}
+//    class Child implements Parent {}
 //
 //    Child* ch;
 //    ch->Unref();
 //
 template <typename Child, typename Impl = PolymorphicRefCount,
           typename UnrefBehavior = UnrefDelete>
-class RefCounted : public Impl {
+class RefCounted implements Impl {
  public:
   using RefCountedChildType = Child;
 

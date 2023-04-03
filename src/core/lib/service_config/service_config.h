@@ -59,7 +59,7 @@ namespace grpc_core {
 
 // TODO(roth): Consider stripping this down further to the completely minimal
 // interface required to be exposed as part of the resolver API.
-class ServiceConfig : public RefCounted<ServiceConfig> {
+class ServiceConfig implements RefCounted<ServiceConfig> {
  public:
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_SERVICE_CONFIG_OBJ;

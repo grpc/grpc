@@ -33,7 +33,8 @@ namespace grpc {
 // ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
 // provides the methods defined by DescriptorDatabase interfaces. It can be used
 // to feed a DescriptorPool instance.
-class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
+class ProtoReflectionDescriptorDatabase implements
+    protobuf::DescriptorDatabase {
  public:
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);

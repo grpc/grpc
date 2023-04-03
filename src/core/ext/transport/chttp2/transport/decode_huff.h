@@ -227,7 +227,7 @@ class HuffDecoderCommon {
   static const uint8_t table29_0_inner_[9];
 };
 template <typename F>
-class HuffDecoder : public HuffDecoderCommon {
+class HuffDecoder implements HuffDecoderCommon {
  public:
   HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end)
       : sink_(sink), begin_(begin), end_(end) {}

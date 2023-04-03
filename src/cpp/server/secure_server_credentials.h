@@ -59,7 +59,7 @@ class AuthMetadataProcessorAyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-class SecureServerCredentials final : public ServerCredentials {
+class SecureServerCredentials final implements ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds)
       : creds_(creds) {}

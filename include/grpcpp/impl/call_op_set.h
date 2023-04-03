@@ -510,7 +510,7 @@ class DeserializeFunc {
 };
 
 template <class R>
-class DeserializeFuncType final : public DeserializeFunc {
+class DeserializeFuncType final implements DeserializeFunc {
  public:
   explicit DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
@@ -857,13 +857,8 @@ class CallOpSet;
 /// when there are many unused slots used). To avoid duplicate base classes,
 /// the template parameter for CallNoOp is varied by argument position.
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
-class CallOpSet : public CallOpSetInterface,
-                  public Op1,
-                  public Op2,
-                  public Op3,
-                  public Op4,
-                  public Op5,
-                  public Op6 {
+class CallOpSet implements CallOpSetInterface, public Op1, public Op2,
+    public Op3, public Op4, public Op5, public Op6 {
  public:
   CallOpSet() : core_cq_tag_(this), return_tag_(this) {}
   // The copy constructor and assignment operator reset the value of
@@ -888,7 +883,7 @@ class CallOpSet : public CallOpSetInterface,
     return *this;
   }
 
-  void FillOps(Call* call) override {
+  void FillOps(Call * call) override {
     done_intercepting_ = false;
     grpc_call_ref(call->call());
     call_ =

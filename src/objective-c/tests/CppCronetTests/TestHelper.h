@@ -40,7 +40,7 @@ std::string ToString(const grpc::string_ref& r);
 void configureCronet(void);
 bool CheckIsLocalhost(const std::string& addr);
 
-class PhonyInterceptor : public grpc::experimental::Interceptor {
+class PhonyInterceptor implements grpc::experimental::Interceptor {
  public:
   PhonyInterceptor() {}
   virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods);
@@ -61,7 +61,7 @@ class PhonyInterceptorFactory
   }
 };
 
-class TestServiceImpl : public grpc::testing::EchoTestService::Service {
+class TestServiceImpl implements grpc::testing::EchoTestService::Service {
  public:
   grpc::Status Echo(grpc::ServerContext* context,
                     const grpc::testing::EchoRequest* request,

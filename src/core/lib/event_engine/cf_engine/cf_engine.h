@@ -27,8 +27,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class CFEventEngine : public EventEngine,
-                      public grpc_core::KeepsGrpcInitialized {
+class CFEventEngine implements EventEngine,
+    public grpc_core::KeepsGrpcInitialized {
  public:
   CFEventEngine();
   ~CFEventEngine() override;
@@ -40,20 +40,19 @@ class CFEventEngine : public EventEngine,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-  ConnectionHandle Connect(OnConnectCallback on_connect,
-                           const ResolvedAddress& addr,
-                           const EndpointConfig& args,
-                           MemoryAllocator memory_allocator,
-                           Duration timeout) override;
+  ConnectionHandle Connect(
+      OnConnectCallback on_connect, const ResolvedAddress& addr,
+      const EndpointConfig& args, MemoryAllocator memory_allocator,
+      Duration timeout) override;
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
-  void Run(Closure* closure) override;
+  void Run(Closure * closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
-  TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override;
+  TaskHandle RunAfter(Duration when, Closure * closure) override;
+  TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure)
+      override;
   bool Cancel(TaskHandle handle) override;
 
  private:

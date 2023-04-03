@@ -39,7 +39,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class PosixOracleEndpoint : public EventEngine::Endpoint {
+class PosixOracleEndpoint implements EventEngine::Endpoint {
  public:
   explicit PosixOracleEndpoint(int socket_fd);
   static std::unique_ptr<PosixOracleEndpoint> Create(int socket_fd);
@@ -121,7 +121,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   grpc_core::Thread write_ops_ ABSL_GUARDED_BY(mu_);
 };
 
-class PosixOracleListener : public EventEngine::Listener {
+class PosixOracleListener implements EventEngine::Listener {
  public:
   PosixOracleListener(
       EventEngine::Listener::AcceptCallback on_accept,
@@ -145,7 +145,7 @@ class PosixOracleListener : public EventEngine::Listener {
 };
 
 // A posix based oracle EventEngine.
-class PosixOracleEventEngine final : public EventEngine {
+class PosixOracleEventEngine final implements EventEngine {
  public:
   PosixOracleEventEngine() = default;
   ~PosixOracleEventEngine() override = default;

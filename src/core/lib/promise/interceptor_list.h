@@ -256,7 +256,7 @@ class InterceptorList {
 
  private:
   template <typename Fn, typename CleanupFn>
-  class MapImpl final : public Map {
+  class MapImpl final implements Map {
    public:
     using PromiseFactory = promise_detail::RepeatedPromiseFactory<T, Fn>;
     using Promise = typename PromiseFactory::Promise;

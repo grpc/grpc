@@ -91,7 +91,7 @@ namespace experimental {
 /// recommend running a mostly blocking workload in EventEngine threads.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine> {
+class EventEngine implements std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
   ///

@@ -432,7 +432,7 @@ class Client {
 };
 
 template <class StubType, class RequestType>
-class ClientImpl : public Client {
+class ClientImpl implements Client {
  public:
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>

@@ -26,7 +26,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class EventFdWakeupFd : public WakeupFd {
+class EventFdWakeupFd implements WakeupFd {
  public:
   EventFdWakeupFd() : WakeupFd() {}
   ~EventFdWakeupFd() override;

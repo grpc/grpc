@@ -42,7 +42,7 @@ namespace grpc {
 ///
 /// Read more about ZeroCopyInputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyInputStream
-class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
+class ProtoBufferReader implements grpc::protobuf::io::ZeroCopyInputStream {
  public:
   /// Constructs buffer reader from \a buffer. Will set \a status() to non ok
   /// if \a buffer is invalid (the internal buffer has not been initialized).

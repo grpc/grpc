@@ -27,7 +27,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class MemoryQuotaBasedMemoryAllocatorFactory : public MemoryAllocatorFactory {
+class MemoryQuotaBasedMemoryAllocatorFactory implements MemoryAllocatorFactory {
  public:
   explicit MemoryQuotaBasedMemoryAllocatorFactory(
       grpc_core::MemoryQuotaRefPtr memory_quota)

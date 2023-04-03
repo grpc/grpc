@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-class ServerLoadReportingFilter : public ChannelFilter {
+class ServerLoadReportingFilter implements ChannelFilter {
  public:
   static absl::StatusOr<ServerLoadReportingFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args);

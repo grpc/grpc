@@ -30,7 +30,7 @@ namespace testing {
 using RlsService =
     CountedService<grpc::lookup::v1::RouteLookupService::Service>;
 
-class RlsServiceImpl : public RlsService {
+class RlsServiceImpl implements RlsService {
  public:
   using ContextProcessingFunc = std::function<void(grpc::ServerContext*)>;
 

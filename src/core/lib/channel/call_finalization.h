@@ -60,7 +60,7 @@ class CallFinalization {
   };
   // Specialization for callable objects.
   template <typename F>
-  class FuncFinalizer final : public Finalizer {
+  class FuncFinalizer final implements Finalizer {
    public:
     FuncFinalizer(F&& f, Finalizer* next)
         : next_(next), f_(std::forward<F>(f)) {}

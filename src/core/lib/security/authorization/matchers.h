@@ -52,14 +52,14 @@ class AuthorizationMatcher {
       Rbac::Principal principal);
 };
 
-class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
+class AlwaysAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit AlwaysAuthorizationMatcher() = default;
 
   bool Matches(const EvaluateArgs&) const override { return true; }
 };
 
-class AndAuthorizationMatcher : public AuthorizationMatcher {
+class AndAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit AndAuthorizationMatcher(
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
@@ -71,7 +71,7 @@ class AndAuthorizationMatcher : public AuthorizationMatcher {
   std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
 };
 
-class OrAuthorizationMatcher : public AuthorizationMatcher {
+class OrAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit OrAuthorizationMatcher(
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
@@ -84,7 +84,7 @@ class OrAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Negates matching the provided permission/principal.
-class NotAuthorizationMatcher : public AuthorizationMatcher {
+class NotAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit NotAuthorizationMatcher(
       std::unique_ptr<AuthorizationMatcher> matcher)
@@ -96,7 +96,7 @@ class NotAuthorizationMatcher : public AuthorizationMatcher {
   std::unique_ptr<AuthorizationMatcher> matcher_;
 };
 
-class MetadataAuthorizationMatcher : public AuthorizationMatcher {
+class MetadataAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit MetadataAuthorizationMatcher(bool invert) : invert_(invert) {}
 
@@ -113,7 +113,7 @@ class MetadataAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Perform a match against HTTP headers.
-class HeaderAuthorizationMatcher : public AuthorizationMatcher {
+class HeaderAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit HeaderAuthorizationMatcher(HeaderMatcher matcher)
       : matcher_(std::move(matcher)) {}
@@ -125,7 +125,7 @@ class HeaderAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Perform a match against IP Cidr Range.
-class IpAuthorizationMatcher : public AuthorizationMatcher {
+class IpAuthorizationMatcher implements AuthorizationMatcher {
  public:
   enum class Type {
     kDestIp,
@@ -146,7 +146,7 @@ class IpAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Perform a match against port number of the destination (local) address.
-class PortAuthorizationMatcher : public AuthorizationMatcher {
+class PortAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit PortAuthorizationMatcher(int port) : port_(port) {}
 
@@ -158,7 +158,7 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
 
 // Matches the principal name as described in the peer certificate. Uses URI SAN
 // or DNS SAN in that order, otherwise uses subject field.
-class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
+class AuthenticatedAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit AuthenticatedAuthorizationMatcher(absl::optional<StringMatcher> auth)
       : matcher_(std::move(auth)) {}
@@ -171,7 +171,7 @@ class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
 
 // Perform a match against the request server from the client's connection
 // request. This is typically TLS SNI. Currently unsupported.
-class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
+class ReqServerNameAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit ReqServerNameAuthorizationMatcher(
       StringMatcher requested_server_name)
@@ -184,7 +184,7 @@ class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Perform a match against the path header of HTTP request.
-class PathAuthorizationMatcher : public AuthorizationMatcher {
+class PathAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit PathAuthorizationMatcher(StringMatcher path)
       : matcher_(std::move(path)) {}
@@ -198,7 +198,7 @@ class PathAuthorizationMatcher : public AuthorizationMatcher {
 // Performs a match for policy field in RBAC, which is a collection of
 // permission and principal matchers. Policy matches iff, we find a match in one
 // of its permissions and a match in one of its principals.
-class PolicyAuthorizationMatcher : public AuthorizationMatcher {
+class PolicyAuthorizationMatcher implements AuthorizationMatcher {
  public:
   explicit PolicyAuthorizationMatcher(Rbac::Policy policy)
       : permissions_(

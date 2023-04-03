@@ -25,7 +25,7 @@ namespace testing {
 // A wrapper around an RPC service implementation that provides request and
 // response counting.
 template <typename ServiceType>
-class CountedService : public ServiceType {
+class CountedService implements ServiceType {
  public:
   size_t request_count() {
     grpc_core::MutexLock lock(&mu_);

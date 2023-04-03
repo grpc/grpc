@@ -32,7 +32,7 @@
 
 namespace grpc_core {
 
-class InsecureCredentials final : public grpc_channel_credentials {
+class InsecureCredentials final implements grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -46,7 +46,7 @@ class InsecureCredentials final : public grpc_channel_credentials {
   int cmp_impl(const grpc_channel_credentials* other) const override;
 };
 
-class InsecureServerCredentials final : public grpc_server_credentials {
+class InsecureServerCredentials final implements grpc_server_credentials {
  public:
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
       const ChannelArgs& /* args */) override;

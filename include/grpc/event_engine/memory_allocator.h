@@ -110,7 +110,7 @@ class MemoryAllocator {
       Args&&... args) {
     // Wrap T such that when it's destroyed, we can release memory back to the
     // allocator.
-    class Wrapper final : public T {
+    class Wrapper final implements T {
      public:
       explicit Wrapper(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
                        Args&&... args)
@@ -186,7 +186,7 @@ class MemoryAllocator {
 // Wrapper type around std::vector to make initialization against a
 // MemoryAllocator based container allocator easy.
 template <typename T>
-class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
+class Vector implements std::vector<T, MemoryAllocator::Container<T>> {
  public:
   explicit Vector(MemoryAllocator* allocator)
       : std::vector<T, MemoryAllocator::Container<T>>(

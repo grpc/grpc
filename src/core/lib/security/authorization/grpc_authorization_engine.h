@@ -36,7 +36,7 @@ namespace grpc_core {
 // engine type. This engine ignores condition field in RBAC config. It is the
 // caller's responsibility to provide RBAC policies that are compatible with
 // this engine.
-class GrpcAuthorizationEngine : public AuthorizationEngine {
+class GrpcAuthorizationEngine implements AuthorizationEngine {
  public:
   // Builds GrpcAuthorizationEngine without any policies.
   explicit GrpcAuthorizationEngine(Rbac::Action action) : action_(action) {}

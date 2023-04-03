@@ -116,7 +116,7 @@ grpc_security_connector* grpc_security_connector_find_in_args(
 //  A channel security connector object represents a way to configure the
 //  underlying transport security mechanism on the client side.
 
-class grpc_channel_security_connector : public grpc_security_connector {
+class grpc_channel_security_connector implements grpc_security_connector {
  public:
   grpc_channel_security_connector(
       absl::string_view url_scheme,
@@ -169,7 +169,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
 //  A server security connector object represents a way to configure the
 //  underlying transport security mechanism on the server side.
 
-class grpc_server_security_connector : public grpc_security_connector {
+class grpc_server_security_connector implements grpc_security_connector {
  public:
   grpc_server_security_connector(
       absl::string_view url_scheme,

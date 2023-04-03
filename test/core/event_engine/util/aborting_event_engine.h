@@ -31,7 +31,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class AbortingEventEngine : public EventEngine {
+class AbortingEventEngine implements EventEngine {
   ConnectionHandle Connect(OnConnectCallback /* on_connect */,
                            const ResolvedAddress& /* addr */,
                            const EndpointConfig& /* args */,

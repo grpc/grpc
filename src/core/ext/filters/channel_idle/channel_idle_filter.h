@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-class ChannelIdleFilter : public ChannelFilter {
+class ChannelIdleFilter implements ChannelFilter {
  public:
   ~ChannelIdleFilter() override = default;
 
@@ -90,7 +90,7 @@ class ChannelIdleFilter : public ChannelFilter {
   SingleSetActivityPtr activity_;
 };
 
-class ClientIdleFilter final : public ChannelIdleFilter {
+class ClientIdleFilter final implements ChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -101,7 +101,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
   using ChannelIdleFilter::ChannelIdleFilter;
 };
 
-class MaxAgeFilter final : public ChannelIdleFilter {
+class MaxAgeFilter final implements ChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
   struct Config;
@@ -112,7 +112,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   void PostInit() override;
 
  private:
-  class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
+  class ConnectivityWatcher implements AsyncConnectivityStateWatcherInterface {
    public:
     explicit ConnectivityWatcher(MaxAgeFilter* filter)
         : channel_stack_(filter->channel_stack()->Ref()), filter_(filter) {}

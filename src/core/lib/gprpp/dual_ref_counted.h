@@ -43,9 +43,9 @@ namespace grpc_core {
 // When the weak refcount reaches 0, the object is destroyed.
 //
 // This will be used by CRTP (curiously-recurring template pattern), e.g.:
-//   class MyClass : public RefCounted<MyClass> { ... };
+//   class MyClass implements RefCounted<MyClass> { ... };
 template <typename Child>
-class DualRefCounted : public Orphanable {
+class DualRefCounted implements Orphanable {
  public:
   ~DualRefCounted() override = default;
 

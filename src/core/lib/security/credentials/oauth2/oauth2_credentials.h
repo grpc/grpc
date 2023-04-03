@@ -110,7 +110,7 @@ struct grpc_oauth2_pending_get_request_metadata
 //  This object is a base for credentials that need to acquire an oauth2 token
 //  from an http service.
 
-class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
+class grpc_oauth2_token_fetcher_credentials implements grpc_call_credentials {
  public:
   grpc_oauth2_token_fetcher_credentials();
   ~grpc_oauth2_token_fetcher_credentials() override;
@@ -173,7 +173,7 @@ class grpc_google_refresh_token_credentials final
 };
 
 // Access token credentials.
-class grpc_access_token_credentials final : public grpc_call_credentials {
+class grpc_access_token_credentials final implements grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
 

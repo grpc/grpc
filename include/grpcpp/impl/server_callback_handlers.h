@@ -30,7 +30,7 @@ namespace grpc {
 namespace internal {
 
 template <class RequestType, class ResponseType>
-class CallbackUnaryHandler : public grpc::internal::MethodHandler {
+class CallbackUnaryHandler implements grpc::internal::MethodHandler {
  public:
   explicit CallbackUnaryHandler(
       std::function<ServerUnaryReactor*(grpc::CallbackServerContext*,
@@ -108,7 +108,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       get_reactor_;
   MessageAllocator<RequestType, ResponseType>* allocator_ = nullptr;
 
-  class ServerCallbackUnaryImpl : public ServerCallbackUnary {
+  class ServerCallbackUnaryImpl implements ServerCallbackUnary {
    public:
     void Finish(grpc::Status s) override {
       // A callback that only contains a call to MaybeDone can be run as an
@@ -248,7 +248,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
+class CallbackClientStreamingHandler implements grpc::internal::MethodHandler {
  public:
   explicit CallbackClientStreamingHandler(
       std::function<ServerReadReactor<RequestType>*(
@@ -297,7 +297,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
                                                 ResponseType*)>
       get_reactor_;
 
-  class ServerCallbackReaderImpl : public ServerCallbackReader<RequestType> {
+  class ServerCallbackReaderImpl implements ServerCallbackReader<RequestType> {
    public:
     void Finish(grpc::Status s) override {
       // A finish tag with only MaybeDone can have its callback inlined
@@ -439,7 +439,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
+class CallbackServerStreamingHandler implements grpc::internal::MethodHandler {
  public:
   explicit CallbackServerStreamingHandler(
       std::function<ServerWriteReactor<ResponseType>*(
@@ -504,7 +504,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                                                   const RequestType*)>
       get_reactor_;
 
-  class ServerCallbackWriterImpl : public ServerCallbackWriter<ResponseType> {
+  class ServerCallbackWriterImpl implements ServerCallbackWriter<ResponseType> {
    public:
     void Finish(grpc::Status s) override {
       // A finish tag with only MaybeDone can have its callback inlined
@@ -665,7 +665,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackBidiHandler : public grpc::internal::MethodHandler {
+class CallbackBidiHandler implements grpc::internal::MethodHandler {
  public:
   explicit CallbackBidiHandler(
       std::function<ServerBidiReactor<RequestType, ResponseType>*(

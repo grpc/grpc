@@ -36,7 +36,7 @@ class ScopedEnvVar {
   const char* env_var_;
 };
 
-class ScopedExperimentalEnvVar : public ScopedEnvVar {
+class ScopedExperimentalEnvVar implements ScopedEnvVar {
  public:
   explicit ScopedExperimentalEnvVar(const char* env_var)
       : ScopedEnvVar(env_var, "true") {}

@@ -54,7 +54,7 @@ inline RandomDistInterface::~RandomDistInterface() {}
 // independent identical stationary sources. For more information,
 // see http://en.wikipedia.org/wiki/Exponential_distribution
 
-class ExpDist final : public RandomDistInterface {
+class ExpDist final implements RandomDistInterface {
  public:
   explicit ExpDist(double lambda) : lambda_recip_(1.0 / lambda) {}
   ~ExpDist() override {}

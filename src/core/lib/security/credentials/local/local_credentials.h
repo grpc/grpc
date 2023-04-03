@@ -33,7 +33,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 // Main class for grpc local channel credential.
-class grpc_local_credentials final : public grpc_channel_credentials {
+class grpc_local_credentials final implements grpc_channel_credentials {
  public:
   explicit grpc_local_credentials(grpc_local_connect_type connect_type);
   ~grpc_local_credentials() override = default;
@@ -58,7 +58,7 @@ class grpc_local_credentials final : public grpc_channel_credentials {
 };
 
 // Main class for grpc local server credential.
-class grpc_local_server_credentials final : public grpc_server_credentials {
+class grpc_local_server_credentials final implements grpc_server_credentials {
  public:
   explicit grpc_local_server_credentials(grpc_local_connect_type connect_type);
   ~grpc_local_server_credentials() override = default;

@@ -80,7 +80,7 @@ namespace grpc_core {
 // if it's in flight).
 // TODO(ctiller): allow caching and capturing multiple requests for the
 //                same content and combining them
-class HttpRequest : public InternallyRefCounted<HttpRequest> {
+class HttpRequest implements InternallyRefCounted<HttpRequest> {
  public:
   // Asynchronously perform a HTTP GET.
   // 'uri' is the target to make the request to. The scheme field is used to

@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class BackendMetricFilter : public ChannelFilter {
+class BackendMetricFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

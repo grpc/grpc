@@ -112,7 +112,7 @@ class SubchannelStreamClient
 
  private:
   // Contains a call to the backend and all the data related to the call.
-  class CallState : public Orphanable {
+  class CallState implements Orphanable {
    public:
     CallState(RefCountedPtr<SubchannelStreamClient> client,
               grpc_pollset_set* interested_parties);

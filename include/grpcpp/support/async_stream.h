@@ -196,7 +196,7 @@ class ClientAsyncReaderFactory {
 /// where the incoming message stream coming from the server has
 /// messages of type \a R.
 template <class R>
-class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
+class ClientAsyncReader final implements ClientAsyncReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -344,7 +344,7 @@ class ClientAsyncWriterFactory {
 /// where the outgoing message stream going to the server contains
 /// messages of type \a W.
 template <class W>
-class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
+class ClientAsyncWriter final implements ClientAsyncWriterInterface<W> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -695,7 +695,7 @@ class ServerAsyncReaderInterface
 /// where the incoming message stream from the client has messages of type \a R,
 /// and the single response message sent from the server is type \a W.
 template <class W, class R>
-class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
+class ServerAsyncReader final implements ServerAsyncReaderInterface<W, R> {
  public:
   explicit ServerAsyncReader(grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -842,7 +842,7 @@ class ServerAsyncWriterInterface
 /// Async server-side API for doing server streaming RPCs,
 /// where the outgoing message stream from the server has messages of type \a W.
 template <class W>
-class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
+class ServerAsyncWriter final implements ServerAsyncWriterInterface<W> {
  public:
   explicit ServerAsyncWriter(grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}

@@ -24,7 +24,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class WindowsEndpoint : public EventEngine::Endpoint {
+class WindowsEndpoint implements EventEngine::Endpoint {
  public:
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
@@ -42,7 +42,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   struct AsyncIOState;
 
   // Permanent closure type for Read callbacks
-  class HandleReadClosure : public EventEngine::Closure {
+  class HandleReadClosure implements EventEngine::Closure {
    public:
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
@@ -67,7 +67,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   };
 
   // Permanent closure type for Write callbacks
-  class HandleWriteClosure : public EventEngine::Closure {
+  class HandleWriteClosure implements EventEngine::Closure {
    public:
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,

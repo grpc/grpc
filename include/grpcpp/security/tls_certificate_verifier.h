@@ -224,7 +224,7 @@ class ExternalCertificateVerifier {
 // Note: using this solely without any other authentication mechanisms on the
 // peer identity will leave your applications to the MITM(Man-In-The-Middle)
 // attacks. Users should avoid doing so in production environments.
-class NoOpCertificateVerifier : public CertificateVerifier {
+class NoOpCertificateVerifier implements CertificateVerifier {
  public:
   NoOpCertificateVerifier();
 };
@@ -232,7 +232,7 @@ class NoOpCertificateVerifier : public CertificateVerifier {
 // A CertificateVerifier that will perform hostname verification, to see if the
 // target name set from the client side matches the identity information
 // specified on the server's certificate.
-class HostNameCertificateVerifier : public CertificateVerifier {
+class HostNameCertificateVerifier implements CertificateVerifier {
  public:
   HostNameCertificateVerifier();
 };

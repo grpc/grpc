@@ -36,7 +36,7 @@
 
 namespace grpc_core {
 
-class Chttp2Connector : public SubchannelConnector {
+class Chttp2Connector implements SubchannelConnector {
  public:
   ~Chttp2Connector() override;
 

@@ -30,7 +30,7 @@
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
-class ClientLoadReportingFilter : public ChannelFilter {
+class ClientLoadReportingFilter implements ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

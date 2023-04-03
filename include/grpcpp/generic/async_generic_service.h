@@ -36,7 +36,7 @@ typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
 typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ServerContext {
+class GenericServerContext final implements ServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
@@ -84,7 +84,8 @@ class AsyncGenericService final {
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
-class GenericCallbackServerContext final : public grpc::CallbackServerContext {
+class GenericCallbackServerContext final implements
+    grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
@@ -109,7 +110,7 @@ class CallbackGenericService {
   /// application-level interface for this RPC. Unimplemented by default.
   virtual ServerGenericBidiReactor* CreateReactor(
       GenericCallbackServerContext* /*ctx*/) {
-    class Reactor : public ServerGenericBidiReactor {
+    class Reactor implements ServerGenericBidiReactor {
      public:
       Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }
       void OnDone() override { delete this; }

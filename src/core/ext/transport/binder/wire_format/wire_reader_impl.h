@@ -34,7 +34,7 @@
 
 namespace grpc_binder {
 
-class WireReaderImpl : public WireReader {
+class WireReaderImpl implements WireReader {
  public:
   WireReaderImpl(
       std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,

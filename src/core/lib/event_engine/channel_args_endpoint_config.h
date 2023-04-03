@@ -26,7 +26,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class ChannelArgsEndpointConfig : public EndpointConfig {
+class ChannelArgsEndpointConfig implements EndpointConfig {
  public:
   ChannelArgsEndpointConfig() = default;
   explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)

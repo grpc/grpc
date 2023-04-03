@@ -30,7 +30,7 @@
 namespace grpc_binder {
 
 // Routes the data received from transport to corresponding streams
-class TransportStreamReceiverImpl : public TransportStreamReceiver {
+class TransportStreamReceiverImpl implements TransportStreamReceiver {
  public:
   explicit TransportStreamReceiverImpl(
       bool is_client, std::function<void()> accept_stream_callback = nullptr)

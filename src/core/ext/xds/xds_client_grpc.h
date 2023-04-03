@@ -37,7 +37,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsClient : public XdsClient {
+class GrpcXdsClient implements XdsClient {
  public:
   // Factory function to get or create the global XdsClient instance.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(

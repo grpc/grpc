@@ -30,7 +30,7 @@
 // each new key request, the key is first searched in the map and if found, the
 // interceptor fills in the return value without making a request to the server.
 // Only if the key is not found in the cache do we make a request.
-class CachingInterceptor : public grpc::experimental::Interceptor {
+class CachingInterceptor implements grpc::experimental::Interceptor {
  public:
   CachingInterceptor(grpc::experimental::ClientRpcInfo* info) {}
 

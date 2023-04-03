@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-class JsonChannelArgs : public JsonArgs {
+class JsonChannelArgs implements JsonArgs {
  public:
   explicit JsonChannelArgs(const ChannelArgs& args) : args_(args) {}
 

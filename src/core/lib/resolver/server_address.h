@@ -116,7 +116,8 @@ using ServerAddressList = std::vector<ServerAddress>;
 //
 // ServerAddressWeightAttribute
 //
-class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
+class ServerAddressWeightAttribute implements
+    ServerAddress::AttributeInterface {
  public:
   static const char* kServerAddressWeightAttributeKey;
 

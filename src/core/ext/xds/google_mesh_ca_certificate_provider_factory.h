@@ -40,7 +40,7 @@ namespace grpc_core {
 class GoogleMeshCaCertificateProviderFactory
     : public CertificateProviderFactory {
  public:
-  class Config : public CertificateProviderFactory::Config {
+  class Config implements CertificateProviderFactory::Config {
    public:
     struct StsConfig {
       std::string token_exchange_service_uri;

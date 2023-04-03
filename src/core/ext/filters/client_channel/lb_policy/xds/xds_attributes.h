@@ -33,7 +33,7 @@ namespace grpc_core {
 
 extern const char* kXdsLocalityNameAttributeKey;
 
-class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
+class XdsLocalityAttribute implements ServerAddress::AttributeInterface {
  public:
   XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name,
                        uint32_t weight)

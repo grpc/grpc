@@ -82,7 +82,7 @@
 namespace grpc_core {
 namespace testing {
 
-class LoadBalancingPolicyTest : public ::testing::Test {
+class LoadBalancingPolicyTest implements ::testing::Test {
  protected:
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
@@ -92,7 +92,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // policy when it calls the helper's CreateSubchannel() method.
     // There may be multiple FakeSubchannel objects associated with a
     // given SubchannelState object.
-    class FakeSubchannel : public SubchannelInterface {
+    class FakeSubchannel implements SubchannelInterface {
      public:
       FakeSubchannel(SubchannelState* state,
                      std::shared_ptr<WorkSerializer> work_serializer)
@@ -111,7 +111,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // Converts between
       // SubchannelInterface::ConnectivityStateWatcherInterface and
       // ConnectivityStateWatcherInterface.
-      class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
+      class WatcherWrapper implements AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
             std::shared_ptr<WorkSerializer> work_serializer,
@@ -287,7 +287,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake helper to be passed to the LB policy.
-  class FakeHelper : public LoadBalancingPolicy::ChannelControlHelper {
+  class FakeHelper implements LoadBalancingPolicy::ChannelControlHelper {
    public:
     // Represents a state update reported by the LB policy.
     struct StateUpdate {
@@ -432,7 +432,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake MetadataInterface implementation, for use in PickArgs.
-  class FakeMetadata : public LoadBalancingPolicy::MetadataInterface {
+  class FakeMetadata implements LoadBalancingPolicy::MetadataInterface {
    public:
     explicit FakeMetadata(std::map<std::string, std::string> metadata)
         : metadata_(std::move(metadata)) {}
@@ -462,7 +462,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public ClientChannelLbCallState {
+  class FakeCallState implements ClientChannelLbCallState {
    public:
     explicit FakeCallState(
         const std::map<UniqueTypeName, absl::string_view>& attributes) {

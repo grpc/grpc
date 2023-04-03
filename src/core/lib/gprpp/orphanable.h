@@ -70,7 +70,7 @@ inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
 
 // A type of Orphanable with internal ref-counting.
 template <typename Child, typename UnrefBehavior = UnrefDelete>
-class InternallyRefCounted : public Orphanable {
+class InternallyRefCounted implements Orphanable {
  public:
   // Not copyable nor movable.
   InternallyRefCounted(const InternallyRefCounted&) = delete;

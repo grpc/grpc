@@ -61,7 +61,7 @@ class CallTracerAnnotationInterface {
 
 // The base class for CallAttemptTracer and ServerCallTracer.
 // TODO(yashykt): What's a better name for this?
-class CallTracerInterface : public CallTracerAnnotationInterface {
+class CallTracerInterface implements CallTracerAnnotationInterface {
  public:
   ~CallTracerInterface() override {}
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
@@ -89,13 +89,13 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the ClientCallTracer object.
-class ClientCallTracer : public CallTracerAnnotationInterface {
+class ClientCallTracer implements CallTracerAnnotationInterface {
  public:
   // Interface for a tracer that records activities on a particular call
   // attempt.
   // (A single RPC can have multiple attempts due to retry/hedging policies or
   // as transparent retry attempts.)
-  class CallAttemptTracer : public CallTracerInterface {
+  class CallAttemptTracer implements CallTracerInterface {
    public:
     ~CallAttemptTracer() override {}
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
@@ -124,7 +124,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
 };
 
 // Interface for a tracer that records activities on a server call.
-class ServerCallTracer : public CallTracerInterface {
+class ServerCallTracer implements CallTracerInterface {
  public:
   ~ServerCallTracer() override {}
   // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`

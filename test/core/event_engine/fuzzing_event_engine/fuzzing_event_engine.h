@@ -49,7 +49,7 @@ namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
-class FuzzingEventEngine : public EventEngine {
+class FuzzingEventEngine implements EventEngine {
  public:
   struct Options {
     // After all scheduled tick lengths are completed, this is the amount of
@@ -146,7 +146,7 @@ class FuzzingEventEngine : public EventEngine {
   };
 
   // Implementation of Listener.
-  class FuzzingListener final : public Listener {
+  class FuzzingListener final implements Listener {
    public:
     explicit FuzzingListener(std::shared_ptr<ListenerInfo> info)
         : info_(std::move(info)) {}
@@ -189,7 +189,7 @@ class FuzzingEventEngine : public EventEngine {
   // Implementation of Endpoint.
   // When a connection is formed, we create two of these - one with index 0, the
   // other index 1, both pointing to the same EndpointMiddle.
-  class FuzzingEndpoint final : public Endpoint {
+  class FuzzingEndpoint final implements Endpoint {
    public:
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}

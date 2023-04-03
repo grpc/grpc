@@ -131,7 +131,7 @@ class ReclaimerQueue {
   struct State;
 
  public:
-  class Handle : public InternallyRefCounted<Handle> {
+  class Handle implements InternallyRefCounted<Handle> {
    public:
     Handle() = default;
     template <typename F>
@@ -166,7 +166,7 @@ class ReclaimerQueue {
     };
 
     template <typename F>
-    class SweepFn final : public Sweep {
+    class SweepFn final implements Sweep {
      public:
       explicit SweepFn(F&& f, std::shared_ptr<State> state)
           : Sweep(std::move(state)), f_(std::move(f)) {}
@@ -389,7 +389,7 @@ class BasicMemoryQuota final
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
 // underlying resource quota.
-class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
+class GrpcMemoryAllocatorImpl final implements EventEngineMemoryAllocatorImpl {
  public:
   explicit GrpcMemoryAllocatorImpl(
       std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name);
@@ -507,7 +507,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 // MemoryOwner's lifetime, and are not queryable, so passing a MemoryOwner to a
 // new owning module means that module cannot reason about which reclaimers are
 // active, nor what they might do.
-class MemoryOwner final : public MemoryAllocator {
+class MemoryOwner final implements MemoryAllocator {
  public:
   MemoryOwner() = default;
 

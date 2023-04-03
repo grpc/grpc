@@ -71,7 +71,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   // 1. to initialize in the control plane combiner;
   // 2. to use in the data plane combiner.
   // So no additional synchronization is needed.
-  class DropConfig : public RefCounted<DropConfig> {
+  class DropConfig implements RefCounted<DropConfig> {
    public:
     struct DropCategory {
       bool operator==(const DropCategory& other) const {

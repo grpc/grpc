@@ -39,7 +39,7 @@ class BaseActivation {
 // It provides binding between references used in expressions
 // and actual values. This is a temporary stub implementation of CEL APIs.
 // Once gRPC imports the CEL library, this class will be removed.
-class Activation : public BaseActivation {
+class Activation implements BaseActivation {
  public:
   Activation() = default;
 

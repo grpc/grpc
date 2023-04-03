@@ -40,7 +40,7 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/end2end/end2end_tests.h"
 
-class SockpairFixture : public CoreTestFixture {
+class SockpairFixture implements CoreTestFixture {
  public:
   explicit SockpairFixture(const grpc_core::ChannelArgs& ep_args)
       : ep_(grpc_iomgr_create_endpoint_pair("fixture", ep_args.ToC().get())) {}

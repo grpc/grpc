@@ -28,7 +28,7 @@
 #include "src/compiler/protobuf_plugin.h"
 
 // Cpp Generator for Protobug IDL
-class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class CppGrpcGenerator implements grpc::protobuf::compiler::CodeGenerator {
  public:
   CppGrpcGenerator() {}
   virtual ~CppGrpcGenerator() {}

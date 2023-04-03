@@ -74,7 +74,7 @@ class ReadableParcel {
   virtual absl::Status ReadString(std::string* str) = 0;
 };
 
-class TransactionReceiver : public HasRawBinder {
+class TransactionReceiver implements HasRawBinder {
  public:
   using OnTransactCb =
       std::function<absl::Status(transaction_code_t, ReadableParcel*, int uid)>;
@@ -84,7 +84,7 @@ class TransactionReceiver : public HasRawBinder {
 
 class WireReader;
 
-class Binder : public HasRawBinder {
+class Binder implements HasRawBinder {
  public:
   ~Binder() override = default;
 

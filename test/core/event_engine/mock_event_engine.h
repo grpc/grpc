@@ -30,7 +30,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class MockEventEngine : public EventEngine {
+class MockEventEngine implements EventEngine {
  public:
   MOCK_METHOD(
       absl::StatusOr<std::unique_ptr<Listener>>, CreateListener,

@@ -55,7 +55,7 @@ class ExternalConnectionAcceptorImpl;
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server : public ServerInterface, private internal::GrpcLibrary {
+class Server implements ServerInterface, private internal::GrpcLibrary {
  public:
   ~Server() ABSL_LOCKS_EXCLUDED(mu_) override;
 
@@ -91,7 +91,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   /// to be alive until all server objects in the process have been destroyed.
   /// The same \a GlobalCallbacks object will be used throughout the
   /// application and is shared among all \a Server objects.
-  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+  static void SetGlobalCallbacks(GlobalCallbacks * callbacks);
 
   /// Returns a \em raw pointer to the underlying \a grpc_server instance.
   /// EXPERIMENTAL:  for internal/test use only
@@ -147,8 +147,8 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const std::string& addr,
-                       ServerCredentials* creds) override;
+  int AddListeningPort(const std::string& addr, ServerCredentials* creds)
+      override;
 
   /// NOTE: This is *NOT* a public API. The server constructors are supposed to
   /// be used by \a ServerBuilder class only. The constructor will be made
@@ -172,7 +172,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(ChannelArguments* args,
+  Server(ChannelArguments * args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
@@ -192,7 +192,7 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  void Start(ServerCompletionQueue * *cqs, size_t num_cqs) override;
 
   grpc_server* server() override { return server_; }
 
@@ -234,23 +234,24 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
-  void RegisterAsyncGenericService(AsyncGenericService* service) override;
+  void RegisterAsyncGenericService(AsyncGenericService * service) override;
 
   /// Register a callback-based generic service. This call does not take
   /// ownership of theservice. The service must exist for the lifetime of the
   /// Server instance.
-  void RegisterCallbackGenericService(CallbackGenericService* service) override;
+  void RegisterCallbackGenericService(CallbackGenericService * service)
+      override;
 
   void RegisterContextAllocator(
       std::unique_ptr<ContextAllocator> context_allocator) {
     context_allocator_ = std::move(context_allocator);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface * ops,
+                        internal::Call * call) override;
 
-  void ShutdownInternal(gpr_timespec deadline)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
+  void ShutdownInternal(gpr_timespec deadline) ABSL_LOCKS_EXCLUDED(mu_)
+      override;
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
@@ -302,8 +303,8 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   internal::Mutex mu_;
   bool started_;
   bool shutdown_ ABSL_GUARDED_BY(mu_);
-  bool shutdown_notified_
-      ABSL_GUARDED_BY(mu_);  // Was notify called on the shutdown_cv_
+  bool shutdown_notified_ ABSL_GUARDED_BY(
+      mu_);  // Was notify called on the shutdown_cv_
   internal::CondVar shutdown_done_cv_;
   bool shutdown_done_ ABSL_GUARDED_BY(mu_) = false;
   std::atomic_int shutdown_refs_outstanding_{1};

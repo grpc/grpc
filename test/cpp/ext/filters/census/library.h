@@ -57,7 +57,7 @@ extern const ::opencensus::tags::TagKey TEST_TAG_KEY;
 extern const char* TEST_TAG_VALUE;
 extern const char* kExpectedTraceIdKey;
 
-class EchoServer final : public TestServiceImpl {
+class EchoServer final implements TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     CheckMetadata(context);
@@ -133,7 +133,7 @@ class ExportedTracesRecorder
 
 extern ExportedTracesRecorder* traces_recorder_;
 
-class StatsPluginEnd2EndTest : public ::testing::Test {
+class StatsPluginEnd2EndTest implements ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();

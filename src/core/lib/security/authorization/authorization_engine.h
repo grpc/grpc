@@ -25,7 +25,7 @@
 namespace grpc_core {
 
 // Interface for gRPC Authorization Engine.
-class AuthorizationEngine : public RefCounted<AuthorizationEngine> {
+class AuthorizationEngine implements RefCounted<AuthorizationEngine> {
  public:
   struct Decision {
     enum class Type {

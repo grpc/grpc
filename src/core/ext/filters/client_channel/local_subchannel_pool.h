@@ -35,7 +35,7 @@ namespace grpc_core {
 // when an incoming resolver update contains some addresses for which the
 // channel has already created subchannels.
 // Thread-unsafe.
-class LocalSubchannelPool final : public SubchannelPoolInterface {
+class LocalSubchannelPool final implements SubchannelPoolInterface {
  public:
   LocalSubchannelPool() {}
   ~LocalSubchannelPool() override {}

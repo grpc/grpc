@@ -36,7 +36,7 @@ namespace grpc_core {
 
 // Fetches the value of an attribute from the MetadataServer on a GCP
 // environment.
-class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
+class MetadataQuery implements InternallyRefCounted<MetadataQuery> {
  public:
   static const char kZoneAttribute[];
   static const char kClusterNameAttribute[];

@@ -39,7 +39,7 @@ class GrpcLibraryInitHolder {
   virtual ~GrpcLibraryInitHolder();
 };
 
-class CFStreamHandle : public GrpcLibraryInitHolder {
+class CFStreamHandle implements GrpcLibraryInitHolder {
  public:
   static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
                                             CFWriteStreamRef write_stream);

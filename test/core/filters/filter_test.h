@@ -85,7 +85,7 @@ inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
             << " payload:" << absl::CEscape(msg.payload()->JoinIntoString());
 }
 
-class FilterTestBase : public ::testing::Test {
+class FilterTestBase implements ::testing::Test {
  public:
   class Call;
 
@@ -207,7 +207,7 @@ class FilterTestBase : public ::testing::Test {
 };
 
 template <typename Filter>
-class FilterTest : public FilterTestBase {
+class FilterTest implements FilterTestBase {
  public:
   absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
     auto filter = Filter::Create(args, ChannelFilter::Args());

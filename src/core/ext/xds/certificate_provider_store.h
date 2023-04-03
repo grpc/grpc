@@ -78,7 +78,7 @@ class CertificateProviderStore
  private:
   // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
   // the entry from the CertificateProviderStore when the refcount reaches zero.
-  class CertificateProviderWrapper : public grpc_tls_certificate_provider {
+  class CertificateProviderWrapper implements grpc_tls_certificate_provider {
    public:
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,

@@ -57,7 +57,7 @@ class ServerInterceptorFactoryInterface;
 class ServerMetricRecorder;
 }  // namespace experimental
 
-class ServerInterface : public internal::CallHook {
+class ServerInterface implements internal::CallHook {
  public:
   ~ServerInterface() override {}
 
@@ -160,7 +160,7 @@ class ServerInterface : public internal::CallHook {
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override = 0;
 
-  class BaseAsyncRequest : public internal::CompletionQueueTag {
+  class BaseAsyncRequest implements internal::CompletionQueueTag {
    public:
     BaseAsyncRequest(ServerInterface* server, grpc::ServerContext* context,
                      internal::ServerAsyncStreamingInterface* stream,
@@ -191,7 +191,7 @@ class ServerInterface : public internal::CallHook {
   };
 
   /// RegisteredAsyncRequest is not part of the C++ API
-  class RegisteredAsyncRequest : public BaseAsyncRequest {
+  class RegisteredAsyncRequest implements BaseAsyncRequest {
    public:
     RegisteredAsyncRequest(ServerInterface* server,
                            grpc::ServerContext* context,
@@ -220,7 +220,7 @@ class ServerInterface : public internal::CallHook {
     const internal::RpcMethod::RpcType type_;
   };
 
-  class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
+  class NoPayloadAsyncRequest final implements RegisteredAsyncRequest {
    public:
     NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
                           ServerInterface* server, grpc::ServerContext* context,
@@ -238,7 +238,7 @@ class ServerInterface : public internal::CallHook {
   };
 
   template <class Message>
-  class PayloadAsyncRequest final : public RegisteredAsyncRequest {
+  class PayloadAsyncRequest final implements RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
                         ServerInterface* server, grpc::ServerContext* context,
@@ -295,7 +295,7 @@ class ServerInterface : public internal::CallHook {
     ByteBuffer payload_;
   };
 
-  class GenericAsyncRequest : public BaseAsyncRequest {
+  class GenericAsyncRequest implements BaseAsyncRequest {
    public:
     GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,

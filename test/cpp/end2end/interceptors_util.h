@@ -35,7 +35,7 @@ namespace grpc {
 namespace testing {
 // This interceptor does nothing. Just keeps a global count on the number of
 // times it was invoked.
-class PhonyInterceptor : public experimental::Interceptor {
+class PhonyInterceptor implements experimental::Interceptor {
  public:
   PhonyInterceptor() {}
 
@@ -89,7 +89,7 @@ class PhonyInterceptorFactory
 };
 
 // This interceptor can be used to test the interception mechanism.
-class TestInterceptor : public experimental::Interceptor {
+class TestInterceptor implements experimental::Interceptor {
  public:
   TestInterceptor(const std::string& method, const char* suffix_for_stats,
                   experimental::ClientRpcInfo* info) {
@@ -140,7 +140,7 @@ class NullInterceptorFactory
   }
 };
 
-class EchoTestServiceStreamingImpl : public EchoTestService::Service {
+class EchoTestServiceStreamingImpl implements EchoTestService::Service {
  public:
   ~EchoTestServiceStreamingImpl() override {}
 

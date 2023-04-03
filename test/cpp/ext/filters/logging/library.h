@@ -43,7 +43,7 @@
 namespace grpc {
 namespace testing {
 
-class MyTestServiceImpl : public TestServiceImpl {
+class MyTestServiceImpl implements TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -53,7 +53,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 };
 
-class TestLoggingSink : public grpc_core::LoggingSink {
+class TestLoggingSink implements grpc_core::LoggingSink {
  public:
   Config FindMatch(bool /* is_client */, absl::string_view /* service */,
                    absl::string_view /* method */) override {
@@ -97,7 +97,7 @@ class TestLoggingSink : public grpc_core::LoggingSink {
 
 extern TestLoggingSink* g_test_logging_sink;
 
-class LoggingTest : public ::testing::Test {
+class LoggingTest implements ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     g_test_logging_sink = new TestLoggingSink;

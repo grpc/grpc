@@ -36,7 +36,7 @@ namespace grpc_core {
 
 // ServerConfigSelector allows for choosing the service config to apply to a
 // server-side call based on the received initial metadata.
-class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
+class ServerConfigSelector implements RefCounted<ServerConfigSelector> {
  public:
   // Configuration to apply to an incoming call
   struct CallConfig {

@@ -70,7 +70,7 @@ class QpsGauge {
   std::mutex num_queries_mu_;
 };
 
-class MetricsServiceImpl final : public MetricsService::Service {
+class MetricsServiceImpl final implements MetricsService::Service {
  public:
   grpc::Status GetAllGauges(ServerContext* context, const EmptyMessage* request,
                             ServerWriter<GaugeResponse>* writer) override;

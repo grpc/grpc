@@ -33,7 +33,7 @@ extern absl::AnyInvocable<
     g_oracle_ee_factory;
 
 // Manages the lifetime of the global EventEngine factory.
-class EventEngineTestEnvironment : public testing::Environment {
+class EventEngineTestEnvironment implements testing::Environment {
  public:
   EventEngineTestEnvironment(
       absl::AnyInvocable<
@@ -64,7 +64,7 @@ class EventEngineTestEnvironment : public testing::Environment {
       oracle_factory_;
 };
 
-class EventEngineTest : public testing::Test {
+class EventEngineTest implements testing::Test {
  protected:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewEventEngine() {

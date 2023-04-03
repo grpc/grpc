@@ -33,12 +33,12 @@ namespace grpc_core {
 // ResourceTypeStruct must inherit from XdsResourceType::ResourceData,
 // must be copy-constructible, and must implement operator==().
 template <typename Subclass, typename ResourceTypeStruct>
-class XdsResourceTypeImpl : public XdsResourceType {
+class XdsResourceTypeImpl implements XdsResourceType {
  public:
   using ResourceType = ResourceTypeStruct;
 
   // XdsClient watcher that handles down-casting.
-  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
+  class WatcherInterface implements XdsClient::ResourceWatcherInterface {
    public:
     virtual void OnResourceChanged(ResourceType listener) = 0;
 

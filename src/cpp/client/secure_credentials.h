@@ -44,7 +44,7 @@ namespace grpc {
 
 class Channel;
 
-class SecureChannelCredentials final : public ChannelCredentials {
+class SecureChannelCredentials final implements ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() override {
@@ -67,7 +67,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* const c_creds_;
 };
 
-class SecureCallCredentials final : public CallCredentials {
+class SecureCallCredentials final implements CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() override {

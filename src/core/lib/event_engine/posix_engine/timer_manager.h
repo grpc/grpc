@@ -46,7 +46,7 @@ namespace experimental {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final : public grpc_event_engine::experimental::Forkable {
+class TimerManager final implements grpc_event_engine::experimental::Forkable {
  public:
   explicit TimerManager(
       std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool);
@@ -68,7 +68,7 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   void PostforkChild() override;
 
  private:
-  class Host final : public TimerListHost {
+  class Host final implements TimerListHost {
    public:
     explicit Host(TimerManager* timer_manager)
         : timer_manager_(timer_manager) {}

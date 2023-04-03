@@ -84,7 +84,7 @@ struct HandshakerArgs {
 /// Handshaker
 ///
 
-class Handshaker : public RefCounted<Handshaker> {
+class Handshaker implements RefCounted<Handshaker> {
  public:
   ~Handshaker() override = default;
   virtual void Shutdown(grpc_error_handle why) = 0;
@@ -98,7 +98,7 @@ class Handshaker : public RefCounted<Handshaker> {
 // HandshakeManager
 //
 
-class HandshakeManager : public RefCounted<HandshakeManager> {
+class HandshakeManager implements RefCounted<HandshakeManager> {
  public:
   HandshakeManager();
   ~HandshakeManager() override;

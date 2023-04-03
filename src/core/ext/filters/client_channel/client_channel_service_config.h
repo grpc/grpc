@@ -86,7 +86,7 @@ class ClientChannelMethodParsedConfig
   absl::optional<bool> wait_for_ready_;
 };
 
-class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
+class ClientChannelServiceConfigParser implements ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
 
