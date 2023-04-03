@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/status.h"
@@ -813,12 +814,23 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // (allowing the call code to decide on what signalling to give the
   // application).
 
-  return Map(Seq(std::move(recv_initial_metadata_then_run_promise),
-                 std::move(send_trailing_metadata)),
-             [stream = std::move(stream)](ServerMetadataHandle md) {
-               stream->set_finished();
-               return md;
-             });
+  struct CleanupPollingEntityLatch {
+    void operator()(Latch<grpc_polling_entity>* latch) {
+      if (!latch->is_set()) latch->Set(grpc_polling_entity());
+    }
+  };
+  auto cleanup_polling_entity_latch =
+      std::unique_ptr<Latch<grpc_polling_entity>, CleanupPollingEntityLatch>(
+          &call_data->polling_entity_latch);
+
+  return Map(
+      Seq(std::move(recv_initial_metadata_then_run_promise),
+          std::move(send_trailing_metadata)),
+      [cleanup_polling_entity_latch = std::move(cleanup_polling_entity_latch),
+       stream = std::move(stream)](ServerMetadataHandle md) {
+        stream->set_finished();
+        return md;
+      });
 }
 #endif
 
