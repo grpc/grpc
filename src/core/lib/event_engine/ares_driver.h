@@ -73,8 +73,9 @@ class GrpcAresHostnameRequest : public GrpcAresRequest {
  public:
   using Result = std::vector<EventEngine::ResolvedAddress>;
 
-  // on_resolve is guaranteed to be called with Result or failure status and the
-  // request object's lifetime is managed internally after Start.
+  // on_resolve is guaranteed to be called with Result or failure status unless
+  // being cancelled and the request object's lifetime is managed internally
+  // after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
@@ -89,8 +90,9 @@ class GrpcAresSRVRequest : public GrpcAresRequest {
  public:
   using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
 
-  // on_resolve is guaranteed to be called with Result or failure status and the
-  // request object's lifetime is managed internally after Start.
+  // on_resolve is guaranteed to be called with Result or failure status unless
+  // being cancelled and the request object's lifetime is managed internally
+  // after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };
@@ -104,8 +106,9 @@ class GrpcAresTXTRequest : public GrpcAresRequest {
  public:
   using Result = std::string;
 
-  // on_resolve is guaranteed to be called with Result or failure status and the
-  // request object's lifetime is managed internally after Start.
+  // on_resolve is guaranteed to be called with Result or failure status unless
+  // being cancelled and the request object's lifetime is managed internally
+  // after Start.
   virtual void Start(
       absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) = 0;
 };

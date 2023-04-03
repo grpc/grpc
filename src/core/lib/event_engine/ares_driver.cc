@@ -14,9 +14,16 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
-#include <arpa/nameser.h>
-#include <inttypes.h>
-#include <netdb.h>
+// IWYU pragma: no_include <arpa/inet.h>
+// IWYU pragma: no_include <arpa/nameser.h>
+// IWYU pragma: no_include <inttypes.h>
+// IWYU pragma: no_include <netdb.h>
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <stdlib.h>
+// IWYU pragma: no_include <sys/socket.h>
+
+#if GRPC_ARES == 1
+
 #include <string.h>
 
 #include <algorithm>
@@ -917,7 +924,8 @@ void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
     // OnAresBackupPollAlarm which holds their own ref. So this Unref should
     // not trigger destruction thus is safe to called under the lock. This
     // applies to other OnResolve too.
-    absl::Cleanup closer = [this] { Unref(DEBUG_LOCATION, "OnResolve"); };
+    auto closer =
+        absl::MakeCleanup([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
     // We mark the event driver as being shut down.
     // grpc_ares_notify_on_event_locked will shut down any remaining
     // fds.
@@ -1054,7 +1062,8 @@ void GrpcAresSRVRequestImpl::Start(
 }
 
 void GrpcAresSRVRequestImpl::OnResolve(absl::StatusOr<Result> result) {
-  absl::Cleanup closer = [this] { Unref(DEBUG_LOCATION, "OnResolve"); };
+  auto closer =
+      absl::MakeCleanup([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
   if (cancelled_) {
     // Cancel does not invoke on_resolve.
     return;
@@ -1107,7 +1116,8 @@ void GrpcAresTXTRequestImpl::Start(
 }
 
 void GrpcAresTXTRequestImpl::OnResolve(absl::StatusOr<Result> result) {
-  absl::Cleanup closer = [this] { Unref(DEBUG_LOCATION, "OnResolve"); };
+  auto closer =
+      absl::MakeCleanup([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
   if (cancelled_) {
     // Cancel does not invoke on_resolve.
     return;
@@ -1175,3 +1185,5 @@ void noop_inject_channel_config(ares_channel /*channel*/) {}
 
 void (*ares_driver_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
+
+#endif  // GRPC_ARES == 1
