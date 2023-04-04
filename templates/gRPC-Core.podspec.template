@@ -76,7 +76,6 @@
               set(address_sorting_unwanted_files))
              | set(list_lib_files("re2", ("headers", )))))
   grpc_abseil_specs = list_abseil_specs("grpc")
-  grpc_tests_abseil_specs = list(sorted(set(list_abseil_specs("end2end_tests")) - set(grpc_abseil_specs)))
 
   # TODO(jtattermusch): build.yaml is now generated from bazel build
   # which doesn't have an explicit "grpc_cronet" target. Until it exists
@@ -95,15 +94,6 @@
 
   grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
   grpc_cronet_public_headers = list(sorted(grpc_cronet_extra_public_headers))
-
-  grpc_test_util_files = list(sorted(
-    set(list_lib_files("end2end_tests", ("src", "headers")))
-    - set(grpc_private_files)
-    - set(address_sorting_unwanted_files)
-    - set([
-      # Subprocess is not supported in tvOS and not needed by our tests.
-      "test/core/util/subprocess_posix.cc",
-    ])))
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -226,18 +216,6 @@
       ss.dependency "#{s.name}/Cronet-Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}
-    end
-
-    s.subspec 'Tests' do |ss|
-      ss.header_mappings_dir = '.'
-
-      ss.dependency "#{s.name}/Interface", version
-      ss.dependency "#{s.name}/Implementation", version
-      % for abseil_spec in grpc_tests_abseil_specs:
-      ss.dependency '${abseil_spec}', abseil_version
-      % endfor
-
-      ss.source_files = ${ruby_multiline_list(grpc_test_util_files, 22)}
     end
 
     # patch include of openssl to openssl_grpc
