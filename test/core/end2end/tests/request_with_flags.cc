@@ -99,7 +99,7 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   op++;
   error = grpc_call_start_batch(c->c_call(), ops, static_cast<size_t>(op - ops),
                                 CqVerifier::tag(1), nullptr);
-  EXPECT_EQ(call_start_batch_expected_result, error);
+  EXPECT_EQ(error, call_start_batch_expected_result);
   if (error == GRPC_CALL_OK) {
     if (test.GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) {
       c->Cancel();

@@ -28,47 +28,36 @@
 namespace grpc_core {
 namespace {
 
-void SimpleDelayedRequestBody(CoreEnd2endTest& test) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+TEST_P(CoreClientChannelTest, SimpleDelayedRequestShort) {
+  InitClient(ChannelArgs()
+                 .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+                 .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+                 .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  test.InitServer(ChannelArgs());
-  auto s = test.RequestCall(101);
-  test.Expect(101, true);
-  test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  InitServer(ChannelArgs());
+  auto s = RequestCall(101);
+  Expect(101, true);
+  Step();
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
       .RecvCloseOnServer(client_close);
-  test.Expect(102, true);
-  test.Expect(1, true);
-  test.Step();
+  Expect(102, true);
+  Expect(1, true);
+  Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(CoreClientChannelTest, SimpleDelayedRequestShort) {
-  InitClient(ChannelArgs()
-                 .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
-                 .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                 .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
-  SimpleDelayedRequestBody(*this);
-}
-
-TEST_P(CoreClientChannelTest, SimpleDelayedRequestLong) {
-  InitClient(ChannelArgs()
-                 .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
-                 .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                 .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
-  SimpleDelayedRequestBody(*this);
-}
 }  // namespace
 }  // namespace grpc_core
