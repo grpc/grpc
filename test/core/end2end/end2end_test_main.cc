@@ -657,7 +657,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
         CoreTestConfiguration{
             "Chttp2SslProxy",
-            FEATURE_MASK_IS_SECURE | FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
+                FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                 FEATURE_MASK_IS_HTTP2,
             "foo.test.google.fr",
@@ -697,7 +698,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2SimplSslFullstackTls12",
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
@@ -707,7 +708,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
+                FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
+                FEATURE_MASK_IS_HTTP2,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
