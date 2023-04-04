@@ -73,6 +73,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -392,7 +393,8 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
           "ClusterSpecifierPlugin returned invalid LB policy config: ",
           config.status().message()));
     } else {
-      cluster_specifier_plugin_map[std::move(name)] = lb_policy_config.Dump();
+      cluster_specifier_plugin_map[std::move(name)] =
+          JsonDump(lb_policy_config);
     }
   }
   return cluster_specifier_plugin_map;

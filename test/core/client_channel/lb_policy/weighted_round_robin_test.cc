@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/event_engine/mock_event_engine.h"
@@ -107,7 +108,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::Array{
           Json::Object{{"weighted_round_robin_experimental", json_}}};
-      gpr_log(GPR_INFO, "CONFIG: %s", config.Dump().c_str());
+      gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
       return MakeConfig(config);
     }
 

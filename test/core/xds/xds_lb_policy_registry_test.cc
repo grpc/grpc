@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
@@ -85,7 +86,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
       context, upb_policy, &errors);
   if (!errors.ok()) return errors.status("validation errors");
   EXPECT_EQ(config.size(), 1);
-  return Json{config[0]}.Dump();
+  return JsonDump(Json{config[0]});
 }
 
 // A gRPC LB policy factory for a custom policy.  None of the methods

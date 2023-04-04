@@ -181,9 +181,9 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gracious"  # @unused
 
-core_version = "30.1.0"  # @unused
+core_version = "31.0.0"  # @unused
 
-version = "1.54.0-dev"  # @unused
+version = "1.55.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -670,7 +670,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/wrap_memcpy.cc",
         "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
-        "//src/core:lib/gprpp/global_config_env.cc",
         "//src/core:lib/gprpp/host_port.cc",
         "//src/core:lib/gprpp/mpscq.cc",
         "//src/core:lib/gprpp/posix/stat.cc",
@@ -686,10 +685,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/tmpfile.h",
         "//src/core:lib/gprpp/crash.h",
         "//src/core:lib/gprpp/fork.h",
-        "//src/core:lib/gprpp/global_config.h",
-        "//src/core:lib/gprpp/global_config_custom.h",
-        "//src/core:lib/gprpp/global_config_env.h",
-        "//src/core:lib/gprpp/global_config_generic.h",
         "//src/core:lib/gprpp/host_port.h",
         "//src/core:lib/gprpp/memory.h",
         "//src/core:lib/gprpp/mpscq.h",
@@ -719,6 +714,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "debug_location",
         "//src/core:construct_destruct",
         "//src/core:env",
@@ -911,6 +907,7 @@ grpc_cc_library(
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1397,9 +1394,11 @@ grpc_cc_library(
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
+        "//src/core:lib/transport/custom_metadata.h",
         "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/transport/metadata_batch.h",
         "//src/core:lib/transport/parsed_metadata.h",
+        "//src/core:lib/transport/simple_slice_based_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
@@ -1446,6 +1445,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_builder",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "exec_ctx",
@@ -1501,6 +1501,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
+        "//src/core:json_writer",
         "//src/core:latch",
         "//src/core:loop",
         "//src/core:map",
@@ -1880,6 +1881,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -1938,7 +1940,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
-        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
@@ -2297,11 +2298,53 @@ grpc_cc_library(
     name = "grpc_trace",
     srcs = ["//src/core:lib/debug/trace.cc"],
     hdrs = ["//src/core:lib/debug/trace.h"],
+    external_deps = ["absl/strings"],
     language = "c++",
     visibility = ["@grpc:trace"],
     deps = [
+        "config_vars",
         "gpr",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "load_config",
+    srcs = [
+        "//src/core:lib/config/load_config.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/config/load_config.h",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:marshalling",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_platform",
+        "//src/core:env",
+    ],
+)
+
+grpc_cc_library(
+    name = "config_vars",
+    srcs = [
+        "//src/core:lib/config/config_vars.cc",
+        "//src/core:lib/config/config_vars_non_generated.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/config/config_vars.h",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_platform",
+        "load_config",
     ],
 )
 
@@ -2684,6 +2727,8 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:service_config_parser",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -2821,6 +2866,7 @@ grpc_cc_library(
         "backoff",
         "channel_stack_builder",
         "config",
+        "config_vars",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -2833,6 +2879,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "iomgr_timer",
         "orphanable",
+        "parse_address",
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "server_address",
@@ -2915,6 +2962,7 @@ grpc_cc_library(
     deps = [
         "backoff",
         "config",
+        "config_vars",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -2934,12 +2982,13 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:event_engine_common",
-        "//src/core:grpc_resolver_dns_selection",
         "//src/core:grpc_service_config",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
@@ -3108,6 +3157,8 @@ grpc_cc_library(
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:time",
@@ -3135,6 +3186,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "gpr",
         "grpc_base",
         "grpc_security_base",
@@ -3159,7 +3211,10 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "absl/strings",
+        "upb_lib",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
@@ -3172,6 +3227,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:pollset_set",
         "//src/core:slice",
     ],
@@ -3257,14 +3313,12 @@ grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:lib/security/security_connector/ssl_utils.cc",
-        "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
         "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
-        "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
         "//src/core:tsi/ssl_transport_security_utils.h",
@@ -3279,6 +3333,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "gpr",
         "grpc_base",
         "grpc_credentials_util",
@@ -3432,6 +3487,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:json",
+        "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:time",
         "//src/core:upb_utils",
@@ -3689,7 +3745,6 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
-        "iomgr_timer",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

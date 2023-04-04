@@ -55,6 +55,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -153,6 +154,13 @@ class MyTestServiceImpl : public TestServiceImpl {
         strncpy(key, p.first.data(), p.first.size());
         key[p.first.size()] = '\0';
         recorder->RecordUtilizationMetric(key, p.second);
+      }
+      for (const auto& p : request_metrics.named_metrics()) {
+        char* key = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+        strncpy(key, p.first.data(), p.first.size());
+        key[p.first.size()] = '\0';
+        recorder->RecordNamedMetric(key, p.second);
       }
     }
     return TestServiceImpl::Echo(context, request, response);
@@ -2356,6 +2364,10 @@ xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
     std::string name(p.first);
     (*load_report.mutable_utilization())[name] = p.second;
   }
+  for (const auto& p : backend_metric_data.named_metrics) {
+    std::string name(p.first);
+    (*load_report.mutable_named_metrics())[name] = p.second;
+  }
   return load_report;
 }
 
@@ -2592,6 +2604,12 @@ void CheckLoadReportAsExpected(
     ASSERT_NE(it, expected.utilization().end());
     EXPECT_EQ(it->second, p.second);
   }
+  EXPECT_EQ(actual.named_metrics().size(), expected.named_metrics().size());
+  for (const auto& p : actual.named_metrics()) {
+    auto it = expected.named_metrics().find(p.first);
+    ASSERT_NE(it, expected.named_metrics().end());
+    EXPECT_EQ(it->second, p.second);
+  }
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
@@ -2612,6 +2630,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   // This will be rejected.
   utilization["out_of_range_invalid1"] = 1.1;
   utilization["out_of_range_invalid2"] = -1.1;
+  auto& named_metrics = *load_report.mutable_named_metrics();
+  named_metrics["metric0"] = 3.0;
+  named_metrics["metric1"] = -1.0;
   auto expected = load_report;
   expected.mutable_utilization()->erase("out_of_range_invalid1");
   expected.mutable_utilization()->erase("out_of_range_invalid2");
@@ -3180,14 +3201,16 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
-  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

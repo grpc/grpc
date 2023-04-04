@@ -116,6 +116,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "no_destruct",
+        "//:config_vars",
         "//:gpr",
     ],
 )
@@ -1726,6 +1727,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
+        "//:config_vars",
         "//:gpr",
     ],
 )
@@ -2953,6 +2955,7 @@ grpc_cc_library(
         "grpc_ssl_credentials",
         "iomgr_fwd",
         "json",
+        "json_reader",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3100,6 +3103,7 @@ grpc_cc_library(
         "error",
         "httpcli_ssl_credentials",
         "json",
+        "json_reader",
         "poll",
         "pollset_set",
         "ref_counted",
@@ -3155,6 +3159,8 @@ grpc_cc_library(
         "grpc_oauth2_credentials",
         "httpcli_ssl_credentials",
         "json",
+        "json_reader",
+        "json_writer",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3269,12 +3275,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json",
-    srcs = [
-        "lib/json/json_reader.cc",
-        "lib/json/json_writer.cc",
-    ],
     hdrs = [
         "lib/json/json.h",
+    ],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
+    name = "json_reader",
+    srcs = [
+        "lib/json/json_reader.cc",
+    ],
+    hdrs = [
+        "lib/json/json_reader.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3283,7 +3296,26 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    deps = ["//:gpr"],
+    visibility = ["@grpc:json_reader_legacy"],
+    deps = [
+        "json",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_writer",
+    srcs = [
+        "lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "lib/json/json_writer.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "json",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(
@@ -3773,6 +3805,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -3950,7 +3983,9 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_reader",
         "json_util",
+        "json_writer",
         "lb_policy_registry",
         "match",
         "pollset_set",
@@ -4130,6 +4165,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4199,6 +4235,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4237,6 +4274,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_backend_metric_data",
         "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
@@ -4320,6 +4358,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4851,18 +4890,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_dns_selection",
-    srcs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
-    ],
-    hdrs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
-    ],
-    language = "c++",
-    deps = ["//:gpr"],
-)
-
-grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -4877,12 +4904,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_resolver_dns_selection",
         "polling_resolver",
         "resolved_address",
         "time",
         "//:backoff",
         "//:config",
+        "//:config_vars",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
@@ -5024,6 +5051,7 @@ grpc_cc_library(
         "gcp_metadata_query",
         "grpc_xds_client",
         "json",
+        "json_writer",
         "resource_quota",
         "time",
         "//:alts_util",

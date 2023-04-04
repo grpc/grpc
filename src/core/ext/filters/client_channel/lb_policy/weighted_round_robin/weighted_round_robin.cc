@@ -988,7 +988,7 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       return absl::InvalidArgumentError(
           "field:loadBalancingPolicy error:weighted_round_robin policy "
           "requires configuration. Please use loadBalancingConfig field of "
