@@ -4,14 +4,18 @@
 proposed how gRPC supports TCP-level proxies via the HTTP CONNECT request,
 defined in [RFC-2817](https://www.rfc-editor.org/rfc/rfc2817).
 
-Case 1 in the proposal documents a use-case where all outbound traffic from an
-environment must go through a proxy. Configurations for such environments are
+**Case 1** in the proposal documents a use-case where all outbound traffic from
+an environment must go through a proxy. Configurations for such environments are
 usally performed using environment variables such as `http_proxy`. gRPC supports
 this by providing a default proxy mapper implementation that allows for
-overriding the server name (provided in the channel creation host) to resolve
-based on such configurations.
+overriding the server name (provided in the channel creation hostname) to
+resolve based on such configurations.
 
 This guide documents gRPC C-Core's default proxy mapper implementation.
+
+## Working
+
+### Enabling HTTP Proxy
 
 C-Core checks the following places to determine the HTTP proxy to use, stopping
 at the first one that is set:
@@ -31,6 +35,8 @@ used as user credentials for proxy authentication as per RFC 7617 and
 `proxy.google.com:443` would be the host:port HTTP proxy target. If the port
 part of the authority is omitted, a default port of 443 is used. Note that user
 credential can also be omitted if the proxy does not need authentication.
+
+### Disabling HTTP Proxy
 
 If an HTTP proxy is set, C-Core then checks the following places to exclude
 traffic destined to listed hosts from going through the proxy determined above,
