@@ -213,8 +213,10 @@ std::string CqVerifier::Expectation::ToString() const {
           },
           [](Maybe) { return std::string("maybe"); },
           [](AnyStatus) { return std::string("any success value"); },
-          [](PerformAction) { return std::string("perform some action"); },
-          [](MaybePerformAction) {
+          [](const PerformAction&) {
+            return std::string("perform some action");
+          },
+          [](const MaybePerformAction&) {
             return std::string("maybe perform action");
           }));
 }
@@ -284,8 +286,11 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
     bool found = false;
     for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
       if (it->tag != ev.tag) continue;
+      auto expectation = std::move(*it);
+      expectations_.erase(it);
       const bool expected = Match(
-          it->result, [ev](bool success) { return ev.success == success; },
+          expectation.result,
+          [ev](bool success) { return ev.success == success; },
           [ev](Maybe m) {
             if (m.seen != nullptr) *m.seen = true;
             return ev.success != 0;
@@ -305,7 +310,6 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
       if (!expected) {
         FailUnexpectedEvent(&ev, location);
       }
-      expectations_.erase(it);
       found = true;
       break;
     }

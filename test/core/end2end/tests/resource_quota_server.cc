@@ -66,13 +66,14 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
   auto requests = MakeVec([](int) { return RandomSlice(128 * 1024); });
   auto server_calls =
       MakeVec([this](int i) { return RequestCall(kServerRecvBaseTag + i); });
-  std::vector<IncomingMetadata> server_metadata(kNumCalls);
-  std::vector<IncomingStatusOnClient> server_status(kNumCalls);
-  std::vector<IncomingMessage> client_message(kNumCalls);
-  std::vector<IncomingCloseOnServer> client_close(kNumCalls);
+  IncomingMetadata server_metadata[kNumCalls];
+  IncomingStatusOnClient server_status[kNumCalls];
+  IncomingMessage client_message[kNumCalls];
+  IncomingCloseOnServer client_close[kNumCalls];
+  bool seen_server_call[kNumCalls] = {false};
   auto client_calls =
       MakeVec([this, &requests, &server_metadata, &server_status](int i) {
-        auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+        auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
         c.NewBatch(kClientBaseTag + i)
             .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
             .SendMessage(requests[i].Ref())
@@ -83,24 +84,27 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
       });
   for (int i = 0; i < kNumCalls; i++) {
     Expect(kClientBaseTag + i, true);
-    Expect(kServerRecvBaseTag + i,
-           PerformAction{[&server_calls, &client_message, i](bool success) {
-             EXPECT_TRUE(success);
-             server_calls[i]
-                 .NewBatch(kServerStartBaseTag + i)
-                 .RecvMessage(client_message[i])
-                 .SendInitialMetadata({});
-           }});
-    Expect(kServerStartBaseTag + i,
-           PerformAction{[&server_calls, &client_close, i](bool) {
-             server_calls[i]
-                 .NewBatch(kServerEndBaseTag + i)
-                 .RecvCloseOnServer(client_close[i])
-                 .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
-           }});
-    Expect(kServerEndBaseTag + i, true);
+    Expect(
+        kServerRecvBaseTag + i,
+        MaybePerformAction{[this, &seen_server_call, &server_calls,
+                            &client_message, &client_close, i](bool success) {
+          EXPECT_TRUE(success);
+          seen_server_call[i] = true;
+          server_calls[i]
+              .NewBatch(kServerStartBaseTag + i)
+              .RecvMessage(client_message[i])
+              .SendInitialMetadata({});
+          Expect(kServerStartBaseTag + i,
+                 PerformAction{[&server_calls, &client_close, i](bool) {
+                   server_calls[i]
+                       .NewBatch(kServerEndBaseTag + i)
+                       .RecvCloseOnServer(client_close[i])
+                       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+                 }});
+          Expect(kServerEndBaseTag + i, true);
+        }});
   }
-  Step(Duration::Seconds(30));
+  Step();
 
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
@@ -132,6 +136,18 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
           "client, %d timed out, %d unavailable.",
           kNumCalls, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded, unavailable);
+
+  ShutdownServerAndNotify(0);
+  Expect(0, PerformAction{[this](bool success) {
+           EXPECT_TRUE(success);
+           DestroyServer();
+         }});
+  for (size_t i = 0; i < kNumCalls; i++) {
+    if (!seen_server_call[i]) {
+      Expect(kServerRecvBaseTag + i, false);
+    }
+  }
+  Step();
 }
 
 }  // namespace
