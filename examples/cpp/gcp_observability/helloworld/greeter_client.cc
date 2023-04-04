@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
   // backends. Note that this should be done before any other gRPC operation.
   auto observability = grpc::GcpObservability::Init();
   if (!observability.ok()) {
-    std::cerr << "GcpObservabilityInit() failed: "
+    std::cerr << "GcpObservability::Init() failed: "
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }

@@ -80,7 +80,7 @@ class GcpObservability {
   // As an implementation detail, this properly initializes the OpenCensus stats
   // and tracing plugin, so applications do not need to perform any additional
   // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
-  static absl::StatusOr<GcpObservability> Init();
+  static absl::StatusOr<GcpObservability> Init() GRPC_MUST_USE_RESULT;
 
   GcpObservability() = default;
   // Move constructor and Move-assignment operator.
@@ -99,9 +99,9 @@ class GcpObservability {
 
 namespace experimental {
 // TODO(yashykt): Delete this after the 1.55 release.
-GRPC_DEPRECATED("Use grpc_gcp::Observability::Init() instead.")
+GRPC_DEPRECATED("Use grpc::GcpObservability::Init() instead.")
 absl::Status GcpObservabilityInit();
-GRPC_DEPRECATED("Use grpc_gcp::Observability::Init() instead.")
+GRPC_DEPRECATED("Use grpc::GcpObservability::Init() instead.")
 void GcpObservabilityClose();
 }  // namespace experimental
 
