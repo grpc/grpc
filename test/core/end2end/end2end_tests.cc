@@ -85,7 +85,7 @@ void CoreEnd2endTest::TearDown() {
   fixture_.reset();
   if (do_shutdown) {
     grpc_shutdown_blocking();
-    grpc_wait_until_shutdown(60);
+    grpc_wait_until_shutdown(10);
   }
   initialized_ = false;
 }
