@@ -6,8 +6,8 @@ defined in [RFC-2817](https://www.rfc-editor.org/rfc/rfc2817).
 
 **Case 1** in the proposal documents a use-case where all outbound traffic from
 an environment must go through a proxy. Configurations for such environments are
-usally performed using environment variables such as `http_proxy`. gRPC supports
-this by providing a default proxy mapper implementation that allows for
+usually performed using environment variables such as `http_proxy`. gRPC
+supports this by providing a default proxy mapper implementation that allows for
 overriding the server name (provided in the channel creation hostname) to
 resolve based on such configurations.
 
@@ -31,10 +31,11 @@ The allowed format is an [RFC3986](https://www.rfc-editor.org/rfc/rfc3986) URI
 string where the scheme is expected to be "http" and the authority portion is
 used to determine the proxy to be used. For example, for an HTTP proxy setting
 of `http://username:password@proxy.google.com:443`, `username:password` would be
-used as user credentials for proxy authentication as per RFC 7617 and
-`proxy.google.com:443` would be the host:port HTTP proxy target. If the port
-part of the authority is omitted, a default port of 443 is used. Note that user
-credential can also be omitted if the proxy does not need authentication.
+used as user credentials for proxy authentication as per
+[RFC7617](https://www.rfc-editor.org/rfc/rfc7617) and `proxy.google.com:443`
+would be the host:port HTTP proxy target. If the port part of the authority is
+omitted, a default port of 443 is used. Note that user credential can also be
+omitted if the proxy does not need authentication.
 
 ### Disabling HTTP Proxy
 
@@ -59,6 +60,8 @@ As of [PR#31119](https://github.com/grpc/grpc/pull/31119), CIDR blocks are also
 supported in the list of names. For example, a `no_proxy` setting of
 `10.10.0.0/24` would not use the proxy for channel targets that mention IP
 addresses as the host between the range `10.10.0.0` to `10.10.0.255`.
+
+### Disabling HTTP Proxy Channel-wide
 
 The lookup and subsequent usage of an HTTP proxy for a specific channel can also
 be disabled by setting the channel arg `GRPC_ARG_ENABLE_HTTP_PROXY` to 0.
