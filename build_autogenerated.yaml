@@ -12,134 +12,6 @@ libs:
   - third_party/address_sorting/address_sorting_posix.c
   - third_party/address_sorting/address_sorting_windows.c
   deps: []
-- name: end2end_tests
-  build: private
-  language: c
-  public_headers: []
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/data/ssl_test_data.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/util/test_lb_policies.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/end2end/end2end_test_utils.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/authority_not_supported.cc
-  - test/core/end2end/tests/bad_hostname.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_context.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filter_latency.cc
-  - test/core/end2end/tests/filter_status_code.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/util/test_lb_policies.cc
-  deps:
-  - grpc_authorization_provider
-  - grpc_test_util
 - name: gpr
   build: all
   language: c
@@ -1078,6 +950,7 @@ libs:
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
@@ -2395,6 +2268,7 @@ libs:
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
@@ -3859,6 +3733,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -4182,118 +4057,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: bad_server_response_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/bad_server_response_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-- name: bad_ssl_alpn_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: bad_ssl_cert_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: connection_refused_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/connection_refused_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
-- name: dualstack_socket_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/dualstack_socket_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -4331,42 +4094,12 @@ targets:
   - linux
   - posix
   - mac
-- name: goaway_server_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/goaway_server_test.cc
-  deps:
-  - grpc_test_util
-- name: invalid_call_argument_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/invalid_call_argument_test.cc
-  deps:
-  - grpc_test_util
 - name: multiple_server_queues_test
   build: test
   language: c
   headers: []
   src:
   - test/core/end2end/multiple_server_queues_test.cc
-  deps:
-  - grpc_test_util
-- name: no_server_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
 - name: pollset_windows_starvation_test
@@ -5025,6 +4758,97 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: bad_server_response_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/bad_server_response_test.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: bad_ssl_alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/bad_ssl/bad_ssl_test.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: bad_ssl_cert_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/bad_ssl/bad_ssl_test.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: bad_streaming_id_bad_client_test
   gtest: true
   build: test
@@ -6222,6 +6046,17 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: connection_refused_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/connection_refused_test.cc
+  - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
 - name: connectivity_state_test
   gtest: true
   build: test
@@ -6327,6 +6162,126 @@ targets:
   deps:
   - grpc
   uses_polling: false
+- name: core_end2end_tests
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/bad_ping.cc
+  - test/core/end2end/tests/binary_metadata.cc
+  - test/core/end2end/tests/call_creds.cc
+  - test/core/end2end/tests/call_host_override.cc
+  - test/core/end2end/tests/cancel_after_accept.cc
+  - test/core/end2end/tests/cancel_after_client_done.cc
+  - test/core/end2end/tests/cancel_after_invoke.cc
+  - test/core/end2end/tests/cancel_after_round_trip.cc
+  - test/core/end2end/tests/cancel_before_invoke.cc
+  - test/core/end2end/tests/cancel_in_a_vacuum.cc
+  - test/core/end2end/tests/cancel_with_status.cc
+  - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
+  - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connectivity.cc
+  - test/core/end2end/tests/default_host.cc
+  - test/core/end2end/tests/disappearing_server.cc
+  - test/core/end2end/tests/empty_batch.cc
+  - test/core/end2end/tests/filter_causes_close.cc
+  - test/core/end2end/tests/filter_context.cc
+  - test/core/end2end/tests/filter_init_fails.cc
+  - test/core/end2end/tests/filtered_metadata.cc
+  - test/core/end2end/tests/graceful_server_shutdown.cc
+  - test/core/end2end/tests/grpc_authz.cc
+  - test/core/end2end/tests/high_initial_seqno.cc
+  - test/core/end2end/tests/hpack_size.cc
+  - test/core/end2end/tests/invoke_large_request.cc
+  - test/core/end2end/tests/keepalive_timeout.cc
+  - test/core/end2end/tests/large_metadata.cc
+  - test/core/end2end/tests/max_concurrent_streams.cc
+  - test/core/end2end/tests/max_connection_age.cc
+  - test/core/end2end/tests/max_connection_idle.cc
+  - test/core/end2end/tests/max_message_length.cc
+  - test/core/end2end/tests/negative_deadline.cc
+  - test/core/end2end/tests/no_logging.cc
+  - test/core/end2end/tests/no_op.cc
+  - test/core/end2end/tests/payload.cc
+  - test/core/end2end/tests/ping.cc
+  - test/core/end2end/tests/ping_pong_streaming.cc
+  - test/core/end2end/tests/proxy_auth.cc
+  - test/core/end2end/tests/registered_call.cc
+  - test/core/end2end/tests/request_with_flags.cc
+  - test/core/end2end/tests/request_with_payload.cc
+  - test/core/end2end/tests/resource_quota_server.cc
+  - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
+  - test/core/end2end/tests/retry_cancellation.cc
+  - test/core/end2end/tests/retry_disabled.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
+  - test/core/end2end/tests/retry_lb_fail.cc
+  - test/core/end2end/tests/retry_non_retriable_status.cc
+  - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
+  - test/core/end2end/tests/retry_recv_initial_metadata.cc
+  - test/core/end2end/tests/retry_recv_message.cc
+  - test/core/end2end/tests/retry_recv_message_replay.cc
+  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
+  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
+  - test/core/end2end/tests/retry_send_op_fails.cc
+  - test/core/end2end/tests/retry_send_recv_batch.cc
+  - test/core/end2end/tests/retry_server_pushback_delay.cc
+  - test/core/end2end/tests/retry_server_pushback_disabled.cc
+  - test/core/end2end/tests/retry_streaming.cc
+  - test/core/end2end/tests/retry_streaming_after_commit.cc
+  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  - test/core/end2end/tests/retry_throttled.cc
+  - test/core/end2end/tests/retry_too_many_attempts.cc
+  - test/core/end2end/tests/retry_transparent_goaway.cc
+  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
+  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  - test/core/end2end/tests/retry_unref_before_finish.cc
+  - test/core/end2end/tests/retry_unref_before_recv.cc
+  - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
+  - test/core/end2end/tests/shutdown_finishes_calls.cc
+  - test/core/end2end/tests/shutdown_finishes_tags.cc
+  - test/core/end2end/tests/simple_delayed_request.cc
+  - test/core/end2end/tests/simple_metadata.cc
+  - test/core/end2end/tests/simple_request.cc
+  - test/core/end2end/tests/streaming_error_response.cc
+  - test/core/end2end/tests/trailing_metadata.cc
+  - test/core/end2end/tests/write_buffering.cc
+  - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: cpp_impl_of_test
   gtest: true
   build: test
@@ -6422,6 +6377,21 @@ targets:
   - test/core/gprpp/dual_ref_counted_test.cc
   deps:
   - grpc_test_util
+- name: dualstack_socket_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/dualstack_socket_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -7673,6 +7643,7 @@ targets:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -7964,6 +7935,17 @@ targets:
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: goaway_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/goaway_server_test.cc
+  deps:
+  - grpc_test_util
 - name: google_c2p_resolver_test
   gtest: true
   build: test
@@ -8501,12 +8483,14 @@ targets:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/h2_ssl_cert_test.cc
   deps:
@@ -9039,6 +9023,17 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: invalid_call_argument_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/invalid_call_argument_test.cc
+  deps:
+  - grpc_test_util
 - name: iocp_test
   gtest: true
   build: test
@@ -9672,6 +9667,17 @@ targets:
   - test/core/gprpp/no_destruct_test.cc
   deps: []
   uses_polling: false
+- name: no_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/no_server_test.cc
+  deps:
+  - grpc_test_util
 - name: nonblocking_test
   gtest: true
   build: test
