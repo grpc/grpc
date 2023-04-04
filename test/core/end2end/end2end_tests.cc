@@ -85,7 +85,11 @@ void CoreEnd2endTest::TearDown() {
   fixture_.reset();
   if (do_shutdown) {
     grpc_shutdown_blocking();
-    grpc_wait_until_shutdown(10);
+    // This will wait until gRPC shutdown has actually happened to make sure
+    // no gRPC resources (such as thread) are active. (timeout = 10s)
+    if (!grpc_wait_until_shutdown(10)) {
+      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    }
   }
   initialized_ = false;
 }
