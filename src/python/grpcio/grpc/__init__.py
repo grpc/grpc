@@ -24,6 +24,7 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+from grpc._observability import observability_init
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -2147,6 +2148,7 @@ __all__ = (
     'xds_channel_credentials',
     'xds_server_credentials',
     'insecure_server_credentials',
+    'observability_init',
 )
 
 ############################### Extension Shims ################################
