@@ -134,6 +134,17 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
 5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
 6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 
+### Updating third_party/utf8_range
+
+```
+# set to wherever your grpc repo lives
+export GRPC_ROOT=~/git/grpc
+wget https://github.com/protocolbuffers/utf8_range/archive/refs/heads/main.zip
+rm -rf $GRPC_ROOT/third_party/utf8_range
+unzip main.zip -d $GRPC_ROOT/third_party
+mv $GRPC_ROOT/third_party/utf8_range-main $GRPC_ROOT/third_party/utf8_range
+```
+
 ### Updating third_party/xxhash
 
 TODO(https://github.com/Cyan4973/xxHash/issues/548): revisit LICENSE
