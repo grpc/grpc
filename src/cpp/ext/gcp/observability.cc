@@ -47,6 +47,7 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
@@ -62,6 +63,8 @@ namespace internal {
 namespace {
 
 grpc::internal::ObservabilityLoggingSink* g_logging_sink = nullptr;
+
+bool g_gcp_observability_initialized = false;
 
 // TODO(yashykt): These constants are currently derived from the example at
 // https://cloud.google.com/traffic-director/docs/observability-proxyless#c++.
@@ -104,6 +107,10 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
+  if (g_gcp_observability_initialized) {
+    grpc_core::Crash("GCP Observability for gRPC was already initialized.");
+  }
+  g_gcp_observability_initialized = true;
   grpc::internal::EnvironmentAutoDetect::Create(config->project_id);
   if (!config->cloud_trace.has_value()) {
     // Disable OpenCensus tracing
@@ -227,30 +234,42 @@ absl::Status GcpObservabilityInit() {
 void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
 
 }  // namespace experimental
-}  // namespace grpc
 
-namespace grpc_gcp {
+namespace internal {
 
 //
-// Observability
+// GcpObservabilityImpl
 //
 
-absl::StatusOr<Observability> Observability::Init() {
+GcpObservabilityImpl::~GcpObservabilityImpl() {
+  grpc::internal::GcpObservabilityClose();
+}
+
+}  // namespace internal
+
+//
+// GcpObservability
+//
+
+absl::StatusOr<GcpObservability> GcpObservability::Init() {
   absl::Status status = grpc::internal::GcpObservabilityInit();
   if (!status.ok()) {
     return status;
   }
-  return Observability();
+  GcpObservability obj;
+  obj.impl_ = std::make_unique<internal::GcpObservabilityImpl>();
+  return obj;
 }
 
-Observability::~Observability() {
-  if (close_on_destruction_) {
-    grpc::internal::GcpObservabilityClose();
+GcpObservability::GcpObservability(GcpObservability&& other) noexcept
+    : impl_(std::move(other.impl_)) {}
+
+GcpObservability& GcpObservability::operator=(
+    GcpObservability&& other) noexcept {
+  if (this != &other) {
+    impl_ = std::move(other.impl_);
   }
+  return *this;
 }
 
-Observability::Observability(Observability&& other) noexcept {
-  other.close_on_destruction_ = false;
-}
-
-}  // namespace grpc_gcp
+}  // namespace grpc
