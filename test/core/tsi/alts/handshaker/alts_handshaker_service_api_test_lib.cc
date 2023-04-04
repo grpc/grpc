@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
-
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
