@@ -402,6 +402,17 @@ TEST_P(EnvParsingTest, BadJson) {
       << config.status().message();
 }
 
+// Test that JSON parsing errors are propagated as expected.
+TEST_P(EnvParsingTest, BadJsonEmptyString) {
+  SetConfig("");
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+
+  EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(config.status().message(),
+              ::testing::HasSubstr("JSON parsing failed"))
+      << config.status().message();
+}
+
 // Make sure that GCP config errors are propagated as expected.
 TEST_P(EnvParsingTest, BadGcpConfig) {
   SetConfig(R"json({
