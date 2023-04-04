@@ -369,6 +369,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
 
+  t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
+
   const int soft_limit =
       channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
   if (soft_limit < 0) {
