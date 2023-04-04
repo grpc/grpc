@@ -235,18 +235,6 @@ void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
 
 }  // namespace experimental
 
-namespace internal {
-
-//
-// GcpObservabilityImpl
-//
-
-GcpObservabilityImpl::~GcpObservabilityImpl() {
-  grpc::internal::GcpObservabilityClose();
-}
-
-}  // namespace internal
-
 //
 // GcpObservability
 //
@@ -257,7 +245,7 @@ absl::StatusOr<GcpObservability> GcpObservability::Init() {
     return status;
   }
   GcpObservability obj;
-  obj.impl_ = std::make_unique<internal::GcpObservabilityImpl>();
+  obj.impl_ = std::make_unique<GcpObservabilityImpl>();
   return obj;
 }
 
@@ -270,6 +258,14 @@ GcpObservability& GcpObservability::operator=(
     impl_ = std::move(other.impl_);
   }
   return *this;
+}
+
+//
+// GcpObservability::GcpObservabilityImpl
+//
+
+GcpObservability::GcpObservabilityImpl::~GcpObservabilityImpl() {
+  grpc::internal::GcpObservabilityClose();
 }
 
 }  // namespace grpc

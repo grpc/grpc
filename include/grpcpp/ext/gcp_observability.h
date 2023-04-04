@@ -26,25 +26,6 @@
 
 namespace grpc {
 
-namespace internal {
-// Helper class that aids in implementing GCP Observability.
-// Inheriting from GrpcLibrary makes sure that gRPC is initialized and remains
-// initialized for the lifetime of GCP Observability. In the future, when gRPC
-// initialization goes away, we might still want to keep gRPC Event Engine
-// initialized, just in case, we need to perform some IO operations during
-// observability close.
-// Note that the lifetime guarantees are only one way, i.e., GcpObservability
-// object guarantees that gRPC will not shutdown while the object is still in
-// scope, but the other way around does not hold true. Even though that is not
-// the expected usage, GCP Observability can shutdown before gRPC shuts down. It
-// follows that gRPC should not hold any callbacks from GcpObservability. A
-// change in this restriction should go through a design review.
-class GcpObservabilityImpl : private GrpcLibrary {
- public:
-  ~GcpObservabilityImpl() override;
-};
-}  // namespace internal
-
 // GcpObservability objects follow the RAII idiom and help manage the lifetime
 // of gRPC Observability data exporting to GCP. `GcpObservability::Init()`
 // should be invoked instead to return an `GcpObservability` instance.
@@ -94,7 +75,23 @@ class GcpObservability {
   GcpObservability& operator=(const GcpObservability&) = delete;
 
  private:
-  std::unique_ptr<internal::GcpObservabilityImpl> impl_;
+  // Helper class that aids in implementing GCP Observability.
+  // Inheriting from GrpcLibrary makes sure that gRPC is initialized and remains
+  // initialized for the lifetime of GCP Observability. In the future, when gRPC
+  // initialization goes away, we might still want to keep gRPC Event Engine
+  // initialized, just in case, we need to perform some IO operations during
+  // observability close.
+  // Note that the lifetime guarantees are only one way, i.e., GcpObservability
+  // object guarantees that gRPC will not shutdown while the object is still in
+  // scope, but the other way around does not hold true. Even though that is not
+  // the expected usage, GCP Observability can shutdown before gRPC shuts down.
+  // It follows that gRPC should not hold any callbacks from GcpObservability. A
+  // change in this restriction should go through a design review.
+  class GcpObservabilityImpl : private internal::GrpcLibrary {
+   public:
+    ~GcpObservabilityImpl() override;
+  };
+  std::unique_ptr<GcpObservabilityImpl> impl_;
 };
 
 namespace experimental {
