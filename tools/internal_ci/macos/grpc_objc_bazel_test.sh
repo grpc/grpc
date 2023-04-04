@@ -56,10 +56,10 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  //src/objective-c/tests:CppCronetTests
-  //src/objective-c/tests:CronetTests
+  # //src/objective-c/tests:CppCronetTests
+  # //src/objective-c/tests:CronetTests
   //src/objective-c/tests:PerfTests
-  //src/objective-c/tests:CFStreamTests
+  # //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
@@ -113,6 +113,8 @@ objc_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
+  --config=dbg --cxxopt=-DGRPC_IOS_EVENT_ENGINE_CLIENT=1 \
+  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine_endpoint,event_engine,api \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \

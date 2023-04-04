@@ -46,6 +46,11 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
 time $BAZEL test --ios_multi_cpus=x86_64,sim_arm64 \
+    --runs_per_test=500 \
+    --config=dbg --cxxopt=-DGRPC_IOS_EVENT_ENGINE_CLIENT=1 \
+    --test_output=errors --cache_test_results=no \
+    --test_env GRPC_VERBOSITY=debug \
+    --test_env GRPC_TRACE=all \
     --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     $SCHEME
