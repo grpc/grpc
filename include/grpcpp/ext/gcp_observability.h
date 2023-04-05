@@ -36,8 +36,7 @@ class GcpObservability {
   // Initialize GCP Observability for gRPC.
   // This should be called before any other gRPC operations like creating a
   // channel, server, credentials etc.
-  // The most common usage would call this at the top (or near the top) in
-  // main(). The return value helps determine whether observability was
+  // The return value helps determine whether observability was
   // successfully enabled or not. On success, an object of class `Observability`
   // is returned. When this object goes out of scope, GCP Observability stats,
   // tracing and logging data is flushed. On failure, the status message can be
@@ -47,11 +46,18 @@ class GcpObservability {
   // users should not make any assumptions based on the status code, other than
   // a non-OK status code meaning that observability initialization failed.
   //
-  // Please look at
+  // The expected usage is to call this at the top (or near the top) in
+  // main(), and let it go out of scope after all RPCs and activities that we
+  // want to observe are done. Please look at
   // https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_client.cc
   // and
   // https://github.com/grpc/grpc/blob/master/examples/cpp/gcp_observability/helloworld/greeter_server.cc
   // for sample usage.
+  //
+  // It is possible for an initialized GcpObservability object to go out of
+  // scope while RPCs and other gRPC operations are still ongoing. In this case,
+  // GCP Observability tries to flush all observability data collected till that
+  // point.
   //
   // Note that this is a blocking call which properly sets up gRPC Observability
   // to work with GCP and might take a few seconds to return.  Similarly, the
