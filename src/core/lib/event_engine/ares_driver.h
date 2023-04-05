@@ -16,7 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
