@@ -51,8 +51,7 @@ class Json {
   Json& operator=(const Json& other) = default;
 
   // Moveable.
-  Json(Json&& other) noexcept
-      : value_(std::move(other.value_)) {
+  Json(Json&& other) noexcept : value_(std::move(other.value_)) {
     other.value_ = absl::monostate();
   }
   Json& operator=(Json&& other) noexcept {
@@ -189,13 +188,12 @@ class Json {
       return value == other.value;
     }
   };
-  using Value = absl::variant<
-      absl::monostate,  // kNull
-      bool,             // kTrue or kFalse
-      NumberValue,      // kNumber
-      std::string,      // kString
-      Object,           // kObject
-      Array>;           // kArray
+  using Value = absl::variant<absl::monostate,  // kNull
+                              bool,             // kTrue or kFalse
+                              NumberValue,      // kNumber
+                              std::string,      // kString
+                              Object,           // kObject
+                              Array>;           // kArray
 
   explicit Json(Value value) : value_(std::move(value)) {}
 
