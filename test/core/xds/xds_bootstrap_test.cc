@@ -56,6 +56,7 @@ namespace testing {
 namespace {
 
 TEST(XdsBootstrapTest, Basic) {
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -191,6 +192,7 @@ TEST(XdsBootstrapTest, Basic) {
                           ::testing::Property(&Json::string_value, "1")))));
   EXPECT_EQ(bootstrap->server_listener_resource_name_template(),
             "example/resource");
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, ValidWithoutNode) {
@@ -494,6 +496,7 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -528,9 +531,11 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
             ".client_listener_resource_name_template error:"
             "field must begin with \"xdstp://xds.example.com/\"]")
       << bootstrap.status();
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -557,6 +562,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "field:authorities[\"xds.example.com\"].xds_servers[0].server_uri "
       "error:field not present]")
       << bootstrap.status();
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class FakeCertificateProviderFactory : public CertificateProviderFactory {
@@ -697,6 +703,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
 }
 
 TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "    {"
       "      \"server_uri\": \"fake:///lb\","
@@ -717,6 +724,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(output);
   ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 }  // namespace
