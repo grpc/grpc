@@ -72,7 +72,12 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
   IncomingStatusOnClient server_status[kNumCalls];
   IncomingMessage client_message[kNumCalls];
   IncomingCloseOnServer client_close[kNumCalls];
-  bool seen_server_call[kNumCalls] = {false};
+  enum class SeenServerCall {
+    kNotSeen = 0,
+    kSeenWithSuccess,
+    kSeenWithFailure
+  };
+  SeenServerCall seen_server_call[kNumCalls] = {SeenServerCall::kNotSeen};
   auto client_calls =
       MakeVec([this, &requests, &server_metadata, &server_status](int i) {
         auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -90,7 +95,8 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
         kServerRecvBaseTag + i,
         MaybePerformAction{[this, &seen_server_call, &server_calls,
                             &client_message, &client_close, i](bool success) {
-          seen_server_call[i] = true;
+          seen_server_call[i] = success ? SeenServerCall::kSeenWithSuccess
+                                        : SeenServerCall::kSeenWithFailure;
           if (!success) return;
           server_calls[i]
               .NewBatch(kServerStartBaseTag + i)
@@ -129,7 +135,8 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
         Crash(absl::StrFormat("Unexpected status code: %d",
                               server_status[i].status()));
     }
-    if (seen_server_call[i] && client_close[i].was_cancelled()) {
+    if (seen_server_call[i] == SeenServerCall::kSeenWithSuccess &&
+        client_close[i].was_cancelled()) {
       cancelled_calls_on_server++;
     }
   }
@@ -145,7 +152,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
            DestroyServer();
          }});
   for (size_t i = 0; i < kNumCalls; i++) {
-    if (!seen_server_call[i]) {
+    if (seen_server_call[i] == SeenServerCall::kNotSeen) {
       Expect(kServerRecvBaseTag + i, false);
     }
   }
