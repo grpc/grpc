@@ -14,6 +14,14 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/synchronization/mutex.h"
+
+#include "src/core/lib/iomgr/port.h"
+
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
@@ -21,6 +29,7 @@
 // IWYU pragma: no_include <netinet/in.h>
 // IWYU pragma: no_include <stdlib.h>
 // IWYU pragma: no_include <sys/socket.h>
+// IWYU pragma: no_include <ratio>
 
 #if GRPC_ARES == 1
 
@@ -29,7 +38,6 @@
 #include <algorithm>
 #include <chrono>
 #include <initializer_list>
-#include <ratio>
 #include <type_traits>
 #include <utility>
 
@@ -55,6 +63,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -62,9 +71,9 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#ifdef _WIN32
-#else
+#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 #endif
 
 namespace grpc_event_engine {
@@ -121,7 +130,6 @@ class GrpcAresRequestImpl : public grpc_core::RefCounted<GrpcAresRequestImpl> {
  private:
   friend class GrpcPolledFd;
   friend class GrpcPolledFdFactory;
-  friend struct FdNode;
   friend class FdNodeList;
 
   absl::Status SetRequestDNSServer(absl::string_view dns_server)
@@ -414,10 +422,13 @@ EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
 }
 
 bool IsIpv6LoopbackAvailable() {
-#ifdef _WIN32
-  // TODO(yijiem): (debt) move pieces for Windows
-#else
+#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
   return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  // TODO(yijiem): (debt) move pieces for Windows
+  return false;
+#else
+#error "Unsupported platform"
 #endif
 }
 
@@ -464,7 +475,6 @@ class FdNodeList {
   };
   using Iterator = FdNodeListIterator;
 
-  FdNodeList() = default;
   ~FdNodeList() { GPR_ASSERT(IsEmpty()); }
 
   Iterator begin() { return Iterator(head_); }
@@ -538,7 +548,8 @@ absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
   grpc_core::MutexLock lock(&mu_);
   GPR_DEBUG_ASSERT(!initialized_);
   absl::string_view port;
-  GPR_ASSERT(grpc_core::SplitHostPort(name_, &host_, &port));
+  // parse name, splitting it into host and port parts
+  grpc_core::SplitHostPort(name_, &host_, &port);
   absl::Status error;
   if (host_.empty()) {
     error =
@@ -566,6 +577,7 @@ absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
   }
   ares_driver_test_only_inject_config(channel_);
+  // If dns_server is specified, use it.
   error = SetRequestDNSServer(dns_server);
   if (!error.ok()) {
     ares_destroy(channel_);
@@ -782,17 +794,18 @@ void GrpcAresRequestImpl::OnWritable(FdNode* fd_node, absl::Status status) {
 }
 
 void GrpcAresRequestImpl::OnQueryTimeout() {
-  absl::ReleasableMutexLock lock(&mu_);
-  query_timeout_handle_.reset();
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p OnQueryTimeout. shutting_down_=%d",
-                             this, shutting_down_);
-  if (!shutting_down_) {
-    shutting_down_ = true;
-    ShutdownPollerHandlesLocked(
-        grpc_core::StatusCreate(absl::StatusCode::kDeadlineExceeded,
-                                "OnQueryTimeout", DEBUG_LOCATION, {}));
+  {
+    grpc_core::MutexLock lock(&mu_);
+    query_timeout_handle_.reset();
+    GRPC_ARES_DRIVER_TRACE_LOG("request:%p OnQueryTimeout. shutting_down_=%d",
+                               this, shutting_down_);
+    if (!shutting_down_) {
+      shutting_down_ = true;
+      ShutdownPollerHandlesLocked(
+          grpc_core::StatusCreate(absl::StatusCode::kDeadlineExceeded,
+                                  "OnQueryTimeout", DEBUG_LOCATION, {}));
+    }
   }
-  lock.Release();
   Unref(DEBUG_LOCATION, "OnQueryTimeout");
 }
 
@@ -805,7 +818,7 @@ void GrpcAresRequestImpl::OnQueryTimeout() {
 // For the latter, we use this backup poller. Also see
 // https://github.com/grpc/grpc/pull/17688 description for more details.
 void GrpcAresRequestImpl::OnAresBackupPollAlarm() {
-  absl::ReleasableMutexLock lock(&mu_);
+  grpc_core::ReleasableMutexLock lock(&mu_);
   ares_backup_poll_alarm_handle_.reset();
   GRPC_ARES_DRIVER_TRACE_LOG(
       "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,

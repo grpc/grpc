@@ -21,7 +21,6 @@
 
 #include <ares.h>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <functional>
@@ -23,6 +24,7 @@
 #include <memory>
 #include <ratio>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -44,6 +46,7 @@
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"

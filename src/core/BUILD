@@ -2229,7 +2229,6 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/synchronization",
         "absl/types:optional",
         "address_sorting",
         "cares",

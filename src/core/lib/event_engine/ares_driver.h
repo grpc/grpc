@@ -16,29 +16,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <arpa/inet.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
-#include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include <ares.h>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
-#include "include/grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {

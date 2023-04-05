@@ -17,10 +17,14 @@
 #include <string>
 #include <utility>
 
+#include <ares.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include "src/core/lib/event_engine/ares_driver.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
