@@ -30,6 +30,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/channel_credentials/google_default.h>
 #include <grpc/grpc_security.h>  // IWYU pragma: keep
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
