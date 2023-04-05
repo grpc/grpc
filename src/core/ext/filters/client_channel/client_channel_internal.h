@@ -21,9 +21,9 @@
 
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -47,66 +47,34 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
   virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
 };
 
-// Internal type for ServiceConfigCallData.  Provides access to the
-// CallDispatchController.
+// Internal type for ServiceConfigCallData.  Handles call commits.
 class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
  public:
   ClientChannelServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
       ServiceConfigCallData::CallAttributes call_attributes,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      absl::AnyInvocable<void()> on_commit,
       grpc_call_context_element* call_context)
       : ServiceConfigCallData(std::move(service_config), method_configs,
                               std::move(call_attributes)),
-        call_dispatch_controller_(call_dispatch_controller) {
+        on_commit_(std::move(on_commit)) {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
 
-  ConfigSelector::CallDispatchController* call_dispatch_controller() {
-    return &call_dispatch_controller_;
+  void Commit() {
+    auto on_commit = std::move(on_commit_);
+    if (on_commit != nullptr) on_commit();
   }
 
  private:
-  // A wrapper for the CallDispatchController returned by the ConfigSelector.
-  // Handles the case where the ConfigSelector doees not return any
-  // CallDispatchController.
-  // Also ensures that we call Commit() at most once, which allows the
-  // client channel code to call Commit() when the call is complete in case
-  // it wasn't called earlier, without needing to know whether or not it was.
-  class CallDispatchControllerWrapper
-      : public ConfigSelector::CallDispatchController {
-   public:
-    explicit CallDispatchControllerWrapper(
-        ConfigSelector::CallDispatchController* call_dispatch_controller)
-        : call_dispatch_controller_(call_dispatch_controller) {}
-
-    bool ShouldRetry() override {
-      if (call_dispatch_controller_ != nullptr) {
-        return call_dispatch_controller_->ShouldRetry();
-      }
-      return true;
-    }
-
-    void Commit() override {
-      if (call_dispatch_controller_ != nullptr && !commit_called_) {
-        call_dispatch_controller_->Commit();
-        commit_called_ = true;
-      }
-    }
-
-   private:
-    ConfigSelector::CallDispatchController* call_dispatch_controller_;
-    bool commit_called_ = false;
-  };
-
   static void Destroy(void* ptr) {
     auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
     self->~ClientChannelServiceConfigCallData();
   }
 
-  CallDispatchControllerWrapper call_dispatch_controller_;
+  absl::AnyInvocable<void()> on_commit_;
 };
 
 }  // namespace grpc_core
