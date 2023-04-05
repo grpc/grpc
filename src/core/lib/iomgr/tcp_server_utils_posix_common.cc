@@ -212,6 +212,8 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     if (!err.ok()) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (!err.ok()) goto error;
+    err = grpc_set_socket_dscp(fd, s->options.dscp);
+    if (!err.ok()) goto error;
     err =
         grpc_set_socket_tcp_user_timeout(fd, s->options, false /* is_client */);
     if (!err.ok()) goto error;
