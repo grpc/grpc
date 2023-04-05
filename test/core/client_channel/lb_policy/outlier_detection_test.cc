@@ -17,13 +17,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
-#include <map>
-#include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
