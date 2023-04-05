@@ -20,6 +20,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/grpc.h>
@@ -65,6 +66,46 @@ using grpc::testing::SimpleResponse;
 using grpc::testing::TestService;
 using grpc::testing::XdsUpdateHealthService;
 
+namespace {
+constexpr absl::string_view kRpcBehaviorMetadataKey = "rpc-behavior";
+constexpr absl::string_view kErrorCodeRpcBehavior = "error-code-";
+
+std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
+  std::set<std::string> rpc_behaviors;
+  auto rpc_behavior_metadata =
+      context->client_metadata().equal_range(grpc::string_ref(
+          kRpcBehaviorMetadataKey.data(), kRpcBehaviorMetadataKey.length()));
+  for (auto metadata = rpc_behavior_metadata.first;
+       metadata != rpc_behavior_metadata.second; ++metadata) {
+    auto value = metadata->second;
+    for (auto behavior :
+         absl::StrSplit(absl::string_view(value.data(), value.length()), ',')) {
+      rpc_behaviors.emplace(behavior);
+    }
+  }
+  return rpc_behaviors;
+}
+
+absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
+    absl::string_view header_value) {
+  if (absl::StartsWith(header_value, kErrorCodeRpcBehavior)) {
+    grpc::StatusCode code;
+    if (absl::SimpleAtoi(header_value.substr(kErrorCodeRpcBehavior.length()),
+                         &code)) {
+      std::string message = absl::StrCat(
+          "Rpc failed as per the rpc-behavior header value: ", header_value);
+      return Status(code, message);
+    } else {
+      std::string message = absl::StrCat(
+          "Invalid format for rpc-behavior header: ", header_value);
+      return Status(grpc::StatusCode::INVALID_ARGUMENT, message);
+    }
+  } else {
+    return absl::nullopt;
+  }
+}
+}  // namespace
+
 class TestServiceImpl : public TestService::Service {
  public:
   explicit TestServiceImpl(const std::string& hostname) : hostname_(hostname) {}
@@ -72,6 +113,12 @@ class TestServiceImpl : public TestService::Service {
   Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
                    SimpleResponse* response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
+    for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
+      auto maybe_status = GetStatusForRpcBehaviorMetadata(rpc_behavior);
+      if (maybe_status.has_value()) {
+        return *maybe_status;
+      }
+    }
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
