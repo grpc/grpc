@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/variant.h"
+
 namespace grpc_core {
 
 // A JSON value, which can be any one of object, array, string,
@@ -42,17 +44,20 @@ class Json {
 
   Json() = default;
 
+// FIXME: make sure construction from nullptr does the right thing
+
   // Copyable.
-  Json(const Json& other) { CopyFrom(other); }
-  Json& operator=(const Json& other) {
-    CopyFrom(other);
-    return *this;
-  }
+  Json(const Json& other) = default;
+  Json& operator=(const Json& other) = default;
 
   // Moveable.
-  Json(Json&& other) noexcept { MoveFrom(std::move(other)); }
+  Json(Json&& other) noexcept
+      : value_(std::move(other.value_)) {
+    other.value_ = absl::monostate();
+  }
   Json& operator=(Json&& other) noexcept {
-    MoveFrom(std::move(other));
+    value_ = std::move(other.value_);
+    other.value_ = absl::monostate();
     return *this;
   }
 
@@ -60,16 +65,19 @@ class Json {
   // If is_number is true, the type will be kNumber instead of kString.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(const std::string& string, bool is_number = false)
-      : type_(is_number ? Type::kNumber : Type::kString),
-        string_value_(string) {}
+      : value_(is_number ? Value(NumberValue{string}) : Value(string)) {}
   Json& operator=(const std::string& string) {
-    type_ = Type::kString;
-    string_value_ = string;
+    value_ = string;
     return *this;
   }
 
   // Same thing for C-style strings, both const and mutable.
   // NOLINTNEXTLINE(google-explicit-constructor)
+// FIXME: maybe replace this with absl::string_view to avoid nullptr
+// problem?
+// FIXME: maybe avoid default arg by having static factory methods for
+// each type, where the name of the factory method explicitly states the
+// type?
   Json(const char* string, bool is_number = false)
       : Json(std::string(string), is_number) {}
   Json& operator=(const char* string) {
@@ -86,140 +94,112 @@ class Json {
 
   // Construct by moving a string.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(std::string&& string)
-      : type_(Type::kString), string_value_(std::move(string)) {}
+  Json(std::string&& string) : value_(Value(std::move(string))) {}
   Json& operator=(std::string&& string) {
-    type_ = Type::kString;
-    string_value_ = std::move(string);
+    value_ = Value(std::move(string));
     return *this;
   }
 
   // Construct from bool.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(bool b) : type_(b ? Type::kTrue : Type::kFalse) {}
+  Json(bool b) : value_(b) {}
   Json& operator=(bool b) {
-    type_ = b ? Type::kTrue : Type::kFalse;
+    value_ = b;
     return *this;
   }
 
   // Construct from any numeric type.
   template <typename NumericType>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(NumericType number)
-      : type_(Type::kNumber), string_value_(std::to_string(number)) {}
+  Json(NumericType number) : value_(NumberValue{std::to_string(number)}) {}
   template <typename NumericType>
   Json& operator=(NumericType number) {
-    type_ = Type::kNumber;
-    string_value_ = std::to_string(number);
+    value_ = NumberValue{std::to_string(number)};
     return *this;
   }
 
   // Construct by copying object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Object& object) : type_(Type::kObject), object_value_(object) {}
+  Json(const Object& object) : value_(object) {}
   Json& operator=(const Object& object) {
-    type_ = Type::kObject;
-    object_value_ = object;
+    value_ = object;
     return *this;
   }
 
   // Construct by moving object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Object&& object)
-      : type_(Type::kObject), object_value_(std::move(object)) {}
+  Json(Object&& object) : value_(std::move(object)) {}
   Json& operator=(Object&& object) {
-    type_ = Type::kObject;
-    object_value_ = std::move(object);
+    value_ = std::move(object);
     return *this;
   }
 
   // Construct by copying array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Array& array) : type_(Type::kArray), array_value_(array) {}
+  Json(const Array& array) : value_(array) {}
   Json& operator=(const Array& array) {
-    type_ = Type::kArray;
-    array_value_ = array;
+    value_ = array;
     return *this;
   }
 
   // Construct by moving array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Array&& array) : type_(Type::kArray), array_value_(std::move(array)) {}
+  Json(Array&& array) : value_(std::move(array)) {}
   Json& operator=(Array&& array) {
-    type_ = Type::kArray;
-    array_value_ = std::move(array);
+    value_ = std::move(array);
     return *this;
   }
 
-  // Accessor methods.
-  Type type() const { return type_; }
-  const std::string& string() const { return string_value_; }
-  const Object& object() const { return object_value_; }
-  const Array& array() const { return array_value_; }
-
-  bool operator==(const Json& other) const {
-    if (type_ != other.type_) return false;
-    switch (type_) {
-      case Type::kNumber:
-      case Type::kString:
-        if (string_value_ != other.string_value_) return false;
-        break;
-      case Type::kObject:
-        if (object_value_ != other.object_value_) return false;
-        break;
-      case Type::kArray:
-        if (array_value_ != other.array_value_) return false;
-        break;
-      default:
-        break;
-    }
-    return true;
+  // Returns the JSON type.
+  Type type() const {
+    struct ValueFunctor {
+      Json::Type operator()(const absl::monostate&) { return Type::kNull; }
+      Json::Type operator()(bool value) {
+        return value ? Type::kTrue : Type::kFalse;
+      }
+      Json::Type operator()(const NumberValue&) { return Type::kNumber; }
+      Json::Type operator()(const std::string&) { return Type::kString; }
+      Json::Type operator()(const Object&) { return Type::kObject; }
+      Json::Type operator()(const Array&) { return Type::kArray; }
+    };
+    return absl::visit(ValueFunctor(), value_);
   }
 
+  // Accessor methods.
+// FIXME: need these APIs to work if underlying data struct is a union
+// or variant -- maybe assert on type_ in each method?
+// (assert also important because we're using const reference return values)
+// FIXME: maybe use string_view for strings?
+  const std::string& string() const {
+    const NumberValue* num = absl::get_if<NumberValue>(&value_);
+    if (num != nullptr) return num->value;
+    return absl::get<std::string>(value_);
+  }
+  const Object& object() const { return absl::get<Object>(value_); }
+  const Array& array() const { return absl::get<Array>(value_); }
+
+  bool operator==(const Json& other) const { return value_ == other.value_; }
   bool operator!=(const Json& other) const { return !(*this == other); }
 
  private:
-  void CopyFrom(const Json& other) {
-    type_ = other.type_;
-    switch (type_) {
-      case Type::kNumber:
-      case Type::kString:
-        string_value_ = other.string_value_;
-        break;
-      case Type::kObject:
-        object_value_ = other.object_value_;
-        break;
-      case Type::kArray:
-        array_value_ = other.array_value_;
-        break;
-      default:
-        break;
-    }
-  }
+  struct NumberValue {
+    std::string value;
 
-  void MoveFrom(Json&& other) {
-    type_ = other.type_;
-    other.type_ = Type::kNull;
-    switch (type_) {
-      case Type::kNumber:
-      case Type::kString:
-        string_value_ = std::move(other.string_value_);
-        break;
-      case Type::kObject:
-        object_value_ = std::move(other.object_value_);
-        break;
-      case Type::kArray:
-        array_value_ = std::move(other.array_value_);
-        break;
-      default:
-        break;
+    bool operator==(const NumberValue& other) const {
+      return value == other.value;
     }
-  }
+  };
+  using Value = absl::variant<
+      absl::monostate,  // kNull
+      bool,             // kTrue or kFalse
+      NumberValue,      // kNumber
+      std::string,      // kString
+      Object,           // kObject
+      Array>;           // kArray
 
-  Type type_ = Type::kNull;
-  std::string string_value_;
-  Object object_value_;
-  Array array_value_;
+  Json(Value value) : value_(std::move(value)) {}
+
+  Value value_;
 };
 
 }  // namespace grpc_core
