@@ -3278,6 +3278,7 @@ grpc_cc_library(
     hdrs = [
         "lib/json/json.h",
     ],
+    external_deps = ["absl/types:variant"],
     deps = ["//:gpr"],
 )
 
