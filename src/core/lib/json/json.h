@@ -71,13 +71,13 @@ class Json {
     return *this;
   }
 
-  // Same thing for C-style strings, both const and mutable.
-  // NOLINTNEXTLINE(google-explicit-constructor)
 // FIXME: maybe replace this with absl::string_view to avoid nullptr
 // problem?
 // FIXME: maybe avoid default arg by having static factory methods for
 // each type, where the name of the factory method explicitly states the
 // type?
+  // Same thing for C-style strings, both const and mutable.
+  // NOLINTNEXTLINE(google-explicit-constructor)
   Json(const char* string, bool is_number = false)
       : Json(std::string(string), is_number) {}
   Json& operator=(const char* string) {
@@ -197,7 +197,7 @@ class Json {
       Object,           // kObject
       Array>;           // kArray
 
-  Json(Value value) : value_(std::move(value)) {}
+  explicit Json(Value value) : value_(std::move(value)) {}
 
   Value value_;
 };
