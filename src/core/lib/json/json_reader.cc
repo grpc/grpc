@@ -100,8 +100,8 @@ class JsonReader {
 
     Json::Type type() const {
       return Match(
-          data, [](const Json::Object& object) { return Json::Type::kObject; },
-          [](const Json::Array& array) { return Json::Type::kArray; });
+          data, [](const Json::Object&) { return Json::Type::kObject; },
+          [](const Json::Array&) { return Json::Type::kArray; });
     }
 
     Json TakeAsJson() {
