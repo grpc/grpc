@@ -251,9 +251,7 @@ Json* JsonReader::CreateAndLinkValue() {
   if (stack_.empty()) return &root_value_;
   return MatchMutable(
       &stack_.back().data,
-      [&](Json::Object* object) {
-        return &(*object)[std::move(key_)];
-      },
+      [&](Json::Object* object) { return &(*object)[std::move(key_)]; },
       [&](Json::Array* array) {
         array->emplace_back();
         return &array->back();
