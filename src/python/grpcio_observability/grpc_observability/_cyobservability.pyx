@@ -65,7 +65,7 @@ def observability_init() -> None:
 
 def _start_exporting_thread() -> None:
   global global_export_thread
-  global_export_thread = Thread(target=ExportSensusData)
+  global_export_thread = Thread(target=_export_sensus_data)
   global_export_thread.start()
 
 
@@ -133,7 +133,7 @@ def at_observability_exit() -> None:
   _shutdown_exporting_thread()
 
 
-cdef void ExportSensusData():
+cdef void _export_sensus_data():
   while True:
     with nogil:
       while not GLOBAL_SHUTDOWN_EXPORT_THREAD:
@@ -152,16 +152,16 @@ cdef void ExportSensusData():
       # Flush remaining data before shutdown thread
       LockSensusDataBuffer()
       if not kSensusDataBuffer.empty():
-        FlushSensusData()
+        _flush_sensus_data()
       UnlockSensusDataBuffer()
       break # Break to shutdown exporting thead
 
     LockSensusDataBuffer()
-    FlushSensusData()
+    _flush_sensus_data()
     UnlockSensusDataBuffer()
 
 
-cdef void FlushSensusData():
+cdef void _flush_sensus_data():
   py_metrics_batch = []
   py_spans_batch = []
   while not kSensusDataBuffer.empty():

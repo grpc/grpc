@@ -30,7 +30,6 @@ def set_server_call_tracer_factory(object capsule) -> None:
 def set_context_from_server_call_tracer(RequestCallEvent event) -> None:
   if not observability_enabled():
     return
-  sys.stderr.write("CPY: calling get_server_call_tracer...\n"); sys.stderr.flush()
   cdef ServerCallTracer* server_call_tracer
   server_call_tracer = static_cast['ServerCallTracer*'](grpc_call_get_call_tracer(event.call.c_call))
   if observability_tracing_enabled():
