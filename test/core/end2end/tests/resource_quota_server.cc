@@ -129,7 +129,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
         Crash(absl::StrFormat("Unexpected status code: %d",
                               server_status[i].status()));
     }
-    if (client_close[i].was_cancelled()) {
+    if (seen_server_call[i] && client_close[i].was_cancelled()) {
       cancelled_calls_on_server++;
     }
   }
