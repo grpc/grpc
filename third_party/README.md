@@ -111,7 +111,9 @@ Updating the protobuf dependency is now part of the internal release process (se
 
 ### Updating third_party/envoy-api
 
-Apart from the above steps, please perform the following two steps to generate the Python `xds-protos` package:
+Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+
+In addition, please perform the following two steps to generate the Python `xds-protos` package:
 
 1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
 2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
