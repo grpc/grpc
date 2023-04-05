@@ -251,15 +251,6 @@ Json* JsonReader::CreateAndLinkValue() {
   return MatchMutable(
       &stack_.back().data,
       [&](Json::Object* object) {
-        if (object->find(key_) != object->end()) {
-          if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
-            truncated_errors_ = true;
-          } else {
-            errors_.push_back(
-                absl::StrFormat("duplicate key \"%s\" at index %" PRIuPTR, key_,
-                                CurrentIndex()));
-          }
-        }
         return &(*object)[std::move(key_)];
       },
       [&](Json::Array* array) {
@@ -303,6 +294,16 @@ void JsonReader::EndContainer() {
 void JsonReader::SetKey() {
   key_ = std::move(string_);
   string_.clear();
+  const Json::Object& object = absl::get<Json::Object>(stack_.back().data);
+  if (object.find(key_) != object.end()) {
+    if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+      truncated_errors_ = true;
+    } else {
+      errors_.push_back(
+          absl::StrFormat("duplicate key \"%s\" at index %" PRIuPTR, key_,
+                          CurrentIndex() - key_.size() - 2));
+    }
+  }
 }
 
 void JsonReader::SetString() {
