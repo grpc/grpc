@@ -40,6 +40,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time",
         "absl/types:optional",
         "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
