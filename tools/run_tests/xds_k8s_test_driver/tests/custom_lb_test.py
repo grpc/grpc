@@ -40,8 +40,10 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang == _Lang.JAVA:
             return config.version_gte('v1.47.x')
-        if config.client_lang == _Lang.CPP:
-            return config.version_gte('v1.55.x')
+        # TODO(eostroukhov): Uncomment when the support is added back.
+        #   ref https://github.com/grpc/grpc/pull/32769
+        # if config.client_lang == _Lang.CPP:
+        #    return config.version_gte('v1.55.x')
         return False
 
     def test_custom_lb_config(self):
