@@ -58,8 +58,7 @@ namespace grpc_core {
 //       }
 //     }
 //   }
-//   return errors.status(absl::StatusCode::kInvalidArgument,
-//                        "errors validating foo.bar");
+//   return errors.status("errors validating foo.bar");
 // }
 class ValidationErrors {
  public:
@@ -101,13 +100,7 @@ class ValidationErrors {
   bool FieldHasErrors() const GPR_ATTRIBUTE_NOINLINE;
 
   // Returns the resulting status of parsing.
-  // If there are no errors, this will return an Ok status instead of using the
-  // prefix argument.
-  absl::Status status(absl::StatusCode code, absl::string_view prefix) const;
-
-  // Returns the resulting error message
-  // If there are no errors, this will return an empty string.
-  std::string message(absl::string_view prefix) const;
+  absl::Status status(absl::string_view prefix) const;
 
   // Returns true if there are no errors.
   bool ok() const { return field_errors_.empty(); }

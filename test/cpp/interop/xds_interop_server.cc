@@ -98,7 +98,7 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     } else {
       std::string message = absl::StrCat(
           "Invalid format for rpc-behavior header: ", header_value);
-      return Status(grpc::INVALID_ARGUMENT, message);
+      return Status(grpc::StatusCode::INVALID_ARGUMENT, message);
     }
   } else {
     return absl::nullopt;

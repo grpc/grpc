@@ -432,10 +432,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // Return result.
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument,
-                         "errors parsing EDS resource");
-  }
+  if (!errors.ok()) return errors.status("errors parsing EDS resource");
   return eds_resource;
 }
 

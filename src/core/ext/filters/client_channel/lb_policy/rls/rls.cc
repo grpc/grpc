@@ -117,7 +117,7 @@ constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
-const char* kRlsHeaderKey = "X-Google-RLS-Data";
+const char* kRlsHeaderKey = "x-google-rls-data";
 
 const Duration kDefaultLookupServiceTimeout = Duration::Seconds(10);
 const Duration kMaxMaxAge = Duration::Minutes(5);

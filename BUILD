@@ -783,7 +783,6 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
-        "//src/core:grpc_resolver_dns_plugin",
     ],
 )
 
@@ -1395,9 +1394,11 @@ grpc_cc_library(
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
+        "//src/core:lib/transport/custom_metadata.h",
         "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/transport/metadata_batch.h",
         "//src/core:lib/transport/parsed_metadata.h",
+        "//src/core:lib/transport/simple_slice_based_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
@@ -1446,7 +1447,6 @@ grpc_cc_library(
         "config",
         "config_vars",
         "cpp_impl_of",
-        "custom_metadata",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -1537,13 +1537,6 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
-    ],
-)
-
-grpc_cc_library(
-    name = "custom_metadata",
-    hdrs = [
-        "//src/core:lib/transport/custom_metadata.h",
     ],
 )
 
@@ -1947,7 +1940,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
-        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
@@ -2720,7 +2712,6 @@ grpc_cc_library(
         "//src/core:lib/service_config/service_config_impl.h",
     ],
     external_deps = [
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -2956,7 +2947,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
@@ -2999,10 +2989,12 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
-        "//src/core:service_config_helper",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
