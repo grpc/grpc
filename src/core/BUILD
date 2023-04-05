@@ -3299,6 +3299,7 @@ grpc_cc_library(
     visibility = ["@grpc:json_reader_legacy"],
     deps = [
         "json",
+        "match",
         "//:gpr",
     ],
 )
