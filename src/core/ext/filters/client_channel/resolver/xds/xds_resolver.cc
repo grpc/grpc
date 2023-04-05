@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -248,11 +249,10 @@ class XdsResolver : public Resolver {
                   .first) {}
 
     void Orphan() override {
-      auto* resolver = resolver_.release();
+      auto* resolver = resolver_.get();
       resolver->work_serializer_->Run(
-          [resolver]() {
+          [resolver = std::move(resolver_)]() {
             resolver->MaybeRemoveUnusedClusters();
-            resolver->Unref();
           },
           DEBUG_LOCATION);
     }
@@ -262,34 +262,6 @@ class XdsResolver : public Resolver {
    private:
     RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
-  };
-
-  // Call dispatch controller, created for each call handled by the
-  // ConfigSelector.  Holds a ref to the ClusterState object until the
-  // call is committed.
-  class XdsCallDispatchController
-      : public ConfigSelector::CallDispatchController {
-   public:
-    explicit XdsCallDispatchController(
-        RefCountedPtr<ClusterState> cluster_state)
-        : cluster_state_(std::move(cluster_state)) {}
-
-    bool ShouldRetry() override {
-      // TODO(donnadionne): Implement the retry circuit breaker here.
-      return true;
-    }
-
-    void Commit() override {
-      // TODO(donnadionne): If ShouldRetry() was called previously,
-      // decrement the retry circuit breaker counter.
-      cluster_state_.reset();
-    }
-
-   private:
-    // Note: The XdsCallDispatchController object is never actually destroyed,
-    // so do not add any data members that require destruction unless you have
-    // some other way to clean them up.
-    RefCountedPtr<ClusterState> cluster_state_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -766,9 +738,10 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
   call_config.call_attributes[RequestHashAttributeName()] = hash_value;
-  call_config.call_dispatch_controller =
-      args.arena->New<XdsCallDispatchController>(it->second->Ref());
-  return call_config;
+  call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
+    cluster_state.reset();
+  };
+  return std::move(call_config);
 }
 
 //
