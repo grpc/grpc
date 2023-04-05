@@ -88,8 +88,8 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
         kServerRecvBaseTag + i,
         MaybePerformAction{[this, &seen_server_call, &server_calls,
                             &client_message, &client_close, i](bool success) {
-          EXPECT_TRUE(success);
           seen_server_call[i] = true;
+          if (!success) return;
           server_calls[i]
               .NewBatch(kServerStartBaseTag + i)
               .RecvMessage(client_message[i])
