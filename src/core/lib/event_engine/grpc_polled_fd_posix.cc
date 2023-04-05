@@ -13,6 +13,13 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
+#include <string.h>
+#include <sys/ioctl.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,18 +31,11 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/event_engine/ares_driver.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/port.h"
-
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-
-#include <string.h>
-#include <sys/ioctl.h>
-
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {

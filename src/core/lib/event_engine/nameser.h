@@ -26,6 +26,8 @@
 
 #ifdef GRPC_HAVE_ARPA_NAMESER
 
+#include <arpa/nameser.h>  // IWYU pragma: keep
+
 #else  // GRPC_HAVE_ARPA_NAMESER
 
 typedef enum __ns_class {

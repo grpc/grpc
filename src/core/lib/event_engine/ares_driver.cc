@@ -14,12 +14,6 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
-#include <memory>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
-
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -38,15 +32,19 @@
 #include <algorithm>
 #include <chrono>
 #include <initializer_list>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
 #include <address_sorting/address_sorting.h>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -616,8 +614,8 @@ void GrpcAresRequestImpl::Work() {
                                      fd_node->as);
         }
         new_list->PushFdNode(fd_node);
-        // Register read_closure if the socket is readable and read_closure has
-        // not been registered with this socket.
+        // Register read_closure if the socket is readable and read_closure
+        // has not been registered with this socket.
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fd_node->readable_registered) {
           GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify read on: %d", this,
