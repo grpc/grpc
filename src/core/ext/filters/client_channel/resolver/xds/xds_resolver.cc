@@ -741,7 +741,7 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };
-  return call_config;
+  return std::move(call_config);
 }
 
 //

@@ -124,7 +124,7 @@ class DefaultConfigSelector : public ConfigSelector {
     call_config.method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     call_config.service_config = service_config_;
-    return call_config;
+    return std::move(call_config);
   }
 
   // Only comparing the ConfigSelector itself, not the underlying
