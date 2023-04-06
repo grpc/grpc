@@ -42,8 +42,6 @@ class Json {
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
-// FIXME: make sure construction from nullptr does the right thing
-
   static Json FromString(const std::string& str) {
     Json json;
     json.value = str;
@@ -112,6 +110,8 @@ class Json {
   }
 
 #if 0
+// FIXME: make sure construction from nullptr does the right thing
+
   // Construct from copying a string.
   // If is_number is true, the type will be kNumber instead of kString.
   // NOLINTNEXTLINE(google-explicit-constructor)
