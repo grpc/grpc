@@ -245,10 +245,6 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
-  gpr_log(GPR_DEBUG, "%sCancelWith: %p refs=%" PRIdPTR " err=%s [%s]",
-          releaser->call()->DebugTag().c_str(), batch, refcnt,
-          error.ToString().c_str(),
-          grpc_transport_stream_op_batch_string(batch, false).c_str());
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
     if (grpc_trace_channel.enabled()) {
