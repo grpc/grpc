@@ -1223,7 +1223,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
         "//src/core:lib/iomgr/dualstack_socket_posix.cc",
@@ -1242,7 +1241,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname_fallback.cc",
         "//src/core:lib/iomgr/gethostname_host_name_max.cc",
         "//src/core:lib/iomgr/gethostname_sysconf.cc",
-        "//src/core:lib/iomgr/internal_errqueue.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
         "//src/core:lib/iomgr/iomgr.cc",
         "//src/core:lib/iomgr/iomgr_posix.cc",
@@ -1334,7 +1332,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
         "//src/core:lib/iomgr/block_annotate.h",
-        "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
         "//src/core:lib/iomgr/cfstream_handle.h",
         "//src/core:lib/iomgr/dynamic_annotations.h",
@@ -1347,7 +1344,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
         "//src/core:lib/iomgr/gethostname.h",
-        "//src/core:lib/iomgr/internal_errqueue.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
         "//src/core:lib/iomgr/load_file.h",
@@ -1452,6 +1448,8 @@ grpc_cc_library(
         "gpr",
         "grpc_public_hdrs",
         "grpc_trace",
+        "iomgr_buffer_list",
+        "iomgr_internal_errqueue",
         "iomgr_timer",
         "orphanable",
         "parse_address",
@@ -2594,6 +2592,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_internal_errqueue",
+    srcs = [
+        "//src/core:lib/iomgr/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/iomgr/internal_errqueue.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:iomgr_internal_errqueue"],
+    deps = [
+        "gpr",
+        "//src/core:iomgr_port",
+        "//src/core:strerror",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_buffer_list",
+    srcs = [
+        "//src/core:lib/iomgr/buffer_list.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/iomgr/buffer_list.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:iomgr_buffer_list"],
+    deps = [
+        "gpr",
+        "iomgr_internal_errqueue",
+        "//src/core:error",
+        "//src/core:iomgr_port",
+    ],
+)
+
+grpc_cc_library(
     name = "uri_parser",
     srcs = [
         "//src/core:lib/uri/uri_parser.cc",
@@ -3692,6 +3729,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chttp2_context_list",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/context_list.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/context_list.h",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_buffer_list",
+        "//src/core:error",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
@@ -3745,6 +3797,7 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
+        "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

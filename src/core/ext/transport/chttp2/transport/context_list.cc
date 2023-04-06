@@ -22,8 +22,6 @@
 
 #include <stdint.h>
 
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
                                     grpc_error_handle error) = nullptr;
@@ -31,29 +29,55 @@ void* (*get_copied_context_fn_g)(void*) = nullptr;
 }  // namespace
 
 namespace grpc_core {
-void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
+void ContextList::Append(ContextList** tail, void* context,
+                         size_t byte_offset_in_stream,
+                         int64_t relative_start_pos_in_chunk,
+                         int64_t num_traced_bytes_in_chunk) {
   if (get_copied_context_fn_g == nullptr ||
       write_timestamps_callback_g == nullptr) {
     return;
   }
   // Create a new element in the list and add it at the front
   ContextList* elem = new ContextList();
-  elem->trace_context_ = get_copied_context_fn_g(s->context);
-  elem->byte_offset_ = s->byte_counter;
-  elem->next_ = *head;
-  *head = elem;
+  elem->trace_context_ = get_copied_context_fn_g(context);
+  elem->byte_offset_in_stream_ = byte_offset_in_stream;
+  elem->relative_start_pos_in_chunk_ = relative_start_pos_in_chunk;
+  elem->num_traced_bytes_in_chunk_ = num_traced_bytes_in_chunk;
+  if (*tail != nullptr) {
+    (*tail)->next_ = elem;
+    elem->head_ = (*tail)->head_;
+    *tail = elem;
+  } else {
+    *tail = elem;
+    elem->head_ = elem;
+  }
 }
 
 void ContextList::Execute(void* arg, Timestamps* ts, grpc_error_handle error) {
-  ContextList* head = static_cast<ContextList*>(arg);
+  ContextList* tail = static_cast<ContextList*>(arg);
+  ContextList* head = tail != nullptr ? tail->head_ : nullptr;
   ContextList* to_be_freed;
   while (head != nullptr) {
     if (write_timestamps_callback_g) {
       if (ts) {
-        ts->byte_offset = static_cast<uint32_t>(head->byte_offset_);
+        ts->byte_offset = static_cast<uint32_t>(head->byte_offset_in_stream_);
       }
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
+    to_be_freed = head;
+    head = head->next_;
+    delete to_be_freed;
+  }
+}
+
+void ContextList::ForEachExecuteCallback(
+    ContextList* tail,
+    std::function<void(void*, size_t, int64_t, int64_t)> cb) {
+  ContextList* to_be_freed;
+  ContextList* head = tail != nullptr ? tail->head_ : nullptr;
+  while (head != nullptr) {
+    cb(head->trace_context_, head->byte_offset_in_stream_,
+       head->relative_start_pos_in_chunk_, head->num_traced_bytes_in_chunk_);
     to_be_freed = head;
     head = head->next_;
     delete to_be_freed;

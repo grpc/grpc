@@ -31,15 +31,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -61,8 +52,6 @@ void TestExecuteFlushesListVerifier(void* arg, Timestamps* ts,
   gpr_atm_rel_store(done, gpr_atm{1});
 }
 
-void discard_write(grpc_slice /*slice*/) {}
-
 class ContextListTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -78,93 +67,68 @@ class ContextListTest : public ::testing::Test {
 TEST_F(ContextListTest, ExecuteFlushesList) {
   ContextList* list = nullptr;
   const int kNumElems = 5;
-  ExecCtx exec_ctx;
-  grpc_stream_refcount ref;
-  GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-  auto args = CoreConfiguration::Get()
-                  .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr);
-  grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
-  std::vector<grpc_chttp2_stream*> s;
-  s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
-    s.push_back(static_cast<grpc_chttp2_stream*>(
-        gpr_malloc(grpc_transport_stream_size(t))));
-    grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
-    s[i]->context = &verifier_called[i];
-    s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
-    ContextList::Append(&list, s[i]);
+    ContextList::Append(&list, &verifier_called[i], kByteOffset,
+                        i * kByteOffset, kByteOffset);
   }
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), 1);
-    grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
-                                  reinterpret_cast<grpc_stream*>(s[i]),
-                                  nullptr);
-    exec_ctx.Flush();
-    gpr_free(s[i]);
   }
-  grpc_transport_destroy(t);
-  exec_ctx.Flush();
 }
 
 TEST_F(ContextListTest, EmptyList) {
   ContextList* list = nullptr;
-  ExecCtx exec_ctx;
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
-  exec_ctx.Flush();
 }
 
 TEST_F(ContextListTest, EmptyListEmptyTimestamp) {
   ContextList* list = nullptr;
-  ExecCtx exec_ctx;
   ContextList::Execute(list, nullptr, absl::OkStatus());
-  exec_ctx.Flush();
 }
 
 TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   ContextList* list = nullptr;
   const int kNumElems = 5;
-  ExecCtx exec_ctx;
-  grpc_stream_refcount ref;
-  GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-  auto args = CoreConfiguration::Get()
-                  .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr);
-  grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
-  std::vector<grpc_chttp2_stream*> s;
-  s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
-    s.push_back(static_cast<grpc_chttp2_stream*>(
-        gpr_malloc(grpc_transport_stream_size(t))));
-    grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
-    s[i]->context = &verifier_called[i];
-    s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
-    ContextList::Append(&list, s[i]);
+    ContextList::Append(&list, &verifier_called[i], kByteOffset,
+                        i * kByteOffset, kByteOffset);
   }
   ContextList::Execute(list, nullptr, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), 1);
-    grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
-                                  reinterpret_cast<grpc_stream*>(s[i]),
-                                  nullptr);
-    exec_ctx.Flush();
-    gpr_free(s[i]);
   }
-  grpc_transport_destroy(t);
-  exec_ctx.Flush();
+}
+
+TEST_F(ContextListTest, IterateAndFreeTest) {
+  ContextList* list = nullptr;
+  const int kNumElems = 50;
+  int verifier_context[kNumElems];
+  for (auto i = 0; i < kNumElems; i++) {
+    verifier_context[i] = i;
+    ContextList::Append(&list, &verifier_context[i], kByteOffset,
+                        i * kByteOffset, kByteOffset);
+  }
+  int i = 0;
+  ContextList::ForEachExecuteCallback(
+      list,
+      [&i](void* trace_context, size_t byte_offset,
+           int64_t traced_bytes_relative_start_pos, int64_t num_traced_bytes) {
+        int* verifier_context = static_cast<int*>(trace_context);
+        // It should iterate in the forward order
+        EXPECT_EQ(*verifier_context, i);
+        EXPECT_EQ(byte_offset, kByteOffset);
+        EXPECT_EQ(traced_bytes_relative_start_pos,
+                  static_cast<int64_t>(i * kByteOffset));
+        EXPECT_EQ(num_traced_bytes, static_cast<int64_t>(kByteOffset));
+        i++;
+      });
 }
 
 }  // namespace

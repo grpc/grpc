@@ -627,6 +627,7 @@ class StreamWriteContext {
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
+  int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
   ctx.FlushSettings();
   ctx.FlushPingAcks();
@@ -642,15 +643,20 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
+    int64_t num_stream_bytes = 0;
     stream_ctx.FlushInitialMetadata();
     stream_ctx.FlushWindowUpdates();
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
     if (t->outbuf.length > orig_len) {
       // Add this stream to the list of the contexts to be traced at TCP
-      s->byte_counter += t->outbuf.length - orig_len;
+      num_stream_bytes = t->outbuf.length - orig_len;
+      s->byte_counter += static_cast<size_t>(num_stream_bytes);
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
-        grpc_core::ContextList::Append(&t->cl, s);
+        grpc_core::ContextList::Append(&t->cl, s->context, s->byte_counter,
+                                       outbuf_relative_start_pos,
+                                       num_stream_bytes);
+        outbuf_relative_start_pos += num_stream_bytes;
       }
     }
     if (stream_ctx.stream_became_writable()) {
