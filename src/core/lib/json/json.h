@@ -42,19 +42,9 @@ class Json {
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
-  static Json FromString(const std::string& str) {
+  static Json FromBool(bool b) {
     Json json;
-    json.value = str;
-    return json;
-  }
-  static Json FromString(const char* str) {
-    Json json;
-    json.value = std::string(str);
-    return json;
-  }
-  static Json FromString(std::string str) {
-    Json json;
-    json.value = std::move(str);
+    json.value = b;
     return json;
   }
 
@@ -73,17 +63,45 @@ class Json {
     json.value = NumberValue(std::move(str));
     return json;
   }
-  // Construct from any numeric type.
-  template <typename NumericType>
-  static Json FromNumber(NumericType number) {
+  static Json FromNumber(int32_t value) {
     Json json;
-    json.value = NumberValue{std::to_string(number)};
+    json.value = NumberValue(absl::StrCat(value));
+    return json;
+  }
+  static Json FromNumber(uint32_t value) {
+    Json json;
+    json.value = NumberValue(absl::StrCat(value));
+    return json;
+  }
+  static Json FromNumber(int64_t value) {
+    Json json;
+    json.value = NumberValue(absl::StrCat(value));
+    return json;
+  }
+  static Json FromNumber(uint64_t value) {
+    Json json;
+    json.value = NumberValue(absl::StrCat(value));
+    return json;
+  }
+  static Json FromNumber(double value) {
+    Json json;
+    json.value = NumberValue(absl::StrCat(value));
     return json;
   }
 
-  static Json FromBool(bool b) {
+  static Json FromString(const std::string& str) {
     Json json;
-    json.value = b;
+    json.value = str;
+    return json;
+  }
+  static Json FromString(const char* str) {
+    Json json;
+    json.value = std::string(str);
+    return json;
+  }
+  static Json FromString(std::string str) {
+    Json json;
+    json.value = std::move(str);
     return json;
   }
 
@@ -234,10 +252,6 @@ class Json {
   }
 
   // Accessor methods.
-// FIXME: need these APIs to work if underlying data struct is a union
-// or variant -- maybe assert on type_ in each method?
-// (assert also important because we're using const reference return values)
-// FIXME: maybe use string_view for strings?
   const std::string& string() const {
     const NumberValue* num = absl::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
