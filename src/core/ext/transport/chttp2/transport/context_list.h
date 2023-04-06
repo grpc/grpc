@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/error.h"
@@ -42,35 +43,48 @@ class ContextList {
   // the current chunk that is being sent.
   // - num_traced_bytes_in_chunk: Number of bytes belonging to the traced RPC
   // within the current chunk.
-  static void Append(ContextList** tail, void* context,
-                     size_t byte_offset_in_stream,
-                     int64_t relative_start_pos_in_chunk,
-                     int64_t num_traced_bytes_in_chunk);
+  void Append(void* context, size_t byte_offset_in_stream,
+              int64_t relative_start_pos_in_chunk,
+              int64_t num_traced_bytes_in_chunk);
 
-  // Executes the function set using grpc_http2_set_write_timestamps_callback
-  // method with each context in the list and \a ts. It also frees up the entire
-  // list after this operation. It is intended as a callback and hence does not
-  // take a ref on \a error. The fn receives individual contexts in the same
-  // order in which they were Appended.
+  bool IsEmpty() { return context_list_entries_.empty(); }
+
+  // Interprets the passed arg as a pointer to ContextList type and executes the
+  // function set using grpc_http2_set_write_timestamps_callback method with
+  // each context in the list and \a ts. It also deletes/frees up the passed
+  // ContextList after this operation. It is intended as a callback and hence
+  // does not take a ref on \a error. The fn receives individual contexts in the
+  // same order in which they were Appended.
   static void Execute(void* arg, Timestamps* ts, grpc_error_handle error);
 
   // Executes the passed function \a cb with each context in the list. The
   // arguments provided to cb include the trace_context_, byte_offset_,
   // traced_bytes_relative_start_pos_ and num_traced_bytes_ for each context in
-  // the context list. It also frees up the entire list after this operation.
-  // The cb receives individual contexts in the same order in which they were
-  // Appended.
+  // the context list. It also deletes/frees up the ContextList after this
+  // operation. The cb receives individual contexts in the same order in which
+  // they were Appended.
   static void ForEachExecuteCallback(
-      ContextList* tail,
-      std::function<void(void*, size_t, int64_t, int64_t)> cb);
+      ContextList* list,
+      absl::FunctionRef<void(void*, size_t, int64_t, int64_t)> cb);
+
+  // Use this function to create a new ContextList instead of creating it
+  // manually.
+  static ContextList* MakeNewContextList() { return new ContextList; }
 
  private:
-  void* trace_context_ = nullptr;
-  ContextList* next_ = nullptr;  // For iterating from head to tail.
-  ContextList* head_ = nullptr;  // Point to the first element in the list.
-  int64_t relative_start_pos_in_chunk_ = 0;
-  int64_t num_traced_bytes_in_chunk_ = 0;
-  size_t byte_offset_in_stream_ = 0;
+  struct ContextListEntry {
+    ContextListEntry(void* context, int64_t relative_start_pos,
+                     int64_t num_traced_bytes, size_t byte_offset)
+        : trace_context(context),
+          relative_start_pos_in_chunk(relative_start_pos),
+          num_traced_bytes_in_chunk(num_traced_bytes),
+          byte_offset_in_stream(byte_offset) {}
+    void* trace_context;
+    int64_t relative_start_pos_in_chunk;
+    int64_t num_traced_bytes_in_chunk;
+    size_t byte_offset_in_stream;
+  };
+  std::vector<ContextListEntry> context_list_entries_;
 };
 
 void grpc_http2_set_write_timestamps_callback(

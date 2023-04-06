@@ -653,9 +653,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       num_stream_bytes = t->outbuf.length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
-        grpc_core::ContextList::Append(&t->cl, s->context, s->byte_counter,
-                                       outbuf_relative_start_pos,
-                                       num_stream_bytes);
+        t->cl->Append(s->context, s->byte_counter, outbuf_relative_start_pos,
+                      num_stream_bytes);
         outbuf_relative_start_pos += num_stream_bytes;
       }
     }

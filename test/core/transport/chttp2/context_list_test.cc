@@ -27,8 +27,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 
 #include "test/core/util/test_config.h"
@@ -65,13 +63,13 @@ class ContextListTest : public ::testing::Test {
 /// Also tests that arg and byte_counter are passed correctly.
 ///
 TEST_F(ContextListTest, ExecuteFlushesList) {
-  ContextList* list = nullptr;
+  ContextList* list = ContextList::MakeNewContextList();
   const int kNumElems = 5;
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
     gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
-    ContextList::Append(&list, &verifier_called[i], kByteOffset,
-                        i * kByteOffset, kByteOffset);
+    list->Append(&verifier_called[i], kByteOffset, i * kByteOffset,
+                 kByteOffset);
   }
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
@@ -81,24 +79,24 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
 }
 
 TEST_F(ContextListTest, EmptyList) {
-  ContextList* list = nullptr;
+  ContextList* list = ContextList::MakeNewContextList();
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
 }
 
 TEST_F(ContextListTest, EmptyListEmptyTimestamp) {
-  ContextList* list = nullptr;
+  ContextList* list = ContextList::MakeNewContextList();
   ContextList::Execute(list, nullptr, absl::OkStatus());
 }
 
 TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
-  ContextList* list = nullptr;
+  ContextList* list = ContextList::MakeNewContextList();
   const int kNumElems = 5;
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
     gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
-    ContextList::Append(&list, &verifier_called[i], kByteOffset,
-                        i * kByteOffset, kByteOffset);
+    list->Append(&verifier_called[i], kByteOffset, i * kByteOffset,
+                 kByteOffset);
   }
   ContextList::Execute(list, nullptr, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
@@ -107,13 +105,13 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
 }
 
 TEST_F(ContextListTest, IterateAndFreeTest) {
-  ContextList* list = nullptr;
+  ContextList* list = ContextList::MakeNewContextList();
   const int kNumElems = 50;
   int verifier_context[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
     verifier_context[i] = i;
-    ContextList::Append(&list, &verifier_context[i], kByteOffset,
-                        i * kByteOffset, kByteOffset);
+    list->Append(&verifier_context[i], kByteOffset, i * kByteOffset,
+                 kByteOffset);
   }
   int i = 0;
   ContextList::ForEachExecuteCallback(

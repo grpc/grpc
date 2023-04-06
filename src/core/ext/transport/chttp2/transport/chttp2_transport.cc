@@ -264,7 +264,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  grpc_core::ContextList::Execute(cl, nullptr, error);
+  if (cl != nullptr) {
+    grpc_core::ContextList::Execute(cl, nullptr, error);
+  }
   cl = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -554,6 +556,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       event_engine(
           channel_args
               .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
+  cl = grpc_core::ContextList::MakeNewContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
@@ -985,7 +988,17 @@ static void write_action_begin_locked(void* gt,
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
-  t->cl = nullptr;
+  if (!t->cl->IsEmpty()) {
+    // Transfer the ownership of the context list to the endpoint and create and
+    // associate a new context list with the transport.
+    // The old context list is stored in the cl local variable which is passed
+    // to the endpoint. Its upto the endpoint to manage its lifetime.
+    t->cl = grpc_core::ContextList::MakeNewContextList();
+  } else {
+    // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
+    // to nullptr.
+    cl = nullptr;
+  }
   // Choose max_frame_size as the prefered rx crypto frame size indicated by the
   // peer.
   int max_frame_size =
