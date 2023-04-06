@@ -79,7 +79,7 @@ class HealthProducer::HealthChecker
                    : producer_->state_),
         status_(producer_->status) {
     // If the subchannel is already connected, start health checking.
-    if (producer_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
+    if (producer_->state_ == GRPC_CHANNEL_READY) StartHealthStreamLocked();
   }
 
   // Disable thread-safety analysis because this method is called via
@@ -103,23 +103,32 @@ class HealthProducer::HealthChecker
     return watchers_.empty();
   }
 
-  void OnConnectivityStateChange(grpc_connectivity_state state,
-                                 const absl::Status& status)
+  void OnConnectivityStateChangeLocked(grpc_connectivity_state state,
+                                       const absl::Status& status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
-    if (state != GRPC_CHANNEL_SHUTDOWN && stream_client_ != nullptr) {
+    if (state_ == GRPC_CHANNEL_READY) {
+      // We should already be in CONNECTING, and we don't want to change
+      // that until we see the initial response on the stream.
+      GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+      // Start the health watch stream.
+      StartHealthStreamLocked();
+    } else {
       state_ = state;
       status_ = status;
-      NotifyWatchersLocked(state, status);
+      NotifyWatchersLocked(state_, status_);
+      // We're not connected, so stop health checking.
+      stream_client_.reset();
     }
   }
+
+ private:
+  class HealthStreamEventHandler;
 
   // Starts a new stream if we have a connected subchannel.
   // Called whenever the subchannel transitions to state READY or when a
   // watcher is added.
-  void MaybeStartStreamLocked()
+  void StartHealthStreamLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
-    if (stream_client_ != nullptr) return;  // Already started.
-    if (producer_->connected_subchannel_ == nullptr) return;  // Not connected.
     stream_client_ = MakeOrphanable<SubchannelStreamClient>(
         producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
         absl::make_unique<HealthStreamEventHandler>(Ref()),
@@ -127,15 +136,6 @@ class HealthProducer::HealthChecker
             ? "HealthClient"
             : nullptr);
   }
-
-  // Stops the stream when the subchannel becomes disconnected.
-  void MaybeStopStreamLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
-    stream_client_.reset();
-  }
-
- private:
-  class HealthStreamEventHandler;
 
   // Notifies watchers of a new state.
   // Called while holding the SubchannelStreamClient lock and possibly
@@ -157,6 +157,16 @@ class HealthProducer::HealthChecker
         },
         DEBUG_LOCATION);
     new AsyncWorkSerializerDrainer(work_serializer_);
+  }
+
+  void OnHealthWatchStatusChange(grpc_connectivity_state state,
+                                 const absl::Status& status) {
+    MutexLock lock(&producer_->mu_);
+    if (state != GRPC_CHANNEL_SHUTDOWN && stream_client_ != nullptr) {
+      state_ = state;
+      status_ = status;
+      NotifyWatchersLocked(state, status);
+    }
   }
 
   WeakRefCountedPtr<HealthProducer> producer_;
@@ -271,7 +281,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler
       gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s",
               client, ConnectivityStateName(state), reason);
     }
-    health_checker_->NotifyWatchersLocked(
+    health_checker_->OnHealthWatchStatusChange(
         state,
         state == GRPC_CHANNEL_TRANSIENT_FAILURE
             ? absl::UnavailableError(reason)
