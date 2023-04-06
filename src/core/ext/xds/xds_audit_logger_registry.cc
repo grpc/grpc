@@ -20,6 +20,7 @@
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
+#include "xds_audit_logger_registry.h"
 #include "xds_common_types.h"
 
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -27,8 +28,31 @@
 
 namespace grpc_core {
 
-// TODO(lwge): Add stdout logger factory once the extension proto is defined in
-// envoyproxy/envoy. Also define the constructor to register this factory.
+namespace {
+
+class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsAuditLoggerConfig(
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/,
+      ValidationErrors* /*errors*/) override {
+    return Json::Object{{"stdout_logger", Json::Object()}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog";
+  }
+};
+
+}  // namespace
+
+XdsAuditLoggerRegistry::XdsAuditLoggerRegistry() {
+  audit_logger_config_factories_.emplace(
+      StdoutLoggerConfigFactory::Type(),
+      std::make_unique<StdoutLoggerConfigFactory>());
+}
 
 Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
     const XdsResourceType::DecodeContext& context,

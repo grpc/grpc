@@ -28,7 +28,6 @@
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -56,6 +55,8 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   if (!errors.ok()) return errors.status("validation errors");
   return JsonDump(config_json);
 }
+
+// TODO(lwge): Add stdout logger test when the extension proto exists.
 
 //
 // XdsAuditLoggerRegistryTest

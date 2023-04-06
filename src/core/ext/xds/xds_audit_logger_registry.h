@@ -39,7 +39,7 @@ class XdsAuditLoggerRegistry {
     virtual absl::string_view type() = 0;
   };
 
-  XdsAuditLoggerRegistry() = default;
+  XdsAuditLoggerRegistry();
 
   Json ConvertXdsAuditLoggerConfig(
       const XdsResourceType::DecodeContext& context,
