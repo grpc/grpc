@@ -45,7 +45,7 @@ const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit = {
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_AuditLoggingOptions_submsgs[1] = {
-  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit},
 };
 
 static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC_AuditLoggingOptions__fields[2] = {
@@ -56,6 +56,21 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC_AuditLoggingOptions__
 const upb_MiniTable envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit = {
   &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_submsgs[0],
   &envoy_config_rbac_v3_RBAC_AuditLoggingOptions__fields[0],
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+};
+
+static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit = {
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_submsgs[0],
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig__fields[0],
   UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
@@ -216,9 +231,10 @@ const upb_MiniTable envoy_config_rbac_v3_Action_msginit = {
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[10] = {
+static const upb_MiniTable *messages_layout[11] = {
   &envoy_config_rbac_v3_RBAC_msginit,
   &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit,
+  &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit,
   &envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit,
   &envoy_config_rbac_v3_Policy_msginit,
   &envoy_config_rbac_v3_Permission_msginit,
@@ -233,7 +249,7 @@ const upb_MiniTable_File envoy_config_rbac_v3_rbac_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  10,
+  11,
   0,
   0,
 };
