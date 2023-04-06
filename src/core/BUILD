@@ -3295,10 +3295,12 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
     ],
     visibility = ["@grpc:json_reader_legacy"],
     deps = [
         "json",
+        "match",
         "//:gpr",
     ],
 )
