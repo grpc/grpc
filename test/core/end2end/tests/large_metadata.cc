@@ -47,9 +47,8 @@ class LargeMetadataTest {
     for (int i = 0; i < count; ++i) {
       auto status = PerformOneRequest(metadata_size);
       if (status.status() == GRPC_STATUS_RESOURCE_EXHAUSTED) {
-        EXPECT_THAT(
-            status.message(),
-            ::testing::StartsWith("received initial metadata size exceeds"));
+        EXPECT_THAT(status.message(),
+                    ::testing::StartsWith("received metadata size exceeds"));
       } else {
         num_requests_accepted++;
         EXPECT_EQ(status.status(), GRPC_STATUS_OK);
