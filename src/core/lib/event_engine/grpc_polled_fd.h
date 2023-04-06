@@ -28,9 +28,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
-// Adapted from
-// src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
-
 namespace grpc_event_engine {
 namespace experimental {
 

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <arpa/inet.h>
+// IWYU pragma: no_include <ratio>
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -22,7 +23,6 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -52,7 +52,7 @@
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
+#include "test/cpp/util/subprocess.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -97,19 +97,10 @@ class EventEngineDNSTest : public EventEngineTest {
            "Start it with tools/run_tests/start_port_server.py";
     // <path to python wrapper> <path to dns_server.py> -p <port> -r <path to
     // records config>
-    const char* argv[6];
-    argv[0] = kPythonWrapper;
-    argv[1] = kDNSServerPath;
-    argv[2] = "-p";
-    char* server_port_str;
-    gpr_asprintf(&server_port_str, "%d", port);
-    argv[3] = server_port_str;
-    argv[4] = "-r";
-    argv[5] = kDNSTestRecordGroupsYamlPath;
-    // TODO(yijiem):  use test/cpp/util/subprocess.h
-    _dns_server.server_process =
-        gpr_subprocess_create(sizeof(argv) / sizeof(argv[0]), argv);
-    GPR_ASSERT(_dns_server.server_process);
+    _dns_server.server_process = new grpc::SubProcess(
+        {kPythonWrapper, kDNSServerPath, "-p", std::to_string(port), "-r",
+         kDNSTestRecordGroupsYamlPath});
+    // TODO(yijiem): no way to check whether it fails or not
     _dns_server.port = port;
 
     // 2. wait until dns_server is up (health check)
@@ -118,25 +109,17 @@ class EventEngineDNSTest : public EventEngineTest {
       // 2.1 tcp connect succeeds
       // <path to python wrapper> <path to tcp_connect.py> -s <hostname> -p
       // <port>
-      const char* argv[6];
-      argv[0] = kPythonWrapper;
-      argv[1] = kTCPConnectPath;
-      argv[2] = "-s";
-      argv[3] = "localhost";
-      argv[4] = "-p";
-      argv[5] = server_port_str;
-      gpr_subprocess* tcp_connect =
-          gpr_subprocess_create(sizeof(argv) / sizeof(argv[0]), argv);
-      GPR_ASSERT(tcp_connect);
-      if (gpr_subprocess_join(tcp_connect) == 0) {
+      grpc::SubProcess tcp_connect({kPythonWrapper, kTCPConnectPath, "-s",
+                                    "localhost", "-p", std::to_string(port)});
+      // TODO(yijiem): no way to check whether it fails or not
+      if (tcp_connect.Join()) {
         // 2.2 make an A-record query to dns_server
         // <path to python wrapper> <path to dns_resolver.py> -s <hostname> -p
         // <port> -n <domain name to query>
-        std::string command =
-            absl::StrJoin({kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1",
-                           "-p", const_cast<const char*>(server_port_str), "-n",
-                           kHealthCheckRecordName},
-                          " ");
+        std::string command = absl::StrJoin(
+            {kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1", "-p",
+             std::to_string(port).c_str(), "-n", kHealthCheckRecordName},
+            " ");
         // TODO(yijiem): build a portable solution for Windows
         FILE* f = popen(command.c_str(), "r");
         GPR_ASSERT(f != nullptr);
@@ -151,28 +134,25 @@ class EventEngineDNSTest : public EventEngineTest {
                 GPR_INFO,
                 "DNS server is up! Successfully reached it over UDP and TCP.");
             health_check_succeed = true;
-            gpr_free(tcp_connect);
             break;
           }
         }
       }
-      gpr_free(tcp_connect);
       absl::SleepFor(absl::Seconds(1));
     }
-    gpr_free(server_port_str);
     ASSERT_TRUE(health_check_succeed);
   }
 
   static void TearDownTestSuite() {
-    gpr_subprocess_interrupt(_dns_server.server_process);
-    gpr_subprocess_join(_dns_server.server_process);
+    _dns_server.server_process->Interrupt();
+    _dns_server.server_process->Join();
   }
 
  protected:
   struct DNSServer {
     std::string address() { return "127.0.0.1:" + std::to_string(port); }
     int port;
-    gpr_subprocess* server_process;
+    grpc::SubProcess* server_process;
   };
   static DNSServer _dns_server;
 };

@@ -27,7 +27,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/functional/bind_front.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -504,11 +503,9 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
   absl::StatusOr<GrpcAresHostnameRequest*> request =
-      CreateGrpcAresHostnameRequest(
+      GrpcAresHostnameRequest::Create(
           name, default_port, options_.dns_server, /*check_port=*/true, timeout,
-          absl::bind_front(
-              &PosixEventEngine::PosixDNSResolver::CreateEventHandle, this),
-          event_engine_);
+          [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -523,8 +520,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   }
   (*request)->Start(
       [on_resolve = std::move(on_resolve), handle,
-       this](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                 result) mutable {
+       this](absl::StatusOr<GrpcAresHostnameRequest::Result> result) mutable {
         {
           grpc_core::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
@@ -537,11 +533,9 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
     LookupSRVCallback on_resolve, absl::string_view name, Duration timeout) {
-  absl::StatusOr<GrpcAresSRVRequest*> request = CreateGrpcAresSRVRequest(
+  absl::StatusOr<GrpcAresSRVRequest*> request = GrpcAresSRVRequest::Create(
       name, timeout, options_.dns_server, /*check_port=*/false,
-      absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
-                       this),
-      event_engine_);
+      [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -556,8 +550,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   }
   (*request)->Start(
       [on_resolve = std::move(on_resolve), handle,
-       this](absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                 result) mutable {
+       this](absl::StatusOr<GrpcAresSRVRequest::Result> result) mutable {
         {
           grpc_core::MutexLock lock(&mu_);
           // on_resolved called, no longer inflight.
@@ -570,11 +563,9 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
     LookupTXTCallback on_resolve, absl::string_view name, Duration timeout) {
-  absl::StatusOr<GrpcAresTXTRequest*> request = CreateGrpcAresTXTRequest(
+  absl::StatusOr<GrpcAresTXTRequest*> request = GrpcAresTXTRequest::Create(
       name, timeout, options_.dns_server, /*check_port=*/false,
-      absl::bind_front(&PosixEventEngine::PosixDNSResolver::CreateEventHandle,
-                       this),
-      event_engine_);
+      [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -616,7 +607,7 @@ EventHandle* PosixEventEngine::PosixDNSResolver::CreateEventHandle(int fd) {
   GPR_DEBUG_ASSERT(poller != nullptr);
   GRPC_ARES_DRIVER_TRACE_LOG("CreateEventHandle: poller %p; fd: %d", poller,
                              fd);
-  return poller->CreateHandle(fd, "Add C-ares socket",
+  return poller->CreateHandle(fd, "Add c-ares socket",
                               poller->CanTrackErrors());
 }
 

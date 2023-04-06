@@ -14,6 +14,8 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
+#include "ares_driver.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -40,11 +42,9 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -61,10 +61,8 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -100,166 +98,44 @@ grpc_core::TraceFlag grpc_trace_ares_driver(false, "ares_driver");
 
 namespace {
 
-struct FdNode;
-class FdNodeList;
+EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
+  // An alternative here could be to use ares_timeout to try to be more
+  // accurate, but that would require using "struct timeval"'s, which just
+  // makes things a bit more complicated. So just poll every second, as
+  // suggested by the c-ares code comments.
+  return std::chrono::seconds(1);
+}
 
-class GrpcAresRequestImpl : public grpc_core::RefCounted<GrpcAresRequestImpl> {
- public:
-  GrpcAresRequestImpl(absl::string_view name,
-                      absl::optional<absl::string_view> default_port,
-                      EventEngine::Duration timeout,
-                      RegisterAresSocketWithPollerCallback register_cb,
-                      EventEngine* event_engine);
-  ~GrpcAresRequestImpl() override;
-
-  absl::Status Initialize(absl::string_view dns_server, bool check_port)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  bool Cancel() ABSL_LOCKS_EXCLUDED(mu_);
-  absl::string_view host() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return host_;
-  }
-  int port() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return port_; }
-
- protected:
-  void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void StartTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void CancelTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
- private:
-  friend class GrpcPolledFd;
-  friend class GrpcPolledFdFactory;
-  friend class FdNodeList;
-
-  absl::Status SetRequestDNSServer(absl::string_view dns_server)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void OnReadable(FdNode* fd_node, absl::Status status)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  void OnWritable(FdNode* fd_node, absl::Status status)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  void OnHandleDestroyed(FdNode* fd_node, absl::Status status)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  void OnQueryTimeout() ABSL_LOCKS_EXCLUDED(mu_);
-  void OnAresBackupPollAlarm() ABSL_LOCKS_EXCLUDED(mu_);
-  void ShutdownPollerHandlesLocked(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
- protected:
-  grpc_core::Mutex mu_;
-  bool initialized_ ABSL_GUARDED_BY(mu_) = false;
-  /// name to resolve
-  const std::string name_ ABSL_GUARDED_BY(mu_);
-  const std::string default_port_ ABSL_GUARDED_BY(mu_);
-  // ares channel
-  ares_channel channel_ ABSL_GUARDED_BY(mu_) = nullptr;
-  /// host to resolve; parsed from the name to resolve
-  absl::string_view host_ ABSL_GUARDED_BY(mu_);
-  /// port; parsed from the name to resolve or default_port_
-  int port_ ABSL_GUARDED_BY(mu_) = 0;
-  const EventEngine::Duration timeout_ ABSL_GUARDED_BY(mu_);
-  size_t pending_queries_ ABSL_GUARDED_BY(mu_) = 0;
-  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
-  bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
-  absl::Status error_ ABSL_GUARDED_BY(mu_);
-  std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_);
-  EventEngine* event_engine_;
-  absl::optional<EventEngine::TaskHandle> query_timeout_handle_
-      ABSL_GUARDED_BY(mu_);
-  absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
-      ABSL_GUARDED_BY(mu_);
-  std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
-};
-
-class GrpcAresHostnameRequestImpl final : public GrpcAresHostnameRequest,
-                                          public GrpcAresRequestImpl {
- public:
-  GrpcAresHostnameRequestImpl(absl::string_view name,
-                              absl::string_view default_port,
-                              EventEngine::Duration timeout,
-                              RegisterAresSocketWithPollerCallback register_cb,
-                              EventEngine* event_engine);
-  ~GrpcAresHostnameRequestImpl() override;
-
-  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
-  // Overhead
-  bool Cancel() override;
-  void OnResolve(
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
- private:
-  bool ResolveAsIPLiteralLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void LogResolvedAddressesList(const char* input_output_str)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void SortResolvedAddresses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  std::vector<EventEngine::ResolvedAddress> result_;
-  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_
-      ABSL_GUARDED_BY(mu_);
-};
-
-class GrpcAresSRVRequestImpl final : public GrpcAresSRVRequest,
-                                     public GrpcAresRequestImpl {
- public:
-  GrpcAresSRVRequestImpl(absl::string_view name, EventEngine::Duration timeout,
-                         RegisterAresSocketWithPollerCallback register_cb,
-                         EventEngine* event_engine);
-  ~GrpcAresSRVRequestImpl() override;
-
-  const char* service_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return service_name_.c_str();
-  }
-  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
-  // Overhead
-  bool Cancel() override;
-  void OnResolve(absl::StatusOr<Result> result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
- private:
-  std::string service_name_;
-  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
-};
-
-class GrpcAresTXTRequestImpl : public GrpcAresTXTRequest,
-                               public GrpcAresRequestImpl {
- public:
-  GrpcAresTXTRequestImpl(absl::string_view name, EventEngine::Duration timeout,
-                         RegisterAresSocketWithPollerCallback register_cb,
-                         EventEngine* event_engine);
-  ~GrpcAresTXTRequestImpl() override;
-
-  const char* config_name() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return config_name_.c_str();
-  }
-  void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
-  // Overhead
-  bool Cancel() override;
-  void OnResolve(absl::StatusOr<Result> result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
- private:
-  std::string config_name_;
-  absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
-};
+bool IsIpv6LoopbackAvailable() {
+#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
+  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  // TODO(yijiem): (debt) move pieces for Windows
+  return false;
+#else
+#error "Unsupported platform"
+#endif
+}
 
 struct HostbynameArg {
-  GrpcAresHostnameRequestImpl* request;
+  GrpcAresHostnameRequest* request;
   const char* qtype;
 };
 
-void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
-                               struct hostent* hostent)
-    ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  // This callback is invoked from the c-ares library, so disable thread
-  // safety analysis. Note that we are guaranteed to be holding r->mu, though.
+constexpr char g_service_config_attribute_prefix[] = "grpc_config=";
+constexpr size_t g_prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
+
+}  // namespace
+
+void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
+                                                     int /*timeouts*/,
+                                                     struct hostent* hostent) {
   std::unique_ptr<HostbynameArg> harg(static_cast<HostbynameArg*>(arg));
-  GrpcAresHostnameRequestImpl* request = harg->request;
+  GrpcAresHostnameRequest* request = harg->request;
   if (status != ARES_SUCCESS) {
     std::string error_msg = absl::StrFormat(
-        "C-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
-        request->host(), ares_strerror(status));
+        "c-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
+        request->host_, ares_strerror(status));
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
                                request, error_msg.c_str());
     GRPC_ARES_DRIVER_STACK_TRACE();
@@ -269,7 +145,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_ARES_DRIVER_TRACE_LOG(
       "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
-      request, harg->qtype, std::string(request->host()).c_str());
+      request, harg->qtype, std::string(request->host_).c_str());
   GRPC_ARES_DRIVER_STACK_TRACE();
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
@@ -282,7 +158,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
                sizeof(struct in6_addr));
         addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin6_port = htons(request->port());
+        addr.sin6_port = htons(request->port_);
         resolved_addresses.emplace_back(
             reinterpret_cast<const sockaddr*>(&addr), addr_len);
         char output[INET6_ADDRSTRLEN];
@@ -290,7 +166,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         GRPC_ARES_DRIVER_TRACE_LOG(
             "request:%p c-ares resolver gets a AF_INET6 result: \n"
             "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-            request, output, request->port(), addr.sin6_scope_id);
+            request, output, request->port_, addr.sin6_scope_id);
         break;
       }
       case AF_INET: {
@@ -299,7 +175,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         memset(&addr, 0, addr_len);
         memcpy(&addr.sin_addr, hostent->h_addr_list[i], sizeof(struct in_addr));
         addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin_port = htons(request->port());
+        addr.sin_port = htons(request->port_);
         resolved_addresses.emplace_back(
             reinterpret_cast<const sockaddr*>(&addr), addr_len);
         char output[INET_ADDRSTRLEN];
@@ -307,7 +183,7 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         GRPC_ARES_DRIVER_TRACE_LOG(
             "request:%p c-ares resolver gets a AF_INET result: \n"
             "  addr: %s\n  port: %d\n",
-            request, output, request->port());
+            request, output, request->port_);
         break;
       }
     }
@@ -315,16 +191,14 @@ void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
   request->OnResolve(std::move(resolved_addresses));
 }
 
-void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
-                              unsigned char* abuf,
-                              int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  // This callback is invoked from the c-ares library, so disable thread
-  // safety analysis. Note that we are guaranteed to be holding r->mu, though.
-  GrpcAresSRVRequestImpl* r = static_cast<GrpcAresSRVRequestImpl*>(arg);
+void GrpcAresSRVRequest::OnSRVQueryDoneLocked(void* arg, int status,
+                                              int /*timeouts*/,
+                                              unsigned char* abuf, int alen) {
+  GrpcAresSRVRequest* r = static_cast<GrpcAresSRVRequest*>(arg);
   if (status != ARES_SUCCESS) {
     std::string error_msg = absl::StrFormat(
-        "C-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
-        r->service_name(), ares_strerror(status));
+        "c-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
+        r->service_name_, ares_strerror(status));
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                                error_msg.c_str());
     grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
@@ -333,7 +207,7 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_ARES_DRIVER_TRACE_LOG(
       "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
-      r->service_name());
+      r->service_name_.c_str());
   struct ares_srv_reply* reply = nullptr;
   const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
@@ -354,28 +228,23 @@ void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
   r->OnResolve(std::move(result));
 }
 
-constexpr char g_service_config_attribute_prefix[] = "grpc_config=";
-constexpr size_t g_prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-
-void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
-                        unsigned char* buf,
-                        int len) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  // This callback is invoked from the c-ares library, so disable thread
-  // safety analysis. Note that we are guaranteed to be holding r->mu, though.
-  GrpcAresTXTRequestImpl* r = static_cast<GrpcAresTXTRequestImpl*>(arg);
+void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
+                                         int /*timeouts*/, unsigned char* buf,
+                                         int len) {
+  GrpcAresTXTRequest* r = static_cast<GrpcAresTXTRequest*>(arg);
   struct ares_txt_ext* reply = nullptr;
   int parse_status = ARES_SUCCESS;
   if (status == ARES_SUCCESS) {
     GRPC_ARES_DRIVER_TRACE_LOG(
         "request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
-        r->config_name());
+        r->config_name_.c_str());
     parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
   }
   if (status != ARES_SUCCESS || parse_status != ARES_SUCCESS) {
     grpc_error_handle error;
     std::string error_msg = absl::StrFormat(
-        "C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
-        r->config_name(), ares_strerror(status));
+        "c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+        r->config_name_.c_str(), ares_strerror(status));
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                                error_msg.c_str());
     error = GRPC_ERROR_CREATE(error_msg);
@@ -411,129 +280,42 @@ void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   r->OnResolve(std::move(service_config_json_out));
 }
 
-EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
-  // An alternative here could be to use ares_timeout to try to be more
-  // accurate, but that would require using "struct timeval"'s, which just
-  // makes things a bit more complicated. So just poll every second, as
-  // suggested by the c-ares code comments.
-  return std::chrono::seconds(1);
+GrpcAresRequest::FdNode::FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
+    : as(as), polled_fd(polled_fd) {}
+
+GrpcAresRequest::FdNode* GrpcAresRequest::FdNodeList::PopFdNode(
+    ares_socket_t as) {
+  FdNode phony_head;
+  phony_head.next = head_;
+  FdNode* node = &phony_head;
+  while (node->next != nullptr) {
+    if (node->next->polled_fd->GetWrappedAresSocketLocked() == as) {
+      FdNode* ret = node->next;
+      node->next = node->next->next;
+      head_ = phony_head.next;
+      return ret;
+    }
+    node = node->next;
+  }
+  return nullptr;
 }
 
-bool IsIpv6LoopbackAvailable() {
-#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
-  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
-#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  // TODO(yijiem): (debt) move pieces for Windows
-  return false;
-#else
-#error "Unsupported platform"
-#endif
-}
-
-struct FdNode {
-  FdNode() = default;
-  FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
-      : as(as), polled_fd(polled_fd) {}
-  ares_socket_t as;
-  std::unique_ptr<GrpcPolledFd> polled_fd;
-  // next fd node
-  FdNode* next = nullptr;
-  /// if the readable closure has been registered
-  bool readable_registered = false;
-  /// if the writable closure has been registered
-  bool writable_registered = false;
-  bool already_shutdown = false;
-};
-
-// TODO(yijiem): see if we can use std::list
-// per ares-channel linked-list of FdNodes
-class FdNodeList {
- public:
-  class FdNodeListIterator {
-   public:
-    bool operator!=(const FdNodeListIterator& other) {
-      return node_ != other.node_;
-    }
-    bool operator==(const FdNodeListIterator& other) {
-      return node_ == other.node_;
-    }
-    FdNodeListIterator& operator++(int) {
-      node_ = node_->next;
-      return *this;
-    }
-    FdNode* operator*() { return node_; }
-    static FdNodeListIterator universal_end() {
-      return FdNodeListIterator(nullptr);
-    }
-
-   private:
-    friend class FdNodeList;
-    explicit FdNodeListIterator(FdNode* node) : node_(node) {}
-    FdNode* node_;
-  };
-  using Iterator = FdNodeListIterator;
-
-  ~FdNodeList() { GPR_ASSERT(IsEmpty()); }
-
-  Iterator begin() { return Iterator(head_); }
-  Iterator end() { return Iterator::universal_end(); }
-
-  bool IsEmpty() const { return head_ == nullptr; }
-
-  void PushFdNode(FdNode* fd_node)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequestImpl::mu_) {
-    fd_node->next = head_;
-    head_ = fd_node;
-  }
-
-  FdNode* PopFdNode() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequestImpl::mu_) {
-    GPR_ASSERT(!IsEmpty());
-    FdNode* ret = head_;
-    head_ = head_->next;
-    return ret;
-  }
-
-  // Search for as in the FdNode list. This is an O(n) search, the max
-  // possible value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2
-  // in our tests.
-  FdNode* PopFdNode(ares_socket_t as)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GrpcAresRequestImpl::mu_) {
-    FdNode phony_head;
-    phony_head.next = head_;
-    FdNode* node = &phony_head;
-    while (node->next != nullptr) {
-      if (node->next->polled_fd->GetWrappedAresSocketLocked() == as) {
-        FdNode* ret = node->next;
-        node->next = node->next->next;
-        head_ = phony_head.next;
-        return ret;
-      }
-      node = node->next;
-    }
-    return nullptr;
-  }
-
- private:
-  FdNode* head_ = nullptr;
-};
-
-GrpcAresRequestImpl::GrpcAresRequestImpl(
+GrpcAresRequest::GrpcAresRequest(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : grpc_core::RefCounted<GrpcAresRequestImpl>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver)
-              ? "GrpcAresRequestImpl"
-              : nullptr),
+    : grpc_core::InternallyRefCounted<GrpcAresRequest>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
+                                                          : nullptr),
       name_(name),
       default_port_(default_port.has_value() ? *default_port : ""),
-      timeout_(timeout),
       fd_node_list_(std::make_unique<FdNodeList>()),
+      timeout_(timeout),
       event_engine_(event_engine),
       polled_fd_factory_(NewGrpcPolledFdFactory(std::move(register_cb), &mu_)) {
 }
 
-GrpcAresRequestImpl::~GrpcAresRequestImpl() {
+GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
     ares_destroy(channel_);
     GRPC_ARES_DRIVER_STACK_TRACE();
@@ -541,8 +323,8 @@ GrpcAresRequestImpl::~GrpcAresRequestImpl() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
-absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
-                                             bool check_port) {
+absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
+                                         bool check_port) {
   grpc_core::MutexLock lock(&mu_);
   GPR_DEBUG_ASSERT(!initialized_);
   absl::string_view port;
@@ -572,7 +354,7 @@ absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
   if (status != ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return GRPC_ERROR_CREATE(absl::StrCat(
-        "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
+        "Failed to init ares channel. c-ares error: ", ares_strerror(status)));
   }
   ares_driver_test_only_inject_config(channel_);
   // If dns_server is specified, use it.
@@ -585,10 +367,10 @@ absl::Status GrpcAresRequestImpl::Initialize(absl::string_view dns_server,
   return absl::OkStatus();
 }
 
-bool GrpcAresRequestImpl::Cancel() {
+bool GrpcAresRequest::Cancel() {
   grpc_core::MutexLock lock(&mu_);
   if (std::exchange(shutting_down_, true)) {
-    // Could not cancel since it's already shutting down.
+    // Already shutting down, maybe resolved, cancelled or timed-out.
     return false;
   }
   cancelled_ = true;
@@ -598,7 +380,7 @@ bool GrpcAresRequestImpl::Cancel() {
   return true;
 }
 
-void GrpcAresRequestImpl::Work() {
+void GrpcAresRequest::Work() {
   auto new_list = std::make_unique<FdNodeList>();
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -621,12 +403,9 @@ void GrpcAresRequestImpl::Work() {
           GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify read on: %d", this,
                                      fd_node->as);
           fd_node->readable_registered = true;
-          Ref(DEBUG_LOCATION, "Work").release();
           fd_node->polled_fd->RegisterForOnReadableLocked(
-              [this, fd_node](absl::Status status) {
-                OnReadable(fd_node, status);
-                Unref(DEBUG_LOCATION, "Work");
-              });
+              [self = Ref(DEBUG_LOCATION, "Work"), fd_node](
+                  absl::Status status) { self->OnReadable(fd_node, status); });
         }
         // Register write_closure if the socket is writable and write_closure
         // has not been registered with this socket.
@@ -635,12 +414,9 @@ void GrpcAresRequestImpl::Work() {
           GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify write on: %d", this,
                                      fd_node->as);
           fd_node->writable_registered = true;
-          Ref(DEBUG_LOCATION, "Work").release();
           fd_node->polled_fd->RegisterForOnWriteableLocked(
-              [this, fd_node](absl::Status status) {
-                OnWritable(fd_node, status);
-                Unref(DEBUG_LOCATION, "Work");
-              });
+              [self = Ref(DEBUG_LOCATION, "Work"), fd_node](
+                  absl::Status status) { self->OnWritable(fd_node, status); });
         }
       }
     }
@@ -665,7 +441,7 @@ void GrpcAresRequestImpl::Work() {
   fd_node_list_.swap(new_list);
 }
 
-void GrpcAresRequestImpl::StartTimers() {
+void GrpcAresRequest::StartTimers() {
   // Initialize overall DNS resolution timeout alarm
   EventEngine::Duration timeout =
       timeout_.count() == 0 ? EventEngine::Duration::max() : timeout_;
@@ -695,7 +471,7 @@ void GrpcAresRequestImpl::StartTimers() {
       });
 }
 
-void GrpcAresRequestImpl::CancelTimers() {
+void GrpcAresRequest::CancelTimers() {
   if (query_timeout_handle_.has_value()) {
     if (event_engine_->Cancel(*query_timeout_handle_)) {
       Unref(DEBUG_LOCATION, "CancelTimers");
@@ -710,7 +486,7 @@ void GrpcAresRequestImpl::CancelTimers() {
   }
 }
 
-absl::Status GrpcAresRequestImpl::SetRequestDNSServer(
+absl::Status GrpcAresRequest::SetRequestDNSServer(
     absl::string_view dns_server) {
   if (!dns_server.empty()) {
     GRPC_ARES_DRIVER_TRACE_LOG("request:%p Using DNS server %s", this,
@@ -742,13 +518,13 @@ absl::Status GrpcAresRequestImpl::SetRequestDNSServer(
     int status = ares_set_servers_ports(channel_, &dns_server_addr);
     if (status != ARES_SUCCESS) {
       return GRPC_ERROR_CREATE(absl::StrCat(
-          "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
+          "c-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
     }
   }
   return absl::OkStatus();
 }
 
-void GrpcAresRequestImpl::OnReadable(FdNode* fd_node, absl::Status status) {
+void GrpcAresRequest::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->readable_registered);
   fd_node->readable_registered = false;
@@ -771,7 +547,7 @@ void GrpcAresRequestImpl::OnReadable(FdNode* fd_node, absl::Status status) {
   Work();
 }
 
-void GrpcAresRequestImpl::OnWritable(FdNode* fd_node, absl::Status status) {
+void GrpcAresRequest::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->writable_registered);
   fd_node->writable_registered = false;
@@ -791,7 +567,7 @@ void GrpcAresRequestImpl::OnWritable(FdNode* fd_node, absl::Status status) {
   Work();
 }
 
-void GrpcAresRequestImpl::OnQueryTimeout() {
+void GrpcAresRequest::OnQueryTimeout() {
   {
     grpc_core::MutexLock lock(&mu_);
     query_timeout_handle_.reset();
@@ -815,7 +591,7 @@ void GrpcAresRequestImpl::OnQueryTimeout() {
 //   b) when some time has passed without fd events having happened
 // For the latter, we use this backup poller. Also see
 // https://github.com/grpc/grpc/pull/17688 description for more details.
-void GrpcAresRequestImpl::OnAresBackupPollAlarm() {
+void GrpcAresRequest::OnAresBackupPollAlarm() {
   {
     grpc_core::MutexLock lock(&mu_);
     ares_backup_poll_alarm_handle_.reset();
@@ -851,7 +627,7 @@ void GrpcAresRequestImpl::OnAresBackupPollAlarm() {
 
 // TODO(yijiem): Consider report this status or as part of the result when
 // calling on_resolve_. This status is received in OnReadable/OnWritable.
-void GrpcAresRequestImpl::ShutdownPollerHandlesLocked(absl::Status status) {
+void GrpcAresRequest::ShutdownPollerHandlesLocked(absl::Status status) {
   for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
     if (!(*it)->already_shutdown) {
       (*it)->polled_fd->ShutdownLocked(status);
@@ -860,30 +636,25 @@ void GrpcAresRequestImpl::ShutdownPollerHandlesLocked(absl::Status status) {
   }
 }
 
-GrpcAresHostnameRequestImpl::GrpcAresHostnameRequestImpl(
+GrpcAresHostnameRequest::GrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequestImpl(name, default_port, timeout, std::move(register_cb),
-                          event_engine) {}
+    : GrpcAresRequest(name, default_port, timeout, std::move(register_cb),
+                      event_engine) {}
 
-GrpcAresHostnameRequestImpl::~GrpcAresHostnameRequestImpl() {
+GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
-// Overhead
-bool GrpcAresHostnameRequestImpl::Cancel() {
-  return GrpcAresRequestImpl::Cancel();
-}
-
-void GrpcAresHostnameRequestImpl::Start(
+void GrpcAresHostnameRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
-  absl::ReleasableMutexLock lock(&mu_);
+  grpc_core::ReleasableMutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   on_resolve_ = std::move(on_resolve);
   GRPC_ARES_DRIVER_TRACE_LOG(
-      "request:%p c-ares GrpcAresHostnameRequestImpl::Start name=%s, "
+      "request:%p c-ares GrpcAresHostnameRequest::Start name=%s, "
       "default_port=%s",
       this, name_.c_str(), default_port_.c_str());
   // Early out if the target is an ipv4 or ipv6 literal.
@@ -906,13 +677,15 @@ void GrpcAresHostnameRequestImpl::Start(
     arg->request = this;
     arg->qtype = "AAAA";
     ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET6,
-                       &on_hostbyname_done_locked, static_cast<void*>(arg));
+                       &GrpcAresHostnameRequest::OnHostbynameDoneLocked,
+                       static_cast<void*>(arg));
   }
   auto* arg = new HostbynameArg();
   arg->request = this;
   arg->qtype = "A";
   ares_gethostbyname(channel_, std::string(host_).c_str(), AF_INET,
-                     &on_hostbyname_done_locked, static_cast<void*>(arg));
+                     &GrpcAresHostnameRequest::OnHostbynameDoneLocked,
+                     static_cast<void*>(arg));
   // It's possible that ares_gethostbyname gets everything done inline.
   if (!shutting_down_) {
     Work();
@@ -920,7 +693,7 @@ void GrpcAresHostnameRequestImpl::Start(
   }
 }
 
-void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
+void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
   GPR_ASSERT(pending_queries_ > 0);
   pending_queries_--;
   if (result.ok()) {
@@ -959,13 +732,13 @@ void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
     }
     GPR_ASSERT(!error_.ok());
     // The reason that we are using EventEngine::Run() here is that we are
-    // holding GrpcAresRequest::mu_ now and calling on_resolve will call into
+    // holding GrpcAresRequest::mu_ now and calling on_resolve_ will call into
     // the Engine to clean up some state there (which will take its own
     // mutex). The call could go further all the way back to the caller of the
-    // Lookup* call which may then take its own mutex. This mutex order is
+    // Lookup* call which may then take its own mutex. This mutex ordering is
     // inverted from the order from which the caller calls into the
-    // ares_driver. This could trigger absl::Mutex deadlock detection and TSAN
-    // warning though it might be false positive.
+    // ares_driver. This could potentially cause deadlock or trigger absl::Mutex
+    // deadlock detection or TSAN warning.
     //
     // Another way might work is to std::move away on_resolve_, result_ or
     // error_ under lock, then unlock and then call on_resolve.
@@ -976,7 +749,7 @@ void GrpcAresHostnameRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   }
 }
 
-bool GrpcAresHostnameRequestImpl::ResolveAsIPLiteralLocked() {
+bool GrpcAresHostnameRequest::ResolveAsIPLiteralLocked() {
   GPR_DEBUG_ASSERT(initialized_);
   // host_ and port_ should have been parsed successfully in Initialize.
   const std::string hostport = grpc_core::JoinHostPort(host_, port_);
@@ -996,7 +769,7 @@ bool GrpcAresHostnameRequestImpl::ResolveAsIPLiteralLocked() {
   return false;
 }
 
-void GrpcAresHostnameRequestImpl::LogResolvedAddressesList(
+void GrpcAresHostnameRequest::LogResolvedAddressesList(
     const char* input_output_str) {
   for (size_t i = 0; i < result_.size(); i++) {
     auto addr_str = ResolvedAddressToString(result_[i]);
@@ -1009,7 +782,7 @@ void GrpcAresHostnameRequestImpl::LogResolvedAddressesList(
   }
 }
 
-void GrpcAresHostnameRequestImpl::SortResolvedAddresses() {
+void GrpcAresHostnameRequest::SortResolvedAddresses() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver_address_sorting)) {
     LogResolvedAddressesList("input");
   }
@@ -1035,20 +808,17 @@ void GrpcAresHostnameRequestImpl::SortResolvedAddresses() {
   }
 }
 
-GrpcAresSRVRequestImpl::GrpcAresSRVRequestImpl(
+GrpcAresSRVRequest::GrpcAresSRVRequest(
     absl::string_view name, EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
-                          event_engine) {}
+    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
+                      event_engine) {}
 
-GrpcAresSRVRequestImpl::~GrpcAresSRVRequestImpl() {
+GrpcAresSRVRequest::~GrpcAresSRVRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
-// Overhead
-bool GrpcAresSRVRequestImpl::Cancel() { return GrpcAresRequestImpl::Cancel(); }
-
-void GrpcAresSRVRequestImpl::Start(
+void GrpcAresSRVRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   grpc_core::MutexLock lock(&mu_);
@@ -1066,14 +836,15 @@ void GrpcAresSRVRequestImpl::Start(
   // Query the SRV record
   service_name_ = absl::StrCat("_grpclb._tcp.", host_);
   ares_query(channel_, service_name_.c_str(), ns_c_in, ns_t_srv,
-             on_srv_query_done_locked, static_cast<void*>(this));
+             &GrpcAresSRVRequest::OnSRVQueryDoneLocked,
+             static_cast<void*>(this));
   if (!shutting_down_) {
     Work();
     StartTimers();
   }
 }
 
-void GrpcAresSRVRequestImpl::OnResolve(absl::StatusOr<Result> result) {
+void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
   auto closer =
       absl::MakeCleanup([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
   if (cancelled_) {
@@ -1088,20 +859,17 @@ void GrpcAresSRVRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   });
 }
 
-GrpcAresTXTRequestImpl::GrpcAresTXTRequestImpl(
+GrpcAresTXTRequest::GrpcAresTXTRequest(
     absl::string_view name, EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequestImpl(name, absl::nullopt, timeout, std::move(register_cb),
-                          event_engine) {}
+    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
+                      event_engine) {}
 
-GrpcAresTXTRequestImpl::~GrpcAresTXTRequestImpl() {
+GrpcAresTXTRequest::~GrpcAresTXTRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
 }
 
-// Overhead
-bool GrpcAresTXTRequestImpl::Cancel() { return GrpcAresRequestImpl::Cancel(); }
-
-void GrpcAresTXTRequestImpl::Start(
+void GrpcAresTXTRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   auto self = Ref(DEBUG_LOCATION, "Start");
   absl::ReleasableMutexLock lock(&mu_);
@@ -1120,14 +888,14 @@ void GrpcAresTXTRequestImpl::Start(
   // Query the TXT record
   config_name_ = absl::StrCat("_grpc_config.", host_);
   ares_search(channel_, config_name_.c_str(), ns_c_in, ns_t_txt,
-              on_txt_done_locked, static_cast<void*>(this));
+              &GrpcAresTXTRequest::OnTXTDoneLocked, static_cast<void*>(this));
   if (!shutting_down_) {
     Work();
     StartTimers();
   }
 }
 
-void GrpcAresTXTRequestImpl::OnResolve(absl::StatusOr<Result> result) {
+void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {
   auto closer =
       absl::MakeCleanup([this] { Unref(DEBUG_LOCATION, "OnResolve"); });
   if (cancelled_) {
@@ -1142,15 +910,13 @@ void GrpcAresTXTRequestImpl::OnResolve(absl::StatusOr<Result> result) {
   });
 }
 
-}  // namespace
-
-absl::StatusOr<GrpcAresHostnameRequest*> CreateGrpcAresHostnameRequest(
+absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
     absl::string_view name, absl::string_view default_port,
     absl::string_view dns_server, bool check_port,
     EventEngine::Duration timeout,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine) {
-  auto* request = new GrpcAresHostnameRequestImpl(
+  auto* request = new GrpcAresHostnameRequest(
       name, default_port, timeout, std::move(register_cb), event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
@@ -1160,13 +926,13 @@ absl::StatusOr<GrpcAresHostnameRequest*> CreateGrpcAresHostnameRequest(
   return status;
 }
 
-absl::StatusOr<GrpcAresSRVRequest*> CreateGrpcAresSRVRequest(
+absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server, bool check_port,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine) {
-  auto* request = new GrpcAresSRVRequestImpl(
-      name, timeout, std::move(register_cb), event_engine);
+  auto* request = new GrpcAresSRVRequest(name, timeout, std::move(register_cb),
+                                         event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
     return request;
@@ -1175,13 +941,13 @@ absl::StatusOr<GrpcAresSRVRequest*> CreateGrpcAresSRVRequest(
   return status;
 }
 
-absl::StatusOr<GrpcAresTXTRequest*> CreateGrpcAresTXTRequest(
+absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server, bool check_port,
     RegisterAresSocketWithPollerCallback register_cb,
     EventEngine* event_engine) {
-  auto* request = new GrpcAresTXTRequestImpl(
-      name, timeout, std::move(register_cb), event_engine);
+  auto* request = new GrpcAresTXTRequest(name, timeout, std::move(register_cb),
+                                         event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
     return request;
