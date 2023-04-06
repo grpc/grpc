@@ -25,9 +25,11 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -159,8 +161,7 @@ class ClientChannel {
   OrphanablePtr<FilterBasedLoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      bool is_transparent_retry);
+      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   // Exposed for testing only.
   static ChannelArgs MakeSubchannelArgs(
@@ -365,10 +366,10 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
-  LoadBalancedCall(
-      ClientChannel* chand, grpc_call_context_element* call_context,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      bool is_transparent_retry);
+  LoadBalancedCall(ClientChannel* chand,
+                   grpc_call_context_element* call_context,
+                   absl::AnyInvocable<void()> on_commit,
+                   bool is_transparent_retry);
   ~LoadBalancedCall() override;
 
   void Orphan() override;
@@ -384,9 +385,6 @@ class ClientChannel::LoadBalancedCall
 
  protected:
   ClientChannel* chand() const { return chand_; }
-  ConfigSelector::CallDispatchController* call_dispatch_controller() const {
-    return call_dispatch_controller_;
-  }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
     return static_cast<ClientCallTracer::CallAttemptTracer*>(
         call_context()[GRPC_CONTEXT_CALL_TRACER].value);
@@ -398,6 +396,11 @@ class ClientChannel::LoadBalancedCall
   LoadBalancingPolicy::SubchannelCallTrackerInterface*
   lb_subchannel_call_tracker() const {
     return lb_subchannel_call_tracker_.get();
+  }
+
+  void Commit() {
+    auto on_commit = std::move(on_commit_);
+    on_commit();
   }
 
   // Attempts an LB pick.  The following outcomes are possible:
@@ -441,7 +444,7 @@ class ClientChannel::LoadBalancedCall
 
   ClientChannel* chand_;
 
-  ConfigSelector::CallDispatchController* call_dispatch_controller_;
+  absl::AnyInvocable<void()> on_commit_;
 
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
@@ -460,11 +463,12 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // the LB call has a subchannel call and ensuring that the
   // on_call_destruction_complete closure passed down from the surface
   // is not invoked until after the subchannel call stack is destroyed.
-  FilterBasedLoadBalancedCall(
-      ClientChannel* chand, const grpc_call_element_args& args,
-      grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      bool is_transparent_retry);
+  FilterBasedLoadBalancedCall(ClientChannel* chand,
+                              const grpc_call_element_args& args,
+                              grpc_polling_entity* pollent,
+                              grpc_closure* on_call_destruction_complete,
+                              absl::AnyInvocable<void()> on_commit,
+                              bool is_transparent_retry);
   ~FilterBasedLoadBalancedCall() override;
 
   void Orphan() override;
@@ -480,8 +484,8 @@ class ClientChannel::FilterBasedLoadBalancedCall
 
   // Work-around for Windows compilers that don't allow nested classes
   // to access protected members of the enclosing class's parent class.
-  using LoadBalancedCall::call_dispatch_controller;
   using LoadBalancedCall::chand;
+  using LoadBalancedCall::Commit;
 
   Arena* arena() const override { return arena_; }
   grpc_call_context_element* call_context() const override {
