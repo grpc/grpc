@@ -1343,13 +1343,23 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
+gpr_log(GPR_INFO, "==> MaybeStartReportingLocked(): reporter_=%p", reporter_.get());
   // Don't start again if already started.
   if (reporter_ != nullptr) return;
+gpr_log(GPR_INFO, "  call_=%p send_message_pending_=%d", call_.get(), send_message_pending_);
   // Don't start if the previous send_message op (of the initial request or
   // the last report of the previous reporter) hasn't completed.
   if (call_ != nullptr && send_message_pending_) return;
+gpr_log(GPR_INFO, "  seen_response()=%d", seen_response());
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
+gpr_log(GPR_INFO, "  chand()->ads_calld_=%p", chand()->ads_calld_.get());
+if (chand()->ads_calld_ != nullptr) {
+gpr_log(GPR_INFO, "  chand()->ads_calld_->calld()=%p", chand()->ads_calld_->calld());
+if (chand()->ads_calld_->calld() != nullptr) {
+gpr_log(GPR_INFO, "  chand()->ads_calld_->calld()->seen_response()=%d", chand()->ads_calld_->calld()->seen_response());
+}
+}
   // Don't start if the ADS call hasn't received any valid response. Note that
   // this must be the first channel because it is the current channel but its
   // ADS call hasn't seen any response.
