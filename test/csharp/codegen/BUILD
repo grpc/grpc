@@ -20,9 +20,17 @@ grpc_sh_test(
     name = "csharp_codegen_simple_test",
     srcs = ["csharp_codegen_simple_test.sh"],
     data = [
+        "simple/expected/HelloworldGrpc.cs",
+        "simple/proto/helloworld.proto",
         "//src/compiler:grpc_csharp_plugin",
         "@com_google_protobuf//:protoc",
-    ] + glob(["simple/**"]),
+    ],
+    tags = [
+        "no_windows",
+        "noasan",
+        "nomsan",
+        "notsan",
+        "noubsan",
+    ],
     uses_polling = False,
 )
-
