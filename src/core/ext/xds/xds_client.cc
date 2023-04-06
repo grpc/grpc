@@ -1208,6 +1208,11 @@ void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::
     ScheduleNextReportLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: scheduling load report timer",
+            xds_client(), parent_->chand()->server_.server_uri().c_str());
+  }
   timer_handle_ = xds_client()->engine()->RunAfter(report_interval_, [this]() {
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
@@ -1354,6 +1359,10 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
     return;
   }
   // Start reporting.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] xds server %s: creating load reporter",
+            xds_client(), chand()->server_.server_uri().c_str());
+  }
   reporter_ = MakeOrphanable<Reporter>(
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
