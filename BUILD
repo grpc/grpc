@@ -183,7 +183,7 @@ g_stands_for = "gracious"  # @unused
 
 core_version = "31.0.0"  # @unused
 
-version = "1.54.0-pre1"  # @unused
+version = "1.54.0-pre2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
