@@ -42,22 +42,76 @@ class Json {
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
-  Json() = default;
+// FIXME: make sure construction from nullptr does the right thing
 
-  // Copyable.
-  Json(const Json& other) = default;
-  Json& operator=(const Json& other) = default;
-
-  // Moveable.
-  Json(Json&& other) noexcept : value_(std::move(other.value_)) {
-    other.value_ = absl::monostate();
+  static Json FromString(const std::string& str) {
+    Json json;
+    json.value = str;
+    return json;
   }
-  Json& operator=(Json&& other) noexcept {
-    value_ = std::move(other.value_);
-    other.value_ = absl::monostate();
-    return *this;
+  static Json FromString(const char* str) {
+    Json json;
+    json.value = std::string(str);
+    return json;
+  }
+  static Json FromString(std::string str) {
+    Json json;
+    json.value = std::move(str);
+    return json;
   }
 
+  static Json FromNumber(const std::string& str) {
+    Json json;
+    json.value = NumberValue(str);
+    return json;
+  }
+  static Json FromNumber(const char* str) {
+    Json json;
+    json.value = NumberValue(std::string(str));
+    return json;
+  }
+  static Json FromNumber(std::string str) {
+    Json json;
+    json.value = NumberValue(std::move(str));
+    return json;
+  }
+  // Construct from any numeric type.
+  template <typename NumericType>
+  static Json FromNumber(NumericType number) {
+    Json json;
+    json.value = NumberValue{std::to_string(number)};
+    return json;
+  }
+
+  static Json FromBool(bool b) {
+    Json json;
+    json.value = b;
+    return json;
+  }
+
+  static Json FromObject(const Object& object) {
+    Json json;
+    json.value = object;
+    return json;
+  }
+  static Json FromObject(Object object) {
+    Json json;
+    json.value = std::move(object);
+    return json;
+  }
+
+  static Json FromArray(const Array& array) {
+    Json json;
+    json.value = array;
+    return json;
+  }
+  static Json FromArray(Array array) {
+    Json json;
+    json.value = std::move(array);
+    return json;
+  }
+
+#if 0
   // Construct from copying a string.
   // If is_number is true, the type will be kNumber instead of kString.
   // NOLINTNEXTLINE(google-explicit-constructor)
@@ -68,6 +122,11 @@ class Json {
     return *this;
   }
 
+// FIXME: maybe replace this with absl::string_view to avoid nullptr
+// problem?
+// FIXME: maybe avoid default arg by having static factory methods for
+// each type, where the name of the factory method explicitly states the
+// type?
   // Same thing for C-style strings, both const and mutable.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(const char* string, bool is_number = false)
@@ -141,6 +200,23 @@ class Json {
     value_ = std::move(array);
     return *this;
   }
+#endif
+
+  Json() = default;
+
+  // Copyable.
+  Json(const Json& other) = default;
+  Json& operator=(const Json& other) = default;
+
+  // Moveable.
+  Json(Json&& other) noexcept : value_(std::move(other.value_)) {
+    other.value_ = absl::monostate();
+  }
+  Json& operator=(Json&& other) noexcept {
+    value_ = std::move(other.value_);
+    other.value_ = absl::monostate();
+    return *this;
+  }
 
   // Returns the JSON type.
   Type type() const {
@@ -158,6 +234,10 @@ class Json {
   }
 
   // Accessor methods.
+// FIXME: need these APIs to work if underlying data struct is a union
+// or variant -- maybe assert on type_ in each method?
+// (assert also important because we're using const reference return values)
+// FIXME: maybe use string_view for strings?
   const std::string& string() const {
     const NumberValue* num = absl::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
