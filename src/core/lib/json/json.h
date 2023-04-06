@@ -44,8 +44,6 @@ class Json {
 
   Json() = default;
 
-// FIXME: make sure construction from nullptr does the right thing
-
   // Copyable.
   Json(const Json& other) = default;
   Json& operator=(const Json& other) = default;
@@ -70,11 +68,6 @@ class Json {
     return *this;
   }
 
-// FIXME: maybe replace this with absl::string_view to avoid nullptr
-// problem?
-// FIXME: maybe avoid default arg by having static factory methods for
-// each type, where the name of the factory method explicitly states the
-// type?
   // Same thing for C-style strings, both const and mutable.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(const char* string, bool is_number = false)
@@ -165,10 +158,6 @@ class Json {
   }
 
   // Accessor methods.
-// FIXME: need these APIs to work if underlying data struct is a union
-// or variant -- maybe assert on type_ in each method?
-// (assert also important because we're using const reference return values)
-// FIXME: maybe use string_view for strings?
   const std::string& string() const {
     const NumberValue* num = absl::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
