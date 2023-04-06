@@ -20,7 +20,7 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Optional, Union
+from typing import AsyncIterator, Awaitable, Generic, Optional, Union
 
 import grpc
 
@@ -154,13 +154,13 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
                       metaclass=ABCMeta):
 
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod
@@ -210,13 +210,13 @@ class StreamStreamCall(Generic[RequestType, ResponseType],
                        metaclass=ABCMeta):
 
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod

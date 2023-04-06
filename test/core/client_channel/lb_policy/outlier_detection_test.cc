@@ -17,13 +17,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
-#include <map>
-#include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -104,24 +102,32 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config =
-          Json::Array{Json::Object{{"outlier_detection_experimental", json_}}};
+      Json::Object fields = json_;
+      if (success_rate_.has_value()) {
+        fields["successRateEjection"] = *success_rate_;
+      }
+      if (failure_percentage_.has_value()) {
+        fields["failurePercentageEjection"] = *failure_percentage_;
+      }
+      Json config = Json::Array{
+          Json::Object{{"outlier_detection_experimental", std::move(fields)}}};
       return MakeConfig(config);
     }
 
    private:
     Json::Object& GetSuccessRate() {
-      auto it = json_.emplace("successRateEjection", Json::Object()).first;
-      return *it->second.mutable_object();
+      if (!success_rate_.has_value()) success_rate_.emplace();
+      return *success_rate_;
     }
 
     Json::Object& GetFailurePercentage() {
-      auto it =
-          json_.emplace("failurePercentageEjection", Json::Object()).first;
-      return *it->second.mutable_object();
+      if (!failure_percentage_.has_value()) failure_percentage_.emplace();
+      return *failure_percentage_;
     }
 
     Json::Object json_;
+    absl::optional<Json::Object> success_rate_;
+    absl::optional<Json::Object> failure_percentage_;
   };
 
   OutlierDetectionTest()

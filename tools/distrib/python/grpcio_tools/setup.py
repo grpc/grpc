@@ -203,7 +203,11 @@ GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
 DEFINE_MACROS = ()
 if "win32" in sys.platform:
-    DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1),)
+    DEFINE_MACROS += (
+        ('WIN32_LEAN_AND_MEAN', 1),
+        # avoid https://github.com/abseil/abseil-cpp/issues/1425
+        ('NOMINMAX', 1),
+    )
     if '64bit' in platform.architecture()[0]:
         DEFINE_MACROS += (('MS_WIN64', 1),)
 elif "linux" in sys.platform or "darwin" in sys.platform:
