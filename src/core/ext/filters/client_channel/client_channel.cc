@@ -94,9 +94,6 @@
 // Client channel filter
 //
 
-#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
-  "grpc.internal.health_check_service_name"
-
 namespace grpc_core {
 
 using internal::ClientChannelMethodParsedConfig;
@@ -675,17 +672,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
                   std::string(keepalive_throttling.value()).c_str());
         }
       }
-      // Ignore update if the parent WatcherWrapper has been replaced
-      // since this callback was scheduled.
-      if (watcher_ != nullptr) {
-        // Propagate status only in state TF.
-        // We specifically want to avoid propagating the status for
-        // state IDLE that the real subchannel gave us only for the
-        // purpose of keepalive propagation.
-        watcher_->OnConnectivityStateChange(
-            state, state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status
-                                                           : absl::OkStatus());
-      }
+      // Propagate status only in state TF.
+      // We specifically want to avoid propagating the status for
+      // state IDLE that the real subchannel gave us only for the
+      // purpose of keepalive propagation.
+      watcher_->OnConnectivityStateChange(
+          state, state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status
+                                                         : absl::OkStatus());
     }
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>

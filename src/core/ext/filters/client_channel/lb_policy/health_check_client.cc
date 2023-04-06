@@ -38,6 +38,31 @@ namespace grpc_core {
 //TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 extern TraceFlag grpc_health_check_client_trace;
 
+namespace {
+
+// A fire-and-forget class to asynchronously drain a WorkSerializer queue.
+class AsyncWorkSerializerDrainer {
+ public:
+  explicit AsyncWorkSerializerDrainer(
+      std::shared_ptr<WorkSerializer> work_serializer)
+      : work_serializer_(std::move(work_serializer)) {
+    GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
+    ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
+  }
+
+ private:
+  static void RunInExecCtx(void* arg, grpc_error_handle) {
+    auto* self = static_cast<AsyncWorkSerializerDrainer*>(arg);
+    self->work_serializer_.DrainQueue();
+    delete self;
+  }
+
+  std::shared_ptr<WorkSerializer> work_serializer_;
+  grpc_closure closure_;
+};
+
+}  // namespace
+
 //
 // HealthProducer::HealthChecker
 //
@@ -48,7 +73,14 @@ class HealthProducer::HealthChecker
   HealthChecker(WeakRefCountedPtr<HealthProducer> producer,
                 absl::string_view health_check_service_name)
       : producer_(std::move(producer)),
-        health_check_service_name_(health_check_service_name) {}
+        health_check_service_name_(health_check_service_name),
+        state_(producer_->state == GRPC_CHANNEL_READY
+                   ? GRPC_CHANNEL_CONNECTING
+                   : producer_->state_),
+        status_(producer_->status) {
+    // If the subchannel is already connected, start health checking.
+    if (producer_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
+  }
 
   // Disable thread-safety analysis because this method is called via
   // OrphanablePtr<>, but there's no way to pass the lock annotation
@@ -61,7 +93,7 @@ class HealthProducer::HealthChecker
   void AddWatcherLocked(HealthWatcher* watcher)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
     watchers_.insert(watcher);
-    MaybeStartStreamLocked();
+    watcher->Notify(state_, status_);
   }
 
   // Returns true if this was the last watcher.
@@ -69,6 +101,16 @@ class HealthProducer::HealthChecker
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
     watchers_.erase(watcher);
     return watchers_.empty();
+  }
+
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
+    if (state != GRPC_CHANNEL_SHUTDOWN && stream_client_ != nullptr) {
+      state_ = state;
+      status_ = status;
+      NotifyWatchersLocked(state, status);
+    }
   }
 
   // Starts a new stream if we have a connected subchannel.
@@ -95,26 +137,6 @@ class HealthProducer::HealthChecker
  private:
   class HealthStreamEventHandler;
 
-  class AsyncWorkSerializerDrainer {
-   public:
-    explicit AsyncWorkSerializerDrainer(
-        RefCountedPtr<HealthChecker> health_checker)
-        : health_checker_(std::move(health_checker)) {
-      GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-    }
-
-   private:
-    static void RunInExecCtx(void* arg, grpc_error_handle) {
-      auto* self = static_cast<AsyncWorkSerializerDrainer*>(arg);
-      self->health_checker_->work_serializer_.DrainQueue();
-      delete self;
-    }
-
-    RefCountedPtr<HealthChecker> health_checker_;
-    grpc_closure closure_;
-  };
-
   // Notifies watchers of a new state.
   // Called while holding the SubchannelStreamClient lock and possibly
   // the producer lock, so must notify asynchronously, but in guaranteed
@@ -126,7 +148,7 @@ class HealthProducer::HealthChecker
       gpr_log(GPR_INFO, "HealthProducer %p: reporting state %s to watchers",
               this, ConnectivityStateName(state));
     }
-    work_serializer_.Schedule(
+    work_serializer_->Schedule(
         [self = Ref(), state, status = std::move(status)]() mutable {
           MutexLock lock(&self->producer_->mu_);
           for (HealthWatcher* watcher : self->watchers_) {
@@ -134,17 +156,19 @@ class HealthProducer::HealthChecker
           }
         },
         DEBUG_LOCATION);
-    new AsyncWorkSerializerDrainer(Ref());
+    new AsyncWorkSerializerDrainer(work_serializer_);
   }
 
   WeakRefCountedPtr<HealthProducer> producer_;
   absl::string_view health_check_service_name_;
+  std::shared_ptr<WorkSerializer> work_serializer_ =
+      std::make_shared<WorkSerializer>();
 
-  WorkSerializer work_serializer_;
-
-  std::set<HealthWatcher*> watchers_ ABSL_GUARDED_BY(&HealthProducer::mu_);
+  grpc_connectivity_state state_ ABSL_GUARDED_BY(&HealthProducer::mu_);
+  absl::Status status_ ABSL_GUARDED_BY(&HealthProducer::mu_);
   OrphanablePtr<SubchannelStreamClient> stream_client_
       ABSL_GUARDED_BY(&HealthProducer::mu_);
+  std::set<HealthWatcher*> watchers_ ABSL_GUARDED_BY(&HealthProducer::mu_);
 };
 
 //
@@ -379,11 +403,12 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {
-  work_serializer_->Run(
+  work_serializer_->Schedule(
       [watcher = watcher_, state, status = std::move(status)]() mutable {
         watcher->OnConnectivityStateChange(state, std::move(status));
       },
       DEBUG_LOCATION);
+  new AsyncWorkSerializerDrainer(work_serializer_);
 }
 
 //
