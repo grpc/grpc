@@ -18,8 +18,13 @@
 
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
 
+#include <string>
+
+#include <google/protobuf/any.pb.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"
 #include "upb/upb.hpp"
@@ -27,6 +32,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/lib/json/json_writer.h"
+#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
 #include "test/core/util/test_config.h"
 
