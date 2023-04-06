@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // IWYU pragma: no_include <ratio>
+// IWYU pragma: no_include <arpa/inet.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -40,9 +41,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/status_helper.h"

@@ -14,8 +14,6 @@
 
 #include "src/core/lib/event_engine/ares_driver.h"
 
-#include "ares_driver.h"
-
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -40,7 +38,6 @@
 
 #include <address_sorting/address_sorting.h>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
