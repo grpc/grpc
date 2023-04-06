@@ -20,9 +20,8 @@
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
-#include "xds_audit_logger_registry.h"
-#include "xds_common_types.h"
 
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 
