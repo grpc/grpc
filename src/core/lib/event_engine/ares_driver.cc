@@ -816,35 +816,36 @@ void GrpcAresRequestImpl::OnQueryTimeout() {
 // For the latter, we use this backup poller. Also see
 // https://github.com/grpc/grpc/pull/17688 description for more details.
 void GrpcAresRequestImpl::OnAresBackupPollAlarm() {
-  grpc_core::ReleasableMutexLock lock(&mu_);
-  ares_backup_poll_alarm_handle_.reset();
-  GRPC_ARES_DRIVER_TRACE_LOG(
-      "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
-      shutting_down_);
-  if (!shutting_down_) {
-    for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
-      if (!(*it)->already_shutdown) {
-        GRPC_ARES_DRIVER_TRACE_LOG(
-            "request:%p OnAresBackupPollAlarm; ares_process_fd. fd=%s", this,
-            (*it)->polled_fd->GetName());
-        ares_socket_t as = (*it)->polled_fd->GetWrappedAresSocketLocked();
-        ares_process_fd(channel_, as, as);
-      }
-    }
+  {
+    grpc_core::MutexLock lock(&mu_);
+    ares_backup_poll_alarm_handle_.reset();
+    GRPC_ARES_DRIVER_TRACE_LOG(
+        "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
+        shutting_down_);
     if (!shutting_down_) {
-      EventEngine::Duration next_ares_backup_poll_alarm_duration =
-          calculate_next_ares_backup_poll_alarm_duration();
-      Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm").release();
-      ares_backup_poll_alarm_handle_ =
-          event_engine_->RunAfter(next_ares_backup_poll_alarm_duration, [this] {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-            grpc_core::ExecCtx exec_ctx;
-            OnAresBackupPollAlarm();
-          });
+      for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
+        if (!(*it)->already_shutdown) {
+          GRPC_ARES_DRIVER_TRACE_LOG(
+              "request:%p OnAresBackupPollAlarm; ares_process_fd. fd=%s", this,
+              (*it)->polled_fd->GetName());
+          ares_socket_t as = (*it)->polled_fd->GetWrappedAresSocketLocked();
+          ares_process_fd(channel_, as, as);
+        }
+      }
+      if (!shutting_down_) {
+        EventEngine::Duration next_ares_backup_poll_alarm_duration =
+            calculate_next_ares_backup_poll_alarm_duration();
+        Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm").release();
+        ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
+            next_ares_backup_poll_alarm_duration, [this] {
+              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+              grpc_core::ExecCtx exec_ctx;
+              OnAresBackupPollAlarm();
+            });
+      }
+      Work();
     }
-    Work();
   }
-  lock.Release();
   Unref(DEBUG_LOCATION, "OnAresBackupPollAlarm");
 }
 
