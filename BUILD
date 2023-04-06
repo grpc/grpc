@@ -3748,7 +3748,6 @@ grpc_cc_library(
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
-        "//src/core:ext/transport/chttp2/transport/context_list.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.cc",
         "//src/core:ext/transport/chttp2/transport/frame_ping.cc",
@@ -3763,7 +3762,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
-        "//src/core:ext/transport/chttp2/transport/context_list.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",
         "//src/core:ext/transport/chttp2/transport/frame_ping.h",
@@ -3784,6 +3782,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "chttp2_context_list",
         "chttp2_frame",
         "chttp2_varint",
         "debug_location",
