@@ -3040,8 +3040,6 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
                              bool is_notify_tag_closure) override;
   bool is_trailers_only() const override { abort(); }
   absl::string_view GetServerAuthority() const override {
-    gpr_log(GPR_ERROR, "GetServerAuthority(): md=%s",
-            client_initial_metadata_->DebugString().c_str());
     const Slice* authority_metadata =
         client_initial_metadata_->get_pointer(HttpAuthorityMetadata());
     if (authority_metadata == nullptr) return "";
@@ -3340,6 +3338,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         metadata->Set(GrpcStatusMetadata(),
                       op.data.send_status_from_server.status);
         if (auto* details = op.data.send_status_from_server.status_details) {
+          // TODO(ctiller): this should not be a copy, but we have callers that
+          // allocate and pass in a slice created with
+          // grpc_slice_from_static_string and then delete the string after
+          // passing it in, which shouldn't be a supported API.
           metadata->Set(GrpcMessageMetadata(),
                         Slice(grpc_slice_copy(*details)));
         }

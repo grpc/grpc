@@ -77,6 +77,7 @@ TEST_P(ResourceQuotaTest, ResourceQuota) {
     kSeenWithSuccess,
     kSeenWithFailure
   };
+  // Yep, this really initializes all the elements.
   SeenServerCall seen_server_call[kNumCalls] = {SeenServerCall::kNotSeen};
   auto client_calls =
       MakeVec([this, &requests, &server_metadata, &server_status](int i) {

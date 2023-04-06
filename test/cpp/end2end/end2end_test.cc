@@ -1222,6 +1222,8 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
     }
 
     echo_thread.join();
+    // TODO(ctiller): improve test to not be flaky
+    //
     // TryCancel is best effort, and it can happen that the cancellation is not
     // acted upon before the server wakes up, sends a response, and the client
     // reads that.
