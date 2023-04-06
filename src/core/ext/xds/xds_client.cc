@@ -445,8 +445,8 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
       xds_client_(std::move(xds_client)),
       server_(server) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
-            xds_client_.get(), server.server_uri().c_str());
+    gpr_log(GPR_INFO, "[xds_client %p] creating channel %p for server %s",
+            xds_client_.get(), this, server.server_uri().c_str());
   }
   absl::Status status;
   transport_ = xds_client_->transport_factory_->Create(
@@ -473,6 +473,10 @@ XdsClient::ChannelState::~ChannelState() {
 // called from DualRefCounted::Unref, which cannot have a lock annotation for
 // a lock in this subclass.
 void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] orphaning xds channel %p for server %s",
+            xds_client(), this, server_.server_uri().c_str());
+  }
   shutting_down_ = true;
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
