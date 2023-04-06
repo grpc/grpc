@@ -207,8 +207,7 @@ static void test_request_with_large_metadata_between_soft_and_hard_limits(
     auto status = send_metadata(f.get(), metadata_size, &client_details);
     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
       num_requests_rejected++;
-      const char* expected_error =
-          "received initial metadata size exceeds soft limit";
+      const char* expected_error = "received metadata size exceeds soft limit";
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -246,8 +245,7 @@ static void test_request_with_large_metadata_above_hard_limit(
     grpc_slice client_details;
     auto status = send_metadata(f.get(), metadata_size, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -292,8 +290,7 @@ static void test_request_with_large_metadata_soft_limit_above_hard_limit(
     auto status =
         send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -337,8 +334,7 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
         send_metadata(f.get(), metadata_size_between_limits, &client_details);
     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
       num_requests_rejected++;
-      const char* expected_error =
-          "received initial metadata size exceeds soft limit";
+      const char* expected_error = "received metadata size exceeds soft limit";
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -358,8 +354,7 @@ static void test_request_with_large_metadata_soft_limit_overrides_default_hard(
     auto status =
         send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -404,8 +399,7 @@ static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
         send_metadata(f.get(), metadata_size_between_limits, &client_details);
     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
       num_requests_rejected++;
-      const char* expected_error =
-          "received initial metadata size exceeds soft limit";
+      const char* expected_error = "received metadata size exceeds soft limit";
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -425,8 +419,7 @@ static void test_request_with_large_metadata_hard_limit_overrides_default_soft(
     auto status =
         send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -467,8 +460,7 @@ static void test_request_with_large_metadata_hard_limit_below_default_hard(
     auto status =
         send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -512,8 +504,7 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
         send_metadata(f.get(), metadata_size_between_limits, &client_details);
     if (status == GRPC_STATUS_RESOURCE_EXHAUSTED) {
       num_requests_rejected++;
-      const char* expected_error =
-          "received initial metadata size exceeds soft limit";
+      const char* expected_error = "received metadata size exceeds soft limit";
       grpc_slice actual_error =
           grpc_slice_split_head(&client_details, strlen(expected_error));
       GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
@@ -533,8 +524,7 @@ static void test_request_with_large_metadata_soft_limit_below_default_soft(
     auto status =
         send_metadata(f.get(), metadata_size_above_hard_limit, &client_details);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    const char* expected_error =
-        "received initial metadata size exceeds hard limit";
+    const char* expected_error = "received metadata size exceeds hard limit";
     grpc_slice actual_error =
         grpc_slice_split_head(&client_details, strlen(expected_error));
     GPR_ASSERT(0 == grpc_slice_str_cmp(actual_error, expected_error));
