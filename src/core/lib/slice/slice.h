@@ -298,6 +298,8 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
 
   // Array access
   uint8_t& operator[](size_t i) { return mutable_data()[i]; }
+
+  using slice_detail::BaseSlice::c_slice_ptr;
 };
 
 class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice

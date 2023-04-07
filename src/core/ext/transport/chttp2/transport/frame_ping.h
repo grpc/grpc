@@ -43,7 +43,4 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
                                                 const grpc_slice& slice,
                                                 int is_last);
 
-// Test-only function for disabling ping ack
-void grpc_set_disable_ping_ack(bool disable_ping_ack);
-
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H

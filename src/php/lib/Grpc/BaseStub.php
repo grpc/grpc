@@ -120,7 +120,7 @@ class BaseStub
     public static function getDefaultChannel($hostname, array $opts)
     {
         $channel_opts = self::updateOpts($opts);
-        return new Channel($hostname, $opts);
+        return new Channel($hostname, $channel_opts);
     }
 
     /**

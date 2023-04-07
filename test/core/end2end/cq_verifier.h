@@ -21,9 +21,11 @@
 
 #include <stdint.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
@@ -48,10 +50,34 @@ class CqVerifier {
   struct AnyStatus {
     bool* result = nullptr;
   };
+  // PerformAction - expect the tag, and run a function based on the result
+  struct PerformAction {
+    std::function<void(bool success)> action;
+  };
+  // MaybePerformAction - run a function if a tag is seen
+  struct MaybePerformAction {
+    std::function<void(bool success)> action;
+  };
 
-  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
+  using ExpectedResult =
+      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
-  explicit CqVerifier(grpc_completion_queue* cq);
+  struct Failure {
+    SourceLocation location;
+    std::string message;
+    std::vector<std::string> expected;
+  };
+
+  static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGtestFail(const Failure& failure);
+
+  // Allow customizing the failure handler
+  // For legacy tests we should use FailUsingGprCrash (the default)
+  // For gtest based tests we should start migrating to FailUsingGtestFail which
+  // will produce nicer failure messages.
+  explicit CqVerifier(
+      grpc_completion_queue* cq,
+      absl::AnyInvocable<void(Failure)> fail = FailUsingGprCrash);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -74,6 +100,7 @@ class CqVerifier {
               SourceLocation location = SourceLocation());
 
   std::string ToString() const;
+  std::vector<std::string> ToStrings() const;
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -93,6 +120,7 @@ class CqVerifier {
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
+  mutable absl::AnyInvocable<void(Failure)> fail_;
 };
 
 }  // namespace grpc_core

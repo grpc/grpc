@@ -138,6 +138,12 @@ UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsParameters_clear_ec
 UPB_INLINE upb_StringView const* envoy_extensions_transport_sockets_tls_v3_TlsParameters_ecdh_curves(const envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* len) {
   return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(12, 16), len);
 }
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsParameters_clear_signature_algorithms(const envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg) {
+  _upb_array_detach(msg, UPB_SIZE(16, 24));
+}
+UPB_INLINE upb_StringView const* envoy_extensions_transport_sockets_tls_v3_TlsParameters_signature_algorithms(const envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* len) {
+  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(16, 24), len);
+}
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsParameters_set_tls_minimum_protocol_version(envoy_extensions_transport_sockets_tls_v3_TlsParameters *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
@@ -162,6 +168,15 @@ UPB_INLINE upb_StringView* envoy_extensions_transport_sockets_tls_v3_TlsParamete
 }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsParameters_add_ecdh_curves(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, upb_StringView val, upb_Arena* arena) {
   return _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 16), UPB_SIZE(3, 4), &val, arena);
+}
+UPB_INLINE upb_StringView* envoy_extensions_transport_sockets_tls_v3_TlsParameters_mutable_signature_algorithms(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* len) {
+  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 24), len);
+}
+UPB_INLINE upb_StringView* envoy_extensions_transport_sockets_tls_v3_TlsParameters_resize_signature_algorithms(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t len, upb_Arena* arena) {
+  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 24), len, UPB_SIZE(3, 4), arena);
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsParameters_add_signature_algorithms(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, upb_StringView val, upb_Arena* arena) {
+  return _upb_Array_Append_accessor2(msg, UPB_SIZE(16, 24), UPB_SIZE(3, 4), &val, arena);
 }
 
 /* envoy.extensions.transport_sockets.tls.v3.PrivateKeyProvider */
