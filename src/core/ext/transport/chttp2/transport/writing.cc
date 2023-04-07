@@ -655,8 +655,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
         t->cl->Append(s->context, s->byte_counter, outbuf_relative_start_pos,
                       num_stream_bytes);
-        outbuf_relative_start_pos += num_stream_bytes;
       }
+      outbuf_relative_start_pos += num_stream_bytes;
     }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
