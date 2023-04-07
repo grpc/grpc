@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
 
 #include <utility>

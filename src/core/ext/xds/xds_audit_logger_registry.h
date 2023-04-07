@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 
