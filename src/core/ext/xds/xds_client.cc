@@ -1540,6 +1540,10 @@ void XdsClient::Orphan() {
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
     const XdsBootstrap::XdsServer& server, const char* reason) {
+gpr_log(GPR_INFO, "==> GetOrCreateChannelStateLocked(%s (%p), %s): channel map:", server.server_uri().c_str(), &server, reason);
+for (const auto& p : xds_server_channel_map_) {
+gpr_log(GPR_INFO, "  %s (%p) => %p", p.first->server_uri().c_str(), p.first, p.second);
+}
   auto it = xds_server_channel_map_.find(&server);
   if (it != xds_server_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, reason);
