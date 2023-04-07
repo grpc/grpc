@@ -23,17 +23,18 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[4] = {
+static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[5] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(12, 16), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit = {
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[0],
-  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 32), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[1] = {

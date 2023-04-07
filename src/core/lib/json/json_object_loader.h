@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -590,9 +589,7 @@ absl::StatusOr<T> LoadFromJson(
   ValidationErrors errors;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &errors);
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
-  }
+  if (!errors.ok()) return errors.status(error_prefix);
   return std::move(result);
 }
 
@@ -603,9 +600,7 @@ absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
   ValidationErrors errors;
   auto result = MakeRefCounted<T>();
   json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(), &errors);
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
-  }
+  if (!errors.ok()) return errors.status(error_prefix);
   return std::move(result);
 }
 

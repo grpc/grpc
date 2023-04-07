@@ -21,7 +21,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
-class InprocFixture : public CoreTestFixture {
+class InprocFixture : public grpc_core::CoreTestFixture {
  private:
   grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);

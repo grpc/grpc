@@ -993,13 +993,6 @@ _BUILD_EXTRA_METADATA = {
         '_RENAME': 'grpc++_test_util'
     },
 
-    # end2end test support libraries
-    'test/core/end2end:end2end_tests': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'end2end_tests'
-    },
-
     # benchmark support libraries
     'test/cpp/microbenchmarks:helpers': {
         'language': 'c++',

@@ -22,10 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-
-// TODO(veblush): Remove this deprecated function once codes depending on this
-// function are updated in the internal repo.
-void grpc_tracer_init(const char* env_var_name);
+#include <map>
+#include <string>
 
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
@@ -37,6 +35,7 @@ class TraceFlagList {
  public:
   static bool Set(const char* name, bool enabled);
   static void Add(TraceFlag* flag);
+  static void SaveTo(std::map<std::string, bool>& values);
 
  private:
   static void LogAllTracers();
@@ -100,6 +99,15 @@ class DebugOnlyTraceFlag {
   void set_enabled(bool /*enabled*/) {}
 };
 #endif
+
+class SavedTraceFlags {
+ public:
+  SavedTraceFlags();
+  void Restore();
+
+ private:
+  std::map<std::string, bool> values_;
+};
 
 }  // namespace grpc_core
 

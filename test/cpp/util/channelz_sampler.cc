@@ -530,11 +530,11 @@ class ChannelzSampler final {
                                 {"ID", id},
                                 {"Type", type},
                                 {"Description", description}};
-    json_.mutable_array()->push_back(obj);
+    json_.push_back(obj);
   }
 
   // Dump data in json
-  std::string DumpJson() { return JsonDump(json_); }
+  std::string DumpJson() { return JsonDump(grpc_core::Json(json_)); }
 
   // Check if one entity has been recorded
   bool CheckID(int64_t id) {
@@ -557,7 +557,7 @@ class ChannelzSampler final {
   std::vector<grpc::channelz::v1::Subchannel> all_subchannels_;
   std::vector<grpc::channelz::v1::Socket> all_sockets_;
   std::unordered_set<int64_t> id_set_;
-  grpc_core::Json json_;
+  grpc_core::Json::Array json_;
   int64_t rpc_timeout_seconds_;
   gpr_timespec now_;
 };

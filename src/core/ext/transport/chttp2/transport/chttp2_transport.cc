@@ -369,6 +369,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
 
+  t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
+
   const int soft_limit =
       channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
   if (soft_limit < 0) {
@@ -443,7 +445,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
         // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
         const int soft_limit = channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
                                    .value_or(setting.default_value);
-        const int value = (soft_limit < (INT_MAX / 1.25))
+        const int value = (soft_limit >= 0 && soft_limit < (INT_MAX / 1.25))
                               ? static_cast<int>(soft_limit * 1.25)
                               : soft_limit;
         if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
