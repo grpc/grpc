@@ -20,9 +20,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
-#include <vector>
-
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

@@ -24,6 +24,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <vector>
+
+#include "absl/functional/function_ref.h"
+
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/error.h"
 
