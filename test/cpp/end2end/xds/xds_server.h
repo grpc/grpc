@@ -725,7 +725,9 @@ class LrsServiceImpl
 
   void Shutdown();
 
-  std::vector<ClientStats> WaitForLoadReport();
+  // Returns an empty vector if the timeout elapses with no load report.
+  std::vector<ClientStats> WaitForLoadReport(
+      absl::Duration timeout = absl::Seconds(30));
 
  private:
   using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;

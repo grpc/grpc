@@ -1593,6 +1593,14 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     xds_server = authority->server();
   }
   if (xds_server == nullptr) xds_server = &bootstrap_->server();
+  // Canonify the xDS server instance, so that we make sure we're using
+  // the same instance as will be used in AddClusterDropStats() and
+  // AddClusterLocalityStats().  This may yield a different result than
+  // the logic above if the same server is listed both in the authority
+  // and as the top-level server.
+  // TODO(roth): This is really ugly -- need to find a better way to
+  // index the xDS server than by address here.
+  xds_server = bootstrap_->FindXdsServer(*xds_server);
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
