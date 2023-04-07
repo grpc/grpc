@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
 licenses(["notice"])
-
-grpc_package(name = "test/core/event_engine/test_suite/tools")
 
 # -- Implementations --
 

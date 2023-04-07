@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 licenses(["notice"])
-
-grpc_package(name = "test/core/client_idle")
 
 grpc_cc_test(
     name = "idle_filter_state_test",

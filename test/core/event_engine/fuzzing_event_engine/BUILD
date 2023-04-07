@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_proto_library")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/event_engine/fuzzing_event_engine",
-    visibility = "tests",
-)
+package(default_visibility = ["//test:__subpackages__"])
 
 grpc_cc_library(
     name = "fuzzing_event_engine",

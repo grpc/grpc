@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/tsi/alts/crypt",
-    visibility = "public",
-)
+package(default_visibility = ["//visibility:public"])
 
 grpc_cc_test(
     name = "alts_crypt_test",

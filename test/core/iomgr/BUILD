@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/iomgr",
-    visibility = "public",
-)  # Useful for third party devs to test their io manager implementation.
+package(default_visibility = ["//visibility:public"])  # Useful for third party devs to test their io manager implementation.
 
 grpc_cc_library(
     name = "endpoint_tests",

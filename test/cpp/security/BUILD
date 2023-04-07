@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 licenses(["notice"])
-
-grpc_package(name = "test/cpp/security")
 
 grpc_cc_test(
     name = "tls_certificate_verifier_test",

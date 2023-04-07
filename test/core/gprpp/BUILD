@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
-
-grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
     name = "examine_stack_test",

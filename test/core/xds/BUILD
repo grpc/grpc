@@ -16,11 +16,9 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_cc_test",
-    "grpc_package",
+    
 )
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
-
-grpc_package(name = "test/core/xds")
 
 licenses(["notice"])
 

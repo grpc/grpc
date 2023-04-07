@@ -15,11 +15,9 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_test",
-    "grpc_package",
+    
 )
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
-
-grpc_package(name = "test/core/compression")
 
 licenses(["notice"])
 

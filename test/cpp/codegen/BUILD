@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_package", "grpc_sh_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_sh_test")
 
 licenses(["notice"])
-
-grpc_package(name = "test/cpp/codegen")
 
 grpc_cc_test(
     name = "codegen_test_full",

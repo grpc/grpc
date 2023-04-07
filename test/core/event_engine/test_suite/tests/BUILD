@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/event_engine/test_suite/tests",
-    visibility = "public",
-)
+package(default_visibility = ["//visibility:public"])
 
 # TODO(hork): A single InitTestSuite() call should initialize all tests.
 # This can be done after each test suite specialization can explicitly opt in or out

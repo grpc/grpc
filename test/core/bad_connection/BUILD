@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
 
 licenses(["notice"])
-
-grpc_package(name = "test/core/bad_connection")
 
 grpc_cc_binary(
     name = "close_fd_test",

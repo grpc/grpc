@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/event_engine/posix",
-    visibility = "public",
-)  # Useful for third party devs to test their io manager implementation.
+package(default_visibility = ["//visibility:public"])  # Useful for third party devs to test their io manager implementation.
 
 grpc_cc_library(
     name = "posix_engine_test_utils",
