@@ -57,15 +57,14 @@ Json ParseRegexMatcherToJson(
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher) {
   return Json::FromObject(
       {{"regex",
-        Json::FromString(
-            UpbStringToStdString(envoy_type_matcher_v3_RegexMatcher_regex(
-                                     regex_matcher)))}});
+        Json::FromString(UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)))}});
 }
 
 Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
-  return Json::FromObject({
-      {"start", Json::FromNumber(envoy_type_v3_Int64Range_start(range))},
-      {"end", Json::FromNumber(envoy_type_v3_Int64Range_end(range))}});
+  return Json::FromObject(
+      {{"start", Json::FromNumber(envoy_type_v3_Int64Range_start(range))},
+       {"end", Json::FromNumber(envoy_type_v3_Int64Range_end(range))}});
 }
 
 Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
@@ -191,9 +190,8 @@ Json ParseMetadataMatcherToJson(
   // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md and are not
   // being parsed.
   return Json::FromObject({
-      {"invert",
-       Json::FromBool(
-           envoy_type_matcher_v3_MetadataMatcher_invert(metadata_matcher))},
+      {"invert", Json::FromBool(envoy_type_matcher_v3_MetadataMatcher_invert(
+                     metadata_matcher))},
   });
 }
 
@@ -230,8 +228,7 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
     permission_json.emplace("orRules", std::move(permission_set_json));
   } else if (envoy_config_rbac_v3_Permission_has_any(permission)) {
     permission_json.emplace(
-        "any",
-        Json::FromBool(envoy_config_rbac_v3_Permission_any(permission)));
+        "any", Json::FromBool(envoy_config_rbac_v3_Permission_any(permission)));
   } else if (envoy_config_rbac_v3_Permission_has_header(permission)) {
     ValidationErrors::ScopedField field(errors, ".header");
     Json header_json = ParseHeaderMatcherToJson(
@@ -409,8 +406,7 @@ Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
     }
     Json::Object inner_rbac_json;
     inner_rbac_json.emplace(
-        "action",
-        Json::FromNumber(envoy_config_rbac_v3_RBAC_action(rules)));
+        "action", Json::FromNumber(envoy_config_rbac_v3_RBAC_action(rules)));
     if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
       size_t iter = kUpb_Map_Begin;

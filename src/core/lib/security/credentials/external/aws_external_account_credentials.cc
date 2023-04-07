@@ -490,9 +490,9 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   headers.push_back(Json::FromObject(
       {{"key", Json::FromString("Authorization")},
        {"value", Json::FromString(signed_headers["Authorization"])}}));
-  headers.push_back(Json::FromObject(
-      {{"key", Json::FromString("host")},
-       {"value", Json::FromString(signed_headers["host"])}}));
+  headers.push_back(
+      Json::FromObject({{"key", Json::FromString("host")},
+                        {"value", Json::FromString(signed_headers["host"])}}));
   headers.push_back(Json::FromObject(
       {{"key", Json::FromString("x-amz-date")},
        {"value", Json::FromString(signed_headers["x-amz-date"])}}));
@@ -502,10 +502,10 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   headers.push_back(Json::FromObject(
       {{"key", Json::FromString("x-goog-cloud-target-resource")},
        {"value", Json::FromString(audience_)}}));
-  Json subject_token_json = Json::FromObject(
-      {{"url", Json::FromString(cred_verification_url_)},
-       {"method", Json::FromString("POST")},
-       {"headers", Json::FromArray(headers)}});
+  Json subject_token_json =
+      Json::FromObject({{"url", Json::FromString(cred_verification_url_)},
+                        {"method", Json::FromString("POST")},
+                        {"headers", Json::FromArray(headers)}});
   std::string subject_token = UrlEncode(JsonDump(subject_token_json));
   FinishRetrieveSubjectToken(subject_token, absl::OkStatus());
 }

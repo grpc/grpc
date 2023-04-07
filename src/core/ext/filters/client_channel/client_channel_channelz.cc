@@ -51,10 +51,9 @@ Json SubchannelNode::RenderJson() {
   grpc_connectivity_state state =
       connectivity_state_.load(std::memory_order_relaxed);
   Json::Object data = {
-      {"state",
-       Json::FromObject({
-           {"state", Json::FromString(ConnectivityStateName(state))},
-       })},
+      {"state", Json::FromObject({
+                    {"state", Json::FromString(ConnectivityStateName(state))},
+                })},
       {"target", Json::FromString(target_)},
   };
   // Fill in the channel trace if applicable
@@ -66,10 +65,9 @@ Json SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(&data);
   // Construct top-level object.
   Json::Object object{
-      {"ref",
-       Json::FromObject({
-           {"subchannelId", Json::FromString(absl::StrCat(uuid()))},
-       })},
+      {"ref", Json::FromObject({
+                  {"subchannelId", Json::FromString(absl::StrCat(uuid()))},
+              })},
       {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
@@ -81,8 +79,7 @@ Json SubchannelNode::RenderJson() {
   if (child_socket != nullptr && child_socket->uuid() != 0) {
     object["socketRef"] = Json::FromArray({
         Json::FromObject({
-            {"socketId",
-             Json::FromString(absl::StrCat(child_socket->uuid()))},
+            {"socketId", Json::FromString(absl::StrCat(child_socket->uuid()))},
             {"name", Json::FromString(child_socket->name())},
         }),
     });

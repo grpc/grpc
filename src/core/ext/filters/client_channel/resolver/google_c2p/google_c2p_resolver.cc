@@ -254,10 +254,9 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       {"xds_servers", xds_server},
       {"authorities",
        Json::FromObject({
-           {kC2PAuthority,
-            Json::FromObject({
-                {"xds_servers", std::move(xds_server)},
-            })},
+           {kC2PAuthority, Json::FromObject({
+                               {"xds_servers", std::move(xds_server)},
+                           })},
        })},
       {"node", Json::FromObject(std::move(node))},
   });

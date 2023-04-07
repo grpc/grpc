@@ -104,11 +104,10 @@ MATCHER(ContainsInvalidUtf8,
 }
 
 TEST(Json, Utf8) {
-  RunSuccessTest("\"ßâñć௵⇒\"",Json::FromString(
-  "ßâñć௵⇒"),
+  RunSuccessTest("\"ßâñć௵⇒\"", Json::FromString("ßâñć௵⇒"),
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"",
-             Json::FromString("ßâñć௵⇒"),
+                 Json::FromString("ßâñć௵⇒"),
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   // Testing UTF-8 character "𝄞", U+11D1E.
   RunSuccessTest("\"\xf0\x9d\x84\x9e\"", Json::FromString("\xf0\x9d\x84\x9e"),

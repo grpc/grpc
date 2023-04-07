@@ -424,26 +424,33 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     if (outlier_detection_update.success_rate_ejection.has_value()) {
       outlier_detection["successRateEjection"] = Json::FromObject({
           {"stdevFactor",
-           Json::FromNumber(outlier_detection_update.success_rate_ejection->stdev_factor)},
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->stdev_factor)},
           {"enforcementPercentage",
            Json::FromNumber(outlier_detection_update.success_rate_ejection
-               ->enforcement_percentage)},
+                                ->enforcement_percentage)},
           {"minimumHosts",
-           Json::FromNumber(outlier_detection_update.success_rate_ejection->minimum_hosts)},
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->minimum_hosts)},
           {"requestVolume",
-           Json::FromNumber(outlier_detection_update.success_rate_ejection->request_volume)},
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->request_volume)},
       });
     }
     if (outlier_detection_update.failure_percentage_ejection.has_value()) {
       outlier_detection["failurePercentageEjection"] = Json::FromObject({
           {"threshold",
-           Json::FromNumber(outlier_detection_update.failure_percentage_ejection->threshold)},
+           Json::FromNumber(outlier_detection_update
+                                .failure_percentage_ejection->threshold)},
           {"enforcementPercentage",
-           Json::FromNumber(outlier_detection_update.failure_percentage_ejection
-               ->enforcement_percentage)},
+           Json::FromNumber(
+               outlier_detection_update.failure_percentage_ejection
+                   ->enforcement_percentage)},
           {"minimumHosts",
-           Json::FromNumber(outlier_detection_update.failure_percentage_ejection->minimum_hosts)},
-          {"requestVolume", Json::FromNumber(outlier_detection_update
+           Json::FromNumber(outlier_detection_update
+                                .failure_percentage_ejection->minimum_hosts)},
+          {"requestVolume",
+           Json::FromNumber(outlier_detection_update
                                 .failure_percentage_ejection->request_volume)},
       });
     }

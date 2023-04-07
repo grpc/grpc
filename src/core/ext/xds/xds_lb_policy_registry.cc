@@ -138,9 +138,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       }
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
-    return Json::Object{
-        {"weighted_round_robin_experimental",
-         Json::FromObject(std::move(config))}};
+    return Json::Object{{"weighted_round_robin_experimental",
+                         Json::FromObject(std::move(config))}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -243,8 +242,8 @@ class WrrLocalityLbPolicyConfigFactory
         context, endpoint_picking_policy, errors, recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
-         Json::FromObject({{"childPolicy",
-                            Json::FromArray(std::move(child_policy))}})}};
+         Json::FromObject(
+             {{"childPolicy", Json::FromArray(std::move(child_policy))}})}};
   }
 
   absl::string_view type() override { return Type(); }

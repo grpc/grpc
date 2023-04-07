@@ -781,9 +781,8 @@ absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
         } else {
           Json::Object child_config = child_config_json.object();
           child_config[field] = Json::FromString(value);
-          array.emplace_back(
-              Json::FromObject({{child_name,
-                                 Json::FromObject(std::move(child_config))}}));
+          array.emplace_back(Json::FromObject(
+              {{child_name, Json::FromObject(std::move(child_config))}}));
         }
       }
     }

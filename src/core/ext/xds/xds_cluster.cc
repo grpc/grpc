@@ -111,9 +111,8 @@ std::string XdsClusterResource::ToString() const {
             "prioritized_cluster_names=[",
             absl::StrJoin(aggregate.prioritized_cluster_names, ", "), "]"));
       });
-  contents.push_back(
-      absl::StrCat("lb_policy_config=",
-                   JsonDump(Json::FromArray(lb_policy_config))));
+  contents.push_back(absl::StrCat("lb_policy_config=",
+                                  JsonDump(Json::FromArray(lb_policy_config))));
   if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
@@ -338,11 +337,10 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
       // If there were no conversion errors, validate that the converted config
       // parses with the gRPC LB policy registry.
       if (original_error_count == errors->size()) {
-        auto config =
-            CoreConfiguration::Get()
-                .lb_policy_registry()
-                .ParseLoadBalancingConfig(
-                    Json::FromArray(cds_update->lb_policy_config));
+        auto config = CoreConfiguration::Get()
+                          .lb_policy_registry()
+                          .ParseLoadBalancingConfig(
+                              Json::FromArray(cds_update->lb_policy_config));
         if (!config.ok()) errors->AddError(config.status().message());
       }
       return;
@@ -356,12 +354,11 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
         Json::FromObject({
             {"xds_wrr_locality_experimental",
              Json::FromObject({
-                 {"childPolicy",
-                  Json::FromArray({
-                      Json::FromObject({
-                          {"round_robin", Json::FromObject({})},
-                      }),
-                  })},
+                 {"childPolicy", Json::FromArray({
+                                     Json::FromObject({
+                                         {"round_robin", Json::FromObject({})},
+                                     }),
+                                 })},
              })},
         }),
     };

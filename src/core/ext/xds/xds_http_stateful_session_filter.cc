@@ -157,10 +157,9 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     errors->AddError("could not parse stateful session filter config");
     return absl::nullopt;
   }
-  return FilterConfig{
-      ConfigProtoName(),
-      Json::FromObject(
-          ValidateStatefulSession(context, stateful_session, errors))};
+  return FilterConfig{ConfigProtoName(),
+                      Json::FromObject(ValidateStatefulSession(
+                          context, stateful_session, errors))};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>

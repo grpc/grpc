@@ -107,7 +107,8 @@ class JsonReader {
 
     Json TakeAsJson() {
       return MatchMutable(
-          &data, [&](Json::Object* object) {
+          &data,
+          [&](Json::Object* object) {
             return Json::FromObject(std::move(*object));
           },
           [&](Json::Array* array) {

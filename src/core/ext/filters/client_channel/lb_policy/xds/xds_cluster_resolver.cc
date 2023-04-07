@@ -928,10 +928,11 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         outlier_detection_config =
             discovery_entry.config().outlier_detection_lb_config.value();
       }
-      outlier_detection_config["childPolicy"] = Json::FromArray({Json::FromObject({
-          {"xds_cluster_impl_experimental",
-           Json::FromObject(std::move(xds_cluster_impl_config))},
-      })});
+      outlier_detection_config["childPolicy"] =
+          Json::FromArray({Json::FromObject({
+              {"xds_cluster_impl_experimental",
+               Json::FromObject(std::move(xds_cluster_impl_config))},
+          })});
       Json locality_picking_policy = Json::FromArray({Json::FromObject({
           {"outlier_detection_experimental",
            Json::FromObject(std::move(outlier_detection_config))},

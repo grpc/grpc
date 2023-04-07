@@ -183,10 +183,9 @@ Json ChannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(&data);
   // Construct outer object.
   Json::Object json = {
-      {"ref",
-       Json::FromObject({
-           {"channelId", Json::FromNumber(uuid())},
-       })},
+      {"ref", Json::FromObject({
+                  {"channelId", Json::FromNumber(uuid())},
+              })},
       {"data", Json::FromObject(std::move(data))},
   };
   // Template method. Child classes may override this to add their specific
@@ -311,10 +310,9 @@ Json ServerNode::RenderJson() {
   call_counter_.PopulateCallCounts(&data);
   // Construct top-level object.
   Json::Object object = {
-      {"ref",
-       Json::FromObject({
-           {"serverId", Json::FromNumber(uuid())},
-       })},
+      {"ref", Json::FromObject({
+                  {"serverId", Json::FromNumber(uuid())},
+              })},
       {"data", Json::FromObject(std::move(data))},
   };
   // Render listen sockets.
@@ -440,20 +438,18 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
       }
     } else if (uri->scheme() == "unix") {
       (*json)[name] = Json::FromObject({
-          {"uds_address",
-           Json::FromObject({
-               {"filename", Json::FromString(uri->path())},
-           })},
+          {"uds_address", Json::FromObject({
+                              {"filename", Json::FromString(uri->path())},
+                          })},
       });
       return;
     }
   }
   // Unknown address type.
   (*json)[name] = Json::FromObject({
-      {"other_address",
-       Json::FromObject({
-           {"name", Json::FromString(addr_str)},
-       })},
+      {"other_address", Json::FromObject({
+                            {"name", Json::FromString(addr_str)},
+                        })},
   });
 }
 
@@ -552,11 +548,10 @@ Json SocketNode::RenderJson() {
   }
   // Create and fill the parent object.
   Json::Object object = {
-      {"ref",
-       Json::FromObject({
-           {"socketId", Json::FromNumber(uuid())},
-           {"name", Json::FromString(name())},
-       })},
+      {"ref", Json::FromObject({
+                  {"socketId", Json::FromNumber(uuid())},
+                  {"name", Json::FromString(name())},
+              })},
       {"data", Json::FromObject(std::move(data))},
   };
   if (security_ != nullptr &&
@@ -578,11 +573,10 @@ ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
 
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {
-      {"ref",
-       Json::FromObject({
-           {"socketId", Json::FromNumber(uuid())},
-           {"name", Json::FromString(name())},
-       })},
+      {"ref", Json::FromObject({
+                  {"socketId", Json::FromNumber(uuid())},
+                  {"name", Json::FromString(name())},
+              })},
   };
   PopulateSocketAddressJson(&object, "local", local_addr_.c_str());
   return Json::FromObject(std::move(object));
