@@ -29,25 +29,30 @@
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class CFStreamEndpoint : public EventEngine::Endpoint {
+class CFStreamEndpointImpl
+    : public grpc_core::RefCounted<CFStreamEndpointImpl> {
  public:
-  CFStreamEndpoint(std::shared_ptr<CFEventEngine> engine,
-                   MemoryAllocator memory_allocator);
-  ~CFStreamEndpoint() override;
+  CFStreamEndpointImpl(std::shared_ptr<CFEventEngine> engine,
+                       MemoryAllocator memory_allocator);
+  ~CFStreamEndpointImpl();
+
+  void Shutdown();
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override;
+            const EventEngine::Endpoint::ReadArgs* args);
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override;
+             SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args);
 
-  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+  const EventEngine::ResolvedAddress& GetPeerAddress() const {
     return peer_address_;
   }
-  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+  const EventEngine::ResolvedAddress& GetLocalAddress() const {
     return local_address_;
   }
 
@@ -63,6 +68,16 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
               SliceBuffer* buffer);
 
  private:
+  static void* Retain(void* info) {
+    auto that = static_cast<CFStreamEndpointImpl*>(info);
+    return that->Ref().release();
+  }
+
+  static void Release(void* info) {
+    auto that = static_cast<CFStreamEndpointImpl*>(info);
+    that->Unref();
+  }
+
   static void ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
                            void* client_callback_info);
   static void WriteCallback(CFWriteStreamRef stream, CFStreamEventType type,
@@ -83,6 +98,44 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
   LockfreeEvent open_event_;
   LockfreeEvent read_event_;
   LockfreeEvent write_event_;
+};
+
+class CFStreamEndpoint : public EventEngine::Endpoint {
+ public:
+  CFStreamEndpoint(std::shared_ptr<CFEventEngine> engine,
+                   MemoryAllocator memory_allocator) {
+    impl_ = grpc_core::MakeRefCounted<CFStreamEndpointImpl>(
+        std::move(engine), std::move(memory_allocator));
+  }
+  ~CFStreamEndpoint() override { impl_->Shutdown(); }
+
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const ReadArgs* args) override {
+    return impl_->Read(std::move(on_read), buffer, args);
+  }
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* args) override {
+    return impl_->Write(std::move(on_writable), data, args);
+  }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return impl_->GetPeerAddress();
+  }
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return impl_->GetLocalAddress();
+  }
+
+ public:
+  void Connect(absl::AnyInvocable<void(absl::Status)> on_connect,
+               EventEngine::ResolvedAddress addr) {
+    impl_->Connect(std::move(on_connect), std::move(addr));
+  }
+  bool CancelConnect(absl::Status status) {
+    return impl_->CancelConnect(std::move(status));
+  }
+
+ private:
+  grpc_core::RefCountedPtr<CFStreamEndpointImpl> impl_;
 };
 
 }  // namespace experimental
