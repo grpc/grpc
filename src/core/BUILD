@@ -2103,9 +2103,11 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_lockfree_event",
         "posix_event_engine_timer_manager",
+        "ref_counted",
         "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:ref_counted_ptr",
         "//:sockaddr_utils",
     ],
 )
