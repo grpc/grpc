@@ -3278,6 +3278,7 @@ grpc_cc_library(
     hdrs = [
         "lib/json/json.h",
     ],
+    external_deps = ["absl/types:variant"],
     deps = ["//:gpr"],
 )
 
@@ -3295,10 +3296,12 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
     ],
     visibility = ["@grpc:json_reader_legacy"],
     deps = [
         "json",
+        "match",
         "//:gpr",
     ],
 )
