@@ -56,8 +56,8 @@ grpc_cc_library(
     hdrs = ["dns_test.h"],
     data = [
         "dns_test_record_groups.yaml",
-        "//test/cpp/naming/utils:dns_server",
         "//test/cpp/naming/utils:dns_resolver",
+        "//test/cpp/naming/utils:dns_server",
         "//test/cpp/naming/utils:tcp_connect",
         "//tools/distrib:python_wrapper",
     ],

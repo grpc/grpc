@@ -2040,11 +2040,13 @@ add_library(grpc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_driver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/grpc_polled_fd_posix.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -2730,11 +2732,13 @@ add_library(grpc_unsecure
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_driver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/grpc_polled_fd_posix.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -4252,11 +4256,13 @@ add_library(grpc_authorization_provider
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_driver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/grpc_polled_fd_posix.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -4518,6 +4524,7 @@ target_link_libraries(grpc_authorization_provider
   absl::span
   absl::utility
   gpr
+  address_sorting
   upb
 )
 
@@ -11451,11 +11458,13 @@ add_executable(frame_test
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_driver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/grpc_polled_fd_posix.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -11678,6 +11687,7 @@ target_link_libraries(frame_test
   absl::span
   absl::utility
   gpr
+  address_sorting
   upb
 )
 
@@ -16662,8 +16672,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/posix_event_engine_test.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/dns_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
+    test/core/util/fake_udp_and_tcp_server.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -16693,7 +16705,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_unsecure
-    grpc_test_util
+    grpc++_test_util
   )
 
 
