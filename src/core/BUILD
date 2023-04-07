@@ -2419,7 +2419,10 @@ grpc_cc_library(
         "lib/service_config/service_config.h",
         "lib/service_config/service_config_call_data.h",
     ],
-    external_deps = ["absl/types:any"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:any",
+    ],
     language = "c++",
     deps = [
         "ref_counted",

@@ -130,6 +130,8 @@ EXTERNAL_DEPS = {
         'absl/time',
     'absl/time/time.h':
         'absl/time',
+    'absl/types/any.h':
+        'absl/types:any',
     'absl/types/optional.h':
         'absl/types:optional',
     'absl/types/span.h':
