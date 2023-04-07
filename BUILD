@@ -1960,6 +1960,7 @@ grpc_cc_library(
     name = "grpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
+        "protobuf",
     ],
     language = "c++",
     public_hdrs = [
