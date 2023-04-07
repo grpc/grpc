@@ -56,10 +56,10 @@ grpc_cc_library(
     hdrs = ["dns_test.h"],
     data = [
         "dns_test_record_groups.yaml",
-        "python_wrapper.sh",
         "//test/cpp/naming/utils:dns_server",
         "//test/cpp/naming/utils:dns_resolver",
         "//test/cpp/naming/utils:tcp_connect",
+        "//tools/distrib:python_wrapper",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -67,6 +67,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "//src/core:env",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/util:fake_udp_and_tcp_server",
