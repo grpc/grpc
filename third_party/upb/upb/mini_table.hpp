@@ -41,26 +41,26 @@ class MtDataEncoder {
   MtDataEncoder() : appender_(&encoder_) {}
 
   bool StartMessage(uint64_t msg_mod) {
-    return appender_([=](char* buf) {
+    return appender_([=, this](char* buf) {
       return upb_MtDataEncoder_StartMessage(&encoder_, buf, msg_mod);
     });
   }
 
   bool PutField(upb_FieldType type, uint32_t field_num, uint64_t field_mod) {
-    return appender_([=](char* buf) {
+    return appender_([=, this](char* buf) {
       return upb_MtDataEncoder_PutField(&encoder_, buf, type, field_num,
                                         field_mod);
     });
   }
 
   bool StartOneof() {
-    return appender_([=](char* buf) {
+    return appender_([=, this](char* buf) {
       return upb_MtDataEncoder_StartOneof(&encoder_, buf);
     });
   }
 
   bool PutOneofField(uint32_t field_num) {
-    return appender_([=](char* buf) {
+    return appender_([=, this](char* buf) {
       return upb_MtDataEncoder_PutOneofField(&encoder_, buf, field_num);
     });
   }
@@ -68,14 +68,14 @@ class MtDataEncoder {
   void StartEnum() { upb_MtDataEncoder_StartEnum(&encoder_); }
 
   bool PutEnumValue(uint32_t enum_value) {
-    return appender_([=](char* buf) {
+    return appender_([=, this](char* buf) {
       return upb_MtDataEncoder_PutEnumValue(&encoder_, buf, enum_value);
     });
   }
 
   bool EndEnum() {
     return appender_(
-        [=](char* buf) { return upb_MtDataEncoder_EndEnum(&encoder_, buf); });
+        [=, this](char* buf) { return upb_MtDataEncoder_EndEnum(&encoder_, buf); });
   }
 
   const std::string& data() const { return appender_.data(); }
