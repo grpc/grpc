@@ -25,8 +25,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/json/json.h"
+
 namespace grpc_core {
 namespace experimental {
+
+using grpc_core::Json;
 
 // The base struct for audit context.
 class AuditContext {
@@ -54,9 +58,8 @@ class AuditLoggerFactory {
   };
   virtual const char* name() const = 0;
 
-  // TODO(lwge): change to grpc_core::Json once it's exposed.
   virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
-      absl::string_view config_json) = 0;
+      const Json& json) = 0;
 
   virtual std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) = 0;

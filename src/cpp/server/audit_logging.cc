@@ -23,9 +23,10 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc_audit_logging.h>
-#include <grpcpp/security/audit_logging.h>
 #include <grpcpp/support/string_ref.h>
+
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/audit_logging/grpc_audit_logging.h"
 
 namespace grpc {
 namespace experimental {
@@ -80,9 +81,8 @@ CoreAuditLoggerFactory::CreateAuditLogger(
 
 absl::StatusOr<
     std::unique_ptr<grpc_core::experimental::AuditLoggerFactory::Config>>
-CoreAuditLoggerFactory::ParseAuditLoggerConfig(absl::string_view config_json) {
-  grpc::string_ref s(config_json.data(), config_json.length());
-  auto result = factory_->ParseAuditLoggerConfig(s);
+CoreAuditLoggerFactory::ParseAuditLoggerConfig(const Json& json) {
+  auto result = factory_->ParseAuditLoggerConfig(json);
   if (!result.ok()) {
     return result.status();
   }
