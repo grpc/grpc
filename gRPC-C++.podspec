@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.54.0-dev'
+  version = '1.55.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -904,7 +904,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_args.h',
                       'src/core/lib/json/json_channel_args.h',
                       'src/core/lib/json/json_object_loader.h',
+                      'src/core/lib/json/json_reader.h',
                       'src/core/lib/json/json_util.h',
+                      'src/core/lib/json/json_writer.h',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
                       'src/core/lib/load_balancing/lb_policy_registry.h',
@@ -1043,6 +1045,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/pid_controller.h',
+                      'src/core/lib/transport/simple_slice_based_metadata.h',
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/tcp_connect_handshaker.h',
                       'src/core/lib/transport/timeout_encoding.h',
@@ -1842,7 +1845,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_args.h',
                               'src/core/lib/json/json_channel_args.h',
                               'src/core/lib/json/json_object_loader.h',
+                              'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/json/json_writer.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',
@@ -1981,6 +1986,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/parsed_metadata.h',
                               'src/core/lib/transport/pid_controller.h',
+                              'src/core/lib/transport/simple_slice_based_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/tcp_connect_handshaker.h',
                               'src/core/lib/transport/timeout_encoding.h',

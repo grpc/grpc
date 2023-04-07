@@ -1,6 +1,6 @@
 {
     "LABEL": {
-        "name": "title needs formatting",
+        "name": "PR title format",
         "color": "EEEEEE"
     },
     "CHECKS": {
@@ -10,7 +10,7 @@
     },
     "MESSAGES": {
         "success": "All OK",
-        "failure": "Incorrect PR title",
+        "failure": "PR title should be like this: '[component] Brief summary'",
         "notice": ""
     }
 }

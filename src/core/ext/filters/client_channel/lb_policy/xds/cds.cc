@@ -59,6 +59,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -523,9 +524,8 @@ void CdsLb::OnClusterChanged(const std::string& name,
         },
     };
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-      std::string json_str = json.Dump(/*indent=*/1);
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
-              this, json_str.c_str());
+              this, JsonDump(json, /*indent=*/1).c_str());
     }
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -743,7 +743,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       return absl::InvalidArgumentError(

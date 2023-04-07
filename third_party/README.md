@@ -111,7 +111,9 @@ Updating the protobuf dependency is now part of the internal release process (se
 
 ### Updating third_party/envoy-api
 
-Apart from the above steps, please perform the following two steps to generate the Python `xds-protos` package:
+Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+
+In addition, please perform the following two steps to generate the Python `xds-protos` package:
 
 1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
 2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
@@ -133,6 +135,17 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
      under third_party/upb would give some idea on what needs to be included.
 5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
 6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+
+### Updating third_party/utf8_range
+
+```
+# set to wherever your grpc repo lives
+export GRPC_ROOT=~/git/grpc
+wget https://github.com/protocolbuffers/utf8_range/archive/refs/heads/main.zip
+rm -rf $GRPC_ROOT/third_party/utf8_range
+unzip main.zip -d $GRPC_ROOT/third_party
+mv $GRPC_ROOT/third_party/utf8_range-main $GRPC_ROOT/third_party/utf8_range
+```
 
 ### Updating third_party/xxhash
 

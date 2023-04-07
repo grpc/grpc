@@ -29,7 +29,7 @@
 
 // Base class for a fixture that just needs to select cred types (or mutate
 // client/server channel args).
-class SecureFixture : public CoreTestFixture {
+class SecureFixture : public grpc_core::CoreTestFixture {
  public:
   explicit SecureFixture(std::string localaddr = grpc_core::JoinHostPort(
                              "localhost", grpc_pick_unused_port_or_die()))

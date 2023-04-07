@@ -63,6 +63,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -952,11 +953,10 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
        }},
   }};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    std::string json_str = json.Dump(/*indent=*/1);
     gpr_log(
         GPR_INFO,
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
-        this, json_str.c_str());
+        this, JsonDump(json, /*indent=*/1).c_str());
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -1060,8 +1060,8 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Parse "type".
   {
-    auto type_field = LoadJsonObjectField<std::string>(json.object_value(),
-                                                       args, "type", errors);
+    auto type_field =
+        LoadJsonObjectField<std::string>(json.object(), args, "type", errors);
     if (type_field.has_value()) {
       if (*type_field == "EDS") {
         type = DiscoveryMechanismType::EDS;
@@ -1075,14 +1075,14 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "edsServiceName" if type is EDS.
   if (type == DiscoveryMechanismType::EDS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "edsServiceName", errors,
                                                   /*required=*/false);
     if (value.has_value()) eds_service_name = std::move(*value);
   }
   // Parse "dnsHostname" if type is LOGICAL_DNS.
   if (type == DiscoveryMechanismType::LOGICAL_DNS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "dnsHostname", errors);
     if (value.has_value()) dns_hostname = std::move(*value);
   }
@@ -1112,8 +1112,8 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   // Parse "xdsLbPolicy".
   {
     ValidationErrors::ScopedField field(errors, ".xdsLbPolicy");
-    auto it = json.object_value().find("xdsLbPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("xdsLbPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto lb_config = CoreConfiguration::Get()
@@ -1145,7 +1145,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // xds_cluster_resolver was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(

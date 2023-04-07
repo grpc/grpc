@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -43,7 +44,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
-#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -364,31 +364,6 @@ class RetryFilter::CallData {
       grpc_closure on_complete_;
     };
 
-    class AttemptDispatchController
-        : public ConfigSelector::CallDispatchController {
-     public:
-      explicit AttemptDispatchController(CallAttempt* call_attempt)
-          : call_attempt_(call_attempt) {}
-
-      // Will never be called.
-      bool ShouldRetry() override { return false; }
-
-      void Commit() override {
-        call_attempt_->lb_call_committed_ = true;
-        auto* calld = call_attempt_->calld_;
-        if (calld->retry_committed_) {
-          auto* service_config_call_data =
-              static_cast<ClientChannelServiceConfigCallData*>(
-                  calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                      .value);
-          service_config_call_data->call_dispatch_controller()->Commit();
-        }
-      }
-
-     private:
-      CallAttempt* call_attempt_;
-    };
-
     // Creates a BatchData object on the call's arena with the
     // specified refcount.  If set_on_complete is true, the batch's
     // on_complete callback will be set to point to on_complete();
@@ -450,7 +425,6 @@ class RetryFilter::CallData {
     void MaybeCancelPerAttemptRecvTimer();
 
     CallData* calld_;
-    AttemptDispatchController attempt_dispatch_controller_;
     OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
@@ -558,9 +532,8 @@ class RetryFilter::CallData {
   static void StartTransparentRetry(void* arg, grpc_error_handle error);
 
   OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
-  CreateLoadBalancedCall(
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      bool is_transparent_retry);
+  CreateLoadBalancedCall(absl::AnyInvocable<void()> on_commit,
+                         bool is_transparent_retry);
 
   void CreateCallAttempt(bool is_transparent_retry);
 
@@ -693,7 +666,6 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "CallAttempt"
                                                            : nullptr),
       calld_(calld),
-      attempt_dispatch_controller_(this),
       batch_payload_(calld->call_context_),
       started_send_initial_metadata_(false),
       completed_send_initial_metadata_(false),
@@ -706,8 +678,18 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
       sent_cancel_stream_(false),
       seen_recv_trailing_metadata_from_surface_(false),
       abandoned_(false) {
-  lb_call_ = calld->CreateLoadBalancedCall(&attempt_dispatch_controller_,
-                                           is_transparent_retry);
+  lb_call_ = calld->CreateLoadBalancedCall(
+      [this]() {
+        lb_call_committed_ = true;
+        if (calld_->retry_committed_) {
+          auto* service_config_call_data =
+              static_cast<ClientChannelServiceConfigCallData*>(
+                  calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                      .value);
+          service_config_call_data->Commit();
+        }
+      },
+      is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p attempt=%p: created attempt, lb_call=%p",
@@ -1198,19 +1180,6 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
             calld_->chand_, calld_, this, server_pushback->millis());
       }
     }
-  }
-  // Check with call dispatch controller.
-  auto* service_config_call_data =
-      static_cast<ClientChannelServiceConfigCallData*>(
-          calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  if (!service_config_call_data->call_dispatch_controller()->ShouldRetry()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "chand=%p calld=%p attempt=%p: call dispatch controller denied retry",
-          calld_->chand_, calld_, this);
-    }
-    return false;
   }
   // We should retry.
   return true;
@@ -2272,7 +2241,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
           static_cast<ClientChannelServiceConfigCallData*>(
               call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       committed_call_ = CreateLoadBalancedCall(
-          service_config_call_data->call_dispatch_controller(),
+          [service_config_call_data]() { service_config_call_data->Commit(); },
           /*is_transparent_retry=*/false);
       committed_call_->StartTransportStreamOpBatch(batch);
       return;
@@ -2298,8 +2267,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
 
 OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
-    ConfigSelector::CallDispatchController* call_dispatch_controller,
-    bool is_transparent_retry) {
+    absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
                                  path_,        /*start_time=*/0, deadline_,
                                  arena_,       call_combiner_};
@@ -2308,7 +2276,7 @@ RetryFilter::CallData::CreateLoadBalancedCall(
       // This callback holds a ref to the CallStackDestructionBarrier
       // object until the LB call is destroyed.
       call_stack_destruction_barrier_->MakeLbCallDestructionClosure(this),
-      call_dispatch_controller, is_transparent_retry);
+      std::move(on_commit), is_transparent_retry);
 }
 
 void RetryFilter::CallData::CreateCallAttempt(bool is_transparent_retry) {
@@ -2548,17 +2516,17 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: committing retries", chand_, this);
   }
   if (call_attempt != nullptr) {
-    // If the call attempt's LB call has been committed, inform the call
-    // dispatch controller that the call has been committed.
+    // If the call attempt's LB call has been committed, invoke the
+    // call's on_commit callback.
     // Note: If call_attempt is null, this is happening before the first
     // retry attempt is started, in which case we'll just pass the real
-    // call dispatch controller down into the LB call, and it won't be
-    // our problem anymore.
+    // on_commit callback down into the LB call, and it won't be our
+    // problem anymore.
     if (call_attempt->lb_call_committed()) {
       auto* service_config_call_data =
           static_cast<ClientChannelServiceConfigCallData*>(
               call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-      service_config_call_data->call_dispatch_controller()->Commit();
+      service_config_call_data->Commit();
     }
     // Free cached send ops.
     call_attempt->FreeCachedSendOpDataAfterCommit();

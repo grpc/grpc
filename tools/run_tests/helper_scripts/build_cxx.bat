@@ -29,6 +29,24 @@ If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2019" (
   echo on
 )
 
+If "%GRPC_CMAKE_GENERATOR%" == "Visual Studio 16 2019" (
+  @rem Always use the newest Windows 10 SDK available.
+  @rem A new-enough Windows 10 SDK that supports C++11's stdalign.h is required
+  @rem for a successful build.
+  @rem By default cmake together with Visual Studio generator
+  @rem pick a version of Win SDK that matches the Windows version,
+  @rem even when a newer version of the SDK available.
+  @rem Setting CMAKE_SYSTEM_VERSION=10.0 changes this behavior
+  @rem to pick the newest Windows SDK available.
+  @rem When using Ninja generator, this problem doesn't happen.
+  @rem See b/275694647 and https://gitlab.kitware.com/cmake/cmake/-/issues/16202#note_140259
+  set "CMAKE_SYSTEM_VERSION_ARG=-DCMAKE_SYSTEM_VERSION=10.0"
+) else (
+  @rem Setting the env variable to a single space translates to passing no argument
+  @rem when evaluated on the command line.
+  set "CMAKE_SYSTEM_VERSION_ARG= "
+)
+
 If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
   @rem Use ninja
 
@@ -41,7 +59,7 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 ) else (
   @rem Use one of the Visual Studio generators.
 
-  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
+  cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" %CMAKE_SYSTEM_VERSION_ARG% -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% %* ../.. || goto :error
 
   @rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
   cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error

@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -53,7 +54,7 @@ class XdsHttpFilterImpl {
     }
     std::string ToString() const {
       return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", config.Dump(), "}");
+                          " config=", JsonDump(config), "}");
     }
   };
 

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.54.0-dev
+PROJECT_NUMBER         = 1.55.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2377,9 +2377,11 @@ src/core/lib/json/json_channel_args.h \
 src/core/lib/json/json_object_loader.cc \
 src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
+src/core/lib/json/json_reader.h \
 src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
+src/core/lib/json/json_writer.h \
 src/core/lib/load_balancing/lb_policy.cc \
 src/core/lib/load_balancing/lb_policy.h \
 src/core/lib/load_balancing/lb_policy_factory.h \
@@ -2635,6 +2637,7 @@ src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
 src/core/lib/transport/pid_controller.cc \
 src/core/lib/transport/pid_controller.h \
+src/core/lib/transport/simple_slice_based_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
 src/core/lib/transport/tcp_connect_handshaker.cc \

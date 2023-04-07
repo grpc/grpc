@@ -2955,6 +2955,7 @@ grpc_cc_library(
         "grpc_ssl_credentials",
         "iomgr_fwd",
         "json",
+        "json_reader",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3102,6 +3103,7 @@ grpc_cc_library(
         "error",
         "httpcli_ssl_credentials",
         "json",
+        "json_reader",
         "poll",
         "pollset_set",
         "ref_counted",
@@ -3157,6 +3159,8 @@ grpc_cc_library(
         "grpc_oauth2_credentials",
         "httpcli_ssl_credentials",
         "json",
+        "json_reader",
+        "json_writer",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3271,12 +3275,20 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json",
-    srcs = [
-        "lib/json/json_reader.cc",
-        "lib/json/json_writer.cc",
-    ],
     hdrs = [
         "lib/json/json.h",
+    ],
+    external_deps = ["absl/types:variant"],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
+    name = "json_reader",
+    srcs = [
+        "lib/json/json_reader.cc",
+    ],
+    hdrs = [
+        "lib/json/json_reader.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3284,8 +3296,29 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
     ],
-    deps = ["//:gpr"],
+    visibility = ["@grpc:json_reader_legacy"],
+    deps = [
+        "json",
+        "match",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_writer",
+    srcs = [
+        "lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "lib/json/json_writer.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "json",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(
@@ -3775,6 +3808,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -3952,7 +3986,9 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_reader",
         "json_util",
+        "json_writer",
         "lb_policy_registry",
         "match",
         "pollset_set",
@@ -4132,6 +4168,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4201,6 +4238,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4323,6 +4361,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "json_writer",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4954,6 +4993,7 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5015,6 +5055,7 @@ grpc_cc_library(
         "gcp_metadata_query",
         "grpc_xds_client",
         "json",
+        "json_writer",
         "resource_quota",
         "time",
         "//:alts_util",
