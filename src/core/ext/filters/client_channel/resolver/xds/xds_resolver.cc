@@ -739,7 +739,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
   ServiceConfigCallData::Pack(&call_config.call_attributes,
-                              RequestHashAttributeName(), hash_value);
+                              RequestHashAttributeName(),
+                              absl::string_view(hash_value));
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };

@@ -57,10 +57,11 @@ class ServiceConfigCallData {
 
   using CallAttributes = std::map<std::uintptr_t, std::unique_ptr<Holder>>;
 
-  static void Pack(CallAttributes* attributes, UniqueTypeName name,
-                   absl::string_view value) {
+  template <typename T>
+  static void Pack(CallAttributes* attributes, UniqueTypedTypeName<T> name,
+                   T value) {
     attributes->emplace(name.unique_id(),
-                        new UniversalHolder<absl::string_view>(value));
+                        std::make_unique<UniversalHolder<T>>(std::move(value)));
   }
 
   ServiceConfigCallData() : method_configs_(nullptr) {}
