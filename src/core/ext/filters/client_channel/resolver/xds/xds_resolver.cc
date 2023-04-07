@@ -731,13 +731,15 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
+  ServiceConfigCallData::Pack(&call_config.call_attributes,
+                              XdsClusterAttributeTypeName(), it->first);
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
+  ServiceConfigCallData::Pack(&call_config.call_attributes,
+                              RequestHashAttributeName(), hash_value);
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };

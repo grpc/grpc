@@ -53,7 +53,8 @@
 
 namespace grpc_core {
 
-class UniqueTypeName {
+template <typename T>
+class UniqueTypedTypeName {
  public:
   // Factory class.  There should be a single static instance of this
   // for each unique type name.
@@ -64,40 +65,46 @@ class UniqueTypeName {
     Factory(const Factory&) = delete;
     Factory& operator=(const Factory&) = delete;
 
-    UniqueTypeName Create() { return UniqueTypeName(*name_); }
+    UniqueTypedTypeName<T> Create() { return UniqueTypedTypeName<T>(*name_); }
 
    private:
     std::string* name_;
   };
 
   // Copyable.
-  UniqueTypeName(const UniqueTypeName& other) : name_(other.name_) {}
-  UniqueTypeName& operator=(const UniqueTypeName& other) {
+  UniqueTypedTypeName(const UniqueTypedTypeName& other) : name_(other.name_) {}
+  UniqueTypedTypeName& operator=(const UniqueTypedTypeName& other) {
     name_ = other.name_;
     return *this;
   }
 
-  bool operator==(const UniqueTypeName& other) const {
-    return name_.data() == other.name_.data();
+  bool operator==(const UniqueTypedTypeName& other) const {
+    return unique_id() == other.unique_id();
   }
-  bool operator!=(const UniqueTypeName& other) const {
-    return name_.data() != other.name_.data();
+  bool operator!=(const UniqueTypedTypeName& other) const {
+    return unique_id() != other.unique_id();
   }
-  bool operator<(const UniqueTypeName& other) const {
-    return name_.data() < other.name_.data();
+  bool operator<(const UniqueTypedTypeName& other) const {
+    return unique_id() < other.unique_id();
   }
 
-  int Compare(const UniqueTypeName& other) const {
-    return QsortCompare(name_.data(), other.name_.data());
+  int Compare(const UniqueTypedTypeName& other) const {
+    return QsortCompare(unique_id(), other.unique_id());
   }
 
   absl::string_view name() const { return name_; }
 
+  std::uintptr_t unique_id() const {
+    return reinterpret_cast<std::uintptr_t>(name_.data());
+  }
+
  private:
-  explicit UniqueTypeName(absl::string_view name) : name_(name) {}
+  explicit UniqueTypedTypeName(absl::string_view name) : name_(name) {}
 
   absl::string_view name_;
 };
+
+using UniqueTypeName = UniqueTypedTypeName<absl::string_view>;
 
 }  // namespace grpc_core
 

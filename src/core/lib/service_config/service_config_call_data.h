@@ -40,7 +40,28 @@ namespace grpc_core {
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  using CallAttributes = std::map<UniqueTypeName, absl::string_view>;
+  class Holder {
+   public:
+    virtual ~Holder() = default;
+  };
+
+  template <typename T>
+  class UniversalHolder : public Holder {
+   public:
+    explicit UniversalHolder(T value) : value_(std::move(value)) {}
+    T value() { return value_; }
+
+   private:
+    T value_;
+  };
+
+  using CallAttributes = std::map<std::uintptr_t, std::unique_ptr<Holder>>;
+
+  static void Pack(CallAttributes* attributes, UniqueTypeName name,
+                   absl::string_view value) {
+    attributes->emplace(name.unique_id(),
+                        new UniversalHolder<absl::string_view>(value));
+  }
 
   ServiceConfigCallData() : method_configs_(nullptr) {}
 
@@ -63,12 +84,18 @@ class ServiceConfigCallData {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const CallAttributes& call_attributes() const { return call_attributes_; }
-
   // Must be called when holding the call combiner (legacy filter) or from
   // inside the activity (promise-based filter).
-  void SetCallAttribute(UniqueTypeName name, absl::string_view value) {
-    call_attributes_[name] = value;
+  template <typename T>
+  void SetCallAttribute(UniqueTypedTypeName<T> name, T value) {
+    Pack(&call_attributes_, name, value);
+  }
+
+  template <typename T>
+  T GetCallAttribute(UniqueTypedTypeName<T> name) {
+    auto it = call_attributes_.find(name.unique_id());
+    if (it == call_attributes_.end()) return T();
+    return static_cast<UniversalHolder<T>*>(it->second.get())->value();
   }
 
  private:
