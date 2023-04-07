@@ -209,14 +209,16 @@ void GrpcAresSRVRequest::OnSRVQueryDoneLocked(void* arg, int status,
   const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
                              parse_status);
-  std::vector<EventEngine::DNSResolver::SRVRecord> result;
+  Result result;
   if (parse_status == ARES_SUCCESS) {
     for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
          srv_it = srv_it->next) {
-      result.push_back({.host = srv_it->host,
-                        .port = srv_it->port,
-                        .priority = srv_it->priority,
-                        .weight = srv_it->weight});
+      EventEngine::DNSResolver::SRVRecord record;
+      record.host = srv_it->host;
+      record.port = srv_it->port;
+      record.priority = srv_it->priority;
+      record.weight = srv_it->weight;
+      result.push_back(std::move(record));
     }
   }
   if (reply != nullptr) {
