@@ -3237,6 +3237,7 @@ add_library(grpc++
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -6869,6 +6870,7 @@ add_executable(binder_transport_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -9990,6 +9992,7 @@ add_executable(endpoint_binder_pool_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -10682,6 +10685,7 @@ add_executable(fake_binder_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -21780,6 +21784,7 @@ add_executable(transport_stream_receiver_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -22494,6 +22499,7 @@ add_executable(wire_reader_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -22595,6 +22601,7 @@ add_executable(wire_writer_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc

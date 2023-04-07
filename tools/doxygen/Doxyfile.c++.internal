@@ -2442,6 +2442,7 @@ src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
 src/core/lib/resource_quota/trace.cc \
 src/core/lib/resource_quota/trace.h \
+src/core/lib/security/audit_logging/grpc_audit_logging.h \
 src/core/lib/security/authorization/authorization_engine.h \
 src/core/lib/security/authorization/authorization_policy_provider.h \
 src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
@@ -2744,6 +2745,8 @@ src/cpp/common/tls_credentials_options.cc \
 src/cpp/common/validate_service_config.cc \
 src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \
+src/cpp/server/audit_logging.cc \
+src/cpp/server/audit_logging.h \
 src/cpp/server/backend_metric_recorder.cc \
 src/cpp/server/backend_metric_recorder.h \
 src/cpp/server/channel_argument_option.cc \

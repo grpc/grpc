@@ -2722,7 +2722,6 @@ grpc_cc_library(
     deps = [
         "json",
         "//:gpr",
-        "//:grpc_base",
     ],
 )
 

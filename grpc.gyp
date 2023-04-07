@@ -1525,6 +1525,7 @@
         'src/cpp/common/validate_service_config.cc',
         'src/cpp/common/version_cc.cc',
         'src/cpp/server/async_generic_service.cc',
+        'src/cpp/server/audit_logging.cc',
         'src/cpp/server/backend_metric_recorder.cc',
         'src/cpp/server/channel_argument_option.cc',
         'src/cpp/server/create_default_thread_pool.cc',

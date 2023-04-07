@@ -2937,11 +2937,13 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -2995,6 +2997,7 @@ libs:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -4960,11 +4963,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -5018,6 +5023,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -6473,11 +6479,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -6531,6 +6539,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -6895,11 +6904,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -6953,6 +6964,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -12252,11 +12264,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12309,6 +12323,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -12565,11 +12580,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12623,6 +12640,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
@@ -12672,11 +12690,13 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/lib/security/audit_logging/grpc_audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12730,6 +12750,7 @@ targets:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/audit_logging.cc
   - src/cpp/server/backend_metric_recorder.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
