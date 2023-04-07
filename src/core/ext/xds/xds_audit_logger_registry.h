@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 
+#include <map>
+#include <memory>
+
 #include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 
