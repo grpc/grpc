@@ -2710,6 +2710,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_audit_logging",
+    hdrs = [
+        "lib/security/audit_logging/grpc_audit_logging.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "json",
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_authorization_base",
     srcs = [
         "lib/security/authorization/authorization_policy_provider_vtable.cc",

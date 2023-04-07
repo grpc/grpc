@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_GRPC_AUDIT_LOGGING_H
-#define GRPC_GRPC_AUDIT_LOGGING_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
+#define GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -72,4 +72,4 @@ void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif /* GRPC_GRPC_AUDIT_LOGGING_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
