@@ -3736,6 +3736,7 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/context_list.h",
     ],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "gpr",
         "iomgr_buffer_list",
