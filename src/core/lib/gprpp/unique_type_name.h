@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
 #include <string>
 
 #include "absl/strings/string_view.h"
