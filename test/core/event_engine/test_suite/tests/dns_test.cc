@@ -235,8 +235,10 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 
 TEST_F(EventEngineDNSTest, MissingDefaultPort) {
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -254,8 +256,10 @@ TEST_F(EventEngineDNSTest, MissingDefaultPort) {
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -278,8 +282,10 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
   constexpr uint8_t kExpectedAddresses[] = {4, 3, 2, 1};
 
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -304,8 +310,10 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
       {1, 2, 3, 4}, {1, 2, 3, 5}, {1, 2, 3, 6}};
 
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -340,8 +348,10 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
        0x04}};
 
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -372,8 +382,10 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
       {0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11, 0x11}};
 
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupHostname(
@@ -407,8 +419,10 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
        .priority = 0,
        .weight = 0}};
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupSRV(
@@ -426,8 +440,10 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
 
 TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupSRV(
@@ -461,8 +477,10 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   // clang-format on
 
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = _dns_server.address();
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = _dns_server.address()});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   bool verified = false;
   dns_resolver->LookupTXT(
@@ -488,8 +506,10 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   const std::string dns_server =
       absl::StrFormat("[::1]:%d", fake_dns_server.port());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = dns_server;
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = dns_server});
+      test_ee->GetDNSResolver(options);
   EventEngine::DNSResolver::LookupTaskHandle task_handle =
       dns_resolver->LookupHostname(
           [test_ee](auto) {
@@ -512,8 +532,10 @@ TEST_F(EventEngineDNSTest, TestQueryTimeout) {
   const std::string dns_server =
       absl::StrFormat("[::1]:%d", fake_dns_server.port());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = dns_server;
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = dns_server});
+      test_ee->GetDNSResolver(options);
   grpc_core::Notification dns_resolver_signal;
   dns_resolver->LookupTXT(
       [&dns_resolver_signal](absl::StatusOr<std::string> result) {
@@ -535,8 +557,10 @@ TEST_F(EventEngineDNSTest, MultithreadedCancel) {
   const std::string dns_server =
       absl::StrFormat("[::1]:%d", fake_dns_server.port());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  EventEngine::DNSResolver::ResolverOptions options;
+  options.dns_server = dns_server;
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver({.dns_server = fake_dns_server.address()});
+      test_ee->GetDNSResolver(options);
   constexpr int kNumOfThreads = 10;
   constexpr int kNumOfIterationsPerThread = 100;
   std::vector<std::thread> yarn;
