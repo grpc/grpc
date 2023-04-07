@@ -43,15 +43,15 @@ class Observability:
         _cyobservability.observability_init()
 
         # 5. Inject server call tracer factory.
-        capsule = _cyobservability.create_server_call_tracer_factory_capsule()
-        grpc.observability_init(capsule)
+        server_call_tracer_factory = _cyobservability.create_server_call_tracer_factory_capsule()
+        grpc.observability_init(server_call_tracer_factory)
 
 
 def _create_client_call_tracer_capsule(**kwargs) -> object:
     method = kwargs['method']
+    # Propagate existing OC context
     current_span = execution_context.get_current_span()
     if current_span:
-        # Propagate existing OC context
         trace_id = current_span.context_tracer.trace_id.encode('utf8')
         parent_span_id = current_span.span_id.encode('utf8')
         capsule = _cyobservability.create_client_call_tracer_capsule(
@@ -64,6 +64,8 @@ def _create_client_call_tracer_capsule(**kwargs) -> object:
 
 
 def _save_span_context(**kwargs) -> None:
+    """Used to propagate context from gRPC server to OC.
+    """
     trace_options = trace_options_module.TraceOptions(0)
     trace_options.set_enabled(kwargs['is_sampled'])
     span_context = span_context_module.SpanContext(trace_id=kwargs['trace_id'],

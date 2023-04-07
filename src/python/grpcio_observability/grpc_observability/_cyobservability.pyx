@@ -59,7 +59,6 @@ class PySpan:
 
 
 def observability_init() -> None:
-  gcpObservabilityInit() # remove print buffer
   _start_exporting_thread()
 
 
@@ -138,6 +137,7 @@ cdef void _export_sensus_data():
     with nogil:
       while not GLOBAL_SHUTDOWN_EXPORT_THREAD:
         # Wait for next batch of sensus data OR timeout at fixed interval.
+        # TODO(xuanwn): Changed to a proper value.
         AwaitNextBatch(500)
 
         # Break only when buffer have data
@@ -189,11 +189,11 @@ cdef void _shutdown_exporting_thread():
 
 
 cdef str _decode(bytes bytestring):
-    if isinstance(bytestring, (str,)):
-        return <str>bytestring
-    else:
-        try:
-            return bytestring.decode('utf8')
-        except UnicodeDecodeError:
-            _LOGGER.exception('Invalid encoding on %s', bytestring)
-            return bytestring.decode('latin1')
+  if isinstance(bytestring, (str,)):
+    return <str>bytestring
+  else:
+    try:
+      return bytestring.decode('utf8')
+    except UnicodeDecodeError:
+      _LOGGER.exception('Invalid encoding on %s', bytestring)
+      return bytestring.decode('latin1')

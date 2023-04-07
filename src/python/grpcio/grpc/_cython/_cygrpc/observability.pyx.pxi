@@ -28,6 +28,8 @@ def set_server_call_tracer_factory(object capsule) -> None:
 
 
 def set_context_from_server_call_tracer(RequestCallEvent event) -> None:
+  """Used to propagate context from gRPC server to OC span context.
+  """
   if not observability_enabled():
     return
   cdef ServerCallTracer* server_call_tracer

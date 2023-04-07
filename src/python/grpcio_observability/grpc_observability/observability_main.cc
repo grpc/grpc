@@ -91,6 +91,7 @@ void UnlockSensusDataBuffer() {
 void AddCensusDataToBuffer(CensusData data) {
   std::unique_lock<std::mutex> lk(kSensusDataBufferMutex);
   kSensusDataBuffer.push(data);
+   // TODO(xuanwn): Change kExportThreshold to a proper value.
   if (kSensusDataBuffer.size() >= kExportThreshold) {
       SensusDataBufferCV.notify_all();
   }

@@ -65,7 +65,6 @@ def _call_with_lazy_import(fn_name: str, **kwargs) -> types.ModuleType:
 def observability_init(server_call_tracer_factory: object) -> None:
     if not _cygrpc.observability_enabled():
         return
-
     try:
         _cygrpc.set_server_call_tracer_factory(server_call_tracer_factory)
     except Exception as e:  # pylint:disable=broad-except
