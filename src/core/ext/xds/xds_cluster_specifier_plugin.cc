@@ -91,14 +91,16 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = JsonParse(reinterpret_cast<char*>(buf));
   GPR_ASSERT(json.ok());
-  return Json::Array{Json::Object{
+  return Json::FromArray({Json::FromObject({
       {"rls_experimental",
-       Json::Object{
+       Json::FromObject({
            {"routeLookupConfig", std::move(*json)},
            {"childPolicy",
-            Json::Array{Json::Object{{"cds_experimental", Json::Object()}}}},
-           {"childPolicyConfigTargetFieldName", "cluster"},
-       }}}};
+            Json::FromArray({
+                Json::FromObject({{"cds_experimental", Json::FromObject({})}}),
+            })},
+           {"childPolicyConfigTargetFieldName", Json::FromString("cluster")},
+       })}})});
 }
 
 //

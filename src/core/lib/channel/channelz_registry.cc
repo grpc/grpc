@@ -108,11 +108,12 @@ std::string ChannelzRegistry::InternalGetTopChannels(
     for (size_t i = 0; i < top_level_channels.size(); ++i) {
       array.emplace_back(top_level_channels[i]->RenderJson());
     }
-    object["channel"] = std::move(array);
+    object["channel"] = Json::FromArray(std::move(array));
   }
-  if (node_after_pagination_limit == nullptr) object["end"] = true;
-  Json json(std::move(object));
-  return JsonDump(json);
+  if (node_after_pagination_limit == nullptr) {
+    object["end"] = Json::FromBool(true);
+  }
+  return JsonDump(Json::FromObject(std::move(object)));
 }
 
 std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
@@ -147,11 +148,12 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
     for (size_t i = 0; i < servers.size(); ++i) {
       array.emplace_back(servers[i]->RenderJson());
     }
-    object["server"] = std::move(array);
+    object["server"] = Json::FromArray(std::move(array));
   }
-  if (node_after_pagination_limit == nullptr) object["end"] = true;
-  Json json(std::move(object));
-  return JsonDump(json);
+  if (node_after_pagination_limit == nullptr) {
+    object["end"] = Json::FromBool(true);
+  }
+  return JsonDump(Json::FromObject(std::move(object)));
 }
 
 void ChannelzRegistry::InternalLogAllEntities() {
@@ -200,9 +202,9 @@ char* grpc_channelz_get_server(intptr_t server_id) {
           grpc_core::channelz::BaseNode::EntityType::kServer) {
     return nullptr;
   }
-  grpc_core::Json json = grpc_core::Json::Object{
+  grpc_core::Json json = grpc_core::Json::FromObject({
       {"server", server_node->RenderJson()},
-  };
+  });
   return gpr_strdup(JsonDump(json).c_str());
 }
 
@@ -239,9 +241,9 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
            grpc_core::channelz::BaseNode::EntityType::kInternalChannel)) {
     return nullptr;
   }
-  grpc_core::Json json = grpc_core::Json::Object{
+  grpc_core::Json json = grpc_core::Json::FromObject({
       {"channel", channel_node->RenderJson()},
-  };
+  });
   return gpr_strdup(JsonDump(json).c_str());
 }
 
@@ -255,9 +257,9 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
           grpc_core::channelz::BaseNode::EntityType::kSubchannel) {
     return nullptr;
   }
-  grpc_core::Json json = grpc_core::Json::Object{
+  grpc_core::Json json = grpc_core::Json::FromObject({
       {"subchannel", subchannel_node->RenderJson()},
-  };
+  });
   return gpr_strdup(JsonDump(json).c_str());
 }
 
@@ -271,8 +273,8 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
           grpc_core::channelz::BaseNode::EntityType::kSocket) {
     return nullptr;
   }
-  grpc_core::Json json = grpc_core::Json::Object{
+  grpc_core::Json json = grpc_core::Json::FromObject({
       {"socket", socket_node->RenderJson()},
-  };
+  });
   return gpr_strdup(JsonDump(json).c_str());
 }

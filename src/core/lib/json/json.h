@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
 
 namespace grpc_core {
@@ -44,86 +45,86 @@ class Json {
 
   static Json FromBool(bool b) {
     Json json;
-    json.value = b;
+    json.value_ = b;
     return json;
   }
 
   static Json FromNumber(const std::string& str) {
     Json json;
-    json.value = NumberValue(str);
+    json.value_ = NumberValue{str};
     return json;
   }
   static Json FromNumber(const char* str) {
     Json json;
-    json.value = NumberValue(std::string(str));
+    json.value_ = NumberValue{std::string(str)};
     return json;
   }
-  static Json FromNumber(std::string str) {
+  static Json FromNumber(std::string&& str) {
     Json json;
-    json.value = NumberValue(std::move(str));
+    json.value_ = NumberValue{std::move(str)};
     return json;
   }
   static Json FromNumber(int32_t value) {
     Json json;
-    json.value = NumberValue(absl::StrCat(value));
+    json.value_ = NumberValue{absl::StrCat(value)};
     return json;
   }
   static Json FromNumber(uint32_t value) {
     Json json;
-    json.value = NumberValue(absl::StrCat(value));
+    json.value_ = NumberValue{absl::StrCat(value)};
     return json;
   }
   static Json FromNumber(int64_t value) {
     Json json;
-    json.value = NumberValue(absl::StrCat(value));
+    json.value_ = NumberValue{absl::StrCat(value)};
     return json;
   }
   static Json FromNumber(uint64_t value) {
     Json json;
-    json.value = NumberValue(absl::StrCat(value));
+    json.value_ = NumberValue{absl::StrCat(value)};
     return json;
   }
   static Json FromNumber(double value) {
     Json json;
-    json.value = NumberValue(absl::StrCat(value));
+    json.value_ = NumberValue{absl::StrCat(value)};
     return json;
   }
 
   static Json FromString(const std::string& str) {
     Json json;
-    json.value = str;
+    json.value_ = str;
     return json;
   }
   static Json FromString(const char* str) {
     Json json;
-    json.value = std::string(str);
+    json.value_ = std::string(str);
     return json;
   }
-  static Json FromString(std::string str) {
+  static Json FromString(std::string&& str) {
     Json json;
-    json.value = std::move(str);
+    json.value_ = std::move(str);
     return json;
   }
 
   static Json FromObject(const Object& object) {
     Json json;
-    json.value = object;
+    json.value_ = object;
     return json;
   }
-  static Json FromObject(Object object) {
+  static Json FromObject(Object&& object) {
     Json json;
-    json.value = std::move(object);
+    json.value_ = std::move(object);
     return json;
   }
 
   static Json FromArray(const Array& array) {
     Json json;
-    json.value = array;
+    json.value_ = array;
     return json;
   }
-  static Json FromArray(Array array) {
+  static Json FromArray(Array&& array) {
     Json json;
-    json.value = std::move(array);
+    json.value_ = std::move(array);
     return json;
   }
 

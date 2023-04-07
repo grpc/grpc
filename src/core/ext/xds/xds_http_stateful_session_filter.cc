@@ -120,20 +120,20 @@ Json::Object ValidateStatefulSession(
     ValidationErrors::ScopedField field(errors, ".name");
     errors->AddError("field not present");
   }
-  cookie_config["name"] = std::move(cookie_name);
+  cookie_config["name"] = Json::FromString(std::move(cookie_name));
   // ttl
   {
     ValidationErrors::ScopedField field(errors, ".ttl");
     const auto* duration = envoy_type_http_v3_Cookie_ttl(cookie);
     if (duration != nullptr) {
       Duration ttl = ParseDuration(duration, errors);
-      cookie_config["ttl"] = ttl.ToJsonString();
+      cookie_config["ttl"] = Json::FromString(ttl.ToJsonString());
     }
   }
   // path
   std::string path =
       UpbStringToStdString(envoy_type_http_v3_Cookie_path(cookie));
-  if (!path.empty()) cookie_config["path"] = std::move(path);
+  if (!path.empty()) cookie_config["path"] = Json::FromString(std::move(path));
   return cookie_config;
 }
 
@@ -159,7 +159,8 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
   }
   return FilterConfig{
       ConfigProtoName(),
-      ValidateStatefulSession(context, stateful_session, errors)};
+      Json::FromObject(
+          ValidateStatefulSession(context, stateful_session, errors))};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
@@ -193,7 +194,8 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
       config = ValidateStatefulSession(context, stateful_session, errors);
     }
   }
-  return FilterConfig{OverrideConfigProtoName(), Json(std::move(config))};
+  return FilterConfig{OverrideConfigProtoName(),
+                      Json::FromObject(std::move(config))};
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
@@ -210,9 +212,9 @@ absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
-  Json config = filter_config_override != nullptr
-                    ? filter_config_override->config
-                    : hcm_filter_config.config;
+  const Json& config = filter_config_override != nullptr
+                           ? filter_config_override->config
+                           : hcm_filter_config.config;
   return ServiceConfigJsonEntry{"stateful_session", JsonDump(config)};
 }
 
