@@ -215,9 +215,8 @@ grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
           .value);
 }
 
-void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
-                                    grpc_error_handle error) = nullptr;
-void* (*get_copied_context_fn_g)(void*) = nullptr;
+grpc_core::WriteTimestampsCallback write_timestamps_callback_g = nullptr;
+grpc_core::CopyContextFn get_copied_context_fn_g = nullptr;
 }  // namespace
 
 namespace grpc_core {
