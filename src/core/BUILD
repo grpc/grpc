@@ -2711,6 +2711,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_audit_logging",
+    srcs = [
+        "lib/security/audit_logging/grpc_audit_logging.cc",
+    ],
     hdrs = [
         "lib/security/audit_logging/grpc_audit_logging.h",
     ],
