@@ -359,7 +359,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                      'src/core/ext/transport/chttp2/transport/context_list.cc',
                       'src/core/ext/transport/chttp2/transport/context_list.h',
                       'src/core/ext/transport/chttp2/transport/decode_huff.cc',
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',

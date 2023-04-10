@@ -3730,18 +3730,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chttp2_context_list",
-    srcs = [
-        "//src/core:ext/transport/chttp2/transport/context_list.cc",
-    ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/context_list.h",
     ],
-    external_deps = ["absl/functional:function_ref"],
-    deps = [
-        "gpr",
-        "iomgr_buffer_list",
-        "//src/core:error",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -3797,6 +3789,7 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
+        "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
