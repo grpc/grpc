@@ -653,8 +653,14 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       num_stream_bytes = t->outbuf.length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
-        t->cl->Append(s->context, s->byte_counter, outbuf_relative_start_pos,
-                      num_stream_bytes);
+        grpc_core::CopyContextFn copy_context_fn =
+            grpc_core::GrpcHttp2GetCopyContextFn();
+        if (copy_context_fn != nullptr &&
+            grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
+          t->cl->emplace_back(copy_context_fn(s->context),
+                              outbuf_relative_start_pos, num_stream_bytes,
+                              s->byte_counter);
+        }
       }
       outbuf_relative_start_pos += num_stream_bytes;
     }

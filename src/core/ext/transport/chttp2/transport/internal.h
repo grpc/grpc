@@ -35,6 +35,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -76,10 +77,6 @@
 // First bit of the reference count, stored in the high order bits (with the low
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
-
-namespace grpc_core {
-class ContextList;
-}
 
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list

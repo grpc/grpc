@@ -214,6 +214,10 @@ grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
           s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
 }
+
+void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
+                                    grpc_error_handle error) = nullptr;
+void* (*get_copied_context_fn_g)(void*) = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -238,6 +242,40 @@ void TestOnlySetGlobalHttp2TransportDestructCallback(
 void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
     bool disable) {
   test_only_disable_transient_failure_state_notification = disable;
+}
+
+void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
+  write_timestamps_callback_g = fn;
+}
+
+void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
+  get_copied_context_fn_g = fn;
+}
+
+WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
+  return write_timestamps_callback_g;
+}
+
+CopyContextFn GrpcHttp2GetCopyContextFn() { return get_copied_context_fn_g; }
+
+// For each entry in the passed ContextList, it executes the function set using
+// grpc_http2_set_write_timestamps_callback method with each context in the list
+// and \a ts. It also deletes/frees up the passed ContextList after this
+// operation.
+void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
+                                    grpc_error_handle error) {
+  ContextList* context_list = reinterpret_cast<ContextList*>(arg);
+  if (!context_list) {
+    return;
+  }
+  for (auto it = context_list->begin(); it != context_list->end(); it++) {
+    ContextListEntry& entry = (*it);
+    if (ts) {
+      ts->byte_offset = static_cast<uint32_t>(entry.byte_offset_in_stream);
+    }
+    write_timestamps_callback_g(entry.trace_context, ts, error);
+  }
+  delete context_list;
 }
 
 }  // namespace grpc_core
@@ -265,7 +303,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
   if (cl != nullptr) {
-    grpc_core::ContextList::Execute(cl, nullptr, error);
+    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
   }
   cl = nullptr;
 
@@ -556,7 +594,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       event_engine(
           channel_args
               .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
-  cl = grpc_core::ContextList::MakeNewContextList();
+  cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
@@ -988,12 +1026,12 @@ static void write_action_begin_locked(void* gt,
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
-  if (!t->cl->IsEmpty()) {
+  if (!t->cl->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
     // associate a new context list with the transport.
     // The old context list is stored in the cl local variable which is passed
     // to the endpoint. Its upto the endpoint to manage its lifetime.
-    t->cl = grpc_core::ContextList::MakeNewContextList();
+    t->cl = new grpc_core::ContextList();
   } else {
     // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
     // to nullptr.
