@@ -35,7 +35,25 @@ TEST(PrioritizedRaceTest, Race2B) {
   EXPECT_EQ(PrioritizedRace(never, instant)(), Poll<int>(1));
 }
 
-TEST(PrioritizedRaceTest, PrioritizedCompletion2) {
+TEST(PrioritizedRaceTest, PrioritizedCompletion2A) {
+  int first_polls = 0;
+  int second_polls = 0;
+  auto r = PrioritizedRace(
+      [&first_polls]() -> Poll<int> {
+        ++first_polls;
+        return 1;
+      },
+      [&second_polls]() {
+        ++second_polls;
+        return 2;
+      })();
+  EXPECT_EQ(r, Poll<int>(1));
+  // First promise completes immediately, so second promise is never polled.
+  EXPECT_EQ(first_polls, 1);
+  EXPECT_EQ(second_polls, 0);
+}
+
+TEST(PrioritizedRaceTest, PrioritizedCompletion2B) {
   int first_polls = 0;
   int second_polls = 0;
   auto r = PrioritizedRace(
@@ -49,6 +67,7 @@ TEST(PrioritizedRaceTest, PrioritizedCompletion2) {
         return 2;
       })();
   EXPECT_EQ(r, Poll<int>(1));
+  // First promise completes after second promise is polled.
   EXPECT_EQ(first_polls, 2);
   EXPECT_EQ(second_polls, 1);
 }
