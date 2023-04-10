@@ -2,6 +2,7 @@ name: PR CheckTitle
 on:
   pull_request_target:
     types: [opened, reopened, synchronized, edited, labeled, unlabeled]
+  workflow_dispatch:
 permissions:
   contents: read
 
