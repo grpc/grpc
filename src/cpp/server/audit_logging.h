@@ -54,6 +54,7 @@ class AuditContext {
 // Users are expected to inherit this class and implement the Log() function.
 class AuditLogger {
  public:
+  virtual ~AuditLogger() = default;
   // This function will be invoked synchronously when applicable during the
   // RBAC-based authorization process. It does not return anything and thus will
   // not impact whether the RPC will be rejected or not.

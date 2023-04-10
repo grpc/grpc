@@ -35,16 +35,24 @@ using grpc_core::Json;
 // The base struct for audit context.
 class AuditContext {
  public:
-  absl::string_view rpc_method() const;
-  absl::string_view principal() const;
-  absl::string_view policy_name() const;
-  absl::string_view matched_rule() const;
-  bool authorized() const;
+  absl::string_view rpc_method() const { return rpc_method_; }
+  absl::string_view principal() const { return principal_; }
+  absl::string_view policy_name() const { return policy_name_; }
+  absl::string_view matched_rule() const { return matched_rule_; }
+  bool authorized() const { return authorized_; }
+
+ private:
+  absl::string_view rpc_method_;
+  absl::string_view principal_;
+  absl::string_view policy_name_;
+  absl::string_view matched_rule_;
+  bool authorized_;
 };
 
 // This base class for audit logger implementations.
 class AuditLogger {
  public:
+  virtual ~AuditLogger() = default;
   virtual void Log(const AuditContext& audit_context) = 0;
 };
 
@@ -53,9 +61,12 @@ class AuditLoggerFactory {
  public:
   class Config {
    public:
+    virtual ~Config() = default;
     virtual const char* name() const = 0;
     virtual std::string ToString() = 0;
   };
+
+  virtual ~AuditLoggerFactory() = default;
   virtual const char* name() const = 0;
 
   virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
