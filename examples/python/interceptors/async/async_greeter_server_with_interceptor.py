@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import helloworld_pb2_grpc
 
 rpc_id_var = contextvars.ContextVar('rpc_id', default='')
 
+
 class ServerInterceptor(grpc.aio.ServerInterceptor):
 
-    def __init__(self, tag: str, rpc_id: Optional[str]=None) -> None:
+    def __init__(self, tag: str, rpc_id: Optional[str] = None) -> None:
         self.tag = tag
         self.rpc_id = rpc_id
 
@@ -47,12 +48,16 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
     async def SayHello(
             self, request: helloworld_pb2.HelloRequest,
             context: grpc.aio.ServicerContext) -> helloworld_pb2.HelloReply:
-        logging.info(f"Handle rpc with id {rpc_id_var.get()} in server handler.")
+        logging.info(
+            f"Handle rpc with id {rpc_id_var.get()} in server handler.")
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
 async def serve() -> None:
-    interceptors = [ServerInterceptor('Interceptor1'), ServerInterceptor('Interceptor2')]
+    interceptors = [
+        ServerInterceptor('Interceptor1'),
+        ServerInterceptor('Interceptor2')
+    ]
 
     server = grpc.aio.server(interceptors=interceptors)
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)

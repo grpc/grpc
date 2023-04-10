@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,9 +26,7 @@ async def run() -> None:
     async with grpc.aio.insecure_channel('localhost:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         rpc_id = '{:032x}'.format(random.getrandbits(128))
-        metadata = grpc.aio.Metadata(
-            ('client-rpc-id', rpc_id),
-        )
+        metadata = grpc.aio.Metadata(('client-rpc-id', rpc_id),)
         print(f"Seding request with rpc id: {rpc_id}")
         response = await stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
                                        metadata=metadata)
