@@ -39,7 +39,7 @@ class ServerInterceptor(grpc.aio.ServerInterceptor):
         metadata_dict = dict(handler_call_details.invocation_metadata)
         if 'client-rpc-id' in metadata_dict.keys():
             rpc_id_var.set(metadata_dict['client-rpc-id'])
-        logging.info(f"{self.tag} called with rpc_id: {rpc_id_var.get()}")
+        logging.info("{} called with rpc_id: {}".format(self.tag, rpc_id_var.get()))
         return await continuation(handler_call_details)
 
 
@@ -49,7 +49,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
             self, request: helloworld_pb2.HelloRequest,
             context: grpc.aio.ServicerContext) -> helloworld_pb2.HelloReply:
         logging.info(
-            f"Handle rpc with id {rpc_id_var.get()} in server handler.")
+            "Handle rpc with id {} in server handler.".format(rpc_id_var.get()))
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
