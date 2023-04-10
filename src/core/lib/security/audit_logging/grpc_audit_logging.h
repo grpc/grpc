@@ -37,6 +37,15 @@ using grpc_core::Json;
 // The base struct for audit context.
 class AuditContext {
  public:
+  AuditContext(absl::string_view rpc_method, absl::string_view principal,
+               absl::string_view policy_name, absl::string_view matched_rule,
+               bool authorized)
+      : rpc_method_(rpc_method),
+        principal_(principal),
+        policy_name_(policy_name),
+        matched_rule_(matched_rule),
+        authorized_(authorized) {}
+
   absl::string_view rpc_method() const { return rpc_method_; }
   absl::string_view principal() const { return principal_; }
   absl::string_view policy_name() const { return policy_name_; }
