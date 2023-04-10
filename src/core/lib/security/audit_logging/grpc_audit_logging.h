@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
+#include <memory>
+#include <string>
+
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 

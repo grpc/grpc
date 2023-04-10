@@ -20,6 +20,10 @@
 
 #include "src/core/lib/security/audit_logging/grpc_audit_logging.h"
 
+#include <map>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"

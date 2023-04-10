@@ -20,6 +20,10 @@
 #define GRPC_SRC_CPP_SERVER_AUDIT_LOGGING_H
 
 #include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/status/statusor.h"
 
 #include <grpcpp/support/string_ref.h>
 
