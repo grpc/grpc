@@ -92,4 +92,4 @@ promise_detail::PrioritizedRace<Promises...> PrioritizedRace(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_RACE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_PRIORITIZED_RACE_H
