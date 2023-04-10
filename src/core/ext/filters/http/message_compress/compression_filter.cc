@@ -273,8 +273,19 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return std::move(*r);
       });
   // Run the next filter, and race it with getting an error from decompression.
-  return Race(decompress_err->Wait(),
-              next_promise_factory(std::move(call_args)));
+  return [err = decompress_err->Wait(),
+          next = next_promise_factory(
+              std::move(call_args))]() mutable -> Poll<ServerMetadataHandle> {
+    auto p = err();
+    if (auto* r = p.value_if_ready()) return std::move(*r);
+    p = next();
+    if (auto* r = p.value_if_ready()) {
+      auto p2 = err();
+      if (auto* r2 = p2.value_if_ready()) return std::move(*r2);
+      return std::move(*r);
+    }
+    return Pending{};
+  };
 }
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
@@ -316,8 +327,19 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
         return CompressMessage(std::move(message), *compression_algorithm);
       });
   // Run the next filter, and race it with getting an error from decompression.
-  return Race(decompress_err->Wait(),
-              next_promise_factory(std::move(call_args)));
+  return [err = decompress_err->Wait(),
+          next = next_promise_factory(
+              std::move(call_args))]() mutable -> Poll<ServerMetadataHandle> {
+    auto p = err();
+    if (auto* r = p.value_if_ready()) return std::move(*r);
+    p = next();
+    if (auto* r = p.value_if_ready()) {
+      auto p2 = err();
+      if (auto* r2 = p2.value_if_ready()) return std::move(*r2);
+      return std::move(*r);
+    }
+    return Pending{};
+  };
 }
 
 }  // namespace grpc_core
