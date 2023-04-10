@@ -32,8 +32,6 @@
 namespace grpc_core {
 namespace experimental {
 
-using grpc_core::Json;
-
 // The base struct for audit context.
 class AuditContext {
  public:
