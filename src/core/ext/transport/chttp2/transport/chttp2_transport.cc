@@ -216,8 +216,8 @@ grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
           .value);
 }
 
-grpc_core::WriteTimestampsCallback write_timestamps_callback_g = nullptr;
-grpc_core::CopyContextFn get_copied_context_fn_g = nullptr;
+grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
+grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -245,21 +245,21 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 }
 
 void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
-  write_timestamps_callback_g = fn;
+  g_write_timestamps_callback = fn;
 }
 
 void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  get_copied_context_fn_g = fn;
+  g_get_copied_context_fn = fn;
 }
 
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
-  return write_timestamps_callback_g;
+  return g_write_timestamps_callback;
 }
 
-CopyContextFn GrpcHttp2GetCopyContextFn() { return get_copied_context_fn_g; }
+CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
-// grpc_http2_set_write_timestamps_callback method with each context in the list
+// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
 // and \a ts. It also deletes/frees up the passed ContextList after this
 // operation.
 void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
@@ -273,7 +273,7 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
     if (ts) {
       ts->byte_offset = static_cast<uint32_t>(entry.byte_offset_in_stream);
     }
-    write_timestamps_callback_g(entry.trace_context, ts, error);
+    g_write_timestamps_callback(entry.trace_context, ts, error);
   }
   delete context_list;
 }
