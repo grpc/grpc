@@ -17,6 +17,7 @@
 #include "src/core/ext/xds/xds_http_filters.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,6 +27,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
@@ -45,7 +47,10 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
