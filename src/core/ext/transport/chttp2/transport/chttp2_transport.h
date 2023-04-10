@@ -87,7 +87,7 @@ CopyContextFn GrpcHttp2GetCopyContextFn();
 
 // Interprets the passed arg as a ContextList type and for each entry in the
 // passed ContextList, it executes the function set using
-// grpc_http2_set_write_timestamps_callback method with each context in the list
+// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
 // and \a ts. It also deletes/frees up the passed ContextList after this
 // operation.
 void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
