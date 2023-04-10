@@ -71,9 +71,13 @@ class AuditLoggerFactory {
   // their custom loggers.
   class Config {
    public:
+    virtual ~Config() = default;
+
     virtual const char* name() const = 0;
     virtual std::string ToString() = 0;
   };
+  virtual ~AuditLoggerFactory() = default;
+
   virtual const char* name() const = 0;
 
   virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
