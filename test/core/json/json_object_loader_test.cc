@@ -1095,7 +1095,8 @@ TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
     ValidationErrors errors;
     TestStruct test_struct =
         LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
-    ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+    ASSERT_TRUE(errors.ok()) << errors.status(
+        absl::StatusCode::kInvalidArgument, "unexpected errors");
     EXPECT_EQ(test_struct.a, 1);
   }
   // Invalid.
@@ -1105,7 +1106,8 @@ TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
     ASSERT_TRUE(json.ok()) << json.status();
     ValidationErrors errors;
     LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
-    absl::Status status = errors.status("errors validating JSON");
+    absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                        "errors validating JSON");
     EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: [field:a error:failed to parse number]")
@@ -1122,7 +1124,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
     ValidationErrors errors;
     auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(), "int",
                                               &errors);
-    ASSERT_TRUE(value.has_value()) << errors.status("unexpected errors");
+    ASSERT_TRUE(value.has_value()) << errors.status(
+        absl::StatusCode::kInvalidArgument, "unexpected errors");
     EXPECT_EQ(*value, 1);
     EXPECT_TRUE(errors.ok());
   }
@@ -1141,7 +1144,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
     auto value = LoadJsonObjectField<int32_t>(json->object(), JsonArgs(),
                                               "not_present", &errors);
     EXPECT_FALSE(value.has_value());
-    auto status = errors.status("errors validating JSON");
+    auto status = errors.status(absl::StatusCode::kInvalidArgument,
+                                "errors validating JSON");
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: ["
@@ -1154,7 +1158,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
     auto value = LoadJsonObjectField<std::string>(json->object(), JsonArgs(),
                                                   "int", &errors);
     EXPECT_FALSE(value.has_value());
-    auto status = errors.status("errors validating JSON");
+    auto status = errors.status(absl::StatusCode::kInvalidArgument,
+                                "errors validating JSON");
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: [field:int error:is not a string]")
