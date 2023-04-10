@@ -887,7 +887,8 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
       "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
   *logging_options->add_logger_configs() = logger_config;
   auto config = GenerateConfig(rbac);
-  ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
@@ -910,7 +911,8 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
   audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
   *logging_options->add_logger_configs() = logger_config;
   auto config = GenerateConfig(rbac);
-  absl::Status status = errors_.status("errors validating filter config");
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             absl::StrCat("errors validating filter config: ["
