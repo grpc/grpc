@@ -2718,7 +2718,7 @@ grpc_cc_library(
         "lib/security/audit_logging/grpc_audit_logging.h",
     ],
     external_deps = [
-        "absl/status",
+        "absl/base:core_headers",
         "absl/status:statusor",
         "absl/strings",
     ],
