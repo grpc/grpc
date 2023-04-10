@@ -837,11 +837,11 @@ class HPackParser::Parser {
                      "B)", summary.empty() ? "" : " to ", summary);
     if (exceeded_hard_limit) {
       error_message = absl::StrCat(
-          "received initial metadata size exceeds hard limit (", *frame_length_,
+          "received metadata size exceeds hard limit (", *frame_length_,
           " vs. ", metadata_early_detection_->hard_limit(), ")", summary);
     } else {
       error_message = absl::StrCat(
-          "received initial metadata size exceeds soft limit (", *frame_length_,
+          "received metadata size exceeds soft limit (", *frame_length_,
           " vs. ", metadata_early_detection_->soft_limit(),
           "), rejecting requests with some random probability", summary);
     }
