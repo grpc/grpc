@@ -26,6 +26,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upb_collections_lib",
+        actual = "@upb//:collections",
+    )
+
+    native.bind(
         name = "upb_reflection",
         actual = "@upb//:reflection",
     )
