@@ -45,7 +45,7 @@ namespace {
 
 class TestAuditLogger : public AuditLogger {
  public:
-  void Log(const AuditContext& audit_context) override {}
+  void Log(const AuditContext&) override {}
 };
 
 class TestAuditLoggerFactory : public AuditLoggerFactory {
@@ -62,7 +62,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     return std::make_unique<TestAuditLogger>();
   }
   absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
-      const grpc_core::Json& json) override {
+      const grpc_core::Json&) override {
     return std::make_unique<TestConfig>();
   }
 };
