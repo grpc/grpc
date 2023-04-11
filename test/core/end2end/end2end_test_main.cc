@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>

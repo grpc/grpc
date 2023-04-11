@@ -374,6 +374,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     must_have_tags = [
         # We don't run experiments on cmake builds
         "bazel_only",
+        # Nor on windows
+        "no_windows",
         # Nor on mac
         "no_mac",
         # Nor on arm64
