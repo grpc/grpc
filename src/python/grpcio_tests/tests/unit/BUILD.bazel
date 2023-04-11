@@ -150,6 +150,6 @@ internal_py_grpc_test(
         ":test_common",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
-        # "//tools/distrib/python/grpcio_tools:grpc_tools",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
