@@ -928,12 +928,12 @@ class ConfigQuery {
     for (const CoreTestConfiguration& config : *kConfigs) {
       if (IsEventEngineClientEnabled() &&
           (config.feature_mask &
-           FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) == 0) {
+           FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0) {
         continue;
       }
       if (IsEventEngineListenerEnabled() &&
           (config.feature_mask &
-           FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) == 0) {
+           FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0) {
         continue;
       }
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
