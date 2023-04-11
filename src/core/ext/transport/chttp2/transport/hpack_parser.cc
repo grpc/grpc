@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -663,7 +664,6 @@ class HPackParser::Parser {
       // Reject some random sample of requests above soft metadata limit.
       return HandleMetadataSizeLimitExceeded(md, /*exceeded_hard_limit=*/false);
     }
-
     metadata_buffer_->Set(md);
     return true;
   }
@@ -703,7 +703,27 @@ class HPackParser::Parser {
   // Parse a string encoded key and a string encoded value
   absl::optional<HPackTable::Memento> ParseLiteralKey() {
     auto key = String::Parse(input_);
-    if (!key.has_value()) return {};
+    if (!key.has_value()) {
+      return {};
+    } else {
+      auto key_value = key->string_view();
+      if (key_value != HttpSchemeMetadata::key() &&
+          key_value != HttpMethodMetadata::key() &&
+          key_value != HttpAuthorityMetadata::key() &&
+          key_value != HttpPathMetadata::key() &&
+          key_value != HttpStatusMetadata::key()) {
+        auto error = grpc_validate_header_key_is_legal(
+            Slice::FromExternalString(key->string_view()).TakeCSlice());
+        if (!error.ok()) {
+          // StreamId is used as a signal to skip this stream but keep the
+          // connection alive. Also note that we don't return absl::nullopt to
+          // allow the rest of the parsing logic to continue as normal so that
+          // we don't mess with the HPACK algorithm.
+          input_->SetError(grpc_error_set_int(std::move(error),
+                                              StatusIntProperty::kStreamId, 0));
+        }
+      }
+    }
     auto value = ParseValueString(absl::EndsWith(key->string_view(), "-bin"));
     if (GPR_UNLIKELY(!value.has_value())) {
       return {};
@@ -746,7 +766,20 @@ class HPackParser::Parser {
     if (is_binary) {
       return String::ParseBinary(input_);
     } else {
-      return String::Parse(input_);
+      auto value = String::Parse(input_);
+      if (value.has_value()) {
+        auto error = grpc_validate_header_nonbin_value_is_legal(
+            Slice::FromExternalString(value->string_view()).TakeCSlice());
+        if (!error.ok()) {
+          // StreamId is used as a signal to skip this stream but keep the
+          // connection alive. Also note that we don't return absl::nullopt to
+          // allow the rest of the parsing logic to continue as normal so that
+          // we don't mess with the HPACK algorithm.
+          input_->SetError(grpc_error_set_int(std::move(error),
+                                              StatusIntProperty::kStreamId, 0));
+        }
+      }
+      return value;
     }
   }
 
@@ -928,18 +961,20 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
-  bool parsed_ok = ParseInputInner(&input, is_last);
+  ParseInputInner(&input, is_last);
   if (is_last) global_stats().IncrementHttp2MetadataSize(frame_length_);
-  if (parsed_ok) return absl::OkStatus();
+  auto error = input.TakeError();
+  if (!error.ok()) {
+    return error;
+  }
   if (input.eof_error()) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
       return GRPC_ERROR_CREATE(
           "Incomplete header at the end of a header/continuation sequence");
     }
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
-    return absl::OkStatus();
   }
-  return input.TakeError();
+  return absl::OkStatus();
 }
 
 bool HPackParser::ParseInputInner(Input* input, bool is_last) {
