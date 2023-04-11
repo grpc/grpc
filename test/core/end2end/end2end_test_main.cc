@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
@@ -44,6 +45,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
@@ -924,6 +926,16 @@ class ConfigQuery {
         AllConfigs());
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : *kConfigs) {
+      if (IsEventEngineClientEnabled() &&
+          (config.feature_mask &
+           FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) == 0) {
+        continue;
+      }
+      if (IsEventEngineListenerEnabled() &&
+          (config.feature_mask &
+           FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) == 0) {
+        continue;
+      }
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();
@@ -1027,7 +1039,8 @@ INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaTests, ResourceQuotaTest,
     ConfigQuery()
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                         FEATURE_MASK_1BYTE_AT_A_TIME)
+                         FEATURE_MASK_1BYTE_AT_A_TIME |
+                         FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT)
         .ExcludeName("Chttp2.*Uds.*")
         .ExcludeName("Chttp2HttpProxy")
         .Run(),
