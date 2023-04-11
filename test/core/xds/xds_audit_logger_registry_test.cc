@@ -59,9 +59,10 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   ValidationErrors::ScopedField field(&errors, ".logger_config");
   auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
       context, upb_config, &errors);
-  if (!errors.ok())
+  if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
+  }
   return JsonDump(config_json);
 }
 
