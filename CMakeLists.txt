@@ -2404,7 +2404,6 @@ foreach(_hdr
   include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
-  include/grpc/grpc_audit_logging.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
@@ -3037,7 +3036,6 @@ foreach(_hdr
   include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
-  include/grpc/grpc_audit_logging.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
@@ -3303,7 +3301,6 @@ target_link_libraries(grpc++
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  grpc_unsecure
 )
 
 foreach(_hdr
@@ -3381,6 +3378,7 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
+  include/grpc/grpc_audit_logging.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
@@ -4545,7 +4543,6 @@ foreach(_hdr
   include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
-  include/grpc/grpc_audit_logging.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
@@ -6968,7 +6965,6 @@ target_link_libraries(binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10092,7 +10088,6 @@ target_link_libraries(endpoint_binder_pool_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10787,7 +10782,6 @@ target_link_libraries(fake_binder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -12081,7 +12075,6 @@ target_link_libraries(grpc_audit_logging_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -21926,7 +21919,6 @@ target_link_libraries(transport_stream_receiver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -22644,7 +22636,6 @@ target_link_libraries(wire_reader_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -22748,7 +22739,6 @@ target_link_libraries(wire_writer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 

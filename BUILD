@@ -220,7 +220,6 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
-    "include/grpc/grpc_audit_logging.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -1727,7 +1726,6 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
-        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",

@@ -41,7 +41,6 @@ const char kName[] = "test_logger";
 using experimental::AuditContext;
 using experimental::AuditLogger;
 using experimental::AuditLoggerFactory;
-using experimental::AuditLoggerRegistry;
 using Config = experimental::AuditLoggerFactory::Config;
 using experimental::GetAuditLoggerRegistry;
 using experimental::RegisterAuditLoggerFactory;

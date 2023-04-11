@@ -92,4 +92,4 @@ void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_GRPC_AUDIT_LOGGING_H
+#endif /* GRPC_GRPC_AUDIT_LOGGING_H */
