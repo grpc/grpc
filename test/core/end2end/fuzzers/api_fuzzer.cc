@@ -851,9 +851,9 @@ namespace grpc {
 namespace testing {
 
 ApiFuzzer::ApiFuzzer() {
-  grpc_init();
   engine_ =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  grpc_init();
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
   {
