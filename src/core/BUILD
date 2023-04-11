@@ -2399,6 +2399,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_type",
         "//:channel_stack_builder",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -3498,6 +3499,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_security_base",
     ],
 )
 
@@ -3525,6 +3527,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "context",
+        "grpc_deadline_filter",
         "grpc_service_config",
         "json",
         "json_args",

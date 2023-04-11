@@ -99,12 +99,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallTracerFilter::MakeCallPromise(
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&ServerCallTracerFilter::kFilter);
-        return true;
-      });
+  builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL,
+                                          &ServerCallTracerFilter::kFilter);
 }
 
 }  // namespace grpc_core

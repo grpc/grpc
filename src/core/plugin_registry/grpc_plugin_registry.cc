@@ -65,6 +65,7 @@ extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
+extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -91,6 +92,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
   RegisterChannelIdleFilters(builder);
+  RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);
   RegisterDeadlineFilter(builder);

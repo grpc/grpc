@@ -104,7 +104,9 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 }
 
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
+  // DO NOT SUBMIT: Figure out what to do about this.
+  /*
+  builder->channel_init()->RegisterFilter(
       GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
         auto channel_stack_modifier =
             builder->channel_args().GetObjectRef<XdsChannelStackModifier>();
@@ -113,6 +115,7 @@ void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
         }
         return true;
       });
+*/
 }
 
 }  // namespace grpc_core

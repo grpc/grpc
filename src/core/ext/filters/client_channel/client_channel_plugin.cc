@@ -31,12 +31,9 @@ namespace grpc_core {
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   internal::ClientChannelServiceConfigParser::Register(builder);
   internal::RetryServiceConfigParser::Register(builder);
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&ClientChannel::kFilterVtable);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientChannel::kFilterVtable)
+      .Terminal();
 }
 
 }  // namespace grpc_core

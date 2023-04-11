@@ -146,14 +146,9 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
 }
 
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-        if (builder->channel_args().Contains(
-                GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
-          builder->PrependFilter(&BackendMetricFilter::kFilter);
-        }
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &BackendMetricFilter::kFilter)
+      .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
 }
 
 }  // namespace grpc_core

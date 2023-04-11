@@ -1905,14 +1905,11 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
-            "grpclb") {
-          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
-        }
-        return true;
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &ClientLoadReportingFilter::kFilter)
+      .If([](const ChannelArgs& args) {
+        return args.GetString(GRPC_ARG_LB_POLICY_NAME) == "grpclb";
       });
 }
 

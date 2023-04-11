@@ -31,26 +31,12 @@ namespace grpc_core {
 
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   RegisterServerCallTracerFilter(builder);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL,
-                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         grpc_add_connected_filter);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         grpc_add_connected_filter);
-  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL,
-                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         grpc_add_connected_filter);
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&LameClientFilter::kFilter);
-        return true;
-      });
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-        builder->PrependFilter(&Server::kServerTopFilter);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_LAME_CHANNEL, &LameClientFilter::kFilter)
+      .Terminal();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .BeforeAll();
 }
 
 }  // namespace grpc_core

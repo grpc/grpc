@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -69,22 +70,22 @@ const grpc_channel_filter ClientAuthorityFilter::kFilter =
         "authority");
 
 namespace {
-bool add_client_authority_filter(ChannelStackBuilder* builder) {
-  if (builder->channel_args()
-          .GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
-          .value_or(false)) {
-    return true;
-  }
-  builder->PrependFilter(&ClientAuthorityFilter::kFilter);
-  return true;
+bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
+  return !args.GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
+              .value_or(false);
 }
 }  // namespace
 
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                         add_client_authority_filter);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                         add_client_authority_filter);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthorityFilter::kFilter)
+      .If(NeedsClientAuthorityFilter)
+      .Before({&grpc_core::ClientAuthFilter::kFilter});
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &ClientAuthorityFilter::kFilter)
+      .If(NeedsClientAuthorityFilter)
+      .Before({&grpc_core::ClientAuthFilter::kFilter});
 }
 
 }  // namespace grpc_core

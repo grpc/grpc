@@ -158,17 +158,11 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
 
 void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (channel_args.WantMinimalStack() ||
-            !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
-          return true;
-        }
-        builder->PrependFilter(&ServiceConfigChannelArgFilter);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &ServiceConfigChannelArgFilter)
+      .ExcludeFromMinimalStack()
+      .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG);
 }
 
 }  // namespace grpc_core

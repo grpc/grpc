@@ -22,8 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <initializer_list>
 #include <utility>
 #include <vector>
+
+#include "channel_stack_type.h"
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -37,38 +40,66 @@
 
 namespace grpc_core {
 
+extern const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
+
 class ChannelInit {
  public:
-  /// One stage of mutation: call functions against \a builder to influence the
-  /// finally constructed channel stack
-  using Stage = std::function<bool(ChannelStackBuilder* builder)>;
+  using InclusionPredicate = std::function<bool(const ChannelArgs&)>;
+
+  class FilterRegistration {
+   public:
+    explicit FilterRegistration(const grpc_channel_filter* filter)
+        : filter_(filter) {}
+    FilterRegistration(const FilterRegistration&) = delete;
+    FilterRegistration& operator=(const FilterRegistration&) = delete;
+
+    FilterRegistration& After(
+        std::initializer_list<const grpc_channel_filter*> filters);
+    FilterRegistration& Before(
+        std::initializer_list<const grpc_channel_filter*> filters);
+    FilterRegistration& If(InclusionPredicate predicate);
+    FilterRegistration& IfHasChannelArg(const char* arg) {
+      return If([arg](const ChannelArgs& args) { return args.Contains(arg); });
+    }
+    FilterRegistration& IfChannelArg(const char* arg, bool default_value) {
+      return If([arg, default_value](const ChannelArgs& args) {
+        return args.GetBool(arg).value_or(default_value);
+      });
+    }
+    FilterRegistration& Terminal() {
+      terminal_ = true;
+      return *this;
+    }
+    FilterRegistration& BeforeAll() {
+      before_all_ = true;
+      return *this;
+    }
+    FilterRegistration& ExcludeFromMinimalStack() {
+      return If(
+          [](const ChannelArgs& args) { return !args.WantMinimalStack(); });
+    }
+
+   private:
+    friend class ChannelInit;
+    const grpc_channel_filter* const filter_;
+    std::vector<const grpc_channel_filter*> after_;
+    std::vector<const grpc_channel_filter*> before_;
+    std::vector<InclusionPredicate> predicates_;
+    bool terminal_ = false;
+    bool before_all_ = false;
+  };
 
   class Builder {
    public:
-    /// Register one stage of mutators.
-    /// Stages are run in priority order (lowest to highest), and then in
-    /// registration order (in the case of a tie).
-    /// Stages are registered against one of the pre-determined channel stack
-    /// types.
-    /// If the channel stack type is GRPC_CLIENT_SUBCHANNEL, the caller should
-    /// ensure that subchannels with different filter lists will always have
-    /// different channel args. This requires setting a channel arg in case the
-    /// registration function relies on some condition other than channel args
-    /// to decide whether to add a filter or not.
-    void RegisterStage(grpc_channel_stack_type type, int priority, Stage stage);
+    FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
+                                       const grpc_channel_filter* filter);
 
-    /// Finalize registration. No more calls to grpc_channel_init_register_stage
-    /// are allowed.
+    /// Finalize registration.
     ChannelInit Build();
 
    private:
-    struct Slot {
-      Slot(Stage stage, int priority)
-          : stage(std::move(stage)), priority(priority) {}
-      Stage stage;
-      int priority;
-    };
-    std::vector<Slot> slots_[GRPC_NUM_CHANNEL_STACK_TYPES];
+    std::vector<std::unique_ptr<FilterRegistration>>
+        filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
@@ -76,7 +107,21 @@ class ChannelInit {
   bool CreateStack(ChannelStackBuilder* builder) const;
 
  private:
-  std::vector<Stage> slots_[GRPC_NUM_CHANNEL_STACK_TYPES];
+  struct Filter {
+    Filter(const grpc_channel_filter* filter, InclusionPredicate predicate)
+        : filter(filter), predicate(std::move(predicate)) {}
+    const grpc_channel_filter* filter;
+    InclusionPredicate predicate;
+  };
+  struct StackConfig {
+    std::vector<Filter> filters;
+    std::vector<Filter> terminators;
+  };
+  StackConfig filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
+
+  static StackConfig BuildFilters(
+      const std::vector<std::unique_ptr<FilterRegistration>>& registrations,
+      grpc_channel_stack_type type);
 };
 
 }  // namespace grpc_core
