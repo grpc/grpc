@@ -23,11 +23,14 @@
 
 #include <functional>
 #include <initializer_list>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "channel_stack_type.h"
+#include "absl/types/optional.h"
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 

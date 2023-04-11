@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <limits.h>
-
 #include <functional>
 #include <memory>
 
@@ -32,7 +30,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -80,12 +77,12 @@ void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthorityFilter::kFilter)
       .If(NeedsClientAuthorityFilter)
-      .Before({&grpc_core::ClientAuthFilter::kFilter});
+      .Before({&ClientAuthFilter::kFilter});
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
                        &ClientAuthorityFilter::kFilter)
       .If(NeedsClientAuthorityFilter)
-      .Before({&grpc_core::ClientAuthFilter::kFilter});
+      .Before({&ClientAuthFilter::kFilter});
 }
 
 }  // namespace grpc_core

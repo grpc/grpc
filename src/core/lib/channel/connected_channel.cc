@@ -33,7 +33,6 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "channel_stack_builder.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
@@ -921,34 +920,30 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
   // Option 1, and our ideal: the transport supports promise based calls,
   // and so we simply use the transport directly.
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &grpc_core::kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kPromiseBasedTransportFilter)
       .Terminal()
       .If(TransportSupportsPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &grpc_core::kPromiseBasedTransportFilter)
+                       &kPromiseBasedTransportFilter)
       .Terminal()
       .If(TransportSupportsPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                       &grpc_core::kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
       .Terminal()
       .If(TransportSupportsPromiseBasedCalls);
 
   // Option 2: the transport does not support promise based calls.
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &grpc_core::kClientEmulatedFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kClientEmulatedFilter)
       .Terminal()
       .If(TransportDoesNotSupportPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &grpc_core::kClientEmulatedFilter)
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &kClientEmulatedFilter)
       .Terminal()
       .If(TransportDoesNotSupportPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &grpc_core::kServerEmulatedFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerEmulatedFilter)
       .Terminal()
       .If(TransportDoesNotSupportPromiseBasedCalls);
 }
