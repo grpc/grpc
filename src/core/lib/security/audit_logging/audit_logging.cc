@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/audit_logging/grpc_audit_logging.h"
+#include "src/core/lib/security/audit_logging/audit_logging.h"
 
 #include <map>
 #include <utility>
@@ -28,22 +28,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_audit_logging.h>
+
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 namespace experimental {
-
-class AuditLoggerRegistry {
- public:
-  void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory>);
-  absl::StatusOr<const AuditLoggerFactory*> GetAuditLoggerFactory(
-      absl::string_view);
-
- private:
-  Mutex mu_;
-  std::map<std::string, std::unique_ptr<AuditLoggerFactory>>
-      logger_factories_map_ ABSL_GUARDED_BY(mu_);
-};
 
 void AuditLoggerRegistry::RegisterAuditLoggerFactory(
     std::unique_ptr<AuditLoggerFactory> factory) {
@@ -51,14 +41,19 @@ void AuditLoggerRegistry::RegisterAuditLoggerFactory(
   logger_factories_map_[factory->name()] = std::move(factory);
 }
 
-absl::StatusOr<const AuditLoggerFactory*>
-AuditLoggerRegistry::GetAuditLoggerFactory(absl::string_view name) {
+absl::StatusOr<AuditLoggerFactory*> AuditLoggerRegistry::GetAuditLoggerFactory(
+    absl::string_view name) {
   MutexLock lock(&mu_);
   auto it = logger_factories_map_.find(std::string(name));
   if (it != logger_factories_map_.end()) {
     return it->second.get();
   }
   return absl::NotFoundError("factory does not exist");
+}
+
+void AuditLoggerRegistry::UnregisterAuditLoggerFactory(absl::string_view name) {
+  MutexLock lock(&mu_);
+  logger_factories_map_.erase(std::string(name));
 }
 
 AuditLoggerRegistry& GetAuditLoggerRegistry() {

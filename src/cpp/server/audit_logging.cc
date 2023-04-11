@@ -23,10 +23,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpcpp/security/audit_logging.h>
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/audit_logging/grpc_audit_logging.h"
+#include "src/core/lib/security/audit_logging/audit_logging.h"
 
 namespace grpc {
 namespace experimental {
@@ -95,6 +97,11 @@ void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory) {
       std::make_unique<CoreAuditLoggerFactory>(std::move(factory));
   grpc_core::experimental::RegisterAuditLoggerFactory(std::move(core_factory));
 };
+
+void UnregisterAuditLoggerFactory(absl::string_view name) {
+  grpc_core::experimental::GetAuditLoggerRegistry()
+      .UnregisterAuditLoggerFactory(name);
+}
 
 }  // namespace experimental
 }  // namespace grpc

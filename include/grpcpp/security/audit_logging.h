@@ -16,66 +16,72 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
-#define GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
-
-#include <grpc/support/port_platform.h>
+#ifndef GRPCPP_SECURITY_AUDIT_LOGGING_H
+#define GRPCPP_SECURITY_AUDIT_LOGGING_H
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_audit_logging.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/json/json.h"
 
-namespace grpc_core {
+namespace grpc {
 namespace experimental {
 
-// The base struct for audit context.
+using grpc_core::Json;
+
+// This class contains useful information to be consumed in an audit logging
+// event. It provides non-owning accessors to those information.
 class AuditContext {
  public:
-  AuditContext(absl::string_view rpc_method, absl::string_view principal,
-               absl::string_view policy_name, absl::string_view matched_rule,
-               bool authorized)
-      : rpc_method_(rpc_method),
-        principal_(principal),
-        policy_name_(policy_name),
-        matched_rule_(matched_rule),
-        authorized_(authorized) {}
+  // Callers need to ensure the given reference outlives this class object.
+  explicit AuditContext(
+      const grpc_core::experimental::AuditContext& core_context)
+      : core_context_(core_context) {}
 
-  absl::string_view rpc_method() const { return rpc_method_; }
-  absl::string_view principal() const { return principal_; }
-  absl::string_view policy_name() const { return policy_name_; }
-  absl::string_view matched_rule() const { return matched_rule_; }
-  bool authorized() const { return authorized_; }
+  grpc::string_ref rpc_method() const;
+  grpc::string_ref principal() const;
+  grpc::string_ref policy_name() const;
+  grpc::string_ref matched_rule() const;
+  bool authorized() const;
 
  private:
-  absl::string_view rpc_method_;
-  absl::string_view principal_;
-  absl::string_view policy_name_;
-  absl::string_view matched_rule_;
-  bool authorized_;
+  const grpc_core::experimental::AuditContext& core_context_;
 };
 
-// This base class for audit logger implementations.
+// The base class for audit logger implementations.
+// Users are expected to inherit this class and implement the Log() function.
 class AuditLogger {
  public:
   virtual ~AuditLogger() = default;
+  // This function will be invoked synchronously when applicable during the
+  // RBAC-based authorization process. It does not return anything and thus will
+  // not impact whether the RPC will be rejected or not.
   virtual void Log(const AuditContext& audit_context) = 0;
 };
 
-// This is the base class for audit logger factory implementations.
+// The base class for audit logger factory implementations.
+// Users should inherit this class and implement those declared virtual
+// funcitons.
 class AuditLoggerFactory {
  public:
+  // The base class for the audit logger config that the factory parses.
+  // Users should inherit this class to define the configuration needed for
+  // their custom loggers.
   class Config {
    public:
     virtual ~Config() = default;
+
     virtual const char* name() const = 0;
     virtual std::string ToString() = 0;
   };
-
   virtual ~AuditLoggerFactory() = default;
+
   virtual const char* name() const = 0;
 
   virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
@@ -90,6 +96,6 @@ class AuditLoggerFactory {
 void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 
 }  // namespace experimental
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_GRPC_AUDIT_LOGGING_H
+#endif  // GRPCPP_SECURITY_AUDIT_LOGGING_H

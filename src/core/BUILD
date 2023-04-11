@@ -2712,10 +2712,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_audit_logging",
     srcs = [
-        "lib/security/audit_logging/grpc_audit_logging.cc",
+        "lib/security/audit_logging/audit_logging.cc",
     ],
     hdrs = [
-        "lib/security/audit_logging/grpc_audit_logging.h",
+        "lib/security/audit_logging/audit_logging.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2726,6 +2726,7 @@ grpc_cc_library(
     deps = [
         "json",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
