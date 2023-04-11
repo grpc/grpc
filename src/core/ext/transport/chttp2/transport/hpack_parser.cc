@@ -719,6 +719,10 @@ class HPackParser::Parser {
           // connection alive. Also note that we don't return absl::nullopt to
           // allow the rest of the parsing logic to continue as normal so that
           // we don't mess with the HPACK algorithm.
+          gpr_log(GPR_ERROR,
+                  "Received illegal literal key \"%s\". Stream will be "
+                  "cancelled.",
+                  std::string(key_value).c_str());
           input_->SetError(grpc_error_set_int(std::move(error),
                                               StatusIntProperty::kStreamId, 0));
         }
@@ -775,6 +779,10 @@ class HPackParser::Parser {
           // connection alive. Also note that we don't return absl::nullopt to
           // allow the rest of the parsing logic to continue as normal so that
           // we don't mess with the HPACK algorithm.
+          gpr_log(GPR_ERROR,
+                  "Received illegal literal value \"%s\". Stream will be "
+                  "cancelled.",
+                  std::string(value->string_view()).c_str());
           input_->SetError(grpc_error_set_int(std::move(error),
                                               StatusIntProperty::kStreamId, 0));
         }

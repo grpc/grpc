@@ -102,7 +102,7 @@ constexpr char kDefaultServiceConfig[] =
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
+const char g_kCallCredsMdKey[] = "balancer_should_not_...";
 const char g_kCallCredsMdValue[] = "... receive me";
 
 // A test user agent string sent by the client only to the grpclb loadbalancer.
