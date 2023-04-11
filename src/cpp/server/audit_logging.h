@@ -24,10 +24,10 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpcpp/security/audit_logging.h>
-#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/json/json.h"
 
