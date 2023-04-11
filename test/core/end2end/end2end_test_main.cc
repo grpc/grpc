@@ -927,13 +927,21 @@ class ConfigQuery {
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : *kConfigs) {
       if (IsEventEngineClientEnabled() &&
-          (config.feature_mask &
-           FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0) {
+          // Ignore disabled test suites
+          (((exclude_features_ &
+             FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0) ||
+           // Ignore disabled tests
+           ((config.feature_mask &
+             FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0))) {
         continue;
       }
       if (IsEventEngineListenerEnabled() &&
-          (config.feature_mask &
-           FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0) {
+          // Ignore disabled test suites
+          (((exclude_features_ &
+             FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0) ||
+           // Ignore disabled tests
+           ((config.feature_mask &
+             FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0))) {
         continue;
       }
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
@@ -1035,6 +1043,7 @@ INSTANTIATE_TEST_SUITE_P(
         .Run(),
     NameFromConfig);
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(ResourceQuotaTest);
 INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaTests, ResourceQuotaTest,
     ConfigQuery()
