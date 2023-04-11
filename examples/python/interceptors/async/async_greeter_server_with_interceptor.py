@@ -22,7 +22,7 @@ import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
-rpc_id_var = contextvars.ContextVar('rpc_id', default='')
+rpc_id_var = contextvars.ContextVar('rpc_id', default='default')
 
 
 class ServerInterceptor(grpc.aio.ServerInterceptor):
@@ -36,11 +36,16 @@ class ServerInterceptor(grpc.aio.ServerInterceptor):
                                          Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
-        metadata_dict = dict(handler_call_details.invocation_metadata)
-        if 'client-rpc-id' in metadata_dict.keys():
-            rpc_id_var.set(metadata_dict['client-rpc-id'])
         logging.info("%s called with rpc_id: %s", self.tag, rpc_id_var.get())
+        if rpc_id_var.get() == 'default':
+            _metadata = dict(handler_call_details.invocation_metadata)
+            rpc_id_var.set(self.decorate(_metadata['client-rpc-id']))
+        else:
+            rpc_id_var.set(self.decorate(rpc_id_var.get()))
         return await continuation(handler_call_details)
+
+    def decorate(self, rpc_id: str):
+        return f"{self.tag}-{rpc_id}"
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
