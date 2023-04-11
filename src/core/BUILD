@@ -2724,9 +2724,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "json",
         "//:gpr",
-        "//:grpc_public_hdrs",
+        "//:grpc_unsecure",
     ],
 )
 

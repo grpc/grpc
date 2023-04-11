@@ -155,6 +155,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -1836,6 +1837,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -2876,6 +2878,7 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
+  - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/authorization_policy_provider.h
@@ -2937,7 +2940,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -2970,7 +2973,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3021,6 +3024,7 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc
+  - grpc_unsecure
   baselib: true
 - name: grpc++_alts
   build: all
@@ -3302,6 +3306,7 @@ libs:
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
+  - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/authorization_policy_provider.h
@@ -3408,6 +3413,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -4604,6 +4610,16 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: audit_logging_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/server/audit_logging_test.cc
+  deps:
+  - grpc++
+  - grpc_test_util
 - name: auth_context_test
   gtest: true
   build: test
@@ -4964,7 +4980,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -4998,7 +5014,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -5048,6 +5064,7 @@ targets:
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: bitset_test
@@ -6481,7 +6498,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6515,7 +6532,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6565,6 +6582,7 @@ targets:
   - test/core/transport/binder/endpoint_binder_pool_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: endpoint_config_test
@@ -6907,7 +6925,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6941,7 +6959,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6991,6 +7009,7 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: fake_resolver_test
@@ -8028,6 +8047,18 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
+  - grpc_test_util
+- name: grpc_audit_logging_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/audit_logging/audit_logging.h
+  src:
+  - src/core/lib/security/audit_logging/audit_logging.cc
+  - test/core/security/grpc_audit_logging_test.cc
+  deps:
+  - grpc_unsecure
   - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
@@ -12268,7 +12299,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12301,7 +12332,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12350,6 +12381,7 @@ targets:
   - src/cpp/util/time_cc.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: try_join_test
@@ -12585,7 +12617,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12619,7 +12651,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12669,6 +12701,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: wire_writer_test
@@ -12696,7 +12729,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/audit_logging/grpc_audit_logging.h
+  - src/core/lib/security/audit_logging/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12730,7 +12763,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/audit_logging/grpc_audit_logging.cc
+  - src/core/lib/security/audit_logging/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12780,6 +12813,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: work_queue_test
