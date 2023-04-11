@@ -1043,6 +1043,8 @@ INSTANTIATE_TEST_SUITE_P(
         .Run(),
     NameFromConfig);
 
+// TODO(ctiller): Resolve the ResourceQuota / EventEngine listener problems and
+// re-enable this test.
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(ResourceQuotaTest);
 INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaTests, ResourceQuotaTest,
