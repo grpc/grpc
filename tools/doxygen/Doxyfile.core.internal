@@ -772,6 +772,7 @@ doc/connection-backoff-interop-test-description.md \
 doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
 doc/core/combiner-explainer.md \
+doc/core/default_http_proxy_mapper.md \
 doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
@@ -2428,6 +2429,7 @@ src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
 src/core/lib/transport/pid_controller.cc \
 src/core/lib/transport/pid_controller.h \
+src/core/lib/transport/simple_slice_based_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
 src/core/lib/transport/tcp_connect_handshaker.cc \

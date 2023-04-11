@@ -22,6 +22,7 @@ extern "C" {
 
 struct envoy_config_rbac_v3_RBAC;
 struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions;
+struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig;
 struct envoy_config_rbac_v3_RBAC_PoliciesEntry;
 struct envoy_config_rbac_v3_Policy;
 struct envoy_config_rbac_v3_Permission;
@@ -32,6 +33,7 @@ struct envoy_config_rbac_v3_Principal_Authenticated;
 struct envoy_config_rbac_v3_Action;
 typedef struct envoy_config_rbac_v3_RBAC envoy_config_rbac_v3_RBAC;
 typedef struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions envoy_config_rbac_v3_RBAC_AuditLoggingOptions;
+typedef struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig;
 typedef struct envoy_config_rbac_v3_RBAC_PoliciesEntry envoy_config_rbac_v3_RBAC_PoliciesEntry;
 typedef struct envoy_config_rbac_v3_Policy envoy_config_rbac_v3_Policy;
 typedef struct envoy_config_rbac_v3_Permission envoy_config_rbac_v3_Permission;
@@ -42,6 +44,7 @@ typedef struct envoy_config_rbac_v3_Principal_Authenticated envoy_config_rbac_v3
 typedef struct envoy_config_rbac_v3_Action envoy_config_rbac_v3_Action;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_AuditLoggingOptions_msginit;
+extern const upb_MiniTable envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Policy_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Permission_msginit;
@@ -220,30 +223,98 @@ UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_clear_audit_condit
 UPB_INLINE int32_t envoy_config_rbac_v3_RBAC_AuditLoggingOptions_audit_condition(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
-UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_audit_loggers(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg) {
+UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_logger_configs(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
 }
-UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_clear_audit_loggers(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg) {
+UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_clear_logger_configs(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg) {
   _upb_array_detach(msg, UPB_SIZE(4, 8));
 }
-UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* const* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_audit_loggers(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t* len) {
-  return (const struct envoy_config_core_v3_TypedExtensionConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_logger_configs(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t* len) {
+  return (const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
 }
 
 UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_set_audit_condition(envoy_config_rbac_v3_RBAC_AuditLoggingOptions *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_rbac_v3_RBAC_AuditLoggingOptions_mutable_audit_loggers(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t* len) {
-  return (struct envoy_config_core_v3_TypedExtensionConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig** envoy_config_rbac_v3_RBAC_AuditLoggingOptions_mutable_logger_configs(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t* len) {
+  return (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_rbac_v3_RBAC_AuditLoggingOptions_resize_audit_loggers(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t len, upb_Arena* arena) {
-  return (struct envoy_config_core_v3_TypedExtensionConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig** envoy_config_rbac_v3_RBAC_AuditLoggingOptions_resize_logger_configs(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, size_t len, upb_Arena* arena) {
+  return (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_add_audit_loggers(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, upb_Arena* arena) {
-  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+UPB_INLINE struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_add_logger_configs(envoy_config_rbac_v3_RBAC_AuditLoggingOptions* msg, upb_Arena* arena) {
+  struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* sub = (struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*)_upb_Message_New(&envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, arena);
   bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
+}
+
+/* envoy.config.rbac.v3.RBAC.AuditLoggingOptions.AuditLoggerConfig */
+
+UPB_INLINE envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_new(upb_Arena* arena) {
+  return (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*)_upb_Message_New(&envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, arena);
+}
+UPB_INLINE envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* ret = envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* ret = envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_serialize(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_serialize_ex(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_has_audit_logger(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_clear_audit_logger(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_audit_logger(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
+UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_clear_is_optional(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
+}
+UPB_INLINE bool envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+}
+
+UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_set_audit_logger(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_mutable_audit_logger(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_audit_logger(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_set_audit_logger(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_set_is_optional(envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
 /* envoy.config.rbac.v3.RBAC.PoliciesEntry */

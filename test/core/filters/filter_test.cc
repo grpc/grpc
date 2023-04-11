@@ -116,7 +116,7 @@ void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
   EXPECT_EQ(promise_, absl::nullopt);
   promise_ = channel_->filter->MakeCallPromise(
       CallArgs{std::move(md), ClientInitialMetadataOutstandingToken::Empty(),
-               &pipe_server_initial_metadata_.sender,
+               nullptr, &pipe_server_initial_metadata_.sender,
                &pipe_client_to_server_messages_.receiver,
                &pipe_server_to_client_messages_.sender},
       [this](CallArgs args) -> ArenaPromise<ServerMetadataHandle> {

@@ -27,6 +27,7 @@ struct envoy_config_core_v3_RateLimitSettings;
 struct envoy_config_core_v3_PathConfigSource;
 struct envoy_config_core_v3_ConfigSource;
 struct envoy_config_core_v3_ExtensionConfigSource;
+struct envoy_config_core_v3_RestSubscription;
 typedef struct envoy_config_core_v3_ApiConfigSource envoy_config_core_v3_ApiConfigSource;
 typedef struct envoy_config_core_v3_AggregatedConfigSource envoy_config_core_v3_AggregatedConfigSource;
 typedef struct envoy_config_core_v3_SelfConfigSource envoy_config_core_v3_SelfConfigSource;
@@ -34,6 +35,7 @@ typedef struct envoy_config_core_v3_RateLimitSettings envoy_config_core_v3_RateL
 typedef struct envoy_config_core_v3_PathConfigSource envoy_config_core_v3_PathConfigSource;
 typedef struct envoy_config_core_v3_ConfigSource envoy_config_core_v3_ConfigSource;
 typedef struct envoy_config_core_v3_ExtensionConfigSource envoy_config_core_v3_ExtensionConfigSource;
+typedef struct envoy_config_core_v3_RestSubscription envoy_config_core_v3_RestSubscription;
 extern const upb_MiniTable envoy_config_core_v3_ApiConfigSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_AggregatedConfigSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_SelfConfigSource_msginit;
@@ -41,6 +43,7 @@ extern const upb_MiniTable envoy_config_core_v3_RateLimitSettings_msginit;
 extern const upb_MiniTable envoy_config_core_v3_PathConfigSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_ConfigSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_ExtensionConfigSource_msginit;
+extern const upb_MiniTable envoy_config_core_v3_RestSubscription_msginit;
 struct envoy_config_core_v3_GrpcService;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_core_v3_WatchedDirectory;
@@ -794,6 +797,43 @@ UPB_INLINE upb_StringView* envoy_config_core_v3_ExtensionConfigSource_resize_typ
 UPB_INLINE bool envoy_config_core_v3_ExtensionConfigSource_add_type_urls(envoy_config_core_v3_ExtensionConfigSource* msg, upb_StringView val, upb_Arena* arena) {
   return _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(3, 4), &val, arena);
 }
+
+/* envoy.config.core.v3.RestSubscription */
+
+UPB_INLINE envoy_config_core_v3_RestSubscription* envoy_config_core_v3_RestSubscription_new(upb_Arena* arena) {
+  return (envoy_config_core_v3_RestSubscription*)_upb_Message_New(&envoy_config_core_v3_RestSubscription_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_RestSubscription* envoy_config_core_v3_RestSubscription_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_core_v3_RestSubscription* ret = envoy_config_core_v3_RestSubscription_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_RestSubscription_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_core_v3_RestSubscription* envoy_config_core_v3_RestSubscription_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_core_v3_RestSubscription* ret = envoy_config_core_v3_RestSubscription_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_RestSubscription_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_core_v3_RestSubscription_serialize(const envoy_config_core_v3_RestSubscription* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_RestSubscription_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_core_v3_RestSubscription_serialize_ex(const envoy_config_core_v3_RestSubscription* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_RestSubscription_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+
 
 extern const upb_MiniTable_File envoy_config_core_v3_config_source_proto_upb_file_layout;
 

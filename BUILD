@@ -1395,9 +1395,11 @@ grpc_cc_library(
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
+        "//src/core:lib/transport/custom_metadata.h",
         "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/transport/metadata_batch.h",
         "//src/core:lib/transport/parsed_metadata.h",
+        "//src/core:lib/transport/simple_slice_based_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
@@ -1446,7 +1448,6 @@ grpc_cc_library(
         "config",
         "config_vars",
         "cpp_impl_of",
-        "custom_metadata",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -1537,13 +1538,6 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
-    ],
-)
-
-grpc_cc_library(
-    name = "custom_metadata",
-    hdrs = [
-        "//src/core:lib/transport/custom_metadata.h",
     ],
 )
 
@@ -1947,7 +1941,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
-        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
@@ -2860,6 +2853,7 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

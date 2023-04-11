@@ -39,6 +39,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -195,9 +196,35 @@ class Server::RequestMatcherInterface {
   virtual void RequestCallWithPossiblePublish(size_t request_queue_index,
                                               RequestedCall* call) = 0;
 
-  struct MatchResult {
-    size_t cq_idx;
-    RequestedCall* requested_call;
+  class MatchResult {
+   public:
+    MatchResult(Server* server, size_t cq_idx, RequestedCall* requested_call)
+        : server_(server), cq_idx_(cq_idx), requested_call_(requested_call) {}
+    ~MatchResult() {
+      if (requested_call_ != nullptr) {
+        server_->FailCall(cq_idx_, requested_call_, absl::CancelledError());
+      }
+    }
+
+    MatchResult(const MatchResult&) = delete;
+    MatchResult& operator=(const MatchResult&) = delete;
+
+    MatchResult(MatchResult&& other) noexcept
+        : server_(other.server_),
+          cq_idx_(other.cq_idx_),
+          requested_call_(std::exchange(other.requested_call_, nullptr)) {}
+
+    RequestedCall* TakeCall() {
+      return std::exchange(requested_call_, nullptr);
+    }
+
+    grpc_completion_queue* cq() const { return server_->cqs_[cq_idx_]; }
+    size_t cq_idx() const { return cq_idx_; }
+
+   private:
+    Server* server_;
+    size_t cq_idx_;
+    RequestedCall* requested_call_;
   };
 
   // This function is invoked on an incoming promise based RPC.
@@ -294,18 +321,20 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       while (true) {
         NextPendingCall next_pending = pop_next_pending();
         if (next_pending.rc == nullptr) break;
-        auto mr = MatchResult{request_queue_index, next_pending.rc};
+        auto mr = MatchResult(server(), request_queue_index, next_pending.rc);
         Match(
             next_pending.pending,
-            [mr](CallData* calld) {
+            [&mr](CallData* calld) {
               if (!calld->MaybeActivate()) {
                 // Zombied Call
                 calld->KillZombie();
               } else {
-                calld->Publish(mr.cq_idx, mr.requested_call);
+                calld->Publish(mr.cq_idx(), mr.TakeCall());
               }
             },
-            [mr](const std::shared_ptr<ActivityWaiter>& w) { w->Finish(mr); });
+            [&mr](const std::shared_ptr<ActivityWaiter>& w) {
+              w->Finish(std::move(mr));
+            });
       }
     }
   }
@@ -357,7 +386,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
-        return Immediate(MatchResult{cq_idx, rc});
+        return Immediate(MatchResult(server(), cq_idx, rc));
       }
     }
     // No cq to take the request found; queue it on the slow list.
@@ -390,10 +419,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         };
       }
     }
-    return Immediate(MatchResult{cq_idx, rc});
+    return Immediate(MatchResult(server(), cq_idx, rc));
   }
 
-  Server* server() const override { return server_; }
+  Server* server() const final { return server_; }
 
  private:
   Server* const server_;
@@ -444,7 +473,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
     Crash("unreachable");
   }
 
-  Server* server() const override { return server_; }
+  Server* server() const final { return server_; }
 
   // Supply the completion queue related to this request matcher
   grpc_completion_queue* cq() const { return cq_; }
@@ -501,7 +530,7 @@ class Server::AllocatingRequestMatcherBatch
       RequestedCall* rc = new RequestedCall(
           static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
           call_info.initial_metadata, call_info.details);
-      return Immediate(MatchResult{cq_idx(), rc});
+      return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
       return Immediate(absl::InternalError("Server shutdown"));
     }
@@ -556,7 +585,7 @@ class Server::AllocatingRequestMatcherRegistered
           new RequestedCall(call_info.tag, call_info.cq, call_info.call,
                             call_info.initial_metadata, registered_method_,
                             call_info.deadline, call_info.optional_payload);
-      return Immediate(MatchResult{cq_idx(), rc});
+      return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
       return Immediate(absl::InternalError("Server shutdown"));
     }
@@ -1282,8 +1311,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
           absl::InternalError("Missing :authority header"));
     };
   }
-  // TODO(ctiller): deadline handling
-  Timestamp deadline = Timestamp::InfFuture();
+  Timestamp deadline = GetContext<CallContext>()->deadline();
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =
@@ -1309,19 +1337,19 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   return TrySeq(
       TryJoin(matcher->MatchRequest(chand->cq_idx()),
               std::move(maybe_read_first_message)),
-      [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
+      [path = std::move(*path), host_ptr, deadline,
        call_args = std::move(call_args)](
           std::tuple<RequestMatcherInterface::MatchResult,
                      NextResult<MessageHandle>>
               match_result_and_payload) mutable {
         auto& mr = std::get<0>(match_result_and_payload);
         auto& payload = std::get<1>(match_result_and_payload);
-        auto* rc = mr.requested_call;
-        auto* cq_for_new_request = server->cqs_[mr.cq_idx];
+        auto* rc = mr.TakeCall();
+        auto* cq_for_new_request = mr.cq();
         switch (rc->type) {
           case RequestedCall::Type::BATCH_CALL:
             GPR_ASSERT(!payload.has_value());
-            rc->data.batch.details->host = CSliceRef(host.c_slice());
+            rc->data.batch.details->host = CSliceRef(host_ptr->c_slice());
             rc->data.batch.details->method = CSliceRef(path.c_slice());
             rc->data.batch.details->deadline =
                 deadline.as_timespec(GPR_CLOCK_MONOTONIC);

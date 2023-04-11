@@ -1650,6 +1650,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/parsed_metadata.h )
   s.files += %w( src/core/lib/transport/pid_controller.cc )
   s.files += %w( src/core/lib/transport/pid_controller.h )
+  s.files += %w( src/core/lib/transport/simple_slice_based_metadata.h )
   s.files += %w( src/core/lib/transport/status_conversion.cc )
   s.files += %w( src/core/lib/transport/status_conversion.h )
   s.files += %w( src/core/lib/transport/tcp_connect_handshaker.cc )
