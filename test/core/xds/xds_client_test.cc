@@ -37,7 +37,7 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
