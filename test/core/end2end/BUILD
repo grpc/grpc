@@ -318,6 +318,7 @@ grpc_cc_test(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
