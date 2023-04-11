@@ -23,13 +23,10 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 

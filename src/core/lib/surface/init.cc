@@ -20,21 +20,15 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include <limits.h>
-
 #include "absl/base/thread_annotations.h"
-#include "channel_stack_type.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/forkable.h"
@@ -73,22 +67,19 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &grpc_core::ClientAuthFilter::kFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthFilter::kFilter)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &grpc_core::ClientAuthFilter::kFilter)
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &ClientAuthFilter::kFilter)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                       &grpc_core::ServerAuthFilter::kFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerAuthFilter::kFilter)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                       &grpc_core::GrpcServerAuthzFilter::kFilterVtable)
+                       &GrpcServerAuthzFilter::kFilterVtable)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After({&grpc_core::ServerAuthFilter::kFilter});
+      .After({&ServerAuthFilter::kFilter});
 }
 }  // namespace grpc_core
 
