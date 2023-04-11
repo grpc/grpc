@@ -151,10 +151,10 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// Returns the total number of bytes written since this object was created.
   int64_t ByteCount() const override { return byte_count_; }
 
-#ifdef GRPC_CORD_SUPPORT_ENABLED
+#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
   // Writes cord to the backing byte_buffer, sharing the memory between the
   // blocks of the cord, and the slices of the byte_buffer.
-  bool WriteCord(const absl::Cord& cord) override {
+  virtual bool WriteCord(const absl::Cord& cord) {
     grpc_slice_buffer* buffer = slice_buffer();
     size_t cur = 0;
     for (absl::string_view chunk : cord.Chunks()) {
@@ -180,7 +180,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     set_byte_count(ByteCount() + cur);
     return true;
   }
-#endif
+#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have
