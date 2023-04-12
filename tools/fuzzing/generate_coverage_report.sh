@@ -31,9 +31,9 @@ if [ -z ${1} ]; then
 fi
 
 RANDOM=$(date +%s)
-RANDOM_FILENAME=${RANDOM}
+FILENAME=${RANDOM}
 
-export LLVM_PROFILE_FILE=/tmp/${RANDOM_FILENAME}.profraw
+export LLVM_PROFILE_FILE=/tmp/${FILENAME}.profraw
 OUTPUT_BASE=$(bazel info output_base)
 MIDDLE="execroot/com_github_grpc_grpc/bazel-out/k8-dbg/bin"
 
@@ -55,14 +55,19 @@ bazel build --dynamic_mode=off --config=dbg --config=fuzzer_asan --config=covera
 # Run:
 ${TARGET_BINARY_PATH} ${@:2}
 
+if [ ! -e ${LLVM_PROFILE_FILE} ]; then
+  echo "Profile file ${LLVM_PROFILE_FILE} not created"
+  exit 1
+fi
+
 # Create coverage report:
-${LLVM_PROFDATA} merge -sparse ${LLVM_PROFILE_FILE} -o /tmp/${RANDOM_FILENAME}.profdata
-${LLVM_COV} report ${TARGET_BINARY_PATH} --format=text --instr-profile=/tmp/${RANDOM_FILENAME}.profdata > /tmp/${RANDOM_FILENAME}.cov
+${LLVM_PROFDATA} merge -sparse ${LLVM_PROFILE_FILE} -o /tmp/${FILENAME}.profdata
+${LLVM_COV} report ${TARGET_BINARY_PATH} --format=text --instr-profile=/tmp/${FILENAME}.profdata > /tmp/${FILENAME}.cov
 
 if [ $? -eq 0 ]; then
-  echo "Coverage summary report created: /tmp/${RANDOM_FILENAME}.cov"
-  echo "Merged profile data file:        /tmp/${RANDOM_FILENAME}.profdata"
-  echo "Raw profile data file:           /tmp/${RANDOM_FILENAME}.profraw"
+  echo "Coverage summary report created: /tmp/${FILENAME}.cov"
+  echo "Merged profile data file:        /tmp/${FILENAME}.profdata"
+  echo "Raw profile data file:           /tmp/${FILENAME}.profraw"
   echo "There are other ways to explore the data, see https://clang.llvm.org/docs/SourceBasedCodeCoverage.html#creating-coverage-reports"
 else
   echo "Something went wrong"
