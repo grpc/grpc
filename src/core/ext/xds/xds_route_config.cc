@@ -51,9 +51,9 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
-#include "upb/def.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/collections/map.h"
+#include "upb/text/encode.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

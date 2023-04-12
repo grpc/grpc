@@ -24,8 +24,8 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "upb/arena.h"
-#include "upb/def.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"

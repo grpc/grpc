@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "xds/annotations/v3/status.upbdefs.h"
 #include "xds/annotations/v3/status.upb.h"
 

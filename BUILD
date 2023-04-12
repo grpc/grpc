@@ -802,6 +802,7 @@ grpc_cc_library(
     external_deps = [
         "absl/synchronization",
         "protobuf_headers",
+        "protobuf",
     ],
     tags = [
         "avoid_dep",
@@ -949,6 +950,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
+        "upb_collections_lib",
         "upb_lib",
     ],
     language = "c++",
@@ -1147,7 +1149,10 @@ grpc_cc_library(
         "include/grpcpp/security/alts_context.h",
         "include/grpcpp/security/alts_util.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "upb_collections_lib",
+        "upb_lib",
+    ],
     language = "c++",
     standalone = True,
     visibility = ["@grpc:tsi"],
@@ -1960,6 +1965,7 @@ grpc_cc_library(
     name = "grpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
+        "protobuf",
     ],
     language = "c++",
     public_hdrs = [
@@ -1982,6 +1988,7 @@ grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
         "protobuf_headers",
+        "protobuf",
     ],
     language = "c++",
     public_hdrs = [
@@ -2860,6 +2867,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
+        "upb_collections_lib",
         "upb_lib",
     ],
     language = "c++",

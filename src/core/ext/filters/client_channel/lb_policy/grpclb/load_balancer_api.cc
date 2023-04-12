@@ -26,7 +26,7 @@
 
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>

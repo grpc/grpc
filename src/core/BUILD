@@ -3920,6 +3920,7 @@ grpc_cc_library(
         "upb_json_lib",
         "re2",
         "upb_reflection",
+        "upb_collections_lib",
     ],
     language = "c++",
     tags = ["nofixdeps"],

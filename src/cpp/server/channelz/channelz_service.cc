@@ -23,6 +23,9 @@
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
+// IWYU pragma: no_include "google/protobuf/json/json.h"
+// IWYU pragma: no_include "google/protobuf/util/json_util.h"
+
 // IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
 namespace grpc {
