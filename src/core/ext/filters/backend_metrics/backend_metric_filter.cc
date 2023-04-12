@@ -17,7 +17,6 @@
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stddef.h>
 
 #include <functional>
@@ -35,7 +34,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

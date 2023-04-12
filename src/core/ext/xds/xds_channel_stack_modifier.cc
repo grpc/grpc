@@ -20,7 +20,6 @@
 
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 
-#include <limits.h>
 #include <string.h>
 
 #include <algorithm>
@@ -29,7 +28,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
 namespace {

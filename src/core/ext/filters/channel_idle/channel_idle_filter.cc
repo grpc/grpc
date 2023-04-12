@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -46,7 +45,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 

@@ -2706,7 +2706,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -2874,7 +2873,6 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
-        "channel_stack_builder",
         "config",
         "config_vars",
         "debug_location",
@@ -3387,7 +3385,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc_base",
@@ -3399,7 +3396,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
-        "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
