@@ -783,6 +783,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
+        "//src/core:grpc_resolver_dns_plugin",
     ],
 )
 
@@ -2954,6 +2955,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
@@ -2996,12 +2998,10 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
-        "//src/core:json",
-        "//src/core:json_reader",
-        "//src/core:json_writer",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
+        "//src/core:service_config_helper",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",
