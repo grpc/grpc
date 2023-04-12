@@ -7,33 +7,40 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "xds/type/matcher/v3/cel.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 #include "xds/type/v3/cel.upb.h"
 #include "validate/validate.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Sub xds_type_matcher_v3_CelMatcher_submsgs[1] = {
-  {.submsg = &xds_type_v3_CelExpression_msginit},
+static const upb_MiniTableSub xds_type_matcher_v3_CelMatcher_submsgs[1] = {
+  {.submsg = &xds_type_v3_CelExpression_msg_init},
 };
 
-static const upb_MiniTable_Field xds_type_matcher_v3_CelMatcher__fields[1] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField xds_type_matcher_v3_CelMatcher__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable xds_type_matcher_v3_CelMatcher_msginit = {
+const upb_MiniTable xds_type_matcher_v3_CelMatcher_msg_init = {
   &xds_type_matcher_v3_CelMatcher_submsgs[0],
   &xds_type_matcher_v3_CelMatcher__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &xds_type_matcher_v3_CelMatcher_msginit,
+  &xds_type_matcher_v3_CelMatcher_msg_init,
 };
 
-const upb_MiniTable_File xds_type_matcher_v3_cel_proto_upb_file_layout = {
+const upb_MiniTableFile xds_type_matcher_v3_cel_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -42,5 +49,5 @@ const upb_MiniTable_File xds_type_matcher_v3_cel_proto_upb_file_layout = {
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
