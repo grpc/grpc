@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
 fi
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-16 ${IWYU_ROOT}/iwyu 
 if [ $? -ne 0 ]; then
   echo "Failed to cmake iwyu"
   exit 1
