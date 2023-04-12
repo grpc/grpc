@@ -28,10 +28,7 @@ Typical usage examples:
     # More information and usage options
     python -m bin.run_channelz --helpfull
 """
-import atexit
 import hashlib
-import signal
-import sys
 
 from absl import app
 from absl import flags
@@ -71,21 +68,6 @@ _Socket = grpc_channelz.Socket
 _ChannelState = grpc_channelz.ChannelState
 _XdsTestServer = server_app.XdsTestServer
 _XdsTestClient = client_app.XdsTestClient
-
-
-def _graceful_exit(server_runner: common.KubernetesServerRunner,
-                   client_runner: common.KubernetesClientRunner):
-    """Stop port forwarding processes."""
-    client_runner.stop_pod_dependencies()
-    server_runner.stop_pod_dependencies()
-
-
-def _ensure_atexit(signum, frame):
-    """Needed to handle signals or atexit handler won't be called."""
-    del frame
-    logger.warning('Caught %r, initiating graceful shutdown...\n',
-                   signal.Signals(signum))
-    sys.exit(1)
 
 
 def debug_cert(cert):
@@ -211,11 +193,8 @@ def main(argv):
         port_forwarding=should_port_forward,
         secure=is_secure)
     # Find server pod.
-    server_deployment: k8s.V1Deployment = server_runner.k8s_namespace.get_deployment(
-        xds_flags.SERVER_NAME.value)
-    server_pod_name: str = server_runner._wait_deployment_pod_count(
-        server_deployment)[0]
-    server_pod: k8s.V1Pod = server_runner._wait_pod_started(server_pod_name)
+    server_pod: k8s.V1Pod = common.get_server_pod(server_runner,
+                                                  xds_flags.SERVER_NAME.value)
 
     # Client
     client_namespace = common.make_client_namespace(k8s_api_manager)
@@ -225,18 +204,15 @@ def main(argv):
         port_forwarding=should_port_forward,
         secure=is_secure)
     # Find client pod.
-    client_deployment: k8s.V1Deployment = client_runner.k8s_namespace.get_deployment(
-        xds_flags.CLIENT_NAME.value)
-    client_pod_name: str = client_runner._wait_deployment_pod_count(
-        client_deployment)[0]
-    client_pod: k8s.V1Pod = client_runner._wait_pod_started(client_pod_name)
+    client_pod: k8s.V1Pod = common.get_client_pod(client_runner,
+                                                  xds_flags.CLIENT_NAME.value)
 
-    atexit.register(_graceful_exit, server_runner, client_runner)
-    for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
-        signal.signal(signum, _ensure_atexit)
+    # Ensure port forwarding stopped.
+    common.register_graceful_exit(server_runner, client_runner)
 
     # Create server app for the server pod.
-    test_server: _XdsTestServer = server_runner._xds_test_server_for_pod(
+    test_server: _XdsTestServer = common.get_test_server_for_pod(
+        server_runner,
         server_pod,
         test_port=xds_flags.SERVER_PORT.value,
         secure_mode=is_secure)
@@ -244,8 +220,8 @@ def main(argv):
                                 xds_flags.SERVER_XDS_PORT.value)
 
     # Create client app for the client pod.
-    test_client: _XdsTestClient = client_runner._xds_test_client_for_pod(
-        client_pod, server_target=test_server.xds_uri)
+    test_client: _XdsTestClient = common.get_test_client_for_pod(
+        client_runner, client_pod, server_target=test_server.xds_uri)
 
     with test_client, test_server:
         if _SECURITY.value in ('mtls', 'tls', 'plaintext'):

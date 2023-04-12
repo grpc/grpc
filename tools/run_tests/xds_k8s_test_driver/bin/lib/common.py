@@ -12,17 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common functionality for bin/ python helpers."""
+import atexit
+import signal
+import sys
+
+from absl import logging
 
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
+from framework.test_app import client_app
+from framework.test_app import server_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
+
+logger = logging.get_absl_logger()
 
 # Type aliases
 KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+_XdsTestServer = server_app.XdsTestServer
+_XdsTestClient = client_app.XdsTestClient
 
 
 def make_client_namespace(
@@ -93,3 +104,55 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
             deployment_template='server-secure.deployment.yaml')
 
     return KubernetesServerRunner(namespace, **runner_kwargs)
+
+
+def ensure_atexit(signum, frame):
+    """Needed to handle signals or atexit handler won't be called."""
+    del frame
+    logger.warning('Caught %r, initiating graceful shutdown...\n',
+                   signal.Signals(signum))
+    sys.exit(1)
+
+
+def graceful_exit(server_runner: KubernetesServerRunner,
+                  client_runner: KubernetesClientRunner):
+    """Stop port forwarding processes."""
+    client_runner.stop_pod_dependencies()
+    server_runner.stop_pod_dependencies()
+
+
+def register_graceful_exit(server_runner: KubernetesServerRunner,
+                           client_runner: KubernetesClientRunner):
+    atexit.register(graceful_exit, server_runner, client_runner)
+    for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+        signal.signal(signum, ensure_atexit)
+
+
+def get_client_pod(client_runner: KubernetesClientRunner,
+                   deployment_name: str) -> k8s.V1Pod:
+    client_deployment: k8s.V1Deployment
+    client_deployment = client_runner.k8s_namespace.get_deployment(
+        deployment_name)
+    client_pod_name: str = client_runner._wait_deployment_pod_count(
+        client_deployment)[0]
+    return client_runner._wait_pod_started(client_pod_name)
+
+
+def get_server_pod(server_runner: KubernetesServerRunner,
+                   deployment_name: str) -> k8s.V1Pod:
+    server_deployment: k8s.V1Deployment
+    server_deployment = server_runner.k8s_namespace.get_deployment(
+        deployment_name)
+    server_pod_name: str = server_runner._wait_deployment_pod_count(
+        server_deployment)[0]
+    return server_runner._wait_pod_started(server_pod_name)
+
+
+def get_test_server_for_pod(server_runner: KubernetesServerRunner,
+                            server_pod: k8s.V1Pod, **kwargs) -> _XdsTestServer:
+    return server_runner._xds_test_server_for_pod(server_pod, **kwargs)
+
+
+def get_test_client_for_pod(client_runner: KubernetesClientRunner,
+                            client_pod: k8s.V1Pod, **kwargs) -> _XdsTestClient:
+    return client_runner._xds_test_client_for_pod(client_pod, **kwargs)
