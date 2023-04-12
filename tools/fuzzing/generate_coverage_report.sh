@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash
 # Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +60,10 @@ ${LLVM_PROFDATA} merge -sparse ${LLVM_PROFILE_FILE} -o /tmp/${RANDOM_FILENAME}.p
 ${LLVM_COV} report ${TARGET_BINARY_PATH} --format=text --instr-profile=/tmp/${RANDOM_FILENAME}.profdata > /tmp/${RANDOM_FILENAME}.cov
 
 if [ $? -eq 0 ]; then
-  echo "Coverage summary report created at /tmp/${RANDOM_FILENAME}.cov"
+  echo "Coverage summary report created: /tmp/${RANDOM_FILENAME}.cov"
+  echo "Merged profile data file:        /tmp/${RANDOM_FILENAME}.profdata"
+  echo "Raw profile data file:           /tmp/${RANDOM_FILENAME}.profraw"
+  echo "There are other ways to explore the data, see https://clang.llvm.org/docs/SourceBasedCodeCoverage.html#creating-coverage-reports"
 else
   echo "Something went wrong"
   exit 1
