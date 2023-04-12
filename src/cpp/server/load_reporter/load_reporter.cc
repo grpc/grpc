@@ -36,6 +36,8 @@
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
+// IWYU pragma: no_include "google/protobuf/duration.pb.h"
+
 namespace grpc {
 namespace load_reporter {
 

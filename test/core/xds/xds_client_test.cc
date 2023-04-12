@@ -63,6 +63,8 @@
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>
 // IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
 // IWYU pragma: no_include <google/protobuf/util/json_util.h>
+// IWYU pragma: no_include "google/protobuf/json/json.h"
+// IWYU pragma: no_include "google/protobuf/util/json_util.h"
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;

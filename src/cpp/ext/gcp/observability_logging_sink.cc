@@ -50,6 +50,9 @@
 #include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
+// IWYU pragma: no_include "google/protobuf/struct.pb.h"
+// IWYU pragma: no_include "google/protobuf/timestamp.pb.h"
+
 namespace grpc {
 namespace internal {
 
