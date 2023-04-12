@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,8 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -74,11 +76,10 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
-      /* We were awoken from a kick. */
+      // We were awoken from a kick.
       return GRPC_IOCP_WORK_KICK;
     }
-    gpr_log(GPR_ERROR, "Unknown custom completion key.");
-    abort();
+    grpc_core::Crash("Unknown custom completion key.");
   }
 
   socket = (grpc_winsocket*)completion_key;
@@ -154,4 +155,4 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
   GPR_ASSERT(ret == g_iocp);
 }
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif  // GRPC_WINSOCK_SOCKET

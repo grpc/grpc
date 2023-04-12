@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
-#define GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
+#define GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,10 +26,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -52,13 +52,15 @@ class ServiceConfigParser {
 
     virtual absl::string_view name() const = 0;
 
-    virtual absl::StatusOr<std::unique_ptr<ParsedConfig>> ParseGlobalParams(
-        const ChannelArgs& /*args*/, const Json& /*json*/) {
+    virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
+        const ChannelArgs& /*args*/, const Json& /*json*/,
+        ValidationErrors* /*errors*/) {
       return nullptr;
     }
 
-    virtual absl::StatusOr<std::unique_ptr<ParsedConfig>> ParsePerMethodParams(
-        const ChannelArgs& /*args*/, const Json& /*json*/) {
+    virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
+        const ChannelArgs& /*args*/, const Json& /*json*/,
+        ValidationErrors* /*errors*/) {
       return nullptr;
     }
   };
@@ -80,11 +82,13 @@ class ServiceConfigParser {
     ServiceConfigParserList registered_parsers_;
   };
 
-  absl::StatusOr<ParsedConfigVector> ParseGlobalParameters(
-      const ChannelArgs& args, const Json& json) const;
+  ParsedConfigVector ParseGlobalParameters(const ChannelArgs& args,
+                                           const Json& json,
+                                           ValidationErrors* errors) const;
 
-  absl::StatusOr<ParsedConfigVector> ParsePerMethodParameters(
-      const ChannelArgs& args, const Json& json) const;
+  ParsedConfigVector ParsePerMethodParameters(const ChannelArgs& args,
+                                              const Json& json,
+                                              ValidationErrors* errors) const;
 
   // Return the index for a given registered parser.
   // If there is an error, return -1.
@@ -98,4 +102,4 @@ class ServiceConfigParser {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H */
+#endif  // GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H

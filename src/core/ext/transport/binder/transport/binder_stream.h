@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
 
 #include <grpc/support/port_platform.h>
 
@@ -68,10 +68,9 @@ struct grpc_binder_stream {
   }
 
   ~grpc_binder_stream() {
-    GRPC_ERROR_UNREF(cancel_self_error);
     if (destroy_stream_then_closure != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_then_closure,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
     }
   }
 
@@ -88,7 +87,7 @@ struct grpc_binder_stream {
   grpc_closure destroy_stream;
 
   // The reason why this stream is cancelled and closed.
-  grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_self_error;
 
   grpc_closure recv_initial_metadata_closure;
   RecvInitialMetadataArgs recv_initial_metadata_args;
@@ -115,4 +114,4 @@ struct grpc_binder_stream {
   bool need_to_call_trailing_metadata_callback = false;
 };
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H

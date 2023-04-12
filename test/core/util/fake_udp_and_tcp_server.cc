@@ -25,11 +25,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -37,6 +35,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -99,15 +99,15 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   }
   grpc_error_handle set_non_block_error;
   set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
-            grpc_error_std_string(set_non_block_error).c_str());
+            StatusToString(set_non_block_error).c_str());
     GPR_ASSERT(0);
   }
   set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
-            grpc_error_std_string(set_non_block_error).c_str());
+            StatusToString(set_non_block_error).c_str());
     GPR_ASSERT(0);
   }
 #else
@@ -154,7 +154,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     GPR_ASSERT(0);
   }
   gpr_event_init(&stop_ev_);
-  run_server_loop_thd_ = absl::make_unique<std::thread>(
+  run_server_loop_thd_ = std::make_unique<std::thread>(
       std::bind(&FakeUdpAndTcpServer::RunServerLoop, this));
 }
 
@@ -226,7 +226,7 @@ void FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::
       0x00,                   // flags
       0x00, 0x00, 0x00, 0x00  // stream identifier
   };
-  if (total_bytes_sent_ < int(kEmptyHttp2SettingsFrame.size())) {
+  if (total_bytes_sent_ < static_cast<int>(kEmptyHttp2SettingsFrame.size())) {
     int bytes_to_send = kEmptyHttp2SettingsFrame.size() - total_bytes_sent_;
     int bytes_sent =
         send(fd_, kEmptyHttp2SettingsFrame.data() + total_bytes_sent_,
@@ -259,9 +259,9 @@ void FakeUdpAndTcpServer::RunServerLoop() {
 #ifdef GPR_WINDOWS
       grpc_error_handle set_non_block_error;
       set_non_block_error = grpc_tcp_set_non_block(p);
-      if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+      if (!set_non_block_error.ok()) {
         gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
-                grpc_error_std_string(set_non_block_error).c_str());
+                StatusToString(set_non_block_error).c_str());
         GPR_ASSERT(0);
       }
 #else
@@ -271,7 +271,7 @@ void FakeUdpAndTcpServer::RunServerLoop() {
         GPR_ASSERT(0);
       }
 #endif
-      peers.insert(absl::make_unique<FakeUdpAndTcpServerPeer>(p));
+      peers.insert(std::make_unique<FakeUdpAndTcpServerPeer>(p));
     }
     auto it = peers.begin();
     while (it != peers.end()) {

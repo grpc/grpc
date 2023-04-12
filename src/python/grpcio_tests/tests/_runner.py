@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import collections
+import io
 import os
 import select
 import signal
@@ -24,9 +25,6 @@ import threading
 import time
 import unittest
 import uuid
-
-import six
-from six import moves
 
 from tests import _loader
 from tests import _result
@@ -79,7 +77,7 @@ class CaptureFile(object):
     Arguments:
       value (str): What to write to the original file.
     """
-        if six.PY3 and not isinstance(value, six.binary_type):
+        if not isinstance(value, bytes):
             value = value.encode('ascii')
         if self._saved_fd is None:
             os.write(self._redirect_fd, value)
@@ -147,7 +145,7 @@ class Runner(object):
         ]
         case_id_by_case = dict((augmented_case.case, augmented_case.id)
                                for augmented_case in augmented_cases)
-        result_out = moves.cStringIO()
+        result_out = io.StringIO()
         result = _result.TerminalResult(
             result_out, id_map=lambda case: case_id_by_case[case])
         stdout_pipe = CaptureFile(sys.stdout.fileno())

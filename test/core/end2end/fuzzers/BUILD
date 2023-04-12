@@ -28,6 +28,7 @@ grpc_proto_fuzzer(
     proto = "api_fuzzer.proto",
     proto_deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
     ],
     tags = [
         "no_mac",
@@ -38,8 +39,12 @@ grpc_proto_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -56,6 +61,8 @@ grpc_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -72,6 +79,7 @@ grpc_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

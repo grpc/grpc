@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
 #include <string>
@@ -28,7 +28,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class Scheduler {
  public:
@@ -36,6 +36,8 @@ class Scheduler {
   virtual void Run(absl::AnyInvocable<void()>) = 0;
   virtual ~Scheduler() = default;
 };
+
+class PosixEventPoller;
 
 class EventHandle {
  public:
@@ -79,6 +81,8 @@ class EventHandle {
   virtual void SetHasError() = 0;
   // Returns true if the handle has been shutdown.
   virtual bool IsHandleShutdown() = 0;
+  // Returns the poller which was used to create this handle.
+  virtual PosixEventPoller* Poller() = 0;
   virtual ~EventHandle() = default;
 };
 
@@ -87,6 +91,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
                                     bool track_err) = 0;
+  virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
   // only when no other poller method is in progress. For instance, it is
@@ -100,7 +105,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   ~PosixEventPoller() override = default;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H

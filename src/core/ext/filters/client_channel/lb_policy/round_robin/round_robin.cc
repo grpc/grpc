@@ -18,21 +18,23 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
@@ -45,7 +47,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -176,7 +177,7 @@ class RoundRobin : public LoadBalancingPolicy {
     // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
 
-    size_t last_picked_index_;
+    std::atomic<size_t> last_picked_index_;
     std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
   };
 
@@ -191,6 +192,8 @@ class RoundRobin : public LoadBalancingPolicy {
   RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
+
+  absl::BitGen bit_gen_;
 };
 
 //
@@ -209,27 +212,26 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
   // For discussion on why we generate a random starting index for
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-  // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
-  // something better as part of https://github.com/grpc/grpc/issues/17891.
-  last_picked_index_ = rand() % subchannels_.size();
+  size_t index =
+      absl::Uniform<size_t>(parent->bit_gen_, 0, subchannels_.size());
+  last_picked_index_.store(index, std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
-            parent_, this, subchannel_list, subchannels_.size(),
-            last_picked_index_);
+            parent_, this, subchannel_list, subchannels_.size(), index);
   }
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
-  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
+  size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed) %
+                 subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
-            parent_, this, last_picked_index_,
-            subchannels_[last_picked_index_].get());
+            parent_, this, index, subchannels_[index].get());
   }
-  return PickResult::Complete(subchannels_[last_picked_index_]);
+  return PickResult::Complete(subchannels_[index]);
 }
 
 //
@@ -307,7 +309,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
                             : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
@@ -316,7 +318,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
   return absl::OkStatus();
 }
@@ -357,12 +359,14 @@ void RoundRobin::RoundRobinSubchannelList::
   // If this is latest_pending_subchannel_list_, then swap it into
   // subchannel_list_ in the following cases:
   // - subchannel_list_ has no READY subchannels.
-  // - This list has at least one READY subchannel.
+  // - This list has at least one READY subchannel and we have seen the
+  //   initial connectivity state notification for all subchannels.
   // - All of the subchannels in this list are in TRANSIENT_FAILURE.
   //   (This may cause the channel to go from READY to TRANSIENT_FAILURE,
   //   but we're doing what the control plane told us to do.)
   if (p->latest_pending_subchannel_list_.get() == this &&
-      (p->subchannel_list_->num_ready_ == 0 || num_ready_ > 0 ||
+      (p->subchannel_list_->num_ready_ == 0 ||
+       (num_ready_ > 0 && AllSubchannelsSeenInitialState()) ||
        num_transient_failure_ == num_subchannels())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       const std::string old_counters_string =
@@ -387,8 +391,8 @@ void RoundRobin::RoundRobinSubchannelList::
       gpr_log(GPR_INFO, "[RR %p] reporting READY with subchannel list %p", p,
               this);
     }
-    p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, absl::Status(), absl::make_unique<Picker>(p, this));
+    p->channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
+                                             MakeRefCounted<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO, "[RR %p] reporting CONNECTING with subchannel list %p",
@@ -396,7 +400,7 @@ void RoundRobin::RoundRobinSubchannelList::
     }
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
@@ -410,7 +414,7 @@ void RoundRobin::RoundRobinSubchannelList::
     }
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
-        absl::make_unique<TransientFailurePicker>(last_failure_));
+        MakeRefCounted<TransientFailurePicker>(last_failure_));
   }
 }
 
@@ -525,7 +529,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RoundRobinFactory>());
+      std::make_unique<RoundRobinFactory>());
 }
 
 }  // namespace grpc_core

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <map>
 #include <string>
 #include <utility>
 
@@ -41,14 +40,16 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
 using grpc_core::Json;
 
-/* --- Constants. --- */
+// --- Constants. ---
 
-/* 1 hour max. */
+// 1 hour max.
 gpr_timespec grpc_max_auth_token_lifetime() {
   gpr_timespec out;
   out.tv_sec = 3600;
@@ -60,12 +61,12 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
 
-/* --- Override for testing. --- */
+// --- Override for testing. ---
 
 static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
     nullptr;
 
-/* --- grpc_auth_json_key. --- */
+// --- grpc_auth_json_key. ---
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
   return (json_key != nullptr) &&
@@ -77,11 +78,11 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
@@ -130,7 +131,7 @@ end:
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
   Json json;
-  auto json_or = Json::Parse(json_string);
+  auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
     gpr_log(GPR_ERROR, "JSON key parsing error: %s",
             json_or.status().ToString().c_str());
@@ -161,7 +162,7 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
   }
 }
 
-/* --- jwt encoding and signature. --- */
+// --- jwt encoding and signature. ---
 
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
   Json json = Json::Object{
@@ -169,7 +170,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
       {"typ", GRPC_JWT_TYPE},
       {"kid", key_id},
   };
-  std::string json_str = json.Dump();
+  std::string json_str = JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -192,12 +193,12 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   if (scope != nullptr) {
     object["scope"] = scope;
   } else {
-    /* Unscoped JWTs need a sub field. */
+    // Unscoped JWTs need a sub field.
     object["sub"] = json_key->client_email;
   }
 
   Json json(object);
-  std::string json_str = json.Dump();
+  std::string json_str = JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 

@@ -1,26 +1,28 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 
 #include <stddef.h>
+
+#include <initializer_list>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -43,27 +45,27 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
                      absl::string_view* port, bool* has_port) {
   *has_port = false;
   if (!name.empty() && name[0] == '[') {
-    /* Parse a bracketed host, typically an IPv6 literal. */
+    // Parse a bracketed host, typically an IPv6 literal.
     const size_t rbracket = name.find(']', 1);
     if (rbracket == absl::string_view::npos) {
-      /* Unmatched [ */
+      // Unmatched [
       return false;
     }
     if (rbracket == name.size() - 1) {
-      /* ]<end> */
+      // ]<end>
       *port = absl::string_view();
     } else if (name[rbracket + 1] == ':') {
-      /* ]:<port?> */
+      // ]:<port?>
       *port = name.substr(rbracket + 2, name.size() - rbracket - 2);
       *has_port = true;
     } else {
-      /* ]<invalid> */
+      // ]<invalid>
       return false;
     }
     *host = name.substr(1, rbracket - 1);
     if (host->find(':') == absl::string_view::npos) {
-      /* Require all bracketed hosts to contain a colon, because a hostname or
-         IPv4 address should never use brackets. */
+      // Require all bracketed hosts to contain a colon, because a hostname or
+      // IPv4 address should never use brackets.
       *host = absl::string_view();
       return false;
     }
@@ -71,12 +73,12 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
     size_t colon = name.find(':');
     if (colon != absl::string_view::npos &&
         name.find(':', colon + 1) == absl::string_view::npos) {
-      /* Exactly 1 colon.  Split into host:port. */
+      // Exactly 1 colon.  Split into host:port.
       *host = name.substr(0, colon);
       *port = name.substr(colon + 1, name.size() - colon - 1);
       *has_port = true;
     } else {
-      /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
+      // 0 or 2+ colons.  Bare hostname or IPv6 litearal.
       *host = name;
       *port = absl::string_view();
     }

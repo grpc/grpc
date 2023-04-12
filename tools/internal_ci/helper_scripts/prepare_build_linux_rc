@@ -36,12 +36,13 @@ else
   sudo service docker restart
 fi
 
-# Download Docker images from DockerHub
-export DOCKERHUB_ORGANIZATION=grpctesting
-
 git submodule update --init
 
 python3 -m pip install six
+
+# Allows the test driver to spin up a GDB subprocess and have it attach to
+# another subprocess of the test driver.
+sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 
 # check whether /tmpfs is mounted correctly
 (mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')

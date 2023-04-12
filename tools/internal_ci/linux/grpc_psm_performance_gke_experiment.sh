@@ -26,7 +26,7 @@ gcloud auth configure-docker
 
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod2 \
+gcloud container clusters get-credentials psm-benchmarks-performance \
     --zone us-central1-b --project grpc-testing
 
 # Set up environment variables.
@@ -47,19 +47,14 @@ GRPC_GITREF="$(git show --format="%H" --no-patch)"
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
     GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
 else
-    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+    GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
-
-# Update go version.
-TEST_INFRA_GOVERSION=go1.17.1
-go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
-"${TEST_INFRA_GOVERSION}" download
 
 # Clone test-infra repository and build all tools.
 pushd ..
@@ -67,7 +62,7 @@ git clone https://github.com/grpc/test-infra.git
 cd test-infra
 # Tools are built from HEAD.
 git checkout --detach
-make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
+make all-tools
 
 # Find latest release tag of test-infra.
 git fetch --all --tags

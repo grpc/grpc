@@ -1,0 +1,45 @@
+bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+actions {
+  start_watch {
+    resource_type {
+      route_config {}
+    }
+    resource_name: "route_config1"
+  }
+}
+actions {
+  read_message_from_client {
+    stream_id {
+      ads {}
+    }
+    ok: true
+  }
+}
+actions {
+  send_message_to_client {
+    stream_id {
+      ads {}
+    }
+    response {
+      version_info: "1"
+      nonce: "A"
+      type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+      resources {
+        [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
+          name: "route_config1"
+          virtual_hosts {
+            domains: "*"
+            routes {
+              match {
+                prefix: ""
+              }
+              route {
+                cluster: "cluster1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -28,6 +28,7 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 
 namespace grpc_binder {
@@ -62,10 +63,10 @@ class NoOpWritableParcel : public WritableParcel {
 // returns a TransactionReceiverForFuzzing.
 class BinderForFuzzing : public Binder {
  public:
-  BinderForFuzzing() : input_(absl::make_unique<NoOpWritableParcel>()) {}
+  BinderForFuzzing() : input_(std::make_unique<NoOpWritableParcel>()) {}
 
   explicit BinderForFuzzing(const binder_transport_fuzzer::IncomingParcels& p)
-      : incoming_parcels_(p), input_(absl::make_unique<NoOpWritableParcel>()) {}
+      : incoming_parcels_(p), input_(std::make_unique<NoOpWritableParcel>()) {}
 
   void Initialize() override {}
   absl::Status PrepareTransaction() override { return absl::OkStatus(); }

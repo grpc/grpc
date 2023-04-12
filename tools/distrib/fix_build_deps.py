@@ -34,7 +34,6 @@ avoidness = collections.defaultdict(int)
 consumes = {}
 no_update = set()
 buildozer_commands = []
-needs_codegen_base_src = set()
 original_deps = {}
 original_external_deps = {}
 skip_headers = collections.defaultdict(set)
@@ -69,6 +68,8 @@ EXTERNAL_DEPS = {
         'absl/debugging:symbolize',
     'absl/flags/flag.h':
         'absl/flags:flag',
+    'absl/flags/marshalling.h':
+        'absl/flags:marshalling',
     'absl/flags/parse.h':
         'absl/flags:parse',
     'absl/functional/any_invocable.h':
@@ -83,9 +84,13 @@ EXTERNAL_DEPS = {
         'absl/memory',
     'absl/meta/type_traits.h':
         'absl/meta:type_traits',
+    'absl/numeric/int128.h':
+        'absl/numeric:int128',
     'absl/random/random.h':
         'absl/random',
     'absl/random/distributions.h':
+        'absl/random:distributions',
+    'absl/random/uniform_int_distribution.h':
         'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',
@@ -137,16 +142,35 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
+    'fuzztest/fuzztest.h': ['fuzztest', 'fuzztest_main'],
+    'google/api/monitored_resource.pb.h':
+        'google/api:monitored_resource_cc_proto',
+    'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
+        'googleapis_trace_grpc_service',
+    'google/logging/v2/logging.grpc.pb.h':
+        'googleapis_logging_grpc_service',
+    'google/logging/v2/logging.pb.h':
+        'googleapis_logging_cc_proto',
+    'google/logging/v2/log_entry.pb.h':
+        'googleapis_logging_cc_proto',
+    'google/monitoring/v3/metric_service.grpc.pb.h':
+        'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':
         'gtest',
     'gtest/gtest.h':
         'gtest',
+    'opencensus/exporters/stats/stackdriver/stackdriver_exporter.h':
+        'opencensus-stats-stackdriver_exporter',
+    'opencensus/exporters/trace/stackdriver/stackdriver_exporter.h':
+        'opencensus-trace-stackdriver_exporter',
     'opencensus/trace/context_util.h':
         'opencensus-trace-context_util',
     'opencensus/trace/propagation/grpc_trace_bin.h':
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'opencensus/trace/span_context.h':
+        'opencensus-trace-span_context',
     'openssl/base.h':
         'libssl',
     'openssl/bio.h':
@@ -234,6 +258,8 @@ INTERNAL_DEPS = {
         '//src/proto/grpc/reflection/v1alpha:reflection_proto',
     'src/proto/grpc/gcp/transport_security_common.upb.h':
         'alts_upb',
+    'src/proto/grpc/gcp/handshaker.upb.h':
+        'alts_upb',
     'src/proto/grpc/gcp/altscontext.upb.h':
         'alts_upb',
     'src/proto/grpc/lookup/v1/rls.upb.h':
@@ -262,6 +288,18 @@ class FakeSelects:
 num_cc_libraries = 0
 num_opted_out_cc_libraries = 0
 parsing_path = None
+
+
+# Convert the source or header target to a relative path.
+def _get_filename(name, parsing_path):
+    filename = '%s%s' % (
+        (parsing_path + '/' if
+         (parsing_path and not name.startswith('//')) else ''), name)
+    filename = filename.replace('//:', '')
+    filename = filename.replace('//src/core:', 'src/core/')
+    filename = filename.replace('//src/cpp/ext/filters/census:',
+                                'src/cpp/ext/filters/census/')
+    return filename
 
 
 def grpc_cc_library(name,
@@ -296,24 +334,30 @@ def grpc_cc_library(name,
         proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''),
                               proto.replace('.proto', '.pb.h'))
         skip_headers[name].add(proto_hdr)
+
     for hdr in hdrs + public_hdrs:
-        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
-        vendors[filename].append(name)
+        vendors[_get_filename(hdr, parsing_path)].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
-        for line in open(filename):
+        for line in open(_get_filename(src, parsing_path)):
             m = re.search(r'^#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
             m = re.search(r'^#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
-            if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
-                needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
+
+
+def grpc_proto_library(name, srcs, **kwargs):
+    global parsing_path
+    assert (parsing_path is not None)
+    name = '//%s:%s' % (parsing_path, name)
+    for src in srcs:
+        proto_hdr = src.replace('.proto', '.pb.h')
+        vendors[_get_filename(proto_hdr, parsing_path)].append(name)
 
 
 def buildozer(cmd, target):
@@ -395,12 +439,18 @@ args = parser.parse_args()
 
 for dirname in [
         "",
+        "src/core",
         "src/cpp/ext/gcp",
+        "test/core/backoff",
         "test/core/uri",
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
+        "test/core/filters",
+        "test/core/promise",
         "test/core/resource_quota",
+        "test/core/transport/chaotic_good",
+        "fuzztest",
 ]:
     parsing_path = dirname
     exec(
@@ -408,7 +458,7 @@ for dirname in [
             'load': lambda filename, *args: None,
             'licenses': lambda licenses: None,
             'package': lambda **kwargs: None,
-            'exports_files': lambda files: None,
+            'exports_files': lambda files, visibility=None: None,
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
@@ -416,8 +466,11 @@ for dirname in [
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
+            'grpc_fuzz_test': grpc_cc_library,
             'grpc_proto_fuzzer': grpc_cc_library,
+            'grpc_proto_library': grpc_proto_library,
             'select': lambda d: d["//conditions:default"],
+            'glob': lambda files: None,
             'grpc_end2end_tests': lambda: None,
             'grpc_upb_proto_library': lambda name, **kwargs: None,
             'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
@@ -498,7 +551,10 @@ class Choices:
             choices = new_choices
 
         best = None
-        final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
+
+        def final_scorer(x):
+            return (total_avoidness(x), scorer(x), total_score(x))
+
         for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
@@ -510,12 +566,15 @@ def make_library(library):
     hdrs = sorted(consumes[library])
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
-    # once event engine lands we can clean this up
+    # once EventEngine lands we can clean this up
     deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
                    if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
     for hdr in hdrs:
         if hdr in skip_headers[library]:
+            continue
+
+        if hdr == 'systemd/sd-daemon.h':
             continue
 
         if hdr == 'src/core/lib/profiling/stap_probes.h':
@@ -524,16 +583,20 @@ def make_library(library):
         if hdr.startswith('src/libfuzzer/'):
             continue
 
-        if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
+        if hdr == 'grpc/grpc.h' and library.startswith('//test:'):
             # not the root build including grpc.h ==> //:grpc
             deps.add_one_of(['//:grpc', '//:grpc_unsecure'], hdr)
             continue
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not dep.startswith('//'):
-                dep = '//:' + dep
-            deps.add(dep, hdr)
+            if isinstance(dep, list):
+                for d in dep:
+                    deps.add(d, hdr)
+            else:
+                if not ('//' in dep):
+                    dep = '//:' + dep
+                deps.add(dep, hdr)
             continue
 
         if hdr in vendors:
@@ -549,7 +612,11 @@ def make_library(library):
             continue
 
         if hdr in EXTERNAL_DEPS:
-            external_deps.add(EXTERNAL_DEPS[hdr], hdr)
+            if isinstance(EXTERNAL_DEPS[hdr], list):
+                for dep in EXTERNAL_DEPS[hdr]:
+                    external_deps.add(dep, hdr)
+            else:
+                external_deps.add(EXTERNAL_DEPS[hdr], hdr)
             continue
 
         if hdr.startswith('opencensus/'):
@@ -597,9 +664,6 @@ def make_library(library):
               (hdr, library))
         error = True
 
-    if library in needs_codegen_base_src:
-        deps.add('grpc++_codegen_base_src', '#needs_codegen_base_src')
-
     deps.remove(library)
 
     deps = sorted(
@@ -611,25 +675,30 @@ def make_library(library):
     return (library, error, deps, external_deps)
 
 
-update_libraries = []
-for library in sorted(consumes.keys()):
-    if library in no_update:
-        continue
-    if args.targets and library not in args.targets:
-        continue
-    update_libraries.append(library)
-with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
-    updated_libraries = p.map(make_library, update_libraries, 1)
+def main() -> None:
+    update_libraries = []
+    for library in sorted(consumes.keys()):
+        if library in no_update:
+            continue
+        if args.targets and library not in args.targets:
+            continue
+        update_libraries.append(library)
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
+        updated_libraries = p.map(make_library, update_libraries, 1)
 
-error = False
-for library, lib_error, deps, external_deps in updated_libraries:
-    if lib_error:
-        error = True
-        continue
-    buildozer_set_list('external_deps', external_deps, library, via='deps')
-    buildozer_set_list('deps', deps, library)
+    error = False
+    for library, lib_error, deps, external_deps in updated_libraries:
+        if lib_error:
+            error = True
+            continue
+        buildozer_set_list('external_deps', external_deps, library, via='deps')
+        buildozer_set_list('deps', deps, library)
 
-run_buildozer.run_buildozer(buildozer_commands)
+    run_buildozer.run_buildozer(buildozer_commands)
 
-if error:
-    sys.exit(1)
+    if error:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -28,6 +28,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:idle_filter_state",
+        "//src/core:idle_filter_state",
     ],
 )

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+FROM silkeh/clang:15-bullseye
 
 ADD clang_format_all_the_things.sh /
 

@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
 #include <grpc/support/port_platform.h>
-
-#include <stddef.h>
 
 #include <array>
 #include <cassert>
@@ -26,34 +24,16 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {
-
-// Given f0, ..., fn, call function idx and return the result.
-template <typename R, typename A, R (*... f)(A* arg)>
-class JumpTable {
- public:
-  JumpTable() = delete;
-  JumpTable(const JumpTable&) = delete;
-
-  static R Run(size_t idx, A* arg) { return fs_[idx](arg); }
-
- private:
-  using Fn = R (*)(A* arg);
-  static const Fn fs_[sizeof...(f)];
-};
-
-template <typename R, typename A, R (*... f)(A* arg)>
-const typename JumpTable<R, A, f...>::Fn
-    JumpTable<R, A, f...>::fs_[sizeof...(f)] = {f...};
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -68,7 +48,7 @@ struct SeqStateTypes {
   // Wrap the factory callable in our factory wrapper to deal with common edge
   // cases. We use the 'unwrapped type' from the traits, so for instance, TrySeq
   // can pass back a T from a StatusOr<T>.
-  using Next = promise_detail::PromiseFactory<
+  using Next = promise_detail::OncePromiseFactory<
       typename PromiseResultTraits::UnwrappedType, FNext>;
 };
 
@@ -187,7 +167,7 @@ auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
       &state->next_factory, std::forward<T>(arg));
 }
 
-// A sequence under stome traits for some set of callables Fs.
+// A sequence under some traits for some set of callables Fs.
 // Fs[0] should be a promise-like object that yields a value.
 // Fs[1..] should be promise-factory-like objects that take the value from the
 // previous step and yield a promise. Note that most of the machinery in
@@ -295,18 +275,15 @@ class BasicSeq {
     // Poll the current promise in this state.
     auto r = s->current_promise();
     // If we are still pending, say so by returning.
-    if (absl::holds_alternative<Pending>(r)) {
-      return Pending();
-    }
+    if (r.pending()) return Pending();
     // Current promise is ready, as the traits to do the next thing.
     // That may be returning - eg if TrySeq sees an error.
     // Or it may be by calling the callable we hand down - RunNext - which
     // will advance the state and call the next promise.
     return Traits<
         typename absl::remove_reference_t<decltype(*s)>::Types::PromiseResult>::
-        template CheckResultAndRunNext<Result>(
-            std::move(absl::get<kPollReadyIdx>(std::move(r))),
-            RunNext<I>{this});
+        template CheckResultAndRunNext<Result>(std::move(r.value()),
+                                               RunNext<I>{this});
   }
 
   // Specialization of RunState to run the final state.
@@ -315,11 +292,9 @@ class BasicSeq {
     // Poll the final promise.
     auto r = final_promise_();
     // If we are still pending, say so by returning.
-    if (absl::holds_alternative<Pending>(r)) {
-      return Pending();
-    }
+    if (r.pending()) return Pending();
     // We are complete, return the (wrapped) result.
-    return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
+    return Result(std::move(r.value()));
   }
 
   // For state numbered I, destruct the current promise and the next promise
@@ -353,14 +328,16 @@ class BasicSeq {
   // parameter unpacking can work.
   template <char I>
   struct RunStateStruct {
-    static Poll<Result> Run(BasicSeq* s) { return s->RunState<I>(); }
+    BasicSeq* s;
+    Poll<Result> operator()() { return s->RunState<I>(); }
   };
 
   // Similarly placate those compilers for
   // DestructCurrentPromiseAndSubsequentFactories
   template <char I>
   struct DestructCurrentPromiseAndSubsequentFactoriesStruct {
-    static void Run(BasicSeq* s) {
+    BasicSeq* s;
+    void operator()() {
       return s->DestructCurrentPromiseAndSubsequentFactories<I>();
     }
   };
@@ -373,8 +350,7 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return JumpTable<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>::Run(
-        state_, this);
+    return Switch<Poll<Result>>(state_, RunStateStruct<I>{this}...);
   }
 
   // Run the appropriate destructors for a given state.
@@ -384,9 +360,8 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    JumpTable<void, BasicSeq,
-              DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>::
-        Run(state_, this);
+    Switch<void>(
+        state_, DestructCurrentPromiseAndSubsequentFactoriesStruct<I>{this}...);
   }
 
  public:
@@ -485,9 +460,9 @@ class BasicSeqIter {
  private:
   Poll<Wrapped> PollNonEmpty() {
     Poll<Wrapped> r = state_();
-    if (absl::holds_alternative<Pending>(r)) return r;
+    if (r.pending()) return r;
     return Traits::template CheckResultAndRunNext<Wrapped>(
-        std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
+        std::move(r.value()), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
           if (next == end_) {
@@ -513,4 +488,4 @@ class BasicSeqIter {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H

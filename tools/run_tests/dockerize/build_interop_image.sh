@@ -79,23 +79,9 @@ then
   MOUNT_ARGS+=" -v $HOME/service_account:/var/local/jenkins/service_account:ro"
 fi
 
-# Use image name based on Dockerfile checksum
-# on OSX use md5 instead of sha1sum
-if command -v sha1sum > /dev/null;
-then
-  BASE_IMAGE=${BASE_NAME}:$(sha1sum "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
-else
-  BASE_IMAGE=${BASE_NAME}:$(md5 -r "tools/dockerfile/interoptest/$BASE_NAME/Dockerfile" | cut -f1 -d\ )
-fi
-
-if [ "$DOCKERHUB_ORGANIZATION" != "" ]
-then
-  BASE_IMAGE=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
-  time docker pull "$BASE_IMAGE"
-else
-  # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
-fi
+BASE_IMAGE_DIR="tools/dockerfile/interoptest/$BASE_NAME"
+# The exact base docker image to use and its version is determined by the corresponding .current_version file
+BASE_IMAGE="$(cat "${BASE_IMAGE_DIR}.current_version")"
 
 # If TTY is available, the running container can be conveniently terminated with Ctrl+C.
 if [[ -t 0 ]]; then

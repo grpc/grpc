@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
 
@@ -87,24 +87,25 @@ grpc_cc_library(
     language = "C++",
     tags = ["nofixdeps"],
     deps = [
-        "//:arena",
         "//:debug_location",
         "//:gpr",
-        "//:grpc_authorization_base",
         "//:grpc_base",
         "//:grpc_security_base",
-        "//:grpc_sockaddr",
         "//:grpc_trace",
-        "//:iomgr_fwd",
         "//:iomgr_timer",
-        "//:memory_quota",
         "//:ref_counted_ptr",
-        "//:resolved_address",
-        "//:resource_quota",
-        "//:slice",
-        "//:slice_refcount",
-        "//:time",
-        "//:useful",
+        "//src/core:arena",
+        "//src/core:closure",
+        "//src/core:grpc_authorization_base",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_fwd",
+        "//src/core:memory_quota",
+        "//src/core:resolved_address",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//src/core:slice_refcount",
+        "//src/core:time",
+        "//src/core:useful",
     ],
 )
 
@@ -124,28 +125,33 @@ grpc_cc_library(
     deps = [
         "build",
         "stack_tracer",
-        "//:channel_args_preconditioning",
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
-        "//:gpr_atm",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
-        "//:grpc_sockaddr",
-        "//:grpc_trace",
         "//:httpcli",
-        "//:iomgr_fwd",
-        "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:resolved_address",
-        "//:slice",
-        "//:slice_refcount",
-        "//:time",
         "//:tsi_ssl_credentials",
         "//:uri_parser",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:gpr_atm",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_fwd",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
+        "//src/core:slice",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+        "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -163,23 +169,29 @@ grpc_cc_library(
     deps = [
         "build",
         "stack_tracer",
-        "//:channel_args_preconditioning",
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
-        "//:gpr_atm",
         "//:grpc_security_base",
-        "//:grpc_sockaddr",
         "//:grpc_unsecure",
         "//:httpcli",
-        "//:iomgr_fwd",
-        "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:resolved_address",
-        "//:time",
         "//:uri_parser",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:gpr_atm",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_fwd",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
+        "//src/core:status_helper",
+        "//src/core:time",
         "//test/core/event_engine:test_init",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -193,7 +205,7 @@ grpc_cc_test(
         "grpc_test_util",
         "grpc_test_util_base",
         "//:gpr",
-        "//:useful",
+        "//src/core:useful",
     ],
 )
 
@@ -251,8 +263,8 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//:examine_stack",
         "//:gpr_platform",
+        "//src/core:examine_stack",
     ],
 )
 
@@ -283,7 +295,6 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -293,21 +304,25 @@ grpc_cc_library(
         "//:config",
         "//:gpr",
         "//:grpc",
-        "//:grpc_backend_metric_data",
         "//:grpc_client_channel",
-        "//:json",
-        "//:json_util",
-        "//:lb_policy",
-        "//:lb_policy_factory",
-        "//:lb_policy_registry",
         "//:orphanable",
-        "//:pollset_set",
+        "//:parse_address",
         "//:ref_counted_ptr",
-        "//:resolved_address",
         "//:server_address",
-        "//:subchannel_interface",
-        "//:time",
         "//:uri_parser",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:grpc_backend_metric_data",
+        "//src/core:json",
+        "//src/core:json_util",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_factory",
+        "//src/core:lb_policy_registry",
+        "//src/core:pollset_set",
+        "//src/core:resolved_address",
+        "//src/core:status_helper",
+        "//src/core:subchannel_interface",
+        "//src/core:time",
     ],
 )
 
@@ -316,7 +331,6 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -325,8 +339,26 @@ grpc_cc_library(
         "grpc_test_util",
         "//:gpr",
         "//:grpc",
-        "//:resolved_address",
         "//:sockaddr_utils",
+        "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_udp_and_tcp_server_unsecure",
+    srcs = ["fake_udp_and_tcp_server.cc"],
+    hdrs = ["fake_udp_and_tcp_server.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//:sockaddr_utils",
+        "//src/core:resolved_address",
     ],
 )
 
@@ -334,4 +366,32 @@ grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
+)
+
+grpc_cc_library(
+    name = "scoped_env_var",
+    testonly = True,
+    hdrs = ["scoped_env_var.h"],
+    deps = [
+        "//:gpr_platform",
+        "//src/core:env",
+    ],
+)
+
+grpc_proto_library(
+    name = "fuzz_config_vars_proto",
+    srcs = ["fuzz_config_vars.proto"],
+    has_services = False,
+)
+
+grpc_cc_library(
+    name = "fuzz_config_vars",
+    srcs = ["fuzz_config_vars.cc"],
+    hdrs = ["fuzz_config_vars.h"],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "fuzz_config_vars_proto",
+        "//:config_vars",
+        "//:gpr_platform",
+    ],
 )

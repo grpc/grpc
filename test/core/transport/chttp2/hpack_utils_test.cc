@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <random>
 #include <unordered_map>
@@ -49,8 +49,8 @@ static void VerifyBinaryHeaderSize(const char* key, const uint8_t* value,
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
-  grpc_slice_unref_internal(value_slice);
-  grpc_slice_unref_internal(base64_encoded);
+  grpc_slice_unref(value_slice);
+  grpc_slice_unref(base64_encoded);
   GRPC_MDELEM_UNREF(elem);
 }
 

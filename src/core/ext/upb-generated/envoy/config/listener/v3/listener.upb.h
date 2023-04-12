@@ -27,6 +27,9 @@ struct envoy_config_listener_v3_Listener_DeprecatedV1;
 struct envoy_config_listener_v3_Listener_ConnectionBalanceConfig;
 struct envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance;
 struct envoy_config_listener_v3_Listener_InternalListenerConfig;
+struct envoy_config_listener_v3_ListenerManager;
+struct envoy_config_listener_v3_ValidationListenerManager;
+struct envoy_config_listener_v3_ApiListenerManager;
 typedef struct envoy_config_listener_v3_AdditionalAddress envoy_config_listener_v3_AdditionalAddress;
 typedef struct envoy_config_listener_v3_ListenerCollection envoy_config_listener_v3_ListenerCollection;
 typedef struct envoy_config_listener_v3_Listener envoy_config_listener_v3_Listener;
@@ -34,6 +37,9 @@ typedef struct envoy_config_listener_v3_Listener_DeprecatedV1 envoy_config_liste
 typedef struct envoy_config_listener_v3_Listener_ConnectionBalanceConfig envoy_config_listener_v3_Listener_ConnectionBalanceConfig;
 typedef struct envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance;
 typedef struct envoy_config_listener_v3_Listener_InternalListenerConfig envoy_config_listener_v3_Listener_InternalListenerConfig;
+typedef struct envoy_config_listener_v3_ListenerManager envoy_config_listener_v3_ListenerManager;
+typedef struct envoy_config_listener_v3_ValidationListenerManager envoy_config_listener_v3_ValidationListenerManager;
+typedef struct envoy_config_listener_v3_ApiListenerManager envoy_config_listener_v3_ApiListenerManager;
 extern const upb_MiniTable envoy_config_listener_v3_AdditionalAddress_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_ListenerCollection_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_Listener_msginit;
@@ -41,10 +47,14 @@ extern const upb_MiniTable envoy_config_listener_v3_Listener_DeprecatedV1_msgini
 extern const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_Listener_InternalListenerConfig_msginit;
+extern const upb_MiniTable envoy_config_listener_v3_ListenerManager_msginit;
+extern const upb_MiniTable envoy_config_listener_v3_ValidationListenerManager_msginit;
+extern const upb_MiniTable envoy_config_listener_v3_ApiListenerManager_msginit;
 struct envoy_config_accesslog_v3_AccessLog;
 struct envoy_config_core_v3_Address;
 struct envoy_config_core_v3_Metadata;
 struct envoy_config_core_v3_SocketOption;
+struct envoy_config_core_v3_SocketOptionsOverride;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_listener_v3_ApiListener;
 struct envoy_config_listener_v3_FilterChain;
@@ -59,6 +69,7 @@ extern const upb_MiniTable envoy_config_accesslog_v3_AccessLog_msginit;
 extern const upb_MiniTable envoy_config_core_v3_Address_msginit;
 extern const upb_MiniTable envoy_config_core_v3_Metadata_msginit;
 extern const upb_MiniTable envoy_config_core_v3_SocketOption_msginit;
+extern const upb_MiniTable envoy_config_core_v3_SocketOptionsOverride_msginit;
 extern const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_ApiListener_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_FilterChain_msginit;
@@ -121,6 +132,15 @@ UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_clear_address(const e
 UPB_INLINE const struct envoy_config_core_v3_Address* envoy_config_listener_v3_AdditionalAddress_address(const envoy_config_listener_v3_AdditionalAddress* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_Address*);
 }
+UPB_INLINE bool envoy_config_listener_v3_AdditionalAddress_has_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_clear_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_SocketOptionsOverride* envoy_config_listener_v3_AdditionalAddress_socket_options(const envoy_config_listener_v3_AdditionalAddress* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_core_v3_SocketOptionsOverride*);
+}
 
 UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_set_address(envoy_config_listener_v3_AdditionalAddress *msg, struct envoy_config_core_v3_Address* value) {
   _upb_sethas(msg, 1);
@@ -132,6 +152,19 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_listener_v3_Additio
     sub = (struct envoy_config_core_v3_Address*)_upb_Message_New(&envoy_config_core_v3_Address_msginit, arena);
     if (!sub) return NULL;
     envoy_config_listener_v3_AdditionalAddress_set_address(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_listener_v3_AdditionalAddress_set_socket_options(envoy_config_listener_v3_AdditionalAddress *msg, struct envoy_config_core_v3_SocketOptionsOverride* value) {
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_core_v3_SocketOptionsOverride*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_SocketOptionsOverride* envoy_config_listener_v3_AdditionalAddress_mutable_socket_options(envoy_config_listener_v3_AdditionalAddress* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_SocketOptionsOverride* sub = (struct envoy_config_core_v3_SocketOptionsOverride*)envoy_config_listener_v3_AdditionalAddress_socket_options(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_SocketOptionsOverride*)_upb_Message_New(&envoy_config_core_v3_SocketOptionsOverride_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_listener_v3_AdditionalAddress_set_socket_options(msg, sub);
   }
   return sub;
 }
@@ -1026,6 +1059,117 @@ UPB_INLINE char* envoy_config_listener_v3_Listener_InternalListenerConfig_serial
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(msg, &envoy_config_listener_v3_Listener_InternalListenerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+
+
+/* envoy.config.listener.v3.ListenerManager */
+
+UPB_INLINE envoy_config_listener_v3_ListenerManager* envoy_config_listener_v3_ListenerManager_new(upb_Arena* arena) {
+  return (envoy_config_listener_v3_ListenerManager*)_upb_Message_New(&envoy_config_listener_v3_ListenerManager_msginit, arena);
+}
+UPB_INLINE envoy_config_listener_v3_ListenerManager* envoy_config_listener_v3_ListenerManager_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_listener_v3_ListenerManager* ret = envoy_config_listener_v3_ListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ListenerManager_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_listener_v3_ListenerManager* envoy_config_listener_v3_ListenerManager_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_listener_v3_ListenerManager* ret = envoy_config_listener_v3_ListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ListenerManager_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_listener_v3_ListenerManager_serialize(const envoy_config_listener_v3_ListenerManager* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ListenerManager_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_listener_v3_ListenerManager_serialize_ex(const envoy_config_listener_v3_ListenerManager* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ListenerManager_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+
+
+/* envoy.config.listener.v3.ValidationListenerManager */
+
+UPB_INLINE envoy_config_listener_v3_ValidationListenerManager* envoy_config_listener_v3_ValidationListenerManager_new(upb_Arena* arena) {
+  return (envoy_config_listener_v3_ValidationListenerManager*)_upb_Message_New(&envoy_config_listener_v3_ValidationListenerManager_msginit, arena);
+}
+UPB_INLINE envoy_config_listener_v3_ValidationListenerManager* envoy_config_listener_v3_ValidationListenerManager_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_listener_v3_ValidationListenerManager* ret = envoy_config_listener_v3_ValidationListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ValidationListenerManager_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_listener_v3_ValidationListenerManager* envoy_config_listener_v3_ValidationListenerManager_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_listener_v3_ValidationListenerManager* ret = envoy_config_listener_v3_ValidationListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ValidationListenerManager_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_listener_v3_ValidationListenerManager_serialize(const envoy_config_listener_v3_ValidationListenerManager* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ValidationListenerManager_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_listener_v3_ValidationListenerManager_serialize_ex(const envoy_config_listener_v3_ValidationListenerManager* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ValidationListenerManager_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+
+
+/* envoy.config.listener.v3.ApiListenerManager */
+
+UPB_INLINE envoy_config_listener_v3_ApiListenerManager* envoy_config_listener_v3_ApiListenerManager_new(upb_Arena* arena) {
+  return (envoy_config_listener_v3_ApiListenerManager*)_upb_Message_New(&envoy_config_listener_v3_ApiListenerManager_msginit, arena);
+}
+UPB_INLINE envoy_config_listener_v3_ApiListenerManager* envoy_config_listener_v3_ApiListenerManager_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_listener_v3_ApiListenerManager* ret = envoy_config_listener_v3_ApiListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ApiListenerManager_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_listener_v3_ApiListenerManager* envoy_config_listener_v3_ApiListenerManager_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_listener_v3_ApiListenerManager* ret = envoy_config_listener_v3_ApiListenerManager_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_listener_v3_ApiListenerManager_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_listener_v3_ApiListenerManager_serialize(const envoy_config_listener_v3_ApiListenerManager* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ApiListenerManager_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_listener_v3_ApiListenerManager_serialize_ex(const envoy_config_listener_v3_ApiListenerManager* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ApiListenerManager_msginit, options, arena, &ptr, len);
   return ptr;
 }
 

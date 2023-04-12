@@ -16,17 +16,14 @@
 
 #include <stdlib.h>
 
-#include <atomic>
-#include <chrono>
 #include <functional>
-#include <thread>
 #include <tuple>
-#include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/wait_set.h"
@@ -128,12 +125,12 @@ TEST(ActivityTest, DropImmediately) {
 }
 
 template <typename B>
-class BarrierTest : public testing::Test {
+class BarrierTest : public ::testing::Test {
  public:
   using Type = B;
 };
 
-using BarrierTestTypes = testing::Types<Barrier, SingleBarrier>;
+using BarrierTestTypes = ::testing::Types<Barrier, SingleBarrier>;
 TYPED_TEST_SUITE(BarrierTest, BarrierTestTypes);
 
 TYPED_TEST(BarrierTest, Barrier) {
@@ -323,76 +320,6 @@ TEST(ActivityTest, CanCancelDuringSuccessfulExecution) {
 TEST(WakerTest, CanWakeupEmptyWaker) {
   // Empty wakers should not do anything upon wakeup.
   Waker().Wakeup();
-}
-
-TEST(AtomicWakerTest, CanWakeupEmptyWaker) {
-  // Empty wakers should not do anything upon wakeup.
-  AtomicWaker waker;
-  EXPECT_FALSE(waker.Armed());
-  waker.Wakeup();
-}
-
-class TestWakeable final : public Wakeable {
- public:
-  TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
-      : wakeups_(wakeups), drops_(drops) {}
-  void Wakeup() override {
-    wakeups_->fetch_add(1, std::memory_order_relaxed);
-    delete this;
-  }
-  void Drop() override {
-    drops_->fetch_add(1, std::memory_order_relaxed);
-    delete this;
-  }
-
- private:
-  std::atomic<int>* const wakeups_;
-  std::atomic<int>* const drops_;
-};
-
-TEST(AtomicWakerTest, ThreadStress) {
-  std::vector<std::thread> threads;
-  std::atomic<bool> done{false};
-  std::atomic<int> wakeups{0};
-  std::atomic<int> drops{0};
-  std::atomic<int> armed{0};
-  std::atomic<int> not_armed{0};
-  AtomicWaker waker;
-
-  threads.reserve(15);
-  for (int i = 0; i < 5; i++) {
-    threads.emplace_back([&] {
-      while (!done.load(std::memory_order_relaxed)) {
-        waker.Wakeup();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-    });
-  }
-  for (int i = 0; i < 5; i++) {
-    threads.emplace_back([&] {
-      while (!done.load(std::memory_order_relaxed)) {
-        waker.Set(Waker(new TestWakeable(&wakeups, &drops)));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-    });
-  }
-  for (int i = 0; i < 5; i++) {
-    threads.emplace_back([&] {
-      while (!done.load(std::memory_order_relaxed)) {
-        (waker.Armed() ? &armed : &not_armed)
-            ->fetch_add(1, std::memory_order_relaxed);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-    });
-  }
-
-  do {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  } while (wakeups.load(std::memory_order_relaxed) == 0 ||
-           armed.load(std::memory_order_relaxed) == 0 ||
-           not_armed.load(std::memory_order_relaxed) == 0);
-  done.store(true, std::memory_order_relaxed);
-  for (auto& t : threads) t.join();
 }
 
 }  // namespace grpc_core

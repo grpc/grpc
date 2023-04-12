@@ -702,7 +702,9 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         if rpc_state.client_closed:
             return
         else:
-            raise
+            _LOGGER.exception('ExecuteBatchError raised in core by servicer method [%s]' % (
+                _decode(rpc_state.method())))
+            return
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,
@@ -716,14 +718,18 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                 status_code = rpc_state.status_code
 
             rpc_state.status_sent = True
-            await _send_error_status_from_server(
-                rpc_state,
-                status_code,
-                'Unexpected %s: %s' % (type(e), e),
-                rpc_state.trailing_metadata,
-                rpc_state.create_send_initial_metadata_op_if_not_sent(),
-                loop
-            )
+            try:
+                await _send_error_status_from_server(
+                    rpc_state,
+                    status_code,
+                    'Unexpected %s: %s' % (type(e), e),
+                    rpc_state.trailing_metadata,
+                    rpc_state.create_send_initial_metadata_op_if_not_sent(),
+                    loop
+                )
+            except ExecuteBatchError:
+                _LOGGER.exception('Failed sending error status from server')
+                traceback.print_exc()
 
 
 cdef _add_callback_handler(object rpc_task, RPCState rpc_state):

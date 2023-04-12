@@ -25,17 +25,8 @@ endlocal
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
-
-python tools/run_tests/task_runner.py -f artifact windows %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 4
-set RUNTESTS_EXITCODE=%errorlevel%
-
-@rem show ccache stats
-ccache --show-stats
-
-bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
-
-exit /b %RUNTESTS_EXITCODE%
+echo "The grpc_build_artifacts -> grpc_build_packages -> grpc_distribtests build flow has been deprecated."
+echo "To build the packages for a grpc release, use the grpc_build_all_packages job."
+echo "(which relies on the per-language distribtests jobs to build and test the packages)."

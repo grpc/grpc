@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// CFStream is build-enabled on iOS by default and disabled by default on other
 /// platforms (see port_platform.h). To enable CFStream build on another
@@ -63,6 +63,7 @@ static void apple_iomgr_platform_flush(void) {}
 
 static void apple_iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
+  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void apple_iomgr_platform_shutdown_background_closure(void) {}
@@ -179,7 +180,7 @@ void grpc_set_default_iomgr_platform() {
   }
   grpc_tcp_client_global_init();
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
-  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
+  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 bool grpc_iomgr_run_in_background() {
@@ -198,4 +199,4 @@ bool grpc_iomgr_run_in_background() {
   }
 }
 
-#endif /* GRPC_CFSTREAM_IOMGR */
+#endif  // GRPC_CFSTREAM_IOMGR

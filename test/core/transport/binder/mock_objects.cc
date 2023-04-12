@@ -24,7 +24,7 @@ using ::testing::Return;
 
 MockReadableParcel::MockReadableParcel() {
   ON_CALL(*this, ReadBinder).WillByDefault([](std::unique_ptr<Binder>* binder) {
-    *binder = absl::make_unique<MockBinder>();
+    *binder = std::make_unique<MockBinder>();
     return absl::OkStatus();
   });
   ON_CALL(*this, ReadInt32).WillByDefault(Return(absl::OkStatus()));
@@ -47,7 +47,7 @@ MockBinder::MockBinder() {
       .WillByDefault(
           [this](grpc_core::RefCountedPtr<WireReader> /*wire_reader_ref*/,
                  TransactionReceiver::OnTransactCb cb) {
-            return absl::make_unique<MockTransactionReceiver>(
+            return std::make_unique<MockTransactionReceiver>(
                 cb, BinderTransportTxCode::SETUP_TRANSPORT, &mock_output_);
           });
 }

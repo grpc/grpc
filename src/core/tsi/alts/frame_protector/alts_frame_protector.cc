@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -29,6 +29,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
@@ -42,7 +44,7 @@ constexpr size_t kMaxFrameLength = 1024 * 1024;
 constexpr size_t kAltsRecordProtocolRekeyFrameLimit = 8;
 constexpr size_t kAltsRecordProtocolFrameLimit = 5;
 
-/* Main struct for alts_frame_protector. */
+// Main struct for alts_frame_protector.
 struct alts_frame_protector {
   tsi_frame_protector base;
   alts_crypter* seal_crypter;
@@ -90,20 +92,20 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
     return TSI_INVALID_ARGUMENT;
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
-  /**
-   * If there's nothing to flush (i.e., in_place_protect_buffer is empty),
-   * we're done.
-   */
+  ///
+  /// If there's nothing to flush (i.e., in_place_protect_buffer is empty),
+  /// we're done.
+  ///
   if (impl->in_place_protect_bytes_buffered == 0) {
     *protected_output_frames_size = 0;
     *still_pending_size = 0;
     return TSI_OK;
   }
-  /**
-   * If a new frame can start being processed, we encrypt the payload and reset
-   * the frame writer to point to in_place_protect_buffer that holds the newly
-   * sealed frame.
-   */
+  ///
+  /// If a new frame can start being processed, we encrypt the payload and reset
+  /// the frame writer to point to in_place_protect_buffer that holds the newly
+  /// sealed frame.
+  ///
   if (alts_is_frame_writer_done(impl->writer)) {
     tsi_result result = seal(impl);
     if (result != TSI_OK) {
@@ -115,12 +117,12 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
       return TSI_INTERNAL_ERROR;
     }
   }
-  /**
-   * Write the sealed frame as much as possible to protected_output_frames. It's
-   * possible a frame will not be written out completely by a single flush
-   * (i.e., still_pending_size != 0), in which case the flush should be called
-   * iteratively until a complete frame has been written out.
-   */
+  ///
+  /// Write the sealed frame as much as possible to protected_output_frames.
+  /// It's possible a frame will not be written out completely by a single flush
+  ///(i.e., still_pending_size != 0), in which case the flush should be called
+  /// iteratively until a complete frame has been written out.
+  ///
   size_t written_frame_bytes = *protected_output_frames_size;
   if (!alts_write_frame_bytes(impl->writer, protected_output_frames,
                               &written_frame_bytes)) {
@@ -129,10 +131,10 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
   }
   *protected_output_frames_size = written_frame_bytes;
   *still_pending_size = alts_get_num_writer_bytes_remaining(impl->writer);
-  /**
-   * If the current frame has been finished processing (i.e., sealed and written
-   * out completely), we empty in_place_protect_buffer.
-   */
+  ///
+  /// If the current frame has been finished processing (i.e., sealed and
+  /// written out completely), we empty in_place_protect_buffer.
+  ///
   if (alts_is_frame_writer_done(impl->writer)) {
     impl->in_place_protect_bytes_buffered = 0;
   }
@@ -152,10 +154,10 @@ static tsi_result alts_protect(tsi_frame_protector* self,
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
 
-  /**
-   * If more payload can be buffered, we buffer it as much as possible to
-   * in_place_protect_buffer.
-   */
+  ///
+  /// If more payload can be buffered, we buffer it as much as possible to
+  /// in_place_protect_buffer.
+  ///
   if (impl->in_place_protect_bytes_buffered + impl->overhead_length <
       max_encrypted_payload_bytes(impl)) {
     size_t bytes_to_buffer = std::min(
@@ -172,12 +174,12 @@ static tsi_result alts_protect(tsi_frame_protector* self,
   } else {
     *unprotected_bytes_size = 0;
   }
-  /**
-   * If a full frame has been buffered, we output it. If the first condition
-   * holds, then there exists an unencrypted full frame. If the second
-   * condition holds, then there exists a full frame that has already been
-   * encrypted.
-   */
+  ///
+  /// If a full frame has been buffered, we output it. If the first condition
+  /// holds, then there exists an unencrypted full frame. If the second
+  /// condition holds, then there exists a full frame that has already been
+  /// encrypted.
+  ///
   if (max_encrypted_payload_bytes(impl) ==
           impl->in_place_protect_bytes_buffered + impl->overhead_length ||
       max_encrypted_payload_bytes(impl) ==
@@ -213,10 +215,10 @@ static void ensure_buffer_size(alts_frame_protector* impl) {
   }
   size_t buffer_space_remaining = impl->max_unprotected_frame_size -
                                   alts_get_output_bytes_read(impl->reader);
-  /**
-   * Check if we need to resize in_place_unprotect_buffer in order to hold
-   * remaining bytes of a full frame.
-   */
+  ///
+  /// Check if we need to resize in_place_unprotect_buffer in order to hold
+  /// remaining bytes of a full frame.
+  ///
   if (buffer_space_remaining < alts_get_reader_bytes_remaining(impl->reader)) {
     size_t buffer_len = alts_get_output_bytes_read(impl->reader) +
                         alts_get_reader_bytes_remaining(impl->reader);
@@ -243,11 +245,11 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
     return TSI_INVALID_ARGUMENT;
   }
   alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
-  /**
-   * If a new frame can start being processed, we reset the frame reader to
-   * point to in_place_unprotect_buffer that will be used to hold deframed
-   * result.
-   */
+  ///
+  /// If a new frame can start being processed, we reset the frame reader to
+  /// point to in_place_unprotect_buffer that will be used to hold deframed
+  /// result.
+  ///
   if (alts_is_frame_reader_done(impl->reader) &&
       ((alts_get_output_buffer(impl->reader) == nullptr) ||
        (alts_get_output_bytes_read(impl->reader) ==
@@ -259,12 +261,12 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
     }
     impl->in_place_unprotect_bytes_processed = 0;
   }
-  /**
-   * If a full frame has not yet been read, we read more bytes from
-   * protected_frames_bytes until a full frame has been read. We also need to
-   * make sure in_place_unprotect_buffer is large enough to hold a complete
-   * frame.
-   */
+  ///
+  /// If a full frame has not yet been read, we read more bytes from
+  /// protected_frames_bytes until a full frame has been read. We also need to
+  /// make sure in_place_unprotect_buffer is large enough to hold a complete
+  /// frame.
+  ///
   if (!alts_is_frame_reader_done(impl->reader)) {
     ensure_buffer_size(impl);
     *protected_frames_bytes_size =
@@ -281,10 +283,10 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
   } else {
     *protected_frames_bytes_size = 0;
   }
-  /**
-   * If a full frame has been read, we unseal it, and write out the
-   * deframed result to unprotected_bytes.
-   */
+  ///
+  /// If a full frame has been read, we unseal it, and write out the
+  /// deframed result to unprotected_bytes.
+  ///
   if (alts_is_frame_reader_done(impl->reader)) {
     if (impl->in_place_unprotect_bytes_processed == 0) {
       tsi_result result = unseal(impl);
@@ -378,11 +380,11 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
-  /**
-   * Set maximum frame size to be used by a frame protector. If it is nullptr, a
-   * default frame size will be used. Otherwise, the provided frame size will be
-   * adjusted (if not falling into a valid frame range) and used.
-   */
+  ///
+  /// Set maximum frame size to be used by a frame protector. If it is nullptr,
+  /// a default frame size will be used. Otherwise, the provided frame size will
+  /// be adjusted (if not falling into a valid frame range) and used.
+  ///
   size_t max_protected_frame_size_to_set = kDefaultFrameLength;
   if (max_protected_frame_size != nullptr) {
     *max_protected_frame_size =

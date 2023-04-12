@@ -252,20 +252,17 @@ class CLanguage(object):
             _check_compiler(self.args.compiler, [
                 'default',
                 'cmake',
-                'cmake_ninja_vs2017',
-                'cmake_vs2017',
+                'cmake_ninja_vs2019',
                 'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
 
             activate_vs_tools = ''
-            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+            if self.args.compiler == 'cmake_ninja_vs2019' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
                 # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = 'Ninja'
-                activate_vs_tools = '2017'
-            elif self.args.compiler == 'cmake_vs2017':
-                cmake_generator = 'Visual Studio 15 2017'
+                activate_vs_tools = '2019'
             elif self.args.compiler == 'cmake_vs2019':
                 cmake_generator = 'Visual Studio 16 2019'
             else:
@@ -278,7 +275,8 @@ class CLanguage(object):
             self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
             # when builing with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
-            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+            # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x64_x86'
 
         else:
             if self.platform == 'linux':
@@ -337,9 +335,13 @@ class CLanguage(object):
                     continue
                 if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
                     continue
+
                 if self.platform == 'windows':
-                    binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
-                        self.config.build_config], target['name'])
+                    if self._cmake_generator_windows == 'Ninja':
+                        binary = 'cmake/build/%s.exe' % target['name']
+                    else:
+                        binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
+                            self.config.build_config], target['name'])
                 else:
                     binary = 'cmake/build/%s' % target['name']
 
@@ -491,8 +493,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang6':
             return ('clang_6', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang13':
-            return ('clang_13', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang15':
+            return ('clang_15', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -815,12 +817,16 @@ class RubyLanguage(object):
         # after dropping support for ruby 2.5:
         #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
+        # TODO(apolcyn): the following test is skipped because it sometimes
+        # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
+        # This crashes have been unreproducible outside of CI. Also see
+        # b/266212253.
+        #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
-                'src/ruby/end2end/grpc_class_init_test.rb',
                 'src/ruby/end2end/multiple_killed_watching_threads_test.rb',
                 'src/ruby/end2end/load_grpc_with_gc_stress_test.rb',
                 'src/ruby/end2end/client_memory_usage_test.rb',
@@ -966,18 +972,15 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        # Currently not supporting compiling as frameworks in Bazel
-        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
                 }))
         # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
@@ -1013,48 +1016,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # (how does one add the cronet dependency in bazel?)
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-cronettests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'CronetTests'}))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTests'}))
-        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test-posix',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTestsPosix'}))
-        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
-        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
-        out.append(
-            self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-cpp-test-cronet',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='tvos-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'TvTests',
-                                     'PLATFORM': 'tvos'
-                                 }))
-
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1079,6 +1040,9 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
+    def __init__(self, config_file):
+        self.config_file = config_file
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1086,7 +1050,7 @@ class Sanity(object):
 
     def test_specs(self):
         import yaml
-        with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+        with open('tools/run_tests/sanity/%s' % self.config_file, 'r') as f:
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
@@ -1099,10 +1063,10 @@ class Sanity(object):
                 environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
                 self.config.job_spec(cmd['script'].split(),
-                                     timeout_seconds=30 * 60,
+                                     timeout_seconds=45 * 60,
                                      environ=environ,
                                      cpu_cost=cmd.get('cpu_cost', 1))
-                for cmd in yaml.load(f)
+                for cmd in yaml.safe_load(f)
             ]
 
     def pre_build_steps(self):
@@ -1139,7 +1103,9 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
-    'sanity': Sanity()
+    'sanity': Sanity('sanity_tests.yaml'),
+    'clang-tidy': Sanity('clang_tidy_tests.yaml'),
+    'iwyu': Sanity('iwyu_tests.yaml'),
 }
 
 _MSBUILD_CONFIG = {
@@ -1491,7 +1457,7 @@ argp.add_argument(
         'gcc12',
         'gcc_musl',
         'clang6',
-        'clang13',
+        'clang15',
         'python2.7',
         'python3.5',
         'python3.7',
@@ -1505,8 +1471,7 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
-        'cmake_ninja_vs2017',
-        'cmake_vs2017',
+        'cmake_ninja_vs2019',
         'cmake_vs2019',
         'mono',
     ],

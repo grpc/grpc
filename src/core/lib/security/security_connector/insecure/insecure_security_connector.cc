@@ -81,7 +81,7 @@ void InsecureChannelSecurityConnector::check_peer(
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureChannelSecurityConnector::cmp(
@@ -108,7 +108,7 @@ void InsecureServerSecurityConnector::check_peer(
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureServerSecurityConnector::cmp(

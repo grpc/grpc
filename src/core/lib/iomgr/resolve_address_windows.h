@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,8 +29,7 @@ namespace grpc_core {
 // A DNS resolver which uses the native platform's getaddrinfo API.
 class NativeDNSResolver : public DNSResolver {
  public:
-  // Gets the singleton instance, creating it first if it doesn't exist
-  static NativeDNSResolver* GetOrCreate();
+  NativeDNSResolver();
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -61,4 +60,4 @@ class NativeDNSResolver : public DNSResolver {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,6 +41,7 @@ struct grpc_deadline_state {
   ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
+  grpc_call_element* elem;
   grpc_call_stack* call_stack;
   grpc_core::CallCombiner* call_combiner;
   grpc_core::Arena* arena;
@@ -53,11 +54,6 @@ struct grpc_deadline_state {
   grpc_closure* original_recv_trailing_metadata_ready;
 };
 
-//
-// NOTE: All of these functions require that the first field in
-// elem->call_data is a grpc_deadline_state.
-//
-
 // Cancels the existing timer and starts a new one with new_deadline.
 //
 // Note: It is generally safe to call this with an earlier deadline
@@ -67,7 +63,7 @@ struct grpc_deadline_state {
 // deadline may result in the timer being called twice.
 //
 // Note: Must be called while holding the call combiner.
-void grpc_deadline_state_reset(grpc_call_element* elem,
+void grpc_deadline_state_reset(grpc_deadline_state* deadline_state,
                                grpc_core::Timestamp new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
@@ -79,7 +75,7 @@ void grpc_deadline_state_reset(grpc_call_element* elem,
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op);
+    grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op);
 
 // Should deadline checking be performed (according to channel args)
 bool grpc_deadline_checking_enabled(const grpc_core::ChannelArgs& args);
@@ -90,4 +86,4 @@ bool grpc_deadline_checking_enabled(const grpc_core::ChannelArgs& args);
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
 
-#endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H

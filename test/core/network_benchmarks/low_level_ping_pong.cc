@@ -1,44 +1,48 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/*
-   Basic I/O ping-pong benchmarks.
+//
+// Basic I/O ping-pong benchmarks.
 
-   The goal here is to establish lower bounds on how fast the stack could get by
-   measuring the cost of using various I/O strategies to do a basic
-   request-response loop.
- */
+// The goal here is to establish lower bounds on how fast the stack could get by
+// measuring the cost of using various I/O strategies to do a basic
+// request-response loop.
+//
 
 #include <errno.h>
-#include <netinet/ip.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
 #include <sys/socket.h>
+
+#include <string>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -60,14 +64,14 @@ typedef struct thread_args {
   const char* strategy_name;
 } thread_args;
 
-/*
-   Read strategies
+//
+// Read strategies
 
-   There are a number of read strategies, each of which has a blocking and
-   non-blocking version.
- */
+// There are a number of read strategies, each of which has a blocking and
+// non-blocking version.
+//
 
-/* Basic call to read() */
+// Basic call to read()
 static int read_bytes(int fd, char* buf, size_t read_size, int spin) {
   size_t bytes_read = 0;
   ssize_t err;
@@ -80,7 +84,8 @@ static int read_bytes(int fd, char* buf, size_t read_size, int spin) {
         if (errno == EAGAIN && spin == 1) {
           continue;
         }
-        gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "Read failed: %s",
+                grpc_core::StrError(errno).c_str());
         return -1;
       }
     } else {
@@ -98,7 +103,7 @@ static int spin_read_bytes(thread_args* args, char* buf) {
   return read_bytes(args->fds.read_fd, buf, args->msg_size, 1);
 }
 
-/* Call poll() to monitor a non-blocking fd */
+// Call poll() to monitor a non-blocking fd
 static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
   struct pollfd pfd;
   size_t bytes_read = 0;
@@ -113,7 +118,8 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       if (errno == EINTR) {
         continue;
       } else {
-        gpr_log(GPR_ERROR, "Poll failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "Poll failed: %s",
+                grpc_core::StrError(errno).c_str());
         return -1;
       }
     }
@@ -124,7 +130,7 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
     } while (err2 < 0 && errno == EINTR);
     if (err2 < 0 && errno != EAGAIN) {
-      gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "Read failed: %s", grpc_core::StrError(errno).c_str());
       return -1;
     }
     bytes_read += static_cast<size_t>(err2);
@@ -141,7 +147,7 @@ static int poll_read_bytes_spin(struct thread_args* args, char* buf) {
 }
 
 #ifdef __linux__
-/* Call epoll_wait() to monitor a non-blocking fd */
+// Call epoll_wait() to monitor a non-blocking fd
 static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
   struct epoll_event ev;
   size_t bytes_read = 0;
@@ -153,7 +159,8 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
     err = epoll_wait(args->epoll_fd, &ev, 1, spin ? 0 : -1);
     if (err < 0) {
       if (errno == EINTR) continue;
-      gpr_log(GPR_ERROR, "epoll_wait failed: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "epoll_wait failed: %s",
+              grpc_core::StrError(errno).c_str());
       return -1;
     }
     if (err == 0 && spin) continue;
@@ -167,8 +174,8 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       } while (err2 < 0 && errno == EINTR);
       if (errno == EAGAIN) break;
       bytes_read += static_cast<size_t>(err2);
-      /* TODO(klempner): This should really be doing an extra call after we are
-         done to ensure we see an EAGAIN */
+      // TODO(klempner): This should really be doing an extra call after we are
+      // done to ensure we see an EAGAIN
     } while (bytes_read < read_size);
   } while (bytes_read < read_size);
   GPR_ASSERT(bytes_read == read_size);
@@ -182,12 +189,12 @@ static int epoll_read_bytes_blocking(struct thread_args* args, char* buf) {
 static int epoll_read_bytes_spin(struct thread_args* args, char* buf) {
   return epoll_read_bytes(args, buf, 1);
 }
-#endif /* __linux__ */
+#endif  // __linux__
 
-/* Write out bytes.
-   At this point we only have one strategy, since in the common case these
-   writes go directly out to the kernel.
- */
+// Write out bytes.
+// At this point we only have one strategy, since in the common case these
+// writes go directly out to the kernel.
+//
 static int blocking_write_bytes(struct thread_args* args, char* buf) {
   size_t bytes_written = 0;
   ssize_t err;
@@ -199,7 +206,8 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
       if (errno == EINTR) {
         continue;
       } else {
-        gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "Read failed: %s",
+                grpc_core::StrError(errno).c_str());
         return -1;
       }
     } else {
@@ -209,12 +217,12 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
   return 0;
 }
 
-/*
-   Initialization code
+//
+// Initialization code
 
-   These are called at the beginning of the client and server thread, depending
-   on the scenario we're using.
- */
+// These are called at the beginning of the client and server thread, depending
+// on the scenario we're using.
+//
 static int set_socket_nonblocking(thread_args* args) {
   if (!GRPC_LOG_IF_ERROR("Unable to set read socket nonblocking",
                          grpc_set_socket_nonblocking(args->fds.read_fd, 1))) {
@@ -230,14 +238,14 @@ static int set_socket_nonblocking(thread_args* args) {
 static int do_nothing(thread_args* /*args*/) { return 0; }
 
 #ifdef __linux__
-/* Special case for epoll, where we need to create the fd ahead of time. */
+// Special case for epoll, where we need to create the fd ahead of time.
 static int epoll_setup(thread_args* args) {
   int epoll_fd;
   struct epoll_event ev;
   set_socket_nonblocking(args);
   epoll_fd = epoll_create(1);
   if (epoll_fd < 0) {
-    gpr_log(GPR_ERROR, "epoll_create: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "epoll_create: %s", grpc_core::StrError(errno).c_str());
     return -1;
   }
 
@@ -246,7 +254,7 @@ static int epoll_setup(thread_args* args) {
   ev.events = EPOLLIN | EPOLLET;
   ev.data.fd = args->fds.read_fd;
   if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, args->fds.read_fd, &ev) < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "epoll_ctl: %s", grpc_core::StrError(errno).c_str());
   }
   return 0;
 }
@@ -277,8 +285,8 @@ static void server_thread_wrap(void* arg) {
 }
 
 static void print_histogram(grpc_histogram* histogram) {
-  /* TODO(klempner): Print more detailed information, such as detailed histogram
-     buckets */
+  // TODO(klempner): Print more detailed information, such as detailed histogram
+  // buckets
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
           grpc_histogram_percentile(histogram, 50),
           grpc_histogram_percentile(histogram, 95),
@@ -326,11 +334,12 @@ error:
   grpc_histogram_destroy(histogram);
 }
 
-/* This roughly matches tcp_server's create_listening_socket */
+// This roughly matches tcp_server's create_listening_socket
 static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   int fd = socket(port->sa_family, SOCK_STREAM, 0);
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "Unable to create socket: %s",
+            grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -348,17 +357,17 @@ static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   }
 
   if (bind(fd, port, len) < 0) {
-    gpr_log(GPR_ERROR, "bind: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "bind: %s", grpc_core::StrError(errno).c_str());
     goto error;
   }
 
   if (listen(fd, 1) < 0) {
-    gpr_log(GPR_ERROR, "listen: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "listen: %s", grpc_core::StrError(errno).c_str());
     goto error;
   }
 
   if (getsockname(fd, port, &len) < 0) {
-    gpr_log(GPR_ERROR, "getsockname: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "getsockname: %s", grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -375,7 +384,8 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   int fd = socket(addr->sa_family, SOCK_STREAM, 0);
   int err;
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "Unable to create socket: %s",
+            grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -393,7 +403,7 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   } while (err < 0 && errno == EINTR);
 
   if (err < 0) {
-    gpr_log(GPR_ERROR, "connect error: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "connect error: %s", grpc_core::StrError(errno).c_str());
     goto error;
   }
   return fd;
@@ -408,7 +418,7 @@ error:
 static int accept_server(int listen_fd) {
   int fd = accept(listen_fd, nullptr, nullptr);
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Accept failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "Accept failed: %s", grpc_core::StrError(errno).c_str());
     return -1;
   }
   return fd;
@@ -467,7 +477,7 @@ error:
 static int create_sockets_socketpair(fd_pair* client_fds, fd_pair* server_fds) {
   int fds[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
-    gpr_log(GPR_ERROR, "socketpair: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "socketpair: %s", grpc_core::StrError(errno).c_str());
     return -1;
   }
 
@@ -482,12 +492,12 @@ static int create_sockets_pipe(fd_pair* client_fds, fd_pair* server_fds) {
   int cfds[2];
   int sfds[2];
   if (pipe(cfds) < 0) {
-    gpr_log(GPR_ERROR, "pipe: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "pipe: %s", grpc_core::StrError(errno).c_str());
     return -1;
   }
 
   if (pipe(sfds) < 0) {
-    gpr_log(GPR_ERROR, "pipe: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "pipe: %s", grpc_core::StrError(errno).c_str());
     return -1;
   }
 
@@ -551,7 +561,7 @@ static test_strategy test_strategies[] = {
 #ifdef __linux__
     {"same_thread_epoll", epoll_read_bytes_blocking, epoll_setup},
     {"spin_epoll", epoll_read_bytes_spin, epoll_setup},
-#endif /* __linux__ */
+#endif  // __linux__
     {"spin_read", spin_read_bytes, set_socket_nonblocking},
     {"spin_poll", poll_read_bytes_spin, set_socket_nonblocking}};
 

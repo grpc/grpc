@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -80,8 +80,8 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
       count = compact(keys, values, count);
       map->free = 0;
     } else {
-      /* resize when less than 25% of the table is free, because compaction
-         won't help much */
+      // resize when less than 25% of the table is free, because compaction
+      // won't help much
       map->capacity = capacity = 2 * capacity;
       map->keys = keys = static_cast<uint32_t*>(
           gpr_realloc(keys, capacity * sizeof(uint32_t)));
@@ -108,7 +108,7 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   if (!strict_find && max_idx == 0) return nullptr;
 
   while (min_idx < max_idx) {
-    /* find the midpoint, avoiding overflow */
+    // find the midpoint, avoiding overflow
     mid_idx = min_idx + ((max_idx - min_idx) / 2);
     mid_key = keys[mid_idx];
 
@@ -116,7 +116,7 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
       min_idx = mid_idx + 1;
     } else if (mid_key > key) {
       max_idx = mid_idx;
-    } else /* mid_key == key */
+    } else  // mid_key == key
     {
       return &values[mid_idx];
     }
@@ -133,8 +133,8 @@ void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
   GPR_DEBUG_ASSERT(out != nullptr);
   *pvalue = nullptr;
   map->free++;
-  /* recognize complete emptyness and ensure we can skip
-     defragmentation later */
+  // recognize complete emptyness and ensure we can skip
+  // defragmentation later
   if (map->free == map->count) {
     map->free = map->count = 0;
   }

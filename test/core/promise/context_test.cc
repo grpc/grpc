@@ -26,12 +26,18 @@ template <>
 struct ContextType<TestContext> {};
 
 TEST(Context, WithContext) {
-  EXPECT_EQ(GetContext<TestContext>(), nullptr);
+  EXPECT_FALSE(HasContext<TestContext>());
   TestContext test;
-  EXPECT_EQ(GetContext<TestContext>(), nullptr);
-  EXPECT_EQ(test.done, false);
-  WithContext([]() { GetContext<TestContext>()->done = true; }, &test)();
-  EXPECT_EQ(test.done, true);
+  EXPECT_FALSE(HasContext<TestContext>());
+  EXPECT_FALSE(test.done);
+  WithContext(
+      []() {
+        EXPECT_TRUE(HasContext<TestContext>());
+        GetContext<TestContext>()->done = true;
+      },
+      &test)();
+  EXPECT_FALSE(HasContext<TestContext>());
+  EXPECT_TRUE(test.done);
 }
 
 }  // namespace grpc_core

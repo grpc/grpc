@@ -16,12 +16,12 @@
 import contextlib
 import logging
 import os
+import queue
 import sys
 import threading
 import unittest
 
 import grpc
-from six.moves import queue
 
 from tests.unit import test_common
 

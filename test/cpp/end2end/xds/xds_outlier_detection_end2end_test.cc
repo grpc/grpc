@@ -21,11 +21,11 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -55,8 +55,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
 // 4. Let the ejection period pass and verify we can go back to both backends
 //    after the uneject.
 TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -119,8 +117,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
 // We don't eject more than max_ejection_percent (default 10%) of the backends
 // beyond the first one.
 TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -216,8 +212,6 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
 // Success rate stdev_factor is honored, a higher value would ensure ejection
 // does not occur.
 TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -282,8 +276,6 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
 // the randomized number between 1 to 100 will always be great, so nothing will
 // be ejected.
 TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -343,8 +335,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
 // Success rate does not eject if there are less than minimum_hosts backends
 // Set success_rate_minimum_hosts to 3 when we only have 2 backends
 TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -405,8 +395,6 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
 // Set success_rate_request_volume to 4 when we only send 3 RPC in the
 // interval.
 TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -474,8 +462,6 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
 // 4. Let the ejection period pass and verify that traffic will again go both
 //    backends as we have unejected the backend.
 TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -545,8 +531,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
 // We don't eject more than max_ejection_percent (default 10%) of the backends
 // beyond the first one.
 TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -642,8 +626,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
 // Failure percentage threshold is honored, a higher value would ensure ejection
 // does not occur
 TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -705,8 +687,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
 // guarantee the randomized number between 1 to 100 will always be great, so
 // nothing will be ejected.
 TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -767,8 +747,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
 // Failure percentage does not eject if there are less than minimum_hosts
 // backends Set success_rate_minimum_hosts to 3 when we only have 2 backends
 TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -835,8 +813,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
 // Set success_rate_request_volume to 4 when we only send 3 RPC in the
 // interval.
 TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -901,8 +877,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
 // Configure success rate to eject 1 and failure percentage to eject 2.
 // Verify that maximum 2 backends are ejected, not 3!
 TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -1022,8 +996,6 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
 // that there will be no ejection taking place since we can't do any
 // calculations.
 TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -1070,100 +1042,9 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
-// GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION not configured so feature
-// disabled.
-TEST_P(OutlierDetectionTest,
-       SuccessRateAndFailurePercentageEjectionPolicyDisabled) {
-  CreateAndStartBackends(4);
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
-  // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 100%
-  // (to eliminate flakiness of the test).
-  auto* outlier_detection = cluster.mutable_outlier_detection();
-  SetProtoDuration(grpc_core::Duration::Seconds(1),
-                   outlier_detection->mutable_interval());
-  outlier_detection->mutable_max_ejection_percent()->set_value(50);
-  // This stdev of 500 will ensure the number of ok RPC and error RPC we send
-  // will make 1 outlier out of the 4 backends.
-  outlier_detection->mutable_success_rate_stdev_factor()->set_value(500);
-  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
-  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
-  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
-  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
-  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
-  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
-  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("address_hash");
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   new_route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
-  // hashed to a specific backend as the header value matches the value used
-  // to create the entry in the ring.
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
-  std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
-  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
-  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
-  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr,
-                 WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
-                 WaitForBackendOptions(), rpc_options3);
-  // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
-  // outlier detection interval to pass. The errors should have caused 2
-  // ejctionss but since the policy is disabled we are not ejecting any and
-  // traffic flow as usual and RPCs reach destinated backends.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::CANCELLED, "",
-      RpcOptions().set_metadata(metadata).set_server_expected_error(
-          StatusCode::CANCELLED));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::CANCELLED, "",
-      RpcOptions().set_metadata(metadata).set_server_expected_error(
-          StatusCode::CANCELLED));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::CANCELLED, "",
-      RpcOptions().set_metadata(metadata1).set_server_expected_error(
-          StatusCode::CANCELLED));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::CANCELLED, "",
-      RpcOptions().set_metadata(metadata2).set_server_expected_error(
-          StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      3000 * grpc_test_slowdown_factor()));
-  ResetBackendCounters();
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
-  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[3]->backend_service()->request_count());
-}
-
 // Tests that we uneject any ejected addresses when the OD policy is
 // disabled.
 TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -1242,19 +1123,15 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
-  // TODO(roth): This is a hack to ensure that the outlier_detection LB policy
-  // is always registered at gRPC init time. When the LB policy registry is
-  // moved to the new CoreConfiguration system, change this to use
-  // CoreConfiguration::BuildSpecialConfiguration() instead.
-  grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION", "true");
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   return result;
 }

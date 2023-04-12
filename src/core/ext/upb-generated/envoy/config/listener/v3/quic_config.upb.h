@@ -134,6 +134,24 @@ UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_proof_source_
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_proof_source_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct envoy_config_core_v3_TypedExtensionConfig*);
 }
+UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_connection_id_generator_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  return _upb_hasbit(msg, 8);
+}
+UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_connection_id_generator_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_connection_id_generator_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
+UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_server_preferred_address_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  return _upb_hasbit(msg, 9);
+}
+UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_server_preferred_address_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_server_preferred_address_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
 
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_quic_protocol_options(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_QuicProtocolOptions* value) {
   _upb_sethas(msg, 1);
@@ -223,6 +241,32 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listen
     sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_config_listener_v3_QuicProtocolOptions_set_proof_source_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_connection_id_generator_config(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 8);
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_mutable_connection_id_generator_config(envoy_config_listener_v3_QuicProtocolOptions* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_listener_v3_QuicProtocolOptions_connection_id_generator_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_listener_v3_QuicProtocolOptions_set_connection_id_generator_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_server_preferred_address_config(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 9);
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_mutable_server_preferred_address_config(envoy_config_listener_v3_QuicProtocolOptions* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_listener_v3_QuicProtocolOptions_server_preferred_address_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_listener_v3_QuicProtocolOptions_set_server_preferred_address_config(msg, sub);
   }
   return sub;
 }

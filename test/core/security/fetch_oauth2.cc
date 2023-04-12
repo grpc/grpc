@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -50,7 +51,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     auto status = grpc::experimental::StsCredentialsOptionsFromJson(
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
         &options);
-    gpr_slice_unref(sts_options_slice);
+    grpc_slice_unref(sts_options_slice);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
       return nullptr;
@@ -71,7 +72,7 @@ static grpc_call_credentials* create_refresh_token_creds(
   grpc_call_credentials* result = grpc_google_refresh_token_credentials_create(
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(refresh_token),
       nullptr);
-  gpr_slice_unref(refresh_token);
+  grpc_slice_unref(refresh_token);
   return result;
 }
 

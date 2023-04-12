@@ -22,6 +22,7 @@ import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
 import "src/proto/grpc/testing/xds/v3/endpoint.proto";
 import "src/proto/grpc/testing/xds/v3/extension.proto";
+import "src/proto/grpc/testing/xds/v3/health_check.proto";
 import "src/proto/grpc/testing/xds/v3/outlier_detection.proto";
 
 import "google/protobuf/any.proto";
@@ -137,6 +138,10 @@ message Cluster {
     string service_name = 2;
   }
 
+  message CommonLbConfig {
+    core.v3.HealthStatusSet override_host_status = 8;
+  }
+
   // Supplies the name of the cluster which must be unique across all clusters.
   // The cluster name is used when emitting
   // :ref:`statistics <config_cluster_manager_cluster_stats>` if :ref:`alt_stat_name
@@ -217,6 +222,8 @@ message Cluster {
     // Optional configuration for the Ring Hash load balancing policy.
     RingHashLbConfig ring_hash_lb_config = 23;
   }
+
+  CommonLbConfig common_lb_config = 27;
 
   // Optional custom transport socket implementation to use for upstream connections.
   // To setup TLS, set a transport socket with name `tls` and

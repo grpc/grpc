@@ -171,7 +171,73 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-grpc_objc_ios_unit_test(
+grpc_objc_testing_library(
+    name = "CronetTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+    ] + glob([
+        "CronetTests/*.m",
+        "CronetTests/*.mm",
+    ]),
+    hdrs = [
+        "ConfigureCronet.h",
+    ],
+    deps = [
+        "InteropTests-lib",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/end2end:ssl_test_data",
+        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "CppCronetTests-lib",
+    srcs = glob([
+        "CppCronetTests/*.m",
+        "CppCronetTests/*.mm",
+    ]),
+    hdrs = glob([
+        "CppCronetTests/*.h",
+    ]),
+    deps = [
+        "//:grpc++_cronet_credentials",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/end2end:ssl_test_data",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib-Posix",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsNoCFStreamSSL.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsCFStreamSSL.m",
+        "PerfTests/PerfTestsCronet.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "UnitTests",
     deps = [
         ":APIv2Tests-lib",
@@ -205,6 +271,37 @@ grpc_objc_ios_unit_test(
     ],
 )
 
+grpc_objc_ios_unit_test(
+    name = "CronetTests",
+    deps = [
+        "CronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CppCronetTests",
+    deps = [
+        "CppCronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTestsPosix",
+    deps = [
+        "PerfTests-lib-Posix",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTests",
+    env = {
+        "GRPC_CFSTREAM_RUN_LOOP": "1",
+    },
+    deps = [
+        "PerfTests-lib",
+    ],
+)
+
 macos_unit_test(
     name = "MacTests",
     minimum_os_version = "10.10",
@@ -219,7 +316,23 @@ macos_unit_test(
     ],
 )
 
-# bazel run tvos_unit_test is not yet supported by xctestrunner
+grpc_objc_testing_library(
+    name = "CFStreamTests-lib",
+    srcs = glob(["CFStreamTests/*.mm"]),
+    deps = [
+        "//:gpr_platform",
+        "//src/core:iomgr_port",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CFStreamTests",
+    deps = [":CFStreamTests-lib"],
+)
+
+# Note that bazel currently doesn't support running tvos_unit_test
+# See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
@@ -232,6 +345,20 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+# TvTests is not runnable with bazel, so the best we can do is to test
+# that the testsuite builds correctly. This is achieved by having
+# a dummy sh_test depend on :TvTests.
+grpc_sh_test(
+    name = "tvtests_build_test",
+    srcs = [
+        "tvtests_build_test.sh",
+    ],
+    data = [
+        ":TvTests",
+    ],
+    uses_polling = False,
 )
 
 grpc_sh_test(

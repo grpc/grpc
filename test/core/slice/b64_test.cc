@@ -1,31 +1,31 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/slice/b64.h"
 
+#include <stdint.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -39,7 +39,7 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   grpc_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   ASSERT_EQ(grpc_core::StringViewFromSlice(hello_slice),
             absl::string_view(hello));
-  grpc_slice_unref_internal(hello_slice);
+  grpc_slice_unref(hello_slice);
 
   gpr_free(hello_b64);
 }
@@ -51,7 +51,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   grpc_slice orig_decoded;
   for (i = 0; i < sizeof(orig); i++) orig[i] = static_cast<uint8_t>(i);
 
-  /* Try all the different paddings. */
+  // Try all the different paddings.
   for (i = 0; i < 3; i++) {
     grpc_core::ExecCtx exec_ctx;
     b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
@@ -59,7 +59,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
     ASSERT_EQ(
         grpc_core::StringViewFromSlice(orig_decoded),
         absl::string_view(reinterpret_cast<char*>(orig), sizeof(orig) - i));
-    grpc_slice_unref_internal(orig_decoded);
+    grpc_slice_unref(orig_decoded);
     gpr_free(b64);
   }
 }
@@ -109,13 +109,13 @@ TEST(B64Test, UrlSafeUnsafeMismatchFailure) {
   orig_decoded = grpc_base64_decode(b64, !url_safe);
   ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  grpc_slice_unref_internal(orig_decoded);
+  grpc_slice_unref(orig_decoded);
 
   b64 = grpc_base64_encode(orig, sizeof(orig), !url_safe, 0);
   orig_decoded = grpc_base64_decode(b64, url_safe);
   ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  grpc_slice_unref_internal(orig_decoded);
+  grpc_slice_unref(orig_decoded);
 }
 
 TEST(B64Test, Rfc4648TestVectors) {

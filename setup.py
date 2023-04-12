@@ -375,7 +375,9 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     elif LINUX_AARCH64 == boringssl_asm_platform:
         asm_key = 'crypto_linux_aarch64'
     elif "mac" in boringssl_asm_platform and "x86_64" in boringssl_asm_platform:
-        asm_key = 'crypto_mac_x86_64'
+        asm_key = 'crypto_apple_x86_64'
+    elif "mac" in boringssl_asm_platform and "arm64" in boringssl_asm_platform:
+        asm_key = 'crypto_apple_aarch64'
     else:
         print("ASM Builds for BoringSSL currently not supported on:",
               boringssl_asm_platform)
@@ -481,19 +483,14 @@ PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
-)
+INSTALL_REQUIRES = ()
+
 EXTRAS_REQUIRES = {
     'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'Sphinx~=1.8.1',
-    'six>=1.10',
-) if ENABLE_DOCUMENTATION_BUILD else ()
+    'Sphinx~=1.8.1',) if ENABLE_DOCUMENTATION_BUILD else ()
 
 try:
     import Cython
@@ -544,8 +541,14 @@ setuptools.setup(
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
+    project_urls={
+        "Source Code": "https://github.com/grpc/grpc",
+        "Bug Tracker": "https://github.com/grpc/grpc/issues",
+        'Documentation': 'https://grpc.github.io/grpc/python',
+    },
     license=LICENSE,
     classifiers=CLASSIFIERS,
+    long_description_content_type='text/x-rst',
     long_description=open(README).read(),
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),

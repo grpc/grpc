@@ -73,19 +73,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "murmur_hash_test",
-    srcs = ["murmur_hash_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
     external_deps = ["gtest"],
@@ -138,21 +125,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "tls_test",
-    srcs = ["tls_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
     external_deps = ["gtest"],
@@ -161,6 +133,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:useful",
+        "//src/core:useful",
     ],
 )

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
@@ -29,13 +29,14 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -95,7 +96,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
     const char* expected_error_msg = static_cast<const char*>(arg);
     if (expected_error_msg == nullptr) {
-      EXPECT_EQ(error, GRPC_ERROR_NONE);
+      EXPECT_EQ(error, absl::OkStatus());
     } else {
       EXPECT_EQ(GetErrorMsg(error), expected_error_msg);
     }
@@ -104,7 +105,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static std::string GetErrorMsg(grpc_error_handle error) {
     std::string error_str;
     GPR_ASSERT(
-        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));
+        grpc_error_get_str(error, StatusStrProperty::kDescription, &error_str));
     return error_str;
   }
 
@@ -324,12 +325,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
@@ -738,6 +737,46 @@ TEST_F(TlsSecurityConnectorTest,
                             on_peer_checked);
 }
 
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithVerifiedRootCertSubjectSucceeds) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs new_args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
+  EXPECT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  std::string expected_subject =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+  tsi_peer peer;
+  EXPECT_EQ(tsi_construct_peer(2, &peer), TSI_OK);
+  EXPECT_EQ(
+      tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "grpc",
+                                         strlen("grpc"), &peer.properties[0]),
+      TSI_OK);
+  EXPECT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                expected_subject.c_str(), &peer.properties[1]),
+            TSI_OK);
+  RefCountedPtr<grpc_auth_context> auth_context;
+  ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  ChannelArgs args;
+  tls_connector->check_peer(peer, nullptr, args, &auth_context,
+                            on_peer_checked);
+}
+
 //
 // Tests for Certificate Providers in ServerSecurityConnector.
 //
@@ -877,12 +916,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
-  distributor->SetErrorForCert(
-      kRootCertName, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage),
-      absl::nullopt);
-  distributor->SetErrorForCert(
-      kIdentityCertName, absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
+  distributor->SetErrorForCert(kRootCertName, GRPC_ERROR_CREATE(kErrorMessage),
+                               absl::nullopt);
+  distributor->SetErrorForCert(kIdentityCertName, absl::nullopt,
+                               GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
@@ -1092,12 +1129,49 @@ TEST_F(TlsSecurityConnectorTest,
   core_external_verifier->Unref();
 }
 
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithVerifiedRootSubjectCertSucceeds) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(ChannelArgs());
+  // Construct a basic TSI Peer.
+  std::string expected_subject =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+  tsi_peer peer;
+  EXPECT_EQ(tsi_construct_peer(2, &peer), TSI_OK);
+  EXPECT_EQ(
+      tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "grpc",
+                                         strlen("grpc"), &peer.properties[0]),
+      TSI_OK);
+  EXPECT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY,
+                expected_subject.c_str(), &peer.properties[1]),
+            TSI_OK);
+  RefCountedPtr<grpc_auth_context> auth_context;
+  ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
+}
 }  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

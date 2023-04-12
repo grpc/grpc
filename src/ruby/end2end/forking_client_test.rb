@@ -25,7 +25,7 @@ def main
     'forking_client_client.rb', server_port)
 
   begin
-    Timeout.timeout(10) do
+    Timeout.timeout(180) do
       Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error

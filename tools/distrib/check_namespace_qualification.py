@@ -76,6 +76,7 @@ IGNORED_FILES = [
     # multi-line #define statements are not handled
     "src/core/lib/gprpp/global_config_env.h",
     "src/core/lib/profiling/timers.h",
+    "src/core/lib/gprpp/crash.h"
 ]
 
 # find our home

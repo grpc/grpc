@@ -203,7 +203,11 @@ GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
 DEFINE_MACROS = ()
 if "win32" in sys.platform:
-    DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1),)
+    DEFINE_MACROS += (
+        ('WIN32_LEAN_AND_MEAN', 1),
+        # avoid https://github.com/abseil/abseil-cpp/issues/1425
+        ('NOMINMAX', 1),
+    )
     if '64bit' in platform.architecture()[0]:
         DEFINE_MACROS += (('MS_WIN64', 1),)
 elif "linux" in sys.platform or "darwin" in sys.platform:
@@ -252,7 +256,8 @@ def extension_modules():
 
     plugin_sources += [
         os.path.join('grpc_tools', 'main.cc'),
-        os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')
+        os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc'),
+        os.path.join('grpc_root', 'src', 'compiler', 'proto_parser_helper.cc')
     ] + [os.path.join(CC_INCLUDE, cc_file) for cc_file in CC_FILES]
 
     plugin_ext = extension.Extension(
@@ -277,24 +282,32 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(name='grpcio-tools',
-                 version=grpc_version.VERSION,
-                 description='Protobuf code generator for gRPC',
-                 long_description=open(_README_PATH, 'r').read(),
-                 author='The gRPC Authors',
-                 author_email='grpc-io@googlegroups.com',
-                 url='https://grpc.io',
-                 license='Apache License 2.0',
-                 classifiers=CLASSIFIERS,
-                 ext_modules=extension_modules(),
-                 packages=setuptools.find_packages('.'),
-                 python_requires='>=3.7',
-                 install_requires=[
-                     'protobuf>=4.21.6,<5.0dev',
-                     'grpcio>={version}'.format(version=grpc_version.VERSION),
-                     'setuptools',
-                 ],
-                 package_data=package_data(),
-                 cmdclass={
-                     'build_ext': BuildExt,
-                 })
+setuptools.setup(
+    name='grpcio-tools',
+    version=grpc_version.VERSION,
+    description='Protobuf code generator for gRPC',
+    long_description_content_type='text/x-rst',
+    long_description=open(_README_PATH, 'r').read(),
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='https://grpc.io',
+    project_urls={
+        "Source Code":
+            "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
+        "Bug Tracker":
+            "https://github.com/grpc/grpc/issues",
+    },
+    license='Apache License 2.0',
+    classifiers=CLASSIFIERS,
+    ext_modules=extension_modules(),
+    packages=setuptools.find_packages('.'),
+    python_requires='>=3.7',
+    install_requires=[
+        'protobuf>=4.21.6,<5.0dev',
+        'grpcio>={version}'.format(version=grpc_version.VERSION),
+        'setuptools',
+    ],
+    package_data=package_data(),
+    cmdclass={
+        'build_ext': BuildExt,
+    })

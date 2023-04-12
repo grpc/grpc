@@ -21,10 +21,10 @@
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -33,7 +33,6 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
@@ -76,32 +75,31 @@ RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
                                                      grpc_error_handle* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
-  if (config_json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "error:config type should be OBJECT.");
+  if (config_json.type() != Json::Type::kObject) {
+    *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
-  ParseJsonObjectField(config_json.object_value(), "certificate_file",
+  ParseJsonObjectField(config_json.object(), "certificate_file",
                        &config->identity_cert_file_, &error_list, false);
-  ParseJsonObjectField(config_json.object_value(), "private_key_file",
+  ParseJsonObjectField(config_json.object(), "private_key_file",
                        &config->private_key_file_, &error_list, false);
   if (config->identity_cert_file_.empty() !=
       config->private_key_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset."));
   }
-  ParseJsonObjectField(config_json.object_value(), "ca_certificate_file",
+  ParseJsonObjectField(config_json.object(), "ca_certificate_file",
                        &config->root_cert_file_, &error_list, false);
   if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE(
         "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
         "be specified."));
   }
-  if (!ParseJsonObjectFieldAsDuration(
-          config_json.object_value(), "refresh_interval",
-          &config->refresh_interval_, &error_list, false)) {
+  if (!ParseJsonObjectFieldAsDuration(config_json.object(), "refresh_interval",
+                                      &config->refresh_interval_, &error_list,
+                                      false)) {
     config->refresh_interval_ = Duration::Minutes(10);  // 10 minutes default
   }
   if (!error_list.empty()) {
@@ -147,7 +145,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
 void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder) {
   builder->certificate_provider_registry()->RegisterCertificateProviderFactory(
-      absl::make_unique<FileWatcherCertificateProviderFactory>());
+      std::make_unique<FileWatcherCertificateProviderFactory>());
 }
 
 }  // namespace grpc_core

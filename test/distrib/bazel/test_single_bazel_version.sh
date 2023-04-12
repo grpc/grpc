@@ -30,12 +30,17 @@ EXCLUDED_TARGETS=(
   "-//src/objective-c/..."
   "-//third_party/objective_c/..."
 
+  # Targets here need C++17 to build via a different configuration, so this is
+  # done separately
+  "-//fuzztest/..."
+
   # This could be a legitmate failure due to bitrot.
   "-//src/proto/grpc/testing:test_gen_proto"
 
   # This appears to be a legitimately broken BUILD file. There's a reference to
   # a non-existent "link_dynamic_library.sh".
   "-//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:all"
+  "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
   # TODO(jtattermusch): add back once fixed
   "-//examples/android/binder/..."
@@ -51,12 +56,18 @@ FAILED_TESTS=""
 export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
-bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+
+ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
+
+tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
-  bazel test --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
+  tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+  tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
 
   popd
 done

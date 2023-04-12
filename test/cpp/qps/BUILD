@@ -52,7 +52,6 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",

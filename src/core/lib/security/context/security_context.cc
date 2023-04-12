@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -41,7 +41,7 @@
 grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
     false, "auth_context_refcount");
 
-/* --- grpc_call --- */
+// --- grpc_call ---
 
 grpc_call_error grpc_call_set_credentials(grpc_call* call,
                                           grpc_call_credentials* creds) {
@@ -97,7 +97,7 @@ void grpc_auth_context_release(grpc_auth_context* context) {
   context->Unref(DEBUG_LOCATION, "grpc_auth_context_unref");
 }
 
-/* --- grpc_client_security_context --- */
+// --- grpc_client_security_context ---
 grpc_client_security_context::~grpc_client_security_context() {
   auth_context.reset(DEBUG_LOCATION, "client_security_context");
   if (extension.instance != nullptr && extension.destroy != nullptr) {
@@ -112,13 +112,12 @@ grpc_client_security_context* grpc_client_security_context_create(
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* c =
       static_cast<grpc_client_security_context*>(ctx);
   c->~grpc_client_security_context();
 }
 
-/* --- grpc_server_security_context --- */
+// --- grpc_server_security_context ---
 grpc_server_security_context::~grpc_server_security_context() {
   auth_context.reset(DEBUG_LOCATION, "server_security_context");
   if (extension.instance != nullptr && extension.destroy != nullptr) {
@@ -137,7 +136,7 @@ void grpc_server_security_context_destroy(void* ctx) {
   c->~grpc_server_security_context();
 }
 
-/* --- grpc_auth_context --- */
+// --- grpc_auth_context ---
 
 static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 
@@ -199,7 +198,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
         return prop;
       }
     }
-    /* We could not find the name, try another round. */
+    // We could not find the name, try another round.
     return grpc_auth_property_iterator_next(it);
   }
 }

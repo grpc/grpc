@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kSmallCounterSize = 4;
@@ -40,8 +41,8 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
   alts_counter* ctr = nullptr;
   char* error_details = nullptr;
 
-  /* Input sanity check on alts_counter_create(). */
-  /* Invalid counter size. */
+  // Input sanity check on alts_counter_create().
+  // Invalid counter size.
   grpc_status_code status =
       alts_counter_create(true, 0, overflow_size, &ctr, &error_details);
   ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
@@ -49,14 +50,14 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
       "counter_size is invalid."));
   gpr_free(error_details);
 
-  /* Invalid overflow size. */
+  // Invalid overflow size.
   status = alts_counter_create(true, counter_size, 0, &ctr, &error_details);
   ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "overflow_size is invalid."));
   gpr_free(error_details);
 
-  /* alts_counter is nullptr. */
+  // alts_counter is nullptr.
   status = alts_counter_create(true, counter_size, overflow_size, nullptr,
                                &error_details);
   ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
@@ -68,15 +69,15 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
                                &error_details);
   ASSERT_EQ(status, GRPC_STATUS_OK);
 
-  /* Input sanity check on alts_counter_increment(). */
-  /* crypter_counter is nullptr. */
+  // Input sanity check on alts_counter_increment().
+  // crypter_counter is nullptr.
   bool is_overflow = false;
   status = alts_counter_increment(nullptr, &is_overflow, &error_details);
   ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "crypter_counter is nullptr."));
   gpr_free(error_details);
-  /* is_overflow is nullptr. */
+  // is_overflow is nullptr.
   status = alts_counter_increment(ctr, nullptr, &error_details);
   ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
@@ -98,7 +99,7 @@ static void alts_counter_test_overflow_full_range(bool is_client,
   if (is_client) {
     expected[counter_size - 1] = 0x80;
   }
-  /* Do a single iteration to ensure the counter is initialized as expected. */
+  // Do a single iteration to ensure the counter is initialized as expected.
   ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
                                       counter_size),
             is_client);
@@ -107,11 +108,11 @@ static void alts_counter_test_overflow_full_range(bool is_client,
   ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
             GRPC_STATUS_OK);
   ASSERT_FALSE(is_overflow);
-  /**
-   * The counter can return 2^{overflow_size * 8} counters. The
-   * high-order bit is fixed to the client/server. The last call will yield a
-   * useable counter, but overflow the counter object.
-   */
+  ///
+  /// The counter can return 2^{overflow_size * 8} counters. The
+  /// high-order bit is fixed to the client/server. The last call will yield a
+  /// useable counter, but overflow the counter object.
+  ///
   int iterations = 1 << (overflow_size * 8);
   int ind = 1;
   for (ind = 1; ind < iterations - 1; ind++) {
@@ -132,7 +133,7 @@ static void alts_counter_test_overflow_full_range(bool is_client,
   alts_counter_destroy(ctr);
 }
 
-/* Set the counter manually and make sure it overflows as expected. */
+// Set the counter manually and make sure it overflows as expected.
 static void alts_counter_test_overflow_single_increment(bool is_client,
                                                         size_t counter_size,
                                                         size_t overflow_size) {

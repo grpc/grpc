@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,17 +32,19 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/surface/init_internally.h"
 
-/*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
- */
+//
+// NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+//       AROUND VERY SPECIFIC USE CASES.
+//
 
 namespace {
 bool skipped_handler = true;
@@ -53,7 +55,7 @@ void grpc_prefork() {
   skipped_handler = true;
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
-  if (!grpc_is_initialized()) {
+  if (!grpc_core::IsInitializedInternally()) {
     return;
   }
   grpc_core::ExecCtx exec_ctx;
@@ -98,10 +100,11 @@ void grpc_postfork_child() {
   if (!skipped_handler) {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::Fork::child_postfork_func reset_polling_engine =
-        grpc_core::Fork::GetResetChildPollingEngineFunc();
-    if (reset_polling_engine != nullptr) {
-      reset_polling_engine();
+    for (auto* reset_polling_engine :
+         grpc_core::Fork::GetResetChildPollingEngineFunc()) {
+      if (reset_polling_engine != nullptr) {
+        reset_polling_engine();
+      }
     }
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);

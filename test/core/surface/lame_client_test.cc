@@ -1,32 +1,41 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
@@ -38,8 +47,6 @@ class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
     ASSERT_EQ(new_state, GRPC_CHANNEL_SHUTDOWN);
   }
 };
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_closure transport_op_cb;
 
@@ -111,11 +118,15 @@ TEST(LameClientTest, MainTest) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+                                grpc_core::CqVerifier::tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  /* the call should immediately fail */
-  cqv.Expect(tag(1), false);
+  // Filter stack code considers this a failed to receive initial metadata
+  // result, where as promise based code interprets this as a trailers only
+  // failed request. Both are rational interpretations, so we accept the one
+  // that is implemented for each stack.
+  cqv.Expect(grpc_core::CqVerifier::tag(1),
+             grpc_core::IsPromiseBasedClientCallEnabled());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -128,11 +139,11 @@ TEST(LameClientTest, MainTest) {
   op->reserved = nullptr;
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(2), nullptr);
+                                grpc_core::CqVerifier::tag(2), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  /* the call should immediately fail */
-  cqv.Expect(tag(2), true);
+  // the call should immediately fail
+  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(call);

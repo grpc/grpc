@@ -12,7 +12,7 @@ The authentication context is structured as a multi-map of key-value pairs - the
 
 The contents of the *auth properties* are populated by an *auth interceptor*. The interceptor also chooses which property key will act as the peer identity (e.g. for client certificate authentication this property will be `"x509_common_name"` or `"x509_subject_alternative_name"`).
 
-Note that AuthContext is generally not modifiable, except when used via an AuthMetadataProcessor([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/impl/codegen/security/auth_context.h)). 
+Note that AuthContext is generally not modifiable, except when used via an AuthMetadataProcessor([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/security/auth_context.h)).
 However, because the AuthContext is a connection-level object, when it is modified via an AuthMetadataProcessor, the modifications will be visible on all subsequent calls on the same connection.
 
 WARNING: AuthContext is the only reliable source of truth when it comes to authenticating RPCs. Using any other call/context properties for authentication purposes is wrong and inherently unsafe.

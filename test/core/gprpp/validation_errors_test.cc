@@ -16,10 +16,7 @@
 
 #include "src/core/lib/gprpp/validation_errors.h"
 
-#include <memory>
-#include <thread>
-
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 
@@ -37,7 +34,8 @@ TEST(ValidationErrors, NoErrors) {
   }
   EXPECT_TRUE(errors.ok());
   EXPECT_EQ(errors.size(), 0);
-  absl::Status status = errors.status("errors validating config");
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
   EXPECT_TRUE(status.ok()) << status;
 }
 
@@ -52,7 +50,8 @@ TEST(ValidationErrors, OneError) {
   }
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.size(), 1);
-  absl::Status status = errors.status("errors validating config");
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       status.message(),
@@ -72,7 +71,8 @@ TEST(ValidationErrors, MultipleErrorsForSameField) {
   }
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.size(), 1);
-  absl::Status status = errors.status("errors validating config");
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "errors validating config: [field:foo.bar errors:["
@@ -92,12 +92,32 @@ TEST(ValidationErrors, ErrorsForMultipleFields) {
   }
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.size(), 2);
-  absl::Status status = errors.status("errors validating config");
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "errors validating config: ["
             "field:foo error:too hot; field:foo.bar error:value smells funny]")
       << status;
+}
+
+TEST(ValidationErrors, MessageMatchesStatusMessage) {
+  ValidationErrors errors;
+  {
+    ValidationErrors::ScopedField field(&errors, "foo");
+    {
+      ValidationErrors::ScopedField field(&errors, ".bar");
+      errors.AddError("value smells funny");
+    }
+    errors.AddError("too hot");
+  }
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.size(), 2);
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
+  std::string message = errors.message("errors validating config");
+  EXPECT_EQ(status.message(), message)
+      << status << " does not match " << message;
 }
 
 }  // namespace

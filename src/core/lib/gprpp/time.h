@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_TIME_H
-#define GRPC_CORE_LIB_GPRPP_TIME_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_TIME_H
+#define GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,12 +26,22 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    uint64_t prev_tsamp = prev.exchange(now);                   \
+    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {       \
+      gpr_log(severity, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
 
 namespace grpc_core {
 
@@ -150,7 +160,7 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
-  static GPR_THREAD_LOCAL(Timestamp::Source*) thread_local_time_source_;
+  static thread_local Timestamp::Source* thread_local_time_source_;
 };
 
 class ScopedTimeCache final : public Timestamp::ScopedSource {
@@ -353,4 +363,4 @@ std::ostream& operator<<(std::ostream& out, Duration duration);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_TIME_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_TIME_H

@@ -34,12 +34,6 @@ $PROTOC -I . \
     --plugin=$PLUGIN
 
 $PROTOC -I . \
-    src/proto/grpc/core/stats.proto \
-    --grpc_out=src/ruby/qps \
-    --ruby_out=src/ruby/qps \
-    --plugin=$PLUGIN
-
-$PROTOC -I . \
     -I third_party/protobuf/src \
     src/proto/grpc/testing/{messages,payloads,stats,benchmark_service,report_qps_scenario_service,worker_service,control}.proto \
     --grpc_out=src/ruby/qps \

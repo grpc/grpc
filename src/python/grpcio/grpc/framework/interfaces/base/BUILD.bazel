@@ -27,18 +27,10 @@ py_library(
     srcs = ["base.py"],
     deps = [
         "//src/python/grpcio/grpc/framework/foundation:abandonment",
-        "@six//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_library(
     name = "utilities",
     srcs = ["utilities.py"],
-    deps = select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
 )

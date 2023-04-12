@@ -118,11 +118,10 @@ class CXXLanguage:
     def unimplemented_test_cases(self):
         return _SKIP_DATA_FRAME_PADDING + \
                _SKIP_SPECIAL_STATUS_MESSAGE + \
-               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
-               _ORCA_TEST_CASES
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return _ORCA_TEST_CASES
+        return []
 
     def __str__(self):
         return 'c++'
@@ -626,9 +625,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'py39/bin/python', 'src/python/grpcio_tests/setup.py',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):

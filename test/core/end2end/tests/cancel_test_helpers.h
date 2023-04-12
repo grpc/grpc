@@ -1,43 +1,49 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 #define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
-#include <grpc/grpc.h>
 #include <grpc/status.h>
 
-typedef struct {
-  const char* name;
-  grpc_call_error (*initiate_cancel)(grpc_call* call, void* reserved);
-  grpc_status_code expect_status;
-  const char* expect_details;
-} cancellation_mode;
+#include "test/core/end2end/end2end_tests.h"
 
-static grpc_call_error wait_for_deadline(grpc_call* /*call*/, void* reserved) {
-  (void)reserved;
-  return GRPC_CALL_OK;
-}
-
-static const cancellation_mode cancellation_modes[] = {
-    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "CANCELLED"},
-    {"deadline", wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED,
-     "Deadline Exceeded"},
+namespace grpc_core {
+class CancellationMode {
+ public:
+  virtual void Apply(CoreEnd2endTest::Call& call) = 0;
+  virtual grpc_status_code ExpectedStatus() = 0;
+  virtual ~CancellationMode() = default;
 };
 
-#endif /* GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H */
+class CancelCancellationMode : public CancellationMode {
+ public:
+  void Apply(CoreEnd2endTest::Call& call) override { call.Cancel(); }
+  grpc_status_code ExpectedStatus() override { return GRPC_STATUS_CANCELLED; }
+};
+
+class DeadlineCancellationMode : public CancellationMode {
+ public:
+  void Apply(CoreEnd2endTest::Call&) override {}
+  grpc_status_code ExpectedStatus() override {
+    return GRPC_STATUS_DEADLINE_EXCEEDED;
+  }
+};
+}  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
