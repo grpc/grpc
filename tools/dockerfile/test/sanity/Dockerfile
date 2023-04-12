@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:15-bullseye
+FROM silkeh/clang:16-bullseye
 
 #=================
 # Basic C core dependencies
@@ -96,7 +96,7 @@ RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 RUN apt-get update && apt-get install -y jq git
 
 # Install prerequisites for the iwyu script
-RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev libclang-16-dev && apt-get clean
 
 #========================
 # Bazel installation

@@ -39,9 +39,9 @@ git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
 #
 ###############################################################################
 
-# latest commit on the clang 15 branch
+# latest commit on the clang 16 branch
 cd ${IWYU_ROOT}/iwyu
-git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
+git checkout 35fed15e53d92c8c540f0c00ac10077043126c4d
 if [ $? -ne 0 ]; then
   echo "Failed to checkout iwyu commit"
   exit 1
