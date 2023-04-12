@@ -361,7 +361,7 @@ kokoro_setup_python_virtual_environment() {
   eval "$(pyenv virtualenv-init -)"
   py_latest_patch="$(pyenv versions --bare --skip-aliases | grep -E "^${PYTHON_VERSION}\.[0-9]{1,2}$" | sort --version-sort | tail -n 1)"
   echo "Activating python ${py_latest_patch} virtual environment"
-  pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
+  pyenv virtualenv --without-pip "${py_latest_patch}" k8s_xds_test_runner
   pyenv local k8s_xds_test_runner
   pyenv activate k8s_xds_test_runner
   python3 -m ensurepip
