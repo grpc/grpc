@@ -258,10 +258,6 @@ ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const ChannelArgs& args) {
-  return args.GetBool(GRPC_ARG_ENABLE_LOAD_REPORTING).value_or(false);
-}
-
 const grpc_channel_filter kFilter =
     MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
         "server_load_reporting");
@@ -282,13 +278,9 @@ struct ServerLoadReportingFilterStaticRegistrar {
       grpc::load_reporter::MeasureEndBytesReceived();
       grpc::load_reporter::MeasureEndLatencyMs();
       grpc::load_reporter::MeasureOtherCallMetric();
-      builder->channel_init()->RegisterStage(
-          GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
-            if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
-              cs_builder->PrependFilter(&kFilter);
-            }
-            return true;
-          });
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_CHANNEL, &kFilter)
+          .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
     });
   }
 } server_load_reporting_filter_static_registrar;

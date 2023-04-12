@@ -117,18 +117,6 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(ChannelStackBuilder* builder) {
-  // Skip on proxy (which explicitly disables retries).
-  if (!builder->channel_args()
-           .GetBool(GRPC_ARG_ENABLE_RETRIES)
-           .value_or(true)) {
-    return true;
-  }
-  // Install filter.
-  builder->PrependFilter(&InjectStatusFilter::kFilterVtable);
-  return true;
-}
-
 // Tests that we honor the error passed to recv_trailing_metadata_ready
 // when determining the call's status, even if the op completion runs before
 // the recv_trailing_metadata op is started from the surface.
@@ -137,8 +125,10 @@ bool AddFilter(ChannelStackBuilder* builder) {
 //   so no retry is done
 TEST_P(RetryTest, RetryRecvTrailingMetadataError) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
-                                           AddFilter);
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                         &InjectStatusFilter::kFilterVtable)
+        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

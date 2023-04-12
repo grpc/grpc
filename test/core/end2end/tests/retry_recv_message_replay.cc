@@ -130,18 +130,11 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // a grpc_error.
 TEST_P(RetryTest, RetryRecvMessageReplay) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_CLIENT_SUBCHANNEL, 0, [](ChannelStackBuilder* builder) {
-          // Skip on proxy (which explicitly disables retries).
-          if (!builder->channel_args()
-                   .GetBool(GRPC_ARG_ENABLE_RETRIES)
-                   .value_or(true)) {
-            return true;
-          }
-          // Install filter.
-          builder->PrependFilter(&FailFirstSendOpFilter::kFilterVtable);
-          return true;
-        });
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                         &FailFirstSendOpFilter::kFilterVtable)
+        // Skip on proxy (which explicitly disables retries).
+        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

@@ -210,7 +210,13 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "trailing-metadata-recording-filter",
+    // Want to add the filter as close to the end as possible, to
+    // make sure that all of the filters work well together.
+    // However, we can't add it at the very end, because the
+    // connected channel filter must be the last one.
+    // Channel init code falls back to lexical ordering of filters if there are
+    // otherwise no dependencies, so we leverage that.
+    "zzzzzz_trailing-metadata-recording-filter",
 };
 bool TrailingMetadataRecordingFilter::trailing_metadata_available_;
 absl::optional<GrpcStreamNetworkState::ValueType>
@@ -790,22 +796,7 @@ int main(int argc, char** argv) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);
-        auto register_stage = [builder](grpc_channel_stack_type type,
-                                        const grpc_channel_filter* filter) {
-          builder->channel_init()->RegisterStage(
-              type, INT_MAX, [filter](grpc_core::ChannelStackBuilder* builder) {
-                // Want to add the filter as close to the end as possible, to
-                // make sure that all of the filters work well together.
-                // However, we can't add it at the very end, because the
-                // connected channel filter must be the last one.  So we add it
-                // right before the last one.
-                auto it = builder->mutable_stack()->end();
-                --it;
-                builder->mutable_stack()->insert(it, filter);
-                return true;
-              });
-        };
-        register_stage(
+        builder->channel_init()->RegisterFilter(
             GRPC_CLIENT_SUBCHANNEL,
             &grpc_core::TrailingMetadataRecordingFilter::kFilterVtable);
       },

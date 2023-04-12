@@ -107,11 +107,7 @@ const grpc_channel_filter test_filter = {
 
 TEST_P(CoreEnd2endTest, FilterCausesClose) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_SERVER_CHANNEL, 0, [](ChannelStackBuilder* builder) {
-          builder->PrependFilter(&test_filter);
-          return true;
-        });
+    builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
   });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;

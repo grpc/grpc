@@ -133,19 +133,10 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 // Tests transparent retries when the call was never sent out on the wire.
 TEST_P(RetryTest, RetryTransparentNotSentOnWire) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,
-        [](ChannelStackBuilder* builder) {
-          // Skip on proxy (which explicitly disables retries).
-          if (!builder->channel_args()
-                   .GetBool(GRPC_ARG_ENABLE_RETRIES)
-                   .value_or(true)) {
-            return true;
-          }
-          // Install filter.
-          builder->PrependFilter(&FailFirstTenCallsFilter::kFilterVtable);
-          return true;
-        });
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                         &FailFirstTenCallsFilter::kFilterVtable)
+        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
