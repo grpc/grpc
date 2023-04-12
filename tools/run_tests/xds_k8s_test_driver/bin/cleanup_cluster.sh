@@ -25,10 +25,15 @@ mapfile -t suffixes < <(kubectl get namespaces -o json  | jq -r '.items[].metada
 
 echo "Found suffixes: ${suffixes[*]}"
 
+NO_SECURE="--nosecure"
+if [[ "$1" == "--secure" ]]; then
+  NO_SECURE=""
+fi
+
 for suffix in "${suffixes[@]}"; do
   echo "-------------------- Cleaning suffix ${suffix} --------------------"
   set -x
-  ./bin/cleanup.sh --nosecure "--resource_suffix=${suffix}"
+  ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}" --server_xds_port=1
   set +x
   echo "-------------------- Finished cleaning ${suffix} --------------------"
 done
