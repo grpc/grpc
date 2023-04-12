@@ -33,7 +33,7 @@ fi
 for suffix in "${suffixes[@]}"; do
   echo "-------------------- Cleaning suffix ${suffix} --------------------"
   set -x
-  ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}" --server_xds_port=1
+  ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}"
   set +x
   echo "-------------------- Finished cleaning ${suffix} --------------------"
 done
