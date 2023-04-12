@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 # Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This tool builds and runs a fuzzer target and generates coverage report under /tmp.
+#
 # Example:
 # Run fuzzer with existing corpus (no fuzzing):
 # $ ./tools/fuzzing/generate_coverage_report.sh //test/core/end2end/fuzzers:api_fuzzer test/core/end2end/fuzzers/api_fuzzer_corpus/*
@@ -41,21 +43,24 @@ LLVM_COV="llvm-cov-${CLANG_MAJOR_VERSION}"
 
 which ${LLVM_PROFDATA}
 if [ $? -ne 0 ]; then
-  echo "LLVM tool not found"
+  echo "${LLVM_PROFDATA} not found"
   exit 1
 fi
 
 TARGET=$(bazel query ${1})
 TARGET_BINARY_PATH="${OUTPUT_BASE}/${MIDDLE}/$(echo ${TARGET:2} | sed 's/:/\//')"
 
+# Build:
 bazel build --dynamic_mode=off --config=dbg --config=fuzzer_asan --config=coverage ${TARGET}
+# Run:
 ${TARGET_BINARY_PATH} ${@:2}
 
+# Create coverage report:
 ${LLVM_PROFDATA} merge -sparse ${LLVM_PROFILE_FILE} -o /tmp/${RANDOM_FILENAME}.profdata
 ${LLVM_COV} report ${TARGET_BINARY_PATH} --format=text --instr-profile=/tmp/${RANDOM_FILENAME}.profdata > /tmp/${RANDOM_FILENAME}.cov
 
 if [ $? -eq 0 ]; then
-  echo "report generated at /tmp/${RANDOM_FILENAME}.cov"
+  echo "Coverage summary report created at /tmp/${RANDOM_FILENAME}.cov"
 else
   echo "Something went wrong"
   exit 1
