@@ -84,6 +84,10 @@ struct GcpObservabilityConfig {
   };
 
   struct CloudTrace {
+    // This needs this unnecessary constructor to address clang + std::optional
+    // problem (https://stackoverflow.com/questions/47974898)
+    CloudTrace() {}
+
     float sampling_rate = 0;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
