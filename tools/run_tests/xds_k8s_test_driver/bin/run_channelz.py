@@ -37,7 +37,7 @@ from absl import app
 from absl import flags
 from absl import logging
 
-from bin import common
+from bin.lib import common
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.infrastructure import gcp
