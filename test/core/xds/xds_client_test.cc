@@ -81,6 +81,10 @@ class XdsClientTest : public ::testing::Test {
    public:
     class FakeNode : public Node {
      public:
+      // This unnecessary constructor is to address clang + std::optional
+      // problem (https://stackoverflow.com/questions/47974898)
+      FakeNode() = default;
+
       const std::string& id() const override { return id_; }
       const std::string& cluster() const override { return cluster_; }
       const std::string& locality_region() const override {
