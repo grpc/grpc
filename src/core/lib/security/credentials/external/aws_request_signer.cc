@@ -100,7 +100,7 @@ AwsRequestSigner::AwsRequestSigner(
     std::string err_str;
     if (!absl::ParseTime(kDateFormat, date_it->second, &request_date,
                          &err_str)) {
-      *error = GRPC_ERROR_CREATE(err_str.c_str());
+      *error = GRPC_ERROR_CREATE(err_str);
       return;
     }
     static_request_date_ =

@@ -173,7 +173,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = static_cast<RefCountedPtr<grpc_channel_credentials>>(
         CreateHttpRequestSSLCredentials());
   }
   http_request_ =

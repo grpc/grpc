@@ -55,7 +55,7 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
   if (env.has_value()) {
     bool out;
     std::string error;
-    if (absl::ParseFlag(env->c_str(), &out, &error)) return out;
+    if (absl::ParseFlag(*env, &out, &error)) return out;
     fprintf(stderr, "Error reading bool from %s: '%s' is not a bool: %s",
             std::string(environment_variable).c_str(), env->c_str(),
             error.c_str());

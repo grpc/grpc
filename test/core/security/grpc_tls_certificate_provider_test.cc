@@ -205,14 +205,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
 TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   StaticDataCertificateProvider provider(
-      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      root_cert_, MakeCertKeyPairs(private_key_, cert_chain_));
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
@@ -223,10 +222,9 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(CredentialInfo(
-          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  "", MakeCertKeyPairs(private_key_, cert_chain_))));
   CancelWatch(watcher_state_3);
 }
 
@@ -239,8 +237,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
@@ -251,10 +248,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(CredentialInfo(
-          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  "", MakeCertKeyPairs(private_key_, cert_chain_))));
   CancelWatch(watcher_state_3);
 }
 
@@ -302,8 +298,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Expect to see the credential data.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -314,10 +309,10 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              ::testing::ElementsAre(CredentialInfo(
-                  root_cert_2_, MakeCertKeyPairs(private_key_2_.c_str(),
-                                                 cert_chain_2_.c_str()))));
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          root_cert_2_, MakeCertKeyPairs(private_key_2_, cert_chain_2_))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -337,8 +332,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Expect to see the credential data.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -349,8 +343,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Expect to see the new credential data.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_2_, MakeCertKeyPairs(private_key_.c_str(),
-                                                 cert_chain_.c_str()))));
+                  root_cert_2_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -370,8 +363,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Expect to see the credential data.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -381,10 +373,10 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_2_.c_str(),
-                                               cert_chain_2_.c_str()))));
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          root_cert_, MakeCertKeyPairs(private_key_2_, cert_chain_2_))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -405,8 +397,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // updates.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Delete TmpFile objects, which will remove the corresponding files.
   tmp_root_cert.reset();
   tmp_identity_key.reset();
@@ -439,8 +430,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // updates.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Delete root TmpFile object, which will remove the corresponding file.
   tmp_root_cert.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
@@ -471,8 +461,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // updates.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
+                  root_cert_, MakeCertKeyPairs(private_key_, cert_chain_))));
   // Delete identity TmpFile objects, which will remove the corresponding files.
   tmp_identity_key.reset();
   tmp_identity_cert.reset();

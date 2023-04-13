@@ -199,9 +199,8 @@ class grpc_ssl_channel_security_connector final
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override {
-    return grpc_core::Immediate(
-        SslCheckCallHost(host, target_name_.c_str(),
-                         overridden_target_name_.c_str(), auth_context));
+    return grpc_core::Immediate(SslCheckCallHost(
+        host, target_name_, overridden_target_name_, auth_context));
   }
 
  private:

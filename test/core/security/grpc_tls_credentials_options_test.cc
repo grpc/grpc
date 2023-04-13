@@ -91,7 +91,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      root_cert_, MakeCertKeyPairs(private_key_, cert_chain_));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
@@ -132,7 +132,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnNotProvidedCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      "", MakeCertKeyPairs(private_key_, cert_chain_));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
@@ -150,7 +150,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithDefaultRootAndStaticDataProviderOnIdentityCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      "", MakeCertKeyPairs(private_key_, cert_chain_));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
@@ -168,7 +168,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      root_cert_, MakeCertKeyPairs(private_key_, cert_chain_));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
@@ -189,7 +189,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnIdentityCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+      "", MakeCertKeyPairs(private_key_, cert_chain_));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
@@ -409,7 +409,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
-            MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+            MakeCertKeyPairs(private_key_, cert_chain_));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -426,7 +426,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_2_);
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
-            MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()));
+            MakeCertKeyPairs(private_key_2_, cert_chain_2_));
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -458,7 +458,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
-            MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+            MakeCertKeyPairs(private_key_, cert_chain_));
   // Delete TmpFile objects, which will remove the corresponding files.
   tmp_root_cert.reset();
   tmp_identity_key.reset();
@@ -476,7 +476,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
-            MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+            MakeCertKeyPairs(private_key_, cert_chain_));
 }
 
 //

@@ -98,7 +98,7 @@ absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
              : absl::Status(absl::StatusCode::kInternal,
-                            grpc_core::StrError(errno).c_str());
+                            grpc_core::StrError(errno));
 }
 
 // Create a test socket with the right properties for testing.

@@ -57,8 +57,8 @@ class ServiceConfigChannelArgChannelData {
     auto service_config_str =
         args->channel_args.GetOwnedString(GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str.has_value()) {
-      auto service_config = ServiceConfigImpl::Create(
-          args->channel_args, service_config_str->c_str());
+      auto service_config =
+          ServiceConfigImpl::Create(args->channel_args, *service_config_str);
       if (!service_config.ok()) {
         gpr_log(GPR_ERROR, "%s", service_config.status().ToString().c_str());
       } else {

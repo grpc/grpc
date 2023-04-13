@@ -422,9 +422,9 @@ int TlsChannelSecurityConnector::cmp(
   auto* other = reinterpret_cast<const TlsChannelSecurityConnector*>(other_sc);
   int c = channel_security_connector_cmp(other);
   if (c != 0) return c;
-  c = grpc_ssl_cmp_target_name(
-      target_name_.c_str(), other->target_name_.c_str(),
-      overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
+  c = grpc_ssl_cmp_target_name(target_name_, other->target_name_,
+                               overridden_target_name_,
+                               other->overridden_target_name_);
   if (c != 0) return c;
   return 0;
 }
@@ -432,9 +432,8 @@ int TlsChannelSecurityConnector::cmp(
 ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
     absl::string_view host, grpc_auth_context* auth_context) {
   if (options_->check_call_host()) {
-    return Immediate(SslCheckCallHost(host, target_name_.c_str(),
-                                      overridden_target_name_.c_str(),
-                                      auth_context));
+    return Immediate(SslCheckCallHost(host, target_name_,
+                                      overridden_target_name_, auth_context));
   }
   return ImmediateOkStatus();
 }
@@ -516,10 +515,8 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
   }
   grpc_error_handle error;
   if (!status.ok()) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("Custom verification check failed with error: ",
-                     status.ToString())
-            .c_str());
+    error = GRPC_ERROR_CREATE(absl::StrCat(
+        "Custom verification check failed with error: ", status.ToString()));
   }
   if (run_callback_inline) {
     Closure::Run(DEBUG_LOCATION, on_peer_checked_, error);
@@ -790,10 +787,8 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
   }
   grpc_error_handle error;
   if (!status.ok()) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("Custom verification check failed with error: ",
-                     status.ToString())
-            .c_str());
+    error = GRPC_ERROR_CREATE(absl::StrCat(
+        "Custom verification check failed with error: ", status.ToString()));
   }
   if (run_callback_inline) {
     Closure::Run(DEBUG_LOCATION, on_peer_checked_, error);

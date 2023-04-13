@@ -34,7 +34,7 @@ namespace experimental {
 std::string ValidateServiceConfigJSON(const std::string& service_config_json) {
   grpc_init();
   auto service_config = grpc_core::ServiceConfigImpl::Create(
-      grpc_core::ChannelArgs(), service_config_json.c_str());
+      grpc_core::ChannelArgs(), service_config_json);
   std::string return_value;
   if (!service_config.ok()) return_value = service_config.status().ToString();
   grpc_shutdown();

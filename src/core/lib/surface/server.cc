@@ -1187,7 +1187,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
       Slice method = Slice::FromExternalString(rm->method);
       const bool has_host = !rm->host.empty();
       if (has_host) {
-        host = Slice::FromExternalString(rm->host.c_str());
+        host = Slice::FromExternalString(rm->host);
       }
       uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
       uint32_t probes = 0;

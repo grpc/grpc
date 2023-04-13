@@ -56,7 +56,7 @@ namespace testing {
 static std::string get_host(const std::string& worker) {
   absl::string_view host;
   absl::string_view port;
-  grpc_core::SplitHostPort(worker.c_str(), &host, &port);
+  grpc_core::SplitHostPort(worker, &host, &port);
   return std::string(host.data(), host.size());
 }
 
@@ -466,7 +466,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     } else {
       std::string host = get_host(workers[i]);
       std::string cli_target =
-          grpc_core::JoinHostPort(host.c_str(), init_status.port());
+          grpc_core::JoinHostPort(host, init_status.port());
       client_config.add_server_targets(cli_target.c_str());
     }
   }

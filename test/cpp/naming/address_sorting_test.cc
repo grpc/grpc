@@ -68,7 +68,7 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
   std::string host;
   std::string port;
   grpc_resolved_address resolved_addr;
-  grpc_core::SplitHostPort(test_addr.dest_addr.c_str(), &host, &port);
+  grpc_core::SplitHostPort(test_addr.dest_addr, &host, &port);
   if (test_addr.family == AF_INET) {
     sockaddr_in in_dest;
     memset(&in_dest, 0, sizeof(sockaddr_in));

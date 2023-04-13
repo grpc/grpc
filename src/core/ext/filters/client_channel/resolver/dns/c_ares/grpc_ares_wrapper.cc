@@ -914,10 +914,8 @@ static bool inner_resolve_as_ip_literal_locked(
   }
   grpc_resolved_address addr;
   *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
-  if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
-                               false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
-                               false /* log errors */)) {
+  if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = std::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr.addr, addr.len, grpc_core::ChannelArgs());

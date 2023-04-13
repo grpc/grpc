@@ -164,7 +164,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  auto json = grpc_core::JsonParse(json_string.c_str());
+  auto json = grpc_core::JsonParse(json_string);
   if (!json.ok() || json->type() != grpc_core::Json::Type::kObject) {
     return grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,

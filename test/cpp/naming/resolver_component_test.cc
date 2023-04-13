@@ -534,9 +534,9 @@ void InjectBrokenNameServerList(ares_channel channel) {
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   std::string unused_host;
   std::string local_dns_server_port;
-  GPR_ASSERT(grpc_core::SplitHostPort(
-      absl::GetFlag(FLAGS_local_dns_server_address).c_str(), &unused_host,
-      &local_dns_server_port));
+  GPR_ASSERT(
+      grpc_core::SplitHostPort(absl::GetFlag(FLAGS_local_dns_server_address),
+                               &unused_host, &local_dns_server_port));
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
           "Good server address:%s",
@@ -631,7 +631,7 @@ void RunResolvesRelevantRecordsTest(
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
+          whole_uri, resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   auto* resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },

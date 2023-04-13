@@ -114,8 +114,8 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfigHelper(
       return absl::InvalidArgumentError("child entry should be of type object");
     }
     // If we support this policy, then select it.
-    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            it->first.c_str(), nullptr)) {
+    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(it->first,
+                                                               nullptr)) {
       return it;
     }
     policies_tried.push_back(it->first);
@@ -130,7 +130,7 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const Json& json) const {
   if (!policy.ok()) return policy.status();
   // Find factory.
   LoadBalancingPolicyFactory* factory =
-      GetLoadBalancingPolicyFactory((*policy)->first.c_str());
+      GetLoadBalancingPolicyFactory((*policy)->first);
   if (factory == nullptr) {
     return absl::FailedPreconditionError(absl::StrFormat(
         "Factory not found for policy \"%s\"", (*policy)->first));
