@@ -1468,6 +1468,7 @@ grpc_cc_library(
     deps = [
         "event_engine_executor",
         "event_engine_thread_local",
+        "event_engine_work_queue",
         "forkable",
         "time",
         "useful",
