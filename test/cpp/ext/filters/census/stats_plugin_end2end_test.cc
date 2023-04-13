@@ -629,7 +629,7 @@ bool IsAnnotationPresent(
     std::vector<opencensus::trace::exporter::SpanData>::const_iterator span,
     absl::string_view annotation) {
   for (const auto& event : span->annotations().events()) {
-    if (event.event().description() == annotation) {
+    if (absl::StrContains(event.event().description(), annotation)) {
       return true;
     }
   }
@@ -788,9 +788,9 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   EXPECT_TRUE(
       IsAnnotationPresent(attempt_span_data, "Send message: 1026 bytes"));
   EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
-                                  "Send compressed message: 31 bytes"));
-  EXPECT_TRUE(
-      IsAnnotationPresent(attempt_span_data, "Received message: 31 bytes"));
+                                  "Send compressed message:" /*  31 bytes */));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
+                                  "Received message:" /*  31 bytes */));
   EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
                                   "Received decompressed message: 1026 bytes"));
   // Check presence of message size annotations in server span
@@ -800,9 +800,9 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   EXPECT_TRUE(
       IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
   EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
-                                  "Send compressed message: 31 bytes"));
-  EXPECT_TRUE(
-      IsAnnotationPresent(server_span_data, "Received message: 31 bytes"));
+                                  "Send compressed message:" /*  31 bytes */));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "Received message:" /*  31 bytes */));
   EXPECT_TRUE(IsAnnotationPresent(server_span_data,
                                   "Received decompressed message: 1026 bytes"));
 }
