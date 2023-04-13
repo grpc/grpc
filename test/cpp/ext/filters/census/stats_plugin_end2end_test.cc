@@ -787,10 +787,10 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   ASSERT_NE(attempt_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(attempt_span_data, "Send message: 1026 bytes"));
-  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
-                                  "Send compressed message:" /*  31 bytes */));
-  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
-                                  "Received message:" /*  31 bytes */));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data, "Received message:"));
   EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
                                   "Received decompressed message: 1026 bytes"));
   // Check presence of message size annotations in server span
@@ -799,10 +799,10 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   ASSERT_NE(attempt_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
-  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
-                                  "Send compressed message:" /*  31 bytes */));
-  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
-                                  "Received message:" /*  31 bytes */));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Received message:"));
   EXPECT_TRUE(IsAnnotationPresent(server_span_data,
                                   "Received decompressed message: 1026 bytes"));
 }
