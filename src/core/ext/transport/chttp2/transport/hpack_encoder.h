@@ -95,7 +95,7 @@ class HPackCompressor {
   template <typename MetadataTrait>
   class Compressor<MetadataTrait, NoCompressionCompressor> {
    public:
-    void EncodeWith(MetadataTrait trait,
+    void EncodeWith(MetadataTrait,
                     const typename MetadataTrait::ValueType& value,
                     Encoder* encoder) {
       const Slice& slice = MetadataValueAsSlice<MetadataTrait>(value);
@@ -112,7 +112,7 @@ class HPackCompressor {
   template <typename MetadataTrait>
   class Compressor<MetadataTrait, FrequentKeyWithNoValueCompressionCompressor> {
    public:
-    void EncodeWith(MetadataTrait trait,
+    void EncodeWith(MetadataTrait,
                     const typename MetadataTrait::ValueType& value,
                     Encoder* encoder) {
       const Slice& slice = MetadataValueAsSlice<MetadataTrait>(value);
@@ -203,7 +203,7 @@ class HPackCompressor {
                     Encoder* encoder) {
       uint32_t* index = nullptr;
       auto& table = encoder->compressor()->table_;
-      if (value < N) {
+      if (static_cast<size_t>(value) < N) {
         index = &previously_sent_[static_cast<uint32_t>(value)];
         if (table.ConvertableToDynamicIndex(*index)) {
           encoder->EmitIndexed(table.DynamicIndex(*index));
