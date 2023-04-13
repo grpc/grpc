@@ -1194,6 +1194,11 @@ class MetadataMap {
   explicit MetadataMap(Arena* arena);
   ~MetadataMap();
 
+  // Given a compressor factory - template taking <MetadataTrait,
+  // CompressionTrait>, StatefulCompressor<Factory> provides a type
+  // derived from all Encodable traits in this MetadataMap.
+  // This can be used by transports to delegate compression to the appropriate
+  // compression algorithm.
   template <template <typename, typename> class Factory>
   using StatefulCompressor =
       metadata_detail::StatefulCompressor<Factory, Traits...>;

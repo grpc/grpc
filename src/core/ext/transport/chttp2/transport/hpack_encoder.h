@@ -87,11 +87,23 @@ class HPackCompressor {
   }
 
  private:
+  // Forward declare encoder so we can use it from Compressor
   class Encoder;
 
+  // Compressor is partially specialized on CompressionTraits, but leaves
+  // MetadataTrait as variable.
+  // Via MetadataMap::StatefulCompressor it builds compression state for
+  // HPackCompressor.
+  // Each trait compressor gets to have some persistent state across the channel
+  // (declared as Compressor member variables).
+  // The compressors expose a single method:
+  // void EncodeWith(MetadataTrait, const MetadataTrait::ValueType, Encoder*);
+  // This method figures out how to encode the value, and then delegates to
+  // Encoder to perform the encoding.
   template <typename MetadataTrait, typename CompressonTraits>
   class Compressor;
 
+  // No compression encoder: just emit the key and value as literals.
   template <typename MetadataTrait>
   class Compressor<MetadataTrait, NoCompressionCompressor> {
    public:
@@ -109,6 +121,7 @@ class HPackCompressor {
     }
   };
 
+  // Frequent key with no value compression encoder
   template <typename MetadataTrait>
   class Compressor<MetadataTrait, FrequentKeyWithNoValueCompressionCompressor> {
    public:
@@ -126,6 +139,13 @@ class HPackCompressor {
     uint32_t some_sent_value_ = 0;
   };
 
+  // Helper to determine if two objects have the same identity.
+  // Equivalent here => equality, but equality does not imply equivalency.
+  // For example, two slices with the same contents are equal, but not
+  // equivalent.
+  // Used as a much faster check for equality than the full equality check,
+  // since many metadatum that are stable have the same root object in metadata
+  // maps.
   template <typename T>
   static bool IsEquivalent(T a, T b) {
     return a == b;
