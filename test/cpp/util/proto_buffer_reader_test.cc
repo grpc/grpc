@@ -26,9 +26,9 @@ namespace {
 
 void ExpectBufferEqual(const ByteBuffer& a, const ByteBuffer& b) {
   Slice a_slice;
-  a.DumpToSingleSlice(&a_slice);
+  EXPECT_TRUE(a.DumpToSingleSlice(&a_slice).ok());
   Slice b_slice;
-  b.DumpToSingleSlice(&b_slice);
+  EXPECT_TRUE(b.DumpToSingleSlice(&b_slice).ok());
   EXPECT_EQ(a_slice.size(), b_slice.size());
   EXPECT_EQ(memcmp(a_slice.begin(), b_slice.begin(), a_slice.size()), 0);
 }
@@ -43,7 +43,7 @@ TEST(ProtoBufferReaderTest, Next) {
   // read all data from buffer
   std::vector<Slice> read_slices;
   int read_size = 0;
-  while (read_size < buffer.Length()) {
+  while (read_size < static_cast<int>(buffer.Length())) {
     const void* data;
     int size = 0;
     EXPECT_TRUE(reader.Next(&data, &size));

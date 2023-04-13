@@ -154,10 +154,13 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
 #ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
   // Writes cord to the backing byte_buffer, sharing the memory between the
   // blocks of the cord, and the slices of the byte_buffer.
+  /// (override is intentionally omitted here to support old Protobuf which
+  ///  doesn't have ReadCord method)
   virtual bool WriteCord(const absl::Cord& cord) {
     grpc_slice_buffer* buffer = slice_buffer();
     size_t cur = 0;
     for (absl::string_view chunk : cord.Chunks()) {
+      // TODO(veblush): Revisit this 512 threadhold which could be smaller.
       if (chunk.size() < 512) {
         // If chunk is small enough, just copy it.
         grpc_slice slice =
