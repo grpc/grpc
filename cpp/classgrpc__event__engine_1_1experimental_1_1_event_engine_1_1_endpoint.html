@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -93,12 +93,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">~Endpoint</a> ()=default</td></tr>
 <tr class="memdesc:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuts down all connections and invokes all pending read or write callbacks with an error status.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">More...</a><br /></td></tr>
 <tr class="separator:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4d81f1e05df6e8de0e32b0466bd1133"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa4d81f1e05df6e8de0e32b0466bd1133">Read</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a> *args)=0</td></tr>
-<tr class="memdesc:aa4d81f1e05df6e8de0e32b0466bd1133"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa4d81f1e05df6e8de0e32b0466bd1133">More...</a><br /></td></tr>
-<tr class="separator:aa4d81f1e05df6e8de0e32b0466bd1133"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa402506dfbe429f9ccd9f993adee7561"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa402506dfbe429f9ccd9f993adee7561">Write</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a> *args)=0</td></tr>
-<tr class="memdesc:aa402506dfbe429f9ccd9f993adee7561"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa402506dfbe429f9ccd9f993adee7561">More...</a><br /></td></tr>
-<tr class="separator:aa402506dfbe429f9ccd9f993adee7561"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dfac8b5879c7088c8d2347854012095"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a7dfac8b5879c7088c8d2347854012095">Read</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a> *args)=0</td></tr>
+<tr class="memdesc:a7dfac8b5879c7088c8d2347854012095"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a7dfac8b5879c7088c8d2347854012095">More...</a><br /></td></tr>
+<tr class="separator:a7dfac8b5879c7088c8d2347854012095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20ee9db2384229b0d77abaca38f5e3df"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a20ee9db2384229b0d77abaca38f5e3df">Write</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a> *args)=0</td></tr>
+<tr class="memdesc:a20ee9db2384229b0d77abaca38f5e3df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a20ee9db2384229b0d77abaca38f5e3df">More...</a><br /></td></tr>
+<tr class="separator:a20ee9db2384229b0d77abaca38f5e3df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">GetPeerAddress</a> () const =0</td></tr>
 <tr class="memdesc:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">More...</a><br /></td></tr>
 <tr class="separator:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,8 +191,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aa4d81f1e05df6e8de0e32b0466bd1133"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa4d81f1e05df6e8de0e32b0466bd1133">&#9670;&nbsp;</a></span>Read()</h2>
+<a id="a7dfac8b5879c7088c8d2347854012095"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7dfac8b5879c7088c8d2347854012095">&#9670;&nbsp;</a></span>Read()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -201,7 +201,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Endpoint::Read </td>
+          <td class="memname">virtual bool grpc_event_engine::experimental::EventEngine::Endpoint::Read </td>
           <td>(</td>
           <td class="paramtype">absl::AnyInvocable&lt; void(absl::Status)&gt;&#160;</td>
           <td class="paramname"><em>on_read</em>, </td>
@@ -232,14 +232,14 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
-<p>When data is available on the connection, that data is moved into the <em>buffer</em>, and the <em>on_read</em> callback is called. The caller must ensure that the callback has access to the buffer when executed later. Ownership of the buffer is not transferred. Valid slices <em>may</em> be placed into the buffer even if the callback is invoked with a non-OK Status.</p>
+<p>When data is available on the connection, that data is moved into the <em>buffer</em>. If the read succeeds immediately, it returns true and the <em>on_read</em> callback is not executed. Otherwise it returns false and the <em>on_read</em> callback executes asynchronously when the read completes. The caller must ensure that the callback has access to the buffer when it executes. Ownership of the buffer is not transferred. Valid slices <em>may</em> be placed into the buffer even if the callback is invoked with a non-OK Status.</p>
 <p>There can be at most one outstanding read per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding read is one in which the <em>on_read</em> callback has not yet been executed for some previous call to <em>Read</em>. If an attempt is made to call <em>Read</em> while a previous read is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a></em> must abort.</p>
 <p>For failed read operations, implementations should pass the appropriate statuses to <em>on_read</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
 </div>
 </div>
-<a id="aa402506dfbe429f9ccd9f993adee7561"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa402506dfbe429f9ccd9f993adee7561">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="a20ee9db2384229b0d77abaca38f5e3df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a20ee9db2384229b0d77abaca38f5e3df">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -248,7 +248,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Endpoint::Write </td>
+          <td class="memname">virtual bool grpc_event_engine::experimental::EventEngine::Endpoint::Write </td>
           <td>(</td>
           <td class="paramtype">absl::AnyInvocable&lt; void(absl::Status)&gt;&#160;</td>
           <td class="paramname"><em>on_writable</em>, </td>
@@ -279,7 +279,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Writes data out on the connection. </p>
-<p><em>on_writable</em> is called when the connection is ready for more data. The Slices within the <em>data</em> buffer may be mutated at will by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> until <em>on_writable</em> is called. The <em>data</em> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> will remain valid after calling <em>Write</em>, but its state is otherwise undefined. All bytes in <em>data</em> must have been written before calling <em>on_writable</em> unless an error has occurred.</p>
+<p>If the write succeeds immediately, it returns true and the <em>on_writable</em> callback is not executed. Otherwise it returns false and the <em>on_writable</em> callback is called asynchronously when the connection is ready for more data. The Slices within the <em>data</em> buffer may be mutated at will by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> until <em>on_writable</em> is called. The <em>data</em> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html" title="A Wrapper around grpc_slice_buffer pointer.">SliceBuffer</a> will remain valid after calling <em>Write</em>, but its state is otherwise undefined. All bytes in <em>data</em> must have been written before calling <em>on_writable</em> unless an error has occurred.</p>
 <p>There can be at most one outstanding write per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding write is one in which the <em>on_writable</em> callback has not yet been executed for some previous call to <em>Write</em>. If an attempt is made to call <em>Write</em> while a previous write is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a></em> must abort.</p>
 <p>For failed write operations, implementations should pass the appropriate statuses to <em>on_writable</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
@@ -291,7 +291,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

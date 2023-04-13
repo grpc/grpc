@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">30.1.0</span>
+   &#160;<span id="projectnumber">31.0.0</span>
    </div>
   </td>
  </tr>
@@ -697,7 +697,7 @@ $(function() {
 <div class="line"><a name="l00625"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">  625</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NORETURN</span></div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160; </div>
-<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;<span class="preprocessor">#if GPR_FORBID_UNREACHABLE_CODE</span></div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;<span class="preprocessor">#if defined(GPR_FORBID_UNREACHABLE_CODE) &amp;&amp; GPR_FORBID_UNREACHABLE_CODE</span></div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;<span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)</span></div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
@@ -848,12 +848,12 @@ $(function() {
 <div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160; </div>
 <div class="line"><a name="l00777"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab895b9154f9a06d9042a9f627dab8046">  777</a></span>&#160;<span class="preprocessor">#define GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160; </div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;<span class="comment">/* clang 11 with msan miscompiles destruction of [[no_unique_address]] members</span></div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment"> * of zero size - for a repro see:</span></div>
+<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;<span class="comment">/* clang 12 and lower with msan miscompiles destruction of [[no_unique_address]]</span></div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment"> * members of zero size - for a repro see:</span></div>
 <div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;<span class="comment"> * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc</span></div>
 <div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;<span class="preprocessor">#ifdef __clang__</span></div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="preprocessor">#if __clang__ &amp;&amp; __clang_major__ &lt;= 11 &amp;&amp; __has_feature(memory_sanitizer)</span></div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="preprocessor">#if __clang__ &amp;&amp; __clang_major__ &lt;= 12 &amp;&amp; __has_feature(memory_sanitizer)</span></div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;<span class="preprocessor">#undef GPR_NO_UNIQUE_ADDRESS</span></div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS</span></div>
 <div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="preprocessor">#endif</span></div>
@@ -867,7 +867,7 @@ $(function() {
 <div class="ttc" id="astructgpr__log__func__args_html_ae1a051bbc7e0ef6c58de0db3efda24bb"><div class="ttname"><a href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">gpr_log_func_args::line</a></div><div class="ttdeci">int line</div><div class="ttdef"><b>Definition:</b> log.h:77</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:36 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

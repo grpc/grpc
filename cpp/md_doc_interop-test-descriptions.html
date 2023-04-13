@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -658,7 +658,7 @@ orca_oob</h2>
 <p>Procedures:</p><ol type="1">
 <li>Client starts a full duplex call and sends: ``` { orca_oob_report:{ cpu_utilization: 0.8210 memory_utilization: 0.5847 utilization: { util: 0.30499 } } response_parameters:{ size: 1 } } ```</li>
 <li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 1. To wait for load report, client may inject a callback to the custom LB policy, or poll the result by doing empty unary call that carries a reference, e.g. using CallOptions, that will be filled in by the custom LB policy as part of the <code>OrcaOobReportListener</code> API.</li>
-<li>Then client sends: ``` { orca_oob_report:{ cpu_utilization: 0.29309 memory_utilization: 0.2 utilization: { util: 100.2039 } } response_parameters:{ size: 1 } } ```</li>
+<li>Then client sends: ``` { orca_oob_report:{ cpu_utilization: 0.29309 memory_utilization: 0.2 utilization: { util: 0.2039 } } response_parameters:{ size: 1 } } ```</li>
 <li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 3. Similar to step 2.</li>
 <li>Client half closes the stream, and asserts the streaming call is successful.</li>
 </ol>
@@ -781,7 +781,7 @@ Backend metrics report</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:40 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

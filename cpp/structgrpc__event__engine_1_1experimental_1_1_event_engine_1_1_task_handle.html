@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,9 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Data Fields</a>  </div>
+<a href="#pub-attribs">Data Fields</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::EventEngine::TaskHandle Struct Reference</div>  </div>
 </div><!--header-->
@@ -82,11 +84,96 @@ $(function() {
 Data Fields</h2></td></tr>
 <tr class="memitem:a81267fb939a1c23a2b48e58d6db54f37"><td class="memItemLeft" align="right" valign="top">intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#a81267fb939a1c23a2b48e58d6db54f37">keys</a> [2]</td></tr>
 <tr class="separator:a81267fb939a1c23a2b48e58d6db54f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a2ac912ac58087e650a0784c26b032430"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#a2ac912ac58087e650a0784c26b032430">kInvalid</a></td></tr>
+<tr class="separator:a2ac912ac58087e650a0784c26b032430"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a33c855a73c350de643db174e6741e712"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#a33c855a73c350de643db174e6741e712">operator==</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;lhs, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;rhs)</td></tr>
+<tr class="separator:a33c855a73c350de643db174e6741e712"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a43ed5cddd5f79a123a7c4b045858ce16"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#a43ed5cddd5f79a123a7c4b045858ce16">operator!=</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;lhs, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;rhs)</td></tr>
+<tr class="separator:a43ed5cddd5f79a123a7c4b045858ce16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Represents a scheduled task. </p>
 <p><em>TaskHandles</em> are returned by <em>Run*</em> methods, and can be given to the <em>Cancel</em> method. </p>
-</div><h2 class="groupheader">Field Documentation</h2>
+</div><h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a43ed5cddd5f79a123a7c4b045858ce16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43ed5cddd5f79a123a7c4b045858ce16">&#9670;&nbsp;</a></span>operator!=</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool operator!= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;&#160;</td>
+          <td class="paramname"><em>lhs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a33c855a73c350de643db174e6741e712"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33c855a73c350de643db174e6741e712">&#9670;&nbsp;</a></span>operator==</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool operator== </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;&#160;</td>
+          <td class="paramname"><em>lhs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> &amp;&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Field Documentation</h2>
 <a id="a81267fb939a1c23a2b48e58d6db54f37"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a81267fb939a1c23a2b48e58d6db54f37">&#9670;&nbsp;</a></span>keys</h2>
 
@@ -101,13 +188,35 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a id="a2ac912ac58087e650a0784c26b032430"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ac912ac58087e650a0784c26b032430">&#9670;&nbsp;</a></span>kInvalid</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/grpc/event_engine/<a class="el" href="event__engine_8h_source.html">event_engine.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

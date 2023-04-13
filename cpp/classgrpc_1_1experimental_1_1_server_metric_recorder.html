@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -91,6 +91,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a855494014bb54b17599b2f08d5684cd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a855494014bb54b17599b2f08d5684cd1">SetQps</a> (double value)</td></tr>
 <tr class="memdesc:a855494014bb54b17599b2f08d5684cd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records number of queries per second to the server in the range [0, infy).  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a855494014bb54b17599b2f08d5684cd1">More...</a><br /></td></tr>
 <tr class="separator:a855494014bb54b17599b2f08d5684cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d9e7876e89a95a21473060405a2822a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3d9e7876e89a95a21473060405a2822a">SetEps</a> (double value)</td></tr>
+<tr class="memdesc:a3d9e7876e89a95a21473060405a2822a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records number of errors per second to the server in the range [0, infy).  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3d9e7876e89a95a21473060405a2822a">More...</a><br /></td></tr>
+<tr class="separator:a3d9e7876e89a95a21473060405a2822a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcbbad1cd30f0e7d30e339d41d1cbc53"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#afcbbad1cd30f0e7d30e339d41d1cbc53">SetNamedUtilization</a> (<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> name, double value)</td></tr>
 <tr class="memdesc:afcbbad1cd30f0e7d30e339d41d1cbc53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a named resource utilization value in the range [0, 1].  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#afcbbad1cd30f0e7d30e339d41d1cbc53">More...</a><br /></td></tr>
 <tr class="separator:afcbbad1cd30f0e7d30e339d41d1cbc53"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,6 +109,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ab2ec6b5b456d52ba00194b3f5c2d1195">ClearQps</a> ()</td></tr>
 <tr class="memdesc:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears number of queries per second to the server if recorded.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ab2ec6b5b456d52ba00194b3f5c2d1195">More...</a><br /></td></tr>
 <tr class="separator:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb81d1be77dc5bbc5d77fbd86fdfa14d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#adb81d1be77dc5bbc5d77fbd86fdfa14d">ClearEps</a> ()</td></tr>
+<tr class="memdesc:adb81d1be77dc5bbc5d77fbd86fdfa14d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears number of errors per second to the server if recorded.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#adb81d1be77dc5bbc5d77fbd86fdfa14d">More...</a><br /></td></tr>
+<tr class="separator:adb81d1be77dc5bbc5d77fbd86fdfa14d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22f6964b20f1665dd2eae387c913b4c3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a22f6964b20f1665dd2eae387c913b4c3">ClearNamedUtilization</a> (<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> name)</td></tr>
 <tr class="memdesc:a22f6964b20f1665dd2eae387c913b4c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears a named utilization value if exists.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a22f6964b20f1665dd2eae387c913b4c3">More...</a><br /></td></tr>
 <tr class="separator:a22f6964b20f1665dd2eae387c913b4c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,6 +148,25 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Clears the server CPU utilization if recorded. </p>
+
+</div>
+</div>
+<a id="adb81d1be77dc5bbc5d77fbd86fdfa14d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb81d1be77dc5bbc5d77fbd86fdfa14d">&#9670;&nbsp;</a></span>ClearEps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ServerMetricRecorder::ClearEps </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Clears number of errors per second to the server if recorded. </p>
 
 </div>
 </div>
@@ -270,6 +295,27 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="a3d9e7876e89a95a21473060405a2822a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d9e7876e89a95a21473060405a2822a">&#9670;&nbsp;</a></span>SetEps()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ServerMetricRecorder::SetEps </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Records number of errors per second to the server in the range [0, infy). </p>
+<p>Values outside of the valid range are rejected. Overrides the stored value when called again with a valid value. </p>
+
+</div>
+</div>
 <a id="a3bad96ffa07bbf67f93a498b20efb5a0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3bad96ffa07bbf67f93a498b20efb5a0">&#9670;&nbsp;</a></span>SetMemoryUtilization()</h2>
 
@@ -394,7 +440,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
