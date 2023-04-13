@@ -37,6 +37,12 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+namespace {
+constexpr grpc_core::Duration kOldestTimestampThreshold =
+    grpc_core::Duration::Milliseconds(333);
+
+}  // namespace
+
 void ThreadPool::StartThread(ThreadPoolStatePtr state,
                              StartThreadReason reason) {
   state->thread_count.Add();
@@ -115,7 +121,7 @@ void ThreadPool::ThreadFunc(ThreadPoolStatePtr state) {
 bool ThreadPool::ThreadPoolState::Step() {
   grpc_core::ReleasableMutexLock lock(&mu);
   // Wait until work is available or we are shutting down.
-  while (!shutdown && !forking && queue.size() == 0) {
+  while (!shutdown && !forking && queue.Empty()) {
     // If there are too many threads waiting, then quit this thread.
     // TODO(ctiller): wait some time in this case to be sure.
     if (threads_waiting_ >= reserve_threads_) {
@@ -132,12 +138,14 @@ bool ThreadPool::ThreadPoolState::Step() {
     }
   }
   if (forking) return false;
-  auto qsize = queue.size();
-  if (shutdown && qsize == 0) return false;
-  GPR_ASSERT(qsize > 0);
-  auto callback = queue.Pop();
+  bool qempty = queue.Empty();
+  if (shutdown && qempty) return false;
+  GPR_ASSERT(!qempty);
+  auto callback = queue.PopBack();
   lock.Release();
-  callback();
+  if (callback != nullptr) {
+    callback->Run();
+  }
   return true;
 }
 
@@ -168,13 +176,12 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  auto qsize = state_->queue.Add(std::move(callback));
+  state_->queue.Add(std::move(callback));
   bool should_start_new_thread = false;
   {
     grpc_core::MutexLock lock(&state_->mu);
     state_->broadcast.Signal();
-    should_start_new_thread =
-        !state_->forking && qsize > state_->threads_waiting_;
+    should_start_new_thread = state_->IsBackloggedLocked();
   }
   if (should_start_new_thread) {
     StartThread(state_, StartThreadReason::kNoWaitersWhenScheduling);
@@ -185,24 +192,15 @@ void ThreadPool::Run(EventEngine::Closure* closure) {
   Run([closure]() { closure->Run(); });
 }
 
-size_t ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
-  grpc_core::MutexLock lock(&queue_mu_);
-  // Add works to the callbacks list
-  callbacks_.push(std::move(callback));
-  return callbacks_.size();
-}
-
-absl::AnyInvocable<void()> ThreadPool::Queue::Pop() {
-  grpc_core::MutexLock lock(&queue_mu_);
-  auto callback = std::move(callbacks_.front());
-  callbacks_.pop();
-  return callback;
-}
-
 bool ThreadPool::ThreadPoolState::IsBacklogged() {
   grpc_core::MutexLock lock(&mu);
+  return IsBackloggedLocked();
+}
+
+bool ThreadPool::ThreadPoolState::IsBackloggedLocked() {
   if (forking) return false;
-  return queue.size() > 1;
+  return (grpc_core::Timestamp::Now() - queue.OldestEnqueuedTimestamp()) >
+         kOldestTimestampThreshold;
 }
 
 void ThreadPool::SetShutdown(bool is_shutdown) {

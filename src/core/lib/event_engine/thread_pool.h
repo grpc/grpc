@@ -25,7 +25,6 @@
 
 #include <atomic>
 #include <memory>
-#include <queue>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
@@ -35,6 +34,7 @@
 
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -63,25 +63,6 @@ class ThreadPool final : public Forkable, public Executor {
   static bool IsThreadPoolThread();
 
  private:
-  class Queue {
-   public:
-    // Add a callback to the queue.
-    // Returns the size of the queue after adding the callback.
-    size_t Add(absl::AnyInvocable<void()> callback)
-        ABSL_LOCKS_EXCLUDED(queue_mu_);
-    // Removes and returns the front element of the queue.
-    absl::AnyInvocable<void()> Pop() ABSL_LOCKS_EXCLUDED(queue_mu_);
-    size_t size() ABSL_LOCKS_EXCLUDED(queue_mu_) {
-      grpc_core::MutexLock lock(&queue_mu_);
-      return callbacks_.size();
-    }
-
-   private:
-    grpc_core::Mutex queue_mu_;
-    std::queue<absl::AnyInvocable<void()>> callbacks_
-        ABSL_GUARDED_BY(queue_mu_);
-  };
-
   class ThreadCount {
    public:
     void Add();
@@ -96,12 +77,13 @@ class ThreadPool final : public Forkable, public Executor {
 
   struct ThreadPoolState {
     // Returns true if a new thread should be created.
-    bool IsBacklogged();
+    bool IsBacklogged() ABSL_LOCKS_EXCLUDED(mu);
+    bool IsBackloggedLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
     bool Step();
 
     const unsigned reserve_threads_ =
         grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
-    Queue queue;
+    WorkQueue queue;
     ThreadCount thread_count;
     // After pool creation we use this to rate limit creation of threads to one
     // at a time.
