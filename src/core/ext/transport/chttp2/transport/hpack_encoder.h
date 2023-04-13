@@ -29,6 +29,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "hpack_encoder_table.h"
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
@@ -87,12 +88,221 @@ class HPackCompressor {
   }
 
  private:
+  class Encoder;
+
+  template <typename MetadataTrait, typename CompressonTraits>
+  class Compressor;
+
+  template <typename MetadataTrait>
+  class Compressor<MetadataTrait, NoCompressionCompressor> {
+   public:
+    void EncodeWith(MetadataTrait trait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      const Slice& slice = MetadataValueAsSlice<MetadataTrait>(value);
+      if (absl::EndsWith(MetadataTrait::key(), "-bin")) {
+        encoder->EmitLitHdrWithBinaryStringKeyNotIdx(
+            Slice::FromStaticString(MetadataTrait::key()), slice.Ref());
+      } else {
+        encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            Slice::FromStaticString(MetadataTrait::key()), slice.Ref());
+      }
+    }
+  };
+
+  template <typename MetadataTrait>
+  class Compressor<MetadataTrait, FrequentKeyWithNoValueCompressionCompressor> {
+   public:
+    void EncodeWith(MetadataTrait trait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      const Slice& slice = MetadataValueAsSlice<MetadataTrait>(value);
+      encoder->EncodeRepeatingSliceValue(MetadataTrait::key(), slice,
+                                         &some_sent_value_,
+                                         HPackEncoderTable::MaxEntrySize());
+    }
+
+   private:
+    // Some previously sent value with this tag.
+    uint32_t some_sent_value_ = 0;
+  };
+
+  class StableValueCompressorImpl {
+   public:
+    void EncodeWith(absl::string_view key, const Slice& value,
+                    Encoder* encoder) {
+      if (hpack_constants::SizeForEntry(key.size(), value.size()) >
+          HPackEncoderTable::MaxEntrySize()) {
+        encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            Slice::FromStaticString(key), value.Ref());
+        return;
+      }
+      if (!value.is_equivalent(previously_sent_value_)) {
+        previously_sent_value_ = value.Ref();
+        previously_sent_index_ = 0;
+      }
+      encoder->EncodeAlwaysIndexed(
+          &previously_sent_index_, key, value.Ref(),
+          hpack_constants::SizeForEntry(key.size(), value.size()));
+    }
+
+   private:
+    // Previously sent value
+    Slice previously_sent_value_;
+    // And its index in the table
+    uint32_t previously_sent_index_ = 0;
+  };
+
+  template <typename MetadataTrait>
+  class Compressor<MetadataTrait, StableValueCompressor>
+      : public StableValueCompressorImpl {
+   public:
+    void EncodeWith(MetadataTrait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      StableValueCompressorImpl::EncodeWith(
+          MetadataTrait::key(), MetadataValueAsSlice<MetadataTrait>(value),
+          encoder);
+    }
+  };
+
+  template <typename MetadataTrait,
+            typename MetadataTrait::ValueType known_value>
+  class Compressor<
+      MetadataTrait,
+      KnownValueCompressor<typename MetadataTrait::ValueType, known_value>> {
+   public:
+    void EncodeWith(MetadataTrait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      if (value != known_value) {
+        gpr_log(GPR_ERROR, absl::StrCat("Not encoding bad ",
+                                        MetadataTrait::key(), " header"));
+        return;
+      }
+      encoder->EncodeAlwaysIndexed(
+          &previously_sent_index_, MetadataTrait::key(),
+          MetadataTrait::Encode(known_value),
+          MetadataTrait::key().size() +
+              MetadataTrait::Encode(known_value).Length() +
+              hpack_constants::kEntryOverhead);
+    }
+
+   private:
+    uint32_t previously_sent_index_ = 0;
+  };
+  template <typename MetadataTrait, size_t N>
+  class Compressor<MetadataTrait, SmallIntegralValuesCompressor<N>> {
+   public:
+    void EncodeWith(MetadataTrait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      uint32_t* index = nullptr;
+      if (value < N) {
+        index = &previously_sent_[static_cast<uint32_t>(value)];
+        if (encoder->EncodeIndexed(index)) return;
+      }
+      auto key = Slice::FromStaticString(MetadataTrait::key());
+      auto encoded_value = GrpcEncodingMetadata::Encode(value);
+      size_t transport_length = key.length() + encoded_value.length() +
+                                hpack_constants::kEntryOverhead;
+      if (index != nullptr) {
+        *index = compressor_->table_.AllocateIndex(transport_length);
+        EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
+                                               std::move(encoded_value));
+      } else {
+        EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key),
+                                               std::move(encoded_value));
+      }
+    }
+
+   private:
+    uint32_t previously_sent_[N] = {};
+  };
+
+  class SliceIndex {
+   public:
+    void EmitTo(absl::string_view key, const Slice& value, Encoder* encoder);
+
+   private:
+    struct ValueIndex {
+      ValueIndex(Slice value, uint32_t index)
+          : value(std::move(value)), index(index) {}
+      Slice value;
+      uint32_t index;
+    };
+    std::vector<ValueIndex> values_;
+  };
+
+  template <typename MetadataTrait>
+  class Compressor<MetadataTrait, SmallSetOfValuesCompressor> {
+   public:
+    void EncodeWith(MetadataTrait, const Slice& value, Encoder* encoder);
+
+   private:
+    SliceIndex index_;
+  };
+
+  struct PreviousTimeout {
+    Timeout timeout;
+    uint32_t index;
+  };
+
+  class TimeoutCompressorImpl {
+   public:
+    void EncodeWith(absl::string_view key, Duration value, Encoder* encoder);
+  };
+
+  template <typename MetadataTrait>
+  class Compressor<MetadataTrait, TimeoutCompressor>
+      : public TimeoutCompressorImpl {
+   public:
+    void EncodeWith(MetadataTrait,
+                    const typename MetadataTrait::ValueType& value,
+                    Encoder* encoder) {
+      TimeoutCompressorImpl::EncodeWith(MetadataTrait::key(), value, encoder);
+    }
+
+   private:
+    std::vector<PreviousTimeout> previous_timeouts_;
+  };
+
+  template <>
+  class Compressor<HttpStatusMetadata, HttpStatusCompressor> {
+   public:
+    void EncodeWith(HttpStatusMetadata,
+                    const HttpStatusMetadata::ValueType& value,
+                    Encoder* encoder);
+  };
+
+  template <>
+  class Compressor<HttpMethodMetadata, HttpMethodCompressor> {
+   public:
+    void EncodeWith(HttpStatusMetadata,
+                    const HttpStatusMetadata::ValueType& value,
+                    Encoder* encoder);
+  };
+
+  template <>
+  class Compressor<HttpSchemeMetadata, HttpSchemeCompressor> {
+   public:
+    void EncodeWith(HttpStatusMetadata,
+                    const HttpStatusMetadata::ValueType& value,
+                    Encoder* encoder);
+  };
+
   class Encoder {
    public:
     Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
             SliceBuffer& output);
 
     void Encode(const Slice& key, const Slice& value);
+    template <typename MetadataTrait>
+    void Encode(MetadataTrait, const typename MetadataTrait::ValueType& value) {
+      compressor_->compression_state_.EncodeWith(MetadataTrait(), value, this);
+    }
+
+    /*
     void Encode(HttpPathMetadata, const Slice& value);
     void Encode(HttpAuthorityMetadata, const Slice& value);
     void Encode(HttpStatusMetadata, uint32_t status);
@@ -114,18 +324,8 @@ class HPackCompressor {
     }
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
-      const Slice& slice = MetadataValueAsSlice<Which>(value);
-      if (absl::EndsWith(Which::key(), "-bin")) {
-        EmitLitHdrWithBinaryStringKeyNotIdx(
-            Slice::FromStaticString(Which::key()), slice.Ref());
-      } else {
-        EmitLitHdrWithNonBinaryStringKeyNotIdx(
-            Slice::FromStaticString(Which::key()), slice.Ref());
-      }
     }
-
-   private:
-    friend class SliceIndex;
+*/
 
     void AdvertiseTableSizeChange();
     void EmitIndexed(uint32_t index);
@@ -149,10 +349,14 @@ class HPackCompressor {
                                    const Slice& slice, uint32_t* index,
                                    size_t max_compression_size);
 
+   private:
     const bool use_true_binary_metadata_;
     HPackCompressor* const compressor_;
     SliceBuffer& output_;
   };
+
+  using CompressionState = grpc_metadata_batch::StatefulCompressor<Compressor>;
+  CompressionState compression_state_;
 
   static constexpr size_t kNumFilterValues = 64;
   static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
@@ -168,19 +372,7 @@ class HPackCompressor {
   bool advertise_table_size_change_ = false;
   HPackEncoderTable table_;
 
-  class SliceIndex {
-   public:
-    void EmitTo(absl::string_view key, const Slice& value, Encoder* encoder);
-
-   private:
-    struct ValueIndex {
-      ValueIndex(Slice value, uint32_t index)
-          : value(std::move(value)), index(index) {}
-      Slice value;
-      uint32_t index;
-    };
-    std::vector<ValueIndex> values_;
-  };
+#if 0
 
   struct PreviousTimeout {
     Timeout timeout;
@@ -210,6 +402,7 @@ class HPackCompressor {
   SliceIndex path_index_;
   SliceIndex authority_index_;
   std::vector<PreviousTimeout> previous_timeouts_;
+#endif
 };
 
 }  // namespace grpc_core

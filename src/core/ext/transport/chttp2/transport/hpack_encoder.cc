@@ -368,19 +368,6 @@ void HPackCompressor::Encoder::Encode(HttpSchemeMetadata,
   }
 }
 
-void HPackCompressor::Encoder::Encode(GrpcTraceBinMetadata,
-                                      const Slice& slice) {
-  EncodeRepeatingSliceValue(GrpcTraceBinMetadata::key(), slice,
-                            &compressor_->grpc_trace_bin_index_,
-                            HPackEncoderTable::MaxEntrySize());
-}
-
-void HPackCompressor::Encoder::Encode(GrpcTagsBinMetadata, const Slice& slice) {
-  EncodeRepeatingSliceValue(GrpcTagsBinMetadata::key(), slice,
-                            &compressor_->grpc_tags_bin_index_,
-                            HPackEncoderTable::MaxEntrySize());
-}
-
 void HPackCompressor::Encoder::Encode(HttpStatusMetadata, uint32_t status) {
   if (status == 200) {
     EmitIndexed(8);  // :status: 200
@@ -503,24 +490,6 @@ void HPackCompressor::Encoder::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
   compressor_->previous_timeouts_.push_back(PreviousTimeout{timeout, index});
   EmitLitHdrWithNonBinaryStringKeyIncIdx(
       Slice::FromStaticString(GrpcTimeoutMetadata::key()), std::move(encoded));
-}
-
-void HPackCompressor::Encoder::Encode(UserAgentMetadata, const Slice& slice) {
-  if (hpack_constants::SizeForEntry(UserAgentMetadata::key().size(),
-                                    slice.size()) >
-      HPackEncoderTable::MaxEntrySize()) {
-    EmitLitHdrWithNonBinaryStringKeyNotIdx(
-        Slice::FromStaticString(UserAgentMetadata::key()), slice.Ref());
-    return;
-  }
-  if (!slice.is_equivalent(compressor_->user_agent_)) {
-    compressor_->user_agent_ = slice.Ref();
-    compressor_->user_agent_index_ = 0;
-  }
-  EncodeAlwaysIndexed(&compressor_->user_agent_index_, UserAgentMetadata::key(),
-                      slice.Ref(),
-                      hpack_constants::SizeForEntry(
-                          UserAgentMetadata::key().size(), slice.size()));
 }
 
 void HPackCompressor::Encoder::Encode(GrpcStatusMetadata,
