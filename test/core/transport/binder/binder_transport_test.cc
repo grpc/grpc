@@ -192,7 +192,6 @@ class MetadataEncoder {
   void Encode(Which, const typename Which::ValueType& value) {
     metadata_.emplace_back(
         std::string(Which::key()),
-        // NOLINTNEXTLINE(google-readability-casting)
         std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
   }
 

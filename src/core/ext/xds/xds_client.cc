@@ -1098,7 +1098,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                           xds_client(), chand()->server_.server_uri().c_str(),
                           result.type_url.c_str(),
                           XdsClient::ConstructFullXdsResourceName(
-                              authority, result.type_url.c_str(), resource_key)
+                              authority, result.type_url, resource_key)
                               .c_str());
                   resource_state.ignored_deletion = true;
                 }

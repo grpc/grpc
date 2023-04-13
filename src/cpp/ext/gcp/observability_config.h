@@ -86,7 +86,7 @@ struct GcpObservabilityConfig {
   struct CloudTrace {
     // This unnecessary constructor is to address clang + std::optional
     // problem (https://stackoverflow.com/questions/47974898)
-    CloudTrace() = default;
+    CloudTrace(){};
 
     float sampling_rate = 0;
 

@@ -515,8 +515,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
     target = absl::StrCat("dns:", GetDnsHostname());
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      target.c_str(), args, parent()->interested_parties(),
-      parent()->work_serializer(),
+      target, args, parent()->interested_parties(), parent()->work_serializer(),
       std::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {

@@ -31,6 +31,7 @@
 # - bugprone-unchecked-optional-access
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
+# - google-readability-casting
 # - google-runtime-int
 # - google-runtime-references
 # - modernize-avoid-bind
@@ -72,6 +73,7 @@ Checks: '-*,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
   google-*,
+  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   performance-*,
