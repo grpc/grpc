@@ -16,7 +16,9 @@
 
 #include <stdlib.h>
 
+#include <atomic>
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -103,20 +105,23 @@ TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
       "Waiting for thread pool to idle before forking");
 }
 
-void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
+void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
+  runcount.fetch_add(1);
   if (n == 0) return;
-  p->Run([p, n] {
-    ScheduleTwiceUntilZero(p, n - 1);
-    ScheduleTwiceUntilZero(p, n - 1);
+  p->Run([p, &runcount, n] {
+    ScheduleTwiceUntilZero(p, runcount, n - 1);
+    ScheduleTwiceUntilZero(p, runcount, n - 1);
   });
 }
 
 TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   ThreadPool p;
+  std::atomic<int> runcount{0};
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
-  ScheduleTwiceUntilZero(&p, 20);
+  ScheduleTwiceUntilZero(&p, runcount, 20);
   p.Quiesce();
+  ASSERT_EQ(runcount.load(), pow(2, 21) - 1);
 }
 
 }  // namespace experimental
