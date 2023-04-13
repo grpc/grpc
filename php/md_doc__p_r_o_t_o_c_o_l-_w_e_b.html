@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -101,7 +101,7 @@ Protocol differences vs @ref PROTOCOL-HTTP2.md "gRPC over HTTP2"</h1>
 <p>HTTP wire protocols</p>
 <ol type="1">
 <li>support any HTTP/*, with no dependency on HTTP/2 specific framing</li>
-<li>use lower-case header/trailer names</li>
+<li>header names may be upper- or mixed-case over HTTP/1.1, but trailers encoded in the last length-prefixed message must always use lower-case names.</li>
 <li>use EOF (end of body) to close the stream</li>
 </ol>
 <hr  />
@@ -184,7 +184,7 @@ Other features</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:53:31 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:51:15 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

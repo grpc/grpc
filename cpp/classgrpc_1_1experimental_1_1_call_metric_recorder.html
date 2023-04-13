@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.53.0</span>
+   &#160;<span id="projectnumber">1.54.0</span>
    </div>
   </td>
  </tr>
@@ -91,12 +91,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">RecordQpsMetric</a> (double value)=0</td></tr>
 <tr class="memdesc:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for queries per second.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">More...</a><br /></td></tr>
 <tr class="separator:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed474b5d664467420f4fc1753fa623bf"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#aed474b5d664467420f4fc1753fa623bf">RecordEpsMetric</a> (double value)=0</td></tr>
+<tr class="memdesc:aed474b5d664467420f4fc1753fa623bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for errors per second.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#aed474b5d664467420f4fc1753fa623bf">More...</a><br /></td></tr>
+<tr class="separator:aed474b5d664467420f4fc1753fa623bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe009bb7213eebc43cd02fbff5c5d033"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#abe009bb7213eebc43cd02fbff5c5d033">RecordUtilizationMetric</a> (<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> name, double value)=0</td></tr>
 <tr class="memdesc:abe009bb7213eebc43cd02fbff5c5d033"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for utilization.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#abe009bb7213eebc43cd02fbff5c5d033">More...</a><br /></td></tr>
 <tr class="separator:abe009bb7213eebc43cd02fbff5c5d033"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7c49b6bbc8f76c134d8fe951604f7ad"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab7c49b6bbc8f76c134d8fe951604f7ad">RecordRequestCostMetric</a> (<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> name, double value)=0</td></tr>
 <tr class="memdesc:ab7c49b6bbc8f76c134d8fe951604f7ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for request cost.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab7c49b6bbc8f76c134d8fe951604f7ad">More...</a><br /></td></tr>
 <tr class="separator:ab7c49b6bbc8f76c134d8fe951604f7ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a510b46e0f9ed3300edb4517d8a779193"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a510b46e0f9ed3300edb4517d8a779193">RecordNamedMetric</a> (<a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> name, double value)=0</td></tr>
+<tr class="memdesc:a510b46e0f9ed3300edb4517d8a779193"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records an application-specific opaque metric measurement.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a510b46e0f9ed3300edb4517d8a779193">More...</a><br /></td></tr>
+<tr class="separator:a510b46e0f9ed3300edb4517d8a779193"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Records call metrics for the purpose of load balancing. </p>
@@ -157,6 +163,35 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aed474b5d664467420f4fc1753fa623bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed474b5d664467420f4fc1753fa623bf">&#9670;&nbsp;</a></span>RecordEpsMetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; grpc::experimental::CallMetricRecorder::RecordEpsMetric </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Records a call metric measurement for errors per second. </p>
+<p>Multiple calls to this method will override the stored value. Values outside of the valid range [0, infy) are ignored. </p>
+
+</div>
+</div>
 <a id="ab44ce00d314371a165abd4a94a1f6373"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab44ce00d314371a165abd4a94a1f6373">&#9670;&nbsp;</a></span>RecordMemoryUtilizationMetric()</h2>
 
@@ -183,6 +218,45 @@ Public Member Functions</h2></td></tr>
 
 <p>Records a call metric measurement for memory utilization. </p>
 <p>Multiple calls to this method will override the stored value. Values outside of the valid range [0, 1] are ignored. </p>
+
+</div>
+</div>
+<a id="a510b46e0f9ed3300edb4517d8a779193"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a510b46e0f9ed3300edb4517d8a779193">&#9670;&nbsp;</a></span>RecordNamedMetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; grpc::experimental::CallMetricRecorder::RecordNamedMetric </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Records an application-specific opaque metric measurement. </p>
+<p>Multiple calls to this method with the same name will override the corresponding stored value. The lifetime of the name string needs to be longer than the lifetime of the RPC itself, since it's going to be sent as trailers after the RPC finishes. It is assumed the strings are common names that are global constants. </p>
 
 </div>
 </div>
@@ -299,7 +373,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

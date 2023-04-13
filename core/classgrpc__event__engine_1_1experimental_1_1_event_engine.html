@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">30.1.0</span>
+   &#160;<span id="projectnumber">31.0.0</span>
    </div>
   </td>
  </tr>
@@ -69,8 +69,7 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-attribs">Static Public Attributes</a>  </div>
+<a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::EventEngine Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
@@ -148,22 +147,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">Cancel</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> handle)=0</td></tr>
 <tr class="memdesc:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request cancellation of a task.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">More...</a><br /></td></tr>
 <tr class="separator:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
-Static Public Attributes</h2></td></tr>
-<tr class="memitem:a91af6a3c1d1486827d1b8080252c8b90"><td class="memItemLeft" align="right" valign="top">static constexpr <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a91af6a3c1d1486827d1b8080252c8b90">kInvalidTaskHandle</a> {-1, -1}</td></tr>
-<tr class="separator:a91af6a3c1d1486827d1b8080252c8b90"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aecf1e63f64320b16fc2fabf77f5c4098"><td class="memItemLeft" align="right" valign="top">static constexpr <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aecf1e63f64320b16fc2fabf77f5c4098">kInvalidConnectionHandle</a> {-1, -1}</td></tr>
-<tr class="separator:aecf1e63f64320b16fc2fabf77f5c4098"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> Interface. </p>
-<h2><a class="anchor" id="autotoc_md309"></a>
+<h2><a class="anchor" id="autotoc_md310"></a>
 Overview</h2>
 <p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.</p>
 <p>This interface allows developers to provide their own event management and network stacks. Motivating uses cases for supporting custom EventEngines include the ability to hook into external event loops, and using different <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instances for each channel to better insulate network I/O and callback processing from other channels.</p>
 <p>A default cross-platform <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance is provided by gRPC.</p>
-<h2><a class="anchor" id="autotoc_md310"></a>
+<h2><a class="anchor" id="autotoc_md311"></a>
 Lifespan and Ownership</h2>
 <p>gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure that the engines remain available until they are no longer needed. Depending on the use case, engines may live until gRPC is shut down.</p>
 <p>EXAMPLE USAGE (Not yet implemented)</p>
@@ -171,7 +163,7 @@ Lifespan and Ownership</h2>
 <p>ChannelArguments args; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); args.SetEventEngine(engine); MyAppClient client(grpc::CreateCustomChannel( "localhost:50051", grpc::InsecureChannelCredentials(), args));</p>
 <p>A gRPC server can use a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> by calling the ServerBuilder::SetEventEngine method:</p>
 <p>ServerBuilder builder; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); builder.SetEventEngine(engine); std::unique_ptr&lt;Server&gt; server(builder.BuildAndStart()); server-&gt;Wait();</p>
-<h2><a class="anchor" id="autotoc_md311"></a>
+<h2><a class="anchor" id="autotoc_md312"></a>
 Blocking EventEngine Callbacks</h2>
 <p>Doing blocking work in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> callbacks is generally not advisable. While gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementations have some capacity to scale their thread pools to avoid starvation, this is not an instantaneous process. Further, user-provided EventEngines may not be optimized to handle excessive blocking work at all.</p>
 <p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads. </p>
@@ -607,58 +599,13 @@ Blocking EventEngine Callbacks</h2>
 
 </div>
 </div>
-<h2 class="groupheader">Field Documentation</h2>
-<a id="aecf1e63f64320b16fc2fabf77f5c4098"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aecf1e63f64320b16fc2fabf77f5c4098">&#9670;&nbsp;</a></span>kInvalidConnectionHandle</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">constexpr <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> grpc_event_engine::experimental::EventEngine::kInvalidConnectionHandle {-1, -1}</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">constexpr</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a91af6a3c1d1486827d1b8080252c8b90"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a91af6a3c1d1486827d1b8080252c8b90">&#9670;&nbsp;</a></span>kInvalidTaskHandle</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">constexpr <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::kInvalidTaskHandle {-1, -1}</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">constexpr</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc/event_engine/<a class="el" href="event__engine_8h_source.html">event_engine.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 27 2023 21:52:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
