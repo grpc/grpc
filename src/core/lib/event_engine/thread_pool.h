@@ -65,30 +65,21 @@ class ThreadPool final : public Forkable, public Executor {
  private:
   class Queue {
    public:
-    explicit Queue(unsigned reserve_threads)
-        : reserve_threads_(reserve_threads) {}
-    bool Step();
     // Add a callback to the queue.
-    // Return true if we should also spin up a new thread.
-    bool Add(absl::AnyInvocable<void()> callback);
-    void SetShutdown(bool is_shutdown);
-    void SetForking(bool is_forking);
-    bool IsBacklogged();
-    void SleepIfRunning();
+    // Returns the size of the queue after adding the callback.
+    size_t Add(absl::AnyInvocable<void()> callback)
+        ABSL_LOCKS_EXCLUDED(queue_mu_);
+    // Removes and returns the front element of the queue.
+    absl::AnyInvocable<void()> Pop() ABSL_LOCKS_EXCLUDED(queue_mu_);
+    size_t size() ABSL_LOCKS_EXCLUDED(queue_mu_) {
+      grpc_core::MutexLock lock(&queue_mu_);
+      return callbacks_.size();
+    }
 
    private:
-    const unsigned reserve_threads_;
     grpc_core::Mutex queue_mu_;
-    grpc_core::CondVar cv_;
     std::queue<absl::AnyInvocable<void()>> callbacks_
         ABSL_GUARDED_BY(queue_mu_);
-    unsigned threads_waiting_ ABSL_GUARDED_BY(queue_mu_) = 0;
-    // Track shutdown and fork bits separately.
-    // It's possible for a ThreadPool to initiate shut down while fork handlers
-    // are running, and similarly possible for a fork event to occur during
-    // shutdown.
-    bool shutdown_ ABSL_GUARDED_BY(queue_mu_) = false;
-    bool forking_ ABSL_GUARDED_BY(queue_mu_) = false;
   };
 
   class ThreadCount {
@@ -103,17 +94,31 @@ class ThreadPool final : public Forkable, public Executor {
     int threads_ ABSL_GUARDED_BY(thread_count_mu_) = 0;
   };
 
-  struct State {
-    explicit State(int reserve_threads) : queue(reserve_threads) {}
+  struct ThreadPoolState {
+    // Returns true if a new thread should be created.
+    bool IsBacklogged();
+    bool Step();
+
+    const unsigned reserve_threads_ =
+        grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
     Queue queue;
     ThreadCount thread_count;
     // After pool creation we use this to rate limit creation of threads to one
     // at a time.
     std::atomic<bool> currently_starting_one_thread{false};
     std::atomic<uint64_t> last_started_thread{0};
+    // Track shutdown and fork bits separately.
+    // It's possible for a ThreadPool to initiate shut down while fork handlers
+    // are running, and similarly possible for a fork event to occur during
+    // shutdown.
+    grpc_core::Mutex mu;
+    unsigned threads_waiting_ ABSL_GUARDED_BY(mu) = 0;
+    grpc_core::CondVar broadcast ABSL_GUARDED_BY(mu);
+    bool shutdown ABSL_GUARDED_BY(mu) = false;
+    bool forking ABSL_GUARDED_BY(mu) = false;
   };
 
-  using StatePtr = std::shared_ptr<State>;
+  using ThreadPoolStatePtr = std::shared_ptr<ThreadPoolState>;
 
   enum class StartThreadReason {
     kInitialPool,
@@ -121,17 +126,18 @@ class ThreadPool final : public Forkable, public Executor {
     kNoWaitersWhenFinishedStarting,
   };
 
-  static void ThreadFunc(StatePtr state);
+  void SetShutdown(bool is_shutdown);
+  void SetForking(bool is_forking);
+
+  static void ThreadFunc(ThreadPoolStatePtr state);
   // Start a new thread; throttled indicates whether the State::starting_thread
   // variable is being used to throttle this threads creation against others or
   // not: at thread pool startup we start several threads concurrently, but
   // after that we only start one at a time.
-  static void StartThread(StatePtr state, StartThreadReason reason);
+  static void StartThread(ThreadPoolStatePtr state, StartThreadReason reason);
   void Postfork();
 
-  const unsigned reserve_threads_ =
-      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
-  const StatePtr state_ = std::make_shared<State>(reserve_threads_);
+  const ThreadPoolStatePtr state_ = std::make_shared<ThreadPoolState>();
   std::atomic<bool> quiesced_{false};
 };
 

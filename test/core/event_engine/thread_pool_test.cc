@@ -54,13 +54,13 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
 TEST(ThreadPoolTest, CanSurviveFork) {
   ThreadPool p;
   grpc_core::Notification n;
-  gpr_log(GPR_INFO, "run callback 1");
   p.Run([&n, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    gpr_log(GPR_INFO, "run callback 2");
+    gpr_log(GPR_INFO, "runing callback 1");
     p.Run([&n] {
+      gpr_log(GPR_INFO, "runing callback 2");
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      gpr_log(GPR_INFO, "notify");
+      gpr_log(GPR_INFO, "notify 1");
       n.Notify();
     });
   });
@@ -68,14 +68,15 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   p.PrepareFork();
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
+  gpr_log(GPR_INFO, "wait for notification 1");
   n.WaitForNotification();
   grpc_core::Notification n2;
-  gpr_log(GPR_INFO, "run callback 3");
   p.Run([&n2] {
-    gpr_log(GPR_INFO, "notify");
+    gpr_log(GPR_INFO, "running callback 3");
+    gpr_log(GPR_INFO, "notify 2");
     n2.Notify();
   });
-  gpr_log(GPR_INFO, "wait for notification");
+  gpr_log(GPR_INFO, "wait for notification 2");
   n2.WaitForNotification();
   p.Quiesce();
 }
