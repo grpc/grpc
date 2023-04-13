@@ -130,9 +130,9 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
    - `mv $GRPC_ROOT/third_party/upb-main $GRPC_ROOT/third_party/upb`
 2. Update the dependency in `grpc_deps.bzl` to the same commit
 3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
-4. Update `src/upb/gen_build_yaml.py` for newly added or removed upb files
-   - Running `bazel query "deps(upb) union deps(json) union deps(textformat)"`
-     under third_party/upb would give some idea on what needs to be included.
+4. Inspect `src/upb/gen_build_yaml.py` and update it with added or removed upb files
+   - Running `cd third_party/upb; bazel query "deps(upb) union deps(json) union deps(textformat)"`
+     would give some idea on what needs to be included.
 5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
 6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 

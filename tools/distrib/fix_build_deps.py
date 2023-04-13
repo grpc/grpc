@@ -40,6 +40,7 @@ skip_headers = collections.defaultdict(set)
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
+# Need to figure out how.
 EXTERNAL_DEPS = {
     'absl/algorithm/container.h':
         'absl/algorithm:container',
@@ -209,12 +210,16 @@ EXTERNAL_DEPS = {
         're2',
     'upb/arena.h':
         'upb_lib',
+    'upb/base/string_view.h':
+        'upb_lib',
     'upb/collections/map.h':
         'upb_collections_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':
         'upb_json_lib',
+    'upb/mem/arena.h':
+        'upb_lib',
     'upb/text_encode.h':
         'upb_textformat_lib',
     'upb/def.hpp':

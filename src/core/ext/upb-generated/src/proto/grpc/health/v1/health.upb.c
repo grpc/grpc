@@ -7,37 +7,48 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Field grpc_health_v1_HealthCheckRequest__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField grpc_health_v1_HealthCheckRequest__fields[1] = {
+  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable grpc_health_v1_HealthCheckRequest_msginit = {
+const upb_MiniTable grpc_health_v1_HealthCheckRequest_msg_init = {
   NULL,
   &grpc_health_v1_HealthCheckRequest__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+  })
 };
 
-static const upb_MiniTable_Field grpc_health_v1_HealthCheckResponse__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField grpc_health_v1_HealthCheckResponse__fields[1] = {
+  {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable grpc_health_v1_HealthCheckResponse_msginit = {
+const upb_MiniTable grpc_health_v1_HealthCheckResponse_msg_init = {
   NULL,
   &grpc_health_v1_HealthCheckResponse__fields[0],
-  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  8, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f000008, &upb_psv4_1bt},
+  })
 };
 
 static const upb_MiniTable *messages_layout[2] = {
-  &grpc_health_v1_HealthCheckRequest_msginit,
-  &grpc_health_v1_HealthCheckResponse_msginit,
+  &grpc_health_v1_HealthCheckRequest_msg_init,
+  &grpc_health_v1_HealthCheckResponse_msg_init,
 };
 
-const upb_MiniTable_File src_proto_grpc_health_v1_health_proto_upb_file_layout = {
+const upb_MiniTableFile src_proto_grpc_health_v1_health_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -46,5 +57,5 @@ const upb_MiniTable_File src_proto_grpc_health_v1_health_proto_upb_file_layout =
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

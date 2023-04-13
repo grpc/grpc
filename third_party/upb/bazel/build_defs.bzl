@@ -25,8 +25,6 @@
 
 """Internal rules for building upb."""
 
-load(":upb_proto_library.bzl", "GeneratedSrcsInfo")
-
 _DEFAULT_CPPOPTS = []
 _DEFAULT_COPTS = []
 
@@ -35,12 +33,11 @@ _DEFAULT_CPPOPTS.extend([
     "-Wextra",
     # "-Wshorten-64-to-32",  # not in GCC (and my Kokoro images doesn't have Clang)
     "-Werror",
+    "-Wno-unused-parameter",
     "-Wno-long-long",
 ])
 _DEFAULT_COPTS.extend([
     "-std=c99",
-    "-pedantic",
-    "-Werror=pedantic",
     "-Wall",
     "-Wstrict-prototypes",
     # GCC (at least) emits spurious warnings for this that cannot be fixed
@@ -102,59 +99,3 @@ def make_shell_script(name, contents, out):
         outs = [out],
         cmd = "(cat <<'HEREDOC'\n%s\nHEREDOC\n) > $@" % contents,
     )
-
-# upb_amalgamation() rule, with file_list aspect.
-
-SrcList = provider(
-    fields = {
-        "srcs": "list of srcs",
-    },
-)
-
-def _file_list_aspect_impl(target, ctx):
-    if GeneratedSrcsInfo in target:
-        srcs = target[GeneratedSrcsInfo]
-        return [SrcList(srcs = srcs.srcs + srcs.hdrs)]
-
-    srcs = []
-    for src in ctx.rule.attr.srcs:
-        srcs += src.files.to_list()
-    for hdr in ctx.rule.attr.hdrs:
-        srcs += hdr.files.to_list()
-    for hdr in ctx.rule.attr.textual_hdrs:
-        srcs += hdr.files.to_list()
-    return [SrcList(srcs = srcs)]
-
-_file_list_aspect = aspect(
-    implementation = _file_list_aspect_impl,
-)
-
-def _upb_amalgamation(ctx):
-    inputs = []
-    for lib in ctx.attr.libs:
-        inputs += lib[SrcList].srcs
-    srcs = [src for src in inputs if src.path.endswith("c")]
-    ctx.actions.run(
-        inputs = inputs,
-        outputs = ctx.outputs.outs,
-        arguments = [ctx.bin_dir.path + "/", ctx.attr.prefix] + [f.path for f in srcs] + ["-I" + root for root in _get_real_roots(inputs)],
-        progress_message = "Making amalgamation",
-        executable = ctx.executable._amalgamator,
-    )
-    return []
-
-upb_amalgamation = rule(
-    attrs = {
-        "_amalgamator": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = "//bazel:amalgamate",
-        ),
-        "prefix": attr.string(
-            default = "",
-        ),
-        "libs": attr.label_list(aspects = [_file_list_aspect]),
-        "outs": attr.output_list(),
-    },
-    implementation = _upb_amalgamation,
-)

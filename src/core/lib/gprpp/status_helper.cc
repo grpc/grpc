@@ -34,8 +34,8 @@
 #include "absl/time/clock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
-#include "upb/arena.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.h"
 #include "upb/upb.hpp"
 
 #include <grpc/support/log.h>
