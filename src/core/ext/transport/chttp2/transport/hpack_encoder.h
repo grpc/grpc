@@ -28,16 +28,14 @@
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "hpack_encoder_table.h"
 
-#include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
-#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
