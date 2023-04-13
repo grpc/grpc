@@ -272,7 +272,7 @@ void HPackCompressor::Encoder::AdvertiseTableSizeChange() {
 
 void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
                                          const Slice& value, Encoder* encoder) {
-  auto& table = encoder->compressor_->table_;
+  auto& table = encoder->compressor()->table_;
   using It = std::vector<ValueIndex>::iterator;
   It prev = values_.end();
   size_t transport_length =
@@ -324,43 +324,15 @@ void HPackCompressor::Encoder::Encode(const Slice& key, const Slice& value) {
   }
 }
 
-void HPackCompressor::Encoder::Encode(HttpPathMetadata, const Slice& value) {
-  compressor_->path_index_.EmitTo(HttpPathMetadata::key(), value, this);
-}
-
-void HPackCompressor::Encoder::Encode(HttpAuthorityMetadata,
-                                      const Slice& value) {
-  compressor_->authority_index_.EmitTo(HttpAuthorityMetadata::key(), value,
-                                       this);
-}
-
-void HPackCompressor::Encoder::Encode(TeMetadata, TeMetadata::ValueType value) {
-  GPR_ASSERT(value == TeMetadata::ValueType::kTrailers);
-  EncodeAlwaysIndexed(
-      &compressor_->te_index_, "te", Slice::FromStaticString("trailers"),
-      2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
-}
-
-void HPackCompressor::Encoder::Encode(ContentTypeMetadata,
-                                      ContentTypeMetadata::ValueType value) {
-  if (value != ContentTypeMetadata::ValueType::kApplicationGrpc) {
-    gpr_log(GPR_ERROR, "Not encoding bad content-type header");
-    return;
-  }
-  EncodeAlwaysIndexed(&compressor_->content_type_index_, "content-type",
-                      Slice::FromStaticString("application/grpc"),
-                      12 /* content-type */ + 16 /* application/grpc */ +
-                          hpack_constants::kEntryOverhead);
-}
-
-void HPackCompressor::Encoder::Encode(HttpSchemeMetadata,
-                                      HttpSchemeMetadata::ValueType value) {
+void HPackCompressor::Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::
+    EncodeWith(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value,
+               Encoder* encoder) {
   switch (value) {
     case HttpSchemeMetadata::ValueType::kHttp:
-      EmitIndexed(6);  // :scheme: http
+      encoder->EmitIndexed(6);  // :scheme: http
       break;
     case HttpSchemeMetadata::ValueType::kHttps:
-      EmitIndexed(7);  // :scheme: https
+      encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
       Crash("invalid http scheme encoding");
@@ -368,9 +340,12 @@ void HPackCompressor::Encoder::Encode(HttpSchemeMetadata,
   }
 }
 
-void HPackCompressor::Encoder::Encode(HttpStatusMetadata, uint32_t status) {
+void HPackCompressor::Compressor<
+    HttpStatusMetadata, HttpStatusCompressor>::EncodeWith(HttpStatusMetadata,
+                                                          uint32_t status,
+                                                          Encoder* encoder) {
   if (status == 200) {
-    EmitIndexed(8);  // :status: 200
+    encoder->EmitIndexed(8);  // :status: 200
     return;
   }
   uint8_t index = 0;
@@ -395,27 +370,28 @@ void HPackCompressor::Encoder::Encode(HttpStatusMetadata, uint32_t status) {
       break;
   }
   if (GPR_LIKELY(index != 0)) {
-    EmitIndexed(index);
+    encoder->EmitIndexed(index);
   } else {
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(":status"),
-                                           Slice::FromInt64(status));
+    encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+        Slice::FromStaticString(":status"), Slice::FromInt64(status));
   }
 }
 
-void HPackCompressor::Encoder::Encode(HttpMethodMetadata,
-                                      HttpMethodMetadata::ValueType method) {
+void HPackCompressor::Compressor<HttpMethodMetadata, HttpMethodCompressor>::
+    EncodeWith(HttpMethodMetadata, HttpMethodMetadata::ValueType method,
+               Encoder* encoder) {
   switch (method) {
     case HttpMethodMetadata::ValueType::kPost:
-      EmitIndexed(3);  // :method: POST
+      encoder->EmitIndexed(3);  // :method: POST
       break;
     case HttpMethodMetadata::ValueType::kGet:
-      EmitIndexed(2);  // :method: GET
+      encoder->EmitIndexed(2);  // :method: GET
       break;
     case HttpMethodMetadata::ValueType::kPut:
       // Right now, we only emit PUT as a method for testing purposes, so it's
       // fine to not index it.
-      EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(":method"),
-                                             Slice::FromStaticString("PUT"));
+      encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
+          Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
       Crash("invalid http method encoding");
@@ -461,35 +437,37 @@ void HPackCompressor::Encoder::EncodeRepeatingSliceValue(
   }
 }
 
-void HPackCompressor::Encoder::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
+void HPackCompressor::TimeoutCompressorImpl::EncodeWith(absl::string_view key,
+                                                        Timestamp deadline,
+                                                        Encoder* encoder) {
   Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
-  for (auto it = compressor_->previous_timeouts_.begin();
-       it != compressor_->previous_timeouts_.end(); ++it) {
+  for (auto it = previous_timeouts_.begin(); it != previous_timeouts_.end();
+       ++it) {
     double ratio = timeout.RatioVersus(it->timeout);
     // If the timeout we're sending is shorter than a previous timeout, but
     // within 3% of it, we'll consider sending it.
     if (ratio > -3 && ratio <= 0 &&
-        compressor_->table_.ConvertableToDynamicIndex(it->index)) {
-      EmitIndexed(compressor_->table_.DynamicIndex(it->index));
+        encoder->compressor()->table_.ConvertableToDynamicIndex(it->index)) {
+      encoder->EmitIndexed(
+          encoder->compressor()->table_.DynamicIndex(it->index));
       // Put this timeout to the front of the queue - forces common timeouts to
       // be considered earlier.
-      std::swap(*it, *compressor_->previous_timeouts_.begin());
+      std::swap(*it, *previous_timeouts_.begin());
       return;
     }
   }
   // Clean out some expired timeouts.
-  while (!compressor_->previous_timeouts_.empty() &&
-         !compressor_->table_.ConvertableToDynamicIndex(
-             compressor_->previous_timeouts_.back().index)) {
-    compressor_->previous_timeouts_.pop_back();
+  while (!previous_timeouts_.empty() &&
+         !encoder->compressor()->table_.ConvertableToDynamicIndex(
+             previous_timeouts_.back().index)) {
+    previous_timeouts_.pop_back();
   }
   Slice encoded = timeout.Encode();
-  uint32_t index = compressor_->table_.AllocateIndex(
-      GrpcTimeoutMetadata::key().length() + encoded.length() +
-      hpack_constants::kEntryOverhead);
-  compressor_->previous_timeouts_.push_back(PreviousTimeout{timeout, index});
-  EmitLitHdrWithNonBinaryStringKeyIncIdx(
-      Slice::FromStaticString(GrpcTimeoutMetadata::key()), std::move(encoded));
+  uint32_t index = encoder->compressor()->table_.AllocateIndex(
+      key.length() + encoded.length() + hpack_constants::kEntryOverhead);
+  previous_timeouts_.push_back(PreviousTimeout{timeout, index});
+  encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
+                                                  std::move(encoded));
 }
 
 void HPackCompressor::Encoder::Encode(GrpcStatusMetadata,

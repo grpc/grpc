@@ -250,7 +250,11 @@ class HPackCompressor {
 
   class TimeoutCompressorImpl {
    public:
-    void EncodeWith(absl::string_view key, Duration value, Encoder* encoder);
+    void EncodeWith(absl::string_view key, Timestamp deadline,
+                    Encoder* encoder);
+
+   private:
+    std::vector<PreviousTimeout> previous_timeouts_;
   };
 
   template <typename MetadataTrait>
@@ -262,32 +266,25 @@ class HPackCompressor {
                     Encoder* encoder) {
       TimeoutCompressorImpl::EncodeWith(MetadataTrait::key(), value, encoder);
     }
-
-   private:
-    std::vector<PreviousTimeout> previous_timeouts_;
   };
 
   template <>
   class Compressor<HttpStatusMetadata, HttpStatusCompressor> {
    public:
-    void EncodeWith(HttpStatusMetadata,
-                    const HttpStatusMetadata::ValueType& value,
-                    Encoder* encoder);
+    void EncodeWith(HttpStatusMetadata, uint32_t value, Encoder* encoder);
   };
 
   template <>
   class Compressor<HttpMethodMetadata, HttpMethodCompressor> {
    public:
-    void EncodeWith(HttpStatusMetadata,
-                    const HttpStatusMetadata::ValueType& value,
+    void EncodeWith(HttpMethodMetadata, HttpMethodMetadata::ValueType value,
                     Encoder* encoder);
   };
 
   template <>
   class Compressor<HttpSchemeMetadata, HttpSchemeCompressor> {
    public:
-    void EncodeWith(HttpStatusMetadata,
-                    const HttpStatusMetadata::ValueType& value,
+    void EncodeWith(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value,
                     Encoder* encoder);
   };
 
@@ -299,33 +296,10 @@ class HPackCompressor {
     void Encode(const Slice& key, const Slice& value);
     template <typename MetadataTrait>
     void Encode(MetadataTrait, const typename MetadataTrait::ValueType& value) {
-      compressor_->compression_state_.EncodeWith(MetadataTrait(), value, this);
+      compressor_->compression_state_.Compressor<
+          MetadataTrait, typename MetadataTrait::CompressionTraits>::
+          EncodeWith(MetadataTrait(), value, this);
     }
-
-    /*
-    void Encode(HttpPathMetadata, const Slice& value);
-    void Encode(HttpAuthorityMetadata, const Slice& value);
-    void Encode(HttpStatusMetadata, uint32_t status);
-    void Encode(GrpcTimeoutMetadata, Timestamp deadline);
-    void Encode(TeMetadata, TeMetadata::ValueType value);
-    void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
-    void Encode(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value);
-    void Encode(HttpMethodMetadata, HttpMethodMetadata::ValueType method);
-    void Encode(UserAgentMetadata, const Slice& slice);
-    void Encode(GrpcStatusMetadata, grpc_status_code status);
-    void Encode(GrpcEncodingMetadata, grpc_compression_algorithm value);
-    void Encode(GrpcAcceptEncodingMetadata, CompressionAlgorithmSet value);
-    void Encode(GrpcTagsBinMetadata, const Slice& slice);
-    void Encode(GrpcTraceBinMetadata, const Slice& slice);
-    void Encode(GrpcMessageMetadata, const Slice& slice) {
-      if (slice.empty()) return;
-      EmitLitHdrWithNonBinaryStringKeyNotIdx(
-          Slice::FromStaticString("grpc-message"), slice.Ref());
-    }
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-    }
-*/
 
     void AdvertiseTableSizeChange();
     void EmitIndexed(uint32_t index);
@@ -349,14 +323,13 @@ class HPackCompressor {
                                    const Slice& slice, uint32_t* index,
                                    size_t max_compression_size);
 
+    HPackCompressor* compressor() { return compressor_; }
+
    private:
     const bool use_true_binary_metadata_;
     HPackCompressor* const compressor_;
     SliceBuffer& output_;
   };
-
-  using CompressionState = grpc_metadata_batch::StatefulCompressor<Compressor>;
-  CompressionState compression_state_;
 
   static constexpr size_t kNumFilterValues = 64;
   static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
@@ -372,37 +345,8 @@ class HPackCompressor {
   bool advertise_table_size_change_ = false;
   HPackEncoderTable table_;
 
-#if 0
-
-  struct PreviousTimeout {
-    Timeout timeout;
-    uint32_t index;
-  };
-
-  // Index into table_ for the te:trailers metadata element
-  uint32_t te_index_ = 0;
-  // Index into table_ for the content-type metadata element
-  uint32_t content_type_index_ = 0;
-  // Index into table_ for the user-agent metadata element
-  uint32_t user_agent_index_ = 0;
-  // Cached grpc-status values
-  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
-  // Cached grpc-encoding values
-  uint32_t cached_grpc_encoding_[GRPC_COMPRESS_ALGORITHMS_COUNT] = {};
-  // Cached grpc-accept-encoding value
-  uint32_t grpc_accept_encoding_index_ = 0;
-  // The grpc-accept-encoding string referred to by grpc_accept_encoding_index_
-  CompressionAlgorithmSet grpc_accept_encoding_;
-  // Index of something that was sent with grpc-tags-bin
-  uint32_t grpc_tags_bin_index_ = 0;
-  // Index of something that was sent with grpc-trace-bin
-  uint32_t grpc_trace_bin_index_ = 0;
-  // The user-agent string referred to by user_agent_index_
-  Slice user_agent_;
-  SliceIndex path_index_;
-  SliceIndex authority_index_;
-  std::vector<PreviousTimeout> previous_timeouts_;
-#endif
+  using CompressionState = grpc_metadata_batch::StatefulCompressor<Compressor>;
+  CompressionState compression_state_;
 };
 
 }  // namespace grpc_core
