@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
-#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -52,7 +51,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"

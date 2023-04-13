@@ -16,11 +16,7 @@
 //
 //
 
-#include <limits.h>
-
-#include <algorithm>
 #include <initializer_list>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
@@ -30,7 +26,6 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
