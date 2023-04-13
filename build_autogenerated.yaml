@@ -10168,6 +10168,26 @@ targets:
   - absl/meta:type_traits
   - gpr
   uses_polling: false
+- name: proto_buffer_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_reader_test.cc
+  deps:
+  - grpc++_test_util
+  uses_polling: false
+- name: proto_buffer_writer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_writer_test.cc
+  deps:
+  - grpc++_test_util
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
