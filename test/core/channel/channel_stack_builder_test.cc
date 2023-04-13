@@ -70,7 +70,7 @@ const grpc_channel_filter* FilterNamed(const char* name) {
               grpc_call_stack_ignore_set_pollset_or_pollset_set,
               CallDestroyFunc, 0, ChannelInitFunc,
               [](grpc_channel_stack*, grpc_channel_element*) {},
-              ChannelDestroyFunc, grpc_channel_next_get_info, "filter_name"})
+              ChannelDestroyFunc, grpc_channel_next_get_info, name})
       .first->second;
 }
 
