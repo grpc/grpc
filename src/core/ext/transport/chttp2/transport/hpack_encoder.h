@@ -127,43 +127,46 @@ class HPackCompressor {
     uint32_t some_sent_value_ = 0;
   };
 
-  class StableValueCompressorImpl {
-   public:
-    void EncodeWith(absl::string_view key, const Slice& value,
-                    Encoder* encoder) {
-      if (hpack_constants::SizeForEntry(key.size(), value.size()) >
-          HPackEncoderTable::MaxEntrySize()) {
-        encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
-            Slice::FromStaticString(key), value.Ref());
-        return;
-      }
-      if (!value.is_equivalent(previously_sent_value_)) {
-        previously_sent_value_ = value.Ref();
-        previously_sent_index_ = 0;
-      }
-      encoder->EncodeAlwaysIndexed(
-          &previously_sent_index_, key, value.Ref(),
-          hpack_constants::SizeForEntry(key.size(), value.size()));
-    }
+  template <typename T>
+  static bool IsEquivalent(T a, T b) {
+    return a == b;
+  }
 
-   private:
-    // Previously sent value
-    Slice previously_sent_value_;
-    // And its index in the table
-    uint32_t previously_sent_index_ = 0;
-  };
+  template <typename T>
+  static bool IsEquivalent(const Slice& a, const Slice& b) {
+    return a.is_equivalent(b);
+  }
 
   template <typename MetadataTrait>
-  class Compressor<MetadataTrait, StableValueCompressor>
-      : public StableValueCompressorImpl {
+  class Compressor<MetadataTrait, StableValueCompressor> {
    public:
     void EncodeWith(MetadataTrait,
                     const typename MetadataTrait::ValueType& value,
                     Encoder* encoder) {
-      StableValueCompressorImpl::EncodeWith(
-          MetadataTrait::key(), MetadataValueAsSlice<MetadataTrait>(value),
-          encoder);
+      auto& table = encoder->compressor()->table_;
+      if (previously_sent_value_ == value &&
+          table.ConvertableToDynamicIndex(previously_sent_index_)) {
+        encoder->EmitIndexed(table.DynamicIndex(previously_sent_index_));
+        return;
+      }
+      auto key = MetadataTrait::key();
+      const Slice& value_slice = MetadataValueAsSlice<MetadataTrait>(value);
+      if (hpack_constants::SizeForEntry(key.size(), value_slice.size()) >
+          HPackEncoderTable::MaxEntrySize()) {
+        encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            Slice::FromStaticString(key), value_slice.Ref());
+        return;
+      }
+      encoder->EncodeAlwaysIndexed(
+          &previously_sent_index_, key, value_slice.Ref(),
+          hpack_constants::SizeForEntry(key.size(), value_slice.size()));
     }
+
+   private:
+    // Previously sent value
+    typename MetadataTrait::ValueType previously_sent_value_{};
+    // And its index in the table
+    uint32_t previously_sent_index_ = 0;
   };
 
   template <typename MetadataTrait,
@@ -176,15 +179,17 @@ class HPackCompressor {
                     const typename MetadataTrait::ValueType& value,
                     Encoder* encoder) {
       if (value != known_value) {
-        gpr_log(GPR_ERROR, absl::StrCat("Not encoding bad ",
-                                        MetadataTrait::key(), " header"));
+        gpr_log(
+            GPR_ERROR, "%s",
+            absl::StrCat("Not encoding bad ", MetadataTrait::key(), " header")
+                .c_str());
         return;
       }
       encoder->EncodeAlwaysIndexed(
           &previously_sent_index_, MetadataTrait::key(),
-          MetadataTrait::Encode(known_value),
+          Slice(MetadataTrait::Encode(known_value)),
           MetadataTrait::key().size() +
-              MetadataTrait::Encode(known_value).Length() +
+              MetadataTrait::Encode(known_value).length() +
               hpack_constants::kEntryOverhead);
     }
 
@@ -198,21 +203,25 @@ class HPackCompressor {
                     const typename MetadataTrait::ValueType& value,
                     Encoder* encoder) {
       uint32_t* index = nullptr;
+      auto& table = encoder->compressor()->table_;
       if (value < N) {
         index = &previously_sent_[static_cast<uint32_t>(value)];
-        if (encoder->EncodeIndexed(index)) return;
+        if (table.ConvertableToDynamicIndex(*index)) {
+          encoder->EmitIndexed(table.DynamicIndex(*index));
+          return;
+        }
       }
       auto key = Slice::FromStaticString(MetadataTrait::key());
-      auto encoded_value = GrpcEncodingMetadata::Encode(value);
+      auto encoded_value = MetadataTrait::Encode(value);
       size_t transport_length = key.length() + encoded_value.length() +
                                 hpack_constants::kEntryOverhead;
       if (index != nullptr) {
-        *index = compressor_->table_.AllocateIndex(transport_length);
-        EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
-                                               std::move(encoded_value));
+        *index = table.AllocateIndex(transport_length);
+        encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+            std::move(key), std::move(encoded_value));
       } else {
-        EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key),
-                                               std::move(encoded_value));
+        encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            std::move(key), std::move(encoded_value));
       }
     }
 
@@ -237,7 +246,9 @@ class HPackCompressor {
   template <typename MetadataTrait>
   class Compressor<MetadataTrait, SmallSetOfValuesCompressor> {
    public:
-    void EncodeWith(MetadataTrait, const Slice& value, Encoder* encoder);
+    void EncodeWith(MetadataTrait, const Slice& value, Encoder* encoder) {
+      index_.EmitTo(MetadataTrait::key(), value, encoder);
+    }
 
    private:
     SliceIndex index_;
