@@ -138,7 +138,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
             *slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count(),
             GRPC_SLICE_LENGTH(*slice()) - backup_count() + count)));
       }
-      int64_t take = std::min(backup_count(), int64_t(count));
+      int64_t take = std::min(backup_count(), static_cast<int64_t>(count));
       set_backup_count(backup_count() - take);
       count -= take;
       if (count == 0) {
@@ -177,8 +177,8 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   grpc_slice* slice() { return slice_; }
   grpc_slice** mutable_slice_ptr() { return &slice_; }
 
-#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
  private:
+#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
   // This function takes ownership of slice and return a newly created Cord off
   // of it.
   static absl::Cord MakeCordFromSlice(grpc_slice slice) {
@@ -189,7 +189,6 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   }
 #endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 
- private:
   int64_t byte_count_;              ///< total bytes read since object creation
   int64_t backup_count_;            ///< how far backed up in the stream we are
   grpc_byte_buffer_reader reader_;  ///< internal object to read \a grpc_slice
