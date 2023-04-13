@@ -759,6 +759,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // how to interpret it.
       args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
+          // NOLINTNEXTLINE(bugprone-string-constructor)
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();

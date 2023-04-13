@@ -20,6 +20,7 @@
 # - bugprone-assignment-in-if-condition
 # - bugprone-branch-clone
 # - bugprone-easily-swappable-parameters
+# - bugprone-exception-escape
 # - bugprone-implicit-widening-of-multiplication-result
 # - bugprone-infinite-loop
 # - bugprone-narrowing-conversions
@@ -60,6 +61,7 @@ Checks: '-*,
   -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-infinite-loop,
   -bugprone-narrowing-conversions,

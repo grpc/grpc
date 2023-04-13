@@ -326,7 +326,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     // deleted
     std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
         new ServerBuilderSyncPluginDisabler());
-    builder.SetOption(move(sync_plugin_disabler));
+    builder.SetOption(std::move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
   }
 
