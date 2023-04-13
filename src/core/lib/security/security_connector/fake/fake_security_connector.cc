@@ -122,8 +122,7 @@ class grpc_fake_channel_security_connector final
       absl::string_view fake_security_target_name_override_hostname;
       absl::string_view fake_security_target_name_override_ignored_port;
       grpc_core::SplitHostPort(
-          *target_name_override_,
-          &fake_security_target_name_override_hostname,
+          *target_name_override_, &fake_security_target_name_override_hostname,
           &fake_security_target_name_override_ignored_port);
       if (authority_hostname != fake_security_target_name_override_hostname) {
         grpc_core::Crash(absl::StrFormat(

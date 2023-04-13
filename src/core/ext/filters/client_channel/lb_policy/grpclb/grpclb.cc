@@ -62,7 +62,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>

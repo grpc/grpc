@@ -62,8 +62,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
     }
   }
   // For each comma-separated experiment in the global config:
-  for (auto experiment :
-       absl::StrSplit(ConfigVars::Get().Experiments(), ',')) {
+  for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',')) {
     // Strip whitespace.
     experiment = absl::StripAsciiWhitespace(experiment);
     // Handle ",," without crashing.
