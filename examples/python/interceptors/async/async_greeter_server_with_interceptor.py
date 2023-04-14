@@ -25,7 +25,7 @@ import helloworld_pb2_grpc
 rpc_id_var = contextvars.ContextVar('rpc_id', default='default')
 
 
-class ServerInterceptor(grpc.aio.ServerInterceptor):
+class RPCIdInterceptor(grpc.aio.ServerInterceptor):
 
     def __init__(self, tag: str, rpc_id: Optional[str] = None) -> None:
         self.tag = tag
@@ -36,6 +36,11 @@ class ServerInterceptor(grpc.aio.ServerInterceptor):
                                          Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
+        """
+        This interceptor prepends its tag to the rpc_id.
+        If two of these interceptors are chained together, the resulting rpc_id
+        will be something like this: Interceptor2-Interceptor1-RPC_ID.
+        """
         logging.info("%s called with rpc_id: %s", self.tag, rpc_id_var.get())
         if rpc_id_var.get() == 'default':
             _metadata = dict(handler_call_details.invocation_metadata)
@@ -60,8 +65,8 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 async def serve() -> None:
     interceptors = [
-        ServerInterceptor('Interceptor1'),
-        ServerInterceptor('Interceptor2')
+        RPCIdInterceptor('Interceptor1'),
+        RPCIdInterceptor('Interceptor2')
     ]
 
     server = grpc.aio.server(interceptors=interceptors)
