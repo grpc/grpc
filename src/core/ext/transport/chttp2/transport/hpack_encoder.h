@@ -289,13 +289,13 @@ class Compressor<MetadataTrait, TimeoutCompressor>
 template <>
 class Compressor<HttpStatusMetadata, HttpStatusCompressor> {
  public:
-  void EncodeWith(HttpStatusMetadata, uint32_t value, Encoder* encoder);
+  void EncodeWith(HttpStatusMetadata, uint32_t status, Encoder* encoder);
 };
 
 template <>
 class Compressor<HttpMethodMetadata, HttpMethodCompressor> {
  public:
-  void EncodeWith(HttpMethodMetadata, HttpMethodMetadata::ValueType value,
+  void EncodeWith(HttpMethodMetadata, HttpMethodMetadata::ValueType method,
                   Encoder* encoder);
 };
 
