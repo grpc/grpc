@@ -151,6 +151,15 @@ static bool IsEquivalent(const Slice& a, const Slice& b) {
   return a.is_equivalent(b);
 }
 
+template <typename T>
+static void SaveCopyTo(const T& value, T& copy) {
+  copy = value;
+}
+
+static inline void SaveCopyTo(const Slice& value, Slice& copy) {
+  copy = value.Ref();
+}
+
 template <typename MetadataTrait>
 class Compressor<MetadataTrait, StableValueCompressor> {
  public:
@@ -162,7 +171,6 @@ class Compressor<MetadataTrait, StableValueCompressor> {
       encoder->EmitIndexed(table.DynamicIndex(previously_sent_index_));
       return;
     }
-    previously_sent_value_ = value;
     previously_sent_index_ = 0;
     auto key = MetadataTrait::key();
     const Slice& value_slice = MetadataValueAsSlice<MetadataTrait>(value);
@@ -175,6 +183,7 @@ class Compressor<MetadataTrait, StableValueCompressor> {
     encoder->EncodeAlwaysIndexed(
         &previously_sent_index_, key, value_slice.Ref(),
         hpack_constants::SizeForEntry(key.size(), value_slice.size()));
+    SaveCopyTo(value, previously_sent_value_);
   }
 
  private:
