@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package", "grpc_proto_library")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
@@ -86,8 +86,8 @@ grpc_proto_fuzzer(
     srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",
     language = "C++",
-    tags = ["no_windows"],
     proto = None,
+    tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -106,8 +106,8 @@ grpc_proto_fuzzer(
     srcs = ["server_fuzzer.cc"],
     corpus = "server_fuzzer_corpus",
     language = "C++",
-    tags = ["no_windows"],
     proto = None,
+    tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

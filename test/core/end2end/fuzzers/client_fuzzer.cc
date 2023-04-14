@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <initializer_list>
