@@ -82,6 +82,8 @@ grpc_proto_fuzzer(
     proto = "fuzzer_input.proto",
     proto_deps = [
         ":_api_fuzzer_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
     ],
     tags = ["no_windows"],
     uses_event_engine = False,

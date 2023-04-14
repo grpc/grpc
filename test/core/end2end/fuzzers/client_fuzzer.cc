@@ -46,8 +46,8 @@
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
-#include "test/core/util/mock_endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -136,9 +136,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
     if (msg.network_input().has_single_read_bytes()) {
       grpc_mock_endpoint_put_read(
-          mock_endpoint,
-          grpc_slice_from_copied_string(
-              msg.network_input().single_read_bytes().c_str()));
+          mock_endpoint, grpc_slice_from_copied_string(
+                             msg.network_input().single_read_bytes().c_str()));
     }
 
     grpc_event ev;
