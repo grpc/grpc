@@ -40,7 +40,7 @@ skip_headers = collections.defaultdict(set)
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
-# Need to figure out how.
+# Need to figure out how...
 EXTERNAL_DEPS = {
     'absl/algorithm/container.h':
         'absl/algorithm:container',
