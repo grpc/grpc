@@ -1047,6 +1047,7 @@ CORE_SOURCE_FILES = [
     'third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c',
     'third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c',
     'third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c',
+    'third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c',
     'third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c',
     'third_party/boringssl-with-bazel/src/crypto/mem.c',
     'third_party/boringssl-with-bazel/src/crypto/obj/obj.c',
