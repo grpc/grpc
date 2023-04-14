@@ -35,6 +35,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
+#include "src/proto/grpc/testing/xds/v3/stream.pb.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -43,6 +44,7 @@ namespace {
 
 using AuditLoggerConfigProto =
     ::envoy::config::rbac::v3::RBAC::AuditLoggingOptions::AuditLoggerConfig;
+using ::envoy::extensions::rbac::audit_loggers::stream::v3::StdoutAuditLog;
 
 absl::StatusOr<std::string> ConvertAuditLoggerConfig(
     const AuditLoggerConfigProto& config) {
@@ -66,7 +68,18 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   return JsonDump(config_json);
 }
 
-// TODO(lwge): Add stdout logger test when the extension proto exists.
+//
+// StdoutLoggerTest
+//
+
+TEST(StdoutLoggerTest, Basic) {
+  AuditLoggerConfigProto config;
+  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
+      StdoutAuditLog());
+  auto result = ConvertAuditLoggerConfig(config);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"stdout_logger\":{}}");
+}
 
 //
 // XdsAuditLoggerRegistryTest

@@ -138,6 +138,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/proto/grpc/testing/xds/v3:rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:stream_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
