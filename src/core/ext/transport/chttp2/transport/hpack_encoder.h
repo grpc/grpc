@@ -197,12 +197,12 @@ class Compressor<
                   .c_str());
       return;
     }
-    encoder->EncodeAlwaysIndexed(
-        &previously_sent_index_, MetadataTrait::key(),
-        Slice(MetadataTrait::Encode(known_value)),
-        MetadataTrait::key().size() +
-            MetadataTrait::Encode(known_value).length() +
-            hpack_constants::kEntryOverhead);
+    Slice encoded(MetadataTrait::Encode(known_value));
+    const auto encoded_length = encoded.length();
+    encoder->EncodeAlwaysIndexed(&previously_sent_index_, MetadataTrait::key(),
+                                 std::move(encoded),
+                                 MetadataTrait::key().size() + encoded_length +
+                                     hpack_constants::kEntryOverhead);
   }
 
  private:

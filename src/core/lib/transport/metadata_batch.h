@@ -300,7 +300,7 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
-  using CompressionTraits = StableValueCompressor;
+  using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "host"; }
 };
 
@@ -384,7 +384,7 @@ struct GrpcStatusMetadata
 struct GrpcPreviousRpcAttemptsMetadata
     : public SimpleIntBasedMetadata<uint32_t, 0> {
   static constexpr bool kRepeatable = false;
-  using CompressionTraits = SmallIntegralValuesCompressor<3>;
+  using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
 };
 
@@ -394,7 +394,7 @@ struct GrpcRetryPushbackMsMetadata {
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
   using ValueType = Duration;
   using MementoType = Duration;
-  using CompressionTraits = StableValueCompressor;
+  using CompressionTraits = NoCompressionCompressor;
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(Duration x) { return Slice::FromInt64(x.millis()); }
   static int64_t DisplayValue(Duration x) { return x.millis(); }

@@ -138,7 +138,7 @@ struct WireValue {
   const size_t length;
 };
 
-static WireValue GetWireValue(Slice value, bool true_binary_enabled,
+WireValue GetWireValue(Slice value, bool true_binary_enabled,
                               bool is_bin_hdr) {
   if (is_bin_hdr) {
     if (true_binary_enabled) {
