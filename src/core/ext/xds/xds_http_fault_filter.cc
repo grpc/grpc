@@ -109,7 +109,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
       int abort_http_status_code =
           envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
               fault_abort);
-      if (abort_http_status_code != 0 and abort_http_status_code != 200) {
+      if (abort_http_status_code != 0 && abort_http_status_code != 200) {
         abort_grpc_status_code =
             grpc_http2_status_to_grpc_status(abort_http_status_code);
       }
