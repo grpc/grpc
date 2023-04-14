@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This tool builds and runs a fuzzer target and generates coverage report under /tmp.
+# This tool builds and runs a fuzzer target and generates coverage report under
+# /tmp.
 #
 # Example:
 # Run fuzzer with existing corpus (no fuzzing):
@@ -25,8 +26,12 @@
 # Note that if a crash happened during fuzzing, the coverage data will not be dumped.
 # See https://github.com/google/fuzzing/issues/41#issuecomment-1027653690 for workaround.
 
-if [ -z ${1} ]; then
-  echo "target not specified"
+err() {
+  echo "$*" >&2
+}
+
+if [[ -z $1 ]]; then
+  err "target not specified"
   exit 1
 fi
 
@@ -42,8 +47,8 @@ LLVM_PROFDATA="llvm-profdata-${CLANG_MAJOR_VERSION}"
 LLVM_COV="llvm-cov-${CLANG_MAJOR_VERSION}"
 
 which ${LLVM_PROFDATA}
-if [ $? -ne 0 ]; then
-  echo "${LLVM_PROFDATA} not found"
+if [[ $? -ne 0 ]]; then
+  err "${LLVM_PROFDATA} not found"
   exit 1
 fi
 
@@ -55,8 +60,8 @@ bazel build --dynamic_mode=off --config=dbg --config=fuzzer_asan --config=covera
 # Run:
 ${TARGET_BINARY_PATH} ${@:2}
 
-if [ ! -e ${LLVM_PROFILE_FILE} ]; then
-  echo "Profile file ${LLVM_PROFILE_FILE} not created"
+if [[ ! -e ${LLVM_PROFILE_FILE} ]]; then
+  err "Profile file ${LLVM_PROFILE_FILE} not created"
   exit 1
 fi
 
@@ -64,12 +69,12 @@ fi
 ${LLVM_PROFDATA} merge -sparse ${LLVM_PROFILE_FILE} -o /tmp/${FILENAME}.profdata
 ${LLVM_COV} report ${TARGET_BINARY_PATH} --format=text --instr-profile=/tmp/${FILENAME}.profdata > /tmp/${FILENAME}.cov
 
-if [ $? -eq 0 ]; then
+if [[ $? -eq 0 ]]; then
   echo "Coverage summary report created: /tmp/${FILENAME}.cov"
   echo "Merged profile data file:        /tmp/${FILENAME}.profdata"
   echo "Raw profile data file:           /tmp/${FILENAME}.profraw"
   echo "There are other ways to explore the data, see https://clang.llvm.org/docs/SourceBasedCodeCoverage.html#creating-coverage-reports"
 else
-  echo "Something went wrong"
+  err "Something went wrong"
   exit 1
 fi
