@@ -52,7 +52,7 @@ popd
 @rem Install protobuf
 mkdir third_party\protobuf\cmake\build
 pushd third_party\protobuf\cmake\build
-cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\..
+cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -Dprotobuf_ABSL_PROVIDER=package -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
@@ -99,6 +99,7 @@ cmake ^
   -DgRPC_BUILD_MSVC_MP_COUNT=-1 ^
   -DgRPC_ABSL_PROVIDER=package ^
   -DgRPC_CARES_PROVIDER=package ^
+  -DgRPC_PROTOBUF_PACKAGE_TYPE=CONFIG ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
   -DProtobuf_USE_STATIC_LIBS=ON ^
   -DgRPC_RE2_PROVIDER=package ^

@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <initializer_list>
 #include <limits>
 #include <map>
@@ -39,7 +38,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>

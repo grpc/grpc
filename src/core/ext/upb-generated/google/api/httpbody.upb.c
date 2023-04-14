@@ -7,33 +7,42 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "google/api/httpbody.upb.h"
 #include "google/protobuf/any.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Sub google_api_HttpBody_submsgs[1] = {
-  {.submsg = &google_protobuf_Any_msginit},
+static const upb_MiniTableSub google_api_HttpBody_submsgs[1] = {
+  {.submsg = &google_protobuf_Any_msg_init},
 };
 
-static const upb_MiniTable_Field google_api_HttpBody__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 32), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField google_api_HttpBody__fields[3] = {
+  {1, UPB_SIZE(4, 0), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(0, 32), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable google_api_HttpBody_msginit = {
+const upb_MiniTable google_api_HttpBody_msg_init = {
   &google_api_HttpBody_submsgs[0],
   &google_api_HttpBody__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+    {0x001000003f000012, &upb_psb_1bt},
+    {0x002000003f00001a, &upb_prm_1bt_maxmaxb},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &google_api_HttpBody_msginit,
+  &google_api_HttpBody_msg_init,
 };
 
-const upb_MiniTable_File google_api_httpbody_proto_upb_file_layout = {
+const upb_MiniTableFile google_api_httpbody_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -42,5 +51,5 @@ const upb_MiniTable_File google_api_httpbody_proto_upb_file_layout = {
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

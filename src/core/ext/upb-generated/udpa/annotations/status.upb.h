@@ -9,23 +9,27 @@
 #ifndef UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct udpa_annotations_StatusAnnotation;
 typedef struct udpa_annotations_StatusAnnotation udpa_annotations_StatusAnnotation;
-extern const upb_MiniTable udpa_annotations_StatusAnnotation_msginit;
-extern const upb_MiniTable_Extension udpa_annotations_file_status_ext;
+extern const upb_MiniTable udpa_annotations_StatusAnnotation_msg_init;
+extern const upb_MiniTableExtension udpa_annotations_file_status_ext;
 struct google_protobuf_FileOptions;
-extern const upb_MiniTable google_protobuf_FileOptions_msginit;
+extern const upb_MiniTable google_protobuf_FileOptions_msg_init;
 
 typedef enum {
   udpa_annotations_UNKNOWN = 0,
@@ -39,12 +43,12 @@ typedef enum {
 /* udpa.annotations.StatusAnnotation */
 
 UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_new(upb_Arena* arena) {
-  return (udpa_annotations_StatusAnnotation*)_upb_Message_New(&udpa_annotations_StatusAnnotation_msginit, arena);
+  return (udpa_annotations_StatusAnnotation*)_upb_Message_New(&udpa_annotations_StatusAnnotation_msg_init, arena);
 }
 UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_parse(const char* buf, size_t size, upb_Arena* arena) {
   udpa_annotations_StatusAnnotation* ret = udpa_annotations_StatusAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -54,7 +58,7 @@ UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_
                            int options, upb_Arena* arena) {
   udpa_annotations_StatusAnnotation* ret = udpa_annotations_StatusAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -62,58 +66,75 @@ UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_
 }
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize(const udpa_annotations_StatusAnnotation* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize_ex(const udpa_annotations_StatusAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void udpa_annotations_StatusAnnotation_clear_work_in_progress(const udpa_annotations_StatusAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+UPB_INLINE void udpa_annotations_StatusAnnotation_clear_work_in_progress(udpa_annotations_StatusAnnotation* msg) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool udpa_annotations_StatusAnnotation_work_in_progress(const udpa_annotations_StatusAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_StatusAnnotation_clear_package_version_status(const udpa_annotations_StatusAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
+UPB_INLINE void udpa_annotations_StatusAnnotation_clear_package_version_status(udpa_annotations_StatusAnnotation* msg) {
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t udpa_annotations_StatusAnnotation_package_version_status(const udpa_annotations_StatusAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_work_in_progress(udpa_annotations_StatusAnnotation *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_package_version_status(udpa_annotations_StatusAnnotation *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 UPB_INLINE bool udpa_annotations_has_file_status(const struct google_protobuf_FileOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_file_status_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_file_status_ext);
 }
 UPB_INLINE void udpa_annotations_clear_file_status(struct google_protobuf_FileOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_file_status_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_file_status_ext);
 }
 UPB_INLINE const udpa_annotations_StatusAnnotation* udpa_annotations_file_status(const struct google_protobuf_FileOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_file_status_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_StatusAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_file_status_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_StatusAnnotation* default_val = NULL;
+  const udpa_annotations_StatusAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_file_status(struct google_protobuf_FileOptions* msg, const udpa_annotations_StatusAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_file_status_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_StatusAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_file_status(struct google_protobuf_FileOptions* msg, const udpa_annotations_StatusAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_file_status_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
-extern const upb_MiniTable_File udpa_annotations_status_proto_upb_file_layout;
+extern const upb_MiniTableFile udpa_annotations_status_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H_ */
