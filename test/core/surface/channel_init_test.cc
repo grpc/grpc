@@ -14,14 +14,12 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
-#include "gtest/gtest.h"
+#include <algorithm>
+#include <map>
+#include <string>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"

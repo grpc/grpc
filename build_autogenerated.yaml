@@ -5504,6 +5504,16 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_init_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/channel_init_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
