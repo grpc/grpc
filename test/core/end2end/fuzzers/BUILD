@@ -36,8 +36,8 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "api_fuzzer_proto",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
     ],
 )
 

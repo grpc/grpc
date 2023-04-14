@@ -250,7 +250,7 @@ class Call;
 namespace grpc {
 namespace testing {
 
-class ApiFuzzer : public BasicApiFuzzer {
+class ApiFuzzer : public BasicFuzzer {
  public:
   ApiFuzzer();
   ~ApiFuzzer() override;

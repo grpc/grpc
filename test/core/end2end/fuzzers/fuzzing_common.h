@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H_
-#define TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H_
+#ifndef GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
+#define GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 
 #include <stdint.h>
 
@@ -26,11 +26,11 @@
 namespace grpc {
 namespace testing {
 
-class BasicApiFuzzer {
+class BasicFuzzer {
  public:
   enum Result { kPending = 0, kComplete = 1, kFailed = 2, kNotSupported = 3 };
   virtual Result ExecuteAction(const api_fuzzer::Action& action);
-  virtual ~BasicApiFuzzer() = default;
+  virtual ~BasicFuzzer() = default;
 
  private:
   // Poll any created completion queue to drive the RPC forward.
@@ -89,4 +89,4 @@ class BasicApiFuzzer {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H_
+#endif  // GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
