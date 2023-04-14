@@ -68,7 +68,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 2);
   EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
@@ -109,7 +110,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   EXPECT_FALSE(config.cloud_logging.has_value());
   EXPECT_FALSE(config.cloud_monitoring.has_value());
   EXPECT_FALSE(config.cloud_trace.has_value());
@@ -132,7 +134,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigMethodIllegalSlashes) {
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  EXPECT_THAT(errors.status("Parsing error").ToString(),
+  EXPECT_THAT(errors.status(absl::StatusCode::kInvalidArgument, "Parsing error")
+                  .ToString(),
               ::testing::AllOf(
                   ::testing::HasSubstr(
                       "field:cloud_logging.client_rpc_events[0].methods[0]"
@@ -158,7 +161,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigEmptyMethod) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   EXPECT_THAT(
-      errors.status("Parsing error").ToString(),
+      errors.status(absl::StatusCode::kInvalidArgument, "Parsing error")
+          .ToString(),
       ::testing::HasSubstr("field:cloud_logging.client_rpc_events[0].methods[0]"
                            " error:Empty configuration"));
 }
@@ -183,7 +187,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 1);
   EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
@@ -215,7 +220,8 @@ TEST(GcpObservabilityConfigJsonParsingTest,
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   EXPECT_THAT(
-      errors.status("Parsing error").ToString(),
+      errors.status(absl::StatusCode::kInvalidArgument, "Parsing error")
+          .ToString(),
       ::testing::AllOf(
           ::testing::HasSubstr(
               "field:cloud_logging.client_rpc_events[0].methods[0]"
@@ -239,7 +245,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, SamplingRateDefaults) {
   grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(config.cloud_trace.has_value());
   EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
 }

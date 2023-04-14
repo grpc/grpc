@@ -141,8 +141,7 @@ typedef enum { SUCCESS, FAIL } test_result;
 #define SSL_TEST(request_type, cert_type, result)                              \
   {                                                                            \
     {TEST_NAME(request_type, cert_type, result),                               \
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                                \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                          \
+     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
      "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
         result                                                                 \
@@ -150,7 +149,7 @@ typedef enum { SUCCESS, FAIL } test_result;
 
 // All test configurations
 struct CoreTestConfigWrapper {
-  CoreTestConfiguration config;
+  grpc_core::CoreTestConfiguration config;
   test_result result;
 };
 
@@ -194,7 +193,7 @@ static CoreTestConfigWrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static void simple_request_body(CoreTestFixture* f,
+static void simple_request_body(grpc_core::CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
@@ -239,7 +238,7 @@ class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
   }
   void TearDown() override { fixture_.reset(); }
 
-  std::unique_ptr<CoreTestFixture> fixture_;
+  std::unique_ptr<grpc_core::CoreTestFixture> fixture_;
 };
 
 TEST_P(H2SslCertTest, SimpleRequestBody) {

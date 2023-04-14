@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h"
 

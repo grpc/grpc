@@ -32,7 +32,6 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/def.h"
 
 #include <grpc/status.h>
 
