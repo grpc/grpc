@@ -136,8 +136,9 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
     if (msg.network_input().has_single_read_bytes()) {
       grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_string(
-                             msg.network_input().single_read_bytes().c_str()));
+          mock_endpoint, grpc_slice_from_copied_buffer(
+                             msg.network_input().single_read_bytes().data(),
+                             msg.network_input().single_read_bytes().size()));
     }
 
     grpc_event ev;

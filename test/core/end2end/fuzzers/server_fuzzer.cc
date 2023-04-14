@@ -57,8 +57,9 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
     if (msg.network_input().has_single_read_bytes()) {
       grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_string(
-                             msg.network_input().single_read_bytes().c_str()));
+          mock_endpoint, grpc_slice_from_copied_buffer(
+                             msg.network_input().single_read_bytes().data(),
+                             msg.network_input().single_read_bytes().size()));
     }
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
