@@ -43,7 +43,7 @@ TEST(ProtoBufferWriterTest, Next) {
   EXPECT_EQ(writer.ByteCount(), size1 + size2);
   EXPECT_EQ(buffer.Length(), size1 + size2);
   Slice slice;
-  buffer.DumpToSingleSlice(&slice);
+  EXPECT_TRUE(buffer.DumpToSingleSlice(&slice).ok());
   EXPECT_EQ(memcmp(slice.begin(), data1, size1), 0);
   EXPECT_EQ(memcmp(slice.begin() + size1, data2, size2), 0);
 }
@@ -64,7 +64,7 @@ TEST(ProtoBufferWriterTest, WriteCord) {
   EXPECT_EQ(writer.ByteCount(), str1.size() + str2.size());
   EXPECT_EQ(buffer.Length(), str1.size() + str2.size());
   Slice slice;
-  buffer.DumpToSingleSlice(&slice);
+  EXPECT_TRUE(buffer.DumpToSingleSlice(&slice).ok());
   EXPECT_EQ(memcmp(slice.begin() + str1.size(), str2.c_str(), str2.size()), 0);
 }
 
