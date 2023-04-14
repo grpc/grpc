@@ -50,11 +50,17 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",
     language = "C++",
+    proto = "fuzzer_input.proto",
+    proto_deps = [
+        ":_api_fuzzer_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
+    ],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
@@ -68,11 +74,15 @@ grpc_fuzzer(
     ],
 )
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
     corpus = "server_fuzzer_corpus",
     language = "C++",
+    proto = "fuzzer_input.proto",
+    proto_deps = [
+        ":_api_fuzzer_proto",
+    ],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
