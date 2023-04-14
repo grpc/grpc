@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "google/api/http.upbdefs.h"
 #include "google/api/http.upb.h"
 

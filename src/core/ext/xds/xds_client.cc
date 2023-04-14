@@ -31,7 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "upb/arena.h"
+#include "upb/mem/arena.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>

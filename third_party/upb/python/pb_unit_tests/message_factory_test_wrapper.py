@@ -26,7 +26,6 @@
 from google.protobuf.internal.message_factory_test import *
 import unittest
 
-MessageFactoryTest.testCreatePrototypeOverride.__unittest_expecting_failure__ = True
 MessageFactoryTest.testDuplicateExtensionNumber.__unittest_expecting_failure__ = True
 MessageFactoryTest.testGetMessages.__unittest_expecting_failure__ = True
 MessageFactoryTest.testGetPrototype.__unittest_expecting_failure__ = True
