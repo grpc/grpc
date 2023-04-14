@@ -29,7 +29,7 @@ toolchain(
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
     ],
-    toolchain = "//third_party/toolchains/rbe_ubuntu1804/cc:cc-compiler-k8",
+    toolchain = "//third_party/toolchains/rbe_ubuntu2004/cc:cc-compiler-k8",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
