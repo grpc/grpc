@@ -38,6 +38,8 @@
 #include "src/proto/grpc/testing/xds/v3/stream.pb.h"
 #include "test/core/util/test_config.h"
 
+// IWYU pragma: no_include "upb/reflection/def.hpp"
+
 namespace grpc_core {
 namespace testing {
 namespace {
