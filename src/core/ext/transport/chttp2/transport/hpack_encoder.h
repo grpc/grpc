@@ -162,6 +162,8 @@ class Compressor<MetadataTrait, StableValueCompressor> {
       encoder->EmitIndexed(table.DynamicIndex(previously_sent_index_));
       return;
     }
+    previously_sent_value_ = value;
+    previously_sent_index_ = 0;
     auto key = MetadataTrait::key();
     const Slice& value_slice = MetadataValueAsSlice<MetadataTrait>(value);
     if (hpack_constants::SizeForEntry(key.size(), value_slice.size()) >
