@@ -412,10 +412,17 @@ TEST_P(EnvParsingTest, BadJson) {
 TEST_P(EnvParsingTest, BadJsonEmptyString) {
   SetConfig("");
   auto config = GcpObservabilityConfig::ReadFromEnv();
-  // Depending on the platform, an empty string is considered as the env var not
-  // having been set at all.
-  EXPECT_TRUE(config.status().code() == absl::StatusCode::kFailedPrecondition ||
-              config.status().code() == absl::StatusCode::kInvalidArgument);
+  if (GetParam().config_source() == EnvParsingTestType::ConfigSource::kFile) {
+    EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_THAT(config.status().message(),
+                ::testing::HasSubstr("JSON parsing failed"))
+        << config.status().message();
+  } else {
+    EXPECT_EQ(config.status(),
+              absl::FailedPreconditionError(
+                  "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+                  "GRPC_GCP_OBSERVABILITY_CONFIG not defined"));
+  }
 }
 
 // Make sure that GCP config errors are propagated as expected.
