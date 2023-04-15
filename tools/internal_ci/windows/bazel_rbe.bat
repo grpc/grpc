@@ -24,12 +24,12 @@ cat %~dp0\..\..\..\test/core/http/python_wrapper.sh
 git config core.symlinks
 
 setlocal EnableDelayedExpansion
-IF "%cd%"=="T:\src" (
-  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-  echo respawn script has finished with exitcode !errorlevel!
-  exit /b !errorlevel!
-)
-endlocal
+@rem IF "%cd%"=="T:\src" (
+@rem  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+@rem   echo respawn script has finished with exitcode !errorlevel!
+@rem  exit /b !errorlevel!
+@rem )
+@rem endlocal
 
 git config core.symlinks
 
