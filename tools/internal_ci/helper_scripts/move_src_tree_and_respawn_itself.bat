@@ -60,7 +60,7 @@ which cp
 bash -c "which cp"
 @rem We cannot simply rename "src" to "altsrc" as on linux since the currently running batch file is in it
 @rem and windows holds a lock that prevents moving the dir.
-bash -c "set -ex; mkdir -p altsrc; time cp -r src/github altsrc;"
+bash -c "set -ex; mkdir -p altsrc; time cp -a src/github altsrc;"
 @rem Delete files we can under the original "src/github" directory, skipping the directory that contains CI scripts
 @rem (as on of the scripts is currently running and cannot be deleted)
 @rem We don't want to delete files in "src" outside of "src/github" since they contain e.g kokoro input artifacts.
