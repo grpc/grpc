@@ -18,6 +18,9 @@
 echo "reparsepoint in orig src"
 fsutil reparsepoint query %~dp0\..\..\..\test/core/http/python_wrapper.sh
 
+echo "cat orig src"
+cat %~dp0\..\..\..\test/core/http/python_wrapper.sh
+
 git config core.symlinks
 
 setlocal EnableDelayedExpansion
@@ -39,6 +42,9 @@ ls -l test/core/http/python_wrapper.sh
 echo "reparsepoint in altsrc:"
 pwd
 fsutil reparsepoint query test/core/http/python_wrapper.sh
+
+echo "cat alt src"
+cat test/core/http/python_wrapper.sh
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 

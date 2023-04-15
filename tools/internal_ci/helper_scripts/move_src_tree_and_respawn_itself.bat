@@ -50,6 +50,10 @@ cd /d T:\
 
 echo spawn PATH
 echo %PATH%
+echo cygwin env
+echo %CYGWIN%
+echo msys env
+echo %MSYS%
 echo "spawn which"
 which bash
 which cp
