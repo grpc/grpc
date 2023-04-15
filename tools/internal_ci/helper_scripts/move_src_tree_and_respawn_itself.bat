@@ -48,6 +48,8 @@ IF NOT "%cd%"=="T:\src" (
 echo "Moving workspace from T:\src to T:\altsrc and respawning the CI script."
 cd /d T:\
 
+echo spawn PATH
+echo %PATH%
 echo "spawn which"
 which bash
 which cp
