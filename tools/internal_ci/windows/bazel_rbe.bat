@@ -15,6 +15,7 @@
 @rem Avoid slow finalization after the script has exited.
 @rem See the script's prologue for info on the correct invocation pattern.
 
+fsutil reparsepoint query %~dp0\..\..\..\test/core/http/python_wrapper.sh
 
 git config core.symlinks
 
@@ -33,6 +34,8 @@ cd github/grpc
 git config core.symlinks
 
 ls -l test/core/http/python_wrapper.sh
+
+fsutil reparsepoint query test/core/http/python_wrapper.sh
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 

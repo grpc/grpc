@@ -47,6 +47,11 @@ IF NOT "%cd%"=="T:\src" (
 @rem T:\ is equivalent to /tmpfs on kokoro linux.
 echo "Moving workspace from T:\src to T:\altsrc and respawning the CI script."
 cd /d T:\
+
+echo "spawn which"
+which bash
+which cp
+bash -c "which cp"
 @rem We cannot simply rename "src" to "altsrc" as on linux since the currently running batch file is in it
 @rem and windows holds a lock that prevents moving the dir.
 bash -c "set -ex; mkdir -p altsrc; time cp -r src/github altsrc;"
