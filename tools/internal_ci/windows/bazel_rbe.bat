@@ -32,6 +32,8 @@ cd github/grpc
 
 git config core.symlinks
 
+ls -l test/core/http/python_wrapper.sh
+
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Install bazel
