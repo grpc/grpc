@@ -14,6 +14,10 @@
 
 @rem Avoid slow finalization after the script has exited.
 @rem See the script's prologue for info on the correct invocation pattern.
+
+
+git config core.symlinks
+
 setlocal EnableDelayedExpansion
 IF "%cd%"=="T:\src" (
   call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
@@ -22,7 +26,11 @@ IF "%cd%"=="T:\src" (
 )
 endlocal
 
+git config core.symlinks
+
 cd github/grpc
+
+git config core.symlinks
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
