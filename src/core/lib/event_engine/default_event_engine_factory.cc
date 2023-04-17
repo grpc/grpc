@@ -20,7 +20,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#if defined(GPR_WINDOWS)
+#ifdef GPR_WINDOWS
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
 namespace grpc_event_engine {
@@ -32,19 +32,7 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-#elif defined(GRPC_CFSTREAM)
-#include "src/core/lib/event_engine/cf_engine/cf_engine.h"
-
-namespace grpc_event_engine {
-namespace experimental {
-
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return std::make_unique<CFEventEngine>();
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-#else
+#else  // not GPR_WINDOWS
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 namespace grpc_event_engine {
