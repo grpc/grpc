@@ -1176,7 +1176,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
-    visibility = ["@grpc:tsi"],
+    visibility = ["@grpc:public"],
     deps = [
         "alts_upb",
         "gpr",
