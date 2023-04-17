@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/logging/logging_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -54,7 +53,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"

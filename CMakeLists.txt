@@ -871,6 +871,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channel_arguments_test)
   add_dependencies(buildtests_cxx channel_creds_registry_test)
   add_dependencies(buildtests_cxx channel_filter_test)
+  add_dependencies(buildtests_cxx channel_init_test)
   add_dependencies(buildtests_cxx channel_stack_builder_test)
   add_dependencies(buildtests_cxx channel_stack_test)
   add_dependencies(buildtests_cxx channel_trace_test)
@@ -7696,6 +7697,43 @@ target_link_libraries(channel_filter_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(channel_init_test
+  test/core/surface/channel_init_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(channel_init_test PUBLIC cxx_std_14)
+target_include_directories(channel_init_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channel_init_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 

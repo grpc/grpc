@@ -2249,7 +2249,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc++_base",

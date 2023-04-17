@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-#include <limits.h>
-
 #include <atomic>
 
 #include "absl/base/attributes.h"
@@ -33,7 +31,6 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
