@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <string>
 #include <utility>
 

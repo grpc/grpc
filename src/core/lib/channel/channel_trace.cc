@@ -21,7 +21,6 @@
 #include "src/core/lib/channel/channel_trace.h"
 
 #include <algorithm>
-#include <string>
 #include <utility>
 
 #include <grpc/support/alloc.h>

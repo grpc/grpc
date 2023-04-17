@@ -113,7 +113,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
                                                                   "HEALTHY"}) {
     LoadBalancingPolicy::UpdateArgs update;
-    update.config = MakeXdsOverrideHostConfig(std::move(override_host_status));
+    update.config = MakeXdsOverrideHostConfig(override_host_status);
     update.addresses.emplace();
     for (auto address_and_status : addresses_and_statuses) {
       update.addresses->push_back(MakeAddressWithHealthStatus(
