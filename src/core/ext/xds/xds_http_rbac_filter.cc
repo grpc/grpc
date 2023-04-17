@@ -40,7 +40,7 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/upb.h"
+#include "upb/collections/map.h"
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"

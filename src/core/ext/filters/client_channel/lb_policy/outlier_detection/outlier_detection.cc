@@ -1026,6 +1026,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     if (!errors.ok()) {
       return errors.status(
+          absl::StatusCode::kInvalidArgument,
           "errors validating outlier_detection LB policy config");
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,

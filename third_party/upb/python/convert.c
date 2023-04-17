@@ -29,8 +29,12 @@
 
 #include "python/message.h"
 #include "python/protobuf.h"
-#include "upb/reflection.h"
+#include "upb/map.h"
+#include "upb/reflection/message.h"
 #include "upb/util/compare.h"
+
+// Must be last.
+#include "upb/port/def.inc"
 
 PyObject* PyUpb_UpbToPy(upb_MessageValue val, const upb_FieldDef* f,
                         PyObject* arena) {
@@ -150,6 +154,34 @@ static upb_MessageValue PyUpb_MaybeCopyString(const char* ptr, size_t size,
   return ret;
 }
 
+const char* upb_FieldDef_TypeString(const upb_FieldDef* f) {
+  switch (upb_FieldDef_CType(f)) {
+    case kUpb_CType_Double:
+      return "double";
+    case kUpb_CType_Float:
+      return "float";
+    case kUpb_CType_Int64:
+      return "int64";
+    case kUpb_CType_Int32:
+      return "int32";
+    case kUpb_CType_UInt64:
+      return "uint64";
+    case kUpb_CType_UInt32:
+      return "uint32";
+    case kUpb_CType_Enum:
+      return "enum";
+    case kUpb_CType_Bool:
+      return "bool";
+    case kUpb_CType_String:
+      return "string";
+    case kUpb_CType_Bytes:
+      return "bytes";
+    case kUpb_CType_Message:
+      return "message";
+  }
+  UPB_UNREACHABLE();
+}
+
 static bool PyUpb_PyToUpbEnum(PyObject* obj, const upb_EnumDef* e,
                               upb_MessageValue* val) {
   if (PyUnicode_Check(obj)) {
@@ -176,6 +208,20 @@ static bool PyUpb_PyToUpbEnum(PyObject* obj, const upb_EnumDef* e,
   }
 }
 
+bool PyUpb_IsNumpyNdarray(PyObject* obj, const upb_FieldDef* f) {
+  PyObject* type_name_obj =
+      PyObject_GetAttrString((PyObject*)Py_TYPE(obj), "__name__");
+  bool is_ndarray = false;
+  if (!strcmp(PyUpb_GetStrData(type_name_obj), "ndarray")) {
+    PyErr_Format(PyExc_TypeError,
+                 "%S has type ndarray, but expected one of: %s", obj,
+                 upb_FieldDef_TypeString(f));
+    is_ndarray = true;
+  }
+  Py_DECREF(type_name_obj);
+  return is_ndarray;
+}
+
 bool PyUpb_PyToUpb(PyObject* obj, const upb_FieldDef* f, upb_MessageValue* val,
                    upb_Arena* arena) {
   switch (upb_FieldDef_CType(f)) {
@@ -190,12 +236,15 @@ bool PyUpb_PyToUpb(PyObject* obj, const upb_FieldDef* f, upb_MessageValue* val,
     case kUpb_CType_UInt64:
       return PyUpb_GetUint64(obj, &val->uint64_val);
     case kUpb_CType_Float:
+      if (PyUpb_IsNumpyNdarray(obj, f)) return false;
       val->float_val = PyFloat_AsDouble(obj);
       return !PyErr_Occurred();
     case kUpb_CType_Double:
+      if (PyUpb_IsNumpyNdarray(obj, f)) return false;
       val->double_val = PyFloat_AsDouble(obj);
       return !PyErr_Occurred();
     case kUpb_CType_Bool:
+      if (PyUpb_IsNumpyNdarray(obj, f)) return false;
       val->bool_val = PyLong_AsLong(obj);
       return !PyErr_Occurred();
     case kUpb_CType_Bytes: {
@@ -223,8 +272,7 @@ bool PyUpb_PyToUpb(PyObject* obj, const upb_FieldDef* f, upb_MessageValue* val,
       return true;
     }
     case kUpb_CType_Message:
-      PyErr_Format(PyExc_ValueError, "Message objects may not be assigned",
-                   upb_FieldDef_CType(f));
+      PyErr_Format(PyExc_ValueError, "Message objects may not be assigned");
       return false;
     default:
       PyErr_Format(PyExc_SystemError,
@@ -284,9 +332,8 @@ bool PyUpb_Map_IsEqual(const upb_Map* map1, const upb_Map* map2,
   const upb_FieldDef* val_f = upb_MessageDef_Field(entry_m, 1);
   size_t iter = kUpb_Map_Begin;
 
-  while (upb_MapIterator_Next(map1, &iter)) {
-    upb_MessageValue key = upb_MapIterator_Key(map1, iter);
-    upb_MessageValue val1 = upb_MapIterator_Value(map1, iter);
+  upb_MessageValue key, val1;
+  while (upb_Map_Next(map1, &key, &val1, &iter)) {
     upb_MessageValue val2;
     if (!upb_Map_Get(map2, key, &val2)) return false;
     if (!PyUpb_ValueEq(val1, val2, val_f)) return false;
@@ -348,7 +395,7 @@ bool upb_Message_IsEqual(const upb_Message* msg1, const upb_Message* msg2,
   //      using upb_Message_Next(msg2).  If the two messages have the same set
   //      of fields, this will yield the same field.
   //   3. For extension fields, we have to actually search for the corresponding
-  //      field, which we do with upb_Message_Get(msg2, ext_f1).
+  //      field, which we do with upb_Message_GetFieldByDef(msg2, ext_f1).
   //   4. Once iteration over msg1 is complete, we call upb_Message_Next(msg2)
   //   one
   //      final time to verify that we have visited all of msg2's regular fields
@@ -364,7 +411,7 @@ bool upb_Message_IsEqual(const upb_Message* msg1, const upb_Message* msg2,
   size_t iter2 = kUpb_Message_Begin;
   while (upb_Message_Next(msg1, m, symtab, &f1, &val1, &iter1)) {
     if (upb_FieldDef_IsExtension(f1)) {
-      val2 = upb_Message_Get(msg2, f1);
+      val2 = upb_Message_GetFieldByDef(msg2, f1);
     } else {
       if (!upb_Message_Next(msg2, m, NULL, &f2, &val2, &iter2) || f1 != f2) {
         return false;
@@ -392,3 +439,5 @@ bool upb_Message_IsEqual(const upb_Message* msg1, const upb_Message* msg2,
   return upb_Message_UnknownFieldsAreEqual(uf1, usize1, uf2, usize2, 100) ==
          kUpb_UnknownCompareResult_Equal;
 }
+
+#include "upb/port/undef.inc"

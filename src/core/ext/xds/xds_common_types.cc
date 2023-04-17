@@ -39,9 +39,9 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/arena.h"
-#include "upb/json_encode.h"
-#include "upb/status.h"
+#include "upb/base/status.h"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.h"
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 

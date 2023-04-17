@@ -50,7 +50,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer.h>
