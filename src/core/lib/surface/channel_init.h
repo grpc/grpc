@@ -47,7 +47,14 @@ extern const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 class ChannelInit {
  public:
-  using InclusionPredicate = std::function<bool(const ChannelArgs&)>;
+  // Predicate for if a filter registration applies
+  using InclusionPredicate = absl::AnyInvocable<bool(const ChannelArgs&) const>;
+  // Post processor for the channel stack - applied in PostProcessorSlot order
+  using PostProcessor = absl::AnyInvocable<void(ChannelStackBuilder&) const>;
+  // Post processing slots - up to one PostProcessor per slot can be registered
+  // They run after filters registered are added to the channel stack builder,
+  // but before Build is called - allowing ad-hoc mutation to the channel stack.
+  enum class PostProcessorSlot { kXdsChannelStackModifier, kCount };
 
   class FilterRegistration {
    public:
@@ -97,12 +104,22 @@ class ChannelInit {
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
                                        const grpc_channel_filter* filter);
 
+    void RegisterPostProcessor(grpc_channel_stack_type type,
+                               PostProcessorSlot slot,
+                               PostProcessor post_processor) {
+      auto& slot_value = post_processors_[type][static_cast<int>(slot)];
+      GPR_ASSERT(slot_value == nullptr);
+      slot_value = std::move(post_processor);
+    }
+
     /// Finalize registration.
     ChannelInit Build();
 
    private:
     std::vector<std::unique_ptr<FilterRegistration>>
         filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
+    PostProcessor post_processors_[GRPC_NUM_CHANNEL_STACK_TYPES]
+                                  [static_cast<int>(PostProcessorSlot::kCount)];
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
@@ -119,12 +136,13 @@ class ChannelInit {
   struct StackConfig {
     std::vector<Filter> filters;
     std::vector<Filter> terminators;
+    std::vector<PostProcessor> post_processors_;
   };
-  StackConfig filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
+  StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
-  static StackConfig BuildFilters(
+  static StackConfig BuildStackConfig(
       const std::vector<std::unique_ptr<FilterRegistration>>& registrations,
-      grpc_channel_stack_type type);
+      PostProcessor* post_processors, grpc_channel_stack_type type);
 };
 
 }  // namespace grpc_core

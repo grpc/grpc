@@ -33,7 +33,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
@@ -77,10 +76,10 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
   return *filters_[type].back();
 }
 
-ChannelInit::StackConfig ChannelInit::BuildFilters(
+ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         registrations,
-    grpc_channel_stack_type type) {
+    PostProcessor* post_processors, grpc_channel_stack_type type) {
   auto collapse_predicates =
       [](std::vector<InclusionPredicate> predicates) -> InclusionPredicate {
     switch (predicates.size()) {
@@ -89,8 +88,7 @@ ChannelInit::StackConfig ChannelInit::BuildFilters(
       case 1:
         return std::move(predicates[0]);
       default:
-        return [predicates =
-                    std::move(predicates)](const ChannelArgs& args) mutable {
+        return [predicates = std::move(predicates)](const ChannelArgs& args) {
           for (auto& predicate : predicates) {
             if (!predicate(args)) return false;
           }
@@ -122,7 +120,7 @@ ChannelInit::StackConfig ChannelInit::BuildFilters(
       GPR_ASSERT(!registration->before_all_);
       terminal_filters.emplace_back(
           registration->filter_,
-          collapse_predicates(registration->predicates_));
+          collapse_predicates(std::move(registration->predicates_)));
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
@@ -198,30 +196,43 @@ ChannelInit::StackConfig ChannelInit::BuildFilters(
       p.second.erase(filter);
     }
   }
-  return StackConfig{std::move(filters), std::move(terminal_filters)};
+  std::vector<PostProcessor> post_processor_functions;
+  for (int i = 0; i < static_cast<int>(PostProcessorSlot::kCount); i++) {
+    if (post_processors[i] == nullptr) continue;
+    post_processor_functions.emplace_back(std::move(post_processors[i]));
+  }
+  return StackConfig{std::move(filters), std::move(terminal_filters),
+                     std::move(post_processor_functions)};
 };
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    result.filters_[i] =
-        BuildFilters(filters_[i], static_cast<grpc_channel_stack_type>(i));
+    result.stack_configs_[i] =
+        BuildStackConfig(filters_[i], post_processors_[i],
+                         static_cast<grpc_channel_stack_type>(i));
   }
   return result;
 }
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
-  for (const auto& filter : filters_[builder->channel_stack_type()].filters) {
+  const auto& stack_config = stack_configs_[builder->channel_stack_type()];
+  for (const auto& filter : stack_config.filters) {
     if (!filter.predicate(builder->channel_args())) continue;
     builder->AppendFilter(filter.filter);
   }
-  for (const auto& terminator :
-       filters_[builder->channel_stack_type()].terminators) {
+  bool found_terminator = false;
+  for (const auto& terminator : stack_config.terminators) {
     if (!terminator.predicate(builder->channel_args())) continue;
     builder->AppendFilter(terminator.filter);
-    return true;
+    found_terminator = true;
+    break;
   }
-  return false;
+  if (!found_terminator) return false;
+  for (const auto& post_processor : stack_config.post_processors_) {
+    post_processor(*builder);
+  }
+  return true;
 }
 
 }  // namespace grpc_core

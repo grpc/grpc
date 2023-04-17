@@ -45,8 +45,7 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
   explicit XdsChannelStackModifier(
       std::vector<const grpc_channel_filter*> filters)
       : filters_(std::move(filters)) {}
-  // Returns true on success, false otherwise.
-  bool ModifyChannelStack(ChannelStackBuilder* builder);
+  void ModifyChannelStack(ChannelStackBuilder& builder);
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsChannelStackModifier> GetFromChannelArgs(
       const grpc_channel_args& args);
