@@ -126,8 +126,7 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   GRPC_RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
   GRPC_RETURN_IF_ERROR(sock.SetSocketCloexec(1));
   if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
-    GRPC_RETURN_IF_ERROR(
-        sock.SetSocketRcvBufLength(options.tcp_receive_buffer_size));
+    GRPC_RETURN_IF_ERROR(sock.SetSocketRcvBuf(options.tcp_receive_buffer_size));
   }
   if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
     // If its not a unix socket address.
@@ -395,7 +394,7 @@ absl::Status PosixSocketWrapper::SetSocketSndBuf(int buffer_size_bytes) {
                                          grpc_core::StrError(errno)));
 }
 
-absl::Status PosixSocketWrapper::SetSocketRcvBufLength(int buffer_size_bytes) {
+absl::Status PosixSocketWrapper::SetSocketRcvBuf(int buffer_size_bytes) {
   return 0 == setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()

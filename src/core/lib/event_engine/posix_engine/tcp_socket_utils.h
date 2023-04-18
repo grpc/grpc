@@ -202,7 +202,7 @@ class PosixSocketWrapper {
   absl::Status SetSocketSndBuf(int buffer_size_bytes);
 
   // Tries to set the socket's receive buffer to given size.
-  absl::Status SetSocketRcvBufLength(int buffer_size_bytes);
+  absl::Status SetSocketRcvBuf(int buffer_size_bytes);
 
   // Tries to set the socket using a grpc_socket_mutator
   absl::Status SetSocketMutator(grpc_fd_usage usage,
