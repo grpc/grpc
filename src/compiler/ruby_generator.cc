@@ -110,12 +110,18 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
 // ruby generator
 // to ensure compatibility (with the exception of int and string type changes).
 // See
-// https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// https://github.com/protocolbuffers/protobuf/blob/63895855d7b1298bee97591cbafced49f23902da/src/google/protobuf/compiler/ruby/ruby_generator.cc#L312
 // TODO: keep up to date with protoc code generation, though this behavior isn't
 // expected to change
+
+// Locale-agnostic utility functions.
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
 
-char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
+bool IsUpper(char ch) { return ch >= 'A' && ch <= 'Z'; }
+
+bool IsAlpha(char ch) { return IsLower(ch) || IsUpper(ch); }
+
+char UpperChar(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
 
 // Package names in protobuf are snake_case by convention, but Ruby module
 // names must be PascalCased.
@@ -131,7 +137,7 @@ std::string PackageToModule(const std::string& name) {
       next_upper = true;
     } else {
       if (next_upper) {
-        result.push_back(ToUpper(name[i]));
+        result.push_back(UpperChar(name[i]));
       } else {
         result.push_back(name[i]);
       }
@@ -140,6 +146,29 @@ std::string PackageToModule(const std::string& name) {
   }
 
   return result;
+}
+
+// Class and enum names in protobuf should be PascalCased by convention, but
+// since there is nothing enforcing this we need to ensure that they are valid
+// Ruby constants.  That mainly means making sure that the first character is
+// an upper-case letter.
+std::string RubifyConstant(const std::string& name) {
+  std::string ret = name;
+  if (!ret.empty()) {
+    if (IsLower(ret[0])) {
+      // If it starts with a lowercase letter, capitalize it.
+      ret[0] = UpperChar(ret[0]);
+    } else if (!IsAlpha(ret[0])) {
+      // Otherwise (e.g. if it begins with an underscore), we need to come up
+      // with some prefix that starts with a capital letter. We could be smarter
+      // here, e.g. try to strip leading underscores, but this may cause other
+      // problems if the user really intended the name. So let's just prepend a
+      // well-known suffix.
+      ret = "PB_" + ret;
+    }
+  }
+
+  return ret;
 }
 // end copying of protoc generator for ruby code
 
