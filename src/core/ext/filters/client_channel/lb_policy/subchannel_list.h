@@ -323,26 +323,24 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StartConnectivityWatchLocked() {
   if (GPR_UNLIKELY(subchannel_list_->tracer() != nullptr)) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): starting watch "
-            "(health_check_service_name=\"%s\")",
-            subchannel_list_->tracer(), subchannel_list_->policy(),
-            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_.get(),
-            subchannel_list()->health_check_service_name_.value_or("N/A")
-                .c_str());
+    gpr_log(
+        GPR_INFO,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): starting watch "
+        "(health_check_service_name=\"%s\")",
+        subchannel_list_->tracer(), subchannel_list_->policy(),
+        subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+        subchannel_.get(),
+        subchannel_list()->health_check_service_name_.value_or("N/A").c_str());
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
   auto watcher = std::make_unique<Watcher>(
       this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   pending_watcher_ = watcher.get();
   if (subchannel_list()->health_check_service_name_.has_value()) {
-    subchannel_->AddDataWatcher(
-        MakeHealthCheckWatcher(
-            subchannel_list_->work_serializer(),
-            *subchannel_list()->health_check_service_name_,
-            std::move(watcher)));
+    subchannel_->AddDataWatcher(MakeHealthCheckWatcher(
+        subchannel_list_->work_serializer(),
+        *subchannel_list()->health_check_service_name_, std::move(watcher)));
   } else {
     subchannel_->WatchConnectivityState(std::move(watcher));
   }
@@ -390,7 +388,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
     health_check_service_name_ =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
-  } 
+  }
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO,
             "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",

@@ -16,12 +16,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
-
 #include "upb/upb.hpp"
 
 #include <grpc/status.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
@@ -35,7 +34,7 @@
 namespace grpc_core {
 
 // FIXME
-//TraceFlag grpc_health_check_client_trace(false, "health_check_client");
+// TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 extern TraceFlag grpc_health_check_client_trace;
 
 namespace {
@@ -74,9 +73,8 @@ class HealthProducer::HealthChecker
                 absl::string_view health_check_service_name)
       : producer_(std::move(producer)),
         health_check_service_name_(health_check_service_name),
-        state_(producer_->state_ == GRPC_CHANNEL_READY
-                   ? GRPC_CHANNEL_CONNECTING
-                   : producer_->state_),
+        state_(producer_->state_ == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
+                                                       : producer_->state_),
         status_(producer_->status_) {
     // If the subchannel is already connected, start health checking.
     if (producer_->state_ == GRPC_CHANNEL_READY) StartHealthStreamLocked();
@@ -140,9 +138,8 @@ class HealthProducer::HealthChecker
     stream_client_ = MakeOrphanable<SubchannelStreamClient>(
         producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
         absl::make_unique<HealthStreamEventHandler>(Ref()),
-        GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)
-            ? "HealthClient"
-            : nullptr);
+        GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace) ? "HealthClient"
+                                                                : nullptr);
   }
 
   // Notifies watchers of a new state.
@@ -205,8 +202,7 @@ class HealthProducer::HealthChecker
 class HealthProducer::HealthChecker::HealthStreamEventHandler
     : public SubchannelStreamClient::CallEventHandler {
  public:
-  explicit HealthStreamEventHandler(
-      RefCountedPtr<HealthChecker> health_checker)
+  explicit HealthStreamEventHandler(RefCountedPtr<HealthChecker> health_checker)
       : health_checker_(std::move(health_checker)) {}
 
   Slice GetPathLocked() override {
@@ -228,7 +224,8 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler
     grpc_health_v1_HealthCheckRequest* request_struct =
         grpc_health_v1_HealthCheckRequest_new(arena.ptr());
     grpc_health_v1_HealthCheckRequest_set_service(
-        request_struct, upb_StringView_FromDataAndSize(
+        request_struct,
+        upb_StringView_FromDataAndSize(
             health_checker_->health_check_service_name_.data(),
             health_checker_->health_check_service_name_.size()));
     size_t buf_length;
@@ -299,10 +296,9 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler
               client, ConnectivityStateName(state), reason);
     }
     health_checker_->OnHealthWatchStatusChange(
-        state,
-        state == GRPC_CHANNEL_TRANSIENT_FAILURE
-            ? absl::UnavailableError(reason)
-            : absl::OkStatus());
+        state, state == GRPC_CHANNEL_TRANSIENT_FAILURE
+                   ? absl::UnavailableError(reason)
+                   : absl::OkStatus());
   }
 
   RefCountedPtr<HealthChecker> health_checker_;
@@ -463,9 +459,9 @@ MakeHealthCheckWatcher(
     absl::string_view health_check_service_name,
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher) {
-  return std::make_unique<HealthWatcher>(
-      std::move(work_serializer), health_check_service_name,
-      std::move(watcher));
+  return std::make_unique<HealthWatcher>(std::move(work_serializer),
+                                         health_check_service_name,
+                                         std::move(watcher));
 }
 
 }  // namespace grpc_core

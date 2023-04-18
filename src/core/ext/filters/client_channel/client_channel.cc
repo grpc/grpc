@@ -677,8 +677,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // state IDLE that the real subchannel gave us only for the
       // purpose of keepalive propagation.
       watcher_->OnConnectivityStateChange(
-          state, state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status
-                                                         : absl::OkStatus());
+          state,
+          state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
     }
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
@@ -903,10 +903,11 @@ class ClientChannel::ClientChannelControlHelper
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
     absl::optional<std::string> health_check_service_name;
-//    if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
-//      health_check_service_name =
-//          args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
-//    }
+    // FIXME: remove
+    //if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
+    //  health_check_service_name =
+    //      args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
+    //}
     // Construct channel args for subchannel.
     ChannelArgs subchannel_args = ClientChannel::MakeSubchannelArgs(
         args, address.args(), chand_->subchannel_pool_,
