@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/channel/channelz.h"

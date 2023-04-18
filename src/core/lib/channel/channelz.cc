@@ -25,6 +25,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/support/cpu.h>
