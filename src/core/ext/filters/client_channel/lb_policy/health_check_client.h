@@ -21,6 +21,8 @@
 
 #include <memory>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 

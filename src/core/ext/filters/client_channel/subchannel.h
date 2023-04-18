@@ -226,8 +226,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  void CancelConnectivityStateWatch(
-      ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
+  void CancelConnectivityStateWatch(ConnectivityStateWatcherInterface* watcher)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel()
       ABSL_LOCKS_EXCLUDED(mu_) {

@@ -4410,24 +4410,36 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/health_check_client_internal.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
         "upb_lib",
     ],
     language = "c++",
     deps = [
+        "closure",
+        "error",
+        "iomgr_fwd",
         "lb_policy",
+        "pollset_set",
         "slice",
         "subchannel_interface",
         "time",
         "unique_type_name",
+        "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_health_upb",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:orphanable",
         "//:protobuf_duration_upb",
+        "//:ref_counted_ptr",
         "//:work_serializer",
         "//:xds_orca_service_upb",
         "//:xds_orca_upb",
@@ -4458,6 +4470,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4488,6 +4501,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4566,6 +4580,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4626,6 +4641,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:work_serializer",
     ],
 )
 
