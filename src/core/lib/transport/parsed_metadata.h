@@ -26,6 +26,7 @@
 
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -395,12 +396,17 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
     return absl::StrCat(p->first.as_string_view(), ": ",
                         p->second.as_string_view());
   };
+  static const auto binary_debug_string = [](const Buffer& value) {
+    auto* p = static_cast<KV*>(value.pointer);
+    return absl::StrCat(p->first.as_string_view(), ": \"",
+                        absl::CEscape(p->second.as_string_view()), "\"");
+  };
   static const auto key_fn = [](const Buffer& value) {
     return static_cast<KV*>(value.pointer)->first.as_string_view();
   };
   static const VTable vtable[2] = {
       {false, destroy, set, with_new_value, debug_string, "", key_fn},
-      {true, destroy, set, with_new_value, debug_string, "", key_fn},
+      {true, destroy, set, with_new_value, binary_debug_string, "", key_fn},
   };
   return &vtable[absl::EndsWith(key, "-bin")];
 }
