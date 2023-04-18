@@ -66,31 +66,48 @@ class ChannelInit {
     FilterRegistration(const FilterRegistration&) = delete;
     FilterRegistration& operator=(const FilterRegistration&) = delete;
 
+    // Ensure that this filter is placed *after* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
     FilterRegistration& After(
         std::initializer_list<const grpc_channel_filter*> filters);
+    // Ensure that this filter is placed *before* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
     FilterRegistration& Before(
         std::initializer_list<const grpc_channel_filter*> filters);
+    // Add a predicate for this filters inclusion.
+    // If the predicate returns true the filter will be included in the stack.
+    // Predicates do not affect the ordering of the filter stack: we first
+    // topologically sort (once, globally) and only later apply predicates
+    // per-channel creation.
+    // Multiple predicates can be added to each registration.
     FilterRegistration& If(InclusionPredicate predicate);
-    FilterRegistration& IfHasChannelArg(const char* arg) {
-      return If([arg](const ChannelArgs& args) { return args.Contains(arg); });
-    }
-    FilterRegistration& IfChannelArg(const char* arg, bool default_value) {
-      return If([arg, default_value](const ChannelArgs& args) {
-        return args.GetBool(arg).value_or(default_value);
-      });
-    }
+    // Add a predicate that only includes this filter if a channel arg is
+    // present.
+    FilterRegistration& IfHasChannelArg(const char* arg);
+    // Add a predicate that only includes this filter if a boolean channel arg
+    // is true (with default_value being used if the argument is not present).
+    FilterRegistration& IfChannelArg(const char* arg, bool default_value);
+    // Mark this filter as being terminal.
+    // Exactly one terminal filter will be added at the end of each filter
+    // stack.
+    // If multiple are defined they are tried in registration order, and the
+    // first terminal filter whos predicates succeed is selected.
     FilterRegistration& Terminal() {
       terminal_ = true;
       return *this;
     }
+    // Ensure this filter appears at the top of the stack.
+    // Effectively adds a 'Before' constraint on every other filter.
+    // Adding this to more than one filter will cause a loop.
     FilterRegistration& BeforeAll() {
       before_all_ = true;
       return *this;
     }
-    FilterRegistration& ExcludeFromMinimalStack() {
-      return If(
-          [](const ChannelArgs& args) { return !args.WantMinimalStack(); });
-    }
+    // Add a predicate that ensures this filter does not appear in the minimal
+    // stack.
+    FilterRegistration& ExcludeFromMinimalStack();
 
    private:
     friend class ChannelInit;
