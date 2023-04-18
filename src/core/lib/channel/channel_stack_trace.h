@@ -15,8 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_TRACE_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_TRACE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_trace_channel_stack;
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_TRACE_H

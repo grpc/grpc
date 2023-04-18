@@ -30,11 +30,12 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "channel_stack_type.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack_trace.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/channel_stack_type.h"
