@@ -2396,7 +2396,10 @@ grpc_cc_library(
         "lib/channel/channel_stack_trace.h",
     ],
     language = "c++",
-    deps = ["//:grpc_trace"],
+    deps = [
+        "//:gpr_platform",
+        "//:grpc_trace",
+    ],
 )
 
 grpc_cc_library(
