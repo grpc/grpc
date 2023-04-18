@@ -2410,7 +2410,6 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -2419,8 +2418,10 @@ grpc_cc_library(
         "channel_stack_trace",
         "channel_stack_type",
         "//:channel_stack_builder",
+        "//:debug_location",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
