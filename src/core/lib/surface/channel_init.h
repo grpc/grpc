@@ -45,6 +45,20 @@
 
 namespace grpc_core {
 
+// HACK HACK HACK
+// Right now grpc_channel_filter has a bunch of dependencies high in the stack,
+// but this code needs to live as a dependency of CoreConfiguration so we need
+// to be careful to ensure no dependency loops.
+//
+// We absolutely must be able to get the name from a filter - for stability and
+// for debuggability.
+//
+// So we export this function, and have it filled in by the higher level code at
+// static initialization time.
+//
+// TODO(ctiller): remove this. When we define a FilterFactory type, that type
+// can be specified with the right constraints to be depended upon by this code,
+// and that type can export a `string_view Name()` method.
 extern const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 class ChannelInit {
@@ -122,10 +136,19 @@ class ChannelInit {
 
   class Builder {
    public:
+    // Register a builder in the normal filter registration pass.
+    // This occurs first during channel build time.
+    // The FilterRegistration methods can be called to declaratively define
+    // properties of the filter being registered.
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
                                        const grpc_channel_filter* filter,
-                                       SourceLocation location = {});
+                                       SourceLocation registration_source = {});
 
+    // Register a post processor for the builder.
+    // These run after the main graph has been placed into the builder.
+    // At most one filter per slot per channel stack type can be added.
+    // If at all possible, prefer to use the RegisterFilter() mechanism to add
+    // filters to the system - this should be a last resort escape hatch.
     void RegisterPostProcessor(grpc_channel_stack_type type,
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {

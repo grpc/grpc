@@ -36,6 +36,7 @@
 
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
@@ -208,14 +209,29 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       p.second.erase(filter);
     }
   }
+  // Collect post processors that need to be applied.
+  // We've already ensured the one-per-slot constraint, so now we can just
+  // collect everything up into a vector and run it in order.
   std::vector<PostProcessor> post_processor_functions;
   for (int i = 0; i < static_cast<int>(PostProcessorSlot::kCount); i++) {
     if (post_processors[i] == nullptr) continue;
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
+  // Log out the graph we built if that's been requested.
   if (grpc_trace_channel_stack.enabled()) {
+    // It can happen that multiple threads attempt to construct a core config at
+    // once.
+    // This is benign - the first one wins and others are discarded.
+    // However, it messes up our logging and makes it harder to reason about the
+    // graph, so we add some protection here.
+    static Mutex* const m = new Mutex();
+    MutexLock lock(m);
+    // List the channel stack type (since we'll be repeatedly printing graphs in
+    // this loop).
     gpr_log(GPR_INFO,
             "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
+    // First build up a map of filter -> file:line: strings, because it helps
+    // the readability of this log to get later fields aligned vertically.
     std::map<const grpc_channel_filter*, std::string> loc_strs;
     size_t max_loc_str_len = 0;
     size_t max_filter_name_len = 0;
@@ -246,6 +262,17 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
           loc_str.second,
           std::string(max_loc_str_len + 2 - loc_str.second.length(), ' '));
     }
+    // For each regular filter, print the location registered, the name of the
+    // filter, and if it needed to occur after some other filters list those
+    // filters too.
+    // Note that we use the processed after list here - earlier we turned Before
+    // registrations into After registrations and we used those converted
+    // registrations to build the final ordering.
+    // If you're trying to track down why 'A' is listed as after 'B', look at
+    // the following:
+    //  - If A is registered with .After({B}), then A will be 'after' B here.
+    //  - If B is registered with .Before({A}), then A will be 'after' B here.
+    //  - If B is registered as BeforeAll, then A will be 'after' B here.
     for (const auto& filter : filters) {
       auto dep_it = original.find(filter.filter);
       std::string after_str;
@@ -266,6 +293,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                        NameFromChannelFilter(filter.filter), after_str);
       gpr_log(GPR_INFO, "%s", filter_str.c_str());
     }
+    // Finally list out the terminal filters and where they were registered
+    // from.
     for (const auto& terminal : terminal_filters) {
       const auto filter_str = absl::StrCat(
           "  ", loc_strs[terminal.filter],
