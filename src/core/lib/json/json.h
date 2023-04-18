@@ -35,22 +35,29 @@ namespace grpc_core {
 // number, true, false, or null.
 class Json {
  public:
-  // TODO(roth): Currently, numbers are stored internally as strings,
-  // which makes the API a bit cumbersome to use. When we have time,
-  // consider whether there's a better alternative (e.g., maybe storing
-  // each numeric type as the native C++ type and automatically converting
-  // to string as needed).
-  enum class Type { kNull, kTrue, kFalse, kNumber, kString, kObject, kArray };
+  // The JSON type.
+  enum class Type {
+    kNull,    // No payload.  Default type when using the zero-arg ctor.
+    kTrue,    // No payload.
+    kFalse,   // No payload.
+    kNumber,  // Numbers are stored in string form to avoid precision
+              // and integer capacity issues.  Use string() for payload.
+    kString,  // Use string() for payload.
+    kObject,  // Use object() for payload.
+    kArray,   // Use array() for payload.
+  };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
+  // Factory method for kTrue and kFalse.
   static Json FromBool(bool b) {
     Json json;
     json.value_ = b;
     return json;
   }
 
+  // Factory methods for kNumber.
   static Json FromNumber(const std::string& str) {
     Json json;
     json.value_ = NumberValue{str};
@@ -92,6 +99,7 @@ class Json {
     return json;
   }
 
+  // Factory methods for kString.
   static Json FromString(const std::string& str) {
     Json json;
     json.value_ = str;
@@ -108,6 +116,7 @@ class Json {
     return json;
   }
 
+  // Factory methods for kObject.
   static Json FromObject(const Object& object) {
     Json json;
     json.value_ = object;
@@ -119,6 +128,7 @@ class Json {
     return json;
   }
 
+  // Factory methods for kArray.
   static Json FromArray(const Array& array) {
     Json json;
     json.value_ = array;
@@ -129,99 +139,6 @@ class Json {
     json.value_ = std::move(array);
     return json;
   }
-
-#if 0
-// FIXME: make sure construction from nullptr does the right thing
-
-  // Construct from copying a string.
-  // If is_number is true, the type will be kNumber instead of kString.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const std::string& string, bool is_number = false)
-      : value_(is_number ? Value(NumberValue{string}) : Value(string)) {}
-  Json& operator=(const std::string& string) {
-    value_ = string;
-    return *this;
-  }
-
-// FIXME: maybe replace this with absl::string_view to avoid nullptr
-// problem?
-// FIXME: maybe avoid default arg by having static factory methods for
-// each type, where the name of the factory method explicitly states the
-// type?
-  // Same thing for C-style strings, both const and mutable.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
-  Json& operator=(const char* string) {
-    *this = std::string(string);
-    return *this;
-  }
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
-  Json& operator=(char* string) {
-    *this = std::string(string);
-    return *this;
-  }
-
-  // Construct by moving a string.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(std::string&& string) : value_(Value(std::move(string))) {}
-  Json& operator=(std::string&& string) {
-    value_ = Value(std::move(string));
-    return *this;
-  }
-
-  // Construct from bool.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(bool b) : value_(b) {}
-  Json& operator=(bool b) {
-    value_ = b;
-    return *this;
-  }
-
-  // Construct from any numeric type.
-  template <typename NumericType>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(NumericType number) : value_(NumberValue{std::to_string(number)}) {}
-  template <typename NumericType>
-  Json& operator=(NumericType number) {
-    value_ = NumberValue{std::to_string(number)};
-    return *this;
-  }
-
-  // Construct by copying object.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Object& object) : value_(object) {}
-  Json& operator=(const Object& object) {
-    value_ = object;
-    return *this;
-  }
-
-  // Construct by moving object.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Object&& object) : value_(std::move(object)) {}
-  Json& operator=(Object&& object) {
-    value_ = std::move(object);
-    return *this;
-  }
-
-  // Construct by copying array.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Array& array) : value_(array) {}
-  Json& operator=(const Array& array) {
-    value_ = array;
-    return *this;
-  }
-
-  // Construct by moving array.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Array&& array) : value_(std::move(array)) {}
-  Json& operator=(Array&& array) {
-    value_ = std::move(array);
-    return *this;
-  }
-#endif
 
   Json() = default;
 
@@ -254,13 +171,20 @@ class Json {
     return absl::visit(ValueFunctor(), value_);
   }
 
-  // Accessor methods.
+  // Payload accessor for kNumber or kString.
+  // Must not be called for other types.
   const std::string& string() const {
     const NumberValue* num = absl::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
     return absl::get<std::string>(value_);
   }
+
+  // Payload accessor for kObject.
+  // Must not be called for other types.
   const Object& object() const { return absl::get<Object>(value_); }
+
+  // Payload accessor for kArray.
+  // Must not be called for other types.
   const Array& array() const { return absl::get<Array>(value_); }
 
   bool operator==(const Json& other) const { return value_ == other.value_; }
