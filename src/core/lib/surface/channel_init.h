@@ -21,13 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
