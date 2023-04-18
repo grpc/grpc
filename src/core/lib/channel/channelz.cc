@@ -431,8 +431,8 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
         (*json)[name] = Json::FromObject({
             {"tcpip_address",
              Json::FromObject({
-                 {"port", Json::FromString(absl::StrCat(
-                              grpc_sockaddr_get_port(&*address)))},
+                 {"port", Json::FromString(
+                              absl::StrCat(grpc_sockaddr_get_port(&*address)))},
                  {"ip_address",
                   Json::FromString(absl::Base64Escape(packed_host))},
              })},

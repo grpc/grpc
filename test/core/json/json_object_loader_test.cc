@@ -537,8 +537,8 @@ TEST(JsonObjectLoader, JsonObjectFields) {
   // Valid object.
   auto test_struct = Parse<TestStruct>("{\"value\": {\"a\":1}}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(JsonDump(Json{test_struct->value}), "{\"a\":1}");
-  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "{}");
+  EXPECT_EQ(JsonDump(Json::FromObject(test_struct->value)), "{\"a\":1}");
+  EXPECT_EQ(JsonDump(Json::FromObject(test_struct->optional_value)), "{}");
   EXPECT_FALSE(test_struct->absl_optional_value.has_value());
   // Fails if required field is not present.
   test_struct = Parse<TestStruct>("{}");
@@ -551,12 +551,15 @@ TEST(JsonObjectLoader, JsonObjectFields) {
       "{\"value\": {\"a\":1}, \"optional_value\": {\"b\":2}, "
       "\"absl_optional_value\": {\"c\":3}, \"unique_ptr_value\": {\"d\":4}}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(JsonDump(Json{test_struct->value}), "{\"a\":1}");
-  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "{\"b\":2}");
+  EXPECT_EQ(JsonDump(Json::FromObject(test_struct->value)), "{\"a\":1}");
+  EXPECT_EQ(JsonDump(Json::FromObject(test_struct->optional_value)),
+            "{\"b\":2}");
   ASSERT_TRUE(test_struct->absl_optional_value.has_value());
-  EXPECT_EQ(JsonDump(Json{*test_struct->absl_optional_value}), "{\"c\":3}");
+  EXPECT_EQ(JsonDump(Json::FromObject(*test_struct->absl_optional_value)),
+            "{\"c\":3}");
   ASSERT_NE(test_struct->unique_ptr_value, nullptr);
-  EXPECT_EQ(JsonDump(Json{*test_struct->unique_ptr_value}), "{\"d\":4}");
+  EXPECT_EQ(JsonDump(Json::FromObject(*test_struct->unique_ptr_value)),
+            "{\"d\":4}");
   // Wrong JSON type.
   test_struct = Parse<TestStruct>(
       "{\"value\": [], \"optional_value\": true, "
@@ -597,8 +600,8 @@ TEST(JsonObjectLoader, JsonArrayFields) {
   // Valid object.
   auto test_struct = Parse<TestStruct>("{\"value\": [1, \"a\"]}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(JsonDump(Json{test_struct->value}), "[1,\"a\"]");
-  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "[]");
+  EXPECT_EQ(JsonDump(Json::FromArray(test_struct->value)), "[1,\"a\"]");
+  EXPECT_EQ(JsonDump(Json::FromArray(test_struct->optional_value)), "[]");
   EXPECT_FALSE(test_struct->absl_optional_value.has_value());
   EXPECT_EQ(test_struct->unique_ptr_value, nullptr);
   // Fails if required field is not present.
@@ -612,12 +615,15 @@ TEST(JsonObjectLoader, JsonArrayFields) {
       "{\"value\": [1, \"a\"], \"optional_value\": [2, \"b\"], "
       "\"absl_optional_value\": [3, \"c\"], \"unique_ptr_value\": [4, \"d\"]}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-  EXPECT_EQ(JsonDump(Json{test_struct->value}), "[1,\"a\"]");
-  EXPECT_EQ(JsonDump(Json{test_struct->optional_value}), "[2,\"b\"]");
+  EXPECT_EQ(JsonDump(Json::FromArray(test_struct->value)), "[1,\"a\"]");
+  EXPECT_EQ(JsonDump(Json::FromArray(test_struct->optional_value)),
+            "[2,\"b\"]");
   ASSERT_TRUE(test_struct->absl_optional_value.has_value());
-  EXPECT_EQ(JsonDump(Json{*test_struct->absl_optional_value}), "[3,\"c\"]");
+  EXPECT_EQ(JsonDump(Json::FromArray(*test_struct->absl_optional_value)),
+            "[3,\"c\"]");
   ASSERT_NE(test_struct->unique_ptr_value, nullptr);
-  EXPECT_EQ(JsonDump(Json{*test_struct->unique_ptr_value}), "[4,\"d\"]");
+  EXPECT_EQ(JsonDump(Json::FromArray(*test_struct->unique_ptr_value)),
+            "[4,\"d\"]");
   // Wrong JSON type.
   test_struct = Parse<TestStruct>(
       "{\"value\": {}, \"optional_value\": true, "
