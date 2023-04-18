@@ -2408,6 +2408,7 @@ grpc_cc_library(
         "lib/surface/channel_init.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -4062,6 +4063,8 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_fwd",
+        "channel_init",
+        "channel_stack_type",
         "ref_counted",
         "useful",
         "//:channel_stack_builder",
