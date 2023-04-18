@@ -47,7 +47,6 @@
 
 namespace grpc_core {
 
-bool XdsCustomLbPolicyEnabled();
 bool XdsOverrideHostEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
