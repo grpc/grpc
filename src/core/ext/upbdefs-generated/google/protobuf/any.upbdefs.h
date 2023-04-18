@@ -9,15 +9,16 @@
 #ifndef GOOGLE_PROTOBUF_ANY_PROTO_UPBDEFS_H_
 #define GOOGLE_PROTOBUF_ANY_PROTO_UPBDEFS_H_
 
-#include "upb/def.h"
-#include "upb/port_def.inc"
+#include "upb/reflection/def.h"
+#include "upb/reflection/def_pool_internal.h"
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 
@@ -30,6 +31,6 @@ UPB_INLINE const upb_MessageDef *google_protobuf_Any_getmsgdef(upb_DefPool *s) {
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* GOOGLE_PROTOBUF_ANY_PROTO_UPBDEFS_H_ */

@@ -55,7 +55,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   // First, try GRPC_GCP_OBSERVABILITY_CONFIG_FILE
   std::string contents_str;
   auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
-  if (path.has_value()) {
+  if (path.has_value() && !path.value().empty()) {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
@@ -70,7 +70,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   }
   // Next, try GRPC_GCP_OBSERVABILITY_CONFIG env var.
   auto env_config = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
-  if (env_config.has_value()) {
+  if (env_config.has_value() && !env_config.value().empty()) {
     return std::move(*env_config);
   }
   // No observability config found.

@@ -25,7 +25,6 @@
 #include "absl/functional/bind_front.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -37,7 +36,6 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -179,17 +177,8 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  if (absl::EqualsIgnoreCase(ConfigVars::Get().DnsResolver(), "native")) {
-    gpr_log(GPR_DEBUG, "Using native dns resolver");
-    builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<NativeClientChannelDNSResolverFactory>());
-  } else {
-    if (!builder->resolver_registry()->HasResolverFactory("dns")) {
-      gpr_log(GPR_DEBUG, "Using native dns resolver");
-      builder->resolver_registry()->RegisterResolverFactory(
-          std::make_unique<NativeClientChannelDNSResolverFactory>());
-    }
-  }
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<NativeClientChannelDNSResolverFactory>());
 }
 
 }  // namespace grpc_core
