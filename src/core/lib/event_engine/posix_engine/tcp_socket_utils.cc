@@ -125,7 +125,10 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   });
   GRPC_RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
   GRPC_RETURN_IF_ERROR(sock.SetSocketCloexec(1));
-
+  if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
+    GRPC_RETURN_IF_ERROR(
+        sock.SetSocketRcvBufLength(options.tcp_receive_buffer_size));
+  }
   if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
     // If its not a unix socket address.
     GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
@@ -169,6 +172,10 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.tcp_tx_zerocopy_max_simultaneous_sends =
       AdjustValue(PosixTcpOptions::kDefaultMaxSends, 0, INT_MAX,
                   config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS));
+  auto rcvbuf_size = config.GetInt(GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE);
+  if (rcvbuf_size.has_value()) {
+    options.tcp_receive_buffer_size = *rcvbuf_size;
+  }
   options.tcp_tx_zero_copy_enabled =
       (AdjustValue(PosixTcpOptions::kZerocpTxEnabledDefault, 0, 1,
                    config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) != 0);
@@ -389,7 +396,7 @@ absl::Status PosixSocketWrapper::SetSocketSndBuf(int buffer_size_bytes) {
                                          grpc_core::StrError(errno)));
 }
 
-absl::Status PosixSocketWrapper::SetSocketRcvBuf(int buffer_size_bytes) {
+absl::Status PosixSocketWrapper::SetSocketRcvBufLength(int buffer_size_bytes) {
   return 0 == setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()

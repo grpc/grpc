@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "socket_utils_posix.h"
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -107,6 +109,10 @@ static grpc_error_handle prepare_socket(
   if (!err.ok()) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
   if (!err.ok()) goto error;
+  if (options.tcp_receive_buffer_size != options.kDefaultReadBufferSize) {
+    err = grpc_set_socket_rcvbuf(fd, options.tcp_receive_buffer_size);
+    if (!err.ok()) goto error;
+  }
   if (!grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
     if (!err.ok()) goto error;

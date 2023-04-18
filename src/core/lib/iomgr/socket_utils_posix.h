@@ -49,11 +49,14 @@ struct PosixTcpOptions {
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
+  // Let the system decide the proper buffer size.
+  static constexpr int kDefaultReadBufferSize = -1;
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
+  int tcp_receive_buffer_size = kDefaultReadBufferSize;
   bool tcp_tx_zero_copy_enabled = kZerocpTxEnabledDefault;
   int keep_alive_time_ms = 0;
   int keep_alive_timeout_ms = 0;
@@ -143,6 +146,10 @@ grpc_error_handle grpc_set_socket_nonblocking(int fd, int non_blocking);
 
 // set a socket to close on exec
 grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec);
+
+// Set a socket's SO_RCVBUF size
+grpc_error_handle grpc_maybe_set_receive_buffer_size(int fd,
+                                                     int receive_buffer_size);
 
 // set a socket to reuse old addresses
 grpc_error_handle grpc_set_socket_reuse_addr(int fd, int reuse);
