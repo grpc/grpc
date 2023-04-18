@@ -27,13 +27,13 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 #define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
