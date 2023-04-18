@@ -25,7 +25,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "tcp_socket_utils.h"
 
 #include <grpc/event_engine/event_engine.h>
 
