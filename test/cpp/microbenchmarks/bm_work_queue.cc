@@ -74,7 +74,7 @@ void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
   }
   state.counters["Added"] = element_count * state.iterations();
   state.counters["Popped"] = state.counters["Added"];
-  state.counters["Steal Rate"] =
+  state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
 }
 BENCHMARK(BM_WorkQueueIntptrPopFront)
@@ -101,13 +101,46 @@ void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
   }
   state.counters["Added"] = element_count * state.iterations();
   state.counters["Popped"] = state.counters["Added"];
-  state.counters["Steal Rate"] =
+  state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
   if (state.thread_index() == 0) {
     delete (*globalWorkQueueList)[0];
   }
 }
 BENCHMARK(BM_MultithreadedWorkQueuePopBack)
+    ->Setup(GlobalSetup)
+    ->Teardown(GlobalTeardown)
+    ->Range(1, 512)
+    ->UseRealTime()
+    ->MeasureProcessCPUTime()
+    ->Threads(1)
+    ->Threads(4)
+    ->ThreadPerCpu();
+
+void BM_MultithreadedWorkQueuePopFront(benchmark::State& state) {
+  if (state.thread_index() == 0) (*globalWorkQueueList)[0] = new WorkQueue();
+  AnyInvocableClosure closure([] {});
+  int element_count = state.range(0);
+  for (auto _ : state) {
+    int cnt = 0;
+    auto* queue = (*globalWorkQueueList)[0];
+    for (int i = 0; i < element_count; i++) queue->Add(&closure);
+    absl::optional<EventEngine::Closure*> popped;
+    cnt = 0;
+    do {
+      popped = queue->PopFront();
+      if (popped.has_value()) ++cnt;
+    } while (cnt < element_count);
+  }
+  state.counters["Added"] = element_count * state.iterations();
+  state.counters["Popped"] = state.counters["Added"];
+  state.counters["Pop Rate"] =
+      benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
+  if (state.thread_index() == 0) {
+    delete (*globalWorkQueueList)[0];
+  }
+}
+BENCHMARK(BM_MultithreadedWorkQueuePopFront)
     ->Setup(GlobalSetup)
     ->Teardown(GlobalTeardown)
     ->Range(1, 512)
@@ -132,7 +165,7 @@ void BM_WorkQueueClosureExecution(benchmark::State& state) {
   }
   state.counters["Added"] = element_count * state.iterations();
   state.counters["Popped"] = state.counters["Added"];
-  state.counters["Steal Rate"] =
+  state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
 }
 BENCHMARK(BM_WorkQueueClosureExecution)
@@ -155,7 +188,7 @@ void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
   }
   state.counters["Added"] = element_count * state.iterations();
   state.counters["Popped"] = state.counters["Added"];
-  state.counters["Steal Rate"] =
+  state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
 }
 BENCHMARK(BM_WorkQueueAnyInvocableExecution)
@@ -185,7 +218,7 @@ void BM_StdDequeLIFO(benchmark::State& state) {
   }
   state.counters["Added"] = element_count * state.iterations();
   state.counters["Popped"] = state.counters["Added"];
-  state.counters["Steal Rate"] =
+  state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
   if (state.thread_index() == 0) {
     delete (*globalDequeList)[0];
@@ -242,7 +275,7 @@ void BM_WorkQueuePerThread(benchmark::State& state) {
   state.counters["Added"] =
       std::ceil(element_count * pct_fill) * state.iterations();
   state.counters["Steal Attempts"] = element_count * state.iterations();
-  state.counters["Steal Rate"] = benchmark::Counter(
+  state.counters["Pop Rate"] = benchmark::Counter(
       state.counters["Steal Attempts"], benchmark::Counter::kIsRate);
   if (state.thread_index() == 0) {
     for (auto* queue : *globalWorkQueueList) {
@@ -288,7 +321,7 @@ void BM_StdDequePerThread(benchmark::State& state) {
   state.counters["Added"] =
       std::ceil(element_count * pct_fill) * state.iterations();
   state.counters["Steal Attempts"] = element_count * state.iterations();
-  state.counters["Steal Rate"] = benchmark::Counter(
+  state.counters["Pop Rate"] = benchmark::Counter(
       state.counters["Steal Attempts"], benchmark::Counter::kIsRate);
   if (state.thread_index() == 0) {
     for (auto* queue : *globalDequeList) {
