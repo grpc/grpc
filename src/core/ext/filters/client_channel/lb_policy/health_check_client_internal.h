@@ -21,6 +21,8 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
@@ -71,7 +73,8 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   class HealthChecker;
 
   // Handles a connectivity state change on the subchannel.
-  void OnConnectivityStateChange(grpc_connectivity_state state);
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status);
 
   RefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;

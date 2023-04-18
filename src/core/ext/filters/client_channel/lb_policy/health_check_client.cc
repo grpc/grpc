@@ -53,7 +53,7 @@ class AsyncWorkSerializerDrainer {
  private:
   static void RunInExecCtx(void* arg, grpc_error_handle) {
     auto* self = static_cast<AsyncWorkSerializerDrainer*>(arg);
-    self->work_serializer_.DrainQueue();
+    self->work_serializer_->DrainQueue();
     delete self;
   }
 
@@ -74,10 +74,10 @@ class HealthProducer::HealthChecker
                 absl::string_view health_check_service_name)
       : producer_(std::move(producer)),
         health_check_service_name_(health_check_service_name),
-        state_(producer_->state == GRPC_CHANNEL_READY
+        state_(producer_->state_ == GRPC_CHANNEL_READY
                    ? GRPC_CHANNEL_CONNECTING
                    : producer_->state_),
-        status_(producer_->status) {
+        status_(producer_->status_) {
     // If the subchannel is already connected, start health checking.
     if (producer_->state_ == GRPC_CHANNEL_READY) StartHealthStreamLocked();
   }
@@ -103,10 +103,11 @@ class HealthProducer::HealthChecker
     return watchers_.empty();
   }
 
+  // Called when the subchannel's connectivity state changes.
   void OnConnectivityStateChangeLocked(grpc_connectivity_state state,
                                        const absl::Status& status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
-    if (state_ == GRPC_CHANNEL_READY) {
+    if (state == GRPC_CHANNEL_READY) {
       // We should already be in CONNECTING, and we don't want to change
       // that until we see the initial response on the stream.
       GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
@@ -129,6 +130,13 @@ class HealthProducer::HealthChecker
   // watcher is added.
   void StartHealthStreamLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+      gpr_log(GPR_INFO,
+              "HealthProducer %p HealthChecker %p: "
+              "creating HealthClient for \"%s\"",
+              producer_.get(), this,
+              std::string(health_check_service_name_).c_str());
+    }
     stream_client_ = MakeOrphanable<SubchannelStreamClient>(
         producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
         absl::make_unique<HealthStreamEventHandler>(Ref()),
@@ -143,16 +151,17 @@ class HealthProducer::HealthChecker
   // order (hence the use of WorkSerializer).
   void NotifyWatchersLocked(grpc_connectivity_state state,
                             absl::Status status) {
-// FIXME: fix trace messages
     if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-      gpr_log(GPR_INFO, "HealthProducer %p: reporting state %s to watchers",
-              this, ConnectivityStateName(state));
+      gpr_log(
+          GPR_INFO,
+          "HealthProducer %p HealthChecker %p: reporting state %s to watchers",
+          producer_.get(), this, ConnectivityStateName(state));
     }
     work_serializer_->Schedule(
-        [self = Ref(), state, status = std::move(status)]() mutable {
+        [self = Ref(), state, status = std::move(status)]() {
           MutexLock lock(&self->producer_->mu_);
           for (HealthWatcher* watcher : self->watchers_) {
-            watcher->Notify(state, std::move(status));
+            watcher->Notify(state, status);
           }
         },
         DEBUG_LOCATION);
@@ -161,12 +170,20 @@ class HealthProducer::HealthChecker
 
   void OnHealthWatchStatusChange(grpc_connectivity_state state,
                                  const absl::Status& status) {
-    MutexLock lock(&producer_->mu_);
-    if (state != GRPC_CHANNEL_SHUTDOWN && stream_client_ != nullptr) {
-      state_ = state;
-      status_ = status;
-      NotifyWatchersLocked(state, status);
-    }
+    if (state == GRPC_CHANNEL_SHUTDOWN) return;
+    work_serializer_->Schedule(
+        [self = Ref(), state, status]() mutable {
+          MutexLock lock(&self->producer_->mu_);
+          if (self->stream_client_ != nullptr) {
+            self->state_ = state;
+            self->status_ = std::move(status);
+            for (HealthWatcher* watcher : self->watchers_) {
+              watcher->Notify(state, self->status_);
+            }
+          }
+        },
+        DEBUG_LOCATION);
+    new AsyncWorkSerializerDrainer(work_serializer_);
   }
 
   WeakRefCountedPtr<HealthProducer> producer_;
@@ -307,8 +324,8 @@ class HealthProducer::ConnectivityWatcher
   }
 
   void OnConnectivityStateChange(grpc_connectivity_state state,
-                                 const absl::Status&) override {
-    producer_->OnConnectivityStateChange(state);
+                                 const absl::Status& status) override {
+    producer_->OnConnectivityStateChange(state, status);
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -325,8 +342,15 @@ class HealthProducer::ConnectivityWatcher
 //
 
 void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthProducer %p: starting with subchannel %p", this,
+            subchannel.get());
+  }
   subchannel_ = std::move(subchannel);
-  connected_subchannel_ = subchannel_->connected_subchannel();
+  {
+    MutexLock lock(&mu_);
+    connected_subchannel_ = subchannel_->connected_subchannel();
+  }
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
   subchannel_->WatchConnectivityState(
@@ -335,6 +359,9 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
 }
 
 void HealthProducer::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthProducer %p: shutting down", this);
+  }
   {
     MutexLock lock(&mu_);
     health_checkers_.clear();
@@ -364,18 +391,23 @@ void HealthProducer::RemoveWatcher(
   if (empty) health_checkers_.erase(it);
 }
 
-void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
+void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
+                                               const absl::Status& status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthProducer %p: subchannel state update: state=%s status=%s",
+            this, ConnectivityStateName(state), status.ToString().c_str());
+  }
   MutexLock lock(&mu_);
+  state_ = state;
+  status_ = status;
   if (state == GRPC_CHANNEL_READY) {
     connected_subchannel_ = subchannel_->connected_subchannel();
-    for (const auto& p : health_checkers_) {
-      p.second->MaybeStartStreamLocked();
-    }
   } else {
     connected_subchannel_.reset();
-    for (const auto& p : health_checkers_) {
-      p.second->MaybeStopStreamLocked();
-    }
+  }
+  for (const auto& p : health_checkers_) {
+    p.second->OnConnectivityStateChangeLocked(state, status);
   }
 }
 

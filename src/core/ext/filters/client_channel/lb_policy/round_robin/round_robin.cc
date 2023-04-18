@@ -153,6 +153,10 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RoundRobin*>(policy())->work_serializer();
+    }
+
     std::string CountersString() const {
       return absl::StrCat("num_subchannels=", num_subchannels(),
                           " num_ready=", num_ready_,

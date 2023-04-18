@@ -4401,6 +4401,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "health_check_client",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/health_check_client.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/health_check_client.h",
+        "ext/filters/client_channel/lb_policy/health_check_client_internal.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "lb_policy",
+        "slice",
+        "subchannel_interface",
+        "time",
+        "unique_type_name",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_health_upb",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:protobuf_duration_upb",
+        "//:work_serializer",
+        "//:xds_orca_service_upb",
+        "//:xds_orca_upb",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_subchannel_list",
     hdrs = [
         "ext/filters/client_channel/lb_policy/subchannel_list.h",
@@ -4414,12 +4448,14 @@ grpc_cc_library(
         "channel_args",
         "dual_ref_counted",
         "gpr_manual_constructor",
+        "health_check_client",
         "iomgr_fwd",
         "lb_policy",
         "subchannel_interface",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
     ],
