@@ -1588,7 +1588,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
@@ -2614,7 +2613,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc

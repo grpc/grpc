@@ -223,7 +223,6 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
@@ -1011,7 +1010,6 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
@@ -1915,7 +1913,6 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
@@ -2317,7 +2314,6 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc

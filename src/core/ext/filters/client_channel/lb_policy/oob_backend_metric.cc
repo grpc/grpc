@@ -217,9 +217,7 @@ void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
-  subchannel_->WatchConnectivityState(
-      /*health_check_service_name=*/absl::nullopt,
-      std::move(connectivity_watcher));
+  subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
 void OrcaProducer::Orphan() {
@@ -228,8 +226,7 @@ void OrcaProducer::Orphan() {
     stream_client_.reset();
   }
   GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
-  subchannel_->CancelConnectivityStateWatch(
-      /*health_check_service_name=*/absl::nullopt, connectivity_watcher_);
+  subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }
 

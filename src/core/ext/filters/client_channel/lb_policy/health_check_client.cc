@@ -33,9 +33,7 @@
 
 namespace grpc_core {
 
-// FIXME
-// TraceFlag grpc_health_check_client_trace(false, "health_check_client");
-extern TraceFlag grpc_health_check_client_trace;
+TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 
 namespace {
 
@@ -349,9 +347,7 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   }
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
-  subchannel_->WatchConnectivityState(
-      /*health_check_service_name=*/absl::nullopt,
-      std::move(connectivity_watcher));
+  subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
 void HealthProducer::Orphan() {
@@ -362,8 +358,7 @@ void HealthProducer::Orphan() {
     MutexLock lock(&mu_);
     health_checkers_.clear();
   }
-  subchannel_->CancelConnectivityStateWatch(
-      /*health_check_service_name=*/absl::nullopt, connectivity_watcher_);
+  subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }
 
