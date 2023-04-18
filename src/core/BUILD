@@ -5555,6 +5555,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
+        "//:grpc_opencensus_plugin",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:uri_parser",

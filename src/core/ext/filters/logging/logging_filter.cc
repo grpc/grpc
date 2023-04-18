@@ -72,6 +72,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
 
 namespace grpc_core {
 
@@ -553,7 +554,8 @@ void RegisterLoggingFilter(LoggingSink* sink) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientLoggingFilter::kFilter)
         // TODO(yashykt) : Figure out a good place to place this channel arg
-        .IfChannelArg("grpc.experimental.enable_observability", true);
+        .IfChannelArg("grpc.experimental.enable_observability", true)
+        .After({&grpc::internal::OpenCensusClientFilter::kFilter});
   });
 }
 
