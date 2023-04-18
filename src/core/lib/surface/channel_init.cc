@@ -115,8 +115,13 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> terminal_filters;
   for (const auto& registration : registrations) {
     if (filter_to_registration.count(registration->filter_) > 0) {
+      const auto first =
+          filter_to_registration[registration->filter_]->registration_source_;
+      const auto second = registration->registration_source_;
       Crash(absl::StrCat("Duplicate registration of channel filter ",
-                         NameFromChannelFilter(registration->filter_)));
+                         NameFromChannelFilter(registration->filter_),
+                         "\nfirst: ", first.file(), ":", first.line(),
+                         "\nsecond: ", second.file(), ":", second.line()));
     }
     filter_to_registration[registration->filter_] = registration.get();
     if (registration->terminal_) {
