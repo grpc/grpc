@@ -2388,6 +2388,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_stack_trace",
+    srcs = [
+        "lib/channel/channel_stack_trace.cc",
+    ],
+    hdrs = [
+        "lib/channel/channel_stack_trace.h",
+    ],
+    language = "c++",
+    deps = ["//:grpc_trace"],
+)
+
+grpc_cc_library(
     name = "channel_init",
     srcs = [
         "lib/surface/channel_init.cc",
@@ -2403,6 +2415,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_fwd",
+        "channel_stack_trace",
         "channel_stack_type",
         "//:channel_stack_builder",
         "//:gpr",

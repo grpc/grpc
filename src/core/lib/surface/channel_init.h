@@ -58,8 +58,9 @@ class ChannelInit {
 
   class FilterRegistration {
    public:
-    explicit FilterRegistration(const grpc_channel_filter* filter)
-        : filter_(filter) {}
+    explicit FilterRegistration(const grpc_channel_filter* filter,
+                                SourceLocation registration_source)
+        : filter_(filter), registration_source_(registration_source) {}
     FilterRegistration(const FilterRegistration&) = delete;
     FilterRegistration& operator=(const FilterRegistration&) = delete;
 
@@ -97,12 +98,14 @@ class ChannelInit {
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
+    SourceLocation registration_source_;
   };
 
   class Builder {
    public:
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
-                                       const grpc_channel_filter* filter);
+                                       const grpc_channel_filter* filter,
+                                       SourceLocation location = {});
 
     void RegisterPostProcessor(grpc_channel_stack_type type,
                                PostProcessorSlot slot,

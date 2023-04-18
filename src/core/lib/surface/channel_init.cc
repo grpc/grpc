@@ -29,9 +29,12 @@
 #include <type_traits>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "channel_stack_type.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
@@ -71,8 +74,10 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::If(
 }
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
-    grpc_channel_stack_type type, const grpc_channel_filter* filter) {
-  filters_[type].emplace_back(std::make_unique<FilterRegistration>(filter));
+    grpc_channel_stack_type type, const grpc_channel_filter* filter,
+    SourceLocation registration_source) {
+  filters_[type].emplace_back(
+      std::make_unique<FilterRegistration>(filter, registration_source));
   return *filters_[type].back();
 }
 
@@ -153,6 +158,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     if (registration->before_all_) {
       for (const auto& other : registrations) {
         if (other.get() == registration.get()) continue;
+        if (other->terminal_) continue;
         dependencies[other->filter_].insert(registration->filter_);
       }
     }
@@ -173,7 +179,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
         }
         return result;
       };
-  auto take_ready_dependency = [&, original = dependencies]() {
+  const DependencyMap original = dependencies;
+  auto take_ready_dependency = [&]() {
     for (auto it = dependencies.begin(); it != dependencies.end(); ++it) {
       if (it->second.empty()) {
         auto r = it->first;
@@ -200,6 +207,70 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   for (int i = 0; i < static_cast<int>(PostProcessorSlot::kCount); i++) {
     if (post_processors[i] == nullptr) continue;
     post_processor_functions.emplace_back(std::move(post_processors[i]));
+  }
+  if (grpc_trace_channel_stack.enabled()) {
+    gpr_log(GPR_INFO,
+            "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
+    std::map<const grpc_channel_filter*, std::string> loc_strs;
+    size_t max_loc_str_len = 0;
+    size_t max_filter_name_len = 0;
+    auto add_loc_str = [&max_loc_str_len, &loc_strs, &filter_to_registration,
+                        &max_filter_name_len](
+                           const grpc_channel_filter* filter) {
+      max_filter_name_len =
+          std::max(strlen(NameFromChannelFilter(filter)), max_filter_name_len);
+      const auto registration =
+          filter_to_registration[filter]->registration_source_;
+      absl::string_view file = registration.file();
+      auto slash_pos = file.rfind('/');
+      if (slash_pos != file.npos) {
+        file = file.substr(slash_pos + 1);
+      }
+      auto loc_str = absl::StrCat(file, ":", registration.line(), ":");
+      max_loc_str_len = std::max(max_loc_str_len, loc_str.length());
+      loc_strs.emplace(filter, std::move(loc_str));
+    };
+    for (const auto& filter : filters) {
+      add_loc_str(filter.filter);
+    }
+    for (const auto& terminal : terminal_filters) {
+      add_loc_str(terminal.filter);
+    }
+    for (auto& loc_str : loc_strs) {
+      loc_str.second = absl::StrCat(
+          loc_str.second,
+          std::string(max_loc_str_len + 2 - loc_str.second.length(), ' '));
+    }
+    for (const auto& filter : filters) {
+      auto dep_it = original.find(filter.filter);
+      std::string after_str;
+      if (dep_it != original.end() && !dep_it->second.empty()) {
+        after_str = absl::StrCat(
+            std::string(max_filter_name_len + 1 -
+                            strlen(NameFromChannelFilter(filter.filter)),
+                        ' '),
+            "after ",
+            absl::StrJoin(
+                dep_it->second, ", ",
+                [](std::string* out, const grpc_channel_filter* filter) {
+                  out->append(NameFromChannelFilter(filter));
+                }));
+      }
+      const auto filter_str =
+          absl::StrCat("  ", loc_strs[filter.filter],
+                       NameFromChannelFilter(filter.filter), after_str);
+      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+    }
+    for (const auto& terminal : terminal_filters) {
+      const auto filter_str = absl::StrCat(
+          "  ", loc_strs[terminal.filter],
+          NameFromChannelFilter(terminal.filter),
+          std::string(max_filter_name_len + 1 -
+                          strlen(NameFromChannelFilter(terminal.filter)),
+                      ' '),
+          "[terminal]");
+      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+    }
   }
   return StackConfig{std::move(filters), std::move(terminal_filters),
                      std::move(post_processor_functions)};
