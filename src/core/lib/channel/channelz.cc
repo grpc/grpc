@@ -116,7 +116,8 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
   CounterData data;
   CollectData(&data);
   if (data.calls_started != 0) {
-    (*json)["callsStarted"] = Json::FromNumber(data.calls_started);
+    (*json)["callsStarted"] =
+        Json::FromString(absl::StrCat(data.calls_started));
     gpr_timespec ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(data.last_call_started_cycle),
         GPR_CLOCK_REALTIME);
@@ -124,10 +125,11 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
         Json::FromString(gpr_format_timespec(ts));
   }
   if (data.calls_succeeded != 0) {
-    (*json)["callsSucceeded"] = Json::FromNumber(data.calls_succeeded);
+    (*json)["callsSucceeded"] =
+        Json::FromString(absl::StrCat(data.calls_succeeded));
   }
   if (data.calls_failed != 0) {
-    (*json)["callsFailed"] = Json::FromNumber(data.calls_failed);
+    (*json)["callsFailed"] = Json::FromString(absl::StrCat(data.calls_failed));
   }
 }
 
@@ -184,7 +186,7 @@ Json ChannelNode::RenderJson() {
   // Construct outer object.
   Json::Object json = {
       {"ref", Json::FromObject({
-                  {"channelId", Json::FromNumber(uuid())},
+                  {"channelId", Json::FromString(absl::StrCat(uuid()))},
               })},
       {"data", Json::FromObject(std::move(data))},
   };
@@ -200,7 +202,7 @@ void ChannelNode::PopulateChildRefs(Json::Object* json) {
     Json::Array array;
     for (intptr_t subchannel_uuid : child_subchannels_) {
       array.emplace_back(Json::FromObject({
-          {"subchannelId", Json::FromNumber(subchannel_uuid)},
+          {"subchannelId", Json::FromString(absl::StrCat(subchannel_uuid))},
       }));
     }
     (*json)["subchannelRef"] = Json::FromArray(std::move(array));
@@ -209,7 +211,7 @@ void ChannelNode::PopulateChildRefs(Json::Object* json) {
     Json::Array array;
     for (intptr_t channel_uuid : child_channels_) {
       array.emplace_back(Json::FromObject({
-          {"channelId", Json::FromNumber(channel_uuid)},
+          {"channelId", Json::FromString(absl::StrCat(channel_uuid))},
       }));
     }
     (*json)["channelRef"] = Json::FromArray(std::move(array));
@@ -287,7 +289,7 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
     for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
          ++it, ++sockets_rendered) {
       array.emplace_back(Json::FromObject({
-          {"socketId", Json::FromNumber(it->first)},
+          {"socketId", Json::FromString(absl::StrCat(it->first))},
           {"name", Json::FromString(it->second->name())},
       }));
     }
@@ -311,7 +313,7 @@ Json ServerNode::RenderJson() {
   // Construct top-level object.
   Json::Object object = {
       {"ref", Json::FromObject({
-                  {"serverId", Json::FromNumber(uuid())},
+                  {"serverId", Json::FromString(absl::StrCat(uuid()))},
               })},
       {"data", Json::FromObject(std::move(data))},
   };
@@ -322,7 +324,7 @@ Json ServerNode::RenderJson() {
       Json::Array array;
       for (const auto& it : child_listen_sockets_) {
         array.emplace_back(Json::FromObject({
-            {"socketId", Json::FromNumber(it.first)},
+            {"socketId", Json::FromString(absl::StrCat(it.first))},
             {"name", Json::FromString(it.second->name())},
         }));
       }
@@ -429,7 +431,8 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
         (*json)[name] = Json::FromObject({
             {"tcpip_address",
              Json::FromObject({
-                 {"port", Json::FromNumber(grpc_sockaddr_get_port(&*address))},
+                 {"port", Json::FromString(absl::StrCat(
+                              grpc_sockaddr_get_port(&*address)))},
                  {"ip_address",
                   Json::FromString(absl::Base64Escape(packed_host))},
              })},
@@ -492,7 +495,7 @@ Json SocketNode::RenderJson() {
   gpr_timespec ts;
   int64_t streams_started = streams_started_.load(std::memory_order_relaxed);
   if (streams_started != 0) {
-    data["streamsStarted"] = Json::FromNumber(streams_started);
+    data["streamsStarted"] = Json::FromString(absl::StrCat(streams_started));
     gpr_cycle_counter last_local_stream_created_cycle =
         last_local_stream_created_cycle_.load(std::memory_order_relaxed);
     if (last_local_stream_created_cycle != 0) {
@@ -515,15 +518,16 @@ Json SocketNode::RenderJson() {
   int64_t streams_succeeded =
       streams_succeeded_.load(std::memory_order_relaxed);
   if (streams_succeeded != 0) {
-    data["streamsSucceeded"] = Json::FromNumber(streams_succeeded);
+    data["streamsSucceeded"] =
+        Json::FromString(absl::StrCat(streams_succeeded));
   }
   int64_t streams_failed = streams_failed_.load(std::memory_order_relaxed);
   if (streams_failed != 0) {
-    data["streamsFailed"] = Json::FromNumber(streams_failed);
+    data["streamsFailed"] = Json::FromString(absl::StrCat(streams_failed));
   }
   int64_t messages_sent = messages_sent_.load(std::memory_order_relaxed);
   if (messages_sent != 0) {
-    data["messagesSent"] = Json::FromNumber(messages_sent);
+    data["messagesSent"] = Json::FromString(absl::StrCat(messages_sent));
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
             last_message_sent_cycle_.load(std::memory_order_relaxed)),
@@ -534,7 +538,8 @@ Json SocketNode::RenderJson() {
   int64_t messages_received =
       messages_received_.load(std::memory_order_relaxed);
   if (messages_received != 0) {
-    data["messagesReceived"] = Json::FromNumber(messages_received);
+    data["messagesReceived"] =
+        Json::FromString(absl::StrCat(messages_received));
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
             last_message_received_cycle_.load(std::memory_order_relaxed)),
@@ -544,12 +549,12 @@ Json SocketNode::RenderJson() {
   }
   int64_t keepalives_sent = keepalives_sent_.load(std::memory_order_relaxed);
   if (keepalives_sent != 0) {
-    data["keepAlivesSent"] = Json::FromNumber(keepalives_sent);
+    data["keepAlivesSent"] = Json::FromString(absl::StrCat(keepalives_sent));
   }
   // Create and fill the parent object.
   Json::Object object = {
       {"ref", Json::FromObject({
-                  {"socketId", Json::FromNumber(uuid())},
+                  {"socketId", Json::FromString(absl::StrCat(uuid()))},
                   {"name", Json::FromString(name())},
               })},
       {"data", Json::FromObject(std::move(data))},
@@ -574,7 +579,7 @@ ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {
       {"ref", Json::FromObject({
-                  {"socketId", Json::FromNumber(uuid())},
+                  {"socketId", Json::FromString(absl::StrCat(uuid()))},
                   {"name", Json::FromString(name())},
               })},
   };

@@ -151,7 +151,7 @@ Json ChannelTrace::TraceEvent::RenderTraceEvent() const {
          referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
     object[is_channel ? "channelRef" : "subchannelRef"] = Json::FromObject({
         {(is_channel ? "channelId" : "subchannelId"),
-         Json::FromNumber(referenced_entity_->uuid())},
+         Json::FromString(absl::StrCat(referenced_entity_->uuid()))},
     });
   }
   return Json::FromObject(std::move(object));
@@ -167,7 +167,8 @@ Json ChannelTrace::RenderJson() const {
        Json::FromString(gpr_format_timespec(time_created_))},
   };
   if (num_events_logged_ > 0) {
-    object["numEventsLogged"] = Json::FromNumber(num_events_logged_);
+    object["numEventsLogged"] =
+        Json::FromString(absl::StrCat(num_events_logged_));
   }
   // Only add in the event list if it is non-empty.
   if (head_trace_ != nullptr) {
