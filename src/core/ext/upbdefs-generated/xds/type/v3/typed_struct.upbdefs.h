@@ -9,15 +9,16 @@
 #ifndef XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPBDEFS_H_
 #define XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPBDEFS_H_
 
-#include "upb/def.h"
-#include "upb/port_def.inc"
+#include "upb/reflection/def.h"
+#include "upb/reflection/def_pool_internal.h"
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init xds_type_v3_typed_struct_proto_upbdefinit;
 
@@ -30,6 +31,6 @@ UPB_INLINE const upb_MessageDef *xds_type_v3_TypedStruct_getmsgdef(upb_DefPool *
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPBDEFS_H_ */

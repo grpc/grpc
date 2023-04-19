@@ -340,18 +340,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
-    1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a
-    data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
+    3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
+    data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/084aa4a0186786570496c3a4001b72c3ef592f7f.tar.gz
-    1eef47f983161a522a6fc7f3c5a2574676a268dfb4bbf8a66f4b8b687a33067a
-    data-plane-api-084aa4a0186786570496c3a4001b72c3ef592f7f
+    https://github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
+    3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
+    data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -1621,6 +1621,9 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
@@ -2635,6 +2638,9 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
@@ -4756,26 +4762,50 @@ endif()
 endif()
 
 add_library(upb
-  third_party/upb/third_party/utf8_range/naive.c
-  third_party/upb/third_party/utf8_range/range2-neon.c
-  third_party/upb/third_party/utf8_range/range2-sse.c
-  third_party/upb/upb/arena.c
-  third_party/upb/upb/array.c
-  third_party/upb/upb/decode_fast.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/def.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/extension_registry.c
-  third_party/upb/upb/json_decode.c
-  third_party/upb/upb/json_encode.c
-  third_party/upb/upb/map.c
-  third_party/upb/upb/mini_table.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/reflection.c
-  third_party/upb/upb/status.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/text_encode.c
-  third_party/upb/upb/upb.c
+  third_party/utf8_range/naive.c
+  third_party/utf8_range/range2-neon.c
+  third_party/utf8_range/range2-sse.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/collections/array.c
+  third_party/upb/upb/collections/map.c
+  third_party/upb/upb/collections/map_sorter.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/json/decode.c
+  third_party/upb/upb/json/encode.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_table/common.c
+  third_party/upb/upb/mini_table/decode.c
+  third_party/upb/upb/mini_table/encode.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/reflection/def_builder.c
+  third_party/upb/upb/reflection/def_pool.c
+  third_party/upb/upb/reflection/def_type.c
+  third_party/upb/upb/reflection/desc_state.c
+  third_party/upb/upb/reflection/enum_def.c
+  third_party/upb/upb/reflection/enum_reserved_range.c
+  third_party/upb/upb/reflection/enum_value_def.c
+  third_party/upb/upb/reflection/extension_range.c
+  third_party/upb/upb/reflection/field_def.c
+  third_party/upb/upb/reflection/file_def.c
+  third_party/upb/upb/reflection/message.c
+  third_party/upb/upb/reflection/message_def.c
+  third_party/upb/upb/reflection/message_reserved_range.c
+  third_party/upb/upb/reflection/method_def.c
+  third_party/upb/upb/reflection/oneof_def.c
+  third_party/upb/upb/reflection/service_def.c
+  third_party/upb/upb/text/encode.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
 )

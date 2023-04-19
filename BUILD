@@ -783,6 +783,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
+        "//src/core:grpc_resolver_dns_plugin",
     ],
 )
 
@@ -802,6 +803,7 @@ grpc_cc_library(
     external_deps = [
         "absl/synchronization",
         "protobuf_headers",
+        "protobuf",
     ],
     tags = [
         "avoid_dep",
@@ -949,6 +951,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
+        "upb_collections_lib",
         "upb_lib",
     ],
     language = "c++",
@@ -1147,10 +1150,13 @@ grpc_cc_library(
         "include/grpcpp/security/alts_context.h",
         "include/grpcpp/security/alts_util.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "upb_collections_lib",
+        "upb_lib",
+    ],
     language = "c++",
     standalone = True,
-    visibility = ["@grpc:tsi"],
+    visibility = ["@grpc:public"],
     deps = [
         "alts_upb",
         "gpr",
@@ -1958,6 +1964,7 @@ grpc_cc_library(
     name = "grpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
+        "protobuf",
     ],
     language = "c++",
     public_hdrs = [
@@ -1980,6 +1987,7 @@ grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
         "protobuf_headers",
+        "protobuf",
     ],
     language = "c++",
     public_hdrs = [
@@ -2749,6 +2757,7 @@ grpc_cc_library(
         "//src/core:lib/service_config/service_config_impl.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -2888,6 +2897,7 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2895,6 +2905,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
+        "upb_collections_lib",
         "upb_lib",
     ],
     language = "c++",
@@ -2981,6 +2992,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
         "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
@@ -3023,12 +3035,10 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
-        "//src/core:json",
-        "//src/core:json_reader",
-        "//src/core:json_writer",
         "//src/core:polling_resolver",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
+        "//src/core:service_config_helper",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:time",

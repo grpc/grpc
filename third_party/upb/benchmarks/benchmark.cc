@@ -29,19 +29,20 @@
 
 #include "google/ads/googleads/v11/services/google_ads_service.upbdefs.h"
 #include "google/protobuf/descriptor.pb.h"
-#include "google/protobuf/dynamic_message.h"
 #include "absl/container/flat_hash_set.h"
+#include "google/protobuf/dynamic_message.h"
 #include "benchmarks/descriptor.pb.h"
 #include "benchmarks/descriptor.upb.h"
 #include "benchmarks/descriptor.upbdefs.h"
 #include "benchmarks/descriptor_sv.pb.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 
 upb_StringView descriptor = benchmarks_descriptor_proto_upbdefinit.descriptor;
 namespace protobuf = ::google::protobuf;
 
-/* A buffer big enough to parse descriptor.proto without going to heap. */
-char buf[65535];
+// A buffer big enough to parse descriptor.proto without going to heap.
+// We use 64-bit ints here to force alignment.
+int64_t buf[8191];
 
 void CollectFileDescriptors(
     const _upb_DefPool_Init* file,
@@ -169,7 +170,7 @@ static void BM_LoadAdsDescriptor_Proto2(benchmark::State& state) {
     protobuf::Arena arena;
     protobuf::DescriptorPool pool;
     for (auto file : serialized_files) {
-      protobuf::StringPiece input(file.data, file.size);
+      absl::string_view input(file.data, file.size);
       auto proto =
           protobuf::Arena::CreateMessage<protobuf::FileDescriptorProto>(&arena);
       bool ok = proto->ParseFrom<protobuf::MessageLite::kMergePartial>(input) &&
@@ -264,7 +265,7 @@ struct Proto2Factory<InitBlock, P> {
  private:
   protobuf::ArenaOptions GetOptions() {
     protobuf::ArenaOptions opts;
-    opts.initial_block = buf;
+    opts.initial_block = (char*)buf;
     opts.initial_block_size = sizeof(buf);
     return opts;
   }
@@ -284,7 +285,7 @@ void BM_Parse_Proto2(benchmark::State& state) {
   for (auto _ : state) {
     Proto2Factory<AMode, P> proto_factory;
     auto proto = proto_factory.GetProto();
-    protobuf::StringPiece input(descriptor.data, descriptor.size);
+    absl::string_view input(descriptor.data, descriptor.size);
     bool ok = proto->template ParseFrom<kParseFlags>(input);
     if (!ok) {
       printf("Failed to parse.\n");

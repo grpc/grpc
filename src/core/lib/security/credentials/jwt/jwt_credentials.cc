@@ -144,8 +144,10 @@ static char* redact_private_key(const char* json_key) {
   if (!json.ok() || json->type() != Json::Type::kObject) {
     return gpr_strdup("<Json failed to parse.>");
   }
-  (*json->mutable_object())["private_key"] = "<redacted>";
-  return gpr_strdup(grpc_core::JsonDump(*json, /*indent=*/2).c_str());
+  Json::Object object = json->object();
+  object["private_key"] = "<redacted>";
+  return gpr_strdup(
+      grpc_core::JsonDump(Json(std::move(object)), /*indent=*/2).c_str());
 }
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(

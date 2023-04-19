@@ -18,7 +18,8 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <algorithm>
+#include <stdint.h>
+
 #include <string>
 
 #include <google/protobuf/any.pb.h>
@@ -30,7 +31,7 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
@@ -84,7 +85,10 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
       context, upb_policy, &errors);
-  if (!errors.ok()) return errors.status("validation errors");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "validation errors");
+  }
   EXPECT_EQ(config.size(), 1);
   return JsonDump(Json{config[0]});
 }

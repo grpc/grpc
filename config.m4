@@ -14,6 +14,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl-with-bazel/src/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/re2)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
 
   LIBS="-lpthread $LIBS"
@@ -89,6 +90,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
+    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
@@ -1078,6 +1082,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
     third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
@@ -1251,26 +1256,50 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
-    third_party/upb/third_party/utf8_range/naive.c \
-    third_party/upb/third_party/utf8_range/range2-neon.c \
-    third_party/upb/third_party/utf8_range/range2-sse.c \
-    third_party/upb/upb/arena.c \
-    third_party/upb/upb/array.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/decode_fast.c \
-    third_party/upb/upb/def.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/extension_registry.c \
-    third_party/upb/upb/json_decode.c \
-    third_party/upb/upb/json_encode.c \
-    third_party/upb/upb/map.c \
-    third_party/upb/upb/mini_table.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/reflection.c \
-    third_party/upb/upb/status.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/text_encode.c \
-    third_party/upb/upb/upb.c \
+    third_party/upb/upb/base/status.c \
+    third_party/upb/upb/collections/array.c \
+    third_party/upb/upb/collections/map.c \
+    third_party/upb/upb/collections/map_sorter.c \
+    third_party/upb/upb/hash/common.c \
+    third_party/upb/upb/json/decode.c \
+    third_party/upb/upb/json/encode.c \
+    third_party/upb/upb/lex/atoi.c \
+    third_party/upb/upb/lex/round_trip.c \
+    third_party/upb/upb/lex/strtod.c \
+    third_party/upb/upb/lex/unicode.c \
+    third_party/upb/upb/mem/alloc.c \
+    third_party/upb/upb/mem/arena.c \
+    third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/message/message.c \
+    third_party/upb/upb/mini_table/common.c \
+    third_party/upb/upb/mini_table/decode.c \
+    third_party/upb/upb/mini_table/encode.c \
+    third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/reflection/def_builder.c \
+    third_party/upb/upb/reflection/def_pool.c \
+    third_party/upb/upb/reflection/def_type.c \
+    third_party/upb/upb/reflection/desc_state.c \
+    third_party/upb/upb/reflection/enum_def.c \
+    third_party/upb/upb/reflection/enum_reserved_range.c \
+    third_party/upb/upb/reflection/enum_value_def.c \
+    third_party/upb/upb/reflection/extension_range.c \
+    third_party/upb/upb/reflection/field_def.c \
+    third_party/upb/upb/reflection/file_def.c \
+    third_party/upb/upb/reflection/message.c \
+    third_party/upb/upb/reflection/message_def.c \
+    third_party/upb/upb/reflection/message_reserved_range.c \
+    third_party/upb/upb/reflection/method_def.c \
+    third_party/upb/upb/reflection/oneof_def.c \
+    third_party/upb/upb/reflection/service_def.c \
+    third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/wire/decode.c \
+    third_party/upb/upb/wire/decode_fast.c \
+    third_party/upb/upb/wire/encode.c \
+    third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/reader.c \
+    third_party/utf8_range/naive.c \
+    third_party/utf8_range/range2-neon.c \
+    third_party/utf8_range/range2-sse.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1296,7 +1325,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/binder)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/google_c2p)
@@ -1558,6 +1589,16 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/third_party/utf8_range)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/collections)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi

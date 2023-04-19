@@ -51,9 +51,9 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
-#include "upb/def.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/collections/map.h"
+#include "upb/text/encode.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -1125,7 +1125,8 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
   auto rds_update = XdsRouteConfigResource::Parse(context, resource, &errors);
   if (!errors.ok()) {
     absl::Status status =
-        errors.status("errors validating RouteConfiguration resource");
+        errors.status(absl::StatusCode::kInvalidArgument,
+                      "errors validating RouteConfiguration resource");
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
               context.client, result.name->c_str(), status.ToString().c_str());
