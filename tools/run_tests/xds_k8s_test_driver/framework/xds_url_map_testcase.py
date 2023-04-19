@@ -362,12 +362,12 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def cleanupAfterTests(cls):
-      logging.info('----- Doing cleanup after %s -----', cls.__name__)
-      cls.test_client_runner.cleanup(force=True, force_namespace=True)
-      cls.finished_test_cases.add(cls.__name__)
-      if cls.finished_test_cases == cls.test_case_names:
-          # Tear down the GCP resource after all tests finished
-          GcpResourceManager().cleanup()
+        logging.info('----- Doing cleanup after %s -----', cls.__name__)
+        cls.test_client_runner.cleanup(force=True, force_namespace=True)
+        cls.finished_test_cases.add(cls.__name__)
+        if cls.finished_test_cases == cls.test_case_names:
+            # Tear down the GCP resource after all tests finished
+            GcpResourceManager().cleanup()
 
     def _fetch_and_check_xds_config(self):
         # TODO(lidiz) find another way to store last seen xDS config
