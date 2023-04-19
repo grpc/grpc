@@ -196,7 +196,7 @@ class HealthProducer::HealthChecker
                                  const absl::Status& status) {
     if (state == GRPC_CHANNEL_SHUTDOWN) return;
     work_serializer_->Schedule(
-        [self = Ref(), state, status]() mutable {
+        [self = Ref(), state, status]() {
           MutexLock lock(&self->producer_->mu_);
           if (self->stream_client_ != nullptr) {
             self->state_ = state;
