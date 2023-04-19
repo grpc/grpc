@@ -22,13 +22,11 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/upb.hpp"
 #include "xds/service/orca/v3/orca.upb.h"

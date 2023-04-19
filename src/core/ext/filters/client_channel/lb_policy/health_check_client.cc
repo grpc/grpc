@@ -31,7 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
@@ -201,7 +200,7 @@ class HealthProducer::HealthChecker
           MutexLock lock(&self->producer_->mu_);
           if (self->stream_client_ != nullptr) {
             self->state_ = state;
-            self->status_ = std::move(status);
+            self->status_ = status;
             for (HealthWatcher* watcher : self->watchers_) {
               watcher->Notify(state, self->status_);
             }

@@ -24,11 +24,9 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <string>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
