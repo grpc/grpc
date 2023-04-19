@@ -40,17 +40,25 @@ namespace grpc_core {
 // the current chunk that is being sent.
 // - num_traced_bytes_in_chunk: Number of bytes belonging to the traced RPC
 // within the current chunk.
-struct ContextListEntry {
+class ContextListEntry {
+ public:
   ContextListEntry(void* context, int64_t relative_start_pos,
                    int64_t num_traced_bytes, size_t byte_offset)
-      : trace_context(context),
-        relative_start_pos_in_chunk(relative_start_pos),
-        num_traced_bytes_in_chunk(num_traced_bytes),
-        byte_offset_in_stream(byte_offset) {}
-  void* trace_context;
-  int64_t relative_start_pos_in_chunk;
-  int64_t num_traced_bytes_in_chunk;
-  size_t byte_offset_in_stream;
+      : trace_context_(context),
+        relative_start_pos_in_chunk_(relative_start_pos),
+        num_traced_bytes_in_chunk_(num_traced_bytes),
+        byte_offset_in_stream_(byte_offset) {}
+
+  void* TraceContext() { return trace_context_; }
+  int64_t RelativeStartPosInChunk() { return relative_start_pos_in_chunk_; }
+  int64_t NumTracedBytesInChunk() { return num_traced_bytes_in_chunk_; }
+  size_t ByteOffsetInStream() { return byte_offset_in_stream_; }
+
+ private:
+  void* trace_context_;
+  int64_t relative_start_pos_in_chunk_;
+  int64_t num_traced_bytes_in_chunk_;
+  size_t byte_offset_in_stream_;
 };
 
 /// A list of RPC Contexts

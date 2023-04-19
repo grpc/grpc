@@ -271,9 +271,9 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
   for (auto it = context_list->begin(); it != context_list->end(); it++) {
     ContextListEntry& entry = (*it);
     if (ts) {
-      ts->byte_offset = static_cast<uint32_t>(entry.byte_offset_in_stream);
+      ts->byte_offset = static_cast<uint32_t>(entry.ByteOffsetInStream());
     }
-    g_write_timestamps_callback(entry.trace_context, ts, error);
+    g_write_timestamps_callback(entry.TraceContext(), ts, error);
   }
   delete context_list;
 }
