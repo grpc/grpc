@@ -4421,11 +4421,9 @@ grpc_cc_library(
         "closure",
         "error",
         "iomgr_fwd",
-        "lb_policy",
         "pollset_set",
         "slice",
         "subchannel_interface",
-        "time",
         "unique_type_name",
         "//:debug_location",
         "//:exec_ctx",
@@ -4436,11 +4434,8 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
-        "//:protobuf_duration_upb",
         "//:ref_counted_ptr",
         "//:work_serializer",
-        "//:xds_orca_service_upb",
-        "//:xds_orca_upb",
     ],
 )
 
