@@ -31,6 +31,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -39,6 +41,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -46,6 +49,9 @@
 
 namespace grpc_event_engine {
 namespace experimental {
+
+typedef std::vector<std::tuple<EventEngine::Duration, std::string>>
+    MockEndpointActions;
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
@@ -105,6 +111,9 @@ class FuzzingEventEngine : public EventEngine {
   // destruction to ensure no overlap between tests if constructing/destructing
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
+
+  std::unique_ptr<EventEngine::Endpoint> CreateMockEndpoint(
+      const MockEndpointActions& actions);
 
  private:
   // One pending task to be run.
@@ -224,6 +233,48 @@ class FuzzingEventEngine : public EventEngine {
     const int index_;
   };
 
+  // Implementation of a MockEndpoint.
+  // Writes made using this Endpoint always succeed and are discarded. Arbitrary
+  // data can be injected into the Mock Endpoint to be read.
+  // MockEndpointActions is a list of actions which specifies the set of bytes
+  // that need to be read and the time at which these bytes need to be read.
+  // The first element of each action indicates the relative delay from the
+  // previous action. The second element of each action specifies the set of
+  // bytes to be read when the absolute time advances and triggers the action.
+  class MockEndpoint final : public Endpoint {
+   public:
+    MockEndpoint(int local_port, int peer_port,
+                 const MockEndpointActions& actions) {
+      local_address_ = *URIToResolvedAddress(
+          absl::StrFormat("ipv4:127.0.0.1:%d", local_port));
+      peer_address_ = *URIToResolvedAddress(
+          absl::StrFormat("ipv4:127.0.0.1:%d", peer_port));
+      Init(actions);
+    }
+    ~MockEndpoint() override = default;
+
+    void Init(const MockEndpointActions& actions);
+
+    // A call to MockEndpoint::Read will query the current time and determine
+    // the set of bytes to be read based on passed MockEndpointActions.
+    bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+              SliceBuffer* buffer, const ReadArgs* args) override;
+    bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+               SliceBuffer* data, const WriteArgs* args) override;
+
+    const ResolvedAddress& GetPeerAddress() const override {
+      return peer_address_;
+    }
+    const ResolvedAddress& GetLocalAddress() const override {
+      return local_address_;
+    }
+
+   private:
+    ResolvedAddress local_address_;
+    ResolvedAddress peer_address_;
+    std::vector<std::tuple<Time, std::string>> actions_by_time_;
+  };
+
   void RunLocked(absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     RunAfterLocked(Duration::zero(), std::move(closure));
@@ -270,6 +321,7 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+  int mock_endpoint_ids_ ABSL_GUARDED_BY(mu_) = 1;
 };
 
 }  // namespace experimental

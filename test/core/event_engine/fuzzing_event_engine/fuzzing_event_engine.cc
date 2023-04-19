@@ -19,18 +19,22 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <memory>
 #include <ratio>
 #include <type_traits>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
@@ -532,6 +536,98 @@ FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
        shutdown_status = std::move(shutdown_status)]() mutable {
         on_shutdown(std::move(shutdown_status));
       });
+}
+
+void FuzzingEventEngine::MockEndpoint::Init(
+    const MockEndpointActions& actions) {
+  Time last_action_exec_time = g_fuzzing_event_engine->Now();
+  for (auto action = actions.begin(); action != actions.end(); ++action) {
+    Time curr_action_exec_time =
+        std::get<Duration>(*action) + last_action_exec_time;
+    if (actions_by_time_.empty() ||
+        std::get<Time>(actions_by_time_.back()) != curr_action_exec_time) {
+      actions_by_time_.emplace_back(curr_action_exec_time,
+                                    std::get<std::string>(*action));
+    } else {
+      // Concatenate curr action with last action because the timestamps match
+      auto new_action =
+          absl::StrCat(std::get<std::string>(actions_by_time_.back()),
+                       std::get<std::string>(*action));
+      std::get<std::string>(actions_by_time_.back()) = new_action;
+    }
+    last_action_exec_time = curr_action_exec_time;
+  }
+}
+
+bool FuzzingEventEngine::MockEndpoint::Read(
+    absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+    const ReadArgs* /*args*/) {
+  Duration delay = Duration::zero();
+  buffer->Clear();
+  if (!actions_by_time_.empty() &&
+      g_fuzzing_event_engine->Now() <
+          std::get<Time>(actions_by_time_.front())) {
+    delay = std::get<Time>(actions_by_time_.front()) -
+            g_fuzzing_event_engine->Now();
+  }
+  g_fuzzing_event_engine->RunAfter(delay, [on_readable = std::move(on_read),
+                                           buffer, this]() mutable {
+    auto tcp_annotate_error = [this](absl::Status src_error) {
+      auto peer_string = ResolvedAddressToNormalizedString(peer_address_);
+
+      grpc_core::StatusSetStr(&src_error,
+                              grpc_core::StatusStrProperty::kTargetAddress,
+                              peer_string.ok() ? *peer_string : "");
+      grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
+                              -1);
+      grpc_core::StatusSetInt(&src_error,
+                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE);
+      return src_error;
+    };
+    // Treat the non existence of data available to read as an Endpoint
+    // error.
+    if (actions_by_time_.empty()) {
+      on_readable(tcp_annotate_error(absl::InternalError("Socket Closed")));
+    } else {
+      // Present the first set of bytes as the data read at this time.
+      do {
+        buffer->Append(Slice::FromCopiedString(
+            std::get<std::string>(actions_by_time_.front())));
+        actions_by_time_.erase(actions_by_time_.begin());
+      } while (!actions_by_time_.empty() &&
+               g_fuzzing_event_engine->Now() >=
+                   std::get<Time>(actions_by_time_.front()));
+      if (buffer->Length() == 0) {
+        on_readable(tcp_annotate_error(absl::InternalError("Socket Closed")));
+      } else {
+        on_readable(absl::OkStatus());
+      }
+    }
+  });
+  return false;
+}
+
+bool FuzzingEventEngine::MockEndpoint::Write(
+    absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+    const WriteArgs* /*args*/) {
+  data->Clear();
+  g_fuzzing_event_engine->Run([on_write = std::move(on_writable)]() mutable {
+    on_write(absl::OkStatus());
+  });
+  return false;
+}
+
+std::unique_ptr<EventEngine::Endpoint> FuzzingEventEngine::CreateMockEndpoint(
+    const MockEndpointActions& actions) {
+  int endpoint_id;
+  {
+    grpc_core::MutexLock lock(&*mu_);
+    mock_endpoint_ids_ += 2;
+    endpoint_id = mock_endpoint_ids_;
+  }
+  return std::make_unique<FuzzingEventEngine::MockEndpoint>(
+      endpoint_id - 2, endpoint_id - 1, actions);
 }
 
 }  // namespace experimental
