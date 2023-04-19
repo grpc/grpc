@@ -82,8 +82,7 @@ Pod::Spec.new do |s|
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
 
-    ss.source_files = 'include/grpc/grpc_audit_logging.h',
-                      'include/grpcpp/alarm.h',
+    ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
@@ -1057,6 +1056,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/lib/transport/transport_impl.h',
                       'src/core/lib/uri/uri_parser.h',
+                      'src/core/plugin_registry/grpc_plugin_registry_noextra.cc',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -1119,7 +1119,6 @@ Pod::Spec.new do |s|
                       'src/cpp/common/version_cc.cc',
                       'src/cpp/server/async_generic_service.cc',
                       'src/cpp/server/audit_logging.cc',
-                      'src/cpp/server/audit_logging.h',
                       'src/cpp/server/backend_metric_recorder.cc',
                       'src/cpp/server/backend_metric_recorder.h',
                       'src/cpp/server/channel_argument_option.cc',
@@ -2035,7 +2034,6 @@ Pod::Spec.new do |s|
                               'src/cpp/client/secure_credentials.h',
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/common/secure_auth_context.h',
-                              'src/cpp/server/audit_logging.h',
                               'src/cpp/server/backend_metric_recorder.h',
                               'src/cpp/server/dynamic_thread_pool.h',
                               'src/cpp/server/external_connection_acceptor_impl.h',

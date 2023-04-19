@@ -50,7 +50,8 @@ absl::StatusOr<AuditLoggerFactory*> AuditLoggerRegistry::GetAuditLoggerFactory(
   return absl::NotFoundError("factory does not exist");
 }
 
-void AuditLoggerRegistry::UnregisterAuditLoggerFactory(absl::string_view name) {
+void AuditLoggerRegistry::TestOnlyUnregisterAuditLoggerFactory(
+    absl::string_view name) {
   MutexLock lock(&mu_);
   logger_factories_map_.erase(std::string(name));
 }

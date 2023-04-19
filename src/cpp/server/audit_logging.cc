@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/cpp/server/audit_logging.h"
+#include "src/core/lib/security/audit_logging/audit_logging.h"
 
 #include <memory>
 
@@ -28,80 +28,13 @@
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/audit_logging/audit_logging.h"
 
 namespace grpc {
 namespace experimental {
 
-grpc::string_ref AuditContext::rpc_method() const {
-  absl::string_view s = core_context_.rpc_method();
-  return grpc::string_ref(s.data(), s.length());
-}
-
-grpc::string_ref AuditContext::principal() const {
-  absl::string_view s = core_context_.principal();
-  return grpc::string_ref(s.data(), s.length());
-}
-
-grpc::string_ref AuditContext::policy_name() const {
-  absl::string_view s = core_context_.policy_name();
-  return grpc::string_ref(s.data(), s.length());
-}
-
-grpc::string_ref AuditContext::matched_rule() const {
-  absl::string_view s = core_context_.matched_rule();
-  return grpc::string_ref(s.data(), s.length());
-}
-
-bool AuditContext::authorized() const { return core_context_.authorized(); }
-
-void CoreAuditLogger::Log(
-    const grpc_core::experimental::AuditContext& core_audit_context) {
-  logger_->Log(AuditContext(core_audit_context));
-}
-
-const char* CoreAuditLoggerFactory::Config::name() const {
-  return config_->name();
-}
-
-std::string CoreAuditLoggerFactory::Config::ToString() {
-  return config_->ToString();
-}
-
-const char* CoreAuditLoggerFactory::name() const { return factory_->name(); }
-
-std::unique_ptr<grpc_core::experimental::AuditLogger>
-CoreAuditLoggerFactory::CreateAuditLogger(
-    std::unique_ptr<grpc_core::experimental::AuditLoggerFactory::Config>
-        core_config) {
-  std::unique_ptr<CoreAuditLoggerFactory::Config> config(
-      static_cast<CoreAuditLoggerFactory::Config*>(core_config.release()));
-  std::unique_ptr<grpc::experimental::AuditLogger> logger =
-      factory_->CreateAuditLogger(config->config());
-  return std::make_unique<CoreAuditLogger>(std::move(logger));
-}
-
-absl::StatusOr<
-    std::unique_ptr<grpc_core::experimental::AuditLoggerFactory::Config>>
-CoreAuditLoggerFactory::ParseAuditLoggerConfig(const Json& json) {
-  auto result = factory_->ParseAuditLoggerConfig(json);
-  if (!result.ok()) {
-    return result.status();
-  }
-  return std::make_unique<CoreAuditLoggerFactory::Config>(
-      std::move(result.value()));
-};
-
 void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory) {
-  auto core_factory =
-      std::make_unique<CoreAuditLoggerFactory>(std::move(factory));
-  grpc_core::experimental::RegisterAuditLoggerFactory(std::move(core_factory));
+  grpc_core::experimental::RegisterAuditLoggerFactory(std::move(factory));
 };
-
-void UnregisterAuditLoggerFactory(absl::string_view name) {
-  grpc_core::experimental::GetAuditLoggerRegistry()
-      .UnregisterAuditLoggerFactory(name);
-}
 
 }  // namespace experimental
 }  // namespace grpc

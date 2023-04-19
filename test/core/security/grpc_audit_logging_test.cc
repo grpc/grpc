@@ -84,7 +84,7 @@ TEST(AuditLoggingTest, FactoryRegistrationAndLoggerCreation) {
   ASSERT_TRUE(result2.ok());
   std::unique_ptr<Config> config = std::move(result2.value());
   ASSERT_NE(factory->CreateAuditLogger(std::move(config)), nullptr);
-  registry.UnregisterAuditLoggerFactory(kName);
+  registry.TestOnlyUnregisterAuditLoggerFactory(kName);
 }
 
 TEST(AuditLoggingTest, FactoryNotFound) {

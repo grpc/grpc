@@ -27,12 +27,13 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+// TODO(lwge): Switch to public header when it's ready.
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace experimental {
 
-// The base struct for audit context.
+// The class containing the context for an audited RPC.
 class AuditContext {
  public:
   AuditContext(absl::string_view rpc_method, absl::string_view principal,

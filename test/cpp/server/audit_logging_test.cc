@@ -22,11 +22,9 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/grpc_audit_logging.h>
 #include <grpcpp/security/audit_logging.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/cpp/server/audit_logging.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -38,8 +36,6 @@ const char kName[] = "test_logger";
 using experimental::AuditContext;
 using experimental::AuditLogger;
 using experimental::AuditLoggerFactory;
-using experimental::RegisterAuditLoggerFactory;
-using experimental::UnregisterAuditLoggerFactory;
 
 namespace {
 
@@ -70,7 +66,8 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
 }  // namespace
 
 TEST(AuditLoggingTest, FactoryRegistrationAndLoggerCreation) {
-  RegisterAuditLoggerFactory(std::make_unique<TestAuditLoggerFactory>());
+  grpc::experimental::RegisterAuditLoggerFactory(
+      std::make_unique<TestAuditLoggerFactory>());
   auto& registry = grpc_core::experimental::GetAuditLoggerRegistry();
   auto result = registry.GetAuditLoggerFactory(kName);
   ASSERT_TRUE(result.ok());
@@ -81,7 +78,7 @@ TEST(AuditLoggingTest, FactoryRegistrationAndLoggerCreation) {
   std::unique_ptr<grpc_core::experimental::AuditLoggerFactory::Config> config =
       std::move(result2.value());
   ASSERT_NE(factory->CreateAuditLogger(std::move(config)), nullptr);
-  UnregisterAuditLoggerFactory(kName);
+  registry.TestOnlyUnregisterAuditLoggerFactory(kName);
 }
 
 TEST(AuditLoggingTest, FactoryNotFound) {

@@ -1478,6 +1478,7 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
+        'grpc_unsecure',
       ],
       'sources': [
         'src/core/ext/transport/binder/client/binder_connector.cc',

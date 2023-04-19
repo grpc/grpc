@@ -44,7 +44,7 @@ class AuditLoggerRegistry {
   // Factories are registered during initialization. They should never be
   // unregistered since they will be looked up at any time till the program
   // exits. This function should only be used in tests.
-  void UnregisterAuditLoggerFactory(absl::string_view name);
+  void TestOnlyUnregisterAuditLoggerFactory(absl::string_view name);
 
  private:
   Mutex mu_;

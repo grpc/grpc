@@ -155,6 +155,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -1836,6 +1837,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -2787,7 +2789,6 @@ libs:
   - include/grpc++/support/stub_options.h
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
-  - include/grpc/grpc_audit_logging.h
   - include/grpcpp/alarm.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
@@ -2945,7 +2946,6 @@ libs:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -3023,6 +3023,7 @@ libs:
   - src/cpp/util/time_cc.cc
   deps:
   - grpc
+  - grpc_unsecure
   baselib: true
 - name: grpc++_alts
   build: all
@@ -3411,6 +3412,7 @@ libs:
   - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -4983,7 +4985,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -5061,6 +5062,7 @@ targets:
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: bitset_test
@@ -6500,7 +6502,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -6578,6 +6579,7 @@ targets:
   - test/core/transport/binder/endpoint_binder_pool_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: endpoint_config_test
@@ -6926,7 +6928,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -7004,6 +7005,7 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: fake_resolver_test
@@ -8052,6 +8054,7 @@ targets:
   - src/core/lib/security/audit_logging/audit_logging.cc
   - test/core/security/grpc_audit_logging_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
@@ -12298,7 +12301,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12374,6 +12376,7 @@ targets:
   - src/cpp/util/time_cc.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: try_join_test
@@ -12615,7 +12618,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12693,6 +12695,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: wire_writer_test
@@ -12726,7 +12729,6 @@ targets:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/server/audit_logging.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -12804,6 +12806,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: work_queue_test
