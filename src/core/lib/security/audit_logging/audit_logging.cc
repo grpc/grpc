@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
@@ -47,7 +48,8 @@ absl::StatusOr<AuditLoggerFactory*> AuditLoggerRegistry::GetAuditLoggerFactory(
   if (it != logger_factories_map_.end()) {
     return it->second.get();
   }
-  return absl::NotFoundError("factory does not exist");
+  return absl::NotFoundError(
+      absl::StrFormat("audit logger factory %s does not exist", name));
 }
 
 void AuditLoggerRegistry::TestOnlyUnregisterAuditLoggerFactory(

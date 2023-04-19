@@ -80,9 +80,9 @@ TEST(AuditLoggingTest, FactoryRegistrationAndLoggerCreation) {
   ASSERT_TRUE(result.ok());
   auto* factory = result.value();
   EXPECT_EQ(factory->name(), kName);
-  auto result2 = factory->ParseAuditLoggerConfig(Json());
-  ASSERT_TRUE(result2.ok());
-  std::unique_ptr<Config> config = std::move(result2.value());
+  auto parse_result = factory->ParseAuditLoggerConfig(Json());
+  ASSERT_TRUE(parse_result.ok());
+  std::unique_ptr<Config> config = std::move(parse_result.value());
   ASSERT_NE(factory->CreateAuditLogger(std::move(config)), nullptr);
   registry.TestOnlyUnregisterAuditLoggerFactory(kName);
 }

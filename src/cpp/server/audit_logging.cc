@@ -16,18 +16,11 @@
 //
 //
 
-#include "src/core/lib/security/audit_logging/audit_logging.h"
-
 #include <memory>
-
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include <utility>
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpcpp/security/audit_logging.h>
-#include <grpcpp/support/string_ref.h>
-
-#include "src/core/lib/json/json.h"
 
 namespace grpc {
 namespace experimental {
