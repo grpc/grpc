@@ -40,6 +40,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 
