@@ -52,6 +52,9 @@ class HealthWatcher;
 // registered watchers.
 class HealthProducer : public Subchannel::DataProducerInterface {
  public:
+  HealthProducer() : interested_parties_(grpc_pollset_set_create()) {}
+  ~HealthProducer() override { grpc_pollset_set_destroy(interested_parties_); }
+
   void Start(RefCountedPtr<Subchannel> subchannel);
 
   void Orphan() override;
@@ -78,6 +81,7 @@ class HealthProducer : public Subchannel::DataProducerInterface {
 
   RefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
+  grpc_pollset_set* interested_parties_;
 
   Mutex mu_;
   grpc_connectivity_state state_ ABSL_GUARDED_BY(&mu_);
@@ -107,6 +111,10 @@ class HealthWatcher : public InternalSubchannelDataWatcherInterface {
   void SetSubchannel(Subchannel* subchannel) override;
 
   void Notify(grpc_connectivity_state state, absl::Status status);
+
+  grpc_pollset_set* interested_parties() const {
+    return watcher_->interested_parties();
+  }
 
  private:
   std::shared_ptr<WorkSerializer> work_serializer_;

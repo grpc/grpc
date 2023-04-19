@@ -339,12 +339,7 @@ class HealthProducer::ConnectivityWatcher
     : public Subchannel::ConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)
-      : producer_(std::move(producer)),
-        interested_parties_(grpc_pollset_set_create()) {}
-
-  ~ConnectivityWatcher() override {
-    grpc_pollset_set_destroy(interested_parties_);
-  }
+      : producer_(std::move(producer)) {}
 
   void OnConnectivityStateChange(grpc_connectivity_state state,
                                  const absl::Status& status) override {
@@ -352,12 +347,11 @@ class HealthProducer::ConnectivityWatcher
   }
 
   grpc_pollset_set* interested_parties() override {
-    return interested_parties_;
+    return producer_->interested_parties_;
   }
 
  private:
   WeakRefCountedPtr<HealthProducer> producer_;
-  grpc_pollset_set* interested_parties_;
 };
 
 //
@@ -394,6 +388,8 @@ void HealthProducer::Orphan() {
 void HealthProducer::AddWatcher(HealthWatcher* watcher,
                                 const std::string& health_check_service_name) {
   MutexLock lock(&mu_);
+  grpc_pollset_set_add_pollset_set(interested_parties_,
+                                   watcher->interested_parties());
   auto it = health_checkers_.emplace(health_check_service_name, nullptr).first;
   auto& health_checker = it->second;
   if (health_checker == nullptr) {
@@ -405,6 +401,8 @@ void HealthProducer::AddWatcher(HealthWatcher* watcher,
 void HealthProducer::RemoveWatcher(
     HealthWatcher* watcher, const std::string& health_check_service_name) {
   MutexLock lock(&mu_);
+  grpc_pollset_set_del_pollset_set(interested_parties_,
+                                   watcher->interested_parties());
   auto it = health_checkers_.find(health_check_service_name);
   if (it == health_checkers_.end()) return;
   const bool empty = it->second->RemoveWatcherLocked(watcher);
