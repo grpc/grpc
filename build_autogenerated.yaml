@@ -244,8 +244,13 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h
+  - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
@@ -949,6 +954,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
@@ -1039,6 +1045,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
@@ -1923,8 +1932,13 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h
+  - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/retry_filter.h
@@ -2268,6 +2282,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
@@ -2328,6 +2343,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
@@ -3741,6 +3759,7 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -4123,15 +4142,6 @@ targets:
   - linux
   - posix
   - windows
-- name: public_headers_must_be_c89
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/public_headers_must_be_c89.c
-  deps:
-  - grpc_authorization_provider
-  - grpc_test_util
 - name: static_stride_scheduler_benchmark
   build: test
   language: c
@@ -7673,6 +7683,7 @@ targets:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -10194,6 +10205,26 @@ targets:
   deps:
   - absl/meta:type_traits
   - gpr
+  uses_polling: false
+- name: proto_buffer_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_reader_test.cc
+  deps:
+  - grpc++_test_util
+  uses_polling: false
+- name: proto_buffer_writer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_writer_test.cc
+  deps:
+  - grpc++_test_util
   uses_polling: false
 - name: proto_server_reflection_test
   gtest: true

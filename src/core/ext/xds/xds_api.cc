@@ -40,9 +40,9 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
-#include "upb/def.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/reflection/def.h"
+#include "upb/text/encode.h"
 #include "upb/upb.hpp"
 
 #include <grpc/status.h>
@@ -504,6 +504,24 @@ std::string XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
+namespace {
+
+void MaybeLogLrsResponse(
+    const XdsApiContext& context,
+    const envoy_service_load_stats_v3_LoadStatsResponse* response) {
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_MessageDef* msg_type =
+        envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(context.symtab);
+    char buf[10240];
+    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] received LRS response: %s",
+            context.client, buf);
+  }
+}
+
+}  // namespace
+
 absl::Status XdsApi::ParseLrsResponse(absl::string_view encoded_response,
                                       bool* send_all_clusters,
                                       std::set<std::string>* cluster_names,
@@ -517,6 +535,8 @@ absl::Status XdsApi::ParseLrsResponse(absl::string_view encoded_response,
   if (decoded_response == nullptr) {
     return absl::UnavailableError("Can't decode response.");
   }
+  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  MaybeLogLrsResponse(context, decoded_response);
   // Check send_all_clusters.
   if (envoy_service_load_stats_v3_LoadStatsResponse_send_all_clusters(
           decoded_response)) {
