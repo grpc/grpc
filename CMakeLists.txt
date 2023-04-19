@@ -787,7 +787,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_c pollset_windows_starvation_test)
   endif()
-  add_dependencies(buildtests_c public_headers_must_be_c89)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c static_stride_scheduler_benchmark)
   endif()
@@ -4966,36 +4965,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(public_headers_must_be_c89
-  test/core/surface/public_headers_must_be_c89.c
-)
-target_compile_features(public_headers_must_be_c89 PUBLIC cxx_std_14)
-target_include_directories(public_headers_must_be_c89
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(public_headers_must_be_c89
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_authorization_provider
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
