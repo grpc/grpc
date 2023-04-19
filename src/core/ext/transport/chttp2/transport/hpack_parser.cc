@@ -929,7 +929,7 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
   bool parsed_ok = ParseInputInner(&input, is_last);
-  if (is_last) global_stats().IncrementHttp2MetadataSize(frame_length_);
+  if (is_last && (frame_length_ > 0)) global_stats().IncrementHttp2MetadataSize(frame_length_);
   if (parsed_ok) return absl::OkStatus();
   if (input.eof_error()) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
