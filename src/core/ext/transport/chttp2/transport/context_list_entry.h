@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -49,6 +49,8 @@ class ContextListEntry {
         num_traced_bytes_in_chunk_(num_traced_bytes),
         byte_offset_in_stream_(byte_offset) {}
 
+  ContextListEntry() = delete;
+
   void* TraceContext() { return trace_context_; }
   int64_t RelativeStartPosInChunk() { return relative_start_pos_in_chunk_; }
   int64_t NumTracedBytesInChunk() { return num_traced_bytes_in_chunk_; }
@@ -65,4 +67,4 @@ class ContextListEntry {
 typedef std::vector<ContextListEntry> ContextList;
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H

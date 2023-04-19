@@ -3739,9 +3739,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "chttp2_context_list",
+    name = "chttp2_context_list_entry",
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/context_list.h",
+        "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
     ],
     deps = ["gpr"],
 )
@@ -3785,7 +3785,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
-        "chttp2_context_list",
+        "chttp2_context_list_entry",
         "chttp2_frame",
         "chttp2_varint",
         "debug_location",
