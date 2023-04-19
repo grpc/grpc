@@ -103,6 +103,7 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/metadata_compression_traits.h",
     ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
