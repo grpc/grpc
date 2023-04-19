@@ -97,7 +97,7 @@ class ThreadPool final : public Forkable, public Executor {
     unsigned threads_waiting_ ABSL_GUARDED_BY(mu) = 0;
     grpc_core::CondVar broadcast ABSL_GUARDED_BY(mu);
     bool shutdown ABSL_GUARDED_BY(mu) = false;
-    bool forking ABSL_GUARDED_BY(mu) = false;
+    std::atomic<bool> forking{false};
   };
 
   using ThreadPoolStatePtr = std::shared_ptr<ThreadPoolState>;

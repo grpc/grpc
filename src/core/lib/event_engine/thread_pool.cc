@@ -75,7 +75,7 @@ void ThreadPool::StartThread(ThreadPoolStatePtr state,
       grpc_core::MutexLock lock(&state->mu);
       while (true) {
         grpc_core::Timestamp now = grpc_core::Timestamp::Now();
-        if (now >= end || state->forking) return;
+        if (now >= end || state->forking.load()) return;
         state->broadcast.WaitWithTimeout(
             &state->mu, absl::Milliseconds((end - now).millis()));
       }
@@ -122,7 +122,7 @@ void ThreadPool::ThreadFunc(ThreadPoolStatePtr state) {
 }
 
 bool ThreadPool::ThreadPoolState::Step() {
-  // DO NOT SUBMIT(hork): handle forking.
+  if (forking.load()) return false;
   auto* closure = g_local_queue->PopMostRecent();
   if (closure != nullptr) {
     closure->Run();
@@ -130,7 +130,8 @@ bool ThreadPool::ThreadPoolState::Step() {
   }
   grpc_core::ReleasableMutexLock lock(&mu);
   // Wait until work is available or we are shutting down.
-  while (!shutdown && !forking && queue.Empty()) {
+  while (!shutdown && !forking.load() && queue.Empty()) {
+    // DO NOT SUBMIT(hork): steal work
     // If there are too many threads waiting, then quit this thread.
     // TODO(ctiller): wait some time in this case to be sure.
     if (threads_waiting_ >= reserve_threads_) {
@@ -146,7 +147,7 @@ bool ThreadPool::ThreadPoolState::Step() {
       threads_waiting_--;
     }
   }
-  if (forking) return false;
+  if (forking.load()) return false;
   bool qempty = queue.Empty();
   if (shutdown && qempty) return false;
   GPR_ASSERT(!qempty);
@@ -213,7 +214,7 @@ bool ThreadPool::ThreadPoolState::IsBacklogged() {
 }
 
 bool ThreadPool::ThreadPoolState::IsBackloggedLocked() {
-  if (forking) return false;
+  if (forking.load()) return false;
   // DO NOT SUBMIT(hork): better heuristic based on
   return queue.Size() > 10;
 }
@@ -226,9 +227,9 @@ void ThreadPool::SetShutdown(bool is_shutdown) {
 }
 
 void ThreadPool::SetForking(bool is_forking) {
-  grpc_core::MutexLock lock(&state_->mu);
-  auto was_forking = std::exchange(state_->forking, is_forking);
+  auto was_forking = state_->forking.exchange(is_forking);
   GPR_ASSERT(is_forking != was_forking);
+  grpc_core::MutexLock lock(&state_->mu);
   state_->broadcast.SignalAll();
 }
 
