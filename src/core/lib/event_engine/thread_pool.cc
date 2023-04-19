@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "work_queue/basic_work_queue.h"
 
 #include <grpc/support/log.h>
 
@@ -37,11 +38,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-constexpr grpc_core::Duration kOldestTimestampThreshold =
-    grpc_core::Duration::Milliseconds(333);
-
-}  // namespace
+thread_local BasicWorkQueue* g_local_queue = nullptr;
 
 void ThreadPool::StartThread(ThreadPoolStatePtr state,
                              StartThreadReason reason) {
@@ -87,6 +84,7 @@ void ThreadPool::StartThread(ThreadPoolStatePtr state,
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
+        g_local_queue = new BasicWorkQueue();
         std::unique_ptr<ThreadState> a(static_cast<ThreadState*>(arg));
         ThreadLocal::SetIsEventEngineThread(true);
         switch (a->reason) {
@@ -106,6 +104,11 @@ void ThreadPool::StartThread(ThreadPoolStatePtr state,
             break;
         }
         ThreadFunc(a->state);
+        // DO NOT SUBMIT(hork): threads will shut down if forking. We must
+        // ensure any local callbacks are saved and redistributed. This does not
+        // need to be performant.
+        GPR_ASSERT(g_local_queue->Empty());
+        delete g_local_queue;
       },
       new ThreadState{state, reason}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
@@ -119,6 +122,12 @@ void ThreadPool::ThreadFunc(ThreadPoolStatePtr state) {
 }
 
 bool ThreadPool::ThreadPoolState::Step() {
+  // DO NOT SUBMIT(hork): handle forking.
+  auto* closure = g_local_queue->PopMostRecent();
+  if (closure != nullptr) {
+    closure->Run();
+    return true;
+  }
   grpc_core::ReleasableMutexLock lock(&mu);
   // Wait until work is available or we are shutting down.
   while (!shutdown && !forking && queue.Empty()) {
@@ -141,7 +150,7 @@ bool ThreadPool::ThreadPoolState::Step() {
   bool qempty = queue.Empty();
   if (shutdown && qempty) return false;
   GPR_ASSERT(!qempty);
-  auto callback = queue.PopBack();
+  auto callback = queue.PopMostRecent();
   lock.Release();
   if (callback != nullptr) {
     callback->Run();
@@ -176,6 +185,12 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
+  // DO NOT SUBMIT(hork): skipping the backlog check may be bad, but the Run
+  // path should be fast.
+  if (g_local_queue != nullptr) {
+    g_local_queue->Add(std::move(callback));
+    return;
+  }
   state_->queue.Add(std::move(callback));
   bool should_start_new_thread = false;
   {
@@ -199,8 +214,8 @@ bool ThreadPool::ThreadPoolState::IsBacklogged() {
 
 bool ThreadPool::ThreadPoolState::IsBackloggedLocked() {
   if (forking) return false;
-  return (grpc_core::Timestamp::Now() - queue.OldestEnqueuedTimestamp()) >
-         kOldestTimestampThreshold;
+  // DO NOT SUBMIT(hork): better heuristic based on
+  return queue.Size() > 10;
 }
 
 void ThreadPool::SetShutdown(bool is_shutdown) {
