@@ -61,6 +61,7 @@ template <typename T>
 void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
                           size_t size) {
   T parsed;
+  grpc_core::ExecCtx exec_ctx; // Initialized to get this_cpu() info in global_stat().
   HPackParser hpack_parser;
   SliceBuffer serialized;
   serialized.Append(Slice::FromCopiedBuffer(data, size));
