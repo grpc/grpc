@@ -164,7 +164,7 @@ class HealthProducer::HealthChecker
     }
     stream_client_ = MakeOrphanable<SubchannelStreamClient>(
         producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
-        absl::make_unique<HealthStreamEventHandler>(Ref()),
+        std::make_unique<HealthStreamEventHandler>(Ref()),
         GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace) ? "HealthClient"
                                                                 : nullptr);
   }
