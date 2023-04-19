@@ -73,7 +73,63 @@ class HealthProducer : public Subchannel::DataProducerInterface {
 
  private:
   class ConnectivityWatcher;
-  class HealthChecker;
+
+  // Health checker for a given health check service name.  Contains the
+  // health check client and the list of watchers.
+  class HealthChecker : public InternallyRefCounted<HealthChecker> {
+   public:
+    HealthChecker(WeakRefCountedPtr<HealthProducer> producer,
+                  absl::string_view health_check_service_name);
+
+    // Disable thread-safety analysis because this method is called via
+    // OrphanablePtr<>, but there's no way to pass the lock annotation
+    // through there.
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+    void AddWatcherLocked(HealthWatcher* watcher)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_);
+
+    // Returns true if this was the last watcher.
+    bool RemoveWatcherLocked(HealthWatcher* watcher)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_);
+
+    // Called when the subchannel's connectivity state changes.
+    void OnConnectivityStateChangeLocked(grpc_connectivity_state state,
+                                         const absl::Status& status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_);
+
+   private:
+    class HealthStreamEventHandler;
+
+    // Starts a new stream if we have a connected subchannel.
+    // Called whenever the subchannel transitions to state READY or when a
+    // watcher is added.
+    void StartHealthStreamLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_);
+
+    // Notifies watchers of a new state.
+    // Called while holding the SubchannelStreamClient lock and possibly
+    // the producer lock, so must notify asynchronously, but in guaranteed
+    // order (hence the use of WorkSerializer).
+    void NotifyWatchersLocked(grpc_connectivity_state state,
+                              absl::Status status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthProducer::mu_);
+
+    // Called by the health check client when receiving an update.
+    void OnHealthWatchStatusChange(grpc_connectivity_state state,
+                                   const absl::Status& status);
+
+    WeakRefCountedPtr<HealthProducer> producer_;
+    absl::string_view health_check_service_name_;
+    std::shared_ptr<WorkSerializer> work_serializer_ =
+        std::make_shared<WorkSerializer>();
+
+    grpc_connectivity_state state_ ABSL_GUARDED_BY(&HealthProducer::mu_);
+    absl::Status status_ ABSL_GUARDED_BY(&HealthProducer::mu_);
+    OrphanablePtr<SubchannelStreamClient> stream_client_
+        ABSL_GUARDED_BY(&HealthProducer::mu_);
+    std::set<HealthWatcher*> watchers_ ABSL_GUARDED_BY(&HealthProducer::mu_);
+  };
 
   // Handles a connectivity state change on the subchannel.
   void OnConnectivityStateChange(grpc_connectivity_state state,
