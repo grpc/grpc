@@ -176,7 +176,7 @@ class TimerList {
   const size_t num_shards_;
   grpc_core::Mutex mu_;
   // The deadline of the next timer due across all timer shards
-  std::atomic<uint64_t> min_timer_;
+  std::atomic<int64_t> min_timer_;
   // Allow only one FindExpiredTimers at once (used as a TryLock, protects no
   // fields but ensures limits on concurrency)
   grpc_core::Mutex checker_mu_;

@@ -31,16 +31,16 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 
-#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
-  do {                                                          \
-    static std::atomic<uint64_t> prev{0};                       \
-    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
-                       gpr_now(GPR_CLOCK_MONOTONIC))            \
-                       .milliseconds_after_process_epoch();     \
-    uint64_t prev_tsamp = prev.exchange(now);                   \
-    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {       \
-      gpr_log(severity, format, __VA_ARGS__);                   \
-    }                                                           \
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)         \
+  do {                                                         \
+    static std::atomic<int64_t> prev{0};                       \
+    int64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                      gpr_now(GPR_CLOCK_MONOTONIC))            \
+                      .milliseconds_after_process_epoch();     \
+    int64_t prev_tsamp = prev.exchange(now);                   \
+    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {      \
+      gpr_log(severity, format, __VA_ARGS__);                  \
+    }                                                          \
   } while (0)
 
 namespace grpc_core {
@@ -57,6 +57,13 @@ inline int64_t MillisAdd(int64_t a, int64_t b) {
     return std::numeric_limits<int64_t>::min();
   }
   return SaturatingAdd(a, b);
+}
+
+inline int64_t MillisSub(int64_t a, int64_t b) {
+  if (b == std::numeric_limits<int64_t>::min()) {
+    return std::numeric_limits<int64_t>::min();
+  }
+  return MillisAdd(a, -b);
 }
 
 constexpr inline int64_t MillisMul(int64_t millis, int64_t mul) {
@@ -150,7 +157,7 @@ class Timestamp {
 
   bool is_process_epoch() const { return millis_ == 0; }
 
-  uint64_t milliseconds_after_process_epoch() const { return millis_; }
+  int64_t milliseconds_after_process_epoch() const { return millis_; }
 
   gpr_timespec as_timespec(gpr_clock_type type) const;
 
@@ -293,7 +300,7 @@ inline Duration operator+(Duration lhs, Duration rhs) {
 
 inline Duration operator-(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(
-      time_detail::MillisAdd(lhs.millis(), -rhs.millis()));
+      time_detail::MillisSub(lhs.millis(), rhs.millis()));
 }
 
 inline Timestamp operator+(Timestamp lhs, Duration rhs) {
@@ -302,16 +309,16 @@ inline Timestamp operator+(Timestamp lhs, Duration rhs) {
 }
 
 inline Timestamp operator-(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisAdd(
-      lhs.milliseconds_after_process_epoch(), -rhs.millis()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisSub(
+      lhs.milliseconds_after_process_epoch(), rhs.millis()));
 }
 
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
   return Duration::Milliseconds(
-      time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
-                             -rhs.milliseconds_after_process_epoch()));
+      time_detail::MillisSub(lhs.milliseconds_after_process_epoch(),
+                             rhs.milliseconds_after_process_epoch()));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
