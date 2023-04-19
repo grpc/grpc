@@ -20,6 +20,7 @@
 
 #include "src/core/lib/security/audit_logging/audit_logging.h"
 
+#include <initializer_list>
 #include <map>
 #include <utility>
 
