@@ -34,7 +34,7 @@
 
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/work_queue.h"
+#include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -83,7 +83,7 @@ class ThreadPool final : public Forkable, public Executor {
 
     const unsigned reserve_threads_ =
         grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
-    WorkQueue queue;
+    BasicWorkQueue queue;
     ThreadCount thread_count;
     // After pool creation we use this to rate limit creation of threads to one
     // at a time.

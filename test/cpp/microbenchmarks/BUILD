@@ -462,7 +462,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//src/core:common_event_engine_closures",
-        "//src/core:event_engine_work_queue",
+        "//src/core:event_engine_basic_work_queue",
         "//test/core/util:grpc_test_util",
     ],
 )
