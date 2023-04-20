@@ -447,9 +447,10 @@ grpc_cc_test(
     deps = [":callback_streaming_ping_pong_h"],
 )
 
+# TODO(hork): Generalize this for other work queue implementations
 grpc_cc_test(
-    name = "bm_work_queue",
-    srcs = ["bm_work_queue.cc"],
+    name = "bm_basic_work_queue",
+    srcs = ["bm_basic_work_queue.cc"],
     args = grpc_benchmark_args(),
     external_deps = ["benchmark"],
     tags = [
