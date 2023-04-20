@@ -24,9 +24,11 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <deque>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -35,6 +37,7 @@
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
+#include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -59,9 +62,6 @@ class ThreadPool final : public Forkable, public Executor {
   void PostforkParent() override;
   void PostforkChild() override;
 
-  // Returns true if the current thread is a thread pool thread.
-  static bool IsThreadPoolThread();
-
  private:
   class ThreadCount {
    public:
@@ -73,6 +73,25 @@ class ThreadPool final : public Forkable, public Executor {
     grpc_core::Mutex thread_count_mu_;
     grpc_core::CondVar cv_;
     int threads_ ABSL_GUARDED_BY(thread_count_mu_) = 0;
+  };
+
+  // A pool of WorkQueues that participate in work stealing.
+  //
+  // Every worker thread registers and unregisters its thread-local thread pool
+  // here, and steals closures when necessary.
+  class TheftRegistry {
+   public:
+    // Allow any member of the registry to steal from the provided queue.
+    void Enroll(WorkQueue* queue) ABSL_LOCKS_EXCLUDED(mu_);
+    // Disallow work stealing from the provided queue.
+    void Unenroll(WorkQueue* queue) ABSL_LOCKS_EXCLUDED(mu_);
+    // Returns one closure from another thread, or nullptr if none are
+    // available.
+    EventEngine::Closure* StealOne() ABSL_LOCKS_EXCLUDED(mu_);
+
+   private:
+    grpc_core::Mutex mu_;
+    absl::flat_hash_set<WorkQueue*> queues_ ABSL_GUARDED_BY(mu_);
   };
 
   struct ThreadPoolState {
@@ -98,6 +117,7 @@ class ThreadPool final : public Forkable, public Executor {
     grpc_core::CondVar broadcast ABSL_GUARDED_BY(mu);
     bool shutdown ABSL_GUARDED_BY(mu) = false;
     std::atomic<bool> forking{false};
+    TheftRegistry theft_registry;
   };
 
   using ThreadPoolStatePtr = std::shared_ptr<ThreadPoolState>;
@@ -118,6 +138,9 @@ class ThreadPool final : public Forkable, public Executor {
   // after that we only start one at a time.
   static void StartThread(ThreadPoolStatePtr state, StartThreadReason reason);
   void Postfork();
+
+  // Returns true if the current thread is a thread pool thread.
+  static bool IsThreadPoolThread();
 
   const ThreadPoolStatePtr state_ = std::make_shared<ThreadPoolState>();
   std::atomic<bool> quiesced_{false};

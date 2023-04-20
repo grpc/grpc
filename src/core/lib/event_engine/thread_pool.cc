@@ -27,11 +27,12 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "work_queue/basic_work_queue.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/thread_local.h"
+#include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
+#include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -39,6 +40,8 @@ namespace grpc_event_engine {
 namespace experimental {
 
 thread_local BasicWorkQueue* g_local_queue = nullptr;
+
+// -------- ThreadPool --------
 
 void ThreadPool::StartThread(ThreadPoolStatePtr state,
                              StartThreadReason reason) {
@@ -84,8 +87,9 @@ void ThreadPool::StartThread(ThreadPoolStatePtr state,
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
-        g_local_queue = new BasicWorkQueue();
         std::unique_ptr<ThreadState> a(static_cast<ThreadState*>(arg));
+        g_local_queue = new BasicWorkQueue();
+        a->state->theft_registry.Enroll(g_local_queue);
         ThreadLocal::SetIsEventEngineThread(true);
         switch (a->reason) {
           case StartThreadReason::kInitialPool:
@@ -104,10 +108,17 @@ void ThreadPool::StartThread(ThreadPoolStatePtr state,
             break;
         }
         ThreadFunc(a->state);
-        // DO NOT SUBMIT(hork): threads will shut down if forking. We must
-        // ensure any local callbacks are saved and redistributed. This does not
-        // need to be performant.
+        // cleanup
+        if (a->state->forking.load()) {
+          // TODO(hork): consider WorkQueue::AddAll(WorkQueue*)
+          EventEngine::Closure* closure;
+          while (!g_local_queue->Empty()) {
+            closure = g_local_queue->PopMostRecent();
+            if (closure != nullptr) a->state->queue.Add(closure);
+          }
+        }
         GPR_ASSERT(g_local_queue->Empty());
+        a->state->theft_registry.Unenroll(g_local_queue);
         delete g_local_queue;
       },
       new ThreadState{state, reason}, nullptr,
@@ -121,53 +132,13 @@ void ThreadPool::ThreadFunc(ThreadPoolStatePtr state) {
   state->thread_count.Remove();
 }
 
-bool ThreadPool::ThreadPoolState::Step() {
-  if (forking.load()) return false;
-  auto* closure = g_local_queue->PopMostRecent();
-  if (closure != nullptr) {
-    closure->Run();
-    return true;
-  }
-  grpc_core::ReleasableMutexLock lock(&mu);
-  // Wait until work is available or we are shutting down.
-  while (!shutdown && !forking.load() && queue.Empty()) {
-    // DO NOT SUBMIT(hork): steal work
-    // If there are too many threads waiting, then quit this thread.
-    // TODO(ctiller): wait some time in this case to be sure.
-    if (threads_waiting_ >= reserve_threads_) {
-      threads_waiting_++;
-      bool timeout = broadcast.WaitWithTimeout(&mu, absl::Seconds(30));
-      threads_waiting_--;
-      if (timeout && threads_waiting_ >= reserve_threads_) {
-        return false;
-      }
-    } else {
-      threads_waiting_++;
-      broadcast.Wait(&mu);
-      threads_waiting_--;
-    }
-  }
-  if (forking.load()) return false;
-  bool qempty = queue.Empty();
-  if (shutdown && qempty) return false;
-  GPR_ASSERT(!qempty);
-  auto callback = queue.PopMostRecent();
-  lock.Release();
-  if (callback != nullptr) {
-    callback->Run();
-  }
-  return true;
-}
-
 ThreadPool::ThreadPool() {
   for (unsigned i = 0; i < state_->reserve_threads_; i++) {
     StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 
-bool ThreadPool::IsThreadPoolThread() {
-  return ThreadLocal::IsEventEngineThread();
-}
+bool ThreadPool::IsThreadPoolThread() { return g_local_queue != nullptr; }
 
 void ThreadPool::Quiesce() {
   SetShutdown(true);
@@ -175,8 +146,8 @@ void ThreadPool::Quiesce() {
   // Note that if this is a threadpool thread then we won't exit this thread
   // until the callstack unwinds a little, so we need to wait for just one
   // thread running instead of zero.
-  state_->thread_count.BlockUntilThreadCount(
-      ThreadLocal::IsEventEngineThread() ? 1 : 0, "shutting down");
+  state_->thread_count.BlockUntilThreadCount(IsThreadPoolThread() ? 1 : 0,
+                                             "shutting down");
   quiesced_.store(true, std::memory_order_relaxed);
 }
 
@@ -186,8 +157,9 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  // DO NOT SUBMIT(hork): skipping the backlog check may be bad, but the Run
-  // path should be fast.
+  // TODO(hork): move the backlog check elsewhere so the local run path can
+  // remain a tight loop. It's now only checked when an external closure is
+  // added.
   if (g_local_queue != nullptr) {
     g_local_queue->Add(std::move(callback));
     return;
@@ -208,17 +180,6 @@ void ThreadPool::Run(EventEngine::Closure* closure) {
   Run([closure]() { closure->Run(); });
 }
 
-bool ThreadPool::ThreadPoolState::IsBacklogged() {
-  grpc_core::MutexLock lock(&mu);
-  return IsBackloggedLocked();
-}
-
-bool ThreadPool::ThreadPoolState::IsBackloggedLocked() {
-  if (forking.load()) return false;
-  // DO NOT SUBMIT(hork): better heuristic based on
-  return queue.Size() > 10;
-}
-
 void ThreadPool::SetShutdown(bool is_shutdown) {
   grpc_core::MutexLock lock(&state_->mu);
   auto was_shutdown = std::exchange(state_->shutdown, is_shutdown);
@@ -232,6 +193,111 @@ void ThreadPool::SetForking(bool is_forking) {
   grpc_core::MutexLock lock(&state_->mu);
   state_->broadcast.SignalAll();
 }
+
+void ThreadPool::PrepareFork() {
+  SetForking(true);
+  state_->thread_count.BlockUntilThreadCount(0, "forking");
+}
+
+void ThreadPool::PostforkParent() { Postfork(); }
+
+void ThreadPool::PostforkChild() { Postfork(); }
+
+void ThreadPool::Postfork() {
+  SetForking(false);
+  for (unsigned i = 0; i < state_->reserve_threads_; i++) {
+    StartThread(state_, StartThreadReason::kInitialPool);
+  }
+}
+
+// -------- ThreadPool::Theif --------
+
+void ThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
+  grpc_core::MutexLock lock(&mu_);
+  queues_.emplace(queue);
+}
+
+void ThreadPool::TheftRegistry::Unenroll(WorkQueue* queue) {
+  grpc_core::MutexLock lock(&mu_);
+  queues_.erase(queue);
+}
+
+EventEngine::Closure* ThreadPool::TheftRegistry::StealOne() {
+  grpc_core::MutexLock lock(&mu_);
+  EventEngine::Closure* closure;
+  for (auto& queue : queues_) {
+    closure = queue->PopMostRecent();
+    if (closure != nullptr) {
+      return closure;
+    }
+  }
+  return nullptr;
+}
+
+// -------- ThreadPool::ThreadPoolState --------
+
+bool ThreadPool::ThreadPoolState::IsBacklogged() {
+  grpc_core::MutexLock lock(&mu);
+  return IsBackloggedLocked();
+}
+
+bool ThreadPool::ThreadPoolState::IsBackloggedLocked() {
+  if (forking.load()) return false;
+  // DO NOT SUBMIT(hork): better heuristic
+  return queue.Size() > 10;
+}
+
+bool ThreadPool::ThreadPoolState::Step() {
+  if (forking.load()) return false;
+  auto* closure = g_local_queue->PopMostRecent();
+  if (closure != nullptr) {
+    closure->Run();
+    return true;
+  }
+  bool was_shutdown;
+  {
+    grpc_core::MutexLock lock(&mu);
+    // Wait until work is available or until shut down.
+    while (!shutdown && !forking.load()) {
+      // Pull from the global queue first
+      if (!queue.Empty()) {
+        closure = queue.PopMostRecent();
+        break;
+      };
+      // Try stealing if the queue is empty
+      closure = theft_registry.StealOne();
+      if (closure != nullptr) {
+        break;
+      }
+      // Hang out a while, waiting for work to arrive.
+      if (threads_waiting_ >= reserve_threads_) {
+        // Too many threads are waiting, quit this thread if no work arrives.
+        // TODO(hork): consider using a timeout backoff if it can help us remove
+        // the mutex / CV signaling.
+        threads_waiting_++;
+        bool timeout = broadcast.WaitWithTimeout(&mu, absl::Seconds(30));
+        threads_waiting_--;
+        if (timeout && threads_waiting_ >= reserve_threads_) {
+          return false;
+        }
+      } else {
+        threads_waiting_++;
+        broadcast.Wait(&mu);
+        threads_waiting_--;
+      }
+    }
+    was_shutdown = shutdown;
+  }
+  if (forking.load()) {
+    // save the closure since we aren't going to execute it.
+    if (closure != nullptr) g_local_queue->Add(closure);
+    return false;
+  }
+  if (closure != nullptr) closure->Run();
+  return !was_shutdown;
+}
+
+// -------- ThreadPool::ThreadCount --------
 
 void ThreadPool::ThreadCount::Add() {
   grpc_core::MutexLock lock(&thread_count_mu_);
@@ -255,25 +321,11 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
     // fork.
     cv_.WaitWithTimeout(&thread_count_mu_, absl::Seconds(3));
     if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
-      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s", why);
+      gpr_log(GPR_ERROR,
+              "Waiting for thread pool to idle before %s. (%d to %d)", why,
+              threads_, threads);
       last_log = absl::Now();
     }
-  }
-}
-
-void ThreadPool::PrepareFork() {
-  SetForking(true);
-  state_->thread_count.BlockUntilThreadCount(0, "forking");
-}
-
-void ThreadPool::PostforkParent() { Postfork(); }
-
-void ThreadPool::PostforkChild() { Postfork(); }
-
-void ThreadPool::Postfork() {
-  SetForking(false);
-  for (unsigned i = 0; i < state_->reserve_threads_; i++) {
-    StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 
