@@ -1321,7 +1321,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
 // the ADS call and LRS call being in two different ChannelState objects,
 // which resulted in the LRS load reports not being sent.
 TEST_P(XdsFederationLoadReportingTest, SameServerInAuthorityAndTopLevel) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  grpc_core::testing::ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
