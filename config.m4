@@ -551,7 +551,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
-    src/core/lib/event_engine/work_queue.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/alloc.cc \
@@ -1456,6 +1456,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/posix_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/work_queue)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)

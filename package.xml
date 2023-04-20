@@ -1115,8 +1115,9 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_listener.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue/basic_work_queue.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue/basic_work_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue/work_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
