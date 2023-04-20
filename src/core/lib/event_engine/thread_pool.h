@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include <atomic>
-#include <deque>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"

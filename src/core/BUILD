@@ -1398,8 +1398,9 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/work_queue/work_queue.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     deps = [
-        "time",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )
@@ -1419,7 +1420,6 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_work_queue",
-        "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -1473,6 +1473,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/time",
     ],
