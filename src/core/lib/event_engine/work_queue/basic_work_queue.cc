@@ -41,6 +41,7 @@ EventEngine::Closure* BasicWorkQueue::PopMostRecent() {
 
 EventEngine::Closure* BasicWorkQueue::PopOldest() {
   grpc_core::MutexLock lock(&mu_);
+  if (q_.empty()) return nullptr;
   auto tmp = q_.front();
   q_.pop_front();
   return tmp;
