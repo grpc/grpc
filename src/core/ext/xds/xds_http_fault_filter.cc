@@ -32,7 +32,6 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/def.h"
 
 #include <grpc/status.h>
 
@@ -45,6 +44,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/transport/status_conversion.h"
 
 namespace grpc_core {
@@ -230,7 +230,7 @@ XdsHttpFaultFilter::GenerateServiceConfig(
                          ? filter_config_override->config
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"faultInjectionPolicy", policy_json.Dump()};
+  return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
 }
 
 }  // namespace grpc_core

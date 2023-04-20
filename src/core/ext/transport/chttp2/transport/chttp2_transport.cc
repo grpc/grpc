@@ -78,7 +78,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -103,7 +102,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
 #define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
@@ -369,6 +369,23 @@ static void read_channel_args(grpc_chttp2_transport* t,
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
   }
 
+  t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
+
+  const int soft_limit =
+      channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
+  if (soft_limit < 0) {
+    // Set soft limit to 0.8 * hard limit if this is larger than
+    // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
+    // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
+    t->max_header_list_size_soft_limit = std::max(
+        DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT,
+        static_cast<int>(
+            0.8 * channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE)
+                      .value_or(-1)));
+  } else {
+    t->max_header_list_size_soft_limit = soft_limit;
+  }
+
   static const struct {
     absl::string_view channel_arg_name;
     grpc_chttp2_setting_id setting_id;
@@ -388,7 +405,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        0,
                        INT32_MAX,
                        {true, true}},
-                      {GRPC_ARG_MAX_METADATA_SIZE,
+                      {GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
                        GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        -1,
                        0,
@@ -421,6 +438,21 @@ static void read_channel_args(grpc_chttp2_transport* t,
       if (value >= 0) {
         queue_setting_update(t, setting.setting_id,
                              grpc_core::Clamp(value, setting.min, setting.max));
+      } else if (setting.setting_id ==
+                 GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE) {
+        // Set value to 1.25 * soft limit if this is larger than
+        // `DEFAULT_MAX_HEADER_LIST_SIZE` and
+        // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
+        const int soft_limit = channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
+                                   .value_or(setting.default_value);
+        const int value = (soft_limit >= 0 && soft_limit < (INT_MAX / 1.25))
+                              ? static_cast<int>(soft_limit * 1.25)
+                              : soft_limit;
+        if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
+          queue_setting_update(
+              t, setting.setting_id,
+              grpc_core::Clamp(value, setting.min, setting.max));
+        }
       }
     } else if (channel_args.Contains(setting.channel_arg_name)) {
       gpr_log(GPR_DEBUG, "%s is not available on %s",
@@ -1204,7 +1236,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc) {
+                                       const char* desc,
+                                       grpc_core::DebugLocation whence) {
   grpc_closure* closure = *pclosure;
   *pclosure = nullptr;
   if (closure == nullptr) {
@@ -1215,14 +1248,14 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
-        "write_state=%s",
+        "write_state=%s whence=%s:%d",
         t, closure,
         static_cast<int>(closure->next_data.scratch /
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         static_cast<int>(closure->next_data.scratch %
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         desc, grpc_core::StatusToString(error).c_str(),
-        write_state_name(t->write_state));
+        write_state_name(t->write_state), whence.file(), whence.line());
   }
 
   auto* tracer = CallTracerIfEnabled(s);
@@ -1662,7 +1695,7 @@ namespace {
 // Fire and forget (deletes itself on completion). Does a graceful shutdown by
 // sending a GOAWAY frame with the last stream id set to 2^31-1, sending a ping
 // and waiting for an ack (effective waiting for an RTT) and then sending a
-// final GOAWAY freame with an updated last stream identifier. This helps ensure
+// final GOAWAY frame with an updated last stream identifier. This helps ensure
 // that a connection can be cleanly shut down without losing requests.
 // In the event, that the client does not respond to the ping for some reason,
 // we add a 20 second deadline, after which we send the second goaway.
@@ -1675,6 +1708,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
   }
 
  private:
+  using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
+
   explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t) {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     GRPC_CHTTP2_REF_TRANSPORT(t_, "graceful goaway");
@@ -1682,10 +1717,17 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
-    Ref().release();  // Ref for the timer
-    grpc_timer_init(
-        &timer_, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20),
-        GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr));
+    timer_handle_ = t_->event_engine->RunAfter(
+        grpc_core::Duration::Seconds(20),
+        [self = Ref(DEBUG_LOCATION, "GoawayTimer")]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          // The ref will be unreffed in the combiner.
+          auto* ptr = self.release();
+          ptr->t_->combiner->Run(
+              GRPC_CLOSURE_INIT(&ptr->on_timer_, OnTimerLocked, ptr, nullptr),
+              absl::OkStatus());
+        });
   }
 
   void MaybeSendFinalGoawayLocked() {
@@ -1725,31 +1767,25 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   static void OnPingAckLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
-    grpc_timer_cancel(&self->timer_);
+    if (self->timer_handle_ != TaskHandle::kInvalid) {
+      self->t_->event_engine->Cancel(
+          std::exchange(self->timer_handle_, TaskHandle::kInvalid));
+    }
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
   }
 
-  static void OnTimer(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<GracefulGoaway*>(arg);
-    if (!error.ok()) {
-      self->Unref();
-      return;
-    }
-    self->t_->combiner->Run(
-        GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self, nullptr),
-        absl::OkStatus());
-  }
-
   static void OnTimerLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
+    // Clearing the handle since the timer has fired and the handle is invalid.
+    self->timer_handle_ = TaskHandle::kInvalid;
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
   }
 
   grpc_chttp2_transport* t_;
   grpc_closure on_ping_ack_;
-  grpc_timer timer_;
+  TaskHandle timer_handle_ = TaskHandle::kInvalid;
   grpc_closure on_timer_;
 };
 
@@ -3073,6 +3109,7 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
 }
 
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             false,
                                              "chttp2",
                                              init_stream,
                                              nullptr,

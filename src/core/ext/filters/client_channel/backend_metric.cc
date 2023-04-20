@@ -23,7 +23,8 @@
 #include <map>
 
 #include "absl/strings/string_view.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/collections/map.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
@@ -70,6 +71,7 @@ const BackendMetricData* ParseBackendMetricData(
       xds_data_orca_v3_OrcaLoadReport_mem_utilization(msg);
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
+  backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
   backend_metric_data->request_cost =
       ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
           msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,
@@ -80,6 +82,11 @@ const BackendMetricData* ParseBackendMetricData(
           msg, xds_data_orca_v3_OrcaLoadReport_utilization_next,
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key,
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value, allocator);
+  backend_metric_data->named_metrics =
+      ParseMap<xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry>(
+          msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next,
+          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key,
+          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value, allocator);
   return backend_metric_data;
 }
 

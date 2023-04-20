@@ -522,16 +522,17 @@ class HPackParser::String {
 // Parser parses one key/value pair from a byte stream.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, grpc_metadata_batch* metadata_buffer,
-         uint32_t metadata_size_limit, HPackTable* table,
+  Parser(Input* input, grpc_metadata_batch* metadata_buffer, HPackTable* table,
          uint8_t* dynamic_table_updates_allowed, uint32_t* frame_length,
+         RandomEarlyDetection* metadata_early_detection, bool is_last,
          LogInfo log_info)
       : input_(input),
         metadata_buffer_(metadata_buffer),
         table_(table),
         dynamic_table_updates_allowed_(dynamic_table_updates_allowed),
         frame_length_(frame_length),
-        metadata_size_limit_(metadata_size_limit),
+        metadata_early_detection_(metadata_early_detection),
+        is_last_(is_last),
         log_info_(log_info) {}
 
   // Skip any priority bits, or return false on failure
@@ -655,8 +656,12 @@ class HPackParser::Parser {
     // Pass up to the transport
     if (GPR_UNLIKELY(metadata_buffer_ == nullptr)) return true;
     *frame_length_ += md.transport_size();
-    if (GPR_UNLIKELY(*frame_length_ > metadata_size_limit_)) {
-      return HandleMetadataSizeLimitExceeded(md);
+    if (metadata_early_detection_->MustReject(*frame_length_)) {
+      // Reject any requests above hard metadata limit.
+      return HandleMetadataSizeLimitExceeded(md, /*exceeded_hard_limit=*/true);
+    } else if (is_last_ && metadata_early_detection_->Reject(*frame_length_)) {
+      // Reject some random sample of requests above soft metadata limit.
+      return HandleMetadataSizeLimitExceeded(md, /*exceeded_hard_limit=*/false);
     }
 
     metadata_buffer_->Set(md);
@@ -817,10 +822,12 @@ class HPackParser::Parser {
   };
 
   GPR_ATTRIBUTE_NOINLINE
-  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento& md) {
+  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento& md,
+                                       bool exceeded_hard_limit) {
     // Collect a summary of sizes so far for debugging
     // Do not collect contents, for fear of exposing PII.
     std::string summary;
+    std::string error_message;
     if (metadata_buffer_ != nullptr) {
       MetadataSizeLimitExceededEncoder encoder(summary);
       metadata_buffer_->Encode(&encoder);
@@ -828,19 +835,25 @@ class HPackParser::Parser {
     summary =
         absl::StrCat("; adding ", md.key(), " (length ", md.transport_size(),
                      "B)", summary.empty() ? "" : " to ", summary);
+    if (exceeded_hard_limit) {
+      error_message = absl::StrCat(
+          "received metadata size exceeds hard limit (", *frame_length_,
+          " vs. ", metadata_early_detection_->hard_limit(), ")", summary);
+    } else {
+      error_message = absl::StrCat(
+          "received metadata size exceeds soft limit (", *frame_length_,
+          " vs. ", metadata_early_detection_->soft_limit(),
+          "), rejecting requests with some random probability", summary);
+    }
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
     // StreamId is used as a signal to skip this stream but keep the connection
     // alive
     return input_->MaybeSetErrorAndReturn(
-        [this, summary = std::move(summary)] {
+        [error_message = std::move(error_message)] {
           return grpc_error_set_int(
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE(absl::StrCat(
-                      "received initial metadata size exceeds limit (",
-                      *frame_length_, " vs. ", metadata_size_limit_, ")",
-                      summary)),
-                  StatusIntProperty::kRpcStatus,
-                  GRPC_STATUS_RESOURCE_EXHAUSTED),
+              grpc_error_set_int(GRPC_ERROR_CREATE(error_message),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_RESOURCE_EXHAUSTED),
               StatusIntProperty::kStreamId, 0);
         },
         false);
@@ -859,7 +872,9 @@ class HPackParser::Parser {
   HPackTable* const table_;
   uint8_t* const dynamic_table_updates_allowed_;
   uint32_t* const frame_length_;
-  const uint32_t metadata_size_limit_;
+  // Random early detection of metadata size limits.
+  RandomEarlyDetection* metadata_early_detection_;
+  bool is_last_;  // Whether this is the last frame.
   const LogInfo log_info_;
 };
 
@@ -881,8 +896,10 @@ HPackParser::HPackParser() = default;
 HPackParser::~HPackParser() = default;
 
 void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
-                             uint32_t metadata_size_limit, Boundary boundary,
-                             Priority priority, LogInfo log_info) {
+                             uint32_t metadata_size_soft_limit,
+                             uint32_t metadata_size_hard_limit,
+                             Boundary boundary, Priority priority,
+                             LogInfo log_info) {
   metadata_buffer_ = metadata_buffer;
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
@@ -891,7 +908,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
   frame_length_ = 0;
-  metadata_size_limit_ = metadata_size_limit;
+  metadata_early_detection_ = RandomEarlyDetection(
+      /*soft_limit=*/metadata_size_soft_limit,
+      /*hard_limit=*/metadata_size_hard_limit);
   log_info_ = log_info;
 }
 
@@ -909,7 +928,7 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 }
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
-  bool parsed_ok = ParseInputInner(&input);
+  bool parsed_ok = ParseInputInner(&input, is_last);
   if (is_last) global_stats().IncrementHttp2MetadataSize(frame_length_);
   if (parsed_ok) return absl::OkStatus();
   if (input.eof_error()) {
@@ -923,7 +942,7 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
   return input.TakeError();
 }
 
-bool HPackParser::ParseInputInner(Input* input) {
+bool HPackParser::ParseInputInner(Input* input, bool is_last) {
   switch (priority_) {
     case Priority::None:
       break;
@@ -935,9 +954,9 @@ bool HPackParser::ParseInputInner(Input* input) {
     }
   }
   while (!input->end_of_stream()) {
-    if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, metadata_size_limit_,
-                             &table_, &dynamic_table_updates_allowed_,
-                             &frame_length_, log_info_)
+    if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, &table_,
+                             &dynamic_table_updates_allowed_, &frame_length_,
+                             &metadata_early_detection_, is_last, log_info_)
                           .Parse())) {
       return false;
     }

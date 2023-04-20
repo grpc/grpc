@@ -26,6 +26,7 @@
 #include <grpcpp/ext/server_metric_recorder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
 #include "test/core/util/scoped_env_var.h"
@@ -50,12 +51,17 @@ TEST_P(WrrTest, Basic) {
   ScopedExperimentalEnvVar env_var1("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   ScopedExperimentalEnvVar env_var2("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   CreateAndStartBackends(3);
+  // Expected weights = qps / (cpu_util + (eps/qps)) =
+  //   1/(0.4+0.4) : 1/(0.2+0.2) : 1/(0.1+0.1) = 1:2:4
   backends_[0]->server_metric_recorder()->SetQps(100);
-  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.9);
+  backends_[0]->server_metric_recorder()->SetEps(40);
+  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.4);
   backends_[1]->server_metric_recorder()->SetQps(100);
-  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.3);
+  backends_[1]->server_metric_recorder()->SetEps(20);
+  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.2);
   backends_[2]->server_metric_recorder()->SetQps(100);
-  backends_[2]->server_metric_recorder()->SetCpuUtilization(0.3);
+  backends_[2]->server_metric_recorder()->SetEps(10);
+  backends_[2]->server_metric_recorder()->SetCpuUtilization(0.1);
   auto cluster = default_cluster_;
   WrrLocality wrr_locality;
   wrr_locality.mutable_endpoint_picking_policy()
@@ -79,8 +85,8 @@ TEST_P(WrrTest, Basic) {
               backends_[1]->backend_service()->request_count(),
               backends_[2]->backend_service()->request_count());
       if (backends_[0]->backend_service()->request_count() == 1 &&
-          backends_[1]->backend_service()->request_count() == 3 &&
-          backends_[2]->backend_service()->request_count() == 3) {
+          backends_[1]->backend_service()->request_count() == 2 &&
+          backends_[2]->backend_service()->request_count() == 4) {
         return false;
       }
       num_picks = 0;
@@ -99,7 +105,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

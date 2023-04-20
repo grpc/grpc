@@ -9,15 +9,16 @@
 #ifndef ENVOY_CONFIG_CORE_V3_CONFIG_SOURCE_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_CORE_V3_CONFIG_SOURCE_PROTO_UPBDEFS_H_
 
-#include "upb/def.h"
-#include "upb/port_def.inc"
+#include "upb/reflection/def.h"
+#include "upb/reflection/def_pool_internal.h"
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_config_core_v3_config_source_proto_upbdefinit;
 
@@ -56,10 +57,15 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ExtensionConfigSource_getm
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ExtensionConfigSource");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RestSubscription_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RestSubscription");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_CONFIG_CORE_V3_CONFIG_SOURCE_PROTO_UPBDEFS_H_ */

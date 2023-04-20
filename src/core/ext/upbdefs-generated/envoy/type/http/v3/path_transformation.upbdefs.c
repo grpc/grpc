@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/type/http/v3/path_transformation.upbdefs.h"
 #include "envoy/type/http/v3/path_transformation.upb.h"
 

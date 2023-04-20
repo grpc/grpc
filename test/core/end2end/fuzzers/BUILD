@@ -12,12 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package", "grpc_proto_library")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
 licenses(["notice"])
+
+grpc_proto_library(
+    name = "api_fuzzer_proto",
+    srcs = ["api_fuzzer.proto"],
+    has_services = False,
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "fuzzing_common",
+    srcs = ["fuzzing_common.cc"],
+    hdrs = ["fuzzing_common.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "api_fuzzer_proto",
+        "//:gpr",
+        "//:grpc",
+    ],
+)
 
 grpc_proto_fuzzer(
     name = "api_fuzzer",
@@ -25,10 +47,7 @@ grpc_proto_fuzzer(
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",
-    proto = "api_fuzzer.proto",
-    proto_deps = [
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-    ],
+    proto = None,
     tags = [
         "no_mac",
         "no_windows",
@@ -36,6 +55,8 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "api_fuzzer_proto",
+        "fuzzing_common",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
@@ -43,6 +64,7 @@ grpc_proto_fuzzer(
         "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

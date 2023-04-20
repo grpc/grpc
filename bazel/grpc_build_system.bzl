@@ -103,6 +103,7 @@ def _update_visibility(visibility):
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_timer": PRIVATE,
+        "json_reader_legacy": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "trace": PRIVATE,

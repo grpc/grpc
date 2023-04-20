@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
@@ -26,6 +27,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -52,19 +55,19 @@ void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
 void ValidateValue(const Json& actual, const Json& expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
-    case Json::Type::JSON_NULL:
-    case Json::Type::JSON_TRUE:
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kNull:
+    case Json::Type::kTrue:
+    case Json::Type::kFalse:
       break;
-    case Json::Type::STRING:
-    case Json::Type::NUMBER:
-      EXPECT_EQ(actual.string_value(), expected.string_value());
+    case Json::Type::kString:
+    case Json::Type::kNumber:
+      EXPECT_EQ(actual.string(), expected.string());
       break;
-    case Json::Type::OBJECT:
-      ValidateObject(actual.object_value(), expected.object_value());
+    case Json::Type::kObject:
+      ValidateObject(actual.object(), expected.object());
       break;
-    case Json::Type::ARRAY:
-      ValidateArray(actual.array_value(), expected.array_value());
+    case Json::Type::kArray:
+      ValidateArray(actual.array(), expected.array());
       break;
   }
 }
@@ -72,10 +75,10 @@ void ValidateValue(const Json& actual, const Json& expected) {
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
-  auto json = Json::Parse(input);
+  auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
-  std::string output = json->Dump();
+  std::string output = JsonDump(*json);
   EXPECT_EQ(output, expected_output);
 }
 
@@ -95,7 +98,7 @@ TEST(Json, Utf16) {
 MATCHER(ContainsInvalidUtf8,
         absl::StrCat(negation ? "Contains" : "Does not contain",
                      " invalid UTF-8 characters.")) {
-  auto json = Json::Parse(arg);
+  auto json = JsonParse(arg);
   return json.status().code() == absl::StatusCode::kInvalidArgument &&
          absl::StrContains(json.status().message(), "JSON parsing failed");
 }
@@ -158,8 +161,8 @@ TEST(Json, EscapesAndControlCharactersInKeyStrings) {
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  EXPECT_EQ(Json("abc\xf0\x9d\x24").Dump(), "\"abc\"");
-  EXPECT_EQ(Json("\xff").Dump(), "\"\"");
+  EXPECT_EQ(JsonDump(Json("abc\xf0\x9d\x24")), "\"abc\"");
+  EXPECT_EQ(JsonDump(Json("\xff")), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {
@@ -192,7 +195,7 @@ TEST(Json, Keywords) {
 
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
-  auto json = Json::Parse(input);
+  auto json = JsonParse(input);
   EXPECT_FALSE(json.ok());
 }
 

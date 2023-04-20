@@ -51,11 +51,36 @@ local_repository(
     path = "./src/core/ext/transport/binder/java",
 )
 
+# Prevents bazel's '...' expansion from including the following folder.
+# This is required to avoid triggering "Unable to find package for @rules_fuzzing//fuzzing:cc_defs.bzl"
+# error.
+local_repository(
+    name = "ignore_third_party_utf8_range_subtree",
+    path = "third_party/utf8_range",
+)
+
 load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
 
 pip_install(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+)
+
+load("@upb//bazel:system_python.bzl", "system_python")
+
+system_python(
+    name = "system_python",
+    minimum_python_version = "3.7",
+)
+
+load("@system_python//:pip.bzl", "pip_parse")
+
+pip_parse(
+    name = "pip_deps",
+    requirements = "@upb//python:requirements.txt",
+    requirements_overrides = {
+        "3.11": "@upb//python:requirements_311.txt",
+    },
 )
 
 http_archive(

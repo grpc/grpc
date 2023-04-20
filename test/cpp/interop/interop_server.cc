@@ -429,7 +429,7 @@ void grpc::testing::interop::RunServer(
     builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
   }
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
-      server_metric_recorder.get());
+      nullptr);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
 
