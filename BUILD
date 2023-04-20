@@ -181,7 +181,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gracious"  # @unused
 
-core_version = "31.0.0"  # @unused
+core_version = "32.0.0"  # @unused
 
 version = "1.55.0-dev"  # @unused
 
