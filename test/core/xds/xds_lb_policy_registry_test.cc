@@ -18,7 +18,8 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <algorithm>
+#include <stdint.h>
+
 #include <string>
 
 #include <google/protobuf/any.pb.h>
@@ -30,7 +31,7 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>

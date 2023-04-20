@@ -154,6 +154,7 @@
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
       # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
@@ -188,7 +189,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.27'
+      ss.dependency 'BoringSSL-GRPC', '0.0.28'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

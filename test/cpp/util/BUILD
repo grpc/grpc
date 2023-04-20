@@ -393,3 +393,33 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "proto_buffer_reader_test",
+    srcs = [
+        "proto_buffer_reader_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "proto_buffer_writer_test",
+    srcs = [
+        "proto_buffer_writer_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)

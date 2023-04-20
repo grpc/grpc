@@ -9,53 +9,55 @@
 #ifndef UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct udpa_annotations_MigrateAnnotation;
-struct udpa_annotations_FieldMigrateAnnotation;
-struct udpa_annotations_FileMigrateAnnotation;
 typedef struct udpa_annotations_MigrateAnnotation udpa_annotations_MigrateAnnotation;
 typedef struct udpa_annotations_FieldMigrateAnnotation udpa_annotations_FieldMigrateAnnotation;
 typedef struct udpa_annotations_FileMigrateAnnotation udpa_annotations_FileMigrateAnnotation;
-extern const upb_MiniTable udpa_annotations_MigrateAnnotation_msginit;
-extern const upb_MiniTable udpa_annotations_FieldMigrateAnnotation_msginit;
-extern const upb_MiniTable udpa_annotations_FileMigrateAnnotation_msginit;
-extern const upb_MiniTable_Extension udpa_annotations_message_migrate_ext;
-extern const upb_MiniTable_Extension udpa_annotations_field_migrate_ext;
-extern const upb_MiniTable_Extension udpa_annotations_enum_migrate_ext;
-extern const upb_MiniTable_Extension udpa_annotations_enum_value_migrate_ext;
-extern const upb_MiniTable_Extension udpa_annotations_file_migrate_ext;
+extern const upb_MiniTable udpa_annotations_MigrateAnnotation_msg_init;
+extern const upb_MiniTable udpa_annotations_FieldMigrateAnnotation_msg_init;
+extern const upb_MiniTable udpa_annotations_FileMigrateAnnotation_msg_init;
+extern const upb_MiniTableExtension udpa_annotations_message_migrate_ext;
+extern const upb_MiniTableExtension udpa_annotations_field_migrate_ext;
+extern const upb_MiniTableExtension udpa_annotations_enum_migrate_ext;
+extern const upb_MiniTableExtension udpa_annotations_enum_value_migrate_ext;
+extern const upb_MiniTableExtension udpa_annotations_file_migrate_ext;
 struct google_protobuf_EnumOptions;
 struct google_protobuf_EnumValueOptions;
 struct google_protobuf_FieldOptions;
 struct google_protobuf_FileOptions;
 struct google_protobuf_MessageOptions;
-extern const upb_MiniTable google_protobuf_EnumOptions_msginit;
-extern const upb_MiniTable google_protobuf_EnumValueOptions_msginit;
-extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
-extern const upb_MiniTable google_protobuf_FileOptions_msginit;
-extern const upb_MiniTable google_protobuf_MessageOptions_msginit;
+extern const upb_MiniTable google_protobuf_EnumOptions_msg_init;
+extern const upb_MiniTable google_protobuf_EnumValueOptions_msg_init;
+extern const upb_MiniTable google_protobuf_FieldOptions_msg_init;
+extern const upb_MiniTable google_protobuf_FileOptions_msg_init;
+extern const upb_MiniTable google_protobuf_MessageOptions_msg_init;
 
 
 
 /* udpa.annotations.MigrateAnnotation */
 
 UPB_INLINE udpa_annotations_MigrateAnnotation* udpa_annotations_MigrateAnnotation_new(upb_Arena* arena) {
-  return (udpa_annotations_MigrateAnnotation*)_upb_Message_New(&udpa_annotations_MigrateAnnotation_msginit, arena);
+  return (udpa_annotations_MigrateAnnotation*)_upb_Message_New(&udpa_annotations_MigrateAnnotation_msg_init, arena);
 }
 UPB_INLINE udpa_annotations_MigrateAnnotation* udpa_annotations_MigrateAnnotation_parse(const char* buf, size_t size, upb_Arena* arena) {
   udpa_annotations_MigrateAnnotation* ret = udpa_annotations_MigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -65,7 +67,7 @@ UPB_INLINE udpa_annotations_MigrateAnnotation* udpa_annotations_MigrateAnnotatio
                            int options, upb_Arena* arena) {
   udpa_annotations_MigrateAnnotation* ret = udpa_annotations_MigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -73,35 +75,41 @@ UPB_INLINE udpa_annotations_MigrateAnnotation* udpa_annotations_MigrateAnnotatio
 }
 UPB_INLINE char* udpa_annotations_MigrateAnnotation_serialize(const udpa_annotations_MigrateAnnotation* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_MigrateAnnotation_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_MigrateAnnotation_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_MigrateAnnotation_serialize_ex(const udpa_annotations_MigrateAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_MigrateAnnotation_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_MigrateAnnotation_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void udpa_annotations_MigrateAnnotation_clear_rename(const udpa_annotations_MigrateAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void udpa_annotations_MigrateAnnotation_clear_rename(udpa_annotations_MigrateAnnotation* msg) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView udpa_annotations_MigrateAnnotation_rename(const udpa_annotations_MigrateAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void udpa_annotations_MigrateAnnotation_set_rename(udpa_annotations_MigrateAnnotation *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* udpa.annotations.FieldMigrateAnnotation */
 
 UPB_INLINE udpa_annotations_FieldMigrateAnnotation* udpa_annotations_FieldMigrateAnnotation_new(upb_Arena* arena) {
-  return (udpa_annotations_FieldMigrateAnnotation*)_upb_Message_New(&udpa_annotations_FieldMigrateAnnotation_msginit, arena);
+  return (udpa_annotations_FieldMigrateAnnotation*)_upb_Message_New(&udpa_annotations_FieldMigrateAnnotation_msg_init, arena);
 }
 UPB_INLINE udpa_annotations_FieldMigrateAnnotation* udpa_annotations_FieldMigrateAnnotation_parse(const char* buf, size_t size, upb_Arena* arena) {
   udpa_annotations_FieldMigrateAnnotation* ret = udpa_annotations_FieldMigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -111,7 +119,7 @@ UPB_INLINE udpa_annotations_FieldMigrateAnnotation* udpa_annotations_FieldMigrat
                            int options, upb_Arena* arena) {
   udpa_annotations_FieldMigrateAnnotation* ret = udpa_annotations_FieldMigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -119,44 +127,56 @@ UPB_INLINE udpa_annotations_FieldMigrateAnnotation* udpa_annotations_FieldMigrat
 }
 UPB_INLINE char* udpa_annotations_FieldMigrateAnnotation_serialize(const udpa_annotations_FieldMigrateAnnotation* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_FieldMigrateAnnotation_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_FieldMigrateAnnotation_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_FieldMigrateAnnotation_serialize_ex(const udpa_annotations_FieldMigrateAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_FieldMigrateAnnotation_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_FieldMigrateAnnotation_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_clear_rename(const udpa_annotations_FieldMigrateAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_clear_rename(udpa_annotations_FieldMigrateAnnotation* msg) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView udpa_annotations_FieldMigrateAnnotation_rename(const udpa_annotations_FieldMigrateAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_clear_oneof_promotion(const udpa_annotations_FieldMigrateAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_clear_oneof_promotion(udpa_annotations_FieldMigrateAnnotation* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView udpa_annotations_FieldMigrateAnnotation_oneof_promotion(const udpa_annotations_FieldMigrateAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_set_rename(udpa_annotations_FieldMigrateAnnotation *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void udpa_annotations_FieldMigrateAnnotation_set_oneof_promotion(udpa_annotations_FieldMigrateAnnotation *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* udpa.annotations.FileMigrateAnnotation */
 
 UPB_INLINE udpa_annotations_FileMigrateAnnotation* udpa_annotations_FileMigrateAnnotation_new(upb_Arena* arena) {
-  return (udpa_annotations_FileMigrateAnnotation*)_upb_Message_New(&udpa_annotations_FileMigrateAnnotation_msginit, arena);
+  return (udpa_annotations_FileMigrateAnnotation*)_upb_Message_New(&udpa_annotations_FileMigrateAnnotation_msg_init, arena);
 }
 UPB_INLINE udpa_annotations_FileMigrateAnnotation* udpa_annotations_FileMigrateAnnotation_parse(const char* buf, size_t size, upb_Arena* arena) {
   udpa_annotations_FileMigrateAnnotation* ret = udpa_annotations_FileMigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -166,7 +186,7 @@ UPB_INLINE udpa_annotations_FileMigrateAnnotation* udpa_annotations_FileMigrateA
                            int options, upb_Arena* arena) {
   udpa_annotations_FileMigrateAnnotation* ret = udpa_annotations_FileMigrateAnnotation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -174,117 +194,148 @@ UPB_INLINE udpa_annotations_FileMigrateAnnotation* udpa_annotations_FileMigrateA
 }
 UPB_INLINE char* udpa_annotations_FileMigrateAnnotation_serialize(const udpa_annotations_FileMigrateAnnotation* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_FileMigrateAnnotation_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_FileMigrateAnnotation_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* udpa_annotations_FileMigrateAnnotation_serialize_ex(const udpa_annotations_FileMigrateAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &udpa_annotations_FileMigrateAnnotation_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &udpa_annotations_FileMigrateAnnotation_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void udpa_annotations_FileMigrateAnnotation_clear_move_to_package(const udpa_annotations_FileMigrateAnnotation* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void udpa_annotations_FileMigrateAnnotation_clear_move_to_package(udpa_annotations_FileMigrateAnnotation* msg) {
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView udpa_annotations_FileMigrateAnnotation_move_to_package(const udpa_annotations_FileMigrateAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void udpa_annotations_FileMigrateAnnotation_set_move_to_package(udpa_annotations_FileMigrateAnnotation *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 UPB_INLINE bool udpa_annotations_has_message_migrate(const struct google_protobuf_MessageOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_message_migrate_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_message_migrate_ext);
 }
 UPB_INLINE void udpa_annotations_clear_message_migrate(struct google_protobuf_MessageOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_message_migrate_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_message_migrate_ext);
 }
 UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_message_migrate(const struct google_protobuf_MessageOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_message_migrate_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_message_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_MigrateAnnotation* default_val = NULL;
+  const udpa_annotations_MigrateAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_message_migrate(struct google_protobuf_MessageOptions* msg, const udpa_annotations_MigrateAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_message_migrate_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_MigrateAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_message_migrate(struct google_protobuf_MessageOptions* msg, const udpa_annotations_MigrateAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_message_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool udpa_annotations_has_field_migrate(const struct google_protobuf_FieldOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_field_migrate_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_field_migrate_ext);
 }
 UPB_INLINE void udpa_annotations_clear_field_migrate(struct google_protobuf_FieldOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_field_migrate_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_field_migrate_ext);
 }
 UPB_INLINE const udpa_annotations_FieldMigrateAnnotation* udpa_annotations_field_migrate(const struct google_protobuf_FieldOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_field_migrate_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_FieldMigrateAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_field_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_FieldMigrateAnnotation* default_val = NULL;
+  const udpa_annotations_FieldMigrateAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_field_migrate(struct google_protobuf_FieldOptions* msg, const udpa_annotations_FieldMigrateAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_field_migrate_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_FieldMigrateAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_field_migrate(struct google_protobuf_FieldOptions* msg, const udpa_annotations_FieldMigrateAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_field_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool udpa_annotations_has_enum_migrate(const struct google_protobuf_EnumOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_enum_migrate_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_enum_migrate_ext);
 }
 UPB_INLINE void udpa_annotations_clear_enum_migrate(struct google_protobuf_EnumOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_enum_migrate_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_enum_migrate_ext);
 }
 UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_enum_migrate(const struct google_protobuf_EnumOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_enum_migrate_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_enum_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_MigrateAnnotation* default_val = NULL;
+  const udpa_annotations_MigrateAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_enum_migrate(struct google_protobuf_EnumOptions* msg, const udpa_annotations_MigrateAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_enum_migrate_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_MigrateAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_enum_migrate(struct google_protobuf_EnumOptions* msg, const udpa_annotations_MigrateAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_enum_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool udpa_annotations_has_enum_value_migrate(const struct google_protobuf_EnumValueOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_enum_value_migrate_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_enum_value_migrate_ext);
 }
 UPB_INLINE void udpa_annotations_clear_enum_value_migrate(struct google_protobuf_EnumValueOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_enum_value_migrate_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_enum_value_migrate_ext);
 }
 UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_enum_value_migrate(const struct google_protobuf_EnumValueOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_enum_value_migrate_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_enum_value_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_MigrateAnnotation* default_val = NULL;
+  const udpa_annotations_MigrateAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_enum_value_migrate(struct google_protobuf_EnumValueOptions* msg, const udpa_annotations_MigrateAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_enum_value_migrate_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_MigrateAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_enum_value_migrate(struct google_protobuf_EnumValueOptions* msg, const udpa_annotations_MigrateAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_enum_value_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool udpa_annotations_has_file_migrate(const struct google_protobuf_FileOptions* msg) {
-  return _upb_Message_Getext(msg, &udpa_annotations_file_migrate_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &udpa_annotations_file_migrate_ext);
 }
 UPB_INLINE void udpa_annotations_clear_file_migrate(struct google_protobuf_FileOptions* msg) {
-  _upb_Message_Clearext(msg, &udpa_annotations_file_migrate_ext);
+  _upb_Message_ClearExtensionField(msg, &udpa_annotations_file_migrate_ext);
 }
 UPB_INLINE const udpa_annotations_FileMigrateAnnotation* udpa_annotations_file_migrate(const struct google_protobuf_FileOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &udpa_annotations_file_migrate_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_FileMigrateAnnotation*);
+  const upb_MiniTableExtension* ext = &udpa_annotations_file_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const udpa_annotations_FileMigrateAnnotation* default_val = NULL;
+  const udpa_annotations_FileMigrateAnnotation* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void udpa_annotations_set_file_migrate(struct google_protobuf_FileOptions* msg, const udpa_annotations_FileMigrateAnnotation* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_file_migrate_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_FileMigrateAnnotation*) = ext;
+UPB_INLINE void udpa_annotations_set_file_migrate(struct google_protobuf_FileOptions* msg, const udpa_annotations_FileMigrateAnnotation* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &udpa_annotations_file_migrate_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
-extern const upb_MiniTable_File udpa_annotations_migrate_proto_upb_file_layout;
+extern const upb_MiniTableFile udpa_annotations_migrate_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_H_ */

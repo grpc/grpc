@@ -415,8 +415,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       ignore_resource_deletion_ = true;
       return *this;
     }
-    BootstrapBuilder& SetDefaultServer(const std::string& server) {
-      top_server_ = server;
+    // If ignore_if_set is true, sets the default server only if it has
+    // not already been set.
+    BootstrapBuilder& SetDefaultServer(const std::string& server,
+                                       bool ignore_if_set = false) {
+      if (!ignore_if_set || top_server_.empty()) top_server_ = server;
       return *this;
     }
     BootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
@@ -432,9 +435,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
     BootstrapBuilder& AddAuthority(
-        const std::string& authority, const std::string& servers = "",
+        const std::string& authority, const std::string& server = "",
         const std::string& client_listener_resource_name_template = "") {
-      authorities_[authority] = {servers,
+      authorities_[authority] = {server,
                                  client_listener_resource_name_template};
       return *this;
     }

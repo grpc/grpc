@@ -16,6 +16,8 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <initializer_list>
 #include <string>
@@ -31,7 +33,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>

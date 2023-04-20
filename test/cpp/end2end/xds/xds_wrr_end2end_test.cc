@@ -48,7 +48,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, WrrTest, ::testing::Values(XdsTestType()),
                          &XdsTestType::Name);
 
 TEST_P(WrrTest, Basic) {
-  ScopedExperimentalEnvVar env_var1("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   ScopedExperimentalEnvVar env_var2("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   CreateAndStartBackends(3);
   // Expected weights = qps / (cpu_util + (eps/qps)) =

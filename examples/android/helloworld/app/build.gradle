@@ -29,6 +29,8 @@ android {
                 arguments '-DgRPC_BUILD_CODEGEN=off'
                 arguments '-Dhelloworld_PROTOBUF_PROTOC_EXECUTABLE=' + protoc
                 arguments '-Dhelloworld_GRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
+                arguments '-Dprotobuf_INSTALL=OFF'
+                arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
             }
         }
         ndk.abiFilters 'x86'
