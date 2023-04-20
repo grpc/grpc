@@ -77,28 +77,28 @@ TEST(BasicWorkQueueTest, BecomesEmptyOnPopOldest) {
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(BasicWorkQueueTest, PopMostRecentIsFIFO) {
+TEST(BasicWorkQueueTest, PopMostRecentIsLIFO) {
   BasicWorkQueue queue;
   int flag = 0;
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
   queue.PopMostRecent()->Run();
-  EXPECT_TRUE(flag & 1);
-  EXPECT_FALSE(flag & 2);
+  EXPECT_FALSE(flag & 1);
+  EXPECT_TRUE(flag & 2);
   queue.PopMostRecent()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(BasicWorkQueueTest, PopOldestIsLIFO) {
+TEST(BasicWorkQueueTest, PopOldestIsFIFO) {
   BasicWorkQueue queue;
   int flag = 0;
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
   queue.PopOldest()->Run();
-  EXPECT_FALSE(flag & 1);
-  EXPECT_TRUE(flag & 2);
+  EXPECT_TRUE(flag & 1);
+  EXPECT_FALSE(flag & 2);
   queue.PopOldest()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_TRUE(flag & 2);
