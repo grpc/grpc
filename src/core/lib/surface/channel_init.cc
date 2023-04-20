@@ -75,6 +75,23 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::If(
   return *this;
 }
 
+ChannelInit::FilterRegistration&
+ChannelInit::FilterRegistration::IfHasChannelArg(const char* arg) {
+  return If([arg](const ChannelArgs& args) { return args.Contains(arg); });
+}
+
+ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfChannelArg(
+    const char* arg, bool default_value) {
+  return If([arg, default_value](const ChannelArgs& args) {
+    return args.GetBool(arg).value_or(default_value);
+  });
+}
+
+ChannelInit::FilterRegistration&
+ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
+  return If([](const ChannelArgs& args) { return !args.WantMinimalStack(); });
+}
+
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
     SourceLocation registration_source) {
