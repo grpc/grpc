@@ -953,6 +953,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
@@ -2279,6 +2280,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
@@ -3748,6 +3750,7 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -4130,15 +4133,6 @@ targets:
   - linux
   - posix
   - windows
-- name: public_headers_must_be_c89
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/public_headers_must_be_c89.c
-  deps:
-  - grpc_authorization_provider
-  - grpc_test_util
 - name: static_stride_scheduler_benchmark
   build: test
   language: c
@@ -7658,6 +7652,7 @@ targets:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -10167,6 +10162,26 @@ targets:
   deps:
   - absl/meta:type_traits
   - gpr
+  uses_polling: false
+- name: proto_buffer_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_reader_test.cc
+  deps:
+  - grpc++_test_util
+  uses_polling: false
+- name: proto_buffer_writer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/proto_buffer_writer_test.cc
+  deps:
+  - grpc++_test_util
   uses_polling: false
 - name: proto_server_reflection_test
   gtest: true

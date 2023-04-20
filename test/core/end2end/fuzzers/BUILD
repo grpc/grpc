@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package", "grpc_proto_library")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
@@ -70,15 +70,28 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_fuzzer(
+grpc_proto_library(
+    name = "fuzzer_input_proto",
+    srcs = ["fuzzer_input.proto"],
+    has_services = False,
+    deps = [
+        "api_fuzzer_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/util:fuzz_config_vars_proto",
+    ],
+)
+
+grpc_proto_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",
     language = "C++",
+    proto = None,
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "fuzzer_input_proto",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
@@ -88,15 +101,17 @@ grpc_fuzzer(
     ],
 )
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
     corpus = "server_fuzzer_corpus",
     language = "C++",
+    proto = None,
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "fuzzer_input_proto",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
