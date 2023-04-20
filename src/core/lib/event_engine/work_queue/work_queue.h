@@ -11,24 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_WORK_QUEUE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_WORK_QUEUE_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include <atomic>
-#include <deque>
-
-#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -61,4 +54,4 @@ class WorkQueue {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_WORK_QUEUE_H

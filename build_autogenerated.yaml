@@ -712,7 +712,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
-  - src/core/lib/event_engine/work_queue.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -1502,7 +1503,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
-  - src/core/lib/event_engine/work_queue.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -2071,7 +2072,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
-  - src/core/lib/event_engine/work_queue.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -2475,7 +2477,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
-  - src/core/lib/event_engine/work_queue.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -3551,7 +3553,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
-  - src/core/lib/event_engine/work_queue.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -3832,7 +3835,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
-  - src/core/lib/event_engine/work_queue.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -4897,6 +4900,15 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: basic_work_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/work_queue/basic_work_queue_test.cc
+  deps:
+  - grpc_test_util_unsecure
 - name: bdp_estimator_test
   gtest: true
   build: test
@@ -7489,7 +7501,8 @@ targets:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
-  - src/core/lib/event_engine/work_queue.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -7753,7 +7766,7 @@ targets:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
-  - src/core/lib/event_engine/work_queue.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -11995,13 +12008,14 @@ targets:
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/thread_pool.h
-  - src/core/lib/event_engine/work_queue.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/time.h
   src:
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/thread_pool.cc
-  - src/core/lib/event_engine/work_queue.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/gprpp/time.cc
   - test/core/event_engine/thread_pool_test.cc
   deps:
@@ -12781,15 +12795,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: work_queue_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/work_queue/work_queue_test.cc
-  deps:
-  - grpc_test_util_unsecure
 - name: work_serializer_test
   gtest: true
   build: test

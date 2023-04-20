@@ -15,9 +15,14 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WORK_QUEUE_BASIC_WORK_QUEUE_H
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <deque>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/sync.h"
