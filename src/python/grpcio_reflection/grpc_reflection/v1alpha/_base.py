@@ -29,14 +29,29 @@ def _not_found_error():
             error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
         ))
 
+def _collect_transitive_dependencies(descriptor, pool):
+    pool.update({descriptor.name: descriptor})
+    for dependency in descriptor.dependencies:
+        if not dependency.name in pool:
+            # descriptors cannot have circular dependencies
+            _collect_transitive_dependencies(dependency, pool)
+
 
 def _file_descriptor_response(descriptor):
-    proto = descriptor_pb2.FileDescriptorProto()
-    descriptor.CopyToProto(proto)
-    serialized_proto = proto.SerializeToString()
+    # collect all dependencies
+    descriptors = {}
+    _collect_transitive_dependencies(descriptor, descriptors)
+
+    # serialize all descriptors
+    serialized_proto_list = []
+    for d_key in descriptors:
+        proto = descriptor_pb2.FileDescriptorProto()
+        descriptors[d_key].CopyToProto(proto)
+        serialized_proto_list.append(proto.SerializeToString())
+
     return _reflection_pb2.ServerReflectionResponse(
         file_descriptor_response=_reflection_pb2.FileDescriptorResponse(
-            file_descriptor_proto=(serialized_proto,)),)
+            file_descriptor_proto=(serialized_proto_list)),)
 
 
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
