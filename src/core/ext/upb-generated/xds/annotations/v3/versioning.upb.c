@@ -7,40 +7,47 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "xds/annotations/v3/versioning.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Field xds_annotations_v3_VersioningAnnotation__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField xds_annotations_v3_VersioningAnnotation__fields[1] = {
+  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msginit = {
+const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_VersioningAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &xds_annotations_v3_VersioningAnnotation_msginit,
+  &xds_annotations_v3_VersioningAnnotation_msg_init,
 };
 
-extern const upb_MiniTable google_protobuf_MessageOptions_msginit;
-extern const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msginit;
-const upb_MiniTable_Extension xds_annotations_v3_versioning_ext = {
-  {92389011, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  &google_protobuf_MessageOptions_msginit,
-  {.submsg = &xds_annotations_v3_VersioningAnnotation_msginit},
+extern const upb_MiniTable google_protobuf_MessageOptions_msg_init;
+extern const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msg_init;
+const upb_MiniTableExtension xds_annotations_v3_versioning_ext = {
+  {92389011, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  &google_protobuf_MessageOptions_msg_init,
+  {.submsg = &xds_annotations_v3_VersioningAnnotation_msg_init},
 
 };
 
-static const upb_MiniTable_Extension *extensions_layout[1] = {
+static const upb_MiniTableExtension *extensions_layout[1] = {
   &xds_annotations_v3_versioning_ext,
 };
 
-const upb_MiniTable_File xds_annotations_v3_versioning_proto_upb_file_layout = {
+const upb_MiniTableFile xds_annotations_v3_versioning_proto_upb_file_layout = {
   messages_layout,
   NULL,
   extensions_layout,
@@ -49,5 +56,5 @@ const upb_MiniTable_File xds_annotations_v3_versioning_proto_upb_file_layout = {
   1,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

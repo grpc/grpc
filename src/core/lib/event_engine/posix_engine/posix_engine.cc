@@ -41,7 +41,6 @@
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
@@ -65,10 +64,6 @@ using namespace std::chrono_literals;
 
 namespace grpc_event_engine {
 namespace experimental {
-
-bool NeedPosixEngine() {
-  return UseEventEngineClient() || UseEventEngineListener();
-}
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -340,24 +335,20 @@ PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()),
       timer_manager_(executor_) {
-  if (NeedPosixEngine()) {
-    poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
-  }
+  poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 }
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()),
       timer_manager_(executor_) {
-  if (NeedPosixEngine()) {
-    poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
-    // The threadpool must be instantiated after the poller otherwise, the
-    // process will deadlock when forking.
-    if (poller_manager_->Poller() != nullptr) {
-      executor_->Run([poller_manager = poller_manager_]() {
-        PollerWorkInternal(poller_manager);
-      });
-    }
+  poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
+  // The threadpool must be instantiated after the poller otherwise, the
+  // process will deadlock when forking.
+  if (poller_manager_->Poller() != nullptr) {
+    executor_->Run([poller_manager = poller_manager_]() {
+      PollerWorkInternal(poller_manager);
+    });
   }
 }
 
@@ -549,9 +540,6 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
-  if (!NeedPosixEngine()) {
-    grpc_core::Crash("unimplemented");
-  }
 #ifdef GRPC_POSIX_SOCKET_TCP
   GPR_ASSERT(poller_manager_ != nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
@@ -574,9 +562,6 @@ std::unique_ptr<PosixEndpointWithFdSupport>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
-  if (!NeedPosixEngine()) {
-    grpc_core::Crash("unimplemented");
-  }
 #ifdef GRPC_POSIX_SOCKET_TCP
   GPR_DEBUG_ASSERT(fd > 0);
   PosixEventPoller* poller = poller_manager_->Poller();
@@ -623,9 +608,6 @@ PosixEventEngine::CreatePosixListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  if (!NeedPosixEngine()) {
-    grpc_core::Crash("unimplemented");
-  }
 #ifdef GRPC_POSIX_SOCKET_TCP
   return std::make_unique<PosixEngineListener>(
       std::move(on_accept), std::move(on_shutdown), config,

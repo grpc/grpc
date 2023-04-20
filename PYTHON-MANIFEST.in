@@ -10,6 +10,7 @@ graft third_party/boringssl-with-bazel
 graft third_party/cares
 graft third_party/re2
 graft third_party/upb
+graft third_party/utf8_range
 graft third_party/xxhash
 graft third_party/zlib
 include src/python/grpcio/_parallel_compile_patch.py

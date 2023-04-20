@@ -28,7 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
 #include <grpc/impl/connectivity_state.h>

@@ -209,10 +209,16 @@ EXTERNAL_DEPS = {
         're2',
     'upb/arena.h':
         'upb_lib',
+    'upb/base/string_view.h':
+        'upb_lib',
+    'upb/collections/map.h':
+        'upb_collections_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':
         'upb_json_lib',
+    'upb/mem/arena.h':
+        'upb_lib',
     'upb/text_encode.h':
         'upb_textformat_lib',
     'upb/def.hpp':

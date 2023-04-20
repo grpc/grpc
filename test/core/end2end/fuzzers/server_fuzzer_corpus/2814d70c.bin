@@ -1,1 +1,3 @@
-X
+network_input {
+  single_read_bytes: "\x58"
+}
