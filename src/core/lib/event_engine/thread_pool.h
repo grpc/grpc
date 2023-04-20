@@ -93,11 +93,10 @@ class ThreadPool final : public Forkable, public Executor {
     absl::flat_hash_set<WorkQueue*> queues_ ABSL_GUARDED_BY(mu_);
   };
 
-  struct ThreadPoolState {
+  struct ThreadPoolImpl {
     // Returns true if a new thread should be created.
     bool IsBacklogged() ABSL_LOCKS_EXCLUDED(mu);
     bool IsBackloggedLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
-    bool Step();
 
     const unsigned reserve_threads_ =
         grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
@@ -119,7 +118,7 @@ class ThreadPool final : public Forkable, public Executor {
     TheftRegistry theft_registry;
   };
 
-  using ThreadPoolStatePtr = std::shared_ptr<ThreadPoolState>;
+  using ThreadPoolImplPtr = std::shared_ptr<ThreadPoolImpl>;
 
   enum class StartThreadReason {
     kInitialPool,
@@ -127,21 +126,31 @@ class ThreadPool final : public Forkable, public Executor {
     kNoWaitersWhenFinishedStarting,
   };
 
+  struct ThreadState {
+    void ThreadBody();
+    void SleepIfRunning();
+    bool Step();
+    bool WaitForWorkLocked(absl::Duration wait)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(pool->mu);
+
+    ThreadPoolImplPtr pool;
+    StartThreadReason start_reason;
+  };
+
   void SetShutdown(bool is_shutdown);
   void SetForking(bool is_forking);
 
-  static void ThreadFunc(ThreadPoolStatePtr state);
   // Start a new thread; throttled indicates whether the State::starting_thread
   // variable is being used to throttle this threads creation against others or
   // not: at thread pool startup we start several threads concurrently, but
   // after that we only start one at a time.
-  static void StartThread(ThreadPoolStatePtr state, StartThreadReason reason);
+  static void StartThread(ThreadPoolImplPtr state, StartThreadReason reason);
   void Postfork();
 
   // Returns true if the current thread is a thread pool thread.
   static bool IsThreadPoolThread();
 
-  const ThreadPoolStatePtr state_ = std::make_shared<ThreadPoolState>();
+  const ThreadPoolImplPtr state_ = std::make_shared<ThreadPoolImpl>();
   std::atomic<bool> quiesced_{false};
 };
 
