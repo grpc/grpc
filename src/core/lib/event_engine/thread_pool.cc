@@ -254,21 +254,31 @@ bool ThreadPool::ThreadPoolState::Step() {
     closure->Run();
     return true;
   }
-  bool was_shutdown;
+  // Thread exit condition (ignoring fork). All must be true:
+  // * shutdown was called
+  // * the local queue is empty
+  // * the global queue is empty
+  // * the steal pool returns nullptr
+  bool should_run_again = false;
   {
     grpc_core::MutexLock lock(&mu);
     // Wait until work is available or until shut down.
-    while (!shutdown && !forking.load()) {
+    while (!forking.load()) {
       // Pull from the global queue first
       if (!queue.Empty()) {
+        should_run_again = true;
         closure = queue.PopMostRecent();
         break;
       };
       // Try stealing if the queue is empty
       closure = theft_registry.StealOne();
       if (closure != nullptr) {
+        should_run_again = true;
         break;
       }
+      // No closures were retrieved anywhere. Shut down the thread if the pool
+      // has been shut down.
+      if (shutdown) break;
       // Hang out a while, waiting for work to arrive.
       if (threads_waiting_ >= reserve_threads_) {
         // Too many threads are waiting, quit this thread if no work arrives.
@@ -286,7 +296,6 @@ bool ThreadPool::ThreadPoolState::Step() {
         threads_waiting_--;
       }
     }
-    was_shutdown = shutdown;
   }
   if (forking.load()) {
     // save the closure since we aren't going to execute it.
@@ -294,7 +303,7 @@ bool ThreadPool::ThreadPoolState::Step() {
     return false;
   }
   if (closure != nullptr) closure->Run();
-  return !was_shutdown;
+  return should_run_again;
 }
 
 // -------- ThreadPool::ThreadCount --------
