@@ -26,7 +26,7 @@
 #include "absl/status/statusor.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
