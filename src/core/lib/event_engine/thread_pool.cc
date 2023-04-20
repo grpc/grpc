@@ -190,7 +190,7 @@ void ThreadPool::Postfork() {
   }
 }
 
-// -------- ThreadPool::TheifRegistry --------
+// -------- ThreadPool::TheftRegistry --------
 
 void ThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
   grpc_core::MutexLock lock(&mu_);
@@ -284,9 +284,7 @@ bool ThreadPool::ThreadState::Step() {
           WaitForWorkLocked(pool->threads_waiting_ >= pool->reserve_threads_
                                 ? absl::Seconds(30)
                                 : absl::InfiniteDuration());
-      if (timed_out) {
-        return false;
-      }
+      if (timed_out) return false;
     }
   }
   if (pool->forking.load()) {
