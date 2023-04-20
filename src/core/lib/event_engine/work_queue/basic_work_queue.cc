@@ -54,7 +54,7 @@ void BasicWorkQueue::Add(EventEngine::Closure* closure) {
 
 void BasicWorkQueue::Add(absl::AnyInvocable<void()> invocable) {
   grpc_core::MutexLock lock(&mu_);
-  q_.push_back(new AnyInvocableClosure(std::move(invocable)));
+  q_.push_back(SelfDeletingClosure::Create(std::move(invocable)));
 }
 
 }  // namespace experimental
