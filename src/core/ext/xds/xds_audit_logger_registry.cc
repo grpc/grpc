@@ -66,12 +66,12 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
   const auto* typed_extension_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_audit_logger(
           logger_config);
-  // It is okay if this is not present.
+  ValidationErrors::ScopedField field(errors, ".audit_logger");
   if (typed_extension_config == nullptr) {
+    errors->AddError("this field is required");
     return Json();  // A null Json object.
   } else {
-    ValidationErrors::ScopedField field(errors,
-                                        ".typed_extension_config.typed_config");
+    ValidationErrors::ScopedField field(errors, ".typed_config");
     const auto* typed_config =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(
             typed_extension_config);
@@ -84,12 +84,18 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto config_factory_it =
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
+        // TODO(lwge): Parse the config with the gRPC audit logger registry.
         return config_factory_it->second->ConvertXdsAuditLoggerConfig(
             context, *serialized_value, errors);
       }
     }
+    // TODO(lwge): Check for third-party audit logger type. For now, we disallow
+    // it by rejecting TypedStruct entries.
+    if (absl::get_if<Json>(&extension->value) != nullptr) {
+      errors->AddError("third-party audit logger is not supported");
+      return Json();
+    }
   }
-  // TODO(lwge): Check for third-party audit logger type.
   // Add validation error only if the config is not marked optional.
   if (!envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(
           logger_config)) {

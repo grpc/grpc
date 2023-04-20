@@ -399,7 +399,7 @@ Json ParseAuditLoggerConfigsToJson(
               audit_logging_options, &size);
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".audit_logging_options.logger_configs[", i, "]"));
+        errors, absl::StrCat(".logger_configs[", i, "]"));
     logger_configs_json.emplace_back(registry.ConvertXdsAuditLoggerConfig(
         context, logger_configs[i], errors));
   }
@@ -440,12 +440,23 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
     }
     // Flatten the nested messages defined in rbac.proto
     if (envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
+      ValidationErrors::ScopedField field(errors, ".audit_logging_options");
       const auto* audit_logging_options =
           envoy_config_rbac_v3_RBAC_audit_logging_options(rules);
-      inner_rbac_json.emplace(
-          "audit_condition",
+      int32_t audit_condition =
           envoy_config_rbac_v3_RBAC_AuditLoggingOptions_audit_condition(
-              audit_logging_options));
+              audit_logging_options);
+      switch (audit_condition) {
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_NONE:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_DENY:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_ALLOW:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_DENY_AND_ALLOW:
+          inner_rbac_json.emplace("audit_condition", audit_condition);
+          break;
+        default:
+          ValidationErrors::ScopedField field(errors, ".audit_condition");
+          errors->AddError("invalid audit condition");
+      }
       if (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_logger_configs(
               audit_logging_options)) {
         inner_rbac_json.emplace("audit_loggers",

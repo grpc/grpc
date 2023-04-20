@@ -905,6 +905,28 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
             "}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      static_cast<
+          envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
+          100));
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.audit_condition "
+                         "error:invalid audit condition]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -920,11 +942,12 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
-            absl::StrCat("errors validating filter config: ["
-                         "field:",
-                         FieldPrefix(),
-                         ".rules.audit_logging_options.logger_configs[0] "
-                         "error:unsupported audit logger type]"))
+            absl::StrCat(
+                "errors validating filter config: ["
+                "field:",
+                FieldPrefix(),
+                ".rules.audit_logging_options.logger_configs[0].audit_logger "
+                "error:unsupported audit logger type]"))
       << status;
 }
 

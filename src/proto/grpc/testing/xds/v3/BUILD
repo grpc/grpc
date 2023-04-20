@@ -387,9 +387,9 @@ grpc_proto_library(
 
 # Contains stdout audit logger.
 grpc_proto_library(
-    name = "stream_proto",
+    name = "audit_logger_stream_proto",
     srcs = [
-        "stream.proto",
+        "audit_logger_stream.proto",
     ],
 )
 

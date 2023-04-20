@@ -26,19 +26,18 @@
 #include "absl/status/statusor.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"  // IWYU pragma: keep
+#include "upb/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/proto/grpc/testing/xds/v3/audit_logger_stream.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/stream.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/test_config.h"
-
-// IWYU pragma: no_include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 namespace testing {
@@ -47,6 +46,7 @@ namespace {
 using AuditLoggerConfigProto =
     ::envoy::config::rbac::v3::RBAC::AuditLoggingOptions::AuditLoggerConfig;
 using ::envoy::extensions::rbac::audit_loggers::stream::v3::StdoutAuditLog;
+using ::xds::type::v3::TypedStruct;
 
 absl::StatusOr<std::string> ConvertAuditLoggerConfig(
     const AuditLoggerConfigProto& config) {
@@ -60,7 +60,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
   ValidationErrors errors;
-  ValidationErrors::ScopedField field(&errors, ".logger_config");
+  ValidationErrors::ScopedField field(&errors, ".logger_configs");
   auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
       context, upb_config, &errors);
   if (!errors.ok()) {
@@ -84,13 +84,35 @@ TEST(StdoutLoggerTest, Basic) {
 }
 
 //
+// ThirdPartyLoggerTest
+//
+
+TEST(XdsAuditLoggerRegistryTest, ThirdPartyLogger) {
+  AuditLoggerConfigProto config;
+  TypedStruct logger;
+  logger.set_type_url("myorg/foo/bar/test.UnknownAuditLogger");
+  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
+  auto result = ConvertAuditLoggerConfig(config);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
+            "validation errors: "
+            "[field:logger_configs.audit_logger.typed_config.value"
+            "[xds.type.v3.TypedStruct].value[test.UnknownAuditLogger] "
+            "error:third-party audit logger is not supported]")
+      << result.status();
+}
+
+//
 // XdsAuditLoggerRegistryTest
 //
 
 TEST(XdsAuditLoggerRegistryTest, EmptyAuditLoggerConfig) {
   auto result = ConvertAuditLoggerConfig(AuditLoggerConfigProto());
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kOk);
-  EXPECT_EQ(*result, "null");
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:logger_configs.audit_logger error:this "
+            "field is required]")
+      << result.status();
 }
 
 TEST(XdsAuditLoggerRegistryTest, NoSupportedType) {
@@ -100,9 +122,20 @@ TEST(XdsAuditLoggerRegistryTest, NoSupportedType) {
   auto result = ConvertAuditLoggerConfig(config);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(),
-            "validation errors: [field:logger_config error:unsupported audit "
+            "validation errors: [field:logger_configs.audit_logger "
+            "error:unsupported audit "
             "logger type]")
       << result.status();
+}
+
+TEST(XdsAuditLoggerRegistryTest, NoSupportedTypeButIsOptional) {
+  AuditLoggerConfigProto config;
+  config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
+      AuditLoggerConfigProto());
+  config.set_is_optional(true);
+  auto result = ConvertAuditLoggerConfig(config);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(*result, "null");
 }
 
 }  // namespace
