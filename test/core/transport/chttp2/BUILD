@@ -123,23 +123,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "context_list_test",
-    srcs = ["context_list_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
