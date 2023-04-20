@@ -1480,6 +1480,7 @@ grpc_cc_library(
         "event_engine_basic_work_queue",
         "event_engine_executor",
         "event_engine_thread_local",
+        "event_engine_work_queue",
         "forkable",
         "time",
         "useful",
