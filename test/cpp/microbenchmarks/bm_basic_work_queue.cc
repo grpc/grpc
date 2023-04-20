@@ -25,18 +25,18 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/work_queue.h"
+#include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 
 namespace {
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
+using ::grpc_event_engine::experimental::BasicWorkQueue;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::WorkQueue;
 
 grpc_core::Mutex globalMu;
-WorkQueue globalWorkQueue;
+BasicWorkQueue globalWorkQueue;
 std::deque<EventEngine::Closure*> globalDeque;
 
 // --- Multithreaded Tests ---------------------------------------------------
@@ -50,7 +50,7 @@ void MultithreadedTestArguments(benchmark::internal::Benchmark* b) {
       ->ThreadPerCpu();
 }
 
-void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
+void BM_MultithreadedWorkQueuePopOldest(benchmark::State& state) {
   AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   double pop_attempts = 0;
@@ -58,7 +58,7 @@ void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
     for (int i = 0; i < element_count; i++) globalWorkQueue.Add(&closure);
     int cnt = 0;
     do {
-      if (++pop_attempts && globalWorkQueue.PopBack() != nullptr) ++cnt;
+      if (++pop_attempts && globalWorkQueue.PopOldest() != nullptr) ++cnt;
     } while (cnt < element_count);
   }
   state.counters["added"] = element_count * state.iterations();
@@ -72,9 +72,10 @@ void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
     assert(globalWorkQueue.Empty());
   }
 }
-BENCHMARK(BM_MultithreadedWorkQueuePopBack)->Apply(MultithreadedTestArguments);
+BENCHMARK(BM_MultithreadedWorkQueuePopOldest)
+    ->Apply(MultithreadedTestArguments);
 
-void BM_MultithreadedWorkQueuePopFront(benchmark::State& state) {
+void BM_MultithreadedWorkQueuePopMostRecent(benchmark::State& state) {
   AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   double pop_attempts = 0;
@@ -82,7 +83,7 @@ void BM_MultithreadedWorkQueuePopFront(benchmark::State& state) {
     for (int i = 0; i < element_count; i++) globalWorkQueue.Add(&closure);
     int cnt = 0;
     do {
-      if (++pop_attempts && globalWorkQueue.PopFront() != nullptr) ++cnt;
+      if (++pop_attempts && globalWorkQueue.PopMostRecent() != nullptr) ++cnt;
     } while (cnt < element_count);
   }
   state.counters["added"] = element_count * state.iterations();
@@ -96,7 +97,8 @@ void BM_MultithreadedWorkQueuePopFront(benchmark::State& state) {
     assert(globalWorkQueue.Empty());
   }
 }
-BENCHMARK(BM_MultithreadedWorkQueuePopFront)->Apply(MultithreadedTestArguments);
+BENCHMARK(BM_MultithreadedWorkQueuePopMostRecent)
+    ->Apply(MultithreadedTestArguments);
 
 void BM_MultithreadedStdDequeLIFO(benchmark::State& state) {
   int element_count = state.range(0);
@@ -124,15 +126,15 @@ BENCHMARK(BM_MultithreadedStdDequeLIFO)->Apply(MultithreadedTestArguments);
 
 // --- Basic Functionality Tests ---------------------------------------------
 
-void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
-  WorkQueue queue;
+void BM_WorkQueueIntptrPopMostRecent(benchmark::State& state) {
+  BasicWorkQueue queue;
   grpc_event_engine::experimental::AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   for (auto _ : state) {
     int cnt = 0;
     for (int i = 0; i < element_count; i++) queue.Add(&closure);
     do {
-      if (queue.PopFront() != nullptr) ++cnt;
+      if (queue.PopMostRecent() != nullptr) ++cnt;
     } while (cnt < element_count);
   }
   state.counters["Added"] = element_count * state.iterations();
@@ -140,13 +142,13 @@ void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
   state.counters["Pop Rate"] =
       benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
 }
-BENCHMARK(BM_WorkQueueIntptrPopFront)
+BENCHMARK(BM_WorkQueueIntptrPopMostRecent)
     ->Range(1, 512)
     ->UseRealTime()
     ->MeasureProcessCPUTime();
 
 void BM_WorkQueueClosureExecution(benchmark::State& state) {
-  WorkQueue queue;
+  BasicWorkQueue queue;
   int element_count = state.range(0);
   int run_count = 0;
   grpc_event_engine::experimental::AnyInvocableClosure closure(
@@ -154,7 +156,7 @@ void BM_WorkQueueClosureExecution(benchmark::State& state) {
   for (auto _ : state) {
     for (int i = 0; i < element_count; i++) queue.Add(&closure);
     do {
-      queue.PopFront()->Run();
+      queue.PopMostRecent()->Run();
     } while (run_count < element_count);
     run_count = 0;
   }
@@ -169,7 +171,7 @@ BENCHMARK(BM_WorkQueueClosureExecution)
     ->MeasureProcessCPUTime();
 
 void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
-  WorkQueue queue;
+  BasicWorkQueue queue;
   int element_count = state.range(0);
   int run_count = 0;
   for (auto _ : state) {
@@ -177,7 +179,7 @@ void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
       queue.Add([&run_count] { ++run_count; });
     }
     do {
-      queue.PopFront()->Run();
+      queue.PopMostRecent()->Run();
     } while (run_count < element_count);
     run_count = 0;
   }
