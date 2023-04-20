@@ -30,14 +30,18 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
@@ -218,10 +222,14 @@ class SubchannelList : public DualRefCounted<SubchannelListType> {
   // For accessing Ref() and Unref().
   friend class SubchannelData<SubchannelListType, SubchannelDataType>;
 
+  virtual std::shared_ptr<WorkSerializer> work_serializer() const = 0;
+
   // Backpointer to owning policy.
   LoadBalancingPolicy* policy_;
 
   const char* tracer_;
+
+  absl::optional<std::string> health_check_service_name_;
 
   // The list of subchannels.
   // We use ManualConstructor here to support SubchannelDataType classes
@@ -317,20 +325,27 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StartConnectivityWatchLocked() {
   if (GPR_UNLIKELY(subchannel_list_->tracer() != nullptr)) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): starting watch",
-            subchannel_list_->tracer(), subchannel_list_->policy(),
-            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_.get());
+    gpr_log(
+        GPR_INFO,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): starting watch "
+        "(health_check_service_name=\"%s\")",
+        subchannel_list_->tracer(), subchannel_list_->policy(),
+        subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+        subchannel_.get(),
+        subchannel_list()->health_check_service_name_.value_or("N/A").c_str());
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
-  pending_watcher_ =
-      new Watcher(this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
-  subchannel_->WatchConnectivityState(
-      // NOLINTNEXTLINE(google-readability-casting)
-      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
-          pending_watcher_));
+  auto watcher = std::make_unique<Watcher>(
+      this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
+  pending_watcher_ = watcher.get();
+  if (subchannel_list()->health_check_service_name_.has_value()) {
+    subchannel_->AddDataWatcher(MakeHealthCheckWatcher(
+        subchannel_list_->work_serializer(),
+        *subchannel_list()->health_check_service_name_, std::move(watcher)));
+  } else {
+    subchannel_->WatchConnectivityState(std::move(watcher));
+  }
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -345,7 +360,11 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
               subchannel_list_, Index(), subchannel_list_->num_subchannels(),
               subchannel_.get(), reason);
     }
-    subchannel_->CancelConnectivityStateWatch(pending_watcher_);
+    // No need to cancel if using health checking, because the data
+    // watcher will be destroyed automatically when the subchannel is.
+    if (!subchannel_list()->health_check_service_name_.has_value()) {
+      subchannel_->CancelConnectivityStateWatch(pending_watcher_);
+    }
     pending_watcher_ = nullptr;
   }
 }
@@ -368,6 +387,10 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     : DualRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer) {
+  if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
+    health_check_service_name_ =
+        args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
+  }
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO,
             "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
