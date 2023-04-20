@@ -31,7 +31,7 @@
 #include <stdbool.h>
 
 #include "python/python_api.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 typedef enum {
   kPyUpb_Descriptor = 0,
@@ -72,7 +72,6 @@ const void* PyUpb_AnyDescriptor_GetDef(PyObject* _self);
 // Returns the underlying |def| for a given wrapper object. The caller must
 // have already verified that the given Python object is of the expected type.
 const upb_FileDef* PyUpb_FileDescriptor_GetDef(PyObject* file);
-const void* PyUpb_AnyDescriptor_GetDef(PyObject* _self);
 
 // Module-level init.
 bool PyUpb_InitDescriptor(PyObject* m);
