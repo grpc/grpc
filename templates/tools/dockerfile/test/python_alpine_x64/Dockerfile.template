@@ -44,5 +44,6 @@
   RUN python3 -m pip install --upgrade pip==19.3.1
 
   <%include file="../../gcp_api_libraries.include"/>
-
   <%include file="../../ccache.include"/>
+  <%include file="../../run_tests_addons.include"/>
+  <%include file="../../git-jenkins.include"/>
