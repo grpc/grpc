@@ -43,7 +43,7 @@ class AuditLoggerRegistry {
   static bool AuditLoggerFactoryExists(absl::string_view name);
 
   static absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(const Json& json);
+  ParseAuditLoggerConfig(absl::string_view name, const Json& json);
 
   // This assume the given config is parsed and validated already.
   // Therefore, it should always succeed in creating a logger.

@@ -82,48 +82,17 @@ class AuditLoggingTest : public ::testing::Test {
 }  // namespace
 
 TEST_F(AuditLoggingTest, SuccessfulLoggerCreation) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
-      Json::Object{{std::string(kName), Json::Object()}});
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(kName, Json());
   ASSERT_TRUE(result.ok());
   ASSERT_NE(AuditLoggerRegistry::CreateAuditLogger(std::move(result.value())),
             nullptr);
 }
 
 TEST_F(AuditLoggingTest, UnknownLogger) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
-      Json::Object{{"unknown_logger", Json::Object()}});
+  auto result =
+      AuditLoggerRegistry::ParseAuditLoggerConfig("unknown_logger", Json());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(), "unsupported audit logger type")
-      << result.status();
-}
-
-TEST_F(AuditLoggingTest, ConfigIsNotJsonObject) {
-  auto result =
-      AuditLoggerRegistry::ParseAuditLoggerConfig(Json::Array{"foo", "bar"});
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "audit logger should be of type object")
-      << result.status();
-}
-
-TEST_F(AuditLoggingTest, ConfigIsEmpty) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(Json::Object());
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "no audit logger found in the config")
-      << result.status();
-}
-
-TEST_F(AuditLoggingTest, ConfigViolatesOneOf) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
-      Json::Object{{"foo", Json::Object()}, {"bar", Json::Object()}});
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "oneOf violation") << result.status();
-}
-
-TEST_F(AuditLoggingTest, LoggerConfigIsNotJsonObject) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
-      Json::Object{{"foo", Json::Array()}});
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "logger config should be of type object")
       << result.status();
 }
 

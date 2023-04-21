@@ -29,7 +29,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "audit_logging.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/log.h>
@@ -55,25 +54,13 @@ bool AuditLoggerRegistry::AuditLoggerFactoryExists(absl::string_view name) {
 }
 
 absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-AuditLoggerRegistry::ParseAuditLoggerConfig(const Json& json) {
-  if (json.type() != Json::Type::kObject) {
-    return absl::InvalidArgumentError("audit logger should be of type object");
-  }
-  if (json.object().empty()) {
-    return absl::InvalidArgumentError("no audit logger found in the config");
-  }
-  if (json.object().size() > 1) {
-    return absl::InvalidArgumentError("oneOf violation");
-  }
-  auto it = json.object().begin();
-  if (it->second.type() != Json::Type::kObject) {
-    return absl::InvalidArgumentError("logger config should be of type object");
-  }
-  auto factory_or = AuditLoggerRegistry::GetAuditLoggerFactory(it->first);
+AuditLoggerRegistry::ParseAuditLoggerConfig(absl::string_view name,
+                                            const Json& json) {
+  auto factory_or = AuditLoggerRegistry::GetAuditLoggerFactory(name);
   if (!factory_or.ok()) {
     return absl::InvalidArgumentError("unsupported audit logger type");
   }
-  return factory_or.value()->ParseAuditLoggerConfig(it->second);
+  return factory_or.value()->ParseAuditLoggerConfig(json);
 }
 
 std::unique_ptr<AuditLogger> AuditLoggerRegistry::CreateAuditLogger(
