@@ -42,7 +42,6 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   auto* p = new ThreadPool();
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
     p->Quiesce();
     delete p;
@@ -53,18 +52,18 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
 
 TEST(ThreadPoolTest, CanSurviveFork) {
   ThreadPool p;
-  grpc_core::Notification n;
-  p.Run([&n, &p] {
+  grpc_core::Notification inner_closure_ran;
+  p.Run([&inner_closure_ran, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    p.Run([&n] {
+    p.Run([&inner_closure_ran] {
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      n.Notify();
+      inner_closure_ran.Notify();
     });
   });
   // simulate a fork and watch the child process
   p.TestOnlyPrepareFork();
   p.TestOnlyPostFork();
-  n.WaitForNotification();
+  inner_closure_ran.WaitForNotification();
   grpc_core::Notification n2;
   p.Run([&n2] { n2.Notify(); });
   n2.WaitForNotification();
