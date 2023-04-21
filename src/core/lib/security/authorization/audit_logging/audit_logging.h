@@ -49,10 +49,7 @@ class AuditLoggerRegistry {
       std::unique_ptr<AuditLoggerFactory::Config>);
 
   // Get the static registry instance.
-  static AuditLoggerRegistry& GetAuditLoggerRegistry() {
-    static AuditLoggerRegistry& registry = *new AuditLoggerRegistry();
-    return registry;
-  }
+  static AuditLoggerRegistry& GetAuditLoggerRegistry();
 
   // Factories are registered during initialization. They should never be
   // unregistered since they will be looked up at any time till the program

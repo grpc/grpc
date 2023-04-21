@@ -74,6 +74,11 @@ std::unique_ptr<AuditLogger> AuditLoggerRegistry::CreateAuditLogger(
   return factory_or.value()->CreateAuditLogger(std::move(config));
 }
 
+AuditLoggerRegistry& AuditLoggerRegistry::GetAuditLoggerRegistry() {
+  static AuditLoggerRegistry& registry = *new AuditLoggerRegistry();
+  return registry;
+}
+
 absl::StatusOr<AuditLoggerFactory*> AuditLoggerRegistry::GetAuditLoggerFactory(
     absl::string_view name) {
   auto& registry = GetAuditLoggerRegistry();
