@@ -31,10 +31,11 @@
 namespace grpc {
 namespace experimental {
 
-using grpc_core::experimental::AuditContext;
-using grpc_core::experimental::AuditLogger;
-using grpc_core::experimental::AuditLoggerFactory;
-using grpc_core::experimental::RegisterAuditLoggerFactory;
+using AuditContext = grpc_core::experimental::AuditContext;
+using AuditLogger = grpc_core::experimental::AuditLogger;
+using AuditLoggerFactory = grpc_core::experimental::AuditLoggerFactory;
+constexpr auto RegisterAuditLoggerFactory =
+    grpc_core::experimental::RegisterAuditLoggerFactory;
 
 }  // namespace experimental
 }  // namespace grpc
