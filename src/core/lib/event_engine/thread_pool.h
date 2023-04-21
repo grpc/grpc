@@ -40,7 +40,6 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -50,13 +49,20 @@ class ThreadPool final : public Executor {
   ThreadPool();
   // Asserts Quiesce was called.
   ~ThreadPool() override;
-  // Signal all threads to exit, then wait for them.
+  // Shut down the pool, and wait for all threads to exit.
+  // This method is safe to call from within a ThreadPool thread.
   void Quiesce();
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
+  // This is test-only to support fork testing!
+  void TestOnlyPrepareFork();
+  void TestOnlyPostFork();
+
  private:
+  // A basic communication mechanism to signal waiting threads that work is
+  // available.
   class WorkSignal {
    public:
     void Signal();
@@ -84,7 +90,8 @@ class ThreadPool final : public Executor {
   // A pool of WorkQueues that participate in work stealing.
   //
   // Every worker thread registers and unregisters its thread-local thread pool
-  // here, and steals closures when necessary.
+  // here, and steals closures from other threads when work is otherwise
+  // unavailable.
   class TheftRegistry {
    public:
     // Allow any member of the registry to steal from the provided queue.
@@ -102,38 +109,40 @@ class ThreadPool final : public Executor {
 
   enum class StartThreadReason {
     kInitialPool,
-    BackloggedWhenScheduling,
-    BackloggedWhenFinishedStarting,
+    kBackloggedWhenScheduling,
+    kBackloggedWhenFinishedStarting,
   };
 
-  class ThreadPoolImpl : public Forkable {
+  class ThreadPoolImpl : public Forkable,
+                         public std::enable_shared_from_this<ThreadPoolImpl> {
    public:
-    const unsigned reserve_threads_ =
-        grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 8u);
+    const int reserve_threads_ = grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 8u);
 
     void Run(EventEngine::Closure* closure);
     // Returns true if a new thread should be created.
     bool IsBacklogged();
     // Start a new thread.
-    // The reason parameter determines whether thread creation is rate-limited;
+    // The reason argument determines whether thread creation is rate-limited;
     // threads created to populate the initial pool are not rate-limited, but
-    // all others scenarios are.
-    void StartThread(ThreadPoolImpl* pool, StartThreadReason reason);
+    // all others thread creation scenarios are rate-limited.
+    void StartThread(StartThreadReason reason);
     // Sets a throttled state.
     // After the initial pool has been created, if the pool is backlogged when a
     // new thread has started, it is rate limited.
-    // Returns whether the pool was already throttled.
+    // Returns the previous throttling state.
     bool SetThrottled(bool throttle);
+    // Set the shutdown flag.
     void SetShutdown(bool is_shutdown);
+    // Set the forking flag.
     void SetForking(bool is_forking);
     // Forkable
     // Ensures that the thread pool is empty before forking.
+    // Postfork parent and child have the same behavior.
     void PrepareFork() override;
     void PostforkParent() override;
     void PostforkChild() override;
-    // Postfork parent and child have the same behavior.
     void Postfork();
-    // accessors
+    // Accessor methods
     bool IsShutdown();
     bool IsForking();
     ThreadCount* thread_count() { return &thread_count_; }
@@ -160,18 +169,19 @@ class ThreadPool final : public Executor {
 
   class ThreadState {
    public:
-    ThreadState(ThreadPoolImpl* pool, StartThreadReason start_reason);
+    ThreadState(std::shared_ptr<ThreadPoolImpl> pool,
+                StartThreadReason start_reason);
     void ThreadBody();
     void SleepIfRunning();
     bool Step();
 
    private:
-    ThreadPoolImpl* pool_;
+    std::shared_ptr<ThreadPoolImpl> pool_;
     StartThreadReason start_reason_;
     grpc_core::BackOff backoff_;
   };
 
-  const std::shared_ptr<ThreadPoolImpl> state_ =
+  const std::shared_ptr<ThreadPoolImpl> pool_ =
       std::make_shared<ThreadPoolImpl>();
   std::atomic<bool> quiesced_{false};
 };

@@ -41,10 +41,18 @@ class BasicWorkQueue : public WorkQueue {
   bool Empty() const override ABSL_LOCKS_EXCLUDED(mu_);
   // Returns the size of the queue.
   size_t Size() const override ABSL_LOCKS_EXCLUDED(mu_);
-  // Returns the most recent element from the queue, or nullopt if empty.
-  // This is the fastest way to retrieve elements from the queue.
+  // Returns the most recent element from the queue, or nullptr if either empty
+  // or the queue is under contention. This is the fastest way to retrieve
+  // elements from the queue.
+  //
+  // This method may return nullptr even if the queue is not empty.
   EventEngine::Closure* PopMostRecent() override ABSL_LOCKS_EXCLUDED(mu_);
-  // Returns the oldest element from the queue, or nullopt if empty.
+  // Returns the most recent element from the queue, or nullptr if either empty
+  // or the queue is under contention.
+  // This is expected to be the slower of the two ways to retrieve closures from
+  // the queue.
+  //
+  // This method may return nullptr even if the queue is not empty.
   EventEngine::Closure* PopOldest() override ABSL_LOCKS_EXCLUDED(mu_);
   // Adds a closure to the queue.
   void Add(EventEngine::Closure* closure) override ABSL_LOCKS_EXCLUDED(mu_);
