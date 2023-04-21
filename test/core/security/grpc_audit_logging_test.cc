@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <string>
 
 #include <gtest/gtest.h>
 
@@ -29,20 +30,19 @@
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/audit_logging/audit_logging.h"
+#include "src/core/lib/security/authorization/audit_logging/audit_logging.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
 namespace grpc_core {
 namespace testing {
 
-const char kName[] = "test_logger";
+constexpr absl::string_view kName = "test_logger";
 
 using experimental::AuditContext;
 using experimental::AuditLogger;
 using experimental::AuditLoggerFactory;
-using Config = experimental::AuditLoggerFactory::Config;
-using experimental::GetAuditLoggerRegistry;
+using experimental::AuditLoggerRegistry;
 using experimental::RegisterAuditLoggerFactory;
 
 namespace {
@@ -56,11 +56,11 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   class TestConfig : public Config {
    public:
-    const char* name() const override { return kName; }
-    std::string ToString() override { return "test_config"; }
+    absl::string_view name() const override { return kName; }
+    std::string ToString() const override { return "test_config"; }
   };
 
-  const char* name() const override { return kName; }
+  absl::string_view name() const override { return kName; }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) override {
     return std::make_unique<TestAuditLogger>();
@@ -71,26 +71,60 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   }
 };
 
+class AuditLoggingTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    RegisterAuditLoggerFactory(std::make_unique<TestAuditLoggerFactory>());
+  }
+  void TearDown() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
+};
+
 }  // namespace
 
-TEST(AuditLoggingTest, FactoryRegistrationAndLoggerCreation) {
-  RegisterAuditLoggerFactory(std::make_unique<TestAuditLoggerFactory>());
-  auto& registry = GetAuditLoggerRegistry();
-  auto result = registry.GetAuditLoggerFactory(kName);
+TEST_F(AuditLoggingTest, SuccessfulLoggerCreation) {
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
+      Json::Object{{std::string(kName), Json::Object()}});
   ASSERT_TRUE(result.ok());
-  auto* factory = result.value();
-  EXPECT_EQ(factory->name(), kName);
-  auto parse_result = factory->ParseAuditLoggerConfig(Json());
-  ASSERT_TRUE(parse_result.ok());
-  std::unique_ptr<Config> config = std::move(parse_result.value());
-  ASSERT_NE(factory->CreateAuditLogger(std::move(config)), nullptr);
-  registry.TestOnlyUnregisterAuditLoggerFactory(kName);
+  ASSERT_NE(AuditLoggerRegistry::CreateAuditLogger(std::move(result.value())),
+            nullptr);
 }
 
-TEST(AuditLoggingTest, FactoryNotFound) {
-  auto& registry = GetAuditLoggerRegistry();
-  auto result = registry.GetAuditLoggerFactory(kName);
-  ASSERT_EQ(result.ok(), false);
+TEST_F(AuditLoggingTest, UnknownLogger) {
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
+      Json::Object{{"unknown_logger", Json::Object()}});
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "unsupported audit logger type")
+      << result.status();
+}
+
+TEST_F(AuditLoggingTest, ConfigIsNotJsonObject) {
+  auto result =
+      AuditLoggerRegistry::ParseAuditLoggerConfig(Json::Array{"foo", "bar"});
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "audit logger should be of type object")
+      << result.status();
+}
+
+TEST_F(AuditLoggingTest, ConfigIsEmpty) {
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(Json::Object());
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "no audit logger found in the config")
+      << result.status();
+}
+
+TEST_F(AuditLoggingTest, ConfigViolatesOneOf) {
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
+      Json::Object{{"foo", Json::Object()}, {"bar", Json::Object()}});
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "oneOf violation") << result.status();
+}
+
+TEST_F(AuditLoggingTest, LoggerConfigIsNotJsonObject) {
+  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(
+      Json::Object{{"foo", Json::Array()}});
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "logger config should be of type object")
+      << result.status();
 }
 
 }  // namespace testing

@@ -1840,7 +1840,6 @@ grpc_cc_library(
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/audit_logging.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],

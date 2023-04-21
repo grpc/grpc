@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_AUDIT_LOGGING_H
-#define GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_AUDIT_LOGGING_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUDIT_LOGGING_AUDIT_LOGGING_H
+#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUDIT_LOGGING_AUDIT_LOGGING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,24 +38,41 @@ namespace experimental {
 
 class AuditLoggerRegistry {
  public:
-  void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory>);
-  absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(absl::string_view);
+  static void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory>);
+
+  static absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  ParseAuditLoggerConfig(const Json& json);
+
+  // This assume the given config is parsed and validated already.
+  // Therefore, it should always succeed in creating a logger.
+  static std::unique_ptr<AuditLogger> CreateAuditLogger(
+      std::unique_ptr<AuditLoggerFactory::Config>);
+
+  // Get the static registry instance.
+  static AuditLoggerRegistry& GetAuditLoggerRegistry() {
+    static AuditLoggerRegistry& registry = *new AuditLoggerRegistry();
+    return registry;
+  }
 
   // Factories are registered during initialization. They should never be
   // unregistered since they will be looked up at any time till the program
-  // exits. This function should only be used in tests.
-  void TestOnlyUnregisterAuditLoggerFactory(absl::string_view name);
+  // exits. This function should only be used in tests to clear the registry.
+  static void TestOnlyResetRegistry();
 
  private:
+  AuditLoggerRegistry() = default;
+
+  static absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(
+      absl::string_view name);
+
   Mutex mu_;
-  std::map<std::string, std::unique_ptr<AuditLoggerFactory>>
+
+  // The key is owned by the factory.
+  std::map<absl::string_view, std::unique_ptr<AuditLoggerFactory>>
       logger_factories_map_ ABSL_GUARDED_BY(mu_);
 };
-
-// Get the static registry instance.
-AuditLoggerRegistry& GetAuditLoggerRegistry();
 
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUDIT_LOGGING_AUDIT_LOGGING_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUDIT_LOGGING_AUDIT_LOGGING_H

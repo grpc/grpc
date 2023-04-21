@@ -72,12 +72,12 @@ class AuditLoggerFactory {
   class Config {
    public:
     virtual ~Config() = default;
-    virtual const char* name() const = 0;
-    virtual std::string ToString() = 0;
+    virtual absl::string_view name() const = 0;
+    virtual std::string ToString() const = 0;
   };
 
   virtual ~AuditLoggerFactory() = default;
-  virtual const char* name() const = 0;
+  virtual absl::string_view name() const = 0;
 
   virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
       const Json& json) = 0;

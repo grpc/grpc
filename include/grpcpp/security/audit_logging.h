@@ -34,8 +34,7 @@ namespace experimental {
 using AuditContext = grpc_core::experimental::AuditContext;
 using AuditLogger = grpc_core::experimental::AuditLogger;
 using AuditLoggerFactory = grpc_core::experimental::AuditLoggerFactory;
-
-void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
+using RegisterAuditLoggerFactory = grpc_core::experimental::RegisterAuditLoggerFactory;
 
 }  // namespace experimental
 }  // namespace grpc

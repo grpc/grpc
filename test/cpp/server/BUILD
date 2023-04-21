@@ -105,18 +105,3 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "audit_logging_test",
-    srcs = ["audit_logging_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/core:grpc_audit_logging",
-        "//test/core/util:grpc_test_util",
-    ],
-)
