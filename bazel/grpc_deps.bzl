@@ -253,11 +253,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "81cf6e89aa03bfc5fcdf7fa99d0c2e3073ea342b9e7500cc75feecac8fc4c33d",
-            strip_prefix = "protobuf-5ddb1fc609d2416e8575c9e7435c608222c2edb2",
+            sha256 = "39d6b86a431651b22bd131fd173546deb7763f1979084d71f1aaff664d83e843",
+            strip_prefix = "protobuf-d6ecec884c687b04de6ab2d45fca3d115892a732",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/d6ecec884c687b04de6ab2d45fca3d115892a732.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/d6ecec884c687b04de6ab2d45fca3d115892a732.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -392,11 +392,11 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "50625babfbfbbb85b2c2c1c5b7021c5a9d599113403143c6dc3cb6a8743f7768",
-            strip_prefix = "upb-aafc17fd6bde032b896bcecc66ad3c2ba9af434d",
+            sha256 = "f08571a466749a2cde7870a46e79416913500ff5ba40b224e93346abe85c5012",
+            strip_prefix = "upb-8c10056074a2698a134dae73dea86ba3d7e0d56b",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/aafc17fd6bde032b896bcecc66ad3c2ba9af434d.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/aafc17fd6bde032b896bcecc66ad3c2ba9af434d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/8c10056074a2698a134dae73dea86ba3d7e0d56b.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/8c10056074a2698a134dae73dea86ba3d7e0d56b.tar.gz",
             ],
         )
 
