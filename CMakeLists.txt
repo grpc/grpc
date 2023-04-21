@@ -4238,6 +4238,7 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/backoff/backoff.cc
   src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
@@ -11498,6 +11499,7 @@ add_executable(frame_test
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/backoff/backoff.cc
   src/core/lib/backoff/random_early_detection.cc
   src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
@@ -21127,6 +21129,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_pool_test
+  src/core/lib/backoff/backoff.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc

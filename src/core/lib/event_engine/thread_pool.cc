@@ -80,7 +80,10 @@ void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   Run(SelfDeletingClosure::Create(std::move(callback)));
 }
 
-void ThreadPool::Run(EventEngine::Closure* closure) { state_->Run(closure); }
+void ThreadPool::Run(EventEngine::Closure* closure) {
+  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
+  state_->Run(closure);
+}
 
 void ThreadPool::PrepareFork() {
   state_->SetForking(true);
@@ -125,7 +128,6 @@ EventEngine::Closure* ThreadPool::TheftRegistry::StealOne() {
 // -------- ThreadPool::ThreadPoolImpl --------
 
 void ThreadPool::ThreadPoolImpl::Run(EventEngine::Closure* closure) {
-  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
   // TODO(hork): move the backlog check elsewhere so the local run path can
   // remain a tight loop. It's now only checked when an external closure is
   // added.

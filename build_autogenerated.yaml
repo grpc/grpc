@@ -3488,6 +3488,7 @@ libs:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -3776,6 +3777,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -7435,6 +7437,7 @@ targets:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
@@ -7706,6 +7709,7 @@ targets:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
@@ -12004,6 +12008,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
@@ -12013,6 +12018,7 @@ targets:
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/time.h
   src:
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
