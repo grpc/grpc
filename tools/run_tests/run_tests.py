@@ -493,8 +493,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang6':
             return ('clang_6', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang15':
-            return ('clang_15', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang16':
+            return ('clang_16', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
