@@ -9,32 +9,36 @@
 #ifndef ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct envoy_type_v3_SemanticVersion;
 typedef struct envoy_type_v3_SemanticVersion envoy_type_v3_SemanticVersion;
-extern const upb_MiniTable envoy_type_v3_SemanticVersion_msginit;
+extern const upb_MiniTable envoy_type_v3_SemanticVersion_msg_init;
 
 
 
 /* envoy.type.v3.SemanticVersion */
 
 UPB_INLINE envoy_type_v3_SemanticVersion* envoy_type_v3_SemanticVersion_new(upb_Arena* arena) {
-  return (envoy_type_v3_SemanticVersion*)_upb_Message_New(&envoy_type_v3_SemanticVersion_msginit, arena);
+  return (envoy_type_v3_SemanticVersion*)_upb_Message_New(&envoy_type_v3_SemanticVersion_msg_init, arena);
 }
 UPB_INLINE envoy_type_v3_SemanticVersion* envoy_type_v3_SemanticVersion_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_v3_SemanticVersion* ret = envoy_type_v3_SemanticVersion_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -44,7 +48,7 @@ UPB_INLINE envoy_type_v3_SemanticVersion* envoy_type_v3_SemanticVersion_parse_ex
                            int options, upb_Arena* arena) {
   envoy_type_v3_SemanticVersion* ret = envoy_type_v3_SemanticVersion_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -52,50 +56,68 @@ UPB_INLINE envoy_type_v3_SemanticVersion* envoy_type_v3_SemanticVersion_parse_ex
 }
 UPB_INLINE char* envoy_type_v3_SemanticVersion_serialize(const envoy_type_v3_SemanticVersion* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_v3_SemanticVersion_serialize_ex(const envoy_type_v3_SemanticVersion* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void envoy_type_v3_SemanticVersion_clear_major_number(const envoy_type_v3_SemanticVersion* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
+UPB_INLINE void envoy_type_v3_SemanticVersion_clear_major_number(envoy_type_v3_SemanticVersion* msg) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t envoy_type_v3_SemanticVersion_major_number(const envoy_type_v3_SemanticVersion* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void envoy_type_v3_SemanticVersion_clear_minor_number(const envoy_type_v3_SemanticVersion* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = 0;
+UPB_INLINE void envoy_type_v3_SemanticVersion_clear_minor_number(envoy_type_v3_SemanticVersion* msg) {
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t envoy_type_v3_SemanticVersion_minor_number(const envoy_type_v3_SemanticVersion* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void envoy_type_v3_SemanticVersion_clear_patch(const envoy_type_v3_SemanticVersion* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = 0;
+UPB_INLINE void envoy_type_v3_SemanticVersion_clear_patch(envoy_type_v3_SemanticVersion* msg) {
+  const upb_MiniTableField field = {3, 8, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t envoy_type_v3_SemanticVersion_patch(const envoy_type_v3_SemanticVersion* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {3, 8, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void envoy_type_v3_SemanticVersion_set_major_number(envoy_type_v3_SemanticVersion *msg, uint32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_type_v3_SemanticVersion_set_minor_number(envoy_type_v3_SemanticVersion *msg, uint32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+  const upb_MiniTableField field = {2, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_type_v3_SemanticVersion_set_patch(envoy_type_v3_SemanticVersion *msg, uint32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
+  const upb_MiniTableField field = {3, 8, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
-extern const upb_MiniTable_File envoy_type_v3_semantic_version_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_type_v3_semantic_version_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_ */

@@ -1,1 +1,3 @@
-!‘N
+network_input {
+  single_read_bytes: "\x21\x91\x4e"
+}

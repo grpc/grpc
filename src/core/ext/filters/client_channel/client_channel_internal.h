@@ -38,6 +38,10 @@
 // ClientChannel that is not normally accessible via external APIs.
 //
 
+// Channel arg key for health check service name.
+#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
+  "grpc.internal.health_check_service_name"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for

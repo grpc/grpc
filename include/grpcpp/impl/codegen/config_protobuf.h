@@ -23,6 +23,8 @@
 
 #define GRPC_OPEN_SOURCE_PROTO
 
+#define GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+
 #ifndef GRPC_CUSTOM_MESSAGE
 #ifdef GRPC_USE_PROTO_LITE
 #include <google/protobuf/message_lite.h>
@@ -68,8 +70,10 @@
 #ifndef GRPC_CUSTOM_JSONUTIL
 #include <google/protobuf/util/json_util.h>
 #include <google/protobuf/util/type_resolver_util.h>
+
+#include "absl/status/status.h"
 #define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
-#define GRPC_CUSTOM_UTIL_STATUS ::google::protobuf::util::Status
+#define GRPC_CUSTOM_UTIL_STATUS ::absl::Status
 #endif
 
 namespace grpc {
