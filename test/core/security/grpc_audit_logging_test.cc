@@ -127,6 +127,11 @@ TEST_F(AuditLoggingTest, LoggerConfigIsNotJsonObject) {
       << result.status();
 }
 
+TEST_F(AuditLoggingTest, AuditLoggerFactoryExistenceChecks) {
+  EXPECT_TRUE(AuditLoggerRegistry::AuditLoggerFactoryExists(kName));
+  EXPECT_FALSE(AuditLoggerRegistry::AuditLoggerFactoryExists("unknown_logger"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

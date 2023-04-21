@@ -29,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "audit_logging.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/log.h>
@@ -44,6 +45,13 @@ void AuditLoggerRegistry::RegisterAuditLoggerFactory(
   auto& registry = GetAuditLoggerRegistry();
   MutexLock lock(&registry.mu_);
   registry.logger_factories_map_[factory->name()] = std::move(factory);
+}
+
+bool AuditLoggerRegistry::AuditLoggerFactoryExists(absl::string_view name) {
+  auto& registry = AuditLoggerRegistry::GetAuditLoggerRegistry();
+  MutexLock lock(&registry.mu_);
+  return registry.logger_factories_map_.find(name) !=
+         registry.logger_factories_map_.end();
 }
 
 absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>

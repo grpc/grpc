@@ -40,6 +40,8 @@ class AuditLoggerRegistry {
  public:
   static void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory>);
 
+  static bool AuditLoggerFactoryExists(absl::string_view name);
+
   static absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json);
 
