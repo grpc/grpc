@@ -40,6 +40,7 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {

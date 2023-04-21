@@ -35,8 +35,8 @@ grpc_cc_test(
     ],
 )
 
-# TODO(hork): the same fuzzer configuration should work trivially for all 
-# WorkQueue implementations. Generalize it when another implementation is 
+# TODO(hork): the same fuzzer configuration should work trivially for all
+# WorkQueue implementations. Generalize it when another implementation is
 # written.
 grpc_proto_fuzzer(
     name = "basic_work_queue_fuzzer",

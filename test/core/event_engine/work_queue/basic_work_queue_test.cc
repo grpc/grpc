@@ -19,14 +19,11 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/gprpp/time.h"
 #include "test/core/util/test_config.h"
 
 // TODO(hork): parameterize these tests for other WorkQueue implementations.

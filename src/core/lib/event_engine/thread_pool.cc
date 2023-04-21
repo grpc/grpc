@@ -155,8 +155,9 @@ void ThreadPool::ThreadPoolImpl::StartThread(StartThreadReason reason) {
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
-        std::unique_ptr<ThreadState> worker(static_cast<ThreadState*>(arg));
+        ThreadState* worker = static_cast<ThreadState*>(arg);
         worker->ThreadBody();
+        delete worker;
       },
       new ThreadState(shared_from_this(), reason), nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
