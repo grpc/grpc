@@ -62,6 +62,10 @@
 #include <sys/un.h>
 #endif
 
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -128,8 +132,8 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
     GRPC_RETURN_IF_ERROR(sock.SetSocketRcvBuf(options.tcp_receive_buffer_size));
   }
-  if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
-    // If its not a unix socket address.
+  if (addr.address()->sa_family != AF_UNIX && addr.address()->sa_family != AF_VSOCK) {
+    // If its not a unix socket or vsock address.
     GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
     sock.TrySetSocketTcpUserTimeout(options, true);
