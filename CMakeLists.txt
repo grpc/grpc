@@ -827,7 +827,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx arena_promise_test)
   add_dependencies(buildtests_cxx arena_test)
   add_dependencies(buildtests_cxx async_end2end_test)
-  add_dependencies(buildtests_cxx audit_logging_test)
   add_dependencies(buildtests_cxx auth_context_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
@@ -3221,7 +3220,7 @@ add_library(grpc++
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -3249,7 +3248,6 @@ add_library(grpc++
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -6074,44 +6072,6 @@ target_link_libraries(async_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(audit_logging_test
-  test/cpp/server/audit_logging_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-target_compile_features(audit_logging_test PUBLIC cxx_std_14)
-target_include_directories(audit_logging_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(audit_logging_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(auth_context_test
   test/core/security/auth_context_test.cc
   test/core/util/cmdline.cc
@@ -6892,7 +6852,7 @@ add_executable(binder_transport_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -6919,7 +6879,6 @@ add_executable(binder_transport_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -10016,7 +9975,7 @@ add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -10043,7 +10002,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -10711,7 +10669,7 @@ add_executable(fake_binder_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -10738,7 +10696,6 @@ add_executable(fake_binder_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -12052,7 +12009,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_audit_logging_test
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   test/core/security/grpc_audit_logging_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -21925,7 +21882,7 @@ add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -21952,7 +21909,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -22642,7 +22598,7 @@ add_executable(wire_reader_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -22669,7 +22625,6 @@ add_executable(wire_reader_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -22746,7 +22701,7 @@ add_executable(wire_writer_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/audit_logging/audit_logging.cc
+  src/core/lib/security/authorization/audit_logging/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -22773,7 +22728,6 @@ add_executable(wire_writer_test
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
-  src/cpp/server/audit_logging.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
