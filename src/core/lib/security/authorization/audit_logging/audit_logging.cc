@@ -29,11 +29,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "audit_logging.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace experimental {
