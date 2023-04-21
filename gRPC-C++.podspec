@@ -1062,7 +1062,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/lib/transport/transport_impl.h',
                       'src/core/lib/uri/uri_parser.h',
-                      'src/core/plugin_registry/grpc_plugin_registry_noextra.cc',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
