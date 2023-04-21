@@ -60,6 +60,8 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+// IWYU pragma: no_include "envoy/config/rbac/v3/rbac.upb.h"
+
 namespace grpc_core {
 
 //
