@@ -23,6 +23,8 @@
 
 #define GRPC_OPEN_SOURCE_PROTO
 
+#define GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+
 #ifndef GRPC_CUSTOM_MESSAGE
 #ifdef GRPC_USE_PROTO_LITE
 #include <google/protobuf/message_lite.h>
