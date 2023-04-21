@@ -14,14 +14,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 #include <memory>
 
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -33,6 +30,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/promise/test_context.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 bool squelch = false;
 
@@ -61,7 +59,8 @@ template <typename T>
 void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
                           size_t size) {
   T parsed;
-  grpc_core::ExecCtx exec_ctx; // Initialized to get this_cpu() info in global_stat().
+  grpc_core::ExecCtx
+      exec_ctx;  // Initialized to get this_cpu() info in global_stat().
   HPackParser hpack_parser;
   SliceBuffer serialized;
   serialized.Append(Slice::FromCopiedBuffer(data, size));

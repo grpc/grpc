@@ -1321,21 +1321,6 @@ CORE_SOURCE_FILES = [
     'third_party/utf8_range/naive.c',
     'third_party/utf8_range/range2-neon.c',
     'third_party/utf8_range/range2-sse.c',
-    'third_party/zlib/adler32.c',
-    'third_party/zlib/compress.c',
-    'third_party/zlib/crc32.c',
-    'third_party/zlib/deflate.c',
-    'third_party/zlib/gzclose.c',
-    'third_party/zlib/gzlib.c',
-    'third_party/zlib/gzread.c',
-    'third_party/zlib/gzwrite.c',
-    'third_party/zlib/infback.c',
-    'third_party/zlib/inffast.c',
-    'third_party/zlib/inflate.c',
-    'third_party/zlib/inftrees.c',
-    'third_party/zlib/trees.c',
-    'third_party/zlib/uncompr.c',
-    'third_party/zlib/zutil.c',
 ]
 
 ASM_SOURCE_FILES = {
