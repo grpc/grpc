@@ -53,21 +53,21 @@ thread_local WorkQueue* g_local_queue = nullptr;
 // -------- ThreadPool --------
 
 ThreadPool::ThreadPool() {
-  for (unsigned i = 0; i < state_->reserve_threads_; i++) {
-    state_->StartThread(state_.get(), StartThreadReason::kInitialPool);
+  for (unsigned i = 0; i < pool_->reserve_threads_; i++) {
+    pool_->StartThread(StartThreadReason::kInitialPool);
   }
 }
 
 void ThreadPool::Quiesce() {
-  state_->SetShutdown(true);
+  pool_->SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
   // until all other threads have exited, so we need to wait for just one thread
   // running instead of zero.
   bool is_threadpool_thread = g_local_queue != nullptr;
-  state_->thread_count()->BlockUntilThreadCount(
-      is_threadpool_thread ? 1 : 0, "shutting down", state_->work_signal());
-  GPR_ASSERT(state_->queue()->Empty());
+  pool_->thread_count()->BlockUntilThreadCount(
+      is_threadpool_thread ? 1 : 0, "shutting down", pool_->work_signal());
+  GPR_ASSERT(pool_->queue()->Empty());
   quiesced_.store(true, std::memory_order_relaxed);
 }
 
@@ -81,7 +81,7 @@ void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
 
 void ThreadPool::Run(EventEngine::Closure* closure) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  state_->Run(closure);
+  pool_->Run(closure);
 }
 
 // -------- ThreadPool::TheftRegistry --------
@@ -100,12 +100,15 @@ EventEngine::Closure* ThreadPool::TheftRegistry::StealOne() {
   grpc_core::MutexLock lock(&mu_);
   EventEngine::Closure* closure;
   for (auto* queue : queues_) {
-    // do not check the previous queue again
     closure = queue->PopMostRecent();
     if (closure != nullptr) return closure;
   }
   return nullptr;
 }
+
+void ThreadPool::TestOnlyPrepareFork() { pool_->PrepareFork(); }
+
+void ThreadPool::TestOnlyPostFork() { pool_->Postfork(); }
 
 // -------- ThreadPool::ThreadPoolImpl --------
 
@@ -120,16 +123,15 @@ void ThreadPool::ThreadPoolImpl::Run(EventEngine::Closure* closure) {
   queue_.Add(closure);
   work_signal_.Signal();
   if (IsBacklogged()) {
-    StartThread(this, StartThreadReason::BackloggedWhenScheduling);
+    StartThread(StartThreadReason::kBackloggedWhenScheduling);
   }
 }
 
-void ThreadPool::ThreadPoolImpl::StartThread(ThreadPoolImpl* pool,
-                                             StartThreadReason reason) {
+void ThreadPool::ThreadPoolImpl::StartThread(StartThreadReason reason) {
   thread_count_.Add();
   const auto now = grpc_core::Timestamp::Now();
   switch (reason) {
-    case StartThreadReason::BackloggedWhenScheduling: {
+    case StartThreadReason::kBackloggedWhenScheduling: {
       auto time_since_last_start =
           now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
                     last_started_thread_.load(std::memory_order_relaxed));
@@ -139,7 +141,7 @@ void ThreadPool::ThreadPoolImpl::StartThread(ThreadPoolImpl* pool,
       }
     }
       ABSL_FALLTHROUGH_INTENDED;
-    case StartThreadReason::BackloggedWhenFinishedStarting:
+    case StartThreadReason::kBackloggedWhenFinishedStarting:
       if (SetThrottled(true)) {
         thread_count_.Remove();
         return;
@@ -156,7 +158,7 @@ void ThreadPool::ThreadPoolImpl::StartThread(ThreadPoolImpl* pool,
         std::unique_ptr<ThreadState> worker(static_cast<ThreadState*>(arg));
         worker->ThreadBody();
       },
-      new ThreadState(pool, reason), nullptr,
+      new ThreadState(shared_from_this(), reason), nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -202,15 +204,15 @@ void ThreadPool::ThreadPoolImpl::PostforkChild() { Postfork(); }
 void ThreadPool::ThreadPoolImpl::Postfork() {
   SetForking(false);
   for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartThread(this, StartThreadReason::kInitialPool);
+    StartThread(StartThreadReason::kInitialPool);
   }
 }
 
 // -------- ThreadPool::ThreadState --------
 
-ThreadPool::ThreadState::ThreadState(ThreadPoolImpl* pool,
+ThreadPool::ThreadState::ThreadState(std::shared_ptr<ThreadPoolImpl> pool,
                                      StartThreadReason start_reason)
-    : pool_(pool),
+    : pool_(std::move(pool)),
       start_reason_(start_reason),
       backoff_(grpc_core::BackOff::Options()
                    .set_initial_backoff(grpc_core::Duration::Milliseconds(33))
@@ -224,21 +226,19 @@ void ThreadPool::ThreadState::ThreadBody() {
   switch (start_reason_) {
     case StartThreadReason::kInitialPool:
       break;
-    case StartThreadReason::BackloggedWhenFinishedStarting:
+    case StartThreadReason::kBackloggedWhenFinishedStarting:
       SleepIfRunning();
       ABSL_FALLTHROUGH_INTENDED;
-    case StartThreadReason::BackloggedWhenScheduling:
+    case StartThreadReason::kBackloggedWhenScheduling:
       GPR_ASSERT(pool_->SetThrottled(false));
       if (pool_->IsBacklogged()) {
-        pool_->StartThread(pool_,
-                           StartThreadReason::BackloggedWhenFinishedStarting);
+        pool_->StartThread(StartThreadReason::kBackloggedWhenFinishedStarting);
       }
       break;
   }
   while (Step()) {
     // loop until the thread should no longer run
   }
-  pool_->thread_count()->Remove();
   // cleanup
   if (pool_->IsForking()) {
     // TODO(hork): consider WorkQueue::AddAll(WorkQueue*)
@@ -251,6 +251,7 @@ void ThreadPool::ThreadState::ThreadBody() {
   GPR_ASSERT(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
+  pool_->thread_count()->Remove();
 }
 
 void ThreadPool::ThreadState::SleepIfRunning() {
@@ -325,13 +326,18 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(int desired_threads,
                                                     WorkSignal* work_signal) {
   int curr_threads = threads_.load(std::memory_order_relaxed);
   // Wait for all threads to exit.
+  auto last_log_time = grpc_core::Timestamp::Now();
   while (curr_threads > desired_threads) {
-    absl::SleepFor(absl::Milliseconds(50));
-    // work_signal->SignalAll();
+    absl::SleepFor(absl::Milliseconds(100));
+    work_signal->SignalAll();
+    if (grpc_core::Timestamp::Now() - last_log_time >
+        grpc_core::Duration::Seconds(3)) {
+      gpr_log(GPR_DEBUG,
+              "Waiting for thread pool to idle before %s. (%d to %d)", why,
+              curr_threads, desired_threads);
+      last_log_time = grpc_core::Timestamp::Now();
+    }
     curr_threads = threads_.load(std::memory_order_relaxed);
-    GRPC_LOG_EVERY_N_SEC(
-        3, GPR_ERROR, "Waiting for thread pool to idle before %s. (%d to %d)",
-        why, curr_threads, desired_threads);
   }
 }
 

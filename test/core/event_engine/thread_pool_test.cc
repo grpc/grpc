@@ -39,17 +39,15 @@ TEST(ThreadPoolTest, CanRunClosure) {
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
-  auto p = std::make_shared<ThreadPool>();
+  auto* p = new ThreadPool();
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
     p->Quiesce();
-    p.reset();
+    delete p;
     n.Notify();
   });
-  // Make sure we're not keeping the thread pool alive from outside the loop
-  p.reset();
   n.WaitForNotification();
 }
 
@@ -64,8 +62,8 @@ TEST(ThreadPoolTest, CanSurviveFork) {
     });
   });
   // simulate a fork and watch the child process
-  p.PrepareFork();
-  p.PostforkChild();
+  p.TestOnlyPrepareFork();
+  p.TestOnlyPostFork();
   n.WaitForNotification();
   grpc_core::Notification n2;
   p.Run([&n2] { n2.Notify(); });
@@ -90,7 +88,7 @@ TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
           std::this_thread::sleep_for(std::chrono::seconds(10));
           abort();
         });
-        p.PrepareFork();
+        p.TestOnlyPrepareFork();
       }(),
       "Waiting for thread pool to idle before forking");
 }
