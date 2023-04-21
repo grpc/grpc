@@ -45,23 +45,16 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class ThreadPool final : public Forkable, public Executor {
+class ThreadPool final : public Executor {
  public:
   ThreadPool();
   // Asserts Quiesce was called.
   ~ThreadPool() override;
-
+  // Signal all threads to exit, then wait for them.
   void Quiesce();
-
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
-
-  // Forkable
-  // Ensures that the thread pool is empty before forking.
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
 
  private:
   class WorkSignal {
@@ -113,7 +106,7 @@ class ThreadPool final : public Forkable, public Executor {
     BackloggedWhenFinishedStarting,
   };
 
-  class ThreadPoolImpl {
+  class ThreadPoolImpl : public Forkable {
    public:
     const unsigned reserve_threads_ =
         grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 8u);
@@ -133,6 +126,13 @@ class ThreadPool final : public Forkable, public Executor {
     bool SetThrottled(bool throttle);
     void SetShutdown(bool is_shutdown);
     void SetForking(bool is_forking);
+    // Forkable
+    // Ensures that the thread pool is empty before forking.
+    void PrepareFork() override;
+    void PostforkParent() override;
+    void PostforkChild() override;
+    // Postfork parent and child have the same behavior.
+    void Postfork();
     // accessors
     bool IsShutdown();
     bool IsForking();
@@ -170,11 +170,6 @@ class ThreadPool final : public Forkable, public Executor {
     StartThreadReason start_reason_;
     grpc_core::BackOff backoff_;
   };
-
-  void Postfork();
-
-  // Returns true if the current thread is a thread pool thread.
-  static bool IsThreadPoolThread();
 
   const std::shared_ptr<ThreadPoolImpl> state_ =
       std::make_shared<ThreadPoolImpl>();

@@ -27,11 +27,11 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "common_closures.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
@@ -58,16 +58,15 @@ ThreadPool::ThreadPool() {
   }
 }
 
-bool ThreadPool::IsThreadPoolThread() { return g_local_queue != nullptr; }
-
 void ThreadPool::Quiesce() {
   state_->SetShutdown(true);
-  // Wait until all threads are exited.
+  // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
-  // until the callstack unwinds a little, so we need to wait for just one
-  // thread running instead of zero.
+  // until all other threads have exited, so we need to wait for just one thread
+  // running instead of zero.
+  bool is_threadpool_thread = g_local_queue != nullptr;
   state_->thread_count()->BlockUntilThreadCount(
-      IsThreadPoolThread() ? 1 : 0, "shutting down", state_->work_signal());
+      is_threadpool_thread ? 1 : 0, "shutting down", state_->work_signal());
   GPR_ASSERT(state_->queue()->Empty());
   quiesced_.store(true, std::memory_order_relaxed);
 }
@@ -83,23 +82,6 @@ void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
 void ThreadPool::Run(EventEngine::Closure* closure) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
   state_->Run(closure);
-}
-
-void ThreadPool::PrepareFork() {
-  state_->SetForking(true);
-  state_->thread_count()->BlockUntilThreadCount(0, "forking",
-                                                state_->work_signal());
-}
-
-void ThreadPool::PostforkParent() { Postfork(); }
-
-void ThreadPool::PostforkChild() { Postfork(); }
-
-void ThreadPool::Postfork() {
-  state_->SetForking(false);
-  for (unsigned i = 0; i < state_->reserve_threads_; i++) {
-    state_->StartThread(state_.get(), StartThreadReason::kInitialPool);
-  }
 }
 
 // -------- ThreadPool::TheftRegistry --------
@@ -206,6 +188,22 @@ bool ThreadPool::ThreadPoolImpl::IsForking() {
 
 bool ThreadPool::ThreadPoolImpl::IsShutdown() {
   return shutdown_.load(std::memory_order_relaxed);
+}
+
+void ThreadPool::ThreadPoolImpl::PrepareFork() {
+  SetForking(true);
+  thread_count()->BlockUntilThreadCount(0, "forking", &work_signal_);
+}
+
+void ThreadPool::ThreadPoolImpl::PostforkParent() { Postfork(); }
+
+void ThreadPool::ThreadPoolImpl::PostforkChild() { Postfork(); }
+
+void ThreadPool::ThreadPoolImpl::Postfork() {
+  SetForking(false);
+  for (unsigned i = 0; i < reserve_threads_; i++) {
+    StartThread(this, StartThreadReason::kInitialPool);
+  }
 }
 
 // -------- ThreadPool::ThreadState --------
