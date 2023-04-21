@@ -53,7 +53,7 @@ thread_local WorkQueue* g_local_queue = nullptr;
 // -------- ThreadPool --------
 
 ThreadPool::ThreadPool() {
-  for (unsigned i = 0; i < pool_->reserve_threads_; i++) {
+  for (int i = 0; i < pool_->reserve_threads_; i++) {
     pool_->StartThread(StartThreadReason::kInitialPool);
   }
 }
@@ -203,7 +203,7 @@ void ThreadPool::ThreadPoolImpl::PostforkChild() { Postfork(); }
 
 void ThreadPool::ThreadPoolImpl::Postfork() {
   SetForking(false);
-  for (unsigned i = 0; i < reserve_threads_; i++) {
+  for (int i = 0; i < reserve_threads_; i++) {
     StartThread(StartThreadReason::kInitialPool);
   }
 }
