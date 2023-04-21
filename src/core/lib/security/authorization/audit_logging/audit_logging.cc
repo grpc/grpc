@@ -98,8 +98,7 @@ void AuditLoggerRegistry::TestOnlyResetRegistry() {
 }
 
 void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory) {
-  AuditLoggerRegistry& registry = AuditLoggerRegistry::GetAuditLoggerRegistry();
-  registry.RegisterAuditLoggerFactory(std::move(factory));
+  AuditLoggerRegistry::RegisterAuditLoggerFactory(std::move(factory));
 }
 
 }  // namespace experimental

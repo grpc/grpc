@@ -48,9 +48,6 @@ class AuditLoggerRegistry {
   static std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>);
 
-  // Get the static registry instance.
-  static AuditLoggerRegistry& GetAuditLoggerRegistry();
-
   // Factories are registered during initialization. They should never be
   // unregistered since they will be looked up at any time till the program
   // exits. This function should only be used in tests to clear the registry.
@@ -58,6 +55,8 @@ class AuditLoggerRegistry {
 
  private:
   AuditLoggerRegistry() = default;
+
+  static AuditLoggerRegistry& GetAuditLoggerRegistry();
 
   static absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(
       absl::string_view name);
