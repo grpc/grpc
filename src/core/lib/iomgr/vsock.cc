@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,11 +47,8 @@ absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
     absl::string_view name) {
   grpc_resolved_address addr;
   grpc_error_handle error = grpc_core::VSockaddrPopulate(name, &addr);
-  if (error.ok()) {
-    return std::vector<grpc_resolved_address>({addr});
-  }
-  auto result = grpc_error_to_absl_status(error);
-  return result;
+  GRPC_RETURN_IF_ERROR(error);
+  return std::vector<grpc_resolved_address>({addr});
 }
 
 int grpc_is_vsock(const grpc_resolved_address* resolved_addr) {
