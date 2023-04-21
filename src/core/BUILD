@@ -2732,8 +2732,9 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "json",
         "//:gpr",
-        "//:grpc_unsecure",
+        "//:grpc_base",
     ],
 )
 
