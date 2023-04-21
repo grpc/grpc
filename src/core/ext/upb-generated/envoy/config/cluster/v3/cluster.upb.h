@@ -760,9 +760,6 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEn
   if (!map) return NULL;
   return (const envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_typed_extension_protocol_options(const envoy_config_cluster_v3_Cluster* msg) {
-  return envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_size(msg) != 0;
-}
 UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_least_request_lb_config(envoy_config_cluster_v3_Cluster* msg) {
   const upb_MiniTableField field = {37, UPB_SIZE(180, 336), UPB_SIZE(-173, -29), 23, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);

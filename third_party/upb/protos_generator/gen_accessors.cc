@@ -31,6 +31,7 @@
 #include "google/protobuf/descriptor.h"
 #include "protos_generator/gen_utils.h"
 #include "protos_generator/output.h"
+#include "upbc/common.h"
 #include "upbc/keywords.h"
 #include "upbc/names.h"
 
@@ -486,23 +487,27 @@ void WriteMapAccessorDefinitions(const protobuf::Descriptor* message,
     output(
         R"cc(
           bool $0::set_$1($2 key, $3 value) {
-            $6return $4_$8_set(msg_, $7, ($5*)value->msg(), arena_);
+            upb_Message* clone = upb_Message_DeepClone(value->msg(), &$9, arena_);
+            $6return $4_$8_set(msg_, $7, ($5*)clone, arena_);
           }
         )cc",
         class_name, resolved_field_name, CppConstType(key),
         MessagePtrConstType(val, /* is_const */ true), MessageName(message),
         MessageName(val->message_type()), optional_conversion_code,
-        converted_key_name, upbc_name);
+        converted_key_name, upbc_name,
+        ::upbc::MessageInit(val->message_type()->full_name()));
     output(
         R"cc(
           bool $0::set_$1($2 key, $3 value) {
-            $6return $4_$8_set(msg_, $7, ($5*)value->msg(), arena_);
+            upb_Message* clone = upb_Message_DeepClone(value->msg(), &$9, arena_);
+            $6return $4_$8_set(msg_, $7, ($5*)clone, arena_);
           }
         )cc",
         class_name, resolved_field_name, CppConstType(key),
         MessagePtrConstType(val, /* is_const */ false), MessageName(message),
         MessageName(val->message_type()), optional_conversion_code,
-        converted_key_name, upbc_name);
+        converted_key_name, upbc_name,
+        ::upbc::MessageInit(val->message_type()->full_name()));
     output(
         R"cc(
           absl::StatusOr<$3> $0::get_$1($2 key) {
@@ -672,7 +677,51 @@ void WriteUsingAccessorsInHeader(const protobuf::Descriptor* desc,
       }
     }
   }
+  for (int i = 0; i < desc->real_oneof_decl_count(); ++i) {
+    const protobuf::OneofDescriptor* oneof = desc->oneof_decl(i);
+    output("using $0Access::$1_case;\n", class_name, oneof->name());
+    output("using $0Access::$1Case;\n", class_name,
+           ToCamelCase(oneof->name(), /*lower_first=*/false));
+    for (int j = 0; j < oneof->field_count(); ++j) {
+      const protobuf::FieldDescriptor* field = oneof->field(j);
+      output("using $0Access::k$1;\n", class_name,
+             ToCamelCase(field->name(), /*lower_first=*/false),
+             field->number());
+    }
+    output("using $0Access::$1_NOT_SET;\n", class_name,
+           absl::AsciiStrToUpper(oneof->name()));
+  }
   output("using $0Access::msg;\n", class_name);
+}
+
+void WriteOneofAccessorsInHeader(const protobuf::Descriptor* desc,
+                                 Output& output) {
+  // Generate const methods.
+  OutputIndenter i(output);
+  std::string class_name = ClassName(desc);
+  auto field_names = CreateFieldNameMap(desc);
+  for (int i = 0; i < desc->real_oneof_decl_count(); ++i) {
+    const protobuf::OneofDescriptor* oneof = desc->oneof_decl(i);
+    output("enum $0Case {\n",
+           ToCamelCase(oneof->name(), /*lower_first=*/false));
+    for (int j = 0; j < oneof->field_count(); ++j) {
+      const protobuf::FieldDescriptor* field = oneof->field(j);
+      output("  k$0 = $1,\n", ToCamelCase(field->name(), /*lower_first=*/false),
+             field->number());
+    }
+    output("  $0_NOT_SET = 0,\n", absl::AsciiStrToUpper(oneof->name()));
+    output("};\n\n");
+    output("$0Case $1_case() const {\n",
+           ToCamelCase(oneof->name(), /*lower_first=*/false), oneof->name());
+    for (int j = 0; j < oneof->field_count(); ++j) {
+      const protobuf::FieldDescriptor* field = oneof->field(j);
+      std::string resolved_field_name = ResolveFieldName(field, field_names);
+      output("  if (has_$0()) { return k$1; }\n", resolved_field_name,
+             ToCamelCase(field->name(), /*lower_first=*/false));
+    }
+    output("  return $0_NOT_SET;\n", absl::AsciiStrToUpper(oneof->name()));
+    output("}\n;");
+  }
 }
 
 std::string ResolveFieldName(const protobuf::FieldDescriptor* field,

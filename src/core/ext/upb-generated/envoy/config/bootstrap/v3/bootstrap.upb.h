@@ -510,9 +510,6 @@ UPB_INLINE const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstance
   if (!map) return NULL;
   return (const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_certificate_provider_instances(const envoy_config_bootstrap_v3_Bootstrap* msg) {
-  return envoy_config_bootstrap_v3_Bootstrap_certificate_provider_instances_size(msg) != 0;
-}
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_node_context_params(envoy_config_bootstrap_v3_Bootstrap* msg) {
   const upb_MiniTableField field = {26, UPB_SIZE(84, 208), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);

@@ -107,9 +107,6 @@ UPB_INLINE const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* grpc_lookup_v1_R
   if (!map) return NULL;
   return (const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_has_key_map(const grpc_lookup_v1_RouteLookupRequest* msg) {
-  return grpc_lookup_v1_RouteLookupRequest_key_map_size(msg) != 0;
-}
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_clear_reason(grpc_lookup_v1_RouteLookupRequest* msg) {
   const upb_MiniTableField field = {5, UPB_SIZE(4, 0), 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);

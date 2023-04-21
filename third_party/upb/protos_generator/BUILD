@@ -65,11 +65,11 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//:message_copy",
         "//upbc:common",
         "//upbc:file_layout",
         "//upbc:keywords",
         "//upbc:names",
-        "//upbc:plugin",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/log:absl_check",

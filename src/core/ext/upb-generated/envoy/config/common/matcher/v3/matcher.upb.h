@@ -1042,9 +1042,6 @@ UPB_INLINE const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_Map
   if (!map) return NULL;
   return (const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_has_map(const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
-  return envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_clear(envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
   const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

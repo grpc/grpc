@@ -135,9 +135,6 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEnt
   if (!map) return NULL;
   return (const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_service_discovery_v3_ResourceLocator_has_dynamic_parameters(const envoy_service_discovery_v3_ResourceLocator* msg) {
-  return envoy_service_discovery_v3_ResourceLocator_dynamic_parameters_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_service_discovery_v3_ResourceLocator_set_name(envoy_service_discovery_v3_ResourceLocator *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 0), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -781,9 +778,6 @@ UPB_INLINE const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourc
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_initial_resource_versions(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
-  return envoy_service_discovery_v3_DeltaDiscoveryRequest_initial_resource_versions_size(msg) != 0;
 }
 UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryRequest_clear_response_nonce(envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   const upb_MiniTableField field = {6, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

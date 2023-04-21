@@ -270,9 +270,6 @@ UPB_INLINE const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry* grpc_lookup_v1
   if (!map) return NULL;
   return (const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool grpc_lookup_v1_GrpcKeyBuilder_has_constant_keys(const grpc_lookup_v1_GrpcKeyBuilder* msg) {
-  return grpc_lookup_v1_GrpcKeyBuilder_constant_keys_size(msg) != 0;
-}
 
 UPB_INLINE grpc_lookup_v1_GrpcKeyBuilder_Name** grpc_lookup_v1_GrpcKeyBuilder_mutable_names(grpc_lookup_v1_GrpcKeyBuilder* msg, size_t* size) {
   upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -664,9 +661,6 @@ UPB_INLINE const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry* grpc_lookup_v1
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_has_constant_keys(const grpc_lookup_v1_HttpKeyBuilder* msg) {
-  return grpc_lookup_v1_HttpKeyBuilder_constant_keys_size(msg) != 0;
 }
 
 UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_mutable_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size) {

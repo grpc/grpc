@@ -1502,9 +1502,6 @@ UPB_INLINE const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEnt
   if (!map) return NULL;
   return (const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_has_args(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs* msg) {
-  return envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_args_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_args_clear(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs* msg) {
   const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

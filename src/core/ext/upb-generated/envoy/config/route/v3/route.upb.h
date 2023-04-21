@@ -355,9 +355,6 @@ UPB_INLINE const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEn
   if (!map) return NULL;
   return (const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_has_typed_per_filter_config(const envoy_config_route_v3_RouteConfiguration* msg) {
-  return envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_name(envoy_config_route_v3_RouteConfiguration *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(60, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

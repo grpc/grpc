@@ -23,11 +23,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
+#include <map>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -39,9 +45,6 @@
 #include "absl/strings/substitute.h"
 #include "upb/base/descriptor_constants.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/mini_table/extension_internal.h"
 #include "upb/reflection/def.hpp"
 #include "upb/wire/types.h"
 #include "upbc/common.h"
@@ -200,7 +203,19 @@ std::string FieldDefault(upb::FieldDefPtr field) {
     case kUpb_CType_Int32:
       return absl::Substitute("(int32_t)$0", field.default_value().int32_val);
     case kUpb_CType_Int64:
-      return absl::Substitute("(int64_t)$0ll", field.default_value().int64_val);
+      if (field.default_value().int64_val == INT64_MIN) {
+        // Special-case to avoid:
+        //   integer literal is too large to be represented in a signed integer
+        //   type, interpreting as unsigned
+        //   [-Werror,-Wimplicitly-unsigned-literal]
+        //   int64_t default_val = (int64_t)-9223372036854775808ll;
+        //
+        // More info here: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52661
+        return "INT64_MIN";
+      } else {
+        return absl::Substitute("(int64_t)$0ll",
+                                field.default_value().int64_val);
+      }
     case kUpb_CType_UInt32:
       return absl::Substitute("(uint32_t)$0u",
                               field.default_value().uint32_val);
@@ -412,14 +427,7 @@ void GenerateHazzer(upb::FieldDefPtr field, const DefPoolPair& pools,
         )cc",
         msg_name, resolved_name, FieldInitializer(pools, field, options));
   } else if (field.IsMap()) {
-    // TODO(b/259616267): remove.
-    output(
-        R"cc(
-          UPB_INLINE bool $0_has_$1(const $0* msg) {
-            return $0_$1_size(msg) != 0;
-          }
-        )cc",
-        msg_name, resolved_name);
+    // Do nothing.
   } else if (field.IsSequence()) {
     // TODO(b/259616267): remove.
     output(
@@ -1013,13 +1021,16 @@ bool TryFillTableEntry(const DefPoolPair& pools, upb::FieldDefPtr field,
       upb_MiniTable_FindFieldByNumber(mt, field.number());
   std::string type = "";
   std::string cardinality = "";
-  switch (mt_f->descriptortype) {
+  switch (upb_MiniTableField_Type(mt_f)) {
     case kUpb_FieldType_Bool:
       type = "b1";
       break;
     case kUpb_FieldType_Enum:
-      // We don't have the means to test proto2 enum fields for valid values.
-      return false;
+      if (upb_MiniTableField_IsClosedEnum(mt_f)) {
+        // We don't have the means to test proto2 enum fields for valid values.
+        return false;
+      }
+      [[fallthrough]];
     case kUpb_FieldType_Int32:
     case kUpb_FieldType_UInt32:
       type = "v4";
@@ -1107,7 +1118,7 @@ bool TryFillTableEntry(const DefPoolPair& pools, upb::FieldDefPtr field,
   }
 
   if (field.ctype() == kUpb_CType_Message) {
-    uint64_t idx = mt_f->submsg_index;
+    uint64_t idx = mt_f->UPB_PRIVATE(submsg_index);
     if (idx > 255) return false;
     data |= idx << 16;
 
@@ -1255,10 +1266,10 @@ std::string FieldInitializer(upb::FieldDefPtr field,
         "{$0, $1, $2, $3, $4, $5}", field64->number,
         ArchDependentSize(field32->offset, field64->offset),
         ArchDependentSize(field32->presence, field64->presence),
-        field64->submsg_index == kUpb_NoSub
+        field64->UPB_PRIVATE(submsg_index) == kUpb_NoSub
             ? "kUpb_NoSub"
-            : absl::StrCat(field64->submsg_index).c_str(),
-        field64->descriptortype, GetModeInit(field32, field64));
+            : absl::StrCat(field64->UPB_PRIVATE(submsg_index)).c_str(),
+        field64->UPB_PRIVATE(descriptortype), GetModeInit(field32, field64));
   }
 }
 
@@ -1303,7 +1314,7 @@ void WriteMessage(upb::MessageDefPtr message, const DefPoolPair& pools,
 
   for (int i = 0; i < mt_64->field_count; i++) {
     const upb_MiniTableField* f = &mt_64->fields[i];
-    if (f->submsg_index != kUpb_NoSub) {
+    if (f->UPB_PRIVATE(submsg_index) != kUpb_NoSub) {
       subs.push_back(GetSub(message.FindFieldByNumber(f->number)));
     }
   }

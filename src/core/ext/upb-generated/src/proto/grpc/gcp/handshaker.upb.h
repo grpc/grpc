@@ -243,9 +243,6 @@ UPB_INLINE const grpc_gcp_Identity_AttributesEntry* grpc_gcp_Identity_attributes
   if (!map) return NULL;
   return (const grpc_gcp_Identity_AttributesEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool grpc_gcp_Identity_has_attributes(const grpc_gcp_Identity* msg) {
-  return grpc_gcp_Identity_attributes_size(msg) != 0;
-}
 
 UPB_INLINE void grpc_gcp_Identity_set_service_account(grpc_gcp_Identity *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, -1, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -823,9 +820,6 @@ UPB_INLINE const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* grpc
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_has_handshake_parameters(const grpc_gcp_StartServerHandshakeReq* msg) {
-  return grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(msg) != 0;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_clear_in_bytes(grpc_gcp_StartServerHandshakeReq* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(28, 24), 0, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

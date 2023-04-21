@@ -148,9 +148,6 @@ UPB_INLINE const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEn
   if (!map) return NULL;
   return (const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_has_named_endpoints(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg) {
-  return envoy_config_endpoint_v3_ClusterLoadAssignment_named_endpoints_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(envoy_config_endpoint_v3_ClusterLoadAssignment *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

@@ -135,9 +135,6 @@ UPB_INLINE const google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry* google_
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool google_api_expr_v1alpha1_CheckedExpr_has_reference_map(const google_api_expr_v1alpha1_CheckedExpr* msg) {
-  return google_api_expr_v1alpha1_CheckedExpr_reference_map_size(msg) != 0;
-}
 UPB_INLINE void google_api_expr_v1alpha1_CheckedExpr_clear_type_map(google_api_expr_v1alpha1_CheckedExpr* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
@@ -158,9 +155,6 @@ UPB_INLINE const google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry* google_api_e
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool google_api_expr_v1alpha1_CheckedExpr_has_type_map(const google_api_expr_v1alpha1_CheckedExpr* msg) {
-  return google_api_expr_v1alpha1_CheckedExpr_type_map_size(msg) != 0;
 }
 UPB_INLINE void google_api_expr_v1alpha1_CheckedExpr_clear_expr(google_api_expr_v1alpha1_CheckedExpr* msg) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

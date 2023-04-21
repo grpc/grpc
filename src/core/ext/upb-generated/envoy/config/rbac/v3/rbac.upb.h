@@ -150,9 +150,6 @@ UPB_INLINE const envoy_config_rbac_v3_RBAC_PoliciesEntry* envoy_config_rbac_v3_R
   if (!map) return NULL;
   return (const envoy_config_rbac_v3_RBAC_PoliciesEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_rbac_v3_RBAC_has_policies(const envoy_config_rbac_v3_RBAC* msg) {
-  return envoy_config_rbac_v3_RBAC_policies_size(msg) != 0;
-}
 UPB_INLINE void envoy_config_rbac_v3_RBAC_clear_audit_logging_options(envoy_config_rbac_v3_RBAC* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);

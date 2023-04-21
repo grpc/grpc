@@ -1532,9 +1532,6 @@ UPB_INLINE const google_api_expr_v1alpha1_SourceInfo_PositionsEntry* google_api_
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_SourceInfo_PositionsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_has_positions(const google_api_expr_v1alpha1_SourceInfo* msg) {
-  return google_api_expr_v1alpha1_SourceInfo_positions_size(msg) != 0;
-}
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_clear_macro_calls(google_api_expr_v1alpha1_SourceInfo* msg) {
   const upb_MiniTableField field = {5, UPB_SIZE(8, 48), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
@@ -1555,9 +1552,6 @@ UPB_INLINE const google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry* google_api
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_has_macro_calls(const google_api_expr_v1alpha1_SourceInfo* msg) {
-  return google_api_expr_v1alpha1_SourceInfo_macro_calls_size(msg) != 0;
 }
 
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_set_syntax_version(google_api_expr_v1alpha1_SourceInfo *msg, upb_StringView value) {

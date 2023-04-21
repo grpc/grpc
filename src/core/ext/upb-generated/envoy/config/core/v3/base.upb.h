@@ -687,9 +687,6 @@ UPB_INLINE const envoy_config_core_v3_Node_DynamicParametersEntry* envoy_config_
   if (!map) return NULL;
   return (const envoy_config_core_v3_Node_DynamicParametersEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_core_v3_Node_has_dynamic_parameters(const envoy_config_core_v3_Node* msg) {
-  return envoy_config_core_v3_Node_dynamic_parameters_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_config_core_v3_Node_set_id(envoy_config_core_v3_Node *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(40, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -921,9 +918,6 @@ UPB_INLINE const envoy_config_core_v3_Metadata_FilterMetadataEntry* envoy_config
   if (!map) return NULL;
   return (const envoy_config_core_v3_Metadata_FilterMetadataEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_core_v3_Metadata_has_filter_metadata(const envoy_config_core_v3_Metadata* msg) {
-  return envoy_config_core_v3_Metadata_filter_metadata_size(msg) != 0;
-}
 UPB_INLINE void envoy_config_core_v3_Metadata_clear_typed_filter_metadata(envoy_config_core_v3_Metadata* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
@@ -944,9 +938,6 @@ UPB_INLINE const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry* envoy_c
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool envoy_config_core_v3_Metadata_has_typed_filter_metadata(const envoy_config_core_v3_Metadata* msg) {
-  return envoy_config_core_v3_Metadata_typed_filter_metadata_size(msg) != 0;
 }
 
 UPB_INLINE void envoy_config_core_v3_Metadata_filter_metadata_clear(envoy_config_core_v3_Metadata* msg) {

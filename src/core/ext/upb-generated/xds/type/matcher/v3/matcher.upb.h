@@ -1030,9 +1030,6 @@ UPB_INLINE const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry* xds_
   if (!map) return NULL;
   return (const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_has_map(const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
-  return xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(msg) != 0;
-}
 
 UPB_INLINE void xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_clear(xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* msg) {
   const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
