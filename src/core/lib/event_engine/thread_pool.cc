@@ -128,7 +128,6 @@ void ThreadPool::ThreadPoolImpl::Run(EventEngine::Closure* closure) {
 }
 
 void ThreadPool::ThreadPoolImpl::StartThread(StartThreadReason reason) {
-  thread_count_.Add();
   const auto now = grpc_core::Timestamp::Now();
   switch (reason) {
     case StartThreadReason::kBackloggedWhenScheduling: {
@@ -136,14 +135,12 @@ void ThreadPool::ThreadPoolImpl::StartThread(StartThreadReason reason) {
           now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
                     last_started_thread_.load(std::memory_order_relaxed));
       if (time_since_last_start < kThrottledThreadStartRate) {
-        thread_count_.Remove();
         return;
       }
     }
       ABSL_FALLTHROUGH_INTENDED;
     case StartThreadReason::kBackloggedWhenFinishedStarting:
       if (SetThrottled(true)) {
-        thread_count_.Remove();
         return;
       }
       last_started_thread_.store(now.milliseconds_after_process_epoch(),
@@ -214,6 +211,7 @@ void ThreadPool::ThreadPoolImpl::Postfork() {
 ThreadPool::ThreadState::ThreadState(std::shared_ptr<ThreadPoolImpl> pool,
                                      StartThreadReason start_reason)
     : pool_(std::move(pool)),
+      auto_thread_count_(pool_->thread_count()),
       start_reason_(start_reason),
       backoff_(grpc_core::BackOff::Options()
                    .set_initial_backoff(grpc_core::Duration::Milliseconds(33))
@@ -252,7 +250,6 @@ void ThreadPool::ThreadState::ThreadBody() {
   GPR_ASSERT(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
-  pool_->thread_count()->Remove();
 }
 
 void ThreadPool::ThreadState::SleepIfRunning() {

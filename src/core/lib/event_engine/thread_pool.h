@@ -88,6 +88,18 @@ class ThreadPool final : public Executor {
     std::atomic<int> threads_{0};
   };
 
+  // Adds and removes thread counts on construction and destruction
+  class AutoThreadCount {
+   public:
+    explicit AutoThreadCount(ThreadCount* counter) : counter_(counter) {
+      counter_->Add();
+    }
+    ~AutoThreadCount() { counter_->Remove(); }
+
+   private:
+    ThreadCount* counter_;
+  };
+
   // A pool of WorkQueues that participate in work stealing.
   //
   // Every worker thread registers and unregisters its thread-local thread pool
@@ -177,7 +189,14 @@ class ThreadPool final : public Executor {
     bool Step();
 
    private:
+    // pool_ must be the first member so that it is alive when the thread count
+    // is decremented at time of destruction. This is necessary when this thread
+    // state holds the last shared_ptr keeping the pool alive.
     std::shared_ptr<ThreadPoolImpl> pool_;
+    // auto_thread_count_ must be the second member declared, so that the thread
+    // count is decremented after all other state is cleaned up (preventing
+    // leaks).
+    AutoThreadCount auto_thread_count_;
     StartThreadReason start_reason_;
     grpc_core::BackOff backoff_;
   };
