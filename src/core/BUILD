@@ -1478,6 +1478,7 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "common_event_engine_closures",
         "event_engine_basic_work_queue",
         "event_engine_executor",
         "event_engine_thread_local",
@@ -1485,6 +1486,7 @@ grpc_cc_library(
         "forkable",
         "time",
         "useful",
+        "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
