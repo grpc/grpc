@@ -1484,7 +1484,6 @@ grpc_cc_library(
         "event_engine_thread_local",
         "event_engine_work_queue",
         "forkable",
-        "no_destruct",
         "time",
         "useful",
         "//:backoff",
