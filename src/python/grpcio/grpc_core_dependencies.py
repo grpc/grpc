@@ -1316,8 +1316,6 @@ CORE_SOURCE_FILES = [
     'third_party/upb/upb/reflection/method_def.c',
     'third_party/upb/upb/reflection/oneof_def.c',
     'third_party/upb/upb/reflection/service_def.c',
-    'third_party/upb/upb/reflection/stage0/google/protobuf/descriptor.upb.c',
-    'third_party/upb/upb/reflection/stage1/google/protobuf/descriptor.upb.c',
     'third_party/upb/upb/text/encode.c',
     'third_party/upb/upb/wire/decode.c',
     'third_party/upb/upb/wire/decode_fast.c',

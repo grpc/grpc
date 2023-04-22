@@ -1261,8 +1261,6 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\reflection\\method_def.c " +
     "third_party\\upb\\upb\\reflection\\oneof_def.c " +
     "third_party\\upb\\upb\\reflection\\service_def.c " +
-    "third_party\\upb\\upb\\reflection\\stage0\\google\\protobuf\\descriptor.upb.c " +
-    "third_party\\upb\\upb\\reflection\\stage1\\google\\protobuf\\descriptor.upb.c " +
     "third_party\\upb\\upb\\text\\encode.c " +
     "third_party\\upb\\upb\\wire\\decode.c " +
     "third_party\\upb\\upb\\wire\\decode_fast.c " +
@@ -1755,12 +1753,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\message");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_table");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage0");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage0\\google");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage0\\google\\protobuf");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage1");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage1\\google");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\stage1\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\text");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\wire");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\utf8_range");
