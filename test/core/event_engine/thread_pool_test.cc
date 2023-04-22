@@ -19,7 +19,6 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
-#include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -78,8 +77,7 @@ TEST(ThreadPoolTest, ForkStressTest) {
   constexpr int expected_runcount = 1000;
   constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
-  auto pool = std::make_shared<ThreadPool>();
-  ASSERT_EQ(pool.use_count(), 1);
+  ThreadPool pool;
   std::atomic<int> runcount{0};
   std::atomic<int> fork_count{0};
   std::function<void()> inner_fn;
@@ -92,14 +90,13 @@ TEST(ThreadPoolTest, ForkStressTest) {
             num_closures_between_forks <=
         curr_runcount) {
       // skip incrementing, and schedule again.
-      pool->Run(inner_fn);
+      pool.Run(inner_fn);
       return;
     }
     runcount.fetch_add(1, std::memory_order_relaxed);
   };
-  ASSERT_EQ(pool.use_count(), 2);
   for (int i = 0; i < expected_runcount; i++) {
-    pool->Run(inner_fn);
+    pool.Run(inner_fn);
   }
   // simulate multiple forks at a fixed frequency
   int curr_runcount = 0;
@@ -110,14 +107,13 @@ TEST(ThreadPoolTest, ForkStressTest) {
     if (curr_forkcount * num_closures_between_forks > curr_runcount) {
       continue;
     }
-    pool->TestOnlyPrepareFork();
-    pool->TestOnlyPostFork();
+    pool.TestOnlyPrepareFork();
+    pool.TestOnlyPostFork();
     fork_count.fetch_add(1);
   }
   ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
   // owners are the local pool, and the copy inside `inner_fn`.
-  ASSERT_EQ(pool.use_count(), 2);
-  pool->Quiesce();
+  pool.Quiesce();
 }
 
 void ScheduleSelf(ThreadPool* p) {
