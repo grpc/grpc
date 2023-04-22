@@ -19,8 +19,11 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <thread>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
