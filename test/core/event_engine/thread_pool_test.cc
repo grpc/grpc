@@ -83,7 +83,7 @@ TEST(ThreadPoolTest, ForkStressTest) {
   std::atomic<int> runcount{0};
   std::atomic<int> fork_count{0};
   std::function<void()> inner_fn;
-  inner_fn = [pool, &runcount, &fork_count, &inner_fn]() {
+  inner_fn = [&]() {
     auto curr_runcount = runcount.load(std::memory_order_relaxed);
     // exit when the right number of closures have run, with some flex for
     // relaxed atomics.
