@@ -19,6 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -68,6 +69,55 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   p.Run([&n2] { n2.Notify(); });
   n2.WaitForNotification();
   p.Quiesce();
+}
+
+TEST(ThreadPoolTest, ForkStressTest) {
+  // Runs a large number of closures and multiple simulated fork events,
+  // ensuring that only some fixed number of closures are executed between fork
+  // events.
+  constexpr int expected_runcount = 1000;
+  constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
+  constexpr int num_closures_between_forks{100};
+  auto pool = std::make_shared<ThreadPool>();
+  ASSERT_EQ(pool.use_count(), 1);
+  std::atomic<int> runcount{0};
+  std::atomic<int> fork_count{0};
+  std::function<void()> inner_fn;
+  inner_fn = [pool, &runcount, &fork_count, &inner_fn]() {
+    auto curr_runcount = runcount.load(std::memory_order_relaxed);
+    // exit when the right number of closures have run, with some flex for
+    // relaxed atomics.
+    if (curr_runcount >= expected_runcount) return;
+    if (fork_count.load(std::memory_order_relaxed) *
+            num_closures_between_forks <=
+        curr_runcount) {
+      // skip incrementing, and schedule again.
+      pool->Run(inner_fn);
+      return;
+    }
+    runcount.fetch_add(1, std::memory_order_relaxed);
+  };
+  ASSERT_EQ(pool.use_count(), 2);
+  for (int i = 0; i < expected_runcount; i++) {
+    pool->Run(inner_fn);
+  }
+  // simulate multiple forks at a fixed frequency
+  int curr_runcount = 0;
+  while (curr_runcount < expected_runcount) {
+    absl::SleepFor(fork_freqency);
+    curr_runcount = runcount.load(std::memory_order_relaxed);
+    int curr_forkcount = fork_count.load(std::memory_order_relaxed);
+    if (curr_forkcount * num_closures_between_forks > curr_runcount) {
+      continue;
+    }
+    pool->TestOnlyPrepareFork();
+    pool->TestOnlyPostFork();
+    fork_count.fetch_add(1);
+  }
+  ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
+  // owners are the local pool, and the copy inside `inner_fn`.
+  ASSERT_EQ(pool.use_count(), 2);
+  pool->Quiesce();
 }
 
 void ScheduleSelf(ThreadPool* p) {
