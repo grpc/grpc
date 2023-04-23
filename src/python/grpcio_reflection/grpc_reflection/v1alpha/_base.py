@@ -29,12 +29,12 @@ def _not_found_error():
             error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
         ))
 
-def _collect_transitive_dependencies(descriptor, pool):
-    pool.update({descriptor.name: descriptor})
+def _collect_transitive_dependencies(descriptor, seen_files):
+    seen_files.update({descriptor.name: descriptor})
     for dependency in descriptor.dependencies:
-        if not dependency.name in pool:
+        if not dependency.name in seen_files:
             # descriptors cannot have circular dependencies
-            _collect_transitive_dependencies(dependency, pool)
+            _collect_transitive_dependencies(dependency, seen_files)
 
 
 def _file_descriptor_response(descriptor):
