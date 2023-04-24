@@ -42,18 +42,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
-class EventHandle;
-using PollerHandle = EventHandle*;
-#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-class WinSocket;
-using PollerHandle = std::unique_ptr<WinSocket>;
-#else
-#error "Unsupported platform"
-#endif
-using RegisterAresSocketWithPollerCallback =
-    absl::AnyInvocable<PollerHandle(ares_socket_t)>;
-
 extern grpc_core::TraceFlag grpc_trace_ares_driver;
 
 #define GRPC_ARES_DRIVER_TRACE_LOG(format, ...)                \
@@ -81,7 +69,7 @@ class GrpcAresRequest
   GrpcAresRequest(absl::string_view name,
                   absl::optional<absl::string_view> default_port,
                   EventEngine::Duration timeout,
-                  RegisterAresSocketWithPollerCallback register_cb,
+                  std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                   EventEngine* event_engine);
 
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -187,14 +175,12 @@ class GrpcAresRequest
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_);
-
   const EventEngine::Duration timeout_ ABSL_GUARDED_BY(mu_);
   absl::optional<EventEngine::TaskHandle> query_timeout_handle_
       ABSL_GUARDED_BY(mu_);
   absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mu_);
   EventEngine* event_engine_;
-
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -208,7 +194,7 @@ class GrpcAresHostnameRequest final : public GrpcAresRequest {
       absl::string_view name, absl::string_view default_port,
       absl::string_view dns_server, bool check_port,
       EventEngine::Duration timeout,
-      RegisterAresSocketWithPollerCallback register_cb,
+      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
   // Starting a request, on_resolve is guaranteed to be called with Result or
@@ -223,11 +209,11 @@ class GrpcAresHostnameRequest final : public GrpcAresRequest {
                                      struct hostent* hostent)
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
-  GrpcAresHostnameRequest(absl::string_view name,
-                          absl::string_view default_port,
-                          EventEngine::Duration timeout,
-                          RegisterAresSocketWithPollerCallback register_cb,
-                          EventEngine* event_engine);
+  GrpcAresHostnameRequest(
+      absl::string_view name, absl::string_view default_port,
+      EventEngine::Duration timeout,
+      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+      EventEngine* event_engine);
   ~GrpcAresHostnameRequest() override;
 
   bool ResolveAsIPLiteralLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -252,7 +238,7 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
   static absl::StatusOr<GrpcAresSRVRequest*> Create(
       absl::string_view name, EventEngine::Duration timeout,
       absl::string_view dns_server, bool check_port,
-      RegisterAresSocketWithPollerCallback register_cb,
+      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
   // Starting a request, on_resolve is guaranteed to be called with Result or
@@ -268,7 +254,7 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
                                    int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
   GrpcAresSRVRequest(absl::string_view name, EventEngine::Duration timeout,
-                     RegisterAresSocketWithPollerCallback register_cb,
+                     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                      EventEngine* event_engine);
   ~GrpcAresSRVRequest() override;
 
@@ -286,7 +272,7 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
   static absl::StatusOr<GrpcAresTXTRequest*> Create(
       absl::string_view name, EventEngine::Duration timeout,
       absl::string_view dns_server, bool check_port,
-      RegisterAresSocketWithPollerCallback register_cb,
+      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
   // Starting a request, on_resolve is guaranteed to be called with Result or
@@ -302,7 +288,7 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
                               int len) ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
   GrpcAresTXTRequest(absl::string_view name, EventEngine::Duration timeout,
-                     RegisterAresSocketWithPollerCallback register_cb,
+                     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                      EventEngine* event_engine);
   ~GrpcAresTXTRequest() override;
 

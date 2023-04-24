@@ -42,41 +42,40 @@ namespace experimental {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(ares_socket_t as, PollerHandle poller_handle)
+  GrpcPolledFdPosix(ares_socket_t as, EventHandle* handle)
       : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))),
         as_(as),
-        poller_handle_(poller_handle) {}
+        handle_(handle) {}
 
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd inside grpc_fd. This fd may be picked up
     // immediately by another thread, and should not be closed by the following
     // grpc_fd_orphan.
     int phony_release_fd;
-    poller_handle_->OrphanHandle(/*on_done*/ nullptr, &phony_release_fd,
-                                 "c-ares query finished");
+    handle_->OrphanHandle(/*on_done*/ nullptr, &phony_release_fd,
+                          "c-ares query finished");
   }
 
   void RegisterForOnReadableLocked(
       absl::AnyInvocable<void(absl::Status)> read_closure) override {
-    poller_handle_->NotifyOnRead(new PosixEngineClosure(
-        std::move(read_closure), /*is_permanent=*/false));
+    handle_->NotifyOnRead(new PosixEngineClosure(std::move(read_closure),
+                                                 /*is_permanent=*/false));
   }
 
   void RegisterForOnWriteableLocked(
       absl::AnyInvocable<void(absl::Status)> write_closure) override {
-    poller_handle_->NotifyOnWrite(new PosixEngineClosure(
-        std::move(write_closure), /*is_permanent=*/false));
+    handle_->NotifyOnWrite(new PosixEngineClosure(std::move(write_closure),
+                                                  /*is_permanent=*/false));
   }
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(poller_handle_->WrappedFd(), FIONREAD, &bytes_available) ==
-               0 &&
+    return ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
   void ShutdownLocked(grpc_error_handle error) override {
-    poller_handle_->ShutdownHandle(error);
+    handle_->ShutdownHandle(error);
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
@@ -86,30 +85,25 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
  private:
   const std::string name_;
   const ares_socket_t as_;
-  const PollerHandle poller_handle_;
+  EventHandle* handle_;
 };
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryPosix(
-      RegisterAresSocketWithPollerCallback register_cb)
-      : register_cb_(std::move(register_cb)) {}
+  explicit GrpcPolledFdFactoryPosix(PosixEventPoller* poller)
+      : poller_(poller) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
-    return new GrpcPolledFdPosix(as, register_cb_(as));
+    return new GrpcPolledFdPosix(
+        as,
+        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
   }
 
   void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
 
  private:
-  RegisterAresSocketWithPollerCallback register_cb_;
+  PosixEventPoller* poller_;
 };
-
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    RegisterAresSocketWithPollerCallback register_cb,
-    grpc_core::Mutex* /* mu */) {
-  return std::make_unique<GrpcPolledFdFactoryPosix>(std::move(register_cb));
-}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

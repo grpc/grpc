@@ -304,7 +304,8 @@ GrpcAresRequest::FdNode* GrpcAresRequest::FdNodeList::PopFdNode(
 GrpcAresRequest::GrpcAresRequest(
     absl::string_view name, absl::optional<absl::string_view> default_port,
     EventEngine::Duration timeout,
-    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
                                                           : nullptr),
@@ -313,8 +314,7 @@ GrpcAresRequest::GrpcAresRequest(
       fd_node_list_(std::make_unique<FdNodeList>()),
       timeout_(timeout),
       event_engine_(event_engine),
-      polled_fd_factory_(NewGrpcPolledFdFactory(std::move(register_cb), &mu_)) {
-}
+      polled_fd_factory_(std::move(polled_fd_factory)) {}
 
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
@@ -640,8 +640,9 @@ void GrpcAresRequest::ShutdownPollerHandlesLocked(absl::Status status) {
 GrpcAresHostnameRequest::GrpcAresHostnameRequest(
     absl::string_view name, absl::string_view default_port,
     EventEngine::Duration timeout,
-    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, default_port, timeout, std::move(register_cb),
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, default_port, timeout, std::move(polled_fd_factory),
                       event_engine) {}
 
 GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
@@ -811,9 +812,10 @@ void GrpcAresHostnameRequest::SortResolvedAddresses() {
 
 GrpcAresSRVRequest::GrpcAresSRVRequest(
     absl::string_view name, EventEngine::Duration timeout,
-    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
-                      event_engine) {}
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout,
+                      std::move(polled_fd_factory), event_engine) {}
 
 GrpcAresSRVRequest::~GrpcAresSRVRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
@@ -862,9 +864,10 @@ void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
 
 GrpcAresTXTRequest::GrpcAresTXTRequest(
     absl::string_view name, EventEngine::Duration timeout,
-    RegisterAresSocketWithPollerCallback register_cb, EventEngine* event_engine)
-    : GrpcAresRequest(name, absl::nullopt, timeout, std::move(register_cb),
-                      event_engine) {}
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, absl::nullopt, timeout,
+                      std::move(polled_fd_factory), event_engine) {}
 
 GrpcAresTXTRequest::~GrpcAresTXTRequest() {
   GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
@@ -915,10 +918,10 @@ absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
     absl::string_view name, absl::string_view default_port,
     absl::string_view dns_server, bool check_port,
     EventEngine::Duration timeout,
-    RegisterAresSocketWithPollerCallback register_cb,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     EventEngine* event_engine) {
   auto* request = new GrpcAresHostnameRequest(
-      name, default_port, timeout, std::move(register_cb), event_engine);
+      name, default_port, timeout, std::move(polled_fd_factory), event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
     return request;
@@ -930,10 +933,10 @@ absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
 absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server, bool check_port,
-    RegisterAresSocketWithPollerCallback register_cb,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     EventEngine* event_engine) {
-  auto* request = new GrpcAresSRVRequest(name, timeout, std::move(register_cb),
-                                         event_engine);
+  auto* request = new GrpcAresSRVRequest(
+      name, timeout, std::move(polled_fd_factory), event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
     return request;
@@ -945,10 +948,10 @@ absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
 absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server, bool check_port,
-    RegisterAresSocketWithPollerCallback register_cb,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     EventEngine* event_engine) {
-  auto* request = new GrpcAresTXTRequest(name, timeout, std::move(register_cb),
-                                         event_engine);
+  auto* request = new GrpcAresTXTRequest(
+      name, timeout, std::move(polled_fd_factory), event_engine);
   absl::Status status = request->Initialize(dns_server, check_port);
   if (status.ok()) {
     return request;

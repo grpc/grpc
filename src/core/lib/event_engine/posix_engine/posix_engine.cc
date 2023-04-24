@@ -41,6 +41,7 @@
 #include "src/core/lib/event_engine/ares_driver.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -68,11 +69,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
-
-bool NeedPosixEngine() {
-  // DO NOT SUBMIT: remove the short-circuit
-  return true || UseEventEngineClient() || UseEventEngineListener();
-}
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -497,10 +493,12 @@ PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port, Duration timeout) {
+  PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresHostnameRequest*> request =
       GrpcAresHostnameRequest::Create(
           name, default_port, options_.dns_server, /*check_port=*/true, timeout,
-          [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
+          std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -528,9 +526,11 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
     LookupSRVCallback on_resolve, absl::string_view name, Duration timeout) {
+  PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresSRVRequest*> request = GrpcAresSRVRequest::Create(
       name, timeout, options_.dns_server, /*check_port=*/false,
-      [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -558,9 +558,11 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
 
 LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
     LookupTXTCallback on_resolve, absl::string_view name, Duration timeout) {
+  PosixEventPoller* poller = poller_manager_->Poller();
+  GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresTXTRequest*> request = GrpcAresTXTRequest::Create(
       name, timeout, options_.dns_server, /*check_port=*/false,
-      [this](int fd) { return CreateEventHandle(fd); }, event_engine_);
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run([cb = std::move(on_resolve),
@@ -595,15 +597,6 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
     }
   }
   return false;
-}
-
-EventHandle* PosixEventEngine::PosixDNSResolver::CreateEventHandle(int fd) {
-  PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_DEBUG_ASSERT(poller != nullptr);
-  GRPC_ARES_DRIVER_TRACE_LOG("CreateEventHandle: poller %p; fd: %d", poller,
-                             fd);
-  return poller->CreateHandle(fd, "Add c-ares socket",
-                              poller->CanTrackErrors());
 }
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(

@@ -2216,16 +2216,10 @@ grpc_cc_library(
         "lib/event_engine/ares_driver.cc",
         "lib/event_engine/nameser.h",
         "lib/event_engine/grpc_polled_fd.h",
-    ] + select({
-        "//:windows": [],
-        "//:windows_msvc": [],
-        "//:windows_other": [],
-        "//conditions:default": [
-            "lib/event_engine/grpc_polled_fd_posix.cc",
-        ],
-    }),
+    ],
     hdrs = [
         "lib/event_engine/ares_driver.h",
+        "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2238,16 +2232,6 @@ grpc_cc_library(
         "address_sorting",
         "cares",
     ],
-    select_deps = [{
-        "//:windows": ["windows_iocp"],
-        "//:windows_msvc": ["windows_iocp"],
-        "//:windows_other": ["windows_iocp"],
-        "//conditions:default": [
-            "posix_event_engine_tcp_socket_utils",
-            "posix_event_engine_closure",
-            "posix_event_engine_event_poller",
-        ],
-    }],
     deps = [
         "error",
         "event_engine_tcp_socket_utils",
@@ -2255,9 +2239,13 @@ grpc_cc_library(
         "examine_stack",
         "grpc_sockaddr",
         "iomgr_port",
+        "posix_event_engine_tcp_socket_utils",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
         "ref_counted",
         "resolved_address",
         "status_helper",
+        "windows_iocp",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
