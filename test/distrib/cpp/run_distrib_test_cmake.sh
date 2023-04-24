@@ -43,7 +43,7 @@ popd
 # Install protobuf
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
-cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -Dprotobuf_ABSL_PROVIDER=package ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
@@ -75,6 +75,7 @@ cmake \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_ABSL_PROVIDER=package \
+  -DgRPC_PROTOBUF_PACKAGE_TYPE=CONFIG \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \

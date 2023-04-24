@@ -67,12 +67,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  SetEventEngineFactories(
-      []() {
-        return std::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
-      },
-      nullptr);
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine =
+      std::make_shared<
+          grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
+  SetEventEngineFactories([engine]() { return engine; },
+                          [engine]() { return engine; });
   grpc_event_engine::experimental::InitTimerTests();
   return RUN_ALL_TESTS();
 }

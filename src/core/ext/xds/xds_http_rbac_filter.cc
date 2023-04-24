@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <map>
 #include <string>
 #include <utility>
 
@@ -41,13 +40,14 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/upb.h"
+#include "upb/collections/map.h"
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -296,9 +296,7 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
     principal_json.emplace("any",
                            envoy_config_rbac_v3_Principal_any(principal));
   } else if (envoy_config_rbac_v3_Principal_has_authenticated(principal)) {
-    auto* authenticated_json =
-        principal_json.emplace("authenticated", Json::Object())
-            .first->second.mutable_object();
+    Json::Object authenticated_json;
     const auto* principal_name =
         envoy_config_rbac_v3_Principal_Authenticated_principal_name(
             envoy_config_rbac_v3_Principal_authenticated(principal));
@@ -307,9 +305,9 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
                                           ".authenticated.principal_name");
       Json principal_name_json =
           ParseStringMatcherToJson(principal_name, errors);
-      authenticated_json->emplace("principalName",
-                                  std::move(principal_name_json));
+      authenticated_json["principalName"] = std::move(principal_name_json);
     }
+    principal_json["authenticated"] = std::move(authenticated_json);
   } else if (envoy_config_rbac_v3_Principal_has_source_ip(principal)) {
     principal_json.emplace(
         "sourceIp", ParseCidrRangeToJson(
@@ -396,7 +394,7 @@ Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
     }
     Json::Object inner_rbac_json;
     inner_rbac_json.emplace("action", envoy_config_rbac_v3_RBAC_action(rules));
-    if (envoy_config_rbac_v3_RBAC_has_policies(rules)) {
+    if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
       size_t iter = kUpb_Map_Begin;
       while (true) {
@@ -500,7 +498,7 @@ XdsHttpRbacFilter::GenerateServiceConfig(
                          ? filter_config_override->config
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"rbacPolicy", policy_json.Dump()};
+  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
 }
 
 }  // namespace grpc_core

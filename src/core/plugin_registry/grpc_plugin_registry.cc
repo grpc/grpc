@@ -50,9 +50,8 @@ extern void RegisterServiceConfigChannelArgFilter(
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
+extern void RegisterDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder);
-extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
-extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
@@ -76,8 +75,8 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   grpc_event_engine::experimental::RegisterEventEngineChannelArgPreconditioning(
       builder);
   // The order of the handshaker registration is crucial here.
-  // We want TCP connect handshaker to be registered last so that it is added to
-  // the start of the handshaker list.
+  // We want TCP connect handshaker to be registered last so that it is added
+  // to the start of the handshaker list.
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterPriorityLbPolicy(builder);
@@ -98,8 +97,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
   FaultInjectionFilterRegister(builder);
-  RegisterAresDnsResolver(builder);
-  RegisterNativeDnsResolver(builder);
+  RegisterDnsResolver(builder);
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);

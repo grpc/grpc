@@ -274,7 +274,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                      grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
-  gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
+  gpr_atm_full_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
                             GRPC_ERROR_CREATE("Endpoint already shutdown"));

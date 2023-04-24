@@ -25,47 +25,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Public APIs for message operations that do not require descriptors.
- * These functions can be used even in build that does not want to depend on
- * reflection or descriptors.
- *
- * Descriptor-based reflection functionality lives in reflection.h.
- */
+// This header is deprecated, use upb/message/message.h instead
+// IWYU pragma: private, include "upb/message/message.h"
 
 #ifndef UPB_MSG_H_
 #define UPB_MSG_H_
 
-#include <stddef.h>
-
-// TODO(b/232091617): Remove this and fix everything that breaks as a result.
-#include "upb/extension_registry.h"
-#include "upb/upb.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef void upb_Message;
-
-/* For users these are opaque. They can be obtained from
- * upb_MessageDef_MiniTable() but users cannot access any of the members. */
-struct upb_MiniTable;
-typedef struct upb_MiniTable upb_MiniTable;
-
-/* Adds unknown data (serialized protobuf data) to the given message.  The data
- * is copied into the message instance. */
-void upb_Message_AddUnknown(upb_Message* msg, const char* data, size_t len,
-                            upb_Arena* arena);
-
-/* Returns a reference to the message's unknown data. */
-const char* upb_Message_GetUnknown(const upb_Message* msg, size_t* len);
-
-/* Returns the number of extensions present in this message. */
-size_t upb_Message_ExtensionCount(const upb_Message* msg);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+#include "upb/message/message.h"
 
 #endif /* UPB_MSG_INT_H_ */

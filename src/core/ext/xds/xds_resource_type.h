@@ -24,8 +24,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/arena.h"
-#include "upb/def.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/debug/trace.h"

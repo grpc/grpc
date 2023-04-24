@@ -55,7 +55,7 @@ Aggregation MillisDistributionAggregation() {
 
 void SetConstantLabels(ViewDescriptor* descriptor) {
   for (const auto& label :
-       grpc::internal::OpenCensusRegistry::Get().constant_labels()) {
+       grpc::internal::OpenCensusRegistry::Get().ConstantLabels()) {
     descriptor->add_column(label.tag_key);
   }
 }
@@ -835,5 +835,20 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
 }
 
 }  // namespace experimental
+
+namespace internal {
+
+const ViewDescriptor& ClientApiLatency() {
+  const static ViewDescriptor descriptor =
+      DefaultViewDescriptor()
+          .set_name("grpc.io/client/api_latency")
+          .set_measure(kRpcClientApiLatencyMeasureName)
+          .set_aggregation(MillisDistributionAggregation())
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
+  return descriptor;
+}
+
+}  // namespace internal
 
 }  // namespace grpc

@@ -53,6 +53,11 @@ class CallMetricRecorder {
   /// Values outside of the valid range [0, infy) are ignored.
   virtual CallMetricRecorder& RecordQpsMetric(double value) = 0;
 
+  /// Records a call metric measurement for errors per second.
+  /// Multiple calls to this method will override the stored value.
+  /// Values outside of the valid range [0, infy) are ignored.
+  virtual CallMetricRecorder& RecordEpsMetric(double value) = 0;
+
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
   /// override the corresponding stored value. The lifetime of the
@@ -73,6 +78,16 @@ class CallMetricRecorder {
   /// are global constants.
   virtual CallMetricRecorder& RecordRequestCostMetric(string_ref name,
                                                       double value) = 0;
+
+  /// Records an application-specific opaque metric measurement.
+  /// Multiple calls to this method with the same name will
+  /// override the corresponding stored value. The lifetime of the
+  /// name string needs to be longer than the lifetime of the RPC
+  /// itself, since it's going to be sent as trailers after the RPC
+  /// finishes. It is assumed the strings are common names that
+  /// are global constants.
+  virtual CallMetricRecorder& RecordNamedMetric(string_ref name,
+                                                double value) = 0;
 };
 
 }  // namespace experimental

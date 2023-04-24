@@ -28,7 +28,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -45,19 +44,23 @@ namespace grpc_core {
 
 class Activity;
 
+// WakeupMask is a bitfield representing which parts of an activity should be
+// woken up.
+using WakeupMask = uint16_t;
+
 // A Wakeable object is used by queues to wake activities.
 class Wakeable {
  public:
   // Wake up the underlying activity.
   // After calling, this Wakeable cannot be used again.
-  // arg comes from the Waker object and allows one Wakeable instance to be used
-  // for multiple disjoint subparts of an Activity.
-  virtual void Wakeup(void* arg) = 0;
+  // WakeupMask comes from the activity that created this Wakeable and specifies
+  // the set of promises that should be awoken.
+  virtual void Wakeup(WakeupMask wakeup_mask) = 0;
   // Drop this wakeable without waking up the underlying activity.
-  virtual void Drop(void* arg) = 0;
+  virtual void Drop(WakeupMask wakeup_mask) = 0;
 
   // Return the underlying activity debug tag, or "<unknown>" if not available.
-  virtual std::string ActivityDebugTag(void* arg) const = 0;
+  virtual std::string ActivityDebugTag(WakeupMask wakeup_mask) const = 0;
 
  protected:
   inline ~Wakeable() {}
@@ -65,9 +68,9 @@ class Wakeable {
 
 namespace promise_detail {
 struct Unwakeable final : public Wakeable {
-  void Wakeup(void*) override {}
-  void Drop(void*) override {}
-  std::string ActivityDebugTag(void*) const override;
+  void Wakeup(WakeupMask) override {}
+  void Drop(WakeupMask) override {}
+  std::string ActivityDebugTag(WakeupMask) const override;
 };
 static Unwakeable* unwakeable() {
   return NoDestructSingleton<Unwakeable>::Get();
@@ -78,8 +81,9 @@ static Unwakeable* unwakeable() {
 // This type is non-copyable but movable.
 class Waker {
  public:
-  Waker(Wakeable* wakeable, void* arg) : wakeable_and_arg_{wakeable, arg} {}
-  Waker() : Waker(promise_detail::unwakeable(), nullptr) {}
+  Waker(Wakeable* wakeable, WakeupMask wakeup_mask)
+      : wakeable_and_arg_{wakeable, wakeup_mask} {}
+  Waker() : Waker(promise_detail::unwakeable(), 0) {}
   ~Waker() { wakeable_and_arg_.Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
@@ -95,7 +99,7 @@ class Waker {
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
     return H::combine(H::combine(std::move(h), w.wakeable_and_arg_.wakeable),
-                      w.wakeable_and_arg_.arg);
+                      w.wakeable_and_arg_.wakeup_mask);
   }
 
   bool operator==(const Waker& other) const noexcept {
@@ -118,25 +122,40 @@ class Waker {
  private:
   struct WakeableAndArg {
     Wakeable* wakeable;
-    void* arg;
+    WakeupMask wakeup_mask;
 
-    void Wakeup() { wakeable->Wakeup(arg); }
-    void Drop() { wakeable->Drop(arg); }
+    void Wakeup() { wakeable->Wakeup(wakeup_mask); }
+    void Drop() { wakeable->Drop(wakeup_mask); }
     std::string ActivityDebugTag() const {
       return wakeable == nullptr ? "<unknown>"
-                                 : wakeable->ActivityDebugTag(arg);
+                                 : wakeable->ActivityDebugTag(wakeup_mask);
     }
     bool operator==(const WakeableAndArg& other) const noexcept {
-      return wakeable == other.wakeable && arg == other.arg;
+      return wakeable == other.wakeable && wakeup_mask == other.wakeup_mask;
     }
   };
 
   WakeableAndArg Take() {
-    return std::exchange(wakeable_and_arg_,
-                         {promise_detail::unwakeable(), nullptr});
+    return std::exchange(wakeable_and_arg_, {promise_detail::unwakeable(), 0});
   }
 
   WakeableAndArg wakeable_and_arg_;
+};
+
+// Helper type to track wakeups between objects in the same activity.
+// Can be fairly fast as no ref counting or locking needs to occur.
+class IntraActivityWaiter {
+ public:
+  // Register for wakeup, return Pending(). If state is not ready to proceed,
+  // Promises should bottom out here.
+  Pending pending();
+  // Wake the activity
+  void Wake();
+
+  std::string DebugString() const;
+
+ private:
+  WakeupMask wakeups_ = 0;
 };
 
 // An Activity tracks execution of a single promise.
@@ -158,7 +177,13 @@ class Activity : public Orphanable {
   void ForceWakeup() { MakeOwningWaker().Wakeup(); }
 
   // Force the current activity to immediately repoll if it doesn't complete.
-  virtual void ForceImmediateRepoll() = 0;
+  virtual void ForceImmediateRepoll(WakeupMask mask) = 0;
+  // Legacy version of ForceImmediateRepoll() that uses the current participant.
+  // Will go away once Party gets merged with Activity. New usage is banned.
+  void ForceImmediateRepoll() { ForceImmediateRepoll(CurrentParticipant()); }
+
+  // Return the current part of the activity as a bitmask
+  virtual WakeupMask CurrentParticipant() const { return 1; }
 
   // Return the current activity.
   // Additionally:
@@ -286,7 +311,7 @@ class FreestandingActivity : public Activity, private Wakeable {
  public:
   Waker MakeOwningWaker() final {
     Ref();
-    return Waker(this, nullptr);
+    return Waker(this, 0);
   }
   Waker MakeNonOwningWaker() final;
 
@@ -295,7 +320,7 @@ class FreestandingActivity : public Activity, private Wakeable {
     Unref();
   }
 
-  void ForceImmediateRepoll() final {
+  void ForceImmediateRepoll(WakeupMask) final {
     mu_.AssertHeld();
     SetActionDuringRun(ActionDuringRun::kWakeup);
   }
@@ -335,7 +360,7 @@ class FreestandingActivity : public Activity, private Wakeable {
 
   Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
-  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
  private:
   class Handle;
@@ -469,7 +494,7 @@ class PromiseActivity final
   // the activity to an external threadpool to run. If the activity is already
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
-  void Wakeup(void*) final {
+  void Wakeup(WakeupMask) final {
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
@@ -488,7 +513,7 @@ class PromiseActivity final
   }
 
   // Drop a wakeup
-  void Drop(void*) final { this->WakeupComplete(); }
+  void Drop(WakeupMask) final { this->WakeupComplete(); }
 
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
@@ -543,7 +568,7 @@ class PromiseActivity final
       // Run the promise.
       GPR_ASSERT(!done_);
       auto r = promise_holder_.promise();
-      if (auto* status = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.
         MarkDone();
         return IntoStatus(status);
@@ -593,6 +618,16 @@ ActivityPtr MakeActivity(Factory promise_factory,
                                           Contexts...>(
           std::move(promise_factory), std::move(wakeup_scheduler),
           std::move(on_done), std::forward<Contexts>(contexts)...));
+}
+
+inline Pending IntraActivityWaiter::pending() {
+  wakeups_ |= Activity::current()->CurrentParticipant();
+  return Pending();
+}
+
+inline void IntraActivityWaiter::Wake() {
+  if (wakeups_ == 0) return;
+  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
 }
 
 }  // namespace grpc_core

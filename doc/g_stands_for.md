@@ -52,4 +52,6 @@
 - 1.50 'g' stands for ['galley'](https://github.com/grpc/grpc/tree/v1.50.x)
 - 1.51 'g' stands for ['galaxy'](https://github.com/grpc/grpc/tree/v1.51.x)
 - 1.52 'g' stands for ['gribkoff'](https://github.com/grpc/grpc/tree/v1.52.x)
-- 1.53 'g' stands for ['glockenspiel'](https://github.com/grpc/grpc/tree/master)
+- 1.53 'g' stands for ['glockenspiel'](https://github.com/grpc/grpc/tree/v1.53.x)
+- 1.54 'g' stands for ['gracious'](https://github.com/grpc/grpc/tree/v1.54.x)
+- 1.55 'g' stands for ['grandslam'](https://github.com/grpc/grpc/tree/master)

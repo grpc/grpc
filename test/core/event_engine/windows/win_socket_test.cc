@@ -74,7 +74,8 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   wrapped_client_socket.Shutdown();
   bool read_called = false;
   AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
-    ASSERT_EQ(wrapped_client_socket.read_info()->result().bytes_transferred, 0);
+    ASSERT_EQ(wrapped_client_socket.read_info()->result().bytes_transferred,
+              0u);
     ASSERT_EQ(wrapped_client_socket.read_info()->result().wsa_error,
               WSAESHUTDOWN);
     read_called = true;

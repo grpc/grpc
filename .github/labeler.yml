@@ -40,7 +40,9 @@ lang/python:
 - examples/python/**
 - requirements.bazel.txt
 - src/compiler/python*
-- src/python/**
+- any:
+  - src/python/**
+  - "!src/python/grpcio/grpc_core_dependencies.py"
 
 lang/ruby:
 - examples/ruby/**
@@ -51,3 +53,8 @@ lang/ruby:
 - src/compiler/csharp*
 - src/csharp/**
 
+"disposition/Needs Internal Changes":
+- src/core/lib/event_engine/windows/**
+- src/core/lib/gpr/windows/**
+- src/core/lib/gprpp/windows/**
+- test/core/event_engine/windows/**

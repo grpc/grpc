@@ -24,11 +24,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
@@ -39,6 +39,7 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 // Channel arg key for ConfigSelector.
@@ -50,22 +51,7 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
-  // An interface to be used by the channel when dispatching calls.
-  class CallDispatchController {
-   public:
-    virtual ~CallDispatchController() = default;
-
-    // Called by the channel to decide if it should retry the call upon a
-    // failure.
-    virtual bool ShouldRetry() = 0;
-
-    // Called by the channel when no more LB picks will be performed for
-    // the call.
-    virtual void Commit() = 0;
-  };
-
   struct GetCallConfigArgs {
-    grpc_slice* path;
     grpc_metadata_batch* initial_metadata;
     Arena* arena;
   };
@@ -79,8 +65,9 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
     ServiceConfigCallData::CallAttributes call_attributes;
-    // Call dispatch controller.
-    CallDispatchController* call_dispatch_controller = nullptr;
+    // To be called exactly once, when the call has been committed to a
+    // particular subchannel (i.e., after all LB picks are complete).
+    absl::AnyInvocable<void()> on_commit;
   };
 
   ~ConfigSelector() override = default;
@@ -132,10 +119,12 @@ class DefaultConfigSelector : public ConfigSelector {
 
   absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
+    Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
+    GPR_ASSERT(path != nullptr);
     call_config.method_configs =
-        service_config_->GetMethodParsedConfigVector(*args.path);
+        service_config_->GetMethodParsedConfigVector(path->c_slice());
     call_config.service_config = service_config_;
-    return call_config;
+    return std::move(call_config);
   }
 
   // Only comparing the ConfigSelector itself, not the underlying

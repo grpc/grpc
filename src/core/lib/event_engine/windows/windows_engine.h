@@ -93,6 +93,7 @@ class WindowsEventEngine : public EventEngine,
   // WindowsEventEngine type are effectively friends.
   // Not intended for external use.
   Executor* executor() { return executor_.get(); }
+  IOCP* poller() { return &iocp_; }
 
  private:
   // State of an active connection.
@@ -139,7 +140,7 @@ class WindowsEventEngine : public EventEngine,
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
-  class TimerClosure;
+  struct TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;

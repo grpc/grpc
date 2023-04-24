@@ -20,6 +20,7 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
@@ -68,7 +69,7 @@ TEST(ExamineStackTest, AbseilStackProvider) {
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
-  EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") != std::string::npos);
+  EXPECT_THAT(*stack_trace, ::testing::HasSubstr("GetCurrentStackTrace"));
 #endif
 }
 

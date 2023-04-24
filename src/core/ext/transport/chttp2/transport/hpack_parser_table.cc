@@ -69,6 +69,7 @@ auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const
 
 void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   if (max_entries == max_entries_) return;
+  max_entries_ = max_entries;
   std::vector<Memento> entries;
   entries.reserve(num_entries_);
   for (size_t i = 0; i < num_entries_; i++) {

@@ -62,6 +62,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -134,6 +135,7 @@ static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
 static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
 static constexpr uint8_t kFilterExaminesInboundMessages = 8;
+static constexpr uint8_t kFilterExaminesCallContext = 16;
 
 namespace promise_filter_detail {
 
@@ -182,7 +184,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -197,7 +199,8 @@ class BaseCallData : public Activity, private Wakeable {
         public promise_detail::Context<grpc_polling_entity>,
         public promise_detail::Context<CallFinalization>,
         public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine> {
+            grpc_event_engine::experimental::EventEngine>,
+        public promise_detail::Context<CallContext> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -207,7 +210,8 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_) {}
+              call_data->event_engine_),
+          promise_detail::Context<CallContext>(call_data->call_context_) {}
   };
 
   class Flusher {
@@ -218,7 +222,11 @@ class BaseCallData : public Activity, private Wakeable {
 
     void Resume(grpc_transport_stream_op_batch* batch) {
       GPR_ASSERT(!call_->is_last());
-      release_.push_back(batch);
+      if (batch->HasOp()) {
+        release_.push_back(batch);
+      } else if (batch->on_complete != nullptr) {
+        Complete(batch);
+      }
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,
@@ -236,6 +244,8 @@ class BaseCallData : public Activity, private Wakeable {
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
+
+    BaseCallData* call() const { return call_; }
 
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
@@ -278,11 +288,6 @@ class BaseCallData : public Activity, private Wakeable {
       grpc_metadata_batch* p) {
     return Arena::PoolPtr<grpc_metadata_batch>(p,
                                                Arena::PooledDeleter(nullptr));
-  }
-
-  static grpc_metadata_batch* UnwrapMetadata(
-      Arena::PoolPtr<grpc_metadata_batch> p) {
-    return p.release();
   }
 
   class ReceiveInterceptor final : public Interceptor {
@@ -398,6 +403,8 @@ class BaseCallData : public Activity, private Wakeable {
       kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
+      // We're done, but we haven't gotten a status yet
+      kCancelledButNoStatus,
     };
     static const char* StateString(State);
 
@@ -538,8 +545,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup(void*) final;
-  void Drop(void*) final;
+  void Wakeup(WakeupMask) final;
+  void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
 
@@ -549,6 +556,7 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
   CallFinalization finalization_;
+  CallContext* call_context_ = nullptr;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
@@ -564,9 +572,11 @@ class ClientCallData : public BaseCallData {
   ~ClientCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+  std::string DebugTag() const override;
 
  private:
   // At what stage is our handling of send initial metadata?
@@ -664,6 +674,8 @@ class ClientCallData : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Polling related data. Non-null if we're actively polling
   PollContext* poll_ctx_ = nullptr;
+  // Initial metadata outstanding token
+  ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
 class ServerCallData : public BaseCallData {
@@ -673,9 +685,11 @@ class ServerCallData : public BaseCallData {
   ~ServerCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+  std::string DebugTag() const override;
 
  protected:
   absl::string_view ClientOrServerString() const override { return "SVR"; }

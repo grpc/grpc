@@ -29,17 +29,17 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
-                  Executor* Executor);
+                  Executor* Executor, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
-  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
-  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, const WriteArgs* args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
 
  private:
-  class AsyncIOState;
+  struct AsyncIOState;
 
   // Permanent closure type for Read callbacks
   class HandleReadClosure : public EventEngine::Closure {
@@ -49,11 +49,21 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                absl::AnyInvocable<void(absl::Status)> cb);
     // Resets the per-request data
     void Reset();
+    // Run the callback with whatever data is available, and reset state.
+    //
+    // Returns true if the callback has been called with some data. Returns
+    // false if no data has been read.
+    bool MaybeFinishIfDataHasAlreadyBeenRead();
+    // Execute the callback and reset.
+    void ExecuteCallbackAndReset(absl::Status status);
+    // Swap any leftover slices into the provided buffer
+    void DonateSpareSlices(SliceBuffer* buffer);
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
     absl::AnyInvocable<void(absl::Status)> cb_;
     SliceBuffer* buffer_ = nullptr;
+    SliceBuffer last_read_buffer_;
   };
 
   // Permanent closure type for Write callbacks
@@ -78,13 +88,19 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   // Endpoint, and be destroyed asynchronously when all pending overlapped
   // events are complete.
   struct AsyncIOState {
-    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket);
+    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket,
+                 std::shared_ptr<EventEngine> engine);
     ~AsyncIOState();
     WindowsEndpoint* const endpoint;
     std::unique_ptr<WinSocket> socket;
     HandleReadClosure handle_read_event;
     HandleWriteClosure handle_write_event;
+    std::shared_ptr<EventEngine> engine;
   };
+
+  // Perform the low-level calls and execute the HandleReadClosure
+  // asynchronously.
+  absl::Status DoTcpRead(SliceBuffer* buffer);
 
   EventEngine::ResolvedAddress peer_address_;
   std::string peer_address_string_;

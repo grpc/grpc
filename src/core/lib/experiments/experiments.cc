@@ -54,6 +54,12 @@ const char* const description_transport_supplies_client_latency =
     "opencensus";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
+const char* const description_schedule_cancellation_over_write =
+    "Allow cancellation op to be scheduled over a write";
+const char* const description_trace_record_callops =
+    "Enables tracing of call batch initiation and completion.";
+const char* const description_event_engine_dns =
+    "If set, use EventEngine DNSResolver for client channel resolution";
 }  // namespace
 
 namespace grpc_core {
@@ -75,6 +81,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"transport_supplies_client_latency",
      description_transport_supplies_client_latency, false},
     {"event_engine_listener", description_event_engine_listener, false},
+    {"schedule_cancellation_over_write",
+     description_schedule_cancellation_over_write, false},
+    {"trace_record_callops", description_trace_record_callops, false},
+    {"event_engine_dns", description_event_engine_dns, false},
 };
 
 }  // namespace grpc_core

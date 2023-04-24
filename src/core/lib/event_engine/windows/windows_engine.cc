@@ -37,6 +37,7 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
+#include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -106,16 +107,33 @@ WindowsEventEngine::WindowsEventEngine()
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
+  GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
   {
-    grpc_core::MutexLock lock(&task_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                this, HandleToString<EventEngine::TaskHandle>(handle).c_str());
+    task_mu_.Lock();
+    if (!known_handles_.empty()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+        for (auto handle : known_handles_) {
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
+        }
+      }
+      // Allow a small grace period for timers to be run before shutting down.
+      auto deadline =
+          timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
+      while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
+                               known_handles_.size());
+        }
+        task_mu_.Unlock();
+        absl::SleepFor(absl::Milliseconds(200));
+        task_mu_.Lock();
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
@@ -184,9 +202,11 @@ bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 void WindowsEventEngine::OnConnectCompleted(
     std::shared_ptr<ConnectionState> state) {
   absl::StatusOr<std::unique_ptr<WindowsEndpoint>> endpoint;
+  EventEngine::OnConnectCallback cb;
   {
     // Connection attempt complete!
     grpc_core::MutexLock lock(&state->mu);
+    cb = std::move(state->on_connected_user_callback);
     state->on_connected = nullptr;
     {
       grpc_core::MutexLock handle_lock(&connection_mu_);
@@ -204,10 +224,10 @@ void WindowsEventEngine::OnConnectCompleted(
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
-          cfg, executor_.get());
+          cfg, executor_.get(), shared_from_this());
     }
   }
-  state->on_connected_user_callback(std::move(endpoint));
+  cb(std::move(endpoint));
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
@@ -222,7 +242,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     Run([on_connect = std::move(on_connect), status = uri.status()]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
                           uri->c_str());
@@ -239,14 +259,14 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   status = PrepareSocket(sock);
   if (!status.ok()) {
     Run([on_connect = std::move(on_connect), status]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Grab the function pointer for ConnectEx for that specific socket It may
   // change depending on the interface.
@@ -263,7 +283,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
              "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // bind the local address
   auto local_address = ResolvedAddressMakeWild6(0);
@@ -273,7 +293,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "bind")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Connect
   auto watched_socket = iocp_.Watch(sock);
@@ -291,7 +311,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
         on_connect(status);
       });
       watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      return EventEngine::kInvalidConnectionHandle;
+      return EventEngine::ConnectionHandle::kInvalid;
     }
   }
   GPR_ASSERT(watched_socket != nullptr);
@@ -327,8 +347,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  if (TaskHandleComparator<ConnectionHandle>::Eq()(
-          handle, EventEngine::kInvalidConnectionHandle)) {
+  if (handle == EventEngine::ConnectionHandle::kInvalid) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;
@@ -379,9 +398,11 @@ WindowsEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  grpc_core::Crash("unimplemented");
+  return std::make_unique<WindowsEventEngineListener>(
+      &iocp_, std::move(on_accept), std::move(on_shutdown),
+      std::move(memory_allocator_factory), shared_from_this(), executor_.get(),
+      config);
 }
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

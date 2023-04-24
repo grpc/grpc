@@ -24,8 +24,8 @@
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/compiler/command_line_interface.h>
 #include <google/protobuf/compiler/importer.h>
+#include <google/protobuf/compiler/python/generator.h>
 #include <google/protobuf/compiler/python/pyi_generator.h>
-#include <google/protobuf/compiler/python/python_generator.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 

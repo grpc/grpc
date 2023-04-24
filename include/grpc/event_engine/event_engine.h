@@ -122,15 +122,21 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
+    static const TaskHandle kInvalid;
+    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
+    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
-  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
+    static const ConnectionHandle kInvalid;
+    friend bool operator==(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
+    friend bool operator!=(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
   };
-  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -181,10 +187,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
-    /// \a buffer, and the \a on_read callback is called. The caller must ensure
-    /// that the callback has access to the buffer when executed later.
-    /// Ownership of the buffer is not transferred. Valid slices *may* be placed
-    /// into the buffer even if the callback is invoked with a non-OK Status.
+    /// \a buffer. If the read succeeds immediately, it returns true and the \a
+    /// on_read callback is not executed. Otherwise it returns false and the \a
+    /// on_read callback executes asynchronously when the read completes. The
+    /// caller must ensure that the callback has access to the buffer when it
+    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
+    /// be placed into the buffer even if the callback is invoked with a non-OK
+    /// Status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -195,7 +204,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
@@ -213,12 +222,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     };
     /// Writes data out on the connection.
     ///
-    /// \a on_writable is called when the connection is ready for more data. The
-    /// Slices within the \a data buffer may be mutated at will by the Endpoint
-    /// until \a on_writable is called. The \a data SliceBuffer will remain
-    /// valid after calling \a Write, but its state is otherwise undefined.  All
-    /// bytes in \a data must have been written before calling \a on_writable
-    /// unless an error has occurred.
+    /// If the write succeeds immediately, it returns true and the
+    /// \a on_writable callback is not executed. Otherwise it returns false and
+    /// the \a on_writable callback is called asynchronously when the connection
+    /// is ready for more data. The Slices within the \a data buffer may be
+    /// mutated at will by the Endpoint until \a on_writable is called. The \a
+    /// data SliceBuffer will remain valid after calling \a Write, but its state
+    /// is otherwise undefined.  All bytes in \a data must have been written
+    /// before calling \a on_writable unless an error has occurred.
     ///
     /// There can be at most one outstanding write per Endpoint at any given
     /// time. An outstanding write is one in which the \a on_writable callback
@@ -229,7 +240,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                        SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
@@ -314,6 +325,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
       intptr_t keys[2];
+      static const LookupTaskHandle kInvalid;
+      friend bool operator==(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
+      friend bool operator!=(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
     };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
