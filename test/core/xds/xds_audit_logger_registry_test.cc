@@ -60,7 +60,6 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
   ValidationErrors errors;
-  ValidationErrors::ScopedField field(&errors, ".logger_configs");
   auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
       context, upb_config, &errors);
   if (!errors.ok()) {
@@ -96,7 +95,7 @@ TEST(XdsAuditLoggerRegistryTest, ThirdPartyLogger) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(),
             "validation errors: "
-            "[field:logger_configs.audit_logger.typed_config.value"
+            "[field:audit_logger.typed_config.value"
             "[xds.type.v3.TypedStruct].value[test.UnknownAuditLogger] "
             "error:third-party audit logger is not supported]")
       << result.status();
@@ -110,8 +109,18 @@ TEST(XdsAuditLoggerRegistryTest, EmptyAuditLoggerConfig) {
   auto result = ConvertAuditLoggerConfig(AuditLoggerConfigProto());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(),
-            "validation errors: [field:logger_configs.audit_logger error:this "
-            "field is required]")
+            "validation errors: [field:audit_logger error:field not present]")
+      << result.status();
+}
+
+TEST(XdsAuditLoggerRegistryTest, MissingTypedConfig) {
+  AuditLoggerConfigProto config;
+  config.mutable_audit_logger();
+  auto result = ConvertAuditLoggerConfig(config);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:audit_logger.typed_config error:field "
+            "not present]")
       << result.status();
 }
 
@@ -122,8 +131,7 @@ TEST(XdsAuditLoggerRegistryTest, NoSupportedType) {
   auto result = ConvertAuditLoggerConfig(config);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(),
-            "validation errors: [field:logger_configs.audit_logger "
-            "error:unsupported audit "
+            "validation errors: [field:audit_logger error:unsupported audit "
             "logger type]")
       << result.status();
 }

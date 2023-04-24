@@ -68,7 +68,7 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
           logger_config);
   ValidationErrors::ScopedField field(errors, ".audit_logger");
   if (typed_extension_config == nullptr) {
-    errors->AddError("this field is required");
+    errors->AddError("field not present");
     return Json();  // A null Json object.
   } else {
     ValidationErrors::ScopedField field(errors, ".typed_config");
