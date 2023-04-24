@@ -56,9 +56,10 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  //src/objective-c/tests:CppCronetTests
-  //src/objective-c/tests:CronetTests
-  //src/objective-c/tests:PerfTests
+  # TODO: Enable this again once @CronetFramework is working
+  #//src/objective-c/tests:CppCronetTests
+  #//src/objective-c/tests:CronetTests
+  #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests

@@ -71,7 +71,7 @@ fi
 
 tools/buildgen/generate_projects.sh
 
-if [ "${SUBMODULE_NAME}" == "protobuf" ]
+if [ "${SUBMODULE_NAME}" == "abseil-cpp" ] || [ "${SUBMODULE_NAME}" == "protobuf" ]
 then
   tools/distrib/python/make_grpcio_tools.py
 fi

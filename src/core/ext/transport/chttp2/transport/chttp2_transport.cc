@@ -29,6 +29,7 @@
 #include <new>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -47,7 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -214,6 +215,9 @@ grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
           s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
 }
+
+grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
+grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -240,6 +244,40 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
   test_only_disable_transient_failure_state_notification = disable;
 }
 
+void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
+  g_write_timestamps_callback = fn;
+}
+
+void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
+  g_get_copied_context_fn = fn;
+}
+
+WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
+  return g_write_timestamps_callback;
+}
+
+CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
+
+// For each entry in the passed ContextList, it executes the function set using
+// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
+// and \a ts. It also deletes/frees up the passed ContextList after this
+// operation.
+void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
+                                    grpc_error_handle error) {
+  ContextList* context_list = reinterpret_cast<ContextList*>(arg);
+  if (!context_list) {
+    return;
+  }
+  for (auto it = context_list->begin(); it != context_list->end(); it++) {
+    ContextListEntry& entry = (*it);
+    if (ts) {
+      ts->byte_offset = static_cast<uint32_t>(entry.ByteOffsetInStream());
+    }
+    g_write_timestamps_callback(entry.TraceContext(), ts, error);
+  }
+  delete context_list;
+}
+
 }  // namespace grpc_core
 
 //
@@ -264,7 +302,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  grpc_core::ContextList::Execute(cl, nullptr, error);
+  if (cl != nullptr) {
+    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
+  }
   cl = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -554,6 +594,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       event_engine(
           channel_args
               .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
+  cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
@@ -985,7 +1026,17 @@ static void write_action_begin_locked(void* gt,
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
-  t->cl = nullptr;
+  if (!t->cl->empty()) {
+    // Transfer the ownership of the context list to the endpoint and create and
+    // associate a new context list with the transport.
+    // The old context list is stored in the cl local variable which is passed
+    // to the endpoint. Its upto the endpoint to manage its lifetime.
+    t->cl = new grpc_core::ContextList();
+  } else {
+    // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
+    // to nullptr.
+    cl = nullptr;
+  }
   // Choose max_frame_size as the prefered rx crypto frame size indicated by the
   // peer.
   int max_frame_size =
