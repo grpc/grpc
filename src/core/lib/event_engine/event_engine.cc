@@ -20,10 +20,10 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-constexpr EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
-constexpr EventEngine::ConnectionHandle
-    EventEngine::ConnectionHandle::kInvalid = {-1, -1};
-constexpr EventEngine::DNSResolver::LookupTaskHandle
+const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
+const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
+    -1, -1};
+const EventEngine::DNSResolver::LookupTaskHandle
     EventEngine::DNSResolver::LookupTaskHandle::kInvalid = {-1, -1};
 
 bool operator==(const EventEngine::TaskHandle& lhs,
