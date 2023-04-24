@@ -268,11 +268,17 @@ void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
                        &ClientMessageSizeFilter::kFilter)
       .ExcludeFromMinimalStack()
       .If(HasMessageSizeLimits)
+      // TODO(ctiller): ordering constraint is here to match the ordering that
+      // existed prior to ordering constraints did. Re-examine the ordering of
+      // filters from first principles.
       .Before({&grpc_client_deadline_filter});
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerMessageSizeFilter::kFilter)
       .ExcludeFromMinimalStack()
       .If(HasMessageSizeLimits)
+      // TODO(ctiller): ordering constraint is here to match the ordering that
+      // existed prior to ordering constraints did. Re-examine the ordering of
+      // filters from first principles.
       .Before({&grpc_server_deadline_filter});
 }
 }  // namespace grpc_core

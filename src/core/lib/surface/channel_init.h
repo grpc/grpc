@@ -36,8 +36,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
-#define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
-
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
 /// It also provides a universal entry path to run those mutators to build
@@ -169,19 +167,24 @@ class ChannelInit {
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a builder is the channel stack builder to build into.
+  GRPC_MUST_USE_RESULT
   bool CreateStack(ChannelStackBuilder* builder) const;
 
  private:
   struct Filter {
-    Filter(const grpc_channel_filter* filter, InclusionPredicate predicate)
-        : filter(filter), predicate(std::move(predicate)) {}
+    Filter(const grpc_channel_filter* filter,
+           std::vector<InclusionPredicate> predicates,
+           SourceLocation registration_source)
+        : filter(filter), predicates(std::move(predicates)) {}
     const grpc_channel_filter* filter;
-    InclusionPredicate predicate;
+    std::vector<InclusionPredicate> predicates;
+    SourceLocation registration_source;
+    bool CheckPredicates(const ChannelArgs& args) const;
   };
   struct StackConfig {
     std::vector<Filter> filters;
     std::vector<Filter> terminators;
-    std::vector<PostProcessor> post_processors_;
+    std::vector<PostProcessor> post_processors;
   };
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 

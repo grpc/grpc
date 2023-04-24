@@ -31,6 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "channel_stack_type.h"
 
 #include <grpc/support/log.h>
 
@@ -104,22 +105,6 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         registrations,
     PostProcessor* post_processors, grpc_channel_stack_type type) {
-  auto collapse_predicates =
-      [](std::vector<InclusionPredicate> predicates) -> InclusionPredicate {
-    switch (predicates.size()) {
-      case 0:
-        return [](const ChannelArgs&) { return true; };
-      case 1:
-        return std::move(predicates[0]);
-      default:
-        return [predicates = std::move(predicates)](const ChannelArgs& args) {
-          for (auto& predicate : predicates) {
-            if (!predicate(args)) return false;
-          }
-          return true;
-        };
-    }
-  };
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
   // We order this map (and the set of dependent filters) by filter name to
@@ -147,9 +132,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       GPR_ASSERT(registration->after_.empty());
       GPR_ASSERT(registration->before_.empty());
       GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(
-          registration->filter_,
-          collapse_predicates(std::move(registration->predicates_)));
+      terminal_filters.emplace_back(registration->filter_,
+                                    std::move(registration->predicates_),
+                                    registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
@@ -220,9 +205,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> filters;
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
-    filters.emplace_back(
-        filter, collapse_predicates(
-                    std::move(filter_to_registration[filter]->predicates_)));
+    filters.emplace_back(filter,
+                         std::move(filter_to_registration[filter]->predicates_),
+                         filter_to_registration[filter]->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -324,6 +309,22 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       gpr_log(GPR_INFO, "%s", filter_str.c_str());
     }
   }
+  // Check if there are no terminal filters: this would be an error.
+  // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check that
+  // condition here.
+  // Right now we only log: many tests end up with a core configuration that
+  // is invalid.
+  // TODO: evaluate if we can turn this into a crash one day.
+  // Right now it forces too many tests to know about channel initialization,
+  // either by supplying a valid configuration or by including an opt-out flag.
+  if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
+    gpr_log(
+        GPR_ERROR,
+        "No terminal filters registered for channel stack type %s; this is "
+        "common for unit tests messing with CoreConfiguration, but will result "
+        "in a ChannelInit::CreateStack that never completes successfully.",
+        grpc_channel_stack_type_string(type));
+  }
   return StackConfig{std::move(filters), std::move(terminal_filters),
                      std::move(post_processor_functions)};
 };
@@ -338,21 +339,50 @@ ChannelInit ChannelInit::Builder::Build() {
   return result;
 }
 
+bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
+  for (const auto& predicate : predicates) {
+    if (!predicate(args)) return false;
+  }
+  return true;
+}
+
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
   for (const auto& filter : stack_config.filters) {
-    if (!filter.predicate(builder->channel_args())) continue;
+    if (!filter.CheckPredicates(builder->channel_args())) continue;
     builder->AppendFilter(filter.filter);
   }
-  bool found_terminator = false;
+  int found_terminators = 0;
   for (const auto& terminator : stack_config.terminators) {
-    if (!terminator.predicate(builder->channel_args())) continue;
+    if (!terminator.CheckPredicates(builder->channel_args())) continue;
     builder->AppendFilter(terminator.filter);
-    found_terminator = true;
-    break;
+    ++found_terminators;
   }
-  if (!found_terminator) return false;
-  for (const auto& post_processor : stack_config.post_processors_) {
+  if (found_terminators != 1) {
+    std::string error = absl::StrCat(
+        found_terminators,
+        " terminating filters found creating a channel of type ",
+        grpc_channel_stack_type_string(builder->channel_stack_type()),
+        " with arguments ", builder->channel_args().ToString(),
+        " (we insist upon one and only one terminating "
+        "filter)\n");
+    if (stack_config.terminators.size() == 0) {
+      absl::StrAppend(&error, "  No terminal filters were registered");
+    } else {
+      for (const auto& terminator : stack_config.terminators) {
+        absl::StrAppend(
+            &error, "  ", NameFromChannelFilter(terminator.filter),
+            " registered @ ", terminator.registration_source.file(), ":",
+            terminator.registration_source.line(), ": enabled = ",
+            terminator.CheckPredicates(builder->channel_args()) ? "true"
+                                                                : "false",
+            "\n");
+      }
+    }
+    gpr_log(GPR_ERROR, "%s", error.c_str());
+    return false;
+  }
+  for (const auto& post_processor : stack_config.post_processors) {
     post_processor(*builder);
   }
   return true;

@@ -64,6 +64,10 @@ class ChannelStackBuilder {
   // The type of channel stack being built.
   grpc_channel_stack_type channel_stack_type() const { return type_; }
 
+  // TODO(ctiller): re-evaluate the need for AppendFilter, PrependFilter.
+  // Their usefulness is largely zero now that we have ordering constraints in
+  // channel init.
+
   // Helper to add a filter to the front of the stack.
   void PrependFilter(const grpc_channel_filter* filter);
 

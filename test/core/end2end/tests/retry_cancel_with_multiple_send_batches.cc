@@ -178,6 +178,7 @@ void RegisterFilter() {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
                          &FailSendOpsFilter::kFilterVtable)
+        // Skip on proxy (which explicitly disables retries).
         .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
 }

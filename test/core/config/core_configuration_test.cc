@@ -45,14 +45,17 @@ void InitConfigWithBuilder(ConfigBuilderFunction fn) {
 }
 
 TEST(ConfigTest, NoopConfig) {
-  InitConfigWithBuilder([](CoreConfiguration::Builder*) {});
+  InitConfigWithBuilder([](CoreConfiguration::Builder* b) {
+    b->channel_init()->SetAllowEmptyTerminators();
+  });
   CoreConfiguration::Get();
 }
 
 TEST(ConfigTest, ThreadedInit) {
   CoreConfiguration::Reset();
-  g_mock_builder = [](CoreConfiguration::Builder*) {
+  g_mock_builder = [](CoreConfiguration::Builder* b) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
+    b->channel_init()->SetAllowEmptyTerminators();
   };
   std::vector<std::thread> threads;
   threads.reserve(10);

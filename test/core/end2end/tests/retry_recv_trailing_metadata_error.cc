@@ -127,6 +127,7 @@ TEST_P(RetryTest, RetryRecvTrailingMetadataError) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
                          &InjectStatusFilter::kFilterVtable)
+        // Skip on proxy (which explicitly disables retries).
         .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   InitServer(ChannelArgs());
