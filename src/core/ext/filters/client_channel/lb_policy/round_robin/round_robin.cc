@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -153,6 +154,10 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RoundRobin*>(policy())->work_serializer();
+    }
+
     std::string CountersString() const {
       return absl::StrCat("num_subchannels=", num_subchannels(),
                           " num_ready=", num_ready_,

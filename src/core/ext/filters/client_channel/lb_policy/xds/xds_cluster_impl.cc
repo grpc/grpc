@@ -777,14 +777,6 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_impl policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsClusterImplLbConfig>(
         json, JsonArgs(),
         "errors validating xds_cluster_impl LB policy config");

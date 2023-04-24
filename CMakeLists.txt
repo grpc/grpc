@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.55.0-dev")
-set(gRPC_CORE_VERSION     "31.0.0")
-set(gRPC_CORE_SOVERSION   "31")
-set(gRPC_CPP_VERSION      "1.55.0-dev")
-set(gRPC_CPP_SOVERSION    "1.55")
-set(gRPC_CSHARP_VERSION   "2.55.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.55")
+set(PACKAGE_VERSION       "1.56.0-dev")
+set(gRPC_CORE_VERSION     "32.0.0")
+set(gRPC_CORE_SOVERSION   "32")
+set(gRPC_CPP_VERSION      "1.56.0-dev")
+set(gRPC_CPP_SOVERSION    "1.56")
+set(gRPC_CSHARP_VERSION   "2.56.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.56")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -302,7 +302,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.55.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.56.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -787,7 +787,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_c pollset_windows_starvation_test)
   endif()
-  add_dependencies(buildtests_c public_headers_must_be_c89)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c static_stride_scheduler_benchmark)
   endif()
@@ -912,7 +911,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx connection_refused_test)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_allocator_end2end_test)
-  add_dependencies(buildtests_cxx context_list_test)
   add_dependencies(buildtests_cxx context_test)
   add_dependencies(buildtests_cxx core_configuration_test)
   add_dependencies(buildtests_cxx core_end2end_tests)
@@ -1117,6 +1115,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
+  add_dependencies(buildtests_cxx proto_buffer_reader_test)
+  add_dependencies(buildtests_cxx proto_buffer_writer_test)
   add_dependencies(buildtests_cxx proto_server_reflection_test)
   add_dependencies(buildtests_cxx proto_utils_test)
   add_dependencies(buildtests_cxx qps_json_driver)
@@ -1588,7 +1588,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
@@ -1597,6 +1596,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/filters/client_channel/lb_policy/health_check_client.cc
   src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1659,7 +1659,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
@@ -2614,7 +2613,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
@@ -2623,6 +2621,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/filters/client_channel/lb_policy/health_check_client.cc
   src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -2669,7 +2668,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
@@ -4968,36 +4966,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(public_headers_must_be_c89
-  test/core/surface/public_headers_must_be_c89.c
-)
-target_compile_features(public_headers_must_be_c89 PUBLIC cxx_std_14)
-target_include_directories(public_headers_must_be_c89
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(public_headers_must_be_c89
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_authorization_provider
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -9204,55 +9172,6 @@ target_link_libraries(context_allocator_end2end_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(context_list_test
-  test/core/transport/chttp2/context_list_test.cc
-  test/core/util/cmdline.cc
-  test/core/util/fuzzer_util.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/histogram.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/resolve_localhost_ip46.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/subprocess_posix.cc
-  test/core/util/subprocess_windows.cc
-  test/core/util/tracer_util.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-target_compile_features(context_list_test PUBLIC cxx_std_14)
-target_include_directories(context_list_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(context_list_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
 )
 
 
@@ -16883,6 +16802,80 @@ target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(proto_buffer_reader_test
+  test/cpp/util/proto_buffer_reader_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(proto_buffer_reader_test PUBLIC cxx_std_14)
+target_include_directories(proto_buffer_reader_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(proto_buffer_reader_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(proto_buffer_writer_test
+  test/cpp/util/proto_buffer_writer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(proto_buffer_writer_test PUBLIC cxx_std_14)
+target_include_directories(proto_buffer_writer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(proto_buffer_writer_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
 )
 
 

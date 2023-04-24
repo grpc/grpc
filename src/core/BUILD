@@ -99,6 +99,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "metadata_compression_traits",
+    hdrs = [
+        "lib/transport/metadata_compression_traits.h",
+    ],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "experiments",
     srcs = [
         "lib/experiments/config.cc",
@@ -4417,6 +4425,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "health_check_client",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/health_check_client.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/health_check_client.h",
+        "ext/filters/client_channel/lb_policy/health_check_client_internal.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "closure",
+        "error",
+        "iomgr_fwd",
+        "pollset_set",
+        "slice",
+        "subchannel_interface",
+        "unique_type_name",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_health_upb",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_subchannel_list",
     hdrs = [
         "ext/filters/client_channel/lb_policy/subchannel_list.h",
@@ -4430,14 +4477,17 @@ grpc_cc_library(
         "channel_args",
         "dual_ref_counted",
         "gpr_manual_constructor",
+        "health_check_client",
         "iomgr_fwd",
         "lb_policy",
         "subchannel_interface",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4468,6 +4518,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4546,6 +4597,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4606,6 +4658,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:work_serializer",
     ],
 )
 
