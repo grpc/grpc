@@ -342,6 +342,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
 
+        # Configure cleanup to run after all tests regardless of whether or not
+        # this setUpClass failed
+        cls.addClassCleanup(cls.cleanupAfterTests)
+
         # Create the test case's own client runner with it's own namespace,
         # enables concurrent running with other test cases.
         cls.test_client_runner = GcpResourceManager().create_test_client_runner(
@@ -357,7 +361,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             print_response=True)
 
     @classmethod
-    def tearDownClass(cls):
+    def cleanupAfterTests(cls):
+        logging.info('----- Doing cleanup after %s -----', cls.__name__)
         cls.test_client_runner.cleanup(force=True, force_namespace=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:

@@ -46,51 +46,11 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
+#include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/simple_slice_based_metadata.h"
 
 namespace grpc_core {
-
-///////////////////////////////////////////////////////////////////////////////
-// Compression traits.
-//
-// Each metadata trait exposes exactly one compression trait.
-// This type directs how transports might choose to compress the metadata.
-// Adding a value here typically involves editing all transports to support the
-// trait, and so should not be done lightly.
-
-// No compression.
-struct NoCompressionCompressor {};
-
-// Expect a single value for this metadata key, but we don't know apriori its
-// value.
-// It's ok if it changes over time, but it should be mostly stable.
-// This is used for things like user-agent, which is expected to be the same
-// for all requests.
-struct StableValueCompressor {};
-
-// Expect a single value for this metadata key, and we know apriori its value.
-template <typename T, T value>
-struct KnownValueCompressor {};
-
-// Values are uncompressible, but expect the key to be in most requests and try
-// and compress that.
-struct FrequentKeyWithNoValueCompressionCompressor {};
-
-// Expect a small set of values for this metadata key.
-struct SmallSetOfValuesCompressor {};
-
-// Expect integral values up to N for this metadata key.
-template <size_t N>
-struct SmallIntegralValuesCompressor {};
-
-// Specialty compressor for grpc-timeout metadata.
-struct TimeoutCompressor {};
-
-// Specialty compressors for HTTP/2 psuedo headers.
-struct HttpSchemeCompressor {};
-struct HttpMethodCompressor {};
-struct HttpStatusCompressor {};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Metadata traits

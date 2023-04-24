@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.55.0dev</release>
-  <api>1.55.0dev</api>
+  <release>1.56.0dev</release>
+  <api>1.56.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.55.0 update
+- gRPC Core 1.56.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -127,8 +127,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.cc" role="src" />
@@ -146,6 +144,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h" role="src" />
@@ -256,8 +257,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list_entry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
@@ -1628,6 +1628,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata_compression_traits.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
