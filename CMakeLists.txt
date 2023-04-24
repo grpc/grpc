@@ -49,6 +49,10 @@ option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+option(gRPC_BUILD_ENVOY_API "Build third-party project envoy-api" ON)
+option(gRPC_BUILD_GOOGLEAPIS "Build third-party project googleapis" ON)
+option(gRPC_BUILD_OPENCENSUS_PROTO "Build third-party project opencensus-proto" ON)
+option(gRPC_BUILD_XDS "Build third-party project xds" ON)
 
 set(gRPC_INSTALL_default ON)
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -336,7 +340,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 endif()
 
 # Setup external proto library at third_party/envoy-api with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
+if (gRPC_BUILD_ENVOY_API AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
@@ -345,7 +349,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
     data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
+if (gRPC_BUILD_ENVOY_API AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
@@ -355,7 +359,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
+if (gRPC_BUILD_GOOGLEAPIS AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
@@ -364,7 +368,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
     googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
+if (gRPC_BUILD_GOOGLEAPIS AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
@@ -374,7 +378,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
   )
 endif()
 # Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
+if (gRPC_BUILD_OPENCENSUS_PROTO AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
@@ -383,7 +387,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
     opencensus-proto-0.3.0/src
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
+if (gRPC_BUILD_OPENCENSUS_PROTO AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
@@ -393,7 +397,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
   )
 endif()
 # Setup external proto library at third_party/xds with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
+if (gRPC_BUILD_XDS AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
@@ -402,7 +406,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
     xds-32f1caf87195bf3390061c29f18987e51ca56a88
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
+if (gRPC_BUILD_XDS AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
