@@ -56,7 +56,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/config_selector.cc \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
@@ -65,6 +64,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
     src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
     src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
@@ -127,7 +127,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
-    src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
@@ -1313,7 +1312,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/health)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/outlier_detection)
