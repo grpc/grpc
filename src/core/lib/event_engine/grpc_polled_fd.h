@@ -24,7 +24,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include "src/core/lib/event_engine/ares_driver.h"
+#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 

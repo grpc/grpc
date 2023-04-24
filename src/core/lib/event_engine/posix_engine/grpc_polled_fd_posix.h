@@ -30,7 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/event_engine/ares_driver.h"
+#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"

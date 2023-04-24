@@ -1937,7 +1937,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "ares_driver",
+        "grpc_ares_wrapper",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
@@ -2211,14 +2211,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ares_driver",
+    name = "grpc_ares_wrapper",
     srcs = [
-        "lib/event_engine/ares_driver.cc",
+        "lib/event_engine/grpc_ares_wrapper.cc",
         "lib/event_engine/nameser.h",
         "lib/event_engine/grpc_polled_fd.h",
     ],
     hdrs = [
-        "lib/event_engine/ares_driver.h",
+        "lib/event_engine/grpc_ares_wrapper.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [

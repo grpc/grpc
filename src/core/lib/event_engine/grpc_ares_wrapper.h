@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_DRIVER_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_DRIVER_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_ARES_WRAPPER_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_ARES_WRAPPER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -305,4 +305,4 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
 // Exposed in this header for C-core tests only
 extern void (*ares_driver_test_only_inject_config)(ares_channel channel);
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_DRIVER_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_ARES_WRAPPER_H

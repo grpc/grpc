@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/ares_driver.h"
+#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 
 #include "src/core/lib/iomgr/port.h"
 
