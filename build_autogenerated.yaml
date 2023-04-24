@@ -2958,7 +2958,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -2990,7 +2990,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -4977,7 +4977,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -5010,7 +5010,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6492,7 +6492,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6525,7 +6525,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6916,7 +6916,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6949,7 +6949,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -8042,9 +8042,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   src:
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - test/core/security/grpc_audit_logging_test.cc
   deps:
   - grpc_test_util
@@ -12307,7 +12307,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12339,7 +12339,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12622,7 +12622,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12655,7 +12655,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12731,7 +12731,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging/audit_logging.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12764,7 +12764,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging/audit_logging.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc

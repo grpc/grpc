@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/audit_logging/audit_logging.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 
 #include <initializer_list>
 #include <map>
