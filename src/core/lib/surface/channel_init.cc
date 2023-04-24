@@ -31,7 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "channel_stack_type.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
