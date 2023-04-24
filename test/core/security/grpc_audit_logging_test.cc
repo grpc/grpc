@@ -82,23 +82,23 @@ class AuditLoggingTest : public ::testing::Test {
 }  // namespace
 
 TEST_F(AuditLoggingTest, SuccessfulLoggerCreation) {
-  auto result = AuditLoggerRegistry::ParseAuditLoggerConfig(kName, Json());
+  auto result = AuditLoggerRegistry::ParseConfig(kName, Json());
   ASSERT_TRUE(result.ok());
   ASSERT_NE(AuditLoggerRegistry::CreateAuditLogger(std::move(result.value())),
             nullptr);
 }
 
 TEST_F(AuditLoggingTest, UnknownLogger) {
-  auto result =
-      AuditLoggerRegistry::ParseAuditLoggerConfig("unknown_logger", Json());
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "unsupported audit logger type")
+  auto result = AuditLoggerRegistry::ParseConfig("unknown_logger", Json());
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kNotFound);
+  EXPECT_EQ(result.status().message(),
+            "audit logger factory for unknown_logger does not exist")
       << result.status();
 }
 
 TEST_F(AuditLoggingTest, AuditLoggerFactoryExistenceChecks) {
-  EXPECT_TRUE(AuditLoggerRegistry::AuditLoggerFactoryExists(kName));
-  EXPECT_FALSE(AuditLoggerRegistry::AuditLoggerFactoryExists("unknown_logger"));
+  EXPECT_TRUE(AuditLoggerRegistry::FactoryExists(kName));
+  EXPECT_FALSE(AuditLoggerRegistry::FactoryExists("unknown_logger"));
 }
 
 }  // namespace testing

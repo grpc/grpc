@@ -38,12 +38,14 @@ namespace experimental {
 
 class AuditLoggerRegistry {
  public:
-  static void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory>);
+  AuditLoggerRegistry() = default;
 
-  static bool AuditLoggerFactoryExists(absl::string_view name);
+  static void RegisterFactory(std::unique_ptr<AuditLoggerFactory>);
+
+  static bool FactoryExists(absl::string_view name);
 
   static absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(absl::string_view name, const Json& json);
+  ParseConfig(absl::string_view name, const Json& json);
 
   // This assume the given config is parsed and validated already.
   // Therefore, it should always succeed in creating a logger.
@@ -56,18 +58,12 @@ class AuditLoggerRegistry {
   static void TestOnlyResetRegistry();
 
  private:
-  AuditLoggerRegistry() = default;
-
-  static AuditLoggerRegistry& GetAuditLoggerRegistry();
-
-  static absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(
+  absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(
       absl::string_view name);
-
-  Mutex mu_;
 
   // The key is owned by the factory.
   std::map<absl::string_view, std::unique_ptr<AuditLoggerFactory>>
-      logger_factories_map_ ABSL_GUARDED_BY(mu_);
+      logger_factories_map_;
 };
 
 }  // namespace experimental
