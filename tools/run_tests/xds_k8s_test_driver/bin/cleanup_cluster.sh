@@ -21,7 +21,7 @@ readonly XDS_K8S_DRIVER_DIR="${SCRIPT_DIR}/.."
 
 cd "${XDS_K8S_DRIVER_DIR}"
 
-NO_SECURE="--nosecure"
+NO_SECURE="yes"
 DATE_TO=$(date -Iseconds)
 
 while [[ $# -gt 0 ]]; do
@@ -47,6 +47,11 @@ mapfile -t namespaces < <(\
                           -o json\
   | jq --arg date_to "${DATE_TO}" -r "${jq_selector}"
 )
+  
+if [[ -z "${namespaces[*]}"  ]]; then
+    echo "All clean."
+    exit 0
+fi
 
 echo "Found namespaces:"
 namespaces_joined=$(IFS=,; printf '%s' "${namespaces[*]}")
@@ -61,11 +66,11 @@ echo "Found suffixes: ${suffixes[*]}"
 
 echo "Run plan:"
 for suffix in "${suffixes[@]}"; do
-  echo ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}"
+  echo ./bin/cleanup.sh ${NO_SECURE:+"--nosecure"} "--resource_suffix=${suffix}"
 done
 
 read -r -n 1 -p "Continue? (y/N) " answer
-if [ "$answer" != "${answer#[Yy]}" ] ;then
+if [[ "$answer" != "${answer#[Yy]}" ]] ;then
   echo
   echo "Starting the cleanup."
 else
@@ -77,7 +82,7 @@ fi
 for suffix in "${suffixes[@]}"; do
   echo "-------------------- Cleaning suffix ${suffix} --------------------"
   set -x
-  ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}"
+  ./bin/cleanup.sh ${NO_SECURE:+"--nosecure"} "--resource_suffix=${suffix}"
   set +x
   echo "-------------------- Finished cleaning ${suffix} --------------------"
 done

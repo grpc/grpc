@@ -109,8 +109,11 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
 def ensure_atexit(signum, frame):
     """Needed to handle signals or atexit handler won't be called."""
     del frame
-    logger.warning('Caught %r, initiating graceful shutdown...\n',
-                   signal.Signals(signum))
+
+    # Pylint is wrong about "Module 'signal' has no 'Signals' member":
+    # https://docs.python.org/3/library/signal.html#signal.Signals
+    sig = signal.Signals(signum)  # pylint: disable=no-member
+    logger.warning('Caught %r, initiating graceful shutdown...\n', sig)
     sys.exit(1)
 
 
