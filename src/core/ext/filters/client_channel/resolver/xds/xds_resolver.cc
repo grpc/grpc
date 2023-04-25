@@ -75,6 +75,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -276,8 +277,9 @@ class XdsResolver : public Resolver {
       return clusters_.find(name) != clusters_.end();
     }
 
-    void set(absl::string_view name, RefCountedPtr<ClusterState> state) {
-      clusters_.emplace(name, std::move(state));
+    void Put(RefCountedPtr<ClusterState> state) {
+      absl::string_view cluster_name = state->cluster();
+      clusters_.emplace(cluster_name, std::move(state));
     }
 
     absl::optional<std::pair<absl::string_view, RefCountedPtr<ClusterState>>>
@@ -629,11 +631,9 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (!cluster_map_->contains(name)) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
-      cluster_map_->set(new_cluster_state->cluster(),
-                        std::move(new_cluster_state));
+      cluster_map_->Put(MakeRefCounted<ClusterState>(resolver_, name));
     } else {
-      cluster_map_->set(it->second->cluster(), it->second->Ref());
+      cluster_map_->Put(it->second->Ref());
     }
   }
 }

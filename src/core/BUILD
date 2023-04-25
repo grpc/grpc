@@ -5157,6 +5157,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "pollset_set",
+        "ref_counted",
         "slice",
         "time",
         "unique_type_name",
