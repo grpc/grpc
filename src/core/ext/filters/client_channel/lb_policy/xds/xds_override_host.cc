@@ -740,14 +740,6 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_override_host policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
