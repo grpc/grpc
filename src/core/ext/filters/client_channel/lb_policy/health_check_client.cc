@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -178,12 +179,21 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
 void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
     grpc_connectivity_state state, const absl::Status& status) {
   if (state == GRPC_CHANNEL_SHUTDOWN) return;
+  // Prepend the subchannel's address to the status if needed.
+  absl::Status use_status;
+  if (!status.ok()) {
+    std::string address_str =
+        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
+            .value_or("<unknown address type>");
+    use_status = absl::Status(
+        status.code(), absl::StrCat(address_str, ": ", status.message()));
+  }
   work_serializer_->Schedule(
-      [self = Ref(), state, status]() {
+      [self = Ref(), state, status = std::move(use_status)]() mutable {
         MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
           self->state_ = state;
-          self->status_ = status;
+          self->status_ = std::move(status);
           for (HealthWatcher* watcher : self->watchers_) {
             watcher->Notify(state, self->status_);
           }
