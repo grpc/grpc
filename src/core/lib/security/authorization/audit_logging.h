@@ -24,11 +24,13 @@
 #include <map>
 #include <memory>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -36,8 +38,6 @@ namespace experimental {
 
 class AuditLoggerRegistry {
  public:
-  AuditLoggerRegistry() = default;
-
   static void RegisterFactory(std::unique_ptr<AuditLoggerFactory>);
 
   static bool FactoryExists(absl::string_view name);
@@ -56,12 +56,16 @@ class AuditLoggerRegistry {
   static void TestOnlyResetRegistry();
 
  private:
-  absl::StatusOr<AuditLoggerFactory*> GetAuditLoggerFactory(
-      absl::string_view name);
+  // TODO(lwge): Add built-in logger registrations once avaialble.
+  AuditLoggerRegistry() = default;
+
+  static Mutex mu;
+
+  static AuditLoggerRegistry registry ABSL_GUARDED_BY(mu);
 
   // The key is owned by the factory.
   std::map<absl::string_view, std::unique_ptr<AuditLoggerFactory>>
-      logger_factories_map_;
+      logger_factories_map_ ABSL_GUARDED_BY(mu);
 };
 
 }  // namespace experimental
