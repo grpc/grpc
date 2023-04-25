@@ -26,6 +26,8 @@
 
 #include "absl/types/optional.h"
 
+#include <grpc/grpc_audit_logging.h>
+
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -36,6 +38,13 @@ struct Rbac {
   enum class Action {
     kAllow,
     kDeny,
+  };
+
+  enum class AuditCondition {
+    kNone,
+    kOnDeny,
+    kOnAllow,
+    kOnDenyAndAllow,
   };
 
   struct CidrRange {
@@ -163,6 +172,8 @@ struct Rbac {
 
   Rbac() = default;
   Rbac(Rbac::Action action, std::map<std::string, Policy> policies);
+  Rbac(Rbac::Action action, std::map<std::string, Policy> policies,
+       absl::string_view name);
 
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
@@ -170,7 +181,16 @@ struct Rbac {
   std::string ToString() const;
 
   Action action;
+  AuditCondition audit_condition;
+
   std::map<std::string, Policy> policies;
+  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
+      logger_configs;
+  // The authorization policy name if applicable.
+  // TODO(lwge): The HTTP RBAC filter name is not currently available when
+  // filter config is generated. Need to investigate whether it's worth
+  // refactoring the code to include this piece of information in audit context.
+  std::string name;
 };
 
 }  // namespace grpc_core

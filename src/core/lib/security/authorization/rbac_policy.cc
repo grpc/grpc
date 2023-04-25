@@ -32,19 +32,46 @@ namespace grpc_core {
 Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies)
     : action(action), policies(std::move(policies)) {}
 
+Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies,
+           absl::string_view name)
+    : action(action), policies(std::move(policies)), name(name) {}
+
 Rbac::Rbac(Rbac&& other) noexcept
-    : action(other.action), policies(std::move(other.policies)) {}
+    : action(other.action),
+      audit_condition(other.audit_condition),
+      policies(std::move(other.policies)),
+      logger_configs(std::move(other.logger_configs)),
+      name(std::move(other.name)) {}
 
 Rbac& Rbac::operator=(Rbac&& other) noexcept {
   action = other.action;
+  audit_condition = other.audit_condition;
   policies = std::move(other.policies);
+  logger_configs = std::move(other.logger_configs);
+  name = std::move(other.name);
   return *this;
 }
 
 std::string Rbac::ToString() const {
   std::vector<std::string> contents;
+  std::string condition_str;
+  switch (audit_condition) {
+    case Rbac::AuditCondition::kNone:
+      condition_str = "None";
+      break;
+    case AuditCondition::kOnDeny:
+      condition_str = "OnDeny";
+      break;
+    case AuditCondition::kOnAllow:
+      condition_str = "OnAllow";
+      break;
+    case AuditCondition::kOnDenyAndAllow:
+      condition_str = "OnDenyAndAllow";
+      break;
+  }
   contents.push_back(absl::StrFormat(
-      "Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
+      "Rbac name=%s action=%s audit_condition=%s{", name,
+      action == Rbac::Action::kAllow ? "Allow" : "Deny", condition_str));
   for (const auto& p : policies) {
     contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
                                        p.second.ToString()));
