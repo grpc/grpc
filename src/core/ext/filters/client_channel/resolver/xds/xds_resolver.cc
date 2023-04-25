@@ -264,6 +264,35 @@ class XdsResolver : public Resolver {
     ClusterStateMap::iterator it_;
   };
 
+  class XdsClusterMap : public RefCounted<XdsClusterMap> {
+   public:
+    bool operator==(const XdsClusterMap& other) const {
+      return clusters_ == other.clusters_;
+    }
+
+    void clear() { clusters_.clear(); }
+
+    bool contains(absl::string_view name) const {
+      return clusters_.find(name) != clusters_.end();
+    }
+
+    void set(absl::string_view name, RefCountedPtr<ClusterState> state) {
+      clusters_.emplace(name, std::move(state));
+    }
+
+    absl::optional<std::pair<absl::string_view, RefCountedPtr<ClusterState>>>
+    Find(absl::string_view name) const {
+      auto it = clusters_.find(name);
+      if (it == clusters_.end()) {
+        return absl::nullopt;
+      }
+      return *it;
+    }
+
+   private:
+    std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
+  };
+
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
@@ -276,7 +305,7 @@ class XdsResolver : public Resolver {
       const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
       // Don't need to compare resolver_, since that will always be the same.
       return route_table_ == other_xds->route_table_ &&
-             clusters_ == other_xds->clusters_;
+             *cluster_map_ == *other_xds->cluster_map_;
     }
 
     absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override;
@@ -313,7 +342,7 @@ class XdsResolver : public Resolver {
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
-    std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
+    RefCountedPtr<XdsClusterMap> cluster_map_;
     std::vector<const grpc_channel_filter*> filters_;
   };
 
@@ -401,7 +430,8 @@ class XdsResolver::XdsConfigSelector::RouteListIterator
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver, absl::Status* status)
-    : resolver_(std::move(resolver)) {
+    : resolver_(std::move(resolver)),
+      cluster_map_(MakeRefCounted<XdsClusterMap>()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
@@ -509,7 +539,7 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
     gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
             resolver_.get(), this);
   }
-  clusters_.clear();
+  cluster_map_->clear();
   resolver_->MaybeRemoveUnusedClusters();
 }
 
@@ -596,13 +626,14 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
-  if (clusters_.find(name) == clusters_.end()) {
+  if (!cluster_map_->contains(name)) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
-      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
+      cluster_map_->set(new_cluster_state->cluster(),
+                        std::move(new_cluster_state));
     } else {
-      clusters_[it->second->cluster()] = it->second->Ref();
+      cluster_map_->set(it->second->cluster(), it->second->Ref());
     }
   }
 }
@@ -694,8 +725,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
             cluster_specifier_plugin_name.cluster_specifier_plugin_name);
         method_config = entry.method_config;
       });
-  auto it = clusters_.find(cluster_name);
-  GPR_ASSERT(it != clusters_.end());
+  auto it = cluster_map_->Find(cluster_name);
+  GPR_ASSERT(it.has_value());
   // Generate a hash.
   absl::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
