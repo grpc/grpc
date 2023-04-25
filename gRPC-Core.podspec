@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.55.0-dev'
+  version = '1.56.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1040,6 +1040,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/upb_utils.h',
                       'src/core/ext/xds/xds_api.cc',
                       'src/core/ext/xds/xds_api.h',
+                      'src/core/ext/xds/xds_audit_logger_registry.cc',
+                      'src/core/ext/xds/xds_audit_logger_registry.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_bootstrap_grpc.cc',
@@ -2432,6 +2434,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
                               'src/core/ext/xds/upb_utils.h',
                               'src/core/ext/xds/xds_api.h',
+                              'src/core/ext/xds/xds_audit_logger_registry.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_bootstrap_grpc.h',
                               'src/core/ext/xds/xds_certificate_provider.h',

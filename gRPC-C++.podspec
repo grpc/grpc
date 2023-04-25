@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.55.0-dev'
+  version = '1.56.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -689,6 +689,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
                       'src/core/ext/xds/upb_utils.h',
                       'src/core/ext/xds/xds_api.h',
+                      'src/core/ext/xds/xds_audit_logger_registry.h',
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_bootstrap_grpc.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
@@ -1714,6 +1715,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
                               'src/core/ext/xds/upb_utils.h',
                               'src/core/ext/xds/xds_api.h',
+                              'src/core/ext/xds/xds_audit_logger_registry.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_bootstrap_grpc.h',
                               'src/core/ext/xds/xds_certificate_provider.h',

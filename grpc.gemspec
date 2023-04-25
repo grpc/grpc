@@ -946,6 +946,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/upb_utils.h )
   s.files += %w( src/core/ext/xds/xds_api.cc )
   s.files += %w( src/core/ext/xds/xds_api.h )
+  s.files += %w( src/core/ext/xds/xds_audit_logger_registry.cc )
+  s.files += %w( src/core/ext/xds/xds_audit_logger_registry.h )
   s.files += %w( src/core/ext/xds/xds_bootstrap.cc )
   s.files += %w( src/core/ext/xds/xds_bootstrap.h )
   s.files += %w( src/core/ext/xds/xds_bootstrap_grpc.cc )
