@@ -37,6 +37,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -149,7 +150,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
       OrphanablePtr<LoadBalancingPolicy> policy_;
 
-      // The logical connectivity state of the subchannel.
+      // The logical connectivity state of the child.
       // Note that the logical connectivity state may differ from the
       // actual reported state in some cases (e.g., after we see
       // TRANSIENT_FAILURE, we ignore any subsequent state changes until
@@ -176,7 +177,7 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
     std::string CountersString() const {
-      return absl::StrCat("num_subchannels=", children_.size(),
+      return absl::StrCat("num_children=", children_.size(),
                           " num_ready=", num_ready_,
                           " num_connecting=", num_connecting_,
                           " num_transient_failure=", num_transient_failure_);
@@ -388,9 +389,11 @@ RoundRobin::ChildList::ChildPolicy::ChildPolicy(
     RefCountedPtr<ChildList> child_list, const ServerAddress& address,
     const ChannelArgs& args)
     : child_list_(std::move(child_list)) {
+  ChannelArgs child_args =
+      args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = child_list_->round_robin_->work_serializer();
-  lb_policy_args.args = args;
+  lb_policy_args.args = child_args;
   lb_policy_args.channel_control_helper =
       std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   policy_ = CoreConfiguration::Get()
@@ -410,7 +413,7 @@ RoundRobin::ChildList::ChildPolicy::ChildPolicy(
   // Update child policy.
   UpdateArgs update_args;
   update_args.addresses.emplace().emplace_back(address);
-  update_args.args = args;
+  update_args.args = child_args;
   // TODO(roth): If the child reports a non-OK status with the update,
   // we need to propagate that back to the resolver somehow.
   (void)policy_->UpdateLocked(std::move(update_args));
@@ -592,23 +595,23 @@ void RoundRobin::ChildList::MaybeUpdateRoundRobinConnectivityStateLocked(
               : "";
       gpr_log(
           GPR_INFO,
-          "[RR %p] swapping out subchannel list %p (%s) in favor of %p (%s)",
+          "[RR %p] swapping out child list %p (%s) in favor of %p (%s)",
           round_robin_.get(), round_robin_->child_list_.get(),
           old_counters_string.c_str(), this, CountersString().c_str());
     }
     round_robin_->child_list_ =
         std::move(round_robin_->latest_pending_child_list_);
   }
-  // Only set connectivity state if this is the current subchannel list.
+  // Only set connectivity state if this is the current child list.
   if (round_robin_->child_list_.get() != this) return;
 // FIXME: scan children each time instead of keeping counters?
   // First matching rule wins:
-  // 1) ANY subchannel is READY => policy is READY.
-  // 2) ANY subchannel is CONNECTING => policy is CONNECTING.
-  // 3) ALL subchannels are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
+  // 1) ANY child is READY => policy is READY.
+  // 2) ANY child is CONNECTING => policy is CONNECTING.
+  // 3) ALL children are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO, "[RR %p] reporting READY with subchannel list %p",
+      gpr_log(GPR_INFO, "[RR %p] reporting READY with child list %p",
               round_robin_.get(), this);
     }
     std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
@@ -624,7 +627,7 @@ void RoundRobin::ChildList::MaybeUpdateRoundRobinConnectivityStateLocked(
         MakeRefCounted<Picker>(round_robin_.get(), std::move(pickers)));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO, "[RR %p] reporting CONNECTING with subchannel list %p",
+      gpr_log(GPR_INFO, "[RR %p] reporting CONNECTING with child list %p",
               round_robin_.get(), this);
     }
     round_robin_->channel_control_helper()->UpdateState(
@@ -634,7 +637,7 @@ void RoundRobin::ChildList::MaybeUpdateRoundRobinConnectivityStateLocked(
   } else if (num_transient_failure_ == children_.size()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
-              "[RR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s",
+              "[RR %p] reporting TRANSIENT_FAILURE with child list %p: %s",
               round_robin_.get(), this, status_for_tf.ToString().c_str());
     }
     if (!status_for_tf.ok()) last_failure_ = std::move(status_for_tf);

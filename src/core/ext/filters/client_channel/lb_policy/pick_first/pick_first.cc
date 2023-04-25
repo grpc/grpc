@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
+
 #include <inttypes.h>
 #include <string.h>
 
@@ -85,6 +87,9 @@ class PickFirst : public LoadBalancingPolicy {
           SubchannelList* subchannel_list,
           RefCountedPtr<SubchannelInterface> subchannel);
 
+      RefCountedPtr<SubchannelInterface> subchannel() const {
+        return subchannel_;
+      }
       absl::optional<grpc_connectivity_state> connectivity_state() const {
         return connectivity_state_;
       }
@@ -204,6 +209,27 @@ class PickFirst : public LoadBalancingPolicy {
     size_t attempting_index_ = 0;
   };
 
+  class HealthWatcher
+      : public SubchannelInterface::ConnectivityStateWatcherInterface {
+   public:
+    explicit HealthWatcher(RefCountedPtr<PickFirst> policy)
+        : policy_(std::move(policy)) {}
+
+    ~HealthWatcher() override {
+      policy_.reset(DEBUG_LOCATION, "HealthWatcher dtor");
+    }
+
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   absl::Status status) override;
+
+    grpc_pollset_set* interested_parties() override {
+      return policy_->interested_parties();
+    }
+
+   private:
+    RefCountedPtr<PickFirst> policy_;
+  };
+
   class Picker : public SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<SubchannelInterface> subchannel)
@@ -221,6 +247,8 @@ class PickFirst : public LoadBalancingPolicy {
 
   void AttemptToConnectUsingLatestUpdateArgsLocked();
 
+  void UnsetSelectedSubchannel();
+
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
@@ -229,6 +257,9 @@ class PickFirst : public LoadBalancingPolicy {
   OrphanablePtr<SubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   SubchannelList::SubchannelData* selected_ = nullptr;
+  // Health watcher for the selected subchannel.
+  SubchannelInterface::ConnectivityStateWatcherInterface* health_watcher_ =
+      nullptr;
   // Are we in IDLE state?
   bool idle_ = false;
   // Are we shut down?
@@ -312,9 +343,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
-  if (latest_pending_subchannel_list_->size() == 0 ||
-      selected_ == nullptr) {
-    selected_ = nullptr;
+  if (latest_pending_subchannel_list_->size() == 0 || selected_ == nullptr) {
+    UnsetSelectedSubchannel();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
         subchannel_list_ != nullptr) {
       gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p",
@@ -335,8 +365,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
               this, args.addresses.status().ToString().c_str());
     }
   }
-  // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  args.args = args.args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   // Set return status based on the address list.
   absl::Status status;
   if (!args.addresses.ok()) {
@@ -359,6 +387,45 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   return status;
 }
 
+void PickFirst::UnsetSelectedSubchannel() {
+  selected_ = nullptr;
+  health_watcher_ = nullptr;
+}
+
+//
+// PickFirst::HealthWatcher
+//
+
+void PickFirst::HealthWatcher::OnConnectivityStateChange(
+    grpc_connectivity_state new_state, absl::Status status) {
+  if (policy_->health_watcher_ != this) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+    gpr_log(GPR_INFO, "[PF %p] health watch state update: %s (%s)",
+            policy_.get(), ConnectivityStateName(new_state),
+            status.ToString().c_str());
+  }
+  switch (new_state) {
+    case GRPC_CHANNEL_READY:
+      policy_->channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_READY, absl::OkStatus(),
+          MakeRefCounted<Picker>(policy_->selected_->subchannel()));
+      break;
+    case GRPC_CHANNEL_IDLE:  // IDLE shouldn't happen, but just in case.
+    case GRPC_CHANNEL_CONNECTING:
+      policy_->channel_control_helper()->UpdateState(
+          new_state, absl::OkStatus(),
+          MakeRefCounted<QueuePicker>(policy_->Ref()));
+      break;
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      policy_->channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+          MakeRefCounted<TransientFailurePicker>(status));
+      break;
+    case GRPC_CHANNEL_SHUTDOWN:
+      Crash("health watcher reported state SHUTDOWN");
+  }
+}
+
 //
 // PickFirst::SubchannelList::SubchannelData
 //
@@ -372,23 +439,15 @@ PickFirst::SubchannelList::SubchannelData::SubchannelData(
     gpr_log(
         GPR_INFO,
         "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): starting watch "
-        "(health_check_service_name=\"%s\")",
+        " (subchannel %p): starting watch",
         subchannel_list_->policy(),
         subchannel_list_, Index(), subchannel_list_->size(),
-        subchannel_.get(),
-        subchannel_list_->health_check_service_name_.value_or("N/A").c_str());
+        subchannel_.get());
   }
   auto watcher = std::make_unique<Watcher>(
       this, subchannel_list_->Ref(DEBUG_LOCATION, "Watcher"));
   pending_watcher_ = watcher.get();
-  if (subchannel_list_->health_check_service_name_.has_value()) {
-    subchannel_->AddDataWatcher(MakeHealthCheckWatcher(
-        subchannel_list_->policy()->work_serializer(),
-        *subchannel_list_->health_check_service_name_, std::move(watcher)));
-  } else {
-    subchannel_->WatchConnectivityState(std::move(watcher));
-  }
+  subchannel_->WatchConnectivityState(std::move(watcher));
 }
 
 void PickFirst::SubchannelList::SubchannelData::ShutdownLocked() {
@@ -401,11 +460,7 @@ void PickFirst::SubchannelList::SubchannelData::ShutdownLocked() {
               subchannel_list_, Index(), subchannel_list_->size(),
               subchannel_.get());
     }
-    // No need to cancel if using health checking, because the data
-    // watcher will be destroyed automatically when the subchannel is.
-    if (!subchannel_list_->health_check_service_name_.has_value()) {
-      subchannel_->CancelConnectivityStateWatch(pending_watcher_);
-    }
+    subchannel_->CancelConnectivityStateWatch(pending_watcher_);
     pending_watcher_ = nullptr;
     subchannel_.reset();
   }
@@ -459,7 +514,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
                 p, p->latest_pending_subchannel_list_.get(),
                 p->subchannel_list_.get());
       }
-      p->selected_ = nullptr;
+      p->UnsetSelectedSubchannel();
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
@@ -489,7 +544,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // and we could switch to that rather than going IDLE.
     // Enter idle.
     p->idle_ = true;
-    p->selected_ = nullptr;
+    p->UnsetSelectedSubchannel();
     p->subchannel_list_.reset();
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
@@ -554,7 +609,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
                     p, p->latest_pending_subchannel_list_.get(),
                     p->subchannel_list_.get());
           }
-          p->selected_ = nullptr;  // owned by p->subchannel_list_
+          p->UnsetSelectedSubchannel();
           p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
         }
         // If this is the current subchannel list (either because we were
@@ -632,9 +687,27 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
             subchannel_.get());
   }
   p->selected_ = this;
-  p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, absl::Status(),
-      MakeRefCounted<Picker>(subchannel_->Ref()));
+  // If health checking is enabled, start the health watch, but don't
+  // report a new picker -- we want to stay in CONNECTING while we wait
+  // for the health status notification.
+  // If health checking is NOT enabled, report READY.
+  if (subchannel_list_->health_check_service_name_.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+      gpr_log(GPR_INFO, "[PF %p] starting health watch for \"%s\"",
+              p, subchannel_list_->health_check_service_name_->c_str());
+    }
+    auto watcher = std::make_unique<HealthWatcher>(
+        p->Ref(DEBUG_LOCATION, "HealthWatcher"));
+    p->health_watcher_ = watcher.get();
+    subchannel_->AddDataWatcher(MakeHealthCheckWatcher(
+        p->work_serializer(), *subchannel_list_->health_check_service_name_,
+        std::move(watcher)));
+  } else {
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, absl::Status(),
+        MakeRefCounted<Picker>(subchannel_->Ref()));
+  }
+  // Unref all other subchannels in the list.
   for (size_t i = 0; i < subchannel_list_->size(); ++i) {
     if (i != Index()) {
       subchannel_list_->subchannels_[i].ShutdownLocked();
@@ -654,7 +727,9 @@ PickFirst::SubchannelList::SubchannelList(
               ? "SubchannelList"
               : nullptr),
       policy_(std::move(policy)) {
-  if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
+  if (args.GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+          .value_or(false) &&
+      !args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
     health_check_service_name_ =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
   }

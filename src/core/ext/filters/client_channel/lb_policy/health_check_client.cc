@@ -110,7 +110,7 @@ void HealthProducer::HealthChecker::Orphan() {
 
 void HealthProducer::HealthChecker::AddWatcherLocked(HealthWatcher* watcher) {
   watchers_.insert(watcher);
-  watcher->Notify(state_, status_);
+  if (state_.has_value()) watcher->Notify(*state_, status_);
 }
 
 bool HealthProducer::HealthChecker::RemoveWatcherLocked(
@@ -124,13 +124,18 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
   if (state == GRPC_CHANNEL_READY) {
     // We should already be in CONNECTING, and we don't want to change
     // that until we see the initial response on the stream.
-    GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+    if (!state_.has_value()) {
+      state_ = GRPC_CHANNEL_CONNECTING;
+      status_ = absl::OkStatus();
+    } else {
+      GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+    }
     // Start the health watch stream.
     StartHealthStreamLocked();
   } else {
     state_ = state;
     status_ = status;
-    NotifyWatchersLocked(state_, status_);
+    NotifyWatchersLocked(*state_, status_);
     // We're not connected, so stop health checking.
     stream_client_.reset();
   }

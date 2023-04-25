@@ -4422,6 +4422,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
         "upb_lib",
     ],
     language = "c++",
@@ -4479,6 +4480,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
         "ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/pick_first/pick_first.h",
     ],
     external_deps = [
         "absl/status",
@@ -4570,6 +4574,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_lb_policy_pick_first",
         "json",
         "lb_policy",
         "lb_policy_factory",

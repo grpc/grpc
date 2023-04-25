@@ -1999,8 +1999,6 @@ TEST_F(RoundRobinTest, SingleReconnect) {
   WaitForServer(DEBUG_LOCATION, stub, 0);
 }
 
-// FIXME: re-enable after health checking is fixed
-#if 0
 // If health checking is required by client but health checking service
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
@@ -2251,7 +2249,6 @@ TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
   EXPECT_GT(servers_[0]->noop_health_check_service_impl_.request_count(), 1);
   EXPECT_GT(servers_[1]->noop_health_check_service_impl_.request_count(), 1);
 }
-#endif
 
 //
 // LB policy pick args
