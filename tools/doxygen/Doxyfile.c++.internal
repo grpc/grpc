@@ -1941,6 +1941,8 @@ src/core/ext/xds/file_watcher_certificate_provider_factory.h \
 src/core/ext/xds/upb_utils.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
+src/core/ext/xds/xds_audit_logger_registry.cc \
+src/core/ext/xds/xds_audit_logger_registry.h \
 src/core/ext/xds/xds_bootstrap.cc \
 src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_bootstrap_grpc.cc \

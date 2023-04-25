@@ -3866,6 +3866,7 @@ grpc_cc_library(
     srcs = [
         "ext/xds/certificate_provider_store.cc",
         "ext/xds/file_watcher_certificate_provider_factory.cc",
+        "ext/xds/xds_audit_logger_registry.cc",
         "ext/xds/xds_bootstrap_grpc.cc",
         "ext/xds/xds_certificate_provider.cc",
         "ext/xds/xds_client_grpc.cc",
@@ -3888,6 +3889,7 @@ grpc_cc_library(
     hdrs = [
         "ext/xds/certificate_provider_store.h",
         "ext/xds/file_watcher_certificate_provider_factory.h",
+        "ext/xds/xds_audit_logger_registry.h",
         "ext/xds/xds_bootstrap_grpc.h",
         "ext/xds/xds_certificate_provider.h",
         "ext/xds/xds_client_grpc.h",
