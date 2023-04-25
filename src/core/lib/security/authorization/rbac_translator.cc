@@ -403,7 +403,12 @@ ParseAuditLogger(const Json& json, size_t pos) {
     return absl::InvalidArgumentError(absl::StrFormat(
         "\"audit_loggers[%d].name\" %s is not supported.", pos, name));
   }
-  return AuditLoggerRegistry::ParseConfig(name, config);
+  auto result = AuditLoggerRegistry::ParseConfig(name, config);
+  if (!result.ok()) {
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "\"audit_loggers[%d]\" %s", pos, result.status().message()));
+  }
+  return result;
 }
 
 absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {

@@ -77,6 +77,9 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
+    if (json.object().find("bad") != json.object().end()) {
+      return absl::InvalidArgumentError("bad logger config.");
+    }
     return std::make_unique<TestAuditLoggerConfig>();
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
@@ -1231,6 +1234,30 @@ TEST_F(GenerateRbacPoliciesTest, IncorrectAuditLoggerConfigType) {
   EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbacs.status().message(),
               "\"audit_loggers[0].config\" is not an object.");
+}
+
+TEST_F(GenerateRbacPoliciesTest, BadAuditLoggerConfig) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\","
+      "        \"config\": {\"bad\": true}"
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  auto rbacs = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(rbacs.status().message(),
+              "\"audit_loggers[0]\" bad logger config.");
 }
 
 TEST_F(GenerateRbacPoliciesTest, IncorrectAuditLoggerNameType) {
