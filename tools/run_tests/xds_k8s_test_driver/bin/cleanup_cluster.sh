@@ -21,13 +21,57 @@ readonly XDS_K8S_DRIVER_DIR="${SCRIPT_DIR}/.."
 
 cd "${XDS_K8S_DRIVER_DIR}"
 
-mapfile -t suffixes < <(kubectl get namespaces -o json  | jq -r '.items[].metadata.name' | grep -Po '(?<=-(client|server)-)(.*)')
+NO_SECURE="--nosecure"
+DATE_TO=$(date -Iseconds)
 
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --secure) NO_SECURE=""; shift ;;
+    --date_to=*) DATE_TO="${1#*=}T00:00:00Z"; shift ;;
+    *) echo "Unknown argument $1"; exit 1 ;;
+  esac
+done
+
+jq_selector=$(cat <<- 'EOM'
+  .items[].metadata |
+  select(
+    (.name | test("-(client|server)-")) and
+    (.creationTimestamp < $date_to)
+  ) | .name
+EOM
+)
+
+mapfile -t namespaces < <(\
+  kubectl get namespaces --sort-by='{.metadata.creationTimestamp}'\
+                         --selector='owner=xds-k8s-interop-test'\
+                          -o json\
+  | jq --arg date_to "${DATE_TO}" -r "${jq_selector}"
+)
+
+echo "Found namespaces:"
+namespaces_joined=$(IFS=,; printf '%s' "${namespaces[*]}")
+kubectl get namespaces --sort-by='{.metadata.creationTimestamp}' \
+                       --selector="name in (${namespaces_joined})"
+# Suffixes
+mapfile -t suffixes < <(\
+  printf '%s\n' "${namespaces[@]}" | sed -E 's/psm-interop-(server|client)-//'
+)
+echo
 echo "Found suffixes: ${suffixes[*]}"
 
-NO_SECURE="--nosecure"
-if [[ "$1" == "--secure" ]]; then
-  NO_SECURE=""
+echo "Run plan:"
+for suffix in "${suffixes[@]}"; do
+  echo ./bin/cleanup.sh $NO_SECURE "--resource_suffix=${suffix}"
+done
+
+read -r -n 1 -p "Continue? (y/N) " answer
+if [ "$answer" != "${answer#[Yy]}" ] ;then
+  echo
+  echo "Starting the cleanup."
+else
+  echo
+  echo "Exit"
+  exit 0
 fi
 
 for suffix in "${suffixes[@]}"; do
