@@ -26,7 +26,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <type_traits>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -366,7 +365,7 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
         " with arguments ", builder->channel_args().ToString(),
         " (we insist upon one and only one terminating "
         "filter)\n");
-    if (stack_config.terminators.size() == 0) {
+    if (stack_config.terminators.empty()) {
       absl::StrAppend(&error, "  No terminal filters were registered");
     } else {
       for (const auto& terminator : stack_config.terminators) {
