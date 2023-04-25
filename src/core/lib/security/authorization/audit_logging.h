@@ -59,9 +59,9 @@ class AuditLoggerRegistry {
   // TODO(lwge): Add built-in logger registrations once avaialble.
   AuditLoggerRegistry() = default;
 
-  static Mutex mu;
+  static Mutex* mu;
 
-  static AuditLoggerRegistry registry ABSL_GUARDED_BY(mu);
+  static AuditLoggerRegistry* registry ABSL_GUARDED_BY(mu);
 
   // The key is owned by the factory.
   std::map<absl::string_view, std::unique_ptr<AuditLoggerFactory>>
