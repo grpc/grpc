@@ -71,7 +71,7 @@ void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,
 namespace internal {
 
 void RegisterChannelFilter(
-    grpc_channel_stack_type stack_type, int priority,
+    grpc_channel_stack_type stack_type, int,
     std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
     const grpc_channel_filter* filter) {
   grpc_core::CoreConfiguration::RegisterBuilder(

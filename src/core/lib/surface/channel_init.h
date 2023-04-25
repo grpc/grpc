@@ -175,7 +175,9 @@ class ChannelInit {
     Filter(const grpc_channel_filter* filter,
            std::vector<InclusionPredicate> predicates,
            SourceLocation registration_source)
-        : filter(filter), predicates(std::move(predicates)) {}
+        : filter(filter),
+          predicates(std::move(predicates)),
+          registration_source(registration_source) {}
     const grpc_channel_filter* filter;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
