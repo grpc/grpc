@@ -83,9 +83,8 @@ class PickFirst : public LoadBalancingPolicy {
    public:
     class SubchannelData {
      public:
-      SubchannelData(
-          SubchannelList* subchannel_list,
-          RefCountedPtr<SubchannelInterface> subchannel);
+      SubchannelData(SubchannelList* subchannel_list,
+                     RefCountedPtr<SubchannelInterface> subchannel);
 
       RefCountedPtr<SubchannelInterface> subchannel() const {
         return subchannel_;
@@ -96,8 +95,8 @@ class PickFirst : public LoadBalancingPolicy {
 
       // Returns the index into the subchannel list of this object.
       size_t Index() const {
-        return static_cast<size_t>(
-            this - &subchannel_list_->subchannels_.front());
+        return static_cast<size_t>(this -
+                                   &subchannel_list_->subchannels_.front());
       }
 
       // Resets the connection backoff.
@@ -113,9 +112,8 @@ class PickFirst : public LoadBalancingPolicy {
       class Watcher
           : public SubchannelInterface::ConnectivityStateWatcherInterface {
        public:
-        Watcher(
-            SubchannelData* subchannel_data,
-            RefCountedPtr<SubchannelList> subchannel_list)
+        Watcher(SubchannelData* subchannel_data,
+                RefCountedPtr<SubchannelList> subchannel_list)
             : subchannel_data_(subchannel_data),
               subchannel_list_(std::move(subchannel_list)) {}
 
@@ -160,8 +158,8 @@ class PickFirst : public LoadBalancingPolicy {
       absl::Status connectivity_status_;
     };
 
-    SubchannelList(RefCountedPtr<PickFirst> policy,
-                   ServerAddressList addresses, const ChannelArgs& args);
+    SubchannelList(RefCountedPtr<PickFirst> policy, ServerAddressList addresses,
+                   const ChannelArgs& args);
 
     ~SubchannelList() override;
 
@@ -249,6 +247,8 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UnsetSelectedSubchannel();
 
+  // Whether we should omit our status message prefix.
+  const bool omit_status_message_prefix_;
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
@@ -266,7 +266,12 @@ class PickFirst : public LoadBalancingPolicy {
   bool shutdown_ = false;
 };
 
-PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
+PickFirst::PickFirst(Args args)
+    : LoadBalancingPolicy(std::move(args)),
+      omit_status_message_prefix_(
+          channel_args()
+              .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)
+              .value_or(false)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
@@ -433,16 +438,13 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
 PickFirst::SubchannelList::SubchannelData::SubchannelData(
     SubchannelList* subchannel_list,
     RefCountedPtr<SubchannelInterface> subchannel)
-    : subchannel_list_(subchannel_list),
-      subchannel_(std::move(subchannel)) {
+    : subchannel_list_(subchannel_list), subchannel_(std::move(subchannel)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): starting watch",
-        subchannel_list_->policy(),
-        subchannel_list_, Index(), subchannel_list_->size(),
-        subchannel_.get());
+    gpr_log(GPR_INFO,
+            "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+            " (subchannel %p): starting watch",
+            subchannel_list_->policy(), subchannel_list_, Index(),
+            subchannel_list_->size(), subchannel_.get());
   }
   auto watcher = std::make_unique<Watcher>(
       this, subchannel_list_->Ref(DEBUG_LOCATION, "Watcher"));
@@ -456,9 +458,8 @@ void PickFirst::SubchannelList::SubchannelData::ShutdownLocked() {
       gpr_log(GPR_INFO,
               "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
               " (subchannel %p): cancelling watch and unreffing subchannel",
-              subchannel_list_->policy(),
-              subchannel_list_, Index(), subchannel_list_->size(),
-              subchannel_.get());
+              subchannel_list_->policy(), subchannel_list_, Index(),
+              subchannel_list_->size(), subchannel_.get());
     }
     subchannel_->CancelConnectivityStateWatch(pending_watcher_);
     pending_watcher_ = nullptr;
@@ -521,10 +522,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         absl::Status status = absl::UnavailableError(absl::StrCat(
             "selected subchannel failed; switching to pending update; "
             "last failure: ",
-            p->subchannel_list_
-                ->subchannels_.back()
-                .connectivity_status_
-                .ToString()));
+            p->subchannel_list_->subchannels_.back()
+                .connectivity_status_.ToString()));
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, status,
             MakeRefCounted<TransientFailurePicker>(status));
@@ -617,9 +616,11 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         // be the current list), re-resolve and report new state.
         if (subchannel_list_ == p->subchannel_list_.get()) {
           p->channel_control_helper()->RequestReresolution();
-          absl::Status status = absl::UnavailableError(
-              absl::StrCat("failed to connect to all addresses; last error: ",
-                           connectivity_status_.ToString()));
+          absl::Status status = absl::UnavailableError(absl::StrCat(
+              (p->omit_status_message_prefix_
+                   ? ""
+                   : "failed to connect to all addresses; last error: "),
+              connectivity_status_.ToString()));
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_TRANSIENT_FAILURE, status,
               MakeRefCounted<TransientFailurePicker>(status));
@@ -693,8 +694,8 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
   // If health checking is NOT enabled, report READY.
   if (subchannel_list_->health_check_service_name_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-      gpr_log(GPR_INFO, "[PF %p] starting health watch for \"%s\"",
-              p, subchannel_list_->health_check_service_name_->c_str());
+      gpr_log(GPR_INFO, "[PF %p] starting health watch for \"%s\"", p,
+              subchannel_list_->health_check_service_name_->c_str());
     }
     auto watcher = std::make_unique<HealthWatcher>(
         p->Ref(DEBUG_LOCATION, "HealthWatcher"));
@@ -719,13 +720,12 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
 // PickFirst::SubchannelList
 //
 
-PickFirst::SubchannelList::SubchannelList(
-    RefCountedPtr<PickFirst> policy, ServerAddressList addresses,
-    const ChannelArgs& args)
+PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
+                                          ServerAddressList addresses,
+                                          const ChannelArgs& args)
     : InternallyRefCounted<SubchannelList>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)
-              ? "SubchannelList"
-              : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
+                                                            : nullptr),
       policy_(std::move(policy)) {
   if (args.GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
           .value_or(false) &&
@@ -756,8 +756,8 @@ PickFirst::SubchannelList::SubchannelList(
       gpr_log(GPR_INFO,
               "[PF %p] subchannel list %p index %" PRIuPTR
               ": Created subchannel %p for address %s",
-              policy_.get(), this, subchannels_.size(),
-              subchannel.get(), address.ToString().c_str());
+              policy_.get(), this, subchannels_.size(), subchannel.get(),
+              address.ToString().c_str());
     }
     subchannels_.emplace_back(this, std::move(subchannel));
   }
@@ -765,15 +765,15 @@ PickFirst::SubchannelList::SubchannelList(
 
 PickFirst::SubchannelList::~SubchannelList() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "[PF %p] Destroying subchannel_list %p",
-            policy_.get(), this);
+    gpr_log(GPR_INFO, "[PF %p] Destroying subchannel_list %p", policy_.get(),
+            this);
   }
 }
 
 void PickFirst::SubchannelList::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p",
-            policy_.get(), this);
+    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
+            this);
   }
   GPR_ASSERT(!shutting_down_);
   shutting_down_ = true;

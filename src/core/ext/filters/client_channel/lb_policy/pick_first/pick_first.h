@@ -21,6 +21,12 @@
 // Intended to be used by petiole policies (e.g., round_robin) that
 // delegate to pick_first.
 #define GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING \
-    "grpc.internal.pick_first_enable_health_checking"
+  "grpc.internal.pick_first_enable_health_checking"
+
+// Internal channel arg to tell pick_first to omit the prefix it normally
+// adds to error status messages.  Intended to be used by petiole policies
+// (e.g., round_robin) that want to add their own prefixes.
+#define GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX \
+  "grpc.internal.pick_first_omit_status_message_prefix"
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_PICK_FIRST_PICK_FIRST_H
