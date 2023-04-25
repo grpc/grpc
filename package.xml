@@ -2726,6 +2726,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/types.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/atomic.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port/def.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port/undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/vsnprintf_compat.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.hpp" role="src" />

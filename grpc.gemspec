@@ -2808,6 +2808,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/mini_table/types.h )
   s.files += %w( third_party/upb/upb/msg.h )
   s.files += %w( third_party/upb/upb/port/atomic.h )
+  s.files += %w( third_party/upb/upb/port/def.inc )
+  s.files += %w( third_party/upb/upb/port/undef.inc )
   s.files += %w( third_party/upb/upb/port/vsnprintf_compat.h )
   s.files += %w( third_party/upb/upb/reflection.h )
   s.files += %w( third_party/upb/upb/reflection.hpp )

@@ -133,6 +133,8 @@ try:
             "third_party/upb/upb/mini_table/types.h",
             "third_party/upb/upb/msg.h",
             "third_party/upb/upb/port/atomic.h",
+            "third_party/upb/upb/port/def.inc",
+            "third_party/upb/upb/port/undef.inc",
             "third_party/upb/upb/port/vsnprintf_compat.h",
             "third_party/upb/upb/reflection.h",
             "third_party/upb/upb/reflection.hpp",
