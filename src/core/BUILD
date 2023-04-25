@@ -3485,7 +3485,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
-        "channel_args",
         "channel_fwd",
         "channel_stack_type",
         "closure",
