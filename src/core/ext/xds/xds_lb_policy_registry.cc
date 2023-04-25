@@ -137,8 +137,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       }
       config["errorUtilizationPenalty"] = value;
     }
-    return Json::Object{
-        {"weighted_round_robin_experimental", std::move(config)}};
+    return Json::Object{{"weighted_round_robin", std::move(config)}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -258,19 +257,6 @@ class WrrLocalityLbPolicyConfigFactory
 // XdsLbPolicyRegistry
 //
 
-namespace {
-
-// TODO(roth): Remove this when interop tests pass.
-bool XdsWrrLbEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_WRR_LB");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
-}  // namespace
-
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RingHashLbPolicyConfigFactory::Type(),
@@ -278,11 +264,9 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
       std::make_unique<RoundRobinLbPolicyConfigFactory>());
-  if (XdsWrrLbEnabled()) {
-    policy_config_factories_.emplace(
-        ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
-        std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
-  }
+  policy_config_factories_.emplace(
+      ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
+      std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
