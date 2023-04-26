@@ -39,8 +39,6 @@
 namespace grpc {
 namespace testing {
 namespace {
-using ::envoy::config::core::v3::HealthStatus;
-using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
