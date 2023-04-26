@@ -16,6 +16,8 @@
 
 #ifdef GPR_APPLE
 
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"

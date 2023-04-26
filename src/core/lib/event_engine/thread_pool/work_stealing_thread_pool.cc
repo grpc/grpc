@@ -201,14 +201,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   lifeguard_.BlockUntilShutdown();
 }
 
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PostforkParent() {
-  Postfork();
-}
-
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PostforkChild() {
-  Postfork();
-}
-
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
   SetForking(false);
   Start();

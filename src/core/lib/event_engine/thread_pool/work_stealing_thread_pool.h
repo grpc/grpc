@@ -164,8 +164,6 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Ensures that the thread pool is empty before forking.
     // Postfork parent and child have the same behavior.
     void PrepareFork();
-    void PostforkParent();
-    void PostforkChild();
     void Postfork();
     // Accessor methods
     bool IsShutdown();
