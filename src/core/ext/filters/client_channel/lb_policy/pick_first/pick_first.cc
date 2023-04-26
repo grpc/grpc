@@ -340,12 +340,22 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         MakeRefCounted<TransientFailurePicker>(status));
     channel_control_helper()->RequestReresolution();
   }
+// FIXME: is it okay to remove this?
+// general question: what state should be assumed by parent when
+// creating a child?  we sometimes assume IDLE, other times CONNECTING.
+// Note: ring_hash in particular currently assumes IDLE, because it's
+// dealing with subchannels.  That may be an argument for PF to assume
+// IDLE and not initially try to connect until it sees an RPC -- but
+// then the channel's connectivity state would go CONNECTING -> IDLE ->
+// CONNECTING.
+#if 0
   // Otherwise, if this is the initial update, report CONNECTING.
   else if (subchannel_list_.get() == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
+#endif
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
   if (latest_pending_subchannel_list_->size() == 0 || selected_ == nullptr) {
@@ -733,16 +743,20 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
     health_check_service_name_ =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
   }
+  ChannelArgs use_args =
+      args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+          .Remove(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
-            "[PF %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
-            policy_.get(), this, addresses.size());
+            "[PF %p] Creating subchannel list %p for %" PRIuPTR " subchannels"
+            " - channel args: %s",
+            policy_.get(), this, addresses.size(), use_args.ToString().c_str());
   }
   subchannels_.reserve(addresses.size());
   // Create a subchannel for each address.
   for (const ServerAddress& address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
-        policy_->channel_control_helper()->CreateSubchannel(address, args);
+        policy_->channel_control_helper()->CreateSubchannel(address, use_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
