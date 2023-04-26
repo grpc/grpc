@@ -68,6 +68,8 @@
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -91,6 +93,8 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
+
+extern UniqueTypeName XdsClusterDataTypeName();
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
@@ -348,6 +352,35 @@ class XdsResolver : public Resolver {
     std::vector<const grpc_channel_filter*> filters_;
   };
 
+  class ClusterSelectionFilter : public ChannelFilter {
+   public:
+    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
+        : filter_args_(std::move(filter_args)) {}
+
+    const static grpc_channel_filter kFilter;
+
+    static absl::StatusOr<ClusterSelectionFilter> Create(
+        const ChannelArgs& args, ChannelFilter::Args filter_args) {
+      return ClusterSelectionFilter(std::move(filter_args));
+    }
+
+    // Construct a promise for one call.
+    ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+        CallArgs call_args, NextPromiseFactory next_promise_factory) override {
+      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+          GetContext<grpc_call_context_element>()
+              [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                  .value);
+      GPR_ASSERT(service_config_call_data != nullptr);
+      service_config_call_data->SetCallAttribute(XdsClusterDataTypeName(),
+                                                 "hello there!");
+      return next_promise_factory(std::move(call_args));
+    }
+
+   private:
+    ChannelFilter::Args filter_args_;
+  };
+
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
   void OnError(absl::string_view context, absl::Status status);
@@ -393,6 +426,11 @@ bool MethodConfigsEqual(const ServiceConfig* sc1, const ServiceConfig* sc2) {
   if (sc2 == nullptr) return false;
   return sc1->json_string() == sc2->json_string();
 }
+
+const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
+    MakePromiseBasedFilter<ClusterSelectionFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>(
+        "cluster_selection_filter");
 
 bool XdsResolver::XdsConfigSelector::Route::ClusterWeightState::operator==(
     const ClusterWeightState& other) const {
@@ -534,6 +572,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       filters_.push_back(filter_impl->channel_filter());
     }
   }
+  filters_.push_back(&ClusterSelectionFilter::kFilter);
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {

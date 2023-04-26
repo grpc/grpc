@@ -64,6 +64,11 @@ UniqueTypeName XdsOverrideHostTypeName() {
   return kFactory.Create();
 }
 
+UniqueTypeName XdsClusterDataTypeName() {
+  static UniqueTypeName::Factory kFactory("xds_cluster_data");
+  return kFactory.Create();
+}
+
 const grpc_channel_filter StatefulSessionFilter::kFilter =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>(
