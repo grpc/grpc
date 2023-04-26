@@ -491,8 +491,8 @@ class CLanguage(object):
             return ('gcc_12', ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang6':
-            return ('clang_6', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang7':
+            return ('clang_7', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang15':
             return ('clang_15', self._clang_cmake_configure_extra_args())
         else:
@@ -1456,7 +1456,7 @@ argp.add_argument(
         'gcc10.2_openssl102',
         'gcc12',
         'gcc_musl',
-        'clang6',
+        'clang7',
         'clang15',
         'python2.7',
         'python3.5',

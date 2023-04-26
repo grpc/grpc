@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:6
+FROM silkeh/clang:7
 
 RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
 #====================
@@ -41,10 +41,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
-#=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
@@ -66,6 +62,12 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 
 # Define the default command.
