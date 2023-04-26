@@ -96,7 +96,7 @@ class WorkStealingThreadPool final : public ThreadPool, public Executor {
     void BlockUntilThreadCount(CounterType counter_type, int desired_threads,
                                const char* why, WorkSignal* work_signal);
     // Returns the current thread count for the tracked type.
-    int GetCount(CounterType counter_type);
+    size_t GetCount(CounterType counter_type);
 
     // Adds and removes thread counts on construction and destruction
     class AutoThreadCount {
@@ -110,7 +110,7 @@ class WorkStealingThreadPool final : public ThreadPool, public Executor {
     };
 
    private:
-    std::atomic<int> thread_counts_[2]{{0}, {0}};
+    std::atomic<size_t> thread_counts_[2]{{0}, {0}};
   };
 
   // A pool of WorkQueues that participate in work stealing.

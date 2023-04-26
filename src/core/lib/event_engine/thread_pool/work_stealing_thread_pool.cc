@@ -116,7 +116,7 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     : reserve_threads_(reserve_threads), lifeguard_(this) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
-  for (int i = 0; i < reserve_threads_; i++) {
+  for (size_t i = 0; i < reserve_threads_; i++) {
     StartThread();
   }
   lifeguard_.Start();
@@ -429,7 +429,7 @@ void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
   }
 }
 
-int WorkStealingThreadPool::ThreadCount::GetCount(CounterType counter_type) {
+size_t WorkStealingThreadPool::ThreadCount::GetCount(CounterType counter_type) {
   return thread_counts_[counter_type].load(std::memory_order_relaxed);
 }
 
