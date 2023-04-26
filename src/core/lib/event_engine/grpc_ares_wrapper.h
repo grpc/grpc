@@ -42,13 +42,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-extern grpc_core::TraceFlag grpc_trace_ares_driver;
+extern grpc_core::TraceFlag grpc_trace_ares_wrapper;
 
-#define GRPC_ARES_DRIVER_TRACE_LOG(format, ...)                \
-  do {                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver)) {     \
-      gpr_log(GPR_INFO, "(ares driver) " format, __VA_ARGS__); \
-    }                                                          \
+#define GRPC_ARES_WRAPPER_TRACE_LOG(format, ...)                              \
+  do {                                                                        \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper)) {                   \
+      gpr_log(GPR_INFO, "(EventEngine c-ares wrapper) " format, __VA_ARGS__); \
+    }                                                                         \
   } while (0)
 
 class GrpcPolledFd;
@@ -157,7 +157,7 @@ class GrpcAresRequest
       ABSL_LOCKS_EXCLUDED(mu_);
   void OnQueryTimeout() ABSL_LOCKS_EXCLUDED(mu_);
   void OnAresBackupPollAlarm() ABSL_LOCKS_EXCLUDED(mu_);
-  void ShutdownPollerHandlesLocked(absl::Status status)
+  void ShutdownPolledFdsLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  protected:
@@ -303,6 +303,7 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
 }  // namespace grpc_event_engine
 
 // Exposed in this header for C-core tests only
-extern void (*ares_driver_test_only_inject_config)(ares_channel channel);
+extern void (*event_engine_grpc_ares_test_only_inject_config)(
+    ares_channel channel);
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_ARES_WRAPPER_H

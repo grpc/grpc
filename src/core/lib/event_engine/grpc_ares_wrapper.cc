@@ -74,26 +74,27 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-grpc_core::TraceFlag grpc_trace_ares_driver_address_sorting(
-    false, "ares_driver_address_sorting");
+grpc_core::TraceFlag grpc_trace_ares_wrapper_address_sorting(
+    false, "ares_wrapper_address_sorting");
 
-grpc_core::TraceFlag grpc_trace_ares_driver_stacktrace(
-    false, "ares_driver_stacktrace");
+grpc_core::TraceFlag grpc_trace_ares_wrapper_stacktrace(
+    false, "ares_wrapper_stacktrace");
 
-#define GRPC_ARES_DRIVER_STACK_TRACE()                                \
-  do {                                                                \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver_stacktrace)) { \
-      absl::optional<std::string> stacktrace =                        \
-          grpc_core::GetCurrentStackTrace();                          \
-      if (stacktrace.has_value()) {                                   \
-        gpr_log(GPR_DEBUG, "%s", stacktrace->c_str());                \
-      } else {                                                        \
-        gpr_log(GPR_DEBUG, "stacktrace unavailable");                 \
-      }                                                               \
-    }                                                                 \
+#define GRPC_ARES_WRAPPER_STACK_TRACE()                                \
+  do {                                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper_stacktrace)) { \
+      absl::optional<std::string> stacktrace =                         \
+          grpc_core::GetCurrentStackTrace();                           \
+      if (stacktrace.has_value()) {                                    \
+        gpr_log(GPR_DEBUG, "%s", stacktrace->c_str());                 \
+      } else {                                                         \
+        gpr_log(GPR_DEBUG, "stacktrace unavailable");                  \
+      }                                                                \
+    }                                                                  \
   } while (0)
 
-grpc_core::TraceFlag grpc_trace_ares_driver(false, "ares_driver");
+grpc_core::TraceFlag grpc_trace_ares_wrapper(false,
+                                             "event_engine_ares_wrapper");
 
 namespace {
 
@@ -135,17 +136,17 @@ void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
     std::string error_msg = absl::StrFormat(
         "c-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
         request->host_, ares_strerror(status));
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
-                               request, error_msg.c_str());
-    GRPC_ARES_DRIVER_STACK_TRACE();
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
+                                request, error_msg.c_str());
+    GRPC_ARES_WRAPPER_STACK_TRACE();
     absl::Status error = GRPC_ERROR_CREATE(error_msg);
     request->OnResolve(error);
     return;
   }
-  GRPC_ARES_DRIVER_TRACE_LOG(
+  GRPC_ARES_WRAPPER_TRACE_LOG(
       "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
       request, harg->qtype, std::string(request->host_).c_str());
-  GRPC_ARES_DRIVER_STACK_TRACE();
+  GRPC_ARES_WRAPPER_STACK_TRACE();
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
   for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
@@ -162,7 +163,7 @@ void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
             reinterpret_cast<const sockaddr*>(&addr), addr_len);
         char output[INET6_ADDRSTRLEN];
         ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-        GRPC_ARES_DRIVER_TRACE_LOG(
+        GRPC_ARES_WRAPPER_TRACE_LOG(
             "request:%p c-ares resolver gets a AF_INET6 result: \n"
             "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
             request, output, request->port_, addr.sin6_scope_id);
@@ -179,7 +180,7 @@ void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
             reinterpret_cast<const sockaddr*>(&addr), addr_len);
         char output[INET_ADDRSTRLEN];
         ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-        GRPC_ARES_DRIVER_TRACE_LOG(
+        GRPC_ARES_WRAPPER_TRACE_LOG(
             "request:%p c-ares resolver gets a AF_INET result: \n"
             "  addr: %s\n  port: %d\n",
             request, output, request->port_);
@@ -198,19 +199,19 @@ void GrpcAresSRVRequest::OnSRVQueryDoneLocked(void* arg, int status,
     std::string error_msg = absl::StrFormat(
         "c-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
         r->service_name_, ares_strerror(status));
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
-                               error_msg.c_str());
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
+                                error_msg.c_str());
     grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
     r->OnResolve(error);
     return;
   }
-  GRPC_ARES_DRIVER_TRACE_LOG(
+  GRPC_ARES_WRAPPER_TRACE_LOG(
       "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
       r->service_name_.c_str());
   struct ares_srv_reply* reply = nullptr;
   const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
-                             parse_status);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
+                              parse_status);
   Result result;
   if (parse_status == ARES_SUCCESS) {
     for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
@@ -236,7 +237,7 @@ void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
   struct ares_txt_ext* reply = nullptr;
   int parse_status = ARES_SUCCESS;
   if (status == ARES_SUCCESS) {
-    GRPC_ARES_DRIVER_TRACE_LOG(
+    GRPC_ARES_WRAPPER_TRACE_LOG(
         "request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
         r->config_name_.c_str());
     parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
@@ -246,8 +247,8 @@ void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
     std::string error_msg = absl::StrFormat(
         "c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
         r->config_name_.c_str(), ares_strerror(status));
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
-                               error_msg.c_str());
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
+                                error_msg.c_str());
     error = GRPC_ERROR_CREATE(error_msg);
     r->OnResolve(error);
     return;
@@ -273,8 +274,8 @@ void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
       service_config_json_out.append(reinterpret_cast<char*>(result->txt),
                                      result->length);
     }
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p found service config: %s", r,
-                               service_config_json_out.c_str());
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p found service config: %s", r,
+                                service_config_json_out.c_str());
   }
   // Clean up.
   ares_free_data(reply);
@@ -307,8 +308,8 @@ GrpcAresRequest::GrpcAresRequest(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     EventEngine* event_engine)
     : grpc_core::InternallyRefCounted<GrpcAresRequest>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver) ? "GrpcAresRequest"
-                                                          : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper) ? "GrpcAresRequest"
+                                                           : nullptr),
       name_(name),
       default_port_(default_port.has_value() ? *default_port : ""),
       fd_node_list_(std::make_unique<FdNodeList>()),
@@ -319,9 +320,9 @@ GrpcAresRequest::GrpcAresRequest(
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
     ares_destroy(channel_);
-    GRPC_ARES_DRIVER_STACK_TRACE();
+    GRPC_ARES_WRAPPER_STACK_TRACE();
   }
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
@@ -347,7 +348,13 @@ absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
     port = default_port_;
   }
   if (!port.empty()) {
-    GPR_ASSERT(absl::SimpleAtoi(port, &port_));
+    if (port == "http") {
+      port_ = 80;
+    } else if (port == "https") {
+      port_ = 443;
+    } else {
+      GPR_ASSERT(absl::SimpleAtoi(port, &port_));
+    }
   }
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
@@ -357,7 +364,7 @@ absl::Status GrpcAresRequest::Initialize(absl::string_view dns_server,
     return GRPC_ERROR_CREATE(absl::StrCat(
         "Failed to init ares channel. c-ares error: ", ares_strerror(status)));
   }
-  ares_driver_test_only_inject_config(channel_);
+  event_engine_grpc_ares_test_only_inject_config(channel_);
   // If dns_server is specified, use it.
   error = SetRequestDNSServer(dns_server);
   if (!error.ok()) {
@@ -376,7 +383,7 @@ bool GrpcAresRequest::Cancel() {
   }
   cancelled_ = true;
   CancelTimers();
-  ShutdownPollerHandlesLocked(grpc_core::StatusCreate(
+  ShutdownPolledFdsLocked(grpc_core::StatusCreate(
       absl::StatusCode::kCancelled, "Cancel", DEBUG_LOCATION, {}));
   return true;
 }
@@ -393,31 +400,47 @@ void GrpcAresRequest::Work() {
         if (fd_node == nullptr) {
           fd_node = new FdNode(
               socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i]));
-          GRPC_ARES_DRIVER_TRACE_LOG("request:%p new fd: %d", this,
-                                     fd_node->as);
+          GRPC_ARES_WRAPPER_TRACE_LOG("request:%p new fd: %d", this,
+                                      fd_node->as);
         }
         new_list->PushFdNode(fd_node);
         // Register read_closure if the socket is readable and read_closure
         // has not been registered with this socket.
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fd_node->readable_registered) {
-          GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify read on: %d", this,
-                                     fd_node->as);
+          GRPC_ARES_WRAPPER_TRACE_LOG("request:%p notify read on: %d", this,
+                                      fd_node->as);
           fd_node->readable_registered = true;
           fd_node->polled_fd->RegisterForOnReadableLocked(
-              [self = Ref(DEBUG_LOCATION, "Work"), fd_node](
-                  absl::Status status) { self->OnReadable(fd_node, status); });
+              [self = Ref(DEBUG_LOCATION, "Work"),
+               fd_node](absl::Status status) mutable {
+                // This closure might hold the last RefCount to GrpcAresRequest
+                // so its destruction might trigger a chain reaction of
+                // destruction: ~GrpcAresRequest ->
+                // ~EventEngineClientChannelDNSResolver -> ~PollingResolver ->
+                // ~ResolverResultHandler -> grpc_stream_destroy which requires
+                // ExecCtx.
+                grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+                grpc_core::ExecCtx exec_ctx;
+                self->OnReadable(fd_node, status);
+                self.reset();
+              });
         }
         // Register write_closure if the socket is writable and write_closure
         // has not been registered with this socket.
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
             !fd_node->writable_registered) {
-          GRPC_ARES_DRIVER_TRACE_LOG("request:%p notify write on: %d", this,
-                                     fd_node->as);
+          GRPC_ARES_WRAPPER_TRACE_LOG("request:%p notify write on: %d", this,
+                                      fd_node->as);
           fd_node->writable_registered = true;
           fd_node->polled_fd->RegisterForOnWriteableLocked(
-              [self = Ref(DEBUG_LOCATION, "Work"), fd_node](
-                  absl::Status status) { self->OnWritable(fd_node, status); });
+              [self = Ref(DEBUG_LOCATION, "Work"),
+               fd_node](absl::Status status) mutable {
+                grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+                grpc_core::ExecCtx exec_ctx;
+                self->OnWritable(fd_node, status);
+                self.reset();
+              });
         }
       }
     }
@@ -432,8 +455,8 @@ void GrpcAresRequest::Work() {
       fd_node->already_shutdown = true;
     }
     if (!fd_node->readable_registered && !fd_node->writable_registered) {
-      GRPC_ARES_DRIVER_TRACE_LOG("request: %p delete fd: %s", this,
-                                 fd_node->polled_fd->GetName());
+      GRPC_ARES_WRAPPER_TRACE_LOG("request: %p delete fd: %s", this,
+                                  fd_node->polled_fd->GetName());
       delete fd_node;
     } else {
       new_list->PushFdNode(fd_node);
@@ -446,8 +469,9 @@ void GrpcAresRequest::StartTimers() {
   // Initialize overall DNS resolution timeout alarm
   EventEngine::Duration timeout =
       timeout_.count() == 0 ? EventEngine::Duration::max() : timeout_;
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p StartTimers timeout in %" PRId64 " ms",
-                             this, Milliseconds(timeout));
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p StartTimers timeout in %" PRId64
+                              " ms",
+                              this, Milliseconds(timeout));
 
   Ref(DEBUG_LOCATION, "StartTimers").release();
   query_timeout_handle_ = event_engine_->RunAfter(timeout, [this] {
@@ -459,7 +483,7 @@ void GrpcAresRequest::StartTimers() {
   // Initialize the backup poll alarm
   EventEngine::Duration next_ares_backup_poll_alarm_duration =
       calculate_next_ares_backup_poll_alarm_duration();
-  GRPC_ARES_DRIVER_TRACE_LOG(
+  GRPC_ARES_WRAPPER_TRACE_LOG(
       "request:%p StartTimers next ares process poll time in %" PRId64 " ms",
       this, Milliseconds(next_ares_backup_poll_alarm_duration));
 
@@ -490,8 +514,8 @@ void GrpcAresRequest::CancelTimers() {
 absl::Status GrpcAresRequest::SetRequestDNSServer(
     absl::string_view dns_server) {
   if (!dns_server.empty()) {
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p Using DNS server %s", this,
-                               dns_server.data());
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p Using DNS server %s", this,
+                                dns_server.data());
     grpc_resolved_address addr;
     struct ares_addr_port_node dns_server_addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
@@ -529,9 +553,9 @@ void GrpcAresRequest::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->readable_registered);
   fd_node->readable_registered = false;
-  GRPC_ARES_DRIVER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
-                             fd_node->as, this, status.ToString().c_str());
-  GRPC_ARES_DRIVER_STACK_TRACE();
+  GRPC_ARES_WRAPPER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
+                              fd_node->as, this, status.ToString().c_str());
+  GRPC_ARES_WRAPPER_STACK_TRACE();
   if (status.ok() && !shutting_down_) {
     do {
       ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
@@ -552,8 +576,8 @@ void GrpcAresRequest::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(fd_node->writable_registered);
   fd_node->writable_registered = false;
-  GRPC_ARES_DRIVER_TRACE_LOG("OnWritable: fd: %d; request:%p; status: %s",
-                             fd_node->as, this, status.ToString().c_str());
+  GRPC_ARES_WRAPPER_TRACE_LOG("OnWritable: fd: %d; request:%p; status: %s",
+                              fd_node->as, this, status.ToString().c_str());
   if (status.ok() && !shutting_down_) {
     ares_process_fd(channel_, ARES_SOCKET_BAD, fd_node->as);
   } else {
@@ -572,11 +596,11 @@ void GrpcAresRequest::OnQueryTimeout() {
   {
     grpc_core::MutexLock lock(&mu_);
     query_timeout_handle_.reset();
-    GRPC_ARES_DRIVER_TRACE_LOG("request:%p OnQueryTimeout. shutting_down_=%d",
-                               this, shutting_down_);
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p OnQueryTimeout. shutting_down_=%d",
+                                this, shutting_down_);
     if (!shutting_down_) {
       shutting_down_ = true;
-      ShutdownPollerHandlesLocked(
+      ShutdownPolledFdsLocked(
           grpc_core::StatusCreate(absl::StatusCode::kDeadlineExceeded,
                                   "OnQueryTimeout", DEBUG_LOCATION, {}));
     }
@@ -596,13 +620,13 @@ void GrpcAresRequest::OnAresBackupPollAlarm() {
   {
     grpc_core::MutexLock lock(&mu_);
     ares_backup_poll_alarm_handle_.reset();
-    GRPC_ARES_DRIVER_TRACE_LOG(
+    GRPC_ARES_WRAPPER_TRACE_LOG(
         "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
         shutting_down_);
     if (!shutting_down_) {
       for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
         if (!(*it)->already_shutdown) {
-          GRPC_ARES_DRIVER_TRACE_LOG(
+          GRPC_ARES_WRAPPER_TRACE_LOG(
               "request:%p OnAresBackupPollAlarm; ares_process_fd. fd=%s", this,
               (*it)->polled_fd->GetName());
           ares_socket_t as = (*it)->polled_fd->GetWrappedAresSocketLocked();
@@ -628,7 +652,7 @@ void GrpcAresRequest::OnAresBackupPollAlarm() {
 
 // TODO(yijiem): Consider report this status or as part of the result when
 // calling on_resolve_. This status is received in OnReadable/OnWritable.
-void GrpcAresRequest::ShutdownPollerHandlesLocked(absl::Status status) {
+void GrpcAresRequest::ShutdownPolledFdsLocked(absl::Status status) {
   for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
     if (!(*it)->already_shutdown) {
       (*it)->polled_fd->ShutdownLocked(status);
@@ -646,7 +670,7 @@ GrpcAresHostnameRequest::GrpcAresHostnameRequest(
                       event_engine) {}
 
 GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresHostnameRequest::Start(
@@ -655,7 +679,7 @@ void GrpcAresHostnameRequest::Start(
   grpc_core::ReleasableMutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   on_resolve_ = std::move(on_resolve);
-  GRPC_ARES_DRIVER_TRACE_LOG(
+  GRPC_ARES_WRAPPER_TRACE_LOG(
       "request:%p c-ares GrpcAresHostnameRequest::Start name=%s, "
       "default_port=%s",
       this, name_.c_str(), default_port_.c_str());
@@ -728,6 +752,8 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
       SortResolvedAddresses();
       event_engine_->Run([on_resolve = std::move(on_resolve_),
                           result = std::move(result_)]() mutable {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         on_resolve(std::move(result));
       });
       return;
@@ -746,6 +772,8 @@ void GrpcAresHostnameRequest::OnResolve(absl::StatusOr<Result> result) {
     // error_ under lock, then unlock and then call on_resolve.
     event_engine_->Run([on_resolve = std::move(on_resolve_),
                         error = std::move(error_)]() mutable {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolve(std::move(error));
     });
   }
@@ -764,6 +792,8 @@ bool GrpcAresHostnameRequest::ResolveAsIPLiteralLocked() {
     result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
     event_engine_->Run([on_resolve = std::move(on_resolve_),
                         result = std::move(result)]() mutable {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolve(std::move(result));
     });
     return true;
@@ -785,7 +815,7 @@ void GrpcAresHostnameRequest::LogResolvedAddressesList(
 }
 
 void GrpcAresHostnameRequest::SortResolvedAddresses() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver_address_sorting)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper_address_sorting)) {
     LogResolvedAddressesList("input");
   }
   address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
@@ -805,7 +835,7 @@ void GrpcAresHostnameRequest::SortResolvedAddresses() {
   }
   gpr_free(sortables);
   result_ = std::move(sorted);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_driver_address_sorting)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper_address_sorting)) {
     LogResolvedAddressesList("output");
   }
 }
@@ -818,7 +848,7 @@ GrpcAresSRVRequest::GrpcAresSRVRequest(
                       std::move(polled_fd_factory), event_engine) {}
 
 GrpcAresSRVRequest::~GrpcAresSRVRequest() {
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresSRVRequest::Start(
@@ -829,6 +859,8 @@ void GrpcAresSRVRequest::Start(
   // Don't query for SRV records if the target is "localhost"
   if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
     event_engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolve(GRPC_ERROR_CREATE(
           "Skip querying for SRV records for localhost target"));
     });
@@ -858,6 +890,8 @@ void GrpcAresSRVRequest::OnResolve(absl::StatusOr<Result> result) {
   CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
                       result = std::move(result)]() mutable {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     on_resolve(std::move(result));
   });
 }
@@ -870,7 +904,7 @@ GrpcAresTXTRequest::GrpcAresTXTRequest(
                       std::move(polled_fd_factory), event_engine) {}
 
 GrpcAresTXTRequest::~GrpcAresTXTRequest() {
-  GRPC_ARES_DRIVER_TRACE_LOG("request:%p destructor", this);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresTXTRequest::Start(
@@ -881,6 +915,8 @@ void GrpcAresTXTRequest::Start(
   // Don't query for TXT records if the target is "localhost"
   if (gpr_stricmp(std::string(host_).c_str(), "localhost") == 0) {
     event_engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolve(
           GRPC_ERROR_CREATE("Skip querying for TXT records localhost target"));
     });
@@ -910,6 +946,8 @@ void GrpcAresTXTRequest::OnResolve(absl::StatusOr<Result> result) {
   CancelTimers();
   event_engine_->Run([on_resolve = std::move(on_resolve_),
                       result = std::move(result)]() mutable {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     on_resolve(std::move(result));
   });
 }
@@ -965,7 +1003,7 @@ absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
 
 void noop_inject_channel_config(ares_channel /*channel*/) {}
 
-void (*ares_driver_test_only_inject_config)(ares_channel channel) =
+void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
 
 #endif  // GRPC_ARES == 1
