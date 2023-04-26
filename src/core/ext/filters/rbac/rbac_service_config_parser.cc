@@ -756,7 +756,8 @@ Rbac RbacConfig::RbacPolicy::TakeAsRbac() {
   if (!rules.has_value()) {
     // No enforcing to be applied. An empty deny policy with an empty map
     // is equivalent to no enforcing.
-    return Rbac(Rbac::Action::kDeny, {});
+    // TODO(lwge): Pass the fitler name when working on this parser.
+    return Rbac(Rbac::Action::kDeny, {}, "");
   }
   return rules->TakeAsRbac();
 }

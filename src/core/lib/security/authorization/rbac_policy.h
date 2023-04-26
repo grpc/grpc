@@ -171,7 +171,6 @@ struct Rbac {
   };
 
   Rbac() = default;
-  Rbac(Rbac::Action action, std::map<std::string, Policy> policies);
   Rbac(Rbac::Action action, std::map<std::string, Policy> policies,
        absl::string_view name);
 

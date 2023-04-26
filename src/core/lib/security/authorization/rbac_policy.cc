@@ -29,9 +29,6 @@ namespace grpc_core {
 // Rbac
 //
 
-Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies)
-    : action(action), policies(std::move(policies)) {}
-
 Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies,
            absl::string_view name)
     : action(action), policies(std::move(policies)), name(name) {}
