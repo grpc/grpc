@@ -54,6 +54,9 @@ class CallTracerAnnotationInterface {
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
+  // Records an annotation for metadata information. `metadata` should be in
+  // proto string format.
+  virtual void RecordMetadataInformation(absl::string_view metadata_info) = 0;
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
   virtual bool IsSampled() = 0;

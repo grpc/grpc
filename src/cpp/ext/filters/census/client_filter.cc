@@ -288,6 +288,11 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   context_.AddSpanAnnotation(annotation, {});
 }
 
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
+    RecordMetadataInformation(absl::string_view metadata_info) {
+  RecordAnnotation(metadata_info);
+}
+
 //
 // OpenCensusCallTracer
 //
@@ -357,6 +362,11 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
 void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
   // If tracing is disabled, the following will be a no-op.
   context_.AddSpanAnnotation(annotation, {});
+}
+
+void OpenCensusCallTracer::RecordMetadataInformation(
+    absl::string_view metadata_info) {
+  RecordAnnotation(metadata_info);
 }
 
 void OpenCensusCallTracer::RecordApiLatency(absl::Duration api_latency,
