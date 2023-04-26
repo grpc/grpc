@@ -301,8 +301,8 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      absl::Status* status);
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver, absl::Status* status,
+                      RefCountedPtr<XdsClusterMap> config_map);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -469,9 +469,9 @@ class XdsResolver::XdsConfigSelector::RouteListIterator
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, absl::Status* status)
-    : resolver_(std::move(resolver)),
-      cluster_map_(MakeRefCounted<XdsClusterMap>()) {
+    RefCountedPtr<XdsResolver> resolver, absl::Status* status,
+    RefCountedPtr<XdsClusterMap> cluster_map)
+    : resolver_(std::move(resolver)), cluster_map_(cluster_map) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
@@ -1096,7 +1096,9 @@ void XdsResolver::GenerateResult() {
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   absl::Status status;
-  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &status);
+  auto cluster_map = MakeRefCounted<XdsClusterMap>();
+  auto config_selector =
+      MakeRefCounted<XdsConfigSelector>(Ref(), &status, cluster_map);
   if (!status.ok()) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(status.message()));
