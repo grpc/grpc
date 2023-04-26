@@ -415,6 +415,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'arch'),
         PythonDistribTest('linux', 'x64', 'alpine'),
+        PythonDistribTest('linux', 'aarch64', 'alpine'),
         PythonDistribTest('linux', 'x64', 'ubuntu2004'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster',
                           presubmit=True),
