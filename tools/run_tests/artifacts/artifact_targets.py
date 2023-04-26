@@ -452,6 +452,12 @@ def targets():
             PythonArtifact(
                 "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
             ),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp38-cp38", presubmit=True),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp39-cp39"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
+            PythonArtifact("musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True),
             PythonArtifact("macos", "x64", "python3.8", presubmit=True),
             PythonArtifact("macos", "x64", "python3.9"),
             PythonArtifact("macos", "x64", "python3.10"),
