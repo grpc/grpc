@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
@@ -46,7 +48,11 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
@@ -91,8 +97,32 @@ using ::envoy::extensions::http::stateful_session::cookie::v3 ::
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
-      : decode_context_{nullptr, xds_server_, nullptr, upb_def_pool_.ptr(),
-                        upb_arena_.ptr()} {}
+      : xds_client_(MakeXdsClient()),
+        decode_context_{xds_client_.get(), xds_server_, nullptr,
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+
+  static RefCountedPtr<XdsClient> MakeXdsClient() {
+    grpc_error_handle error;
+    auto bootstrap = GrpcXdsBootstrap::Create(
+        "{\n"
+        "  \"xds_servers\": [\n"
+        "    {\n"
+        "      \"server_uri\": \"xds.example.com\",\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"google_default\"}\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}");
+    if (!bootstrap.ok()) {
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
+    }
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr, "foo agent",
+                                     "foo version");
+  }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     google::protobuf::Any any;
@@ -115,6 +145,7 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   GrpcXdsBootstrap::GrpcXdsServer xds_server_;
+  RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
   XdsResourceType::DecodeContext decode_context_;
@@ -847,6 +878,79 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "{\"orIds\":{\"ids\":[{\"any\":true}]}}"
             "]"
             "}}}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(JsonDump(config->config),
+            "{\"rules\":{\"action\":0,"
+            "\"audit_condition\":1,"
+            "\"audit_loggers\":[{\"stdout_logger\":{}}]"
+            "}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      static_cast<
+          envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
+          100));
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.audit_condition "
+                         "error:invalid audit condition]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat(
+                "errors validating filter config: ["
+                "field:",
+                FieldPrefix(),
+                ".rules.audit_logging_options.logger_configs[0].audit_logger "
+                "error:unsupported audit logger type]"))
+      << status;
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
