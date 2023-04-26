@@ -740,14 +740,6 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_override_host policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
@@ -777,8 +769,8 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
                                            ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto child_policy_config = CoreConfiguration::Get()
@@ -794,7 +786,7 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
   {
     ValidationErrors::ScopedField field(errors, ".overrideHostStatus");
     auto host_status_list = LoadJsonObjectField<std::vector<std::string>>(
-        json.object_value(), args, "overrideHostStatus", errors,
+        json.object(), args, "overrideHostStatus", errors,
         /*required=*/false);
     if (host_status_list.has_value()) {
       for (size_t i = 0; i < host_status_list->size(); ++i) {

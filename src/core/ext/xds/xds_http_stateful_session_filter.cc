@@ -30,7 +30,6 @@
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h"
 #include "envoy/type/http/v3/cookie.upb.h"
-#include "upb/def.h"
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -212,7 +212,7 @@ XdsHttpStatefulSessionFilter::GenerateServiceConfig(
   Json config = filter_config_override != nullptr
                     ? filter_config_override->config
                     : hcm_filter_config.config;
-  return ServiceConfigJsonEntry{"stateful_session", config.Dump()};
+  return ServiceConfigJsonEntry{"stateful_session", JsonDump(config)};
 }
 
 }  // namespace grpc_core

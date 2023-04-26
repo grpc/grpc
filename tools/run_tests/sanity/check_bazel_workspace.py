@@ -43,8 +43,8 @@ _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 _GRPC_DEP_NAMES = [
     'upb', 'boringssl', 'zlib', 'com_google_protobuf', 'com_google_googletest',
     'rules_cc', 'com_github_google_benchmark', 'com_github_cares_cares',
-    'com_google_absl', 'io_opencensus_cpp', 'envoy_api', _BAZEL_SKYLIB_DEP_NAME,
-    _BAZEL_TOOLCHAINS_DEP_NAME, _BAZEL_COMPDB_DEP_NAME,
+    'com_google_absl', 'com_google_fuzztest', 'io_opencensus_cpp', 'envoy_api',
+    _BAZEL_SKYLIB_DEP_NAME, _BAZEL_TOOLCHAINS_DEP_NAME, _BAZEL_COMPDB_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME, _YAML_PYYAML_DEP_NAME,
     _TWISTED_INCREMENTAL_DEP_NAME, _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME, 'io_bazel_rules_go',
@@ -59,6 +59,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'upb',  # third_party/upb is checked in locally
     'rules_cc',
     'com_google_absl',
+    'com_google_fuzztest',
     'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,

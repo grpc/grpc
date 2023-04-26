@@ -637,8 +637,8 @@ void XdsClusterManagerLbConfig::Child::JsonPostLoad(const Json& json,
                                                     const JsonArgs&,
                                                     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".childPolicy");
-  auto it = json.object_value().find("childPolicy");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("childPolicy");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -672,14 +672,6 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // xds_cluster_manager was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_manager policy requires "
-          "configuration.  Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsClusterManagerLbConfig>(
         json, JsonArgs(),
         "errors validating xds_cluster_manager LB policy config");

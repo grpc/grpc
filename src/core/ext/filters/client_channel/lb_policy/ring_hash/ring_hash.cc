@@ -232,6 +232,10 @@ class RingHash : public LoadBalancingPolicy {
                                                absl::Status status);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RingHash*>(policy())->work_serializer();
+    }
+
     size_t num_idle_;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;

@@ -1,1 +1,3 @@
-PX
+network_input {
+  single_read_bytes: "\x50\x58"
+}

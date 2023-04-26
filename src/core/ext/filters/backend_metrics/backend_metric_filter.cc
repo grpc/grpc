@@ -26,7 +26,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
@@ -71,6 +71,10 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
     xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
     has_data = true;
   }
+  if (data.eps != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_eps(response, data.eps);
+    has_data = true;
+  }
   for (const auto& p : data.request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,
@@ -80,6 +84,13 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
   }
   for (const auto& p : data.utilization) {
     xds_data_orca_v3_OrcaLoadReport_utilization_set(
+        response,
+        upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
+        p.second, arena.ptr());
+    has_data = true;
+  }
+  for (const auto& p : data.named_metrics) {
+    xds_data_orca_v3_OrcaLoadReport_named_metrics_set(
         response,
         upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
         p.second, arena.ptr());

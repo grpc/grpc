@@ -91,8 +91,9 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       std::vector<std::string>({"authority", "connected"}));
   EXPECT_EQ(MakeStack("unknown", minimal_stack_args, GRPC_CLIENT_SUBCHANNEL),
             std::vector<std::string>({"authority", "connected"}));
-  EXPECT_EQ(MakeStack("unknown", minimal_stack_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "connected"}));
+  EXPECT_EQ(
+      MakeStack("unknown", minimal_stack_args, GRPC_SERVER_CHANNEL),
+      std::vector<std::string>({"server", "server_call_tracer", "connected"}));
 
   EXPECT_EQ(MakeStack("chttp2", minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL),
             std::vector<std::string>(
@@ -101,8 +102,8 @@ TEST(ChannelStackFilters, LooksAsExpected) {
             std::vector<std::string>(
                 {"authority", "http-client", "compression", "connected"}));
   EXPECT_EQ(MakeStack("chttp2", minimal_stack_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>(
-                {"server", "http-server", "compression", "connected"}));
+            std::vector<std::string>({"server", "http-server", "compression",
+                                      "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, minimal_stack_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client-channel"}));
 
@@ -115,8 +116,8 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       MakeStack("unknown", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(MakeStack("unknown", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>(
-                {"server", "message_size", "deadline", "connected"}));
+            std::vector<std::string>({"server", "message_size", "deadline",
+                                      "server_call_tracer", "connected"}));
 
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
@@ -127,10 +128,10 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       std::vector<std::string>({"authority", "message_size", "http-client",
                                 "compression", "connected"}));
 
-  EXPECT_EQ(
-      MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
-      std::vector<std::string>({"server", "message_size", "deadline",
-                                "http-server", "compression", "connected"}));
+  EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
+            std::vector<std::string>({"server", "message_size", "deadline",
+                                      "http-server", "compression",
+                                      "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client-channel"}));
 }

@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -33,6 +34,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -81,23 +84,26 @@ struct MethodConfig {
 
 absl::StatusOr<RefCountedPtr<ServiceConfig>> ServiceConfigImpl::Create(
     const ChannelArgs& args, absl::string_view json_string) {
-  auto json = Json::Parse(json_string);
+  auto json = JsonParse(json_string);
   if (!json.ok()) return json.status();
   ValidationErrors errors;
   auto service_config = Create(args, *json, json_string, &errors);
-  if (!errors.ok()) return errors.status("errors validating service config");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating service config");
+  }
   return service_config;
 }
 
 RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
-  return Create(args, json, json.Dump(), errors);
+  return Create(args, json, JsonDump(json), errors);
 }
 
 RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     const ChannelArgs& args, const Json& json, absl::string_view json_string,
     ValidationErrors* errors) {
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     errors->AddError("is not an object");
     return nullptr;
   }
@@ -109,7 +115,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
           args, json, errors);
   // Parse per-method parameters.
   auto method_configs = LoadJsonObjectField<std::vector<Json::Object>>(
-      json.object_value(), JsonArgs(), "methodConfig", errors,
+      json.object(), JsonArgs(), "methodConfig", errors,
       /*required=*/false);
   if (method_configs.has_value()) {
     service_config->parsed_method_config_vectors_storage_.reserve(

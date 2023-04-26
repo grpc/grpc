@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <initializer_list>
 #include <limits>
 #include <map>
@@ -39,7 +38,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
@@ -56,7 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -422,7 +421,7 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type_name,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_config.config.Dump(),
+  EXPECT_EQ(JsonDump(filter_config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");
 }
 
@@ -533,7 +532,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type_name,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_config.config.Dump(),
+  EXPECT_EQ(JsonDump(filter_config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");
 }
 

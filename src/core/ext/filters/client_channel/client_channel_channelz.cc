@@ -58,7 +58,7 @@ Json SubchannelNode::RenderJson() {
 
   // Fill in the channel trace if applicable
   Json trace_json = trace_.RenderJson();
-  if (trace_json.type() != Json::Type::JSON_NULL) {
+  if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
   // Ask CallCountingHelper to populate call count data.
