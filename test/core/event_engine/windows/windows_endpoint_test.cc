@@ -42,7 +42,7 @@ class WindowsEndpointTest : public testing::Test {};
 TEST_F(WindowsEndpointTest, BasicCommunication) {
   // TODO(hork): deduplicate against winsocket and iocp tests
   // Setup
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
@@ -86,7 +86,7 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
 
 TEST_F(WindowsEndpointTest, Conversation) {
   // Setup
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];

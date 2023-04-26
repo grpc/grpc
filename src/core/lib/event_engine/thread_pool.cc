@@ -58,7 +58,10 @@ thread_local WorkQueue* g_local_queue = nullptr;
 
 // -------- ThreadPool --------
 
-ThreadPool::ThreadPool() { pool_->Start(); }
+ThreadPool::ThreadPool(size_t reserve_threads)
+    : pool_{std::make_shared<ThreadPoolImpl>(reserve_threads)} {
+  pool_->Start();
+}
 
 void ThreadPool::Quiesce() { pool_->Quiesce(); }
 
@@ -101,7 +104,8 @@ void ThreadPool::TestOnlyPostFork() { pool_->Postfork(); }
 
 // -------- ThreadPool::ThreadPoolImpl --------
 
-ThreadPool::ThreadPoolImpl::ThreadPoolImpl() : lifeguard_(this) {}
+ThreadPool::ThreadPoolImpl::ThreadPoolImpl(size_t reserve_threads)
+    : reserve_threads_(reserve_threads), lifeguard_(this) {}
 
 void ThreadPool::ThreadPoolImpl::Start() {
   for (int i = 0; i < reserve_threads_; i++) {
@@ -352,7 +356,7 @@ bool ThreadPool::ThreadState::Step() {
     // has been idle long enough.
     if (timed_out &&
         pool_->thread_count()->GetCount(CounterType::kLivingThreadCount) >
-            pool_->reserve_threads_ &&
+            pool_->reserve_threads() &&
         grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
       return false;
     }

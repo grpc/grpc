@@ -41,7 +41,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 class WinSocketTest : public testing::Test {};
 
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);
@@ -67,7 +67,7 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);

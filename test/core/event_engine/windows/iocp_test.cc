@@ -57,7 +57,7 @@ void LogErrorMessage(int messageid, absl::string_view context) {
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -139,7 +139,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -206,7 +206,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
@@ -231,7 +231,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   // kick twice
   iocp.Kick();
@@ -255,7 +255,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  ThreadPool executor;
+  ThreadPool executor(8);
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -276,7 +276,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   threads.reserve(thread_count);
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([sockets_per_thread, &read_count, &write_count] {
-      ThreadPool executor;
+      ThreadPool executor(8);
       IOCP iocp(&executor);
       // Start a looping worker thread with a moderate timeout
       std::thread iocp_worker([&iocp] {

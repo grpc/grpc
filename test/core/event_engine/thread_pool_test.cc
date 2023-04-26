@@ -36,7 +36,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 TEST(ThreadPoolTest, CanRunClosure) {
-  ThreadPool p;
+  ThreadPool p(8);
   grpc_core::Notification n;
   p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
@@ -44,7 +44,7 @@ TEST(ThreadPoolTest, CanRunClosure) {
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
-  auto* p = new ThreadPool();
+  auto* p = new ThreadPool(8);
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
     // This should delete the thread pool and not deadlock
@@ -56,7 +56,7 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
 }
 
 TEST(ThreadPoolTest, CanSurviveFork) {
-  ThreadPool p;
+  ThreadPool p(8);
   grpc_core::Notification inner_closure_ran;
   p.Run([&inner_closure_ran, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -82,7 +82,7 @@ TEST(ThreadPoolTest, ForkStressTest) {
   constexpr int expected_runcount = 1000;
   constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
-  ThreadPool pool;
+  ThreadPool pool(8);
   std::atomic<int> runcount{0};
   std::atomic<int> fork_count{0};
   std::function<void()> inner_fn;
@@ -132,7 +132,7 @@ TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
   ASSERT_DEATH_IF_SUPPORTED(
       [] {
         gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
-        ThreadPool p;
+        ThreadPool p(8);
         ScheduleSelf(&p);
         std::thread terminator([] {
           std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -153,7 +153,7 @@ void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
 }
 
 TEST(ThreadPoolTest, CanStartLotsOfClosures) {
-  ThreadPool p;
+  ThreadPool p(8);
   std::atomic<int> runcount{0};
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
@@ -164,12 +164,11 @@ TEST(ThreadPoolTest, CanStartLotsOfClosures) {
 
 TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
   int pool_thread_count = 8;
-  ThreadPool p;
+  ThreadPool p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};
   std::atomic<bool> signaled{false};
-  // TODO(hork): make thread count a ThreadPool constructor arg
   p.Run([&]() {
     for (int i = 0; i < pool_thread_count; i++) {
       p.Run([&]() {
@@ -192,12 +191,11 @@ TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
 
 TEST(ThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
   int pool_thread_count = 8;
-  ThreadPool p;
+  ThreadPool p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};
   std::atomic<bool> signaled{false};
-  // TODO(hork): make thread count a ThreadPool constructor arg
   for (int i = 0; i < pool_thread_count; i++) {
     p.Run([&]() {
       waiters.fetch_add(1);

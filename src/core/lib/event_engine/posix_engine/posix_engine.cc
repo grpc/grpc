@@ -333,14 +333,16 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
+      executor_(std::make_shared<ThreadPool>(
+          grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(executor_) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 }
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
+      executor_(std::make_shared<ThreadPool>(
+          grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(executor_) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the

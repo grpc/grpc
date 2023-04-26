@@ -44,7 +44,9 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {}
+    : executor_(std::make_shared<ThreadPool>(
+          grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      timer_manager_(executor_) {}
 
 CFEventEngine::~CFEventEngine() {
   {

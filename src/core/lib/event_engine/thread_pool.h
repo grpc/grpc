@@ -47,7 +47,7 @@ namespace experimental {
 
 class ThreadPool final : public Executor {
  public:
-  ThreadPool();
+  explicit ThreadPool(size_t reserve_threads);
   // Asserts Quiesce was called.
   ~ThreadPool() override;
   // Shut down the pool, and wait for all threads to exit.
@@ -138,9 +138,7 @@ class ThreadPool final : public Executor {
   class ThreadPoolImpl : public Forkable,
                          public std::enable_shared_from_this<ThreadPoolImpl> {
    public:
-    const int reserve_threads_ = grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 8u);
-
-    ThreadPoolImpl();
+    explicit ThreadPoolImpl(size_t reserve_threads);
     // Start all threads.
     void Start();
     // Add a closure to a work queue, preferably a thread-local queue if
@@ -174,6 +172,7 @@ class ThreadPool final : public Executor {
     bool IsShutdown();
     bool IsForking();
     bool IsQuiesced();
+    size_t reserve_threads() { return reserve_threads_; }
     ThreadCount* thread_count() { return &thread_count_; }
     TheftRegistry* theft_registry() { return &theft_registry_; }
     WorkQueue* queue() { return &queue_; }
@@ -203,6 +202,7 @@ class ThreadPool final : public Executor {
       std::atomic<bool> thread_running_{false};
     };
 
+    const size_t reserve_threads_;
     ThreadCount thread_count_;
     TheftRegistry theft_registry_;
     BasicWorkQueue queue_;
@@ -240,8 +240,7 @@ class ThreadPool final : public Executor {
     grpc_core::BackOff backoff_;
   };
 
-  const std::shared_ptr<ThreadPoolImpl> pool_ =
-      std::make_shared<ThreadPoolImpl>();
+  const std::shared_ptr<ThreadPoolImpl> pool_;
 };
 
 }  // namespace experimental

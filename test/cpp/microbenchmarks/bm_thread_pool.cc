@@ -43,7 +43,7 @@ struct FanoutParameters {
 };
 
 void BM_ThreadPool_RunSmallLambda(benchmark::State& state) {
-  ThreadPool pool;
+  ThreadPool pool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   const int cb_count = state.range(0);
   std::atomic_int runcount{0};
   for (auto _ : state) {
@@ -79,7 +79,7 @@ void BM_ThreadPool_RunClosure(benchmark::State& state) {
           (*signal_holder)->Notify();
         }
       });
-  ThreadPool pool;
+  ThreadPool pool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
       pool.Run(closure);
@@ -161,7 +161,8 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
 
 void BM_ThreadPool_Lambda_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto pool = std::make_shared<ThreadPool>();
+  auto pool = std::make_shared<ThreadPool>(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   for (auto _ : state) {
     std::atomic_int count{0};
     grpc_core::Notification signal;
@@ -197,7 +198,8 @@ void ClosureFanOutCallback(EventEngine::Closure* child_closure,
 
 void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto pool = std::make_shared<ThreadPool>();
+  auto pool = std::make_shared<ThreadPool>(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   std::vector<EventEngine::Closure*> closures;
   closures.reserve(params.depth + 2);
   closures.push_back(nullptr);
