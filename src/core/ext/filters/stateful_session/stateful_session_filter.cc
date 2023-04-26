@@ -160,8 +160,10 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
     // We have a valid cookie, so add the call attribute to be used by the
     // xds_override_host LB policy.
-    service_config_call_data->SetCallAttribute(XdsOverrideHostTypeName(),
-                                               *cookie_value);
+    service_config_call_data->SetCallAttribute(
+        GetContext<Arena>()
+            ->ManagedNew<ServiceConfigCallData::StringViewAttribute>(
+                XdsOverrideHostTypeName(), *cookie_value));
   }
   // Intercept server initial metadata.
   call_args.server_initial_metadata->InterceptAndMap(

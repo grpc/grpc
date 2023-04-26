@@ -48,7 +48,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 
 #define XXH_INLINE_ALL
@@ -732,16 +731,17 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  ServiceConfigCallData::Pack(&call_config.call_attributes,
-                              XdsClusterAttributeTypeName(), it->first);
+  call_config.call_attributes[XdsClusterAttributeTypeName()] =
+      args.arena->ManagedNew<ServiceConfigCallData::StringViewAttribute>(
+          XdsClusterAttributeTypeName(), it->first);
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  ServiceConfigCallData::Pack(&call_config.call_attributes,
-                              RequestHashAttributeName(),
-                              absl::string_view(hash_value));
+  call_config.call_attributes[RequestHashAttributeName()] =
+      args.arena->ManagedNew<ServiceConfigCallData::StringViewAttribute>(
+          RequestHashAttributeName(), hash_value);
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };

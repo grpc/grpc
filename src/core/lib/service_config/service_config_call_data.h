@@ -39,29 +39,27 @@ namespace grpc_core {
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  class Holder {
+  class CallAttributeInterface {
    public:
-    virtual ~Holder() = default;
+    virtual ~CallAttributeInterface() = default;
+    virtual UniqueTypeName type() = 0;
   };
 
-  template <typename T>
-  class UniversalHolder : public Holder {
+  class StringViewAttribute : public CallAttributeInterface {
    public:
-    explicit UniversalHolder(T value) : value_(std::move(value)) {}
-    T value() { return value_; }
+    StringViewAttribute(UniqueTypeName type, absl::string_view value)
+        : type_(type), value_(value) {}
+
+    UniqueTypeName type() override { return type_; }
+
+    absl::string_view value() { return value_; }
 
    private:
-    T value_;
+    UniqueTypeName type_;
+    absl::string_view value_;
   };
 
-  using CallAttributes = std::map<std::uintptr_t, std::unique_ptr<Holder>>;
-
-  template <typename T>
-  static void Pack(CallAttributes* attributes, UniqueTypedTypeName<T> name,
-                   T value) {
-    attributes->emplace(name.unique_id(),
-                        std::make_unique<UniversalHolder<T>>(std::move(value)));
-  }
+  using CallAttributes = std::map<UniqueTypeName, CallAttributeInterface*>;
 
   ServiceConfigCallData() : method_configs_(nullptr) {}
 
@@ -86,16 +84,14 @@ class ServiceConfigCallData {
 
   // Must be called when holding the call combiner (legacy filter) or from
   // inside the activity (promise-based filter).
-  template <typename T>
-  void SetCallAttribute(UniqueTypedTypeName<T> name, T value) {
-    Pack(&call_attributes_, name, value);
+  void SetCallAttribute(CallAttributeInterface* value) {
+    call_attributes_.emplace(value->type(), value);
   }
 
-  template <typename T>
-  T GetCallAttribute(UniqueTypedTypeName<T> name) {
-    auto it = call_attributes_.find(name.unique_id());
-    if (it == call_attributes_.end()) return T();
-    return static_cast<UniversalHolder<T>*>(it->second.get())->value();
+  CallAttributeInterface* GetCallAttribute(UniqueTypeName name) {
+    auto it = call_attributes_.find(name);
+    if (it == call_attributes_.end()) return nullptr;
+    return it->second;
   }
 
  private:
