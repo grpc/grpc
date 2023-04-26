@@ -43,7 +43,8 @@ class ServerMetricRecorder {
  public:
   // Factory method. Use this to create.
   static std::unique_ptr<ServerMetricRecorder> Create();
-  /// Records the server CPU utilization in the range [0, 1].
+  /// Records the server CPU utilization in the range [0, infy).
+  /// Values may be larger than 1.0 when the usage exceeds the soft limit.
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
   void SetCpuUtilization(double value);
