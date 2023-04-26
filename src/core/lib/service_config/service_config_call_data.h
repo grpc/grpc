@@ -21,11 +21,10 @@
 
 #include <stddef.h>
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <utility>
-
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -40,7 +39,27 @@ namespace grpc_core {
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  using CallAttributes = std::map<UniqueTypeName, absl::string_view>;
+  class CallAttributeInterface {
+   public:
+    virtual ~CallAttributeInterface() = default;
+    virtual UniqueTypeName type() = 0;
+  };
+
+  class StringViewAttribute : public CallAttributeInterface {
+   public:
+    StringViewAttribute(UniqueTypeName type, absl::string_view value)
+        : type_(type), value_(value) {}
+
+    UniqueTypeName type() override { return type_; }
+
+    absl::string_view value() { return value_; }
+
+   private:
+    UniqueTypeName type_;
+    absl::string_view value_;
+  };
+
+  using CallAttributes = std::map<UniqueTypeName, CallAttributeInterface*>;
 
   ServiceConfigCallData() : method_configs_(nullptr) {}
 
@@ -63,12 +82,16 @@ class ServiceConfigCallData {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const CallAttributes& call_attributes() const { return call_attributes_; }
-
   // Must be called when holding the call combiner (legacy filter) or from
   // inside the activity (promise-based filter).
-  void SetCallAttribute(UniqueTypeName name, absl::string_view value) {
-    call_attributes_[name] = value;
+  void SetCallAttribute(CallAttributeInterface* value) {
+    call_attributes_.emplace(value->type(), value);
+  }
+
+  CallAttributeInterface* GetCallAttribute(UniqueTypeName name) {
+    auto it = call_attributes_.find(name);
+    if (it == call_attributes_.end()) return nullptr;
+    return it->second;
   }
 
  private:

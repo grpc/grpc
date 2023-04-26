@@ -3060,7 +3060,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
 const char kServiceConfigPerCall[] =
     "{\n"
     "  \"loadBalancingConfig\": [\n"
-    "    {\"weighted_round_robin_experimental\": {\n"
+    "    {\"weighted_round_robin\": {\n"
     "      \"blackoutPeriod\": \"0s\",\n"
     "      \"weightUpdatePeriod\": \"0.1s\"\n"
     "    }}\n"
@@ -3070,7 +3070,7 @@ const char kServiceConfigPerCall[] =
 const char kServiceConfigOob[] =
     "{\n"
     "  \"loadBalancingConfig\": [\n"
-    "    {\"weighted_round_robin_experimental\": {\n"
+    "    {\"weighted_round_robin\": {\n"
     "      \"blackoutPeriod\": \"0s\",\n"
     "      \"weightUpdatePeriod\": \"0.1s\",\n"
     "      \"enableOobLoadReport\": true\n"
@@ -3155,8 +3155,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
                                 /*expected_weights=*/{1, 2, 4});
   // Check LB policy name for the channel.
-  EXPECT_EQ("weighted_round_robin_experimental",
-            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ("weighted_round_robin", channel->GetLoadBalancingPolicyName());
 }
 
 class WeightedRoundRobinParamTest
@@ -3191,8 +3190,7 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
                                 /*expected_weights=*/{1, 2, 4});
   // Check LB policy name for the channel.
-  EXPECT_EQ("weighted_round_robin_experimental",
-            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ("weighted_round_robin", channel->GetLoadBalancingPolicyName());
 }
 
 }  // namespace
