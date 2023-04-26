@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.55.0-dev'
+  version = '1.56.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -257,7 +257,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/dynamic_filters.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
-                      'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
@@ -267,6 +266,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/filters/client_channel/lb_policy/health_check_client.h',
+                      'src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                       'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                       'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
@@ -353,7 +354,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                      'src/core/ext/transport/chttp2/transport/context_list.h',
+                      'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
                       'src/core/ext/transport/chttp2/transport/frame.h',
@@ -689,6 +690,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
                       'src/core/ext/xds/upb_utils.h',
                       'src/core/ext/xds/xds_api.h',
+                      'src/core/ext/xds/xds_audit_logger_registry.h',
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_bootstrap_grpc.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
@@ -1300,7 +1302,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/connector.h',
                               'src/core/ext/filters/client_channel/dynamic_filters.h',
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
-                              'src/core/ext/filters/client_channel/health/health_check_client.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
@@ -1310,6 +1311,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                              'src/core/ext/filters/client_channel/lb_policy/health_check_client.h',
+                              'src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                               'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h',
                               'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
@@ -1378,7 +1381,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                              'src/core/ext/transport/chttp2/transport/context_list.h',
+                              'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                               'src/core/ext/transport/chttp2/transport/decode_huff.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
                               'src/core/ext/transport/chttp2/transport/frame.h',
@@ -1714,6 +1717,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
                               'src/core/ext/xds/upb_utils.h',
                               'src/core/ext/xds/xds_api.h',
+                              'src/core/ext/xds/xds_audit_logger_registry.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_bootstrap_grpc.h',
                               'src/core/ext/xds/xds_certificate_provider.h',

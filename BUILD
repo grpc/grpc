@@ -179,11 +179,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gracious"  # @unused
+g_stands_for = "galvanized"  # @unused
 
-core_version = "31.0.0"  # @unused
+core_version = "32.0.0"  # @unused
 
-version = "1.55.0-dev"  # @unused
+version = "1.56.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1240,7 +1240,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/iomgr/buffer_list.cc",
         "//src/core:lib/iomgr/call_combiner.cc",
         "//src/core:lib/iomgr/cfstream_handle.cc",
         "//src/core:lib/iomgr/dualstack_socket_posix.cc",
@@ -1259,7 +1258,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname_fallback.cc",
         "//src/core:lib/iomgr/gethostname_host_name_max.cc",
         "//src/core:lib/iomgr/gethostname_sysconf.cc",
-        "//src/core:lib/iomgr/internal_errqueue.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
         "//src/core:lib/iomgr/iomgr.cc",
         "//src/core:lib/iomgr/iomgr_posix.cc",
@@ -1351,7 +1349,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression_internal.h",
         "//src/core:lib/compression/message_compress.h",
         "//src/core:lib/iomgr/block_annotate.h",
-        "//src/core:lib/iomgr/buffer_list.h",
         "//src/core:lib/iomgr/call_combiner.h",
         "//src/core:lib/iomgr/cfstream_handle.h",
         "//src/core:lib/iomgr/dynamic_annotations.h",
@@ -1364,7 +1361,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
         "//src/core:lib/iomgr/gethostname.h",
-        "//src/core:lib/iomgr/internal_errqueue.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
         "//src/core:lib/iomgr/load_file.h",
@@ -1469,6 +1465,8 @@ grpc_cc_library(
         "gpr",
         "grpc_public_hdrs",
         "grpc_trace",
+        "iomgr_buffer_list",
+        "iomgr_internal_errqueue",
         "iomgr_timer",
         "orphanable",
         "parse_address",
@@ -2617,6 +2615,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_internal_errqueue",
+    srcs = [
+        "//src/core:lib/iomgr/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/iomgr/internal_errqueue.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:iomgr_internal_errqueue"],
+    deps = [
+        "gpr",
+        "//src/core:iomgr_port",
+        "//src/core:strerror",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_buffer_list",
+    srcs = [
+        "//src/core:lib/iomgr/buffer_list.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/iomgr/buffer_list.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:iomgr_buffer_list"],
+    deps = [
+        "gpr",
+        "iomgr_internal_errqueue",
+        "//src/core:error",
+        "//src/core:iomgr_port",
+    ],
+)
+
+grpc_cc_library(
     name = "uri_parser",
     srcs = [
         "//src/core:lib/uri/uri_parser.cc",
@@ -2831,7 +2868,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/config_selector.cc",
         "//src/core:ext/filters/client_channel/dynamic_filters.cc",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.cc",
-        "//src/core:ext/filters/client_channel/health/health_check_client.cc",
         "//src/core:ext/filters/client_channel/http_proxy.cc",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
@@ -2856,7 +2892,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/connector.h",
         "//src/core:ext/filters/client_channel/dynamic_filters.h",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
-        "//src/core:ext/filters/client_channel/health/health_check_client.h",
         "//src/core:ext/filters/client_channel/http_proxy.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
@@ -2897,7 +2932,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
-        "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config_impl",
@@ -3718,11 +3752,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chttp2_context_list_entry",
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
+    ],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
-        "//src/core:ext/transport/chttp2/transport/context_list.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.cc",
         "//src/core:ext/transport/chttp2/transport/frame_ping.cc",
@@ -3737,7 +3778,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
-        "//src/core:ext/transport/chttp2/transport/context_list.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",
         "//src/core:ext/transport/chttp2/transport/frame_ping.h",
@@ -3758,6 +3798,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "chttp2_context_list_entry",
         "chttp2_frame",
         "chttp2_varint",
         "debug_location",
@@ -3771,6 +3812,7 @@ grpc_cc_library(
         "hpack_parser_table",
         "http_trace",
         "httpcli",
+        "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

@@ -22,13 +22,11 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/upb.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
@@ -217,9 +215,7 @@ void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
-  subchannel_->WatchConnectivityState(
-      /*health_check_service_name=*/absl::nullopt,
-      std::move(connectivity_watcher));
+  subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
 void OrcaProducer::Orphan() {
@@ -228,8 +224,7 @@ void OrcaProducer::Orphan() {
     stream_client_.reset();
   }
   GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
-  subchannel_->CancelConnectivityStateWatch(
-      /*health_check_service_name=*/absl::nullopt, connectivity_watcher_);
+  subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }
 

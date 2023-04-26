@@ -46,7 +46,7 @@ class PodLogCollector(threading.Thread):
                  log_path: pathlib.Path,
                  log_to_stdout: bool = False,
                  log_timestamps: bool = False,
-                 error_backoff_sec: int = 1):
+                 error_backoff_sec: int = 5):
         self.pod_name = pod_name
         self.namespace_name = namespace_name
         self.stop_event = stop_event
@@ -103,6 +103,7 @@ class PodLogCollector(threading.Thread):
                 f'Will attempt to read from the beginning, but log '
                 f'truncation may occur.',
                 force_flush=True)
+        finally:
             # Instead of time.sleep(), we're waiting on the stop event
             # in case it gets set earlier.
             self.stop_event.wait(timeout=self.error_backoff_sec)
