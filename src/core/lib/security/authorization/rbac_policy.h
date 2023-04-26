@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_audit_logging.h>
