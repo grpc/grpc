@@ -45,7 +45,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class WorkStealingThreadPool final : public ThreadPool, public Executor {
+class WorkStealingThreadPool final : public ThreadPool {
  public:
   explicit WorkStealingThreadPool(size_t reserve_threads);
   // Asserts Quiesce was called.

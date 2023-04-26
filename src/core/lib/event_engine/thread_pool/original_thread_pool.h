@@ -41,7 +41,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class OriginalThreadPool final : public ThreadPool, public Executor {
+class OriginalThreadPool final : public ThreadPool {
  public:
   explicit OriginalThreadPool(size_t reserve_threads);
   // Asserts Quiesce was called.
