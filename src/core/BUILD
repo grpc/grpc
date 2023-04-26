@@ -1492,6 +1492,7 @@ grpc_cc_library(
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1965,6 +1966,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",

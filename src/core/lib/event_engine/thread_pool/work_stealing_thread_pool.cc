@@ -24,13 +24,13 @@
 #include <memory>
 #include <utility>
 
-#include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -113,13 +113,13 @@ void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads)
-    : reserve_threads_(reserve_threads), lifeguard_(this) {}
+    : reserve_threads_(reserve_threads), lifeguard_() {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
+  lifeguard_.Start(shared_from_this());
   for (size_t i = 0; i < reserve_threads_; i++) {
     StartThread();
   }
-  lifeguard_.Start();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
@@ -216,15 +216,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
 // -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard
 // --------
 
-WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
-    WorkStealingThreadPoolImpl* pool)
-    : pool_(pool),
-      backoff_(grpc_core::BackOff::Options()
+WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard()
+    : backoff_(grpc_core::BackOff::Options()
                    .set_initial_backoff(kLifeguardMinSleepBetweenChecks)
                    .set_max_backoff(kLifeguardMaxSleepBetweenChecks)
                    .set_multiplier(1.3)) {}
 
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start(
+    std::shared_ptr<WorkStealingThreadPoolImpl> pool) {
+  pool_ = std::move(pool);
   grpc_core::Thread(
       "lifeguard",
       [](void* arg) {
@@ -246,6 +246,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown() && pool_->IsQuiesced()) break;
     MaybeStartNewThread();
   }
+  pool_.reset();
   thread_running_.store(false);
 }
 

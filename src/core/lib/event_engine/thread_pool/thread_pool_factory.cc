@@ -13,10 +13,17 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {

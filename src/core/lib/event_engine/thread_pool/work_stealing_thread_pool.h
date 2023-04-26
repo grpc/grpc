@@ -20,6 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -30,14 +31,11 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/cpu.h>
 
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -187,9 +185,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     //    and there are threads that can accept work.
     class Lifeguard {
      public:
-      explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
+      Lifeguard();
       // Start the lifeguard thread.
-      void Start();
+      void Start(std::shared_ptr<WorkStealingThreadPoolImpl> pool);
       // Block until the lifeguard thread is shut down.
       void BlockUntilShutdown();
 
@@ -198,7 +196,7 @@ class WorkStealingThreadPool final : public ThreadPool {
       void LifeguardMain();
       // Starts a new thread if the pool is backlogged
       void MaybeStartNewThread();
-      WorkStealingThreadPoolImpl* const pool_;
+      std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
       grpc_core::BackOff backoff_;
       std::atomic<bool> thread_running_{false};
     };

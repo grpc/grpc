@@ -14,8 +14,6 @@
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
-#include <stdlib.h>
-
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -27,7 +25,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
