@@ -373,8 +373,6 @@ class XdsResolver : public Resolver {
               [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
                   .value);
       GPR_ASSERT(service_config_call_data != nullptr);
-      service_config_call_data->SetCallAttribute(XdsClusterDataTypeName(),
-                                                 "hello there!");
       return next_promise_factory(std::move(call_args));
     }
 
