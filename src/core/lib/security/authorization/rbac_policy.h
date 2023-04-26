@@ -186,10 +186,7 @@ struct Rbac {
   std::map<std::string, Policy> policies;
   std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
       logger_configs;
-  // The authorization policy name if applicable.
-  // TODO(lwge): The HTTP RBAC filter name is not currently available when
-  // filter config is generated. Need to investigate whether it's worth
-  // refactoring the code to include this piece of information in audit context.
+  // The authorization policy name or the HTTP RBAC filter name.
   std::string name;
 };
 
