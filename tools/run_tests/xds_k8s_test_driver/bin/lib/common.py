@@ -81,10 +81,6 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
                        reuse_namespace: bool = True,
                        reuse_service: bool = False,
                        secure: bool = False) -> KubernetesServerRunner:
-    """
-
-    :rtype: object
-    """
     # KubernetesServerRunner arguments.
     runner_kwargs = dict(
         deployment_name=xds_flags.SERVER_NAME.value,
@@ -106,7 +102,7 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
     return KubernetesServerRunner(namespace, **runner_kwargs)
 
 
-def ensure_atexit(signum, frame):
+def _ensure_atexit(signum, frame):
     """Needed to handle signals or atexit handler won't be called."""
     del frame
 
@@ -117,8 +113,8 @@ def ensure_atexit(signum, frame):
     sys.exit(1)
 
 
-def graceful_exit(server_runner: KubernetesServerRunner,
-                  client_runner: KubernetesClientRunner):
+def _graceful_exit(server_runner: KubernetesServerRunner,
+                   client_runner: KubernetesClientRunner):
     """Stop port forwarding processes."""
     client_runner.stop_pod_dependencies()
     server_runner.stop_pod_dependencies()
@@ -126,9 +122,9 @@ def graceful_exit(server_runner: KubernetesServerRunner,
 
 def register_graceful_exit(server_runner: KubernetesServerRunner,
                            client_runner: KubernetesClientRunner):
-    atexit.register(graceful_exit, server_runner, client_runner)
+    atexit.register(_graceful_exit, server_runner, client_runner)
     for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
-        signal.signal(signum, ensure_atexit)
+        signal.signal(signum, _ensure_atexit)
 
 
 def get_client_pod(client_runner: KubernetesClientRunner,

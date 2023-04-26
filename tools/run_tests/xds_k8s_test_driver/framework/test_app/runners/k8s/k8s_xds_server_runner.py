@@ -103,7 +103,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             secure_mode: bool = False,
             replica_count: int = 1,
             log_to_stdout: bool = False) -> List[XdsTestServer]:
-        if maintenance_port is None:
+        if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
 
         # Implementation detail: in secure mode, maintenance ("backchannel")
