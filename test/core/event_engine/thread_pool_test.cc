@@ -26,9 +26,11 @@
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/notification.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -160,11 +162,68 @@ TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   ASSERT_EQ(runcount.load(), pow(2, 21) - 1);
 }
 
+TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
+  int pool_thread_count = 8;
+  ThreadPool p;
+  grpc_core::Notification signal;
+  // Ensures the pool is saturated before signaling closures to continue.
+  std::atomic<int> waiters{0};
+  std::atomic<bool> signaled{false};
+  // TODO(hork): make thread count a ThreadPool constructor arg
+  p.Run([&]() {
+    for (int i = 0; i < pool_thread_count; i++) {
+      p.Run([&]() {
+        waiters.fetch_add(1);
+        while (!signaled.load()) {
+          signal.WaitForNotification();
+        }
+      });
+    }
+    while (waiters.load() != pool_thread_count) {
+      absl::SleepFor(absl::Milliseconds(50));
+    }
+    p.Run([&]() {
+      signaled.store(true);
+      signal.Notify();
+    });
+  });
+  p.Quiesce();
+}
+
+TEST(ThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
+  int pool_thread_count = 8;
+  ThreadPool p;
+  grpc_core::Notification signal;
+  // Ensures the pool is saturated before signaling closures to continue.
+  std::atomic<int> waiters{0};
+  std::atomic<bool> signaled{false};
+  // TODO(hork): make thread count a ThreadPool constructor arg
+  for (int i = 0; i < pool_thread_count; i++) {
+    p.Run([&]() {
+      waiters.fetch_add(1);
+      while (!signaled.load()) {
+        signal.WaitForNotification();
+      }
+    });
+  }
+  while (waiters.load() != pool_thread_count) {
+    absl::SleepFor(absl::Milliseconds(50));
+  }
+  p.Run([&]() {
+    signaled.store(true);
+    signal.Notify();
+  });
+  p.Quiesce();
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
-  gpr_log_verbosity_init();
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }
