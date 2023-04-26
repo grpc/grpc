@@ -465,6 +465,7 @@ for dirname in [
             'licenses': lambda licenses: None,
             'package': lambda **kwargs: None,
             'exports_files': lambda files, visibility=None: None,
+            'bool_flag': lambda **kwargs: None,
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
