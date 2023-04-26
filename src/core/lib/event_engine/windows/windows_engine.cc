@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -97,8 +98,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : executor_(std::make_shared<ThreadPool>(
-          grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+    : executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       iocp_(executor_.get()),
       timer_manager_(executor_),
       iocp_worker_(executor_.get(), &iocp_) {

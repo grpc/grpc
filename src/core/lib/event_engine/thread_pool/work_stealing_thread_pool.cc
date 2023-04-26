@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
 #include <atomic>
 #include <memory>
@@ -47,48 +47,53 @@ constexpr grpc_core::Duration kIdleThreadLimit =
     grpc_core::Duration::Seconds(20);
 constexpr grpc_core::Duration kTimeBetweenThrottledThreadStarts =
     grpc_core::Duration::Seconds(1);
+constexpr grpc_core::Duration kWorkerThreadMinSleepBetweenChecks{
+    grpc_core::Duration::Milliseconds(33)};
+constexpr grpc_core::Duration kWorkerThreadMaxSleepBetweenChecks{
+    grpc_core::Duration::Seconds(3)};
 constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
-    grpc_core::Duration::Milliseconds(300)};
+    grpc_core::Duration::Milliseconds(50)};
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
-constexpr absl::Duration kSleepBetweenQuiesceCheck{absl::Milliseconds(100)};
+constexpr absl::Duration kSleepBetweenQuiesceCheck{absl::Milliseconds(10)};
 }  // namespace
 
 thread_local WorkQueue* g_local_queue = nullptr;
 
-// -------- ThreadPool --------
+// -------- WorkStealingThreadPool --------
 
-ThreadPool::ThreadPool(size_t reserve_threads)
-    : pool_{std::make_shared<ThreadPoolImpl>(reserve_threads)} {
+WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
+    : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads)} {
   pool_->Start();
 }
 
-void ThreadPool::Quiesce() { pool_->Quiesce(); }
+void WorkStealingThreadPool::Quiesce() { pool_->Quiesce(); }
 
-ThreadPool::~ThreadPool() { GPR_ASSERT(pool_->IsQuiesced()); }
+WorkStealingThreadPool::~WorkStealingThreadPool() {
+  GPR_ASSERT(pool_->IsQuiesced());
+}
 
-void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
+void WorkStealingThreadPool::Run(absl::AnyInvocable<void()> callback) {
   Run(SelfDeletingClosure::Create(std::move(callback)));
 }
 
-void ThreadPool::Run(EventEngine::Closure* closure) {
-  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
+void WorkStealingThreadPool::Run(EventEngine::Closure* closure) {
   pool_->Run(closure);
 }
 
-// -------- ThreadPool::TheftRegistry --------
+// -------- WorkStealingThreadPool::TheftRegistry --------
 
-void ThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
+void WorkStealingThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
   grpc_core::MutexLock lock(&mu_);
   queues_.emplace(queue);
 }
 
-void ThreadPool::TheftRegistry::Unenroll(WorkQueue* queue) {
+void WorkStealingThreadPool::TheftRegistry::Unenroll(WorkQueue* queue) {
   grpc_core::MutexLock lock(&mu_);
   queues_.erase(queue);
 }
 
-EventEngine::Closure* ThreadPool::TheftRegistry::StealOne() {
+EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
   grpc_core::MutexLock lock(&mu_);
   EventEngine::Closure* closure;
   for (auto* queue : queues_) {
@@ -98,23 +103,28 @@ EventEngine::Closure* ThreadPool::TheftRegistry::StealOne() {
   return nullptr;
 }
 
-void ThreadPool::TestOnlyPrepareFork() { pool_->PrepareFork(); }
+void WorkStealingThreadPool::PrepareFork() { pool_->PrepareFork(); }
 
-void ThreadPool::TestOnlyPostFork() { pool_->Postfork(); }
+void WorkStealingThreadPool::PostforkParent() { pool_->Postfork(); }
 
-// -------- ThreadPool::ThreadPoolImpl --------
+void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
 
-ThreadPool::ThreadPoolImpl::ThreadPoolImpl(size_t reserve_threads)
+// -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl --------
+
+WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
+    size_t reserve_threads)
     : reserve_threads_(reserve_threads), lifeguard_(this) {}
 
-void ThreadPool::ThreadPoolImpl::Start() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (int i = 0; i < reserve_threads_; i++) {
     StartThread();
   }
   lifeguard_.Start();
 }
 
-void ThreadPool::ThreadPoolImpl::Run(EventEngine::Closure* closure) {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
+    EventEngine::Closure* closure) {
+  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
   if (g_local_queue != nullptr) {
     g_local_queue->Add(closure);
     return;
@@ -123,7 +133,7 @@ void ThreadPool::ThreadPoolImpl::Run(EventEngine::Closure* closure) {
   work_signal_.Signal();
 }
 
-void ThreadPool::ThreadPoolImpl::StartThread() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
   last_started_thread_.store(
       grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
       std::memory_order_relaxed);
@@ -139,7 +149,7 @@ void ThreadPool::ThreadPoolImpl::StartThread() {
       .Start();
 }
 
-void ThreadPool::ThreadPoolImpl::Quiesce() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -154,58 +164,67 @@ void ThreadPool::ThreadPoolImpl::Quiesce() {
   lifeguard_.BlockUntilShutdown();
 }
 
-bool ThreadPool::ThreadPoolImpl::SetThrottled(bool throttled) {
+bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
+    bool throttled) {
   return throttled_.exchange(throttled, std::memory_order_relaxed);
 }
 
-void ThreadPool::ThreadPoolImpl::SetShutdown(bool is_shutdown) {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
+    bool is_shutdown) {
   auto was_shutdown = shutdown_.exchange(is_shutdown);
   GPR_ASSERT(is_shutdown != was_shutdown);
   work_signal_.SignalAll();
 }
 
-void ThreadPool::ThreadPoolImpl::SetForking(bool is_forking) {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
+    bool is_forking) {
   auto was_forking = forking_.exchange(is_forking);
   GPR_ASSERT(is_forking != was_forking);
 }
 
-bool ThreadPool::ThreadPoolImpl::IsForking() {
+bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsForking() {
   return forking_.load(std::memory_order_relaxed);
 }
 
-bool ThreadPool::ThreadPoolImpl::IsShutdown() {
+bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsShutdown() {
   return shutdown_.load(std::memory_order_relaxed);
 }
 
-bool ThreadPool::ThreadPoolImpl::IsQuiesced() {
+bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
   return quiesced_.load(std::memory_order_relaxed);
 }
 
-void ThreadPool::ThreadPoolImpl::PrepareFork() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   SetForking(true);
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount, 0,
                                         "forking", &work_signal_);
 }
 
-void ThreadPool::ThreadPoolImpl::PostforkParent() { Postfork(); }
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PostforkParent() {
+  Postfork();
+}
 
-void ThreadPool::ThreadPoolImpl::PostforkChild() { Postfork(); }
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PostforkChild() {
+  Postfork();
+}
 
-void ThreadPool::ThreadPoolImpl::Postfork() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
   SetForking(false);
   Start();
 }
 
-// -------- ThreadPool::ThreadPoolImpl::Lifeguard --------
+// -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard
+// --------
 
-ThreadPool::ThreadPoolImpl::Lifeguard::Lifeguard(ThreadPoolImpl* pool)
+WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
+    WorkStealingThreadPoolImpl* pool)
     : pool_(pool),
       backoff_(grpc_core::BackOff::Options()
                    .set_initial_backoff(kLifeguardMinSleepBetweenChecks)
                    .set_max_backoff(kLifeguardMaxSleepBetweenChecks)
                    .set_multiplier(1.3)) {}
 
-void ThreadPool::ThreadPoolImpl::Lifeguard::Start() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
   grpc_core::Thread(
       "lifeguard",
       [](void* arg) {
@@ -217,7 +236,8 @@ void ThreadPool::ThreadPoolImpl::Lifeguard::Start() {
       .Start();
 }
 
-void ThreadPool::ThreadPoolImpl::Lifeguard::LifeguardMain() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
+    LifeguardMain() {
   thread_running_.store(true);
   while (true) {
     absl::SleepFor(absl::Milliseconds(
@@ -229,13 +249,15 @@ void ThreadPool::ThreadPoolImpl::Lifeguard::LifeguardMain() {
   thread_running_.store(false);
 }
 
-void ThreadPool::ThreadPoolImpl::Lifeguard::BlockUntilShutdown() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
+    BlockUntilShutdown() {
   while (thread_running_.load()) {
     absl::SleepFor(kSleepBetweenQuiesceCheck);
   }
 }
 
-void ThreadPool::ThreadPoolImpl::Lifeguard::MaybeStartNewThread() {
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
+    MaybeStartNewThread() {
   // No new threads are started when forking.
   // No new work is done when forking needs to begin.
   if (pool_->forking_.load()) return;
@@ -273,18 +295,19 @@ void ThreadPool::ThreadPoolImpl::Lifeguard::MaybeStartNewThread() {
   backoff_.Reset();
 }
 
-// -------- ThreadPool::ThreadState --------
+// -------- WorkStealingThreadPool::ThreadState --------
 
-ThreadPool::ThreadState::ThreadState(std::shared_ptr<ThreadPoolImpl> pool)
+WorkStealingThreadPool::ThreadState::ThreadState(
+    std::shared_ptr<WorkStealingThreadPoolImpl> pool)
     : pool_(std::move(pool)),
       auto_thread_count_(pool_->thread_count(),
                          CounterType::kLivingThreadCount),
       backoff_(grpc_core::BackOff::Options()
-                   .set_initial_backoff(grpc_core::Duration::Milliseconds(33))
-                   .set_max_backoff(grpc_core::Duration::Seconds(3))
+                   .set_initial_backoff(kWorkerThreadMinSleepBetweenChecks)
+                   .set_max_backoff(kWorkerThreadMaxSleepBetweenChecks)
                    .set_multiplier(1.3)) {}
 
-void ThreadPool::ThreadState::ThreadBody() {
+void WorkStealingThreadPool::ThreadState::ThreadBody() {
   g_local_queue = new BasicWorkQueue();
   pool_->theft_registry()->Enroll(g_local_queue);
   ThreadLocal::SetIsEventEngineThread(true);
@@ -307,13 +330,13 @@ void ThreadPool::ThreadState::ThreadBody() {
   delete g_local_queue;
 }
 
-void ThreadPool::ThreadState::SleepIfRunning() {
+void WorkStealingThreadPool::ThreadState::SleepIfRunning() {
   if (pool_->IsForking()) return;
   absl::SleepFor(
       absl::Milliseconds(kTimeBetweenThrottledThreadStarts.millis()));
 }
 
-bool ThreadPool::ThreadState::Step() {
+bool WorkStealingThreadPool::ThreadState::Step() {
   if (pool_->IsForking()) return false;
   auto* closure = g_local_queue->PopMostRecent();
   // If local work is available, run it.
@@ -375,20 +398,19 @@ bool ThreadPool::ThreadState::Step() {
   return should_run_again;
 }
 
-// -------- ThreadPool::ThreadCount --------
+// -------- WorkStealingThreadPool::ThreadCount --------
 
-void ThreadPool::ThreadCount::Add(CounterType counter_type) {
+void WorkStealingThreadPool::ThreadCount::Add(CounterType counter_type) {
   thread_counts_[counter_type].fetch_add(1, std::memory_order_relaxed);
 }
 
-void ThreadPool::ThreadCount::Remove(CounterType counter_type) {
+void WorkStealingThreadPool::ThreadCount::Remove(CounterType counter_type) {
   thread_counts_[counter_type].fetch_sub(1, std::memory_order_relaxed);
 }
 
-void ThreadPool::ThreadCount::BlockUntilThreadCount(CounterType counter_type,
-                                                    int desired_threads,
-                                                    const char* why,
-                                                    WorkSignal* work_signal) {
+void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
+    CounterType counter_type, int desired_threads, const char* why,
+    WorkSignal* work_signal) {
   auto& counter = thread_counts_[counter_type];
   int curr_threads = counter.load(std::memory_order_relaxed);
   // Wait for all threads to exit.
@@ -407,33 +429,34 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(CounterType counter_type,
   }
 }
 
-int ThreadPool::ThreadCount::GetCount(CounterType counter_type) {
+int WorkStealingThreadPool::ThreadCount::GetCount(CounterType counter_type) {
   return thread_counts_[counter_type].load(std::memory_order_relaxed);
 }
 
-ThreadPool::ThreadCount::AutoThreadCount::AutoThreadCount(
+WorkStealingThreadPool::ThreadCount::AutoThreadCount::AutoThreadCount(
     ThreadCount* counter, CounterType counter_type)
     : counter_(counter), counter_type_(counter_type) {
   counter_->Add(counter_type_);
 }
 
-ThreadPool::ThreadCount::AutoThreadCount::~AutoThreadCount() {
+WorkStealingThreadPool::ThreadCount::AutoThreadCount::~AutoThreadCount() {
   counter_->Remove(counter_type_);
 }
 
-// -------- ThreadPool::WorkSignal --------
+// -------- WorkStealingThreadPool::WorkSignal --------
 
-void ThreadPool::WorkSignal::Signal() {
+void WorkStealingThreadPool::WorkSignal::Signal() {
   grpc_core::MutexLock lock(&mu_);
   cv_.Signal();
 }
 
-void ThreadPool::WorkSignal::SignalAll() {
+void WorkStealingThreadPool::WorkSignal::SignalAll() {
   grpc_core::MutexLock lock(&mu_);
   cv_.SignalAll();
 }
 
-bool ThreadPool::WorkSignal::WaitWithTimeout(grpc_core::Duration time) {
+bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
+    grpc_core::Duration time) {
   grpc_core::MutexLock lock(&mu_);
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
 }

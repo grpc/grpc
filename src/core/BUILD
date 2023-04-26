@@ -1475,9 +1475,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_thread_pool",
-    srcs = ["lib/event_engine/thread_pool.cc"],
+    srcs = [
+        "lib/event_engine/thread_pool/original_thread_pool.cc",
+        "lib/event_engine/thread_pool/thread_pool_factory.cc",
+        "lib/event_engine/thread_pool/work_stealing_thread_pool.cc",
+    ],
     hdrs = [
-        "lib/event_engine/thread_pool.h",
+        "lib/event_engine/thread_pool/original_thread_pool.h",
+        "lib/event_engine/thread_pool/thread_pool.h",
+        "lib/event_engine/thread_pool/work_stealing_thread_pool.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1492,6 +1498,7 @@ grpc_cc_library(
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",
+        "experiments",
         "forkable",
         "time",
         "useful",

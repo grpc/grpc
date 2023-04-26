@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
 #include <stdlib.h>
 
@@ -29,22 +29,31 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-TEST(ThreadPoolTest, CanRunClosure) {
-  ThreadPool p(8);
+template <typename T>
+class ThreadPoolTest : public testing::Test {};
+
+using ThreadPoolTypes =
+    ::testing::Types<OriginalThreadPool, WorkStealingThreadPool>;
+TYPED_TEST_SUITE(ThreadPoolTest, ThreadPoolTypes);
+
+TYPED_TEST(ThreadPoolTest, CanRunAnyInvocable) {
+  TypeParam p(8);
   grpc_core::Notification n;
   p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
   p.Quiesce();
 }
 
-TEST(ThreadPoolTest, CanDestroyInsideClosure) {
-  auto* p = new ThreadPool(8);
+TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
+  auto* p = new TypeParam(8);
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
     // This should delete the thread pool and not deadlock
@@ -55,8 +64,8 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   n.WaitForNotification();
 }
 
-TEST(ThreadPoolTest, CanSurviveFork) {
-  ThreadPool p(8);
+TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
+  TypeParam p(8);
   grpc_core::Notification inner_closure_ran;
   p.Run([&inner_closure_ran, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -66,8 +75,8 @@ TEST(ThreadPoolTest, CanSurviveFork) {
     });
   });
   // simulate a fork and watch the child process
-  p.TestOnlyPrepareFork();
-  p.TestOnlyPostFork();
+  p.PrepareFork();
+  p.PostforkChild();
   inner_closure_ran.WaitForNotification();
   grpc_core::Notification n2;
   p.Run([&n2] { n2.Notify(); });
@@ -75,14 +84,14 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   p.Quiesce();
 }
 
-TEST(ThreadPoolTest, ForkStressTest) {
+TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // Runs a large number of closures and multiple simulated fork events,
   // ensuring that only some fixed number of closures are executed between fork
   // events.
   constexpr int expected_runcount = 1000;
   constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
-  ThreadPool pool(8);
+  TypeParam pool(8);
   std::atomic<int> runcount{0};
   std::atomic<int> fork_count{0};
   std::function<void()> inner_fn;
@@ -112,8 +121,8 @@ TEST(ThreadPoolTest, ForkStressTest) {
     if (curr_forkcount * num_closures_between_forks > curr_runcount) {
       continue;
     }
-    pool.TestOnlyPrepareFork();
-    pool.TestOnlyPostFork();
+    pool.PrepareFork();
+    pool.PostforkChild();
     fork_count.fetch_add(1);
   }
   ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
@@ -125,24 +134,6 @@ void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });
 }
 
-// This can be re-enabled if/when the thread pool is changed to quiesce
-// pre-fork. For now, it cannot get stuck because callback execution is
-// effectively paused until after the post-fork reboot.
-TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
-  ASSERT_DEATH_IF_SUPPORTED(
-      [] {
-        gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
-        ThreadPool p(8);
-        ScheduleSelf(&p);
-        std::thread terminator([] {
-          std::this_thread::sleep_for(std::chrono::seconds(10));
-          abort();
-        });
-        p.TestOnlyPrepareFork();
-      }(),
-      "Waiting for thread pool to idle before forking");
-}
-
 void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
   runcount.fetch_add(1);
   if (n == 0) return;
@@ -152,8 +143,8 @@ void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
   });
 }
 
-TEST(ThreadPoolTest, CanStartLotsOfClosures) {
-  ThreadPool p(8);
+TYPED_TEST(ThreadPoolTest, CanStartLotsOfClosures) {
+  TypeParam p(8);
   std::atomic<int> runcount{0};
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
@@ -162,9 +153,9 @@ TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   ASSERT_EQ(runcount.load(), pow(2, 21) - 1);
 }
 
-TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
+TYPED_TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
   int pool_thread_count = 8;
-  ThreadPool p(pool_thread_count);
+  TypeParam p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};
@@ -189,9 +180,9 @@ TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
   p.Quiesce();
 }
 
-TEST(ThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
+TYPED_TEST(ThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
   int pool_thread_count = 8;
-  ThreadPool p(pool_thread_count);
+  TypeParam p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};

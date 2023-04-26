@@ -15,9 +15,8 @@
 // limitations under the License.
 //
 //
-
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,6 +35,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
@@ -45,21 +45,23 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class ThreadPool final : public Executor {
+class WorkStealingThreadPool final : public ThreadPool, public Executor {
  public:
-  explicit ThreadPool(size_t reserve_threads);
+  explicit WorkStealingThreadPool(size_t reserve_threads);
   // Asserts Quiesce was called.
-  ~ThreadPool() override;
+  ~WorkStealingThreadPool() override;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
-  void Quiesce();
+  void Quiesce() override;
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
-  // This is test-only to support fork testing!
-  void TestOnlyPrepareFork();
-  void TestOnlyPostFork();
+  // Forkable
+  // These methods are exposed on the public object to allow for testing.
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   // A basic communication mechanism to signal waiting threads that work is
@@ -135,10 +137,10 @@ class ThreadPool final : public Executor {
   // This object is held as a shared_ptr between the owning ThreadPool and each
   // worker thread. This design allows a ThreadPool worker thread to be the last
   // owner of the ThreadPool itself.
-  class ThreadPoolImpl : public Forkable,
-                         public std::enable_shared_from_this<ThreadPoolImpl> {
+  class WorkStealingThreadPoolImpl
+      : public std::enable_shared_from_this<WorkStealingThreadPoolImpl> {
    public:
-    explicit ThreadPoolImpl(size_t reserve_threads);
+    explicit WorkStealingThreadPoolImpl(size_t reserve_threads);
     // Start all threads.
     void Start();
     // Add a closure to a work queue, preferably a thread-local queue if
@@ -164,9 +166,9 @@ class ThreadPool final : public Executor {
     // Forkable
     // Ensures that the thread pool is empty before forking.
     // Postfork parent and child have the same behavior.
-    void PrepareFork() override;
-    void PostforkParent() override;
-    void PostforkChild() override;
+    void PrepareFork();
+    void PostforkParent();
+    void PostforkChild();
     void Postfork();
     // Accessor methods
     bool IsShutdown();
@@ -186,7 +188,7 @@ class ThreadPool final : public Executor {
     //    and there are threads that can accept work.
     class Lifeguard {
      public:
-      explicit Lifeguard(ThreadPoolImpl* pool);
+      explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
       // Start the lifeguard thread.
       void Start();
       // Block until the lifeguard thread is shut down.
@@ -197,7 +199,7 @@ class ThreadPool final : public Executor {
       void LifeguardMain();
       // Starts a new thread if the pool is backlogged
       void MaybeStartNewThread();
-      ThreadPoolImpl* const pool_;
+      WorkStealingThreadPoolImpl* const pool_;
       grpc_core::BackOff backoff_;
       std::atomic<bool> thread_running_{false};
     };
@@ -223,7 +225,7 @@ class ThreadPool final : public Executor {
 
   class ThreadState {
    public:
-    explicit ThreadState(std::shared_ptr<ThreadPoolImpl> pool);
+    explicit ThreadState(std::shared_ptr<WorkStealingThreadPoolImpl> pool);
     void ThreadBody();
     void SleepIfRunning();
     bool Step();
@@ -232,7 +234,7 @@ class ThreadPool final : public Executor {
     // pool_ must be the first member so that it is alive when the thread count
     // is decremented at time of destruction. This is necessary when this thread
     // state holds the last shared_ptr keeping the pool alive.
-    std::shared_ptr<ThreadPoolImpl> pool_;
+    std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
     // auto_thread_count_ must be the second member declared, so that the thread
     // count is decremented after all other state is cleaned up (preventing
     // leaks).
@@ -240,10 +242,10 @@ class ThreadPool final : public Executor {
     grpc_core::BackOff backoff_;
   };
 
-  const std::shared_ptr<ThreadPoolImpl> pool_;
+  const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
 };
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H
