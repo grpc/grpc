@@ -7,30 +7,33 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/type/matcher/v3/status_code_input.upb.h"
 #include "udpa/annotations/status.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit = {
+const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
-const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit = {
+const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {
-  &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit,
-  &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit,
+  &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init,
+  &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init,
 };
 
-const upb_MiniTable_File envoy_type_matcher_v3_status_code_input_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_type_matcher_v3_status_code_input_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -39,5 +42,5 @@ const upb_MiniTable_File envoy_type_matcher_v3_status_code_input_proto_upb_file_
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

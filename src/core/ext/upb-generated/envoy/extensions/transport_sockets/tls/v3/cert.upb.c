@@ -7,15 +7,18 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/secret.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-const upb_MiniTable_File envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout = {
   NULL,
   NULL,
   NULL,
@@ -24,5 +27,5 @@ const upb_MiniTable_File envoy_extensions_transport_sockets_tls_v3_cert_proto_up
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
