@@ -297,10 +297,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
-  // Make sure field destroys before cleanup.
-  ValidationErrors::ScopedField field(&errors_, "hostname lookup");
   {
     MutexLock lock(&on_resolved_mu_);
+    // Make sure field destroys before cleanup.
+    ValidationErrors::ScopedField field(&errors_, "hostname lookup");
     if (orphaned_) return;
     hostname_handle_.reset();
     if (!new_addresses.ok()) {
@@ -325,9 +325,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
+  MutexLock lock(&on_resolved_mu_);
   // Make sure field destroys before cleanup.
   ValidationErrors::ScopedField field(&errors_, "srv lookup");
-  MutexLock lock(&on_resolved_mu_);
   if (orphaned_) return;
   srv_handle_.reset();
   if (!srv_records.ok()) {
@@ -368,10 +368,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
+  MutexLock lock(&on_resolved_mu_);
   // Make sure field destroys before cleanup.
   ValidationErrors::ScopedField field(
       &errors_, absl::StrCat("balancer lookup for ", authority));
-  MutexLock lock(&on_resolved_mu_);
   if (orphaned_) return;
   ++number_of_balancer_hostnames_resolved_;
   if (!new_balancer_addresses.ok()) {
@@ -399,10 +399,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
-  // Make sure field destroys before cleanup.
-  ValidationErrors::ScopedField field(&errors_, "txt lookup");
   {
     MutexLock lock(&on_resolved_mu_);
+    // Make sure field destroys before cleanup.
+    ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
     GPR_ASSERT(txt_handle_.has_value());
     txt_handle_.reset();

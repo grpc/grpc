@@ -451,6 +451,8 @@ void GrpcAresRequest::Work() {
   while (!fd_node_list_->IsEmpty()) {
     FdNode* fd_node = fd_node_list_->PopFdNode();
     if (!fd_node->already_shutdown) {
+      GRPC_ARES_WRAPPER_TRACE_LOG("request: %p shutdown fd: %s", this,
+                                  fd_node->polled_fd->GetName());
       fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
       fd_node->already_shutdown = true;
     }
@@ -655,6 +657,8 @@ void GrpcAresRequest::OnAresBackupPollAlarm() {
 void GrpcAresRequest::ShutdownPolledFdsLocked(absl::Status status) {
   for (auto it = fd_node_list_->begin(); it != fd_node_list_->end(); it++) {
     if (!(*it)->already_shutdown) {
+      GRPC_ARES_WRAPPER_TRACE_LOG("request: %p shutdown fd: %s", this,
+                                  (*it)->polled_fd->GetName());
       (*it)->polled_fd->ShutdownLocked(status);
       (*it)->already_shutdown = true;
     }
