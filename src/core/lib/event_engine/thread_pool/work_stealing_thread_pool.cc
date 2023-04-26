@@ -198,6 +198,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   SetForking(true);
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount, 0,
                                         "forking", &work_signal_);
+  lifeguard_.BlockUntilShutdown();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PostforkParent() {
