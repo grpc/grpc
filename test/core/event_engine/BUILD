@@ -59,6 +59,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
         "//test/core/util:grpc_test_util_unsecure",

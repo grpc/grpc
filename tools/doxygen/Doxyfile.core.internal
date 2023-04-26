@@ -1836,7 +1836,6 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/executor/executor.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
@@ -1891,8 +1890,12 @@ src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_local.cc \
 src/core/lib/event_engine/thread_local.h \
-src/core/lib/event_engine/thread_pool.cc \
-src/core/lib/event_engine/thread_pool.h \
+src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+src/core/lib/event_engine/thread_pool/original_thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
+src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \

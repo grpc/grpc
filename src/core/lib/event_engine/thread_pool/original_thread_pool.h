@@ -32,7 +32,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gpr/useful.h"

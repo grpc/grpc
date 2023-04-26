@@ -2075,7 +2075,9 @@ add_library(grpc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -2768,7 +2770,9 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -4292,7 +4296,9 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -11475,7 +11481,9 @@ add_executable(frame_test
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -21127,11 +21135,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_pool_test
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/thread_pool.cc
-  src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/gprpp/time.cc
   test/core/event_engine/thread_pool_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -21161,9 +21164,8 @@ target_link_libraries(thread_pool_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::statusor
-  gpr
+  grpc
+  grpc_test_util_unsecure
 )
 
 

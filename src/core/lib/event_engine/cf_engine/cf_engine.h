@@ -63,7 +63,7 @@ class CFEventEngine : public EventEngine,
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
-  std::shared_ptr<ThreadPool> executor_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   TimerManager timer_manager_;
 };
 

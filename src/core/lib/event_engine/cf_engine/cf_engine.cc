@@ -45,8 +45,8 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
-      timer_manager_(executor_) {}
+    : thread_pool_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      timer_manager_(thread_pool_) {}
 
 CFEventEngine::~CFEventEngine() {
   {
@@ -61,7 +61,7 @@ CFEventEngine::~CFEventEngine() {
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>

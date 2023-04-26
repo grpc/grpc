@@ -19,15 +19,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 // Interface for all EventEngine ThreadPool implementations
-// TODO(hork): we can likely replace Executor with ThreadPool
-class ThreadPool : public Forkable, public Executor {
+class ThreadPool : public Forkable {
  public:
   // Asserts Quiesce was called.
   ~ThreadPool() override = default;
@@ -35,8 +33,8 @@ class ThreadPool : public Forkable, public Executor {
   // This method is safe to call from within a ThreadPool thread.
   virtual void Quiesce() = 0;
   // Run must not be called after Quiesce completes
-  void Run(absl::AnyInvocable<void()> callback) override = 0;
-  void Run(EventEngine::Closure* closure) override = 0;
+  virtual void Run(absl::AnyInvocable<void()> callback) = 0;
+  virtual void Run(EventEngine::Closure* closure) = 0;
 };
 
 // Creates a default thread pool.

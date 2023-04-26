@@ -28,7 +28,6 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -49,21 +48,21 @@ namespace experimental {
 
 // ---- IOCPWorkClosure ----
 
-WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(Executor* executor,
+WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(ThreadPool* thread_pool,
                                                      IOCP* iocp)
-    : executor_(executor), iocp_(iocp) {
-  executor_->Run(this);
+    : thread_pool_(thread_pool), iocp_(iocp) {
+  thread_pool_->Run(this);
 }
 
 void WindowsEventEngine::IOCPWorkClosure::Run() {
   auto result = iocp_->Work(std::chrono::seconds(60), [this] {
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
     // iocp received no messages. restart the worker
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   }
   if (workers_.fetch_sub(1) == 1) done_signal_.Notify();
 }
@@ -98,10 +97,11 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
-      iocp_(executor_.get()),
-      timer_manager_(executor_),
-      iocp_worker_(executor_.get(), &iocp_) {
+    : thread_pool_(
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      iocp_(thread_pool_.get()),
+      timer_manager_(thread_pool_),
+      iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
@@ -141,7 +141,7 @@ WindowsEventEngine::~WindowsEventEngine() {
   iocp_.Shutdown();
   GPR_ASSERT(WSACleanup() == 0);
   timer_manager_.Shutdown();
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -168,11 +168,11 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfter(
 }
 
 void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_->Run(std::move(closure));
+  thread_pool_->Run(std::move(closure));
 }
 
 void WindowsEventEngine::Run(EventEngine::Closure* closure) {
-  executor_->Run(closure);
+  thread_pool_->Run(closure);
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
@@ -220,12 +220,12 @@ void WindowsEventEngine::OnConnectCompleted(
       state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
     } else {
-      // This code should be running in an executor thread already, so the
+      // This code should be running in a thread pool thread already, so the
       // callback can be run directly.
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
-          cfg, executor_.get(), shared_from_this());
+          cfg, thread_pool_.get(), shared_from_this());
     }
   }
   cb(std::move(endpoint));
@@ -401,8 +401,8 @@ WindowsEventEngine::CreateListener(
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
   return std::make_unique<WindowsEventEngineListener>(
       &iocp_, std::move(on_accept), std::move(on_shutdown),
-      std::move(memory_allocator_factory), shared_from_this(), executor_.get(),
-      config);
+      std::move(memory_allocator_factory), shared_from_this(),
+      thread_pool_.get(), config);
 }
 }  // namespace experimental
 }  // namespace grpc_event_engine
