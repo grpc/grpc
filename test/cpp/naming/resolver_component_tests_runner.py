@@ -57,7 +57,10 @@ if cur_resolver and cur_resolver != 'ares':
       'needs to use GRPC_DNS_RESOLVER=ares.'))
   test_runner_log('Exit 1 without running tests.')
   sys.exit(1)
-os.environ.update({'GRPC_TRACE': 'cares_resolver,cares_address_sorting'})
+if "event_engine_dns" in args.extra_args:
+  os.environ.update({'GRPC_TRACE': 'event_engine_ares_wrapper,event_engine_client_channel_resolver'})
+else:
+  os.environ.update({'GRPC_TRACE': 'cares_resolver,cares_address_sorting'})
 
 def wait_until_dns_server_is_up(args,
                                 dns_server_subprocess,

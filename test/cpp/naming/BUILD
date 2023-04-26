@@ -34,8 +34,8 @@ grpc_py_binary(
     ],
 )
 
-grpc_cc_test(
-    name = "cancel_ares_query_test",
+[grpc_cc_test(
+    name = "cancel_ares_query_test%s" % (enable_event_engine_dns_experiment),
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
     deps = [
@@ -49,6 +49,7 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
-)
+    args = ["--grpc_experiments=event_engine_dns" if len(enable_event_engine_dns_experiment) > 0 else ""],
+) for enable_event_engine_dns_experiment in ["", "_enable_event_engine_dns_experiment"]]
 
 generate_resolver_component_tests()

@@ -48,6 +48,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -255,11 +257,20 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(
-            args->pollset, &worker,
-            grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      // This essentially becomes a condition variable.
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(
+              args->pollset, &worker,
+              grpc_core::Timestamp::FromTimespecRoundUp(deadline)));
+    } else {
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(
+              args->pollset, &worker,
+              grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
+    }
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -591,7 +602,12 @@ void RunResolvesRelevantRecordsTest(
         grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
     g_fake_non_responsive_dns_server_port =
         fake_non_responsive_dns_server->port();
-    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      event_engine_grpc_ares_test_only_inject_config =
+          InjectBrokenNameServerList;
+    } else {
+      grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    }
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
@@ -673,13 +689,15 @@ TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // Need before TestEnvironment construct for --grpc_experiments flag at
+  // least.
   grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   if (absl::GetFlag(FLAGS_target_name).empty()) {
     grpc_core::Crash("Missing target_name param.");
   }
+  grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
