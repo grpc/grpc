@@ -71,29 +71,29 @@
 
   def get_deps(target_dict):
     deps = []
-    deps.append("${_gRPC_BASELIB_LIBRARIES}")
+    deps.append("PUBLIC ${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
-      deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
+      deps.append("PUBLIC ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.language == 'c++':
-      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      deps.append("PUBLIC ${_gRPC_PROTOBUF_LIBRARIES}")
+    deps.append("PRIVATE ${_gRPC_ZLIB_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-      deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
-      deps.append("${_gRPC_RE2_LIBRARIES}")
-      deps.append("${_gRPC_UPB_LIBRARIES}")
+      deps.append("PRIVATE ${_gRPC_CARES_LIBRARIES}")
+      deps.append("PRIVATE ${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      deps.append("PRIVATE ${_gRPC_RE2_LIBRARIES}")
+      deps.append("PRIVATE ${_gRPC_UPB_LIBRARIES}")
     if target_dict['name'] in ['grpc_authorization_provider']:
-      deps.append("${_gRPC_RE2_LIBRARIES}")
-    deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
+      deps.append("PRIVATE ${_gRPC_RE2_LIBRARIES}")
+    deps.append("PUBLIC ${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
-        deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+        deps.append("PRIVATE ${_gRPC_BENCHMARK_LIBRARIES}")
       elif d == 'libssl':
-        deps.append("${_gRPC_SSL_LIBRARIES}")
+        deps.append("PRIVATE ${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
-        deps.append(get_absl_dep(d))
+        deps.append("PUBLIC " + get_absl_dep(d))
       else:
-        deps.append(d)
+        deps.append("PUBLIC " + d)
     return deps
 
   def get_platforms_condition_begin(platforms):
