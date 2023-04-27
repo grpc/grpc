@@ -3679,6 +3679,7 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
+        "cluster_lb_data_header",
         "context",
         "grpc_service_config",
         "json",
@@ -5150,12 +5151,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cluster_lb_data_header",
+    hdrs = [
+        "ext/filters/client_channel/resolver/xds/cluster_lb_data.h",
+    ],
+    language = "c++",
+    deps = [
+        "unique_type_name",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
-    ],
-    hdrs = [
-        "ext/filters/client_channel/resolver/xds/cluster_lb_data.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -5175,6 +5185,7 @@ grpc_cc_library(
         "arena",
         "channel_args",
         "channel_fwd",
+        "cluster_lb_data_header",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
         "grpc_service_config",

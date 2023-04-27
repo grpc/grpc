@@ -799,7 +799,7 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   call_config.call_attributes[RequestHashAttributeName()] =
       args.arena->ManagedNew<ServiceConfigCallData::StringViewAttribute>(
           RequestHashAttributeName(), hash_value);
-  auto lb_data = args.arena->ManagedNew<XdsClusterLbData>(nullptr);
+  auto lb_data = args.arena->ManagedNew<XdsClusterLbData>(cluster_map_);
   call_config.call_attributes[lb_data->type()] = lb_data;
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();

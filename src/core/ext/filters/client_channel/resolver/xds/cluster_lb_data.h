@@ -21,23 +21,35 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
 // Forward declaration, implementation is private
 class XdsClusterMap;
+class ClusterState;
 
 class XdsClusterLbData : public ServiceConfigCallData::CallAttributeInterface {
  public:
   XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map);
 
-  virtual UniqueTypeName type() const override {
-    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
-    return factory.Create();
+  bool LockClusterConfig(absl::string_view cluster_name);
+
+  UniqueTypeName type() const override { return type_name(); }
+
+  static XdsClusterLbData* from_call_data(
+      const ServiceConfigCallData* call_data) {
+    return static_cast<XdsClusterLbData*>(
+        call_data->GetCallAttribute(type_name()));
   }
 
  private:
+  static UniqueTypeName type_name() {
+    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
+    return factory.Create();
+  }
   RefCountedPtr<XdsClusterMap> cluster_map_;
+  RefCountedPtr<ClusterState> locked_cluster_config_;
 };
 
 }  // namespace grpc_core

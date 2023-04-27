@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/resolver/xds/cluster_lb_data.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -157,6 +158,11 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   auto cookie_value = GetOverrideHostFromCookie(
       call_args.client_initial_metadata, *cookie_config->name);
   if (cookie_value.has_value()) {
+    auto cluster_lb_data =
+        XdsClusterLbData::from_call_data(service_config_call_data);
+    if (cluster_lb_data != nullptr) {
+      gpr_log(GPR_ERROR, "%d", cluster_lb_data->LockClusterConfig());
+    }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: stateful session filter found cookie %s value %s",
