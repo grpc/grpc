@@ -35,9 +35,7 @@ using grpc_core::BackendMetricData;
 
 namespace {
 // CPU utilization values must be in [0, infy).
-bool IsCpuUtilizationValid(double cpu) {
-  return cpu >= 0.0;
-}
+bool IsCpuUtilizationValid(double cpu) { return cpu >= 0.0; }
 
 // Other utilization values must be in [0, 1].
 bool IsUtilizationValid(double utilization) {
