@@ -160,6 +160,14 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
     EXPECT_EQ(response.mem_utilization(), 0.4);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
+  // TODO(ysseung): Remove this once we accept values in  [0, infy).
+  // Update CPU utilization over 1.0. Must be capped at 1.0
+  server_metric_recorder_->SetCpuUtilization(1.8);
+  ReadResponses([](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.cpu_utilization(), 1.0);
+    EXPECT_EQ(response.mem_utilization(), 0.4);
+    EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
+  });
   // Unset CPU and memory utilization and set a named utilization.
   server_metric_recorder_->ClearCpuUtilization();
   server_metric_recorder_->ClearMemoryUtilization();

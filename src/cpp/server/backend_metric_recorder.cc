@@ -65,6 +65,8 @@ void ServerMetricRecorder::UpdateBackendMetricDataState(
 }
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
+  // TODO(ysseung): Remove this once we accept values in  [0, infy).
+  value = std::min(value, 1.0);
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization rejected: %f", this, value);
@@ -220,6 +222,8 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
 
 experimental::CallMetricRecorder&
 BackendMetricState::RecordCpuUtilizationMetric(double value) {
+  // TODO(ysseung): Remove this once we accept values in  [0, infy).
+  value = std::min(value, 1.0);
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this, value);

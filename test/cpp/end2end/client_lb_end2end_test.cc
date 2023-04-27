@@ -2653,6 +2653,36 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
 }
 
+// TODO(ysseung): Remove this once we accept values in  [0, infy).
+TEST_F(ClientLbInterceptTrailingMetadataTest, CpuUtilizationCap) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  xds::data::orca::v3::OrcaLoadReport load_report;
+  load_report.set_cpu_utilization(1.5);
+  load_report.set_mem_utilization(0.75);
+  load_report.set_rps_fractional(0.25);
+  load_report.set_eps(0.10);
+  auto expected = load_report;
+  // CPU utilization is capped at 1.0.
+  expected.set_cpu_utilization(1.0);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
+    auto actual = backend_load_report();
+    ASSERT_TRUE(actual.has_value());
+    CheckLoadReportAsExpected(*actual, expected);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
+}
+
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
