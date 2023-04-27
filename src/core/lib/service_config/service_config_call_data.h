@@ -56,6 +56,16 @@ class ServiceConfigCallData {
 
     absl::string_view value() { return value_; }
 
+    static absl::string_view FromCallData(const ServiceConfigCallData* data,
+                                          UniqueTypeName type) {
+      auto value =
+          static_cast<StringViewAttribute*>(data->GetCallAttribute(type));
+      if (value == nullptr) {
+        return absl::string_view();
+      }
+      return value->value();
+    }
+
    private:
     UniqueTypeName type_;
     absl::string_view value_;
@@ -90,7 +100,7 @@ class ServiceConfigCallData {
     call_attributes_.emplace(value->type(), value);
   }
 
-  CallAttributeInterface* GetCallAttribute(UniqueTypeName name) {
+  CallAttributeInterface* GetCallAttribute(UniqueTypeName name) const {
     auto it = call_attributes_.find(name);
     if (it == call_attributes_.end()) return nullptr;
     return it->second;
