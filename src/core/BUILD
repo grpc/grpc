@@ -5154,6 +5154,9 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/xds/cluster_lb_data.h",
+    ],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/meta:type_traits",

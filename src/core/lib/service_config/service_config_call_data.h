@@ -42,7 +42,7 @@ class ServiceConfigCallData {
   class CallAttributeInterface {
    public:
     virtual ~CallAttributeInterface() = default;
-    virtual UniqueTypeName type() = 0;
+    virtual UniqueTypeName type() const = 0;
   };
 
   class StringViewAttribute : public CallAttributeInterface {
@@ -50,7 +50,7 @@ class ServiceConfigCallData {
     StringViewAttribute(UniqueTypeName type, absl::string_view value)
         : type_(type), value_(value) {}
 
-    UniqueTypeName type() override { return type_; }
+    UniqueTypeName type() const override { return type_; }
 
     absl::string_view value() { return value_; }
 

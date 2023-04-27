@@ -1,5 +1,5 @@
 //
-// Copyright 2019 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_CLUSTER_LB_DATA_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_CLUSTER_LB_DATA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,8 +24,6 @@
 
 namespace grpc_core {
 
-UniqueTypeName XdsClusterAttributeTypeName();
-
 // Forward declaration, implementation is private
 class XdsClusterMap;
 
@@ -33,10 +31,15 @@ class XdsClusterLbData : public ServiceConfigCallData::CallAttributeInterface {
  public:
   XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map);
 
+  virtual UniqueTypeName type() const override {
+    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
+    return factory.Create();
+  }
+
  private:
   RefCountedPtr<XdsClusterMap> cluster_map_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_CLUSTER_LB_DATA_H
