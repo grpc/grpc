@@ -335,6 +335,19 @@ absl::optional<int> ResolvedAddressIsWildcard(
   }
 }
 
+#ifdef GRPC_HAVE_VSOCK
+bool ResolvedAddressIsVSock(
+    const EventEngine::ResolvedAddress& resolved_addr) {
+  return resolved_addr.address()->sa_family == AF_VSOCK;
+  return false;
+}
+#else
+bool ResolvedAddressIsVSock(
+    const EventEngine::ResolvedAddress& /*resolved_addr*/) {
+  return false;
+}
+#endif
+
 absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
     const EventEngine::ResolvedAddress& resolved_addr) {
   EventEngine::ResolvedAddress addr_normalized;
