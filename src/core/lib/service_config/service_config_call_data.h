@@ -26,6 +26,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/service_config/service_config.h"
