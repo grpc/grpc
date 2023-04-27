@@ -61,6 +61,7 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:hpack_encoder",
         "//:hpack_parser",
