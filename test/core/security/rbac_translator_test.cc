@@ -26,6 +26,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "test/core/util/test_config.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -71,8 +73,14 @@ MATCHER_P4(EqualsHeader, expected_name, expected_matcher_type,
 class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   class TestAuditLoggerConfig : public AuditLoggerFactory::Config {
+   public:
+    explicit TestAuditLoggerConfig(std::string config_dump)
+        : config_dump_(std::move(config_dump)) {}
     absl::string_view name() const override { return kLoggerName; }
-    std::string ToString() const override { return ""; }
+    std::string ToString() const override { return config_dump_; }
+
+   private:
+    std::string config_dump_;
   };
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
@@ -81,7 +89,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("bad logger config.");
     }
-    return std::make_unique<TestAuditLoggerConfig>();
+    return std::make_unique<TestAuditLoggerConfig>(JsonDump(json));
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) override {
@@ -1104,11 +1112,15 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\","
-      "        \"config\": {}"
+      "        \"config\": {"
+      "          \"foo\": true"
+      "        }"
       "      },"
       "      {"
       "        \"name\": \"test_logger\","
-      "        \"config\": {}"
+      "        \"config\": {"
+      "          \"bar\": true"
+      "        }"
       "      }"
       "    ]"
       "  }"
@@ -1124,6 +1136,9 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
   ASSERT_EQ(rbacs->allow_policy.logger_configs.size(), 2);
   EXPECT_EQ(rbacs->deny_policy->logger_configs.size(), 0);
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->name(), kLoggerName);
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->name(), kLoggerName);
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->ToString(), "{\"foo\":true}");
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->ToString(), "{\"bar\":true}");
 }
 
 TEST_F(GenerateRbacPoliciesTest,

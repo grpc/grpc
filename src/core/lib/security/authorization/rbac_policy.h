@@ -34,7 +34,7 @@
 namespace grpc_core {
 
 // Represents Envoy RBAC Proto. [See
-// https://github.com/envoyproxy/envoy/blob/release/v1.17/api/envoy/config/rbac/v3/rbac.proto]
+// https://github.com/envoyproxy/envoy/blob/release/v1.26/api/envoy/config/rbac/v3/rbac.proto]
 struct Rbac {
   enum class Action {
     kAllow,
