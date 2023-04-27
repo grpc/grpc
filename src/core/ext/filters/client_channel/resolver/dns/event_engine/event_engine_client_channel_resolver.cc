@@ -53,6 +53,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -226,8 +227,12 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->name_to_resolve().c_str());
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+              addresses) mutable {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
+        self.reset();
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
       resolver_->query_timeout_ms_);
@@ -240,7 +245,12 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     srv_handle_ = event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) { self->OnSRVResolved(std::move(srv_records)); },
+                srv_records) mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          self->OnSRVResolved(std::move(srv_records));
+          self.reset();
+        },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
                                      HandleToString(*srv_handle_).c_str());
@@ -251,8 +261,11 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         resolver_.get(), resolver_->name_to_resolve().c_str());
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
-            absl::StatusOr<std::string> service_config) {
+            absl::StatusOr<std::string> service_config) mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
+          self.reset();
         },
         resolver_->name_to_resolve(), resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("txt lookup handle: %s",
