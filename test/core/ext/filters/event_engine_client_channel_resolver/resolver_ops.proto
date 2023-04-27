@@ -1,0 +1,72 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package event_engine_client_channel_resolver;
+
+message ResolverArgs {
+    bool request_service_config = 2;
+    bool enable_srv_queries = 3;
+}
+
+// Some error. The details are unimportant.
+message Error {}
+
+// The contents don't matter much, they aren't parsed by the resolver.
+message ResolvedAddresses {
+    repeated string address = 1;
+}
+
+message SRVRecord {
+    string host = 1;
+    uint32 port = 2;
+    uint32 priority = 3;
+    uint32 weight = 4;
+}
+
+message SRVRecords {
+    repeated SRVRecord srv_records = 1;
+}
+
+message LookupHostnameResponse {
+    oneof response {
+        ResolvedAddresses addresses = 1;
+        Error error = 2;
+    }
+}
+
+message LookupSRVResponse {
+    oneof response {
+        SRVRecords srv_records = 1;
+        Error error = 2;
+    }
+}
+
+message LookupTXTResponse {
+    oneof response {
+        string valid_response = 1;
+        string empty_response = 2;
+        string invalid_response = 3;
+        Error error = 4;
+    }
+}
+
+message Msg {
+    ResolverArgs resolver_args = 1;
+    repeated LookupHostnameResponse hostname_response = 2;
+    repeated LookupSRVResponse srv_response = 3;
+    repeated LookupTXTResponse txt_response = 4;
+    // TODO(hork): consider if cancellation responses can be fuzzed
+}
