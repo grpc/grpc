@@ -1198,4 +1198,19 @@ void ClusterState::Orphan() {
 XdsClusterLbData::XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map)
     : cluster_map_(std::move(cluster_map)) {}
 
+bool XdsClusterLbData::LockClusterConfig(absl::string_view cluster_name) {
+  if (cluster_map_ == nullptr) {
+    gpr_log(GPR_ERROR, "Cluster map already released");
+    return false;
+  }
+  auto cluster_info = cluster_map_->Find(cluster_name);
+  if (cluster_info.has_value()) {
+    locked_cluster_config_ = cluster_info->second;
+    cluster_map_.reset();
+    return true;
+  }
+  gpr_log(GPR_INFO, "Cluster %s not found", std::string(cluster_name).c_str());
+  return false;
+}
+
 }  // namespace grpc_core

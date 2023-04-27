@@ -26,17 +26,6 @@ namespace grpc_core {
 
 UniqueTypeName XdsClusterAttributeTypeName();
 
-// Forward declaration, implementation is private
-class XdsClusterMap;
-
-class XdsClusterLbData : public ServiceConfigCallData::CallAttributeInterface {
- public:
-  XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map);
-
- private:
-  RefCountedPtr<XdsClusterMap> cluster_map_;
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H

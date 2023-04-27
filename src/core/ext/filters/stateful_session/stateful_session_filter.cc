@@ -39,6 +39,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/xds/cluster_lb_data.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -161,7 +162,11 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     auto cluster_lb_data =
         XdsClusterLbData::from_call_data(service_config_call_data);
     if (cluster_lb_data != nullptr) {
-      gpr_log(GPR_ERROR, "%d", cluster_lb_data->LockClusterConfig());
+      gpr_log(
+          GPR_ERROR, "%d",
+          cluster_lb_data->LockClusterConfig(
+              ServiceConfigCallData::StringViewAttribute::FromCallData(
+                  service_config_call_data, XdsClusterAttributeTypeName())));
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
       gpr_log(GPR_INFO,
