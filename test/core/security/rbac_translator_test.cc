@@ -1050,6 +1050,22 @@ TEST_F(GenerateRbacPoliciesTest, UnknownFieldInHeaders) {
               "\"foo\".");
 }
 
+TEST_F(GenerateRbacPoliciesTest, EmptyAuditLoggingOptions) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {}"
+      "}";
+  auto rbacs = GenerateRbacPolicies(authz_policy);
+  ASSERT_TRUE(rbacs.ok());
+  EXPECT_EQ(rbacs->allow_policy.name, "authz");
+}
+
 TEST_F(GenerateRbacPoliciesTest, AuditConditionNone) {
   const char* authz_policy =
       "{"
