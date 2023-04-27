@@ -57,12 +57,14 @@ echo "Found namespaces:"
 namespaces_joined=$(IFS=,; printf '%s' "${namespaces[*]}")
 kubectl get namespaces --sort-by='{.metadata.creationTimestamp}' \
                        --selector="name in (${namespaces_joined})"
+
 # Suffixes
 mapfile -t suffixes < <(\
-  printf '%s\n' "${namespaces[@]}" | sed -E 's/psm-interop-(server|client)-//'
+  printf '%s\n' "${namespaces[@]}" | sed -E 's/^.+-(server|client)-//'
 )
 echo
 echo "Found suffixes: ${suffixes[*]}"
+echo "Count: ${#namespaces[@]}"
 
 echo "Run plan:"
 for suffix in "${suffixes[@]}"; do
@@ -79,10 +81,15 @@ else
   exit 0
 fi
 
+failed=0
 for suffix in "${suffixes[@]}"; do
   echo "-------------------- Cleaning suffix ${suffix} --------------------"
   set -x
-  ./bin/cleanup.sh ${NO_SECURE:+"--nosecure"} "--resource_suffix=${suffix}"
+  ./bin/cleanup.sh ${NO_SECURE:+"--nosecure"} "--resource_suffix=${suffix}" || (( ++failed ))
   set +x
   echo "-------------------- Finished cleaning ${suffix} --------------------"
 done
+echo "Failed runs: ${failed}"
+if (( failed > 0 )); then
+  exit 1
+fi
