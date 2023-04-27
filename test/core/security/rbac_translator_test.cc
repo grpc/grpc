@@ -21,7 +21,6 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
 
 #include <grpc/grpc_audit_logging.h>
 
