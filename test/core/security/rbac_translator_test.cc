@@ -1200,6 +1200,26 @@ TEST_F(GenerateRbacPoliciesTest,
   EXPECT_EQ(rbacs->deny_policy->logger_configs.size(), 0);
 }
 
+TEST_F(GenerateRbacPoliciesTest, UnknownFIeldInAuditLoggingOptions) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"foo\": 123"
+      "  }"
+      "}";
+  auto rbacs = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(
+      rbacs.status().message(),
+      "policy contains unknown field \"foo\" in \"audit_logging_options\".");
+}
+
 TEST_F(GenerateRbacPoliciesTest, AuditConditionIsNotString) {
   const char* authz_policy =
       "{"
@@ -1272,6 +1292,30 @@ TEST_F(GenerateRbacPoliciesTest, IncorrectAuditLoggerType) {
   EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbacs.status().message(),
               "\"audit_loggers[0]\" is not an object.");
+}
+
+TEST_F(GenerateRbacPoliciesTest, UnknownFieldInAuditLoggers) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"foo\": 123"
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  auto rbacs = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(rbacs.status().message(),
+              "policy contains unknown field \"foo\" in "
+              "\"audit_logging_options.audit_loggers[0]\".");
 }
 
 TEST_F(GenerateRbacPoliciesTest, IncorrectAuditLoggerConfigType) {
