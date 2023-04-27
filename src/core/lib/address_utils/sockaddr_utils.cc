@@ -45,10 +45,6 @@
 #include <sys/un.h>
 #endif
 
-#ifdef GRPC_HAVE_VSOCK
-#include <linux/vm_sockets.h>
-#endif
-
 #ifdef GRPC_HAVE_UNIX_SOCKET
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
@@ -330,8 +326,10 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv6";
     case GRPC_AF_UNIX:
       return "unix";
+#ifdef GRPC_HAVE_VSOCK
     case GRPC_AF_VSOCK:
       return "vsock";
+#endif
   }
   return nullptr;
 }

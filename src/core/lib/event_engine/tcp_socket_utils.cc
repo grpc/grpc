@@ -74,8 +74,10 @@ absl::StatusOr<std::string> GetScheme(
       return "ipv6";
     case AF_UNIX:
       return "unix";
+#ifdef GRPC_HAVE_VSOCK
     case AF_VSOCK:
       return "vsock";
+#endif
     default:
       return absl::InvalidArgumentError(
           absl::StrFormat("Unknown sockaddr family: %d",

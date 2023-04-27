@@ -62,10 +62,6 @@
 #include <sys/un.h>
 #endif
 
-#ifdef GRPC_HAVE_VSOCK
-#include <linux/vm_sockets.h>
-#endif
-
 namespace grpc_event_engine {
 namespace experimental {
 

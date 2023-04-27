@@ -19,13 +19,10 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_HAVE_VSOCK
-
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <linux/vm_sockets.h>
 
 #include "absl/strings/str_cat.h"
 
@@ -39,6 +36,7 @@
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/transport/error_utils.h"
 
+#ifdef GRPC_HAVE_VSOCK
 void grpc_create_socketpair_if_vsock(int sv[2]) {
   GPR_ASSERT(socketpair(AF_VSOCK, SOCK_STREAM, 0, sv) == 0);
 }
@@ -56,5 +54,13 @@ int grpc_is_vsock(const grpc_resolved_address* resolved_addr) {
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   return addr->sa_family == AF_VSOCK;
 }
+#else
+absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
+    absl::string_view /*name*/) {
+  return absl::InvalidArgumentError("VSOCK is not supported.");
+}
 
+int grpc_is_vsock(const grpc_resolved_address* /*resolved_addr*/) {
+  return 0;
+}
 #endif

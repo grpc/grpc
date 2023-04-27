@@ -32,10 +32,6 @@
 #include <sys/un.h>
 #endif
 
-#ifdef GRPC_HAVE_VSOCK
-#include <linux/vm_sockets.h>
-#endif
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
