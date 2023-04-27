@@ -104,7 +104,7 @@ static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid, uint32_t p
 
 #else  // GRPC_HAVE_VSOCK
 
-static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid, uint32_t port) {}
+static void test_grpc_parse_vsock(const char* /* uri_text */, ...) {}
 
 #endif  // GRPC_HAVE_VSOCK
 
