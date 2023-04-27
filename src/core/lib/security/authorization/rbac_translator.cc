@@ -400,8 +400,10 @@ ParseAuditLogger(const Json& json, size_t pos) {
     if (is_optional) {
       return nullptr;
     }
-    return absl::InvalidArgumentError(absl::StrFormat(
-        "\"audit_loggers[%d].name\" %s is not supported.", pos, name));
+    return absl::InvalidArgumentError(
+        absl::StrFormat("\"audit_loggers[%d].name\" %s is not supported "
+                        "natively or registered.",
+                        pos, name));
   }
   auto result = AuditLoggerRegistry::ParseConfig(name, config);
   if (!result.ok()) {
@@ -445,8 +447,9 @@ absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
     if (it->second.type() != Json::Type::kArray) {
       return absl::InvalidArgumentError("\"audit_loggers\" is not an array.");
     }
-    for (size_t i = 0; i < it->second.array().size(); ++i) {
-      auto result = ParseAuditLogger(it->second.array().at(i), i);
+    const auto& loggers = it->second.array();
+    for (size_t i = 0; i < loggers.size(); ++i) {
+      auto result = ParseAuditLogger(loggers.at(i), i);
       if (!result.ok()) {
         return result.status();
       }
@@ -522,7 +525,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
       rbacs.allow_policy = std::move(*allow_policy_or);
       has_allow_rbac = true;
     } else if (object.first == "audit_logging_options") {
-      // We need to process this till policies are all parsed.
+      // This must be processed this after policies are all parsed.
       continue;
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(

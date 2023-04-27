@@ -77,6 +77,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
+    // Config with a field "bad" will be considered invalid.
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("bad logger config.");
     }
@@ -84,6 +85,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) override {
+    // This test target should never need to create a logger.
     Crash("unreachable");
     return nullptr;
   }
@@ -1038,6 +1040,25 @@ TEST_F(GenerateRbacPoliciesTest, UnknownFieldInHeaders) {
               "\"foo\".");
 }
 
+TEST_F(GenerateRbacPoliciesTest, AuditConditionNone) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"NONE\""
+      "  }"
+      "}";
+  auto rbacs = GenerateRbacPolicies(authz_policy);
+  ASSERT_TRUE(rbacs.ok());
+  EXPECT_EQ(rbacs->allow_policy.name, "authz");
+  EXPECT_EQ(rbacs->allow_policy.audit_condition, Rbac::AuditCondition::kNone);
+}
+
 TEST_F(GenerateRbacPoliciesTest, AuditConditionOnDeny) {
   const char* authz_policy =
       "{"
@@ -1064,7 +1085,7 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnDeny) {
   EXPECT_EQ(rbacs->deny_policy->audit_condition, Rbac::AuditCondition::kOnDeny);
 }
 
-TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLogger) {
+TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -1084,6 +1105,10 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLogger) {
       "      {"
       "        \"name\": \"test_logger\","
       "        \"config\": {}"
+      "      },"
+      "      {"
+      "        \"name\": \"test_logger\","
+      "        \"config\": {}"
       "      }"
       "    ]"
       "  }"
@@ -1096,7 +1121,7 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLogger) {
   EXPECT_EQ(rbacs->allow_policy.audit_condition,
             Rbac::AuditCondition::kOnAllow);
   EXPECT_EQ(rbacs->deny_policy->audit_condition, Rbac::AuditCondition::kNone);
-  ASSERT_EQ(rbacs->allow_policy.logger_configs.size(), 1);
+  ASSERT_EQ(rbacs->allow_policy.logger_configs.size(), 2);
   EXPECT_EQ(rbacs->deny_policy->logger_configs.size(), 0);
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->name(), kLoggerName);
 }
@@ -1376,7 +1401,8 @@ TEST_F(GenerateRbacPoliciesTest, UnsupportedAuditLogger) {
   auto rbacs = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbacs.status().message(),
-              "\"audit_loggers[0].name\" unknown_logger is not supported.");
+              "\"audit_loggers[0].name\" unknown_logger is not supported "
+              "natively or registered.");
 }
 
 }  // namespace grpc_core
