@@ -385,7 +385,7 @@ ParseAuditLogger(const Json& json, size_t pos) {
         absl::StrFormat("\"audit_loggers[%d].name\" is not a string.", pos));
   }
   absl::string_view name = it->second.string();
-  Json config;
+  Json config = Json::Object();
   it = json.object().find("config");
   if (it != json.object().end()) {
     if (it->second.type() != Json::Type::kObject) {
@@ -393,9 +393,6 @@ ParseAuditLogger(const Json& json, size_t pos) {
           "\"audit_loggers[%d].config\" is not an object.", pos));
     }
     config = it->second;
-  } else {
-    return absl::InvalidArgumentError(
-        absl::StrFormat("\"audit_loggers[%d].config\" is required.", pos));
   }
   if (!AuditLoggerRegistry::FactoryExists(name)) {
     if (is_optional) {

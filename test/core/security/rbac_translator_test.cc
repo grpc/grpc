@@ -19,15 +19,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/security/authorization/audit_logging.h"
-#include "test/core/util/test_config.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -1065,6 +1067,9 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionNone) {
   ASSERT_TRUE(rbacs.ok());
   EXPECT_EQ(rbacs->allow_policy.name, "authz");
   EXPECT_EQ(rbacs->allow_policy.audit_condition, Rbac::AuditCondition::kNone);
+  EXPECT_TRUE(
+      absl::StartsWith(rbacs->allow_policy.ToString(),
+                       "Rbac name=authz action=Allow audit_condition=None"));
 }
 
 TEST_F(GenerateRbacPoliciesTest, AuditConditionOnDeny) {
@@ -1137,8 +1142,10 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
   EXPECT_EQ(rbacs->deny_policy->logger_configs.size(), 0);
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->name(), kLoggerName);
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->name(), kLoggerName);
-  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->ToString(), "{\"foo\":true}");
-  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->ToString(), "{\"bar\":true}");
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->ToString(),
+            "{\"foo\":true}");
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->ToString(),
+            "{\"bar\":true}");
 }
 
 TEST_F(GenerateRbacPoliciesTest,
@@ -1382,6 +1389,7 @@ TEST_F(GenerateRbacPoliciesTest, MissingAuditLoggerConfig) {
       "    }"
       "  ],"
       "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY\","
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
@@ -1390,9 +1398,12 @@ TEST_F(GenerateRbacPoliciesTest, MissingAuditLoggerConfig) {
       "  }"
       "}";
   auto rbacs = GenerateRbacPolicies(authz_policy);
-  EXPECT_EQ(rbacs.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(rbacs.status().message(),
-              "\"audit_loggers[0].config\" is required.");
+  ASSERT_TRUE(rbacs.ok());
+  EXPECT_EQ(rbacs->allow_policy.name, "authz");
+  EXPECT_EQ(rbacs->allow_policy.audit_condition, Rbac::AuditCondition::kOnDeny);
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.size(), 1);
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->name(), kLoggerName);
+  EXPECT_EQ(rbacs->allow_policy.logger_configs.at(0)->ToString(), "{}");
 }
 
 TEST_F(GenerateRbacPoliciesTest, UnsupportedAuditLogger) {
