@@ -22,13 +22,30 @@
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 
+using google::protobuf::compiler::csharp::GetOutputFile;
+
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
                              const std::string& file_suffix,
-                             std::string& out_file_name_or_error) {
-  out_file_name_or_error =
-      grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
+                             const std::string& base_namespace,
+                             std::string& out_file, std::string* error) {
+  // Support for base_namespace option is **experimental**.
+  //
+  // If base_namespace is provided then slightly different name mangling
+  // is used to generate the service file name. This is because this
+  // uses common code with protoc. For most file names this will not
+  // make a difference (only files with punctuation or numbers in the
+  // name.)
+  // Otherwise the behavior remains the same as before.
+  if (base_namespace.empty()) {
+    out_file = grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
+  } else {
+    out_file = GetOutputFile(file, file_suffix, true, base_namespace, error);
+    if (out_file.empty()) {
+      return false;
+    }
+  }
   return true;
 }
 
