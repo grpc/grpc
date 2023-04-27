@@ -463,10 +463,12 @@ absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
         }
         if (rbacs.deny_policy != absl::nullopt &&
             rbacs.deny_policy->audit_condition != Rbac::AuditCondition::kNone) {
-          // Parse again since it returns unique_ptr, but no
-          // need to check the error this time.
+          // Parse again since it returns unique_ptr, but result should be ok
+          // this time.
+          auto result = ParseAuditLogger(it->second.array().at(i), i);
+          GPR_ASSERT(result.ok());
           rbacs.deny_policy->logger_configs.push_back(
-              std::move(ParseAuditLogger(it->second.array().at(i), i).value()));
+              std::move(result.value()));
         }
       }
     }
