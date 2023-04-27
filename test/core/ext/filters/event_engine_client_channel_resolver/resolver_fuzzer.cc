@@ -35,6 +35,8 @@
 // exercise the resolution cancellation path. Currently, all requests will get
 // responses.
 
+bool squelch = true;
+
 namespace {
 
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
