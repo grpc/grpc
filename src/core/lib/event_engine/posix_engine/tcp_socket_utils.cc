@@ -128,7 +128,7 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
     GRPC_RETURN_IF_ERROR(sock.SetSocketRcvBuf(options.tcp_receive_buffer_size));
   }
-  if (addr.address()->sa_family != AF_UNIX && addr.address()->sa_family != AF_VSOCK) {
+  if (addr.address()->sa_family != AF_UNIX && !ResolvedAddressIsVSock(addr)) {
     // If its not a unix socket or vsock address.
     GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));

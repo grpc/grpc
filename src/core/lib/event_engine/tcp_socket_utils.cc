@@ -165,9 +165,9 @@ absl::StatusOr<std::string> ResolvedAddrToVsockPathIfPossible(
 absl::StatusOr<std::string> ResolvedAddrToUriVsockIfPossible(
     const EventEngine::ResolvedAddress* resolved_addr) {
   auto path = ResolvedAddrToVsockPathIfPossible(resolved_addr);
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      "vsock", /*authority=*/"", std::move(*path),
-      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Create("vsock", /*authority=*/"", std::move(*path),
+                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
 }
@@ -338,10 +338,8 @@ absl::optional<int> ResolvedAddressIsWildcard(
 }
 
 #ifdef GRPC_HAVE_VSOCK
-bool ResolvedAddressIsVSock(
-    const EventEngine::ResolvedAddress& resolved_addr) {
+bool ResolvedAddressIsVSock(const EventEngine::ResolvedAddress& resolved_addr) {
   return resolved_addr.address()->sa_family == AF_VSOCK;
-  return false;
 }
 #else
 bool ResolvedAddressIsVSock(

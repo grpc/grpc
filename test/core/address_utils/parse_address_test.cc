@@ -82,7 +82,8 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
 
 #ifdef GRPC_HAVE_VSOCK
 
-static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid, uint32_t port) {
+static void test_grpc_parse_vsock(const char* uri_text, uint32_t cid,
+                                  uint32_t port) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
