@@ -465,7 +465,7 @@ absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
             rbacs.deny_policy->audit_condition != Rbac::AuditCondition::kNone) {
           // Parse again since it returns unique_ptr, but result should be ok
           // this time.
-          auto result = ParseAuditLogger(loggers.array().at(i), i);
+          auto result = ParseAuditLogger(loggers.at(i), i);
           GPR_ASSERT(result.ok());
           rbacs.deny_policy->logger_configs.push_back(
               std::move(result.value()));
