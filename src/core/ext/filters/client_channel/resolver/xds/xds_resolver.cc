@@ -343,14 +343,11 @@ class XdsResolver : public Resolver {
 
   class ClusterSelectionFilter : public ChannelFilter {
    public:
-    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
-        : filter_args_(std::move(filter_args)) {}
-
     const static grpc_channel_filter kFilter;
 
     static absl::StatusOr<ClusterSelectionFilter> Create(
-        const ChannelArgs& args, ChannelFilter::Args filter_args) {
-      return ClusterSelectionFilter(std::move(filter_args));
+        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args) {
+      return ClusterSelectionFilter(filter_args);
     }
 
     // Construct a promise for one call.
@@ -365,6 +362,9 @@ class XdsResolver : public Resolver {
     }
 
    private:
+    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
+        : filter_args_(filter_args) {}
+
     ChannelFilter::Args filter_args_;
   };
 

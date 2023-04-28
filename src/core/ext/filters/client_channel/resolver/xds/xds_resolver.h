@@ -33,7 +33,7 @@ class ClusterState;
 
 class XdsClusterLbData : public ServiceConfigCallData::CallAttributeInterface {
  public:
-  XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map);
+  explicit XdsClusterLbData(RefCountedPtr<XdsClusterMap> cluster_map);
 
   bool LockClusterConfig(absl::string_view cluster_name);
 

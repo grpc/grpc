@@ -138,17 +138,6 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   if (!cookie_config->name.has_value()) {
     return next_promise_factory(std::move(call_args));
   }
-  auto* cluster_lb_data =
-      XdsClusterLbData::from_call_data(service_config_call_data);
-  absl::string_view cluster_name =
-      ServiceConfigCallData::StringViewAttribute::FromCallData(
-          service_config_call_data, XdsClusterAttributeTypeName());
-  if (cluster_lb_data != nullptr && cluster_name.length() > 0) {
-    if (!cluster_lb_data->LockClusterConfig(cluster_name)) {
-      gpr_log(GPR_ERROR, "Unable to lock cluster config for %s",
-              std::string(cluster_name).c_str());
-    }
-  }
   // We have a config.
   // If the config has a path, check to see if it matches the request path.
   if (!cookie_config->path.empty()) {
@@ -169,14 +158,16 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   auto cookie_value = GetOverrideHostFromCookie(
       call_args.client_initial_metadata, *cookie_config->name);
   if (cookie_value.has_value()) {
-    auto cluster_lb_data =
+    auto* cluster_lb_data =
         XdsClusterLbData::from_call_data(service_config_call_data);
-    if (cluster_lb_data != nullptr) {
-      gpr_log(
-          GPR_ERROR, "%d",
-          cluster_lb_data->LockClusterConfig(
-              ServiceConfigCallData::StringViewAttribute::FromCallData(
-                  service_config_call_data, XdsClusterAttributeTypeName())));
+    absl::string_view cluster_name =
+        ServiceConfigCallData::StringViewAttribute::FromCallData(
+            service_config_call_data, XdsClusterAttributeTypeName());
+    if (cluster_lb_data != nullptr && cluster_name.length() > 0) {
+      if (!cluster_lb_data->LockClusterConfig(cluster_name)) {
+        gpr_log(GPR_ERROR, "Unable to lock cluster config for %s",
+                std::string(cluster_name).c_str());
+      }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
       gpr_log(GPR_INFO,
