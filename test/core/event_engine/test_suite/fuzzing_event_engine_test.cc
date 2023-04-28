@@ -16,16 +16,24 @@
 
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <thread>
 
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include "grpc/event_engine/event_engine.h"
+#include "grpc/event_engine/slice_buffer.h"
+
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
+
+using namespace std::chrono_literals;
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -41,15 +49,27 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
               return options;
             }(),
             fuzzing_event_engine::Actions()),
-        main_([this]() {
-          while (!done_.load()) {
-            auto tick_start = absl::Now();
-            while (absl::Now() - tick_start < absl::Milliseconds(10)) {
-              absl::SleepFor(absl::Milliseconds(1));
-            }
-            Tick();
-          }
-        }) {}
+        main_([this]() { RunWorkerLoop(); }) {}
+
+  void Pause() {
+    done_.store(true);
+    main_.join();
+  }
+
+  void Resume() {
+    done_.store(false);
+    main_ = std::thread([this]() { RunWorkerLoop(); });
+  }
+
+  void RunWorkerLoop() {
+    while (!done_.load()) {
+      auto tick_start = absl::Now();
+      while (absl::Now() - tick_start < absl::Milliseconds(10)) {
+        absl::SleepFor(absl::Milliseconds(1));
+      }
+      Tick();
+    }
+  }
 
   ~ThreadedFuzzingEventEngine() override {
     done_.store(true);
@@ -60,6 +80,64 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
   std::atomic<bool> done_{false};
   std::thread main_;
 };
+
+TEST_F(EventEngineTest, FuzzingEventEngineMockEndpointTest) {
+  // Create a mock endpoint which is expected to read specified bytes at
+  // specified times and verify that the read operations succeed and fail when
+  // they should.
+  SliceBuffer read_buf;
+  std::shared_ptr<ThreadedFuzzingEventEngine> fuzzing_engine =
+      std::dynamic_pointer_cast<ThreadedFuzzingEventEngine>(
+          this->NewEventEngine());
+  // Stop the previous worker loop because we want fine grained control over
+  // timing for this test.
+  fuzzing_engine->Pause();
+  MockEndpointActions actions;
+
+  // This concatenated block should be read after 10ms
+  actions.emplace_back(10ms, "abc");
+  actions.emplace_back(0ms, "def");
+
+  // This concatenated block should be read after 20ms
+  actions.emplace_back(10ms, "ghi");
+  actions.emplace_back(0ms, "jkl");
+
+  // This block should be read after 40ms
+  actions.emplace_back(20ms, "blah blah blah ");
+  actions.emplace_back(0ms, "go go go");
+
+  auto endpoint = fuzzing_engine->CreateMockEndpoint(actions);
+  endpoint->Read([](absl::Status status) { EXPECT_TRUE(status.ok()); },
+                 &read_buf, nullptr);
+  // Advance by 10ms
+  fuzzing_engine->Tick();
+  EXPECT_EQ(ExtractSliceBufferIntoString(&read_buf), "abcdef");
+
+  endpoint->Read([](absl::Status status) { EXPECT_TRUE(status.ok()); },
+                 &read_buf, nullptr);
+  // Advance by 20ms
+  fuzzing_engine->Tick();
+  EXPECT_EQ(ExtractSliceBufferIntoString(&read_buf), "ghijkl");
+
+  endpoint->Read([](absl::Status status) { EXPECT_TRUE(status.ok()); },
+                 &read_buf, nullptr);
+  // Advance by 30ms
+  fuzzing_engine->Tick();
+  // The callback should not have executed after 30ms.
+  EXPECT_EQ(read_buf.Length(), 0);
+
+  // Advance by 40ms
+  fuzzing_engine->Tick();
+  // The callback should have executed after 40ms.
+  EXPECT_EQ(ExtractSliceBufferIntoString(&read_buf), "blah blah blah go go go");
+
+  // There is nothing to read now. The following endpoint Read should fail with
+  // non OK status.
+  endpoint->Read([](absl::Status status) { EXPECT_FALSE(status.ok()); },
+                 &read_buf, nullptr);
+  fuzzing_engine->TickUntilIdle();
+  fuzzing_engine->Resume();
+}
 
 }  // namespace
 }  // namespace experimental

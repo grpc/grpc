@@ -25,10 +25,16 @@ grpc_cc_library(
     name = "fuzzing_event_engine",
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
     deps = [
         ":fuzzing_event_engine_proto",
         "//:event_engine_base_hdrs",
         "//src/core:default_event_engine",
+        "//src/core:status_helper",
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],
