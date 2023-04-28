@@ -136,6 +136,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_audit_logging",
         "//src/proto/grpc/testing/xds/v3:audit_logger_stream_proto",
         "//src/proto/grpc/testing/xds/v3:rbac_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",

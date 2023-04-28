@@ -29,10 +29,13 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 
 namespace grpc_core {
 
 namespace {
+
+using experimental::AuditLoggerRegistry;
 
 class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
  public:
@@ -40,6 +43,8 @@ class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
       const XdsResourceType::DecodeContext& /*context*/,
       absl::string_view /*configuration*/,
       ValidationErrors* /*errors*/) override {
+    // Stdout logger has no configuration right now. So we don't need to invoke
+    // the gRPC audit logger registry to validate the config.
     return Json::Object{{"stdout_logger", Json::Object()}};
   }
 
@@ -84,16 +89,19 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto config_factory_it =
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
-        // TODO(lwge): Parse the config with the gRPC audit logger registry.
         return config_factory_it->second->ConvertXdsAuditLoggerConfig(
             context, *serialized_value, errors);
       }
     }
-    // TODO(lwge): Check for third-party audit logger type. For now, we disallow
-    // it by rejecting TypedStruct entries.
-    if (absl::get_if<Json>(&extension->value) != nullptr) {
-      errors->AddError("third-party audit logger is not supported");
-      return Json();
+    // Check for custom audit logger type.
+    Json* json = absl::get_if<Json>(&extension->value);
+    if (json != nullptr &&
+        AuditLoggerRegistry::FactoryExists(extension->type)) {
+      auto result = AuditLoggerRegistry::ParseConfig(extension->type, *json);
+      if (!result.ok()) {
+        errors->AddError(result.status().message());
+      }
+      return Json::Object{{std::string(extension->type), std::move(*json)}};
     }
   }
   // Add validation error only if the config is not marked optional.
