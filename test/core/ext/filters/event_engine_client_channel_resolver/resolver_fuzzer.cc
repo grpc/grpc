@@ -15,16 +15,32 @@
 
 #include <memory>
 #include <queue>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
