@@ -18,6 +18,9 @@
 
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
 
+#include <stdint.h>
+
+#include <initializer_list>
 #include <memory>
 #include <string>
 
@@ -28,6 +31,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
+#include "google/protobuf/struct.pb.h"
 #include "gtest/gtest.h"
 #include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
@@ -36,6 +40,7 @@
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"

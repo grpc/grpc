@@ -1458,6 +1458,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/thread_quota.h )
   s.files += %w( src/core/lib/resource_quota/trace.cc )
   s.files += %w( src/core/lib/resource_quota/trace.h )
+  s.files += %w( src/core/lib/security/authorization/audit_logging.cc )
+  s.files += %w( src/core/lib/security/authorization/audit_logging.h )
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider_vtable.cc )
