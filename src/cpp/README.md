@@ -38,13 +38,13 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 | iOS                            |               |                        | Best Effort          |
 | Android                        |               |                        | Best Effort          |
 | Asylo                          |               |                        | Best Effort          |
+| AIX                            |               |                        | Community Supported  |
 | FreeBSD                        |               |                        | Community Supported  |
+| Fuchsia                        |               |                        | Community Supported  |
+| NaCL                           |               |                        | Community Supported  |
 | NetBSD                         |               |                        | Community Supported  |
 | OpenBSD                        |               |                        | Community Supported  |
-| AIX                            |               |                        | Community Supported  |
 | Solaris                        |               |                        | Community Supported  |
-| NaCL                           |               |                        | Community Supported  |
-| Fuchsia                        |               |                        | Community Supported  |
 
 ## Bazel
 
