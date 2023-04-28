@@ -357,8 +357,8 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
           return absl::OkStatus();
         }
         if (newval != timeout) {
-          // Do not fail on failing to set TCP_USER_TIMEOUT for now.
-          gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+          gpr_log(GPR_ERROR, "Setting TCP_USER_TIMEOUT to value %d ms from previous value %d",
+                  timeout, newval);
           return absl::OkStatus();
         }
       }
