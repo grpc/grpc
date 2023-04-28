@@ -53,36 +53,23 @@ include_directories(..)
 include_directories(../cmake)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-if(EXISTS ../external/utf8_range)
-  # utf8_range is already installed
-  include_directories(../external/utf8_range)
-else()
-  include(FetchContent)
-  FetchContent_Declare(
-    utf8_range
-    GIT_REPOSITORY "https://github.com/protocolbuffers/utf8_range.git"
-    GIT_TAG "de0b4a8ff9b5d4c98108bdfe723291a33c52c54f"
-  )
-  FetchContent_GetProperties(utf8_range)
-  if(NOT utf8_range_POPULATED)
-    FetchContent_Populate(utf8_range)
-    include_directories(${utf8_range_SOURCE_DIR})
+if(NOT TARGET utf8_range)
+  if(EXISTS ../external/utf8_range)
+    # utf8_range is already installed
+    include_directories(../external/utf8_range)
+  else()
+    include(FetchContent)
+    FetchContent_Declare(
+      utf8_range
+      GIT_REPOSITORY "https://github.com/protocolbuffers/utf8_range.git"
+      GIT_TAG "de0b4a8ff9b5d4c98108bdfe723291a33c52c54f"
+    )
+    FetchContent_GetProperties(utf8_range)
+    if(NOT utf8_range_POPULATED)
+      FetchContent_Populate(utf8_range)
+      include_directories(${utf8_range_SOURCE_DIR})
+    endif()
   endif()
-  #FetchContent_MakeAvailable(utf8_range)
-  #include_directories(${utf8_range_SOURCE_DIR})
-  #
-  #include(ExternalProject)
-  #ExternalProject_Add(utf8_range
-  #                    PREFIX ${CMAKE_BINARY_DIR}/external
-  #                    GIT_REPOSITORY "https://github.com/protocolbuffers/utf8_range.git"
-  #                    GIT_TAG "de0b4a8ff9b5d4c98108bdfe723291a33c52c54f"
-  #                    SOURCE_DIR ${CMAKE_BINARY_DIR}/external/utf8_range
-  #                    UPDATE_COMMAND ""
-  #                    PATCH_COMMAND ""
-  #                    CONFIGURE_COMMAND ""
-  #                    BUILD_COMMAND ""
-  #                    BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/external/utf8_range/utf8_range.h)
-  #include_directories(${CMAKE_BINARY_DIR}/external/utf8_range)
 endif()
 
 if(APPLE)
@@ -162,15 +149,42 @@ target_link_libraries(message_internal
   port)
 add_library(message_accessors
   ../upb/message/accessors.c
+  ../upb/message/accessors_internal.h
   ../upb/message/accessors.h)
 target_link_libraries(message_accessors
   collections_internal
+  eps_copy_input_stream
   hash
   message_internal
   mini_table_internal
   port
   upb
-  wire)
+  wire
+  wire_reader)
+add_library(message_promote
+  ../upb/message/promote.c
+  ../upb/message/promote.h)
+target_link_libraries(message_promote
+  collections_internal
+  eps_copy_input_stream
+  hash
+  message_accessors
+  message_internal
+  mini_table_internal
+  port
+  upb
+  wire
+  wire_reader)
+add_library(message_copy
+  ../upb/message/copy.c
+  ../upb/message/copy.h)
+target_link_libraries(message_copy
+  collections_internal
+  message_accessors
+  message_internal
+  mini_table_internal
+  port
+  upb)
 add_library(fastdecode INTERFACE)
 target_link_libraries(fastdecode INTERFACE
   base
@@ -192,6 +206,7 @@ target_link_libraries(generated_cpp_support__only_for_generated_code_do_not_use_
   base
   collections_internal
   hash
+  message_copy
   mini_table
   upb)
 add_library(generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE)
@@ -199,6 +214,7 @@ target_link_libraries(generated_reflection_support__only_for_generated_code_do_n
   base
   descriptor_upb_proto
   hash
+  mini_table_internal
   reflection_internal)
 add_library(collections INTERFACE)
 target_link_libraries(collections INTERFACE
@@ -221,81 +237,22 @@ target_link_libraries(collections_internal
   base
   hash
   mem
+  message_internal
   mini_table_internal
   port)
-add_library(reflection INTERFACE)
-target_link_libraries(reflection INTERFACE
-  collections
-  port
-  reflection_internal
-  upb)
-add_library(reflection_internal
-  ../upb/reflection/def_builder.c
-  ../upb/reflection/def_pool.c
-  ../upb/reflection/def_type.c
-  ../upb/reflection/desc_state.c
-  ../upb/reflection/enum_def.c
-  ../upb/reflection/enum_reserved_range.c
-  ../upb/reflection/enum_value_def.c
-  ../upb/reflection/extension_range.c
-  ../upb/reflection/field_def.c
-  ../upb/reflection/file_def.c
-  ../upb/reflection/message.c
-  ../upb/reflection/message_def.c
-  ../upb/reflection/message_reserved_range.c
-  ../upb/reflection/method_def.c
-  ../upb/reflection/oneof_def.c
-  ../upb/reflection/service_def.c
-  ../upb/reflection/common.h
-  ../upb/reflection/def.h
-  ../upb/reflection/def.hpp
-  ../upb/reflection/def_builder_internal.h
-  ../upb/reflection/def_pool.h
-  ../upb/reflection/def_pool_internal.h
-  ../upb/reflection/def_type.h
-  ../upb/reflection/desc_state_internal.h
-  ../upb/reflection/enum_def.h
-  ../upb/reflection/enum_def_internal.h
-  ../upb/reflection/enum_reserved_range.h
-  ../upb/reflection/enum_reserved_range_internal.h
-  ../upb/reflection/enum_value_def.h
-  ../upb/reflection/enum_value_def_internal.h
-  ../upb/reflection/extension_range.h
-  ../upb/reflection/extension_range_internal.h
-  ../upb/reflection/field_def.h
-  ../upb/reflection/field_def_internal.h
-  ../upb/reflection/file_def.h
-  ../upb/reflection/file_def_internal.h
-  ../upb/reflection/message.h
-  ../upb/reflection/message.hpp
-  ../upb/reflection/message_def.h
-  ../upb/reflection/message_def_internal.h
-  ../upb/reflection/message_reserved_range.h
-  ../upb/reflection/message_reserved_range_internal.h
-  ../upb/reflection/method_def.h
-  ../upb/reflection/method_def_internal.h
-  ../upb/reflection/oneof_def.h
-  ../upb/reflection/oneof_def_internal.h
-  ../upb/reflection/service_def.h
-  ../upb/reflection/service_def_internal.h)
-target_link_libraries(reflection_internal
-  collections
-  descriptor_upb_proto
-  hash
-  message_accessors
-  mini_table_internal
-  port
-  upb)
 add_library(textformat
   ../upb/text/encode.c
   ../upb/text/encode.h
   ../upb/text_encode.h)
 target_link_libraries(textformat
   collections_internal
+  eps_copy_input_stream
   lex
   port
   reflection
-  wire)
+  wire
+  wire_reader
+  wire_types)
 add_library(json
   ../upb/json/decode.c
   ../upb/json/encode.c
@@ -332,22 +289,40 @@ add_library(wire_internal
   ../upb/wire/decode.c
   ../upb/wire/decode_fast.c
   ../upb/wire/encode.c
+  ../upb/wire/common.h
   ../upb/wire/common_internal.h
   ../upb/wire/decode.h
   ../upb/wire/decode_fast.h
   ../upb/wire/decode_internal.h
   ../upb/wire/encode.h
-  ../upb/wire/swap_internal.h
-  ../upb/wire/types.h)
+  ../upb/wire/swap_internal.h)
 target_link_libraries(wire_internal
   base
   collections_internal
+  eps_copy_input_stream
   hash
   mem_internal
   message_internal
   mini_table_internal
   port
-  utf8_range//:utf8_range)
+  wire_reader
+  wire_types
+  utf8_range)
+add_library(wire_types INTERFACE)
+add_library(eps_copy_input_stream
+  ../upb/wire/eps_copy_input_stream.c
+  ../upb/wire/eps_copy_input_stream.h)
+target_link_libraries(eps_copy_input_stream
+  mem
+  port)
+add_library(wire_reader
+  ../upb/wire/reader.c
+  ../upb/wire/swap_internal.h
+  ../upb/wire/reader.h)
+target_link_libraries(wire_reader
+  eps_copy_input_stream
+  port
+  wire_types)
 add_library(hash
   ../upb/hash/common.c
   ../upb/hash/common.h

@@ -245,6 +245,23 @@ UPB_INLINE upb_StringView const* grpc_lookup_v1_RouteLookupResponse_targets(cons
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_lookup_v1_RouteLookupResponse_targets_upb_array(const grpc_lookup_v1_RouteLookupResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_lookup_v1_RouteLookupResponse_targets_mutable_upb_array(const grpc_lookup_v1_RouteLookupResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_lookup_v1_RouteLookupResponse_has_targets(const grpc_lookup_v1_RouteLookupResponse* msg) {
   size_t size;
   grpc_lookup_v1_RouteLookupResponse_targets(msg, &size);

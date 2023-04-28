@@ -84,6 +84,23 @@ UPB_INLINE const google_api_HttpRule* const* google_api_Http_rules(const google_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _google_api_Http_rules_upb_array(const google_api_Http* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(0, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_Http_rules_mutable_upb_array(const google_api_Http* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(0, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool google_api_Http_has_rules(const google_api_Http* msg) {
   size_t size;
   google_api_Http_rules(msg, &size);
@@ -306,6 +323,23 @@ UPB_INLINE const google_api_HttpRule* const* google_api_HttpRule_additional_bind
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _google_api_HttpRule_additional_bindings_upb_array(const google_api_HttpRule* msg, size_t* size) {
+  const upb_MiniTableField field = {11, UPB_SIZE(4, 56), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_HttpRule_additional_bindings_mutable_upb_array(const google_api_HttpRule* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {11, UPB_SIZE(4, 56), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool google_api_HttpRule_has_additional_bindings(const google_api_HttpRule* msg) {
   size_t size;

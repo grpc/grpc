@@ -107,6 +107,23 @@ UPB_INLINE const struct envoy_config_endpoint_v3_LocalityLbEndpoints* const* env
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints_upb_array(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints_mutable_upb_array(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_has_endpoints(const envoy_config_endpoint_v3_ClusterLoadAssignment* msg) {
   size_t size;
   envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(msg, &size);
@@ -265,6 +282,23 @@ UPB_INLINE const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverl
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads_upb_array(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads_mutable_upb_array(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_has_drop_overloads(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg) {
   size_t size;

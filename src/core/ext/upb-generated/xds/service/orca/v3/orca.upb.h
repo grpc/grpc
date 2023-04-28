@@ -97,6 +97,23 @@ UPB_INLINE upb_StringView const* xds_service_orca_v3_OrcaLoadReportRequest_reque
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _xds_service_orca_v3_OrcaLoadReportRequest_request_cost_names_upb_array(const xds_service_orca_v3_OrcaLoadReportRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _xds_service_orca_v3_OrcaLoadReportRequest_request_cost_names_mutable_upb_array(const xds_service_orca_v3_OrcaLoadReportRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool xds_service_orca_v3_OrcaLoadReportRequest_has_request_cost_names(const xds_service_orca_v3_OrcaLoadReportRequest* msg) {
   size_t size;
   xds_service_orca_v3_OrcaLoadReportRequest_request_cost_names(msg, &size);
