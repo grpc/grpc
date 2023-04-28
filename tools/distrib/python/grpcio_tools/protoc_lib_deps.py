@@ -237,7 +237,6 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/rust/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/rust/upb_kernel.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
     'third_party/protobuf/src/google/protobuf/descriptor.cc',
@@ -304,4 +303,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="d6ecec884c687b04de6ab2d45fca3d115892a732"
+PROTOBUF_SUBMODULE_VERSION="f6c7fdf88cdba6a8c7e2215f72578b0b50d2c4ca"
