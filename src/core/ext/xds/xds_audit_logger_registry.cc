@@ -103,6 +103,7 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto result = AuditLoggerRegistry::ParseConfig(extension->type, *json);
       if (!result.ok()) {
         errors->AddError(result.status().message());
+        return Json();
       }
       return Json::Object{{std::string(extension->type), std::move(*json)}};
     }
