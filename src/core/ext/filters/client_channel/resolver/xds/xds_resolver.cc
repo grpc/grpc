@@ -59,7 +59,7 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/cluster_lb_data.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -456,9 +456,9 @@ class XdsResolver::XdsConfigSelector::RouteListIterator
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, absl::Status* status,
-    RefCountedPtr<XdsClusterMap> cluster_map)
-    : resolver_(std::move(resolver)), cluster_map_(cluster_map) {
+    RefCountedPtr<XdsResolver> resolver, absl::Status* status)
+    : resolver_(std::move(resolver)),
+      cluster_map_(MakeRefCounted<XdsClusterMap>()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
@@ -804,6 +804,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };
+  auto lb_data = args.arena->ManagedNew<XdsClusterLbData>(cluster_map_);
+  call_config.call_attributes[lb_data->type()] = lb_data;
   return std::move(call_config);
 }
 

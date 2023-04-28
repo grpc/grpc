@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/xds/cluster_lb_data.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -138,6 +137,17 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   GPR_ASSERT(cookie_config != nullptr);
   if (!cookie_config->name.has_value()) {
     return next_promise_factory(std::move(call_args));
+  }
+  auto* cluster_lb_data =
+      XdsClusterLbData::from_call_data(service_config_call_data);
+  absl::string_view cluster_name =
+      ServiceConfigCallData::StringViewAttribute::FromCallData(
+          service_config_call_data, XdsClusterAttributeTypeName());
+  if (cluster_lb_data != nullptr && cluster_name.length() > 0) {
+    if (!cluster_lb_data->LockClusterConfig(cluster_name)) {
+      gpr_log(GPR_ERROR, "Unable to lock cluster config for %s",
+              std::string(cluster_name).c_str());
+    }
   }
   // We have a config.
   // If the config has a path, check to see if it matches the request path.

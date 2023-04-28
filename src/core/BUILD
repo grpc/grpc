@@ -5189,6 +5189,7 @@ grpc_cc_library(
         "cluster_lb_data_header",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
+        "grpc_resolver_xds_header",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",

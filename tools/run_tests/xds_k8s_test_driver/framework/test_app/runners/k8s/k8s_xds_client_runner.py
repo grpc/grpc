@@ -149,6 +149,10 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)
 
+        return self._xds_test_client_for_pod(pod, server_target=server_target)
+
+    def _xds_test_client_for_pod(self, pod: k8s.V1Pod, *,
+                                 server_target: str) -> XdsTestClient:
         if self.debug_use_port_forwarding:
             pf = self._start_port_forwarding_pod(pod, self.stats_port)
             rpc_port, rpc_host = pf.local_port, pf.local_address
@@ -158,7 +162,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         return XdsTestClient(ip=pod.status.pod_ip,
                              rpc_port=rpc_port,
                              server_target=server_target,
-                             hostname=pod_name,
+                             hostname=pod.metadata.name,
                              rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ

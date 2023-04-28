@@ -9323,6 +9323,7 @@ add_executable(core_end2end_tests
   test/core/end2end/tests/trailing_metadata.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13041,6 +13042,7 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/h2_ssl_cert_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13069,6 +13071,7 @@ target_link_libraries(h2_ssl_cert_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_unsecure
   grpc_test_util
 )
 
