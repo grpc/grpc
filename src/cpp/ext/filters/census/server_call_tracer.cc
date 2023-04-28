@@ -160,7 +160,6 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
     context_.AddSpanAnnotation(annotation, {});
   }
 
-
   void RecordMetadataInformation(absl::string_view metadata_info) override {
     RecordAnnotation(metadata_info);
   }
