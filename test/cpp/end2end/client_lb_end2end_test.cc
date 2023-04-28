@@ -84,6 +84,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using xds::data::orca::v3::OrcaLoadReport;
 constexpr char kRequestMessage[] = "Live long and prosper.";
 
 // A noop health check service that just terminates the call and returns OK
@@ -282,7 +283,6 @@ class FakeResolverResponseGeneratorWrapper {
       response_generator_;
 };
 
-using xds::data::orca::v3::OrcaLoadReport;
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
@@ -2378,7 +2378,7 @@ class OrcaLoadReportBuilder {
     (*report_.mutable_named_metrics())[n] = v;
     return *this;
   }
-  OrcaLoadReport Get() { return std::move(report_); }
+  OrcaLoadReport Build() { return std::move(report_); }
 
  private:
   OrcaLoadReport report_;
@@ -2404,7 +2404,7 @@ OrcaLoadReport BackendMetricDataToOrcaLoadReport(
   for (const auto& p : backend_metric_data.named_metrics) {
     builder.SetNamedMetrics(std::string(p.first), p.second);
   }
-  return builder.Get();
+  return builder.Build();
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
@@ -2664,7 +2664,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
                                        .SetEps(0.99)
                                        .SetUtilization("foo", 0.99)
                                        .SetUtilization("bar", 0.1)
-                                       .Get();
+                                       .Build();
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator);
@@ -2673,9 +2673,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   size_t total_num_rpcs = 0;
   {
     OrcaLoadReport load_report =
-        OrcaLoadReportBuilder().SetCpuUtilization(0.5).Get();
+        OrcaLoadReportBuilder().SetCpuUtilization(0.5).Build();
     OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetCpuUtilization(0.5).Get();
+        OrcaLoadReportBuilder(per_server_load).SetCpuUtilization(0.5).Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2686,9 +2686,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   }
   {
     OrcaLoadReport load_report =
-        OrcaLoadReportBuilder().SetMemUtilization(0.5).Get();
+        OrcaLoadReportBuilder().SetMemUtilization(0.5).Build();
     OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetMemUtilization(0.5).Get();
+        OrcaLoadReportBuilder(per_server_load).SetMemUtilization(0.5).Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2698,9 +2698,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
     }
   }
   {
-    OrcaLoadReport load_report = OrcaLoadReportBuilder().SetQps(0.5).Get();
+    OrcaLoadReport load_report = OrcaLoadReportBuilder().SetQps(0.5).Build();
     OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetQps(0.5).Get();
+        OrcaLoadReportBuilder(per_server_load).SetQps(0.5).Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2710,9 +2710,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
     }
   }
   {
-    OrcaLoadReport load_report = OrcaLoadReportBuilder().SetEps(0.5).Get();
+    OrcaLoadReport load_report = OrcaLoadReportBuilder().SetEps(0.5).Build();
     OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetEps(0.5).Get();
+        OrcaLoadReportBuilder(per_server_load).SetEps(0.5).Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2727,11 +2727,11 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
             .SetUtilization("foo", 0.5)
             .SetUtilization("bar", 1.1)  // Out of range.
             .SetUtilization("baz", 1.0)
-            .Get();
+            .Build();
     auto expected = OrcaLoadReportBuilder(per_server_load)
                         .SetUtilization("foo", 0.5)
                         .SetUtilization("baz", 1.0)
-                        .Get();
+                        .Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2749,6 +2749,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
 struct ClientLbLoadReportTestParams {
   OrcaLoadReport reported;
   OrcaLoadReport received;
+  std::string test_name;
 };
 
 class ClientLbLoadReportTest : public ClientLbInterceptTrailingMetadataTest,
@@ -2778,40 +2779,57 @@ TEST_P(ClientLbLoadReportTest, Basic) {
 
 INSTANTIATE_TEST_SUITE_P(
     Test, ClientLbLoadReportTest,
-    ::testing::Values(
-        ClientLbLoadReportTestParams{
-            OrcaLoadReportBuilder()
-                .SetCpuUtilization(0.5)
-                .SetMemUtilization(0.75)
-                .SetQps(0.25)
-                .SetEps(0.1)
-                .SetRequestCost("foo", -0.8)
-                .SetRequestCost("bar", 1.4)
-                .SetUtilization("baz", 1.0)
-                .SetUtilization("quux", 0.9)
-                .SetUtilization("out_of_range_invalid1", 1.1)
-                .SetUtilization("out_of_range_invalid2", -1.1)
-                .SetNamedMetrics("metric0", 3.0)
-                .SetNamedMetrics("metric1", -1.0)
-                .Get(),
-            OrcaLoadReportBuilder()
-                .SetCpuUtilization(0.5)
-                .SetMemUtilization(0.75)
-                .SetQps(0.25)
-                .SetEps(0.1)
-                .SetRequestCost("foo", -0.8)
-                .SetRequestCost("bar", 1.4)
-                .SetUtilization("baz", 1.0)
-                .SetUtilization("quux", 0.9)
-                .SetNamedMetrics("metric0", 3.0)
-                .SetNamedMetrics("metric1", -1.0)
-                .Get()},
-        ClientLbLoadReportTestParams{
-            OrcaLoadReportBuilder().SetCpuUtilization(1.5).SetQps(0.25).Get(),
-            OrcaLoadReportBuilder()
-                .SetCpuUtilization(1.5)
-                .SetQps(0.25)
-                .Get()}));
+    ::testing::ValuesIn<ClientLbLoadReportTestParams>(
+        {{OrcaLoadReportBuilder()
+              .SetCpuUtilization(0.5)
+              .SetMemUtilization(0.75)
+              .SetQps(0.25)
+              .SetEps(0.1)
+              .SetRequestCost("foo", -0.8)
+              .SetRequestCost("bar", 1.4)
+              .SetUtilization("baz", 1.0)
+              .SetUtilization("quux", 0.9)
+              .SetNamedMetrics("metric0", 3.0)
+              .SetNamedMetrics("metric1", -1.0)
+              .Build(),
+          OrcaLoadReportBuilder()
+              .SetCpuUtilization(0.5)
+              .SetMemUtilization(0.75)
+              .SetQps(0.25)
+              .SetEps(0.1)
+              .SetRequestCost("foo", -0.8)
+              .SetRequestCost("bar", 1.4)
+              .SetUtilization("baz", 1.0)
+              .SetUtilization("quux", 0.9)
+              .SetNamedMetrics("metric0", 3.0)
+              .SetNamedMetrics("metric1", -1.0)
+              .Build(),
+          "ValidValues"},
+         {OrcaLoadReportBuilder().SetCpuUtilization(-1).SetQps(0.25).Build(),
+          OrcaLoadReportBuilder().SetQps(0.25).Build(),
+          "CpuUtilizationNegative"},
+         {OrcaLoadReportBuilder().SetCpuUtilization(1.5).SetQps(0.25).Build(),
+          OrcaLoadReportBuilder().SetCpuUtilization(1.5).SetQps(0.25).Build(),
+          "CpuUtilizationAboveOne"},
+         {OrcaLoadReportBuilder().SetMemUtilization(-1.5).SetQps(0.25).Build(),
+          OrcaLoadReportBuilder().SetQps(0.25).Build(),
+          "MemUtilizationNegative"},
+         {OrcaLoadReportBuilder().SetMemUtilization(1.5).SetQps(0.25).Build(),
+          OrcaLoadReportBuilder().SetQps(0.25).Build(),
+          "MemUtilizationAboveOne"},
+         {OrcaLoadReportBuilder().SetQps(-1.0).SetEps(0.25).Build(),
+          OrcaLoadReportBuilder().SetEps(0.25).Build(), "QpsNegative"},
+         {OrcaLoadReportBuilder().SetQps(1.0).SetEps(-0.25).Build(),
+          OrcaLoadReportBuilder().SetQps(1.0).Build(), "EpsNegative"},
+         {OrcaLoadReportBuilder()
+              .SetUtilization("foo", -1.0)
+              .SetUtilization("bar", 0.9)
+              .SetUtilization("baz", 1.9)
+              .Build(),
+          OrcaLoadReportBuilder().SetUtilization("bar", 0.9).Build(),
+          "UtilizationOutOfRange"}}),
+    [](const ::testing::TestParamInfo<ClientLbLoadReportTest::ParamType>&
+           info) { return info.param.test_name; });
 
 //
 // tests that address attributes from the resolver are visible to the LB policy
@@ -3210,7 +3228,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
                                 /*expected_weights=*/{15, 10, 2},
                                 /*total_passes=*/3, &request);
   // Now send requests without per-call reported QPS.
-  // This should change WRR picks back to 2:1:8.
+  // This should change WRR picks back to 6:4:3.
   ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
                                 /*expected_weights=*/{6, 4, 3});
   // Check LB policy name for the channel.
