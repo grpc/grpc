@@ -3679,7 +3679,6 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "cluster_lb_data_header",
         "context",
         "grpc_resolver_xds_header",
         "grpc_service_config",
@@ -5146,8 +5145,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "grpc_service_config",
         "unique_type_name",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -5158,8 +5159,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "grpc_service_config",
         "unique_type_name",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -5186,7 +5189,6 @@ grpc_cc_library(
         "arena",
         "channel_args",
         "channel_fwd",
-        "cluster_lb_data_header",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_header",
