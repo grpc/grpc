@@ -290,8 +290,8 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver, absl::Status* status,
-                      RefCountedPtr<XdsClusterMap> config_map);
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      absl::Status* status);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -799,8 +799,6 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   call_config.call_attributes[RequestHashAttributeName()] =
       args.arena->ManagedNew<ServiceConfigCallData::StringViewAttribute>(
           RequestHashAttributeName(), hash_value);
-  auto lb_data = args.arena->ManagedNew<XdsClusterLbData>(cluster_map_);
-  call_config.call_attributes[lb_data->type()] = lb_data;
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };
@@ -1091,9 +1089,7 @@ void XdsResolver::GenerateResult() {
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   absl::Status status;
-  auto cluster_map = MakeRefCounted<XdsClusterMap>();
-  auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), &status, cluster_map);
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &status);
   if (!status.ok()) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(status.message()));
