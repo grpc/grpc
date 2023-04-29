@@ -14,6 +14,7 @@
 """Invocation-side implementation of gRPC Python."""
 
 import copy
+from datetime import datetime
 import functools
 import logging
 import os
@@ -114,6 +115,9 @@ class _RPCState(object):
     cancelled: bool
     callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
+    rpc_start_time: Optional[datetime]
+    rpc_end_time: Optional[datetime]
+    method: Optional[str]
 
     def __init__(self, due: Sequence[cygrpc.OperationType],
                  initial_metadata: Optional[MetadataType],
@@ -136,6 +140,9 @@ class _RPCState(object):
         self.code = code
         self.details = details
         self.debug_error_string = None
+        self.rpc_start_time = None
+        self.rpc_end_time = None
+        self.method = None
 
         # The semantics of grpc.Future.cancel and grpc.Future.cancelled are
         # slightly wonky, so they have to be tracked separately from the rest of the
@@ -191,6 +198,8 @@ def _handle_event(
                     state.code = code
                     state.details = batch_operation.details()
                     state.debug_error_string = batch_operation.error_string()
+            state.rpc_end_time = datetime.utcnow()
+            cygrpc.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks
@@ -1014,6 +1023,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                     operations,
                     None,
                 ),), self._context)
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             event = call.next_event()
             _handle_event(event, state, self._response_deserializer)
             return state, call
@@ -1062,6 +1073,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 self._method, None, deadline, metadata,
                 None if credentials is None else credentials._credentials,
                 (operations,), event_handler, self._context)
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             return _MultiThreadedRendezvous(state, call,
                                             self._response_deserializer,
                                             deadline)
@@ -1120,6 +1133,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), metadata, call_credentials,
             operations_and_tags, self._context)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         return _SingleThreadedRendezvous(state, call,
                                          self._response_deserializer, deadline)
 
@@ -1180,6 +1195,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 None if credentials is None else credentials._credentials,
                 operations, _event_handler(state, self._response_deserializer),
                 self._context)
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             return _MultiThreadedRendezvous(state, call,
                                             self._response_deserializer,
                                             deadline)
@@ -1223,6 +1240,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None if credentials is None else credentials._credentials,
             _stream_unary_invocation_operations_and_tags(
                 augmented_metadata, initial_metadata_flags), self._context)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, None)
         while True:
@@ -1281,6 +1300,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             _stream_unary_invocation_operations(metadata,
                                                 initial_metadata_flags),
             event_handler, self._context)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
         return _MultiThreadedRendezvous(state, call,
@@ -1338,6 +1359,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             None, _determine_deadline(deadline), augmented_metadata,
             None if credentials is None else credentials._credentials,
             operations, event_handler, self._context)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
         return _MultiThreadedRendezvous(state, call,

@@ -1,0 +1,70 @@
+# Copyright 2023 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:cython_library.bzl", "pyx_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "observability",
+    srcs = [
+        "observability_main.cc",
+        "python_census_context.cc",
+        "server_call_tracer.cc",
+        "client_call_tracer.cc",
+        "sampler.cc",
+        ],
+    hdrs = [
+        "observability_main.h",
+        "python_census_context.h",
+        "constants.h",
+        "server_call_tracer.h",
+        "client_call_tracer.h",
+        "sampler.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/cpp/ext/gcp:observability_config",
+        "//:grpc_rpc_encoding",
+        "//:grpc",
+    ],
+)
+
+pyx_library(
+    name = "cyobservability",
+    srcs = [
+        "_cyobservability.pyx",
+        "_cyobservability.pxd",
+    ],
+    deps = [
+        ':observability',
+    ],
+)
+
+py_library(
+    name = "pyobservability",
+    srcs = [
+        "__init__.py",
+        "_observability.py",
+        "_open_census.py",
+        "_views.py",
+        "_measures.py",
+    ],
+    imports = ["../", "."],
+    srcs_version = "PY3ONLY",
+    deps = [
+        ":cyobservability",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
