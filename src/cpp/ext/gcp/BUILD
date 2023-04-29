@@ -81,7 +81,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
+    # visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
         "//:grpc_base",
