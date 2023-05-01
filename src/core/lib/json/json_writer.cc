@@ -311,11 +311,12 @@ void JsonWriter::DumpValue(const Json& value) {
     case Json::Type::kNumber:
       ValueRaw(value.string());
       break;
-    case Json::Type::kTrue:
-      ValueRaw(std::string("true", 4));
-      break;
-    case Json::Type::kFalse:
-      ValueRaw(std::string("false", 5));
+    case Json::Type::kBoolean:
+      if (value.boolean()) {
+        ValueRaw(std::string("true", 4));
+      } else {
+        ValueRaw(std::string("false", 5));
+      }
       break;
     case Json::Type::kNull:
       ValueRaw(std::string("null", 4));

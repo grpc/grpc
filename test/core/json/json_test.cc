@@ -56,8 +56,9 @@ void ValidateValue(const Json& actual, const Json& expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
     case Json::Type::kNull:
-    case Json::Type::kTrue:
-    case Json::Type::kFalse:
+      break;
+    case Json::Type::kBoolean:
+      EXPECT_EQ(actual.boolean(), expected.boolean());
       break;
     case Json::Type::kString:
     case Json::Type::kNumber:

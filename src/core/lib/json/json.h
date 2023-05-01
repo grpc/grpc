@@ -31,26 +31,25 @@
 
 namespace grpc_core {
 
-// A JSON value, which can be any one of object, array, string,
-// number, true, false, or null.
+// A JSON value, which can be any one of null, boolean, number, string,
+// object, or array.
 class Json {
  public:
   // The JSON type.
   enum class Type {
-    kNull,    // No payload.  Default type when using the zero-arg ctor.
-    kTrue,    // No payload.
-    kFalse,   // No payload.
-    kNumber,  // Numbers are stored in string form to avoid precision
-              // and integer capacity issues.  Use string() for payload.
-    kString,  // Use string() for payload.
-    kObject,  // Use object() for payload.
-    kArray,   // Use array() for payload.
+    kNull,     // No payload.  Default type when using the zero-arg ctor.
+    kBoolean,  // Use boolean() for payload.
+    kNumber,   // Numbers are stored in string form to avoid precision
+               // and integer capacity issues.  Use string() for payload.
+    kString,   // Use string() for payload.
+    kObject,   // Use object() for payload.
+    kArray,    // Use array() for payload.
   };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
-  // Factory method for kTrue and kFalse.
+  // Factory method for kBoolean.
   static Json FromBool(bool b) {
     Json json;
     json.value_ = b;
@@ -160,9 +159,7 @@ class Json {
   Type type() const {
     struct ValueFunctor {
       Json::Type operator()(const absl::monostate&) { return Type::kNull; }
-      Json::Type operator()(bool value) {
-        return value ? Type::kTrue : Type::kFalse;
-      }
+      Json::Type operator()(bool value) { return Type::kBoolean; }
       Json::Type operator()(const NumberValue&) { return Type::kNumber; }
       Json::Type operator()(const std::string&) { return Type::kString; }
       Json::Type operator()(const Object&) { return Type::kObject; }
@@ -170,6 +167,10 @@ class Json {
     };
     return absl::visit(ValueFunctor(), value_);
   }
+
+  // Payload accessor for kBoolean.
+  // Must not be called for other types.
+  bool boolean() const { return absl::get<bool>(value_); }
 
   // Payload accessor for kNumber or kString.
   // Must not be called for other types.
@@ -199,7 +200,7 @@ class Json {
     }
   };
   using Value = absl::variant<absl::monostate,  // kNull
-                              bool,             // kTrue or kFalse
+                              bool,             // kBoolean
                               NumberValue,      // kNumber
                               std::string,      // kString
                               Object,           // kObject
