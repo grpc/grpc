@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
@@ -35,7 +36,6 @@
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -112,8 +112,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(update, policy_.get()), absl::OkStatus());
   }
 
-  LoadBalancingPolicyTest::CallAttributes MakeOverrideHostAttribute(
-      absl::string_view host) {
+  CallAttributes MakeOverrideHostAttribute(absl::string_view host) {
     CallAttributes override_host_attributes;
     override_host_attributes.emplace_back(
         std::make_unique<XdsOverrideHostAttribute>(host));
