@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from dataclasses import field
 import importlib
 import logging
-import sys
 import threading
 import time
 from typing import Any, Mapping, Optional, TypeVar
@@ -138,18 +137,18 @@ class GCPOpenCensusObservability(grpc.GrpcObservability):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.exit()
 
-    def create_client_call_tracer_capsule(self, method: bytes) -> PyCapsule:
+    def create_client_call_tracer_capsule(self, method_name: bytes) -> PyCapsule:
         current_span = execution_context.get_current_span()
         if current_span:
             # Propagate existing OC context
             trace_id = current_span.context_tracer.trace_id.encode('utf8')
             parent_span_id = current_span.span_id.encode('utf8')
             capsule = _cyobservability.create_client_call_tracer_capsule(
-                method, trace_id, parent_span_id)
+                method_name, trace_id, parent_span_id)
         else:
             trace_id = span_context_module.generate_trace_id().encode('utf8')
             capsule = _cyobservability.create_client_call_tracer_capsule(
-                method, trace_id)
+                method_name, trace_id)
         return capsule
 
     def create_server_call_tracer_factory(self) -> PyCapsule:

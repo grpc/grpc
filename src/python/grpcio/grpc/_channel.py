@@ -29,6 +29,7 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # pytype: disable=pyi-error
+from grpc import _observability
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
@@ -199,7 +200,7 @@ def _handle_event(
                     state.details = batch_operation.details()
                     state.debug_error_string = batch_operation.error_string()
             state.rpc_end_time = datetime.utcnow()
-            cygrpc.maybe_record_rpc_latency(state)
+            _observability.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks

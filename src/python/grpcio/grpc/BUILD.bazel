@@ -107,10 +107,10 @@ py_library(
     ],
     imports = ["../"],
     deps = [
+        ":_observability",
         ":_runtime_protos",
         ":_simple_stubs",
         ":_typing",
-        ":_observability",
         ":aio",
         ":auth",
         ":channel",

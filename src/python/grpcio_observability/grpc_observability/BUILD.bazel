@@ -19,36 +19,36 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "observability",
     srcs = [
+        "client_call_tracer.cc",
         "observability_main.cc",
         "python_census_context.cc",
-        "server_call_tracer.cc",
-        "client_call_tracer.cc",
         "sampler.cc",
-        ],
+        "server_call_tracer.cc",
+    ],
     hdrs = [
+        "client_call_tracer.h",
+        "constants.h",
         "observability_main.h",
         "python_census_context.h",
-        "constants.h",
-        "server_call_tracer.h",
-        "client_call_tracer.h",
         "sampler.h",
+        "server_call_tracer.h",
     ],
     includes = ["."],
     deps = [
-        "//src/cpp/ext/gcp:observability_config",
-        "//:grpc_rpc_encoding",
         "//:grpc",
+        "//:grpc_rpc_encoding",
+        "//src/cpp/ext/gcp:observability_config",
     ],
 )
 
 pyx_library(
     name = "cyobservability",
     srcs = [
-        "_cyobservability.pyx",
         "_cyobservability.pxd",
+        "_cyobservability.pyx",
     ],
     deps = [
-        ':observability',
+        ":observability",
     ],
 )
 
@@ -56,12 +56,15 @@ py_library(
     name = "pyobservability",
     srcs = [
         "__init__.py",
+        "_measures.py",
         "_observability.py",
         "_open_census.py",
         "_views.py",
-        "_measures.py",
     ],
-    imports = ["../", "."],
+    imports = [
+        ".",
+        "../",
+    ],
     srcs_version = "PY3ONLY",
     deps = [
         ":cyobservability",

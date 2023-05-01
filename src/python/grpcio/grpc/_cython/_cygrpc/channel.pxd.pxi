@@ -26,7 +26,6 @@ cdef class _CallState:
 
   cdef grpc_call *c_call
   cdef set due
-  cdef ClientCallTracer* call_tracer_ptr
   cdef object call_tracer_capsule
 
 

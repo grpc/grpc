@@ -23,8 +23,8 @@ py_test(
     main = "_observability_test.py",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/testing",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
         requirement("opencensus"),
         requirement("opencensus-ext-stackdriver"),
     ],
