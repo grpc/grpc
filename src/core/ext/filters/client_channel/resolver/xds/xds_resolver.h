@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 
