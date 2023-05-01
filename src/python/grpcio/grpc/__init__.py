@@ -1706,7 +1706,7 @@ def stream_stream_rpc_method_handler(
 
     Args:
       behavior: The implementation of an RPC that accepts an iterator of
-        request values, one request context and returns an iterator of response values, depends
+        request values, one ServicerContext and returns an iterator of response values, depends
         on synchronous or asynchronous API, the iterator should be an Iterable or AsyncIterable.
       request_deserializer: An optional :term:`deserializer` for request deserialization.
       response_serializer: An optional :term:`serializer` for response serialization.
