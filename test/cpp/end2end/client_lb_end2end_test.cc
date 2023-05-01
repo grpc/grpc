@@ -2407,6 +2407,34 @@ OrcaLoadReport BackendMetricDataToOrcaLoadReport(
   return builder.Build();
 }
 
+// TODO(roth): Change this to use EqualsProto() once that becomes available in
+// OSS.
+void CheckLoadReportAsExpected(const OrcaLoadReport& actual,
+                               const OrcaLoadReport& expected) {
+  EXPECT_EQ(actual.cpu_utilization(), expected.cpu_utilization());
+  EXPECT_EQ(actual.mem_utilization(), expected.mem_utilization());
+  EXPECT_EQ(actual.rps_fractional(), expected.rps_fractional());
+  EXPECT_EQ(actual.eps(), expected.eps());
+  EXPECT_EQ(actual.request_cost().size(), expected.request_cost().size());
+  for (const auto& p : actual.request_cost()) {
+    auto it = expected.request_cost().find(p.first);
+    ASSERT_NE(it, expected.request_cost().end());
+    EXPECT_EQ(it->second, p.second);
+  }
+  EXPECT_EQ(actual.utilization().size(), expected.utilization().size());
+  for (const auto& p : actual.utilization()) {
+    auto it = expected.utilization().find(p.first);
+    ASSERT_NE(it, expected.utilization().end());
+    EXPECT_EQ(it->second, p.second);
+  }
+  EXPECT_EQ(actual.named_metrics().size(), expected.named_metrics().size());
+  for (const auto& p : actual.named_metrics()) {
+    auto it = expected.named_metrics().find(p.first);
+    ASSERT_NE(it, expected.named_metrics().end());
+    EXPECT_EQ(it->second, p.second);
+  }
+}
+
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
   void SetUp() override {
@@ -2457,6 +2485,28 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     }
     trailer_intercepted_ = false;
     return true;
+  }
+
+  void RunPerRpcMetricReportingTest(const OrcaLoadReport& reported,
+                                    const OrcaLoadReport& expected) {
+    const int kNumServers = 1;
+    const int kNumRpcs = 10;
+    StartServers(kNumServers);
+    auto response_generator = BuildResolverResponseGenerator();
+    auto channel =
+        BuildChannel("intercept_trailing_metadata_lb", response_generator);
+    auto stub = BuildStub(channel);
+    response_generator.SetNextResolution(GetServersPorts());
+    for (size_t i = 0; i < kNumRpcs; ++i) {
+      CheckRpcSendOk(DEBUG_LOCATION, stub, false, &reported);
+      auto actual = backend_load_report();
+      ASSERT_TRUE(actual.has_value());
+      CheckLoadReportAsExpected(*actual, expected);
+    }
+    // Check LB policy name for the channel.
+    EXPECT_EQ("intercept_trailing_metadata_lb",
+              channel->GetLoadBalancingPolicyName());
+    EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
   }
 
  private:
@@ -2619,32 +2669,62 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   EXPECT_FALSE(backend_load_report().has_value());
 }
 
-// TODO(roth): Change this to use EqualsProto() once that becomes available in
-// OSS.
-void CheckLoadReportAsExpected(const OrcaLoadReport& actual,
-                               const OrcaLoadReport& expected) {
-  EXPECT_EQ(actual.cpu_utilization(), expected.cpu_utilization());
-  EXPECT_EQ(actual.mem_utilization(), expected.mem_utilization());
-  EXPECT_EQ(actual.rps_fractional(), expected.rps_fractional());
-  EXPECT_EQ(actual.eps(), expected.eps());
-  EXPECT_EQ(actual.request_cost().size(), expected.request_cost().size());
-  for (const auto& p : actual.request_cost()) {
-    auto it = expected.request_cost().find(p.first);
-    ASSERT_NE(it, expected.request_cost().end());
-    EXPECT_EQ(it->second, p.second);
-  }
-  EXPECT_EQ(actual.utilization().size(), expected.utilization().size());
-  for (const auto& p : actual.utilization()) {
-    auto it = expected.utilization().find(p.first);
-    ASSERT_NE(it, expected.utilization().end());
-    EXPECT_EQ(it->second, p.second);
-  }
-  EXPECT_EQ(actual.named_metrics().size(), expected.named_metrics().size());
-  for (const auto& p : actual.named_metrics()) {
-    auto it = expected.named_metrics().find(p.first);
-    ASSERT_NE(it, expected.named_metrics().end());
-    EXPECT_EQ(it->second, p.second);
-  }
+TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
+  RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetCpuUtilization(0.5)
+                                   .SetMemUtilization(0.75)
+                                   .SetQps(0.25)
+                                   .SetEps(0.1)
+                                   .SetRequestCost("foo", -0.8)
+                                   .SetRequestCost("bar", 1.4)
+                                   .SetUtilization("baz", 1.0)
+                                   .SetUtilization("quux", 0.9)
+                                   .SetNamedMetrics("metric0", 3.0)
+                                   .SetNamedMetrics("metric1", -1.0)
+                                   .Build(),
+                               OrcaLoadReportBuilder()
+                                   .SetCpuUtilization(0.5)
+                                   .SetMemUtilization(0.75)
+                                   .SetQps(0.25)
+                                   .SetEps(0.1)
+                                   .SetRequestCost("foo", -0.8)
+                                   .SetRequestCost("bar", 1.4)
+                                   .SetUtilization("baz", 1.0)
+                                   .SetUtilization("quux", 0.9)
+                                   .SetNamedMetrics("metric0", 3.0)
+                                   .SetNamedMetrics("metric1", -1.0)
+                                   .Build());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
+  RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetCpuUtilization(-0.1)
+                                   .SetMemUtilization(-0.2)
+                                   .SetQps(-3)
+                                   .SetEps(-4)
+                                   .SetRequestCost("foo", -5)
+                                   .SetUtilization("bar", -0.6)
+                                   .SetNamedMetrics("baz", -0.7)
+                                   .Build(),
+                               OrcaLoadReportBuilder()
+                                   .SetRequestCost("foo", -5)
+                                   .SetNamedMetrics("baz", -0.7)
+                                   .Build());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
+  RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetCpuUtilization(1.1)
+                                   .SetMemUtilization(2)
+                                   .SetQps(3)
+                                   .SetEps(4)
+                                   .SetUtilization("foo", 5)
+                                   .Build(),
+                               OrcaLoadReportBuilder()
+                                   .SetCpuUtilization(1.1)
+                                   .SetQps(3)
+                                   .SetEps(4)
+                                   .Build());
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
@@ -2745,91 +2825,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
             channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(total_num_rpcs, num_trailers_intercepted());
 }
-
-struct ClientLbLoadReportTestParams {
-  OrcaLoadReport reported;
-  OrcaLoadReport received;
-  std::string test_name;
-};
-
-class ClientLbLoadReportTest : public ClientLbInterceptTrailingMetadataTest,
-                               public ::testing::WithParamInterface<
-                                   struct ClientLbLoadReportTestParams> {};
-
-TEST_P(ClientLbLoadReportTest, Basic) {
-  const int kNumServers = 1;
-  const int kNumRpcs = 10;
-  StartServers(kNumServers);
-  auto response_generator = BuildResolverResponseGenerator();
-  auto channel =
-      BuildChannel("intercept_trailing_metadata_lb", response_generator);
-  auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts());
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub, false, &GetParam().reported);
-    auto actual = backend_load_report();
-    ASSERT_TRUE(actual.has_value());
-    CheckLoadReportAsExpected(*actual, GetParam().received);
-  }
-  // Check LB policy name for the channel.
-  EXPECT_EQ("intercept_trailing_metadata_lb",
-            channel->GetLoadBalancingPolicyName());
-  EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    Test, ClientLbLoadReportTest,
-    ::testing::ValuesIn<ClientLbLoadReportTestParams>(
-        {{OrcaLoadReportBuilder()
-              .SetCpuUtilization(0.5)
-              .SetMemUtilization(0.75)
-              .SetQps(0.25)
-              .SetEps(0.1)
-              .SetRequestCost("foo", -0.8)
-              .SetRequestCost("bar", 1.4)
-              .SetUtilization("baz", 1.0)
-              .SetUtilization("quux", 0.9)
-              .SetNamedMetrics("metric0", 3.0)
-              .SetNamedMetrics("metric1", -1.0)
-              .Build(),
-          OrcaLoadReportBuilder()
-              .SetCpuUtilization(0.5)
-              .SetMemUtilization(0.75)
-              .SetQps(0.25)
-              .SetEps(0.1)
-              .SetRequestCost("foo", -0.8)
-              .SetRequestCost("bar", 1.4)
-              .SetUtilization("baz", 1.0)
-              .SetUtilization("quux", 0.9)
-              .SetNamedMetrics("metric0", 3.0)
-              .SetNamedMetrics("metric1", -1.0)
-              .Build(),
-          "ValidValues"},
-         {OrcaLoadReportBuilder().SetCpuUtilization(-1).SetQps(0.25).Build(),
-          OrcaLoadReportBuilder().SetQps(0.25).Build(),
-          "CpuUtilizationNegative"},
-         {OrcaLoadReportBuilder().SetCpuUtilization(1.5).SetQps(0.25).Build(),
-          OrcaLoadReportBuilder().SetCpuUtilization(1.5).SetQps(0.25).Build(),
-          "CpuUtilizationAboveOne"},
-         {OrcaLoadReportBuilder().SetMemUtilization(-1.5).SetQps(0.25).Build(),
-          OrcaLoadReportBuilder().SetQps(0.25).Build(),
-          "MemUtilizationNegative"},
-         {OrcaLoadReportBuilder().SetMemUtilization(1.5).SetQps(0.25).Build(),
-          OrcaLoadReportBuilder().SetQps(0.25).Build(),
-          "MemUtilizationAboveOne"},
-         {OrcaLoadReportBuilder().SetQps(-1.0).SetEps(0.25).Build(),
-          OrcaLoadReportBuilder().SetEps(0.25).Build(), "QpsNegative"},
-         {OrcaLoadReportBuilder().SetQps(1.0).SetEps(-0.25).Build(),
-          OrcaLoadReportBuilder().SetQps(1.0).Build(), "EpsNegative"},
-         {OrcaLoadReportBuilder()
-              .SetUtilization("foo", -1.0)
-              .SetUtilization("bar", 0.9)
-              .SetUtilization("baz", 1.9)
-              .Build(),
-          OrcaLoadReportBuilder().SetUtilization("bar", 0.9).Build(),
-          "UtilizationOutOfRange"}}),
-    [](const ::testing::TestParamInfo<ClientLbLoadReportTest::ParamType>&
-           info) { return info.param.test_name; });
 
 //
 // tests that address attributes from the resolver are visible to the LB policy
