@@ -89,9 +89,9 @@ def set_gcp_observability_config(object py_config) -> bool:
   return True
 
 
-def create_client_call_tracer_capsule(bytes method, bytes trace_id,
+def create_client_call_tracer_capsule(bytes method_name, bytes trace_id,
                                       bytes parent_span_id=b'') -> cpython.PyObject:
-  cdef char* c_method = cpython.PyBytes_AsString(method)
+  cdef char* c_method = cpython.PyBytes_AsString(method_name)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
   cdef char* c_parent_span_id = cpython.PyBytes_AsString(parent_span_id)
 

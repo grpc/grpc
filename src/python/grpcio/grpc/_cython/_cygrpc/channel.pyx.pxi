@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import grpc
+from grpc import _observability
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -73,10 +73,9 @@ cdef class _CallState:
     self.due = set()
 
   def maybe_delete_call_tracer(self) -> None:
-    observability = get_grpc_observability()
-    if not (observability and observability._observability_enabled()):
+    if not self.call_tracer_capsule:
       return
-    observability.delete_client_call_tracer(self.call_tracer_capsule)
+    _observability.delete_call_tracer(self.call_tracer_capsule)
 
 cdef class _ChannelState:
 
