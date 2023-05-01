@@ -288,9 +288,6 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   context_.AddSpanAnnotation(annotation, {});
 }
 
-void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
-    RecordMetadataInformation(absl::string_view metadata_info) {}
-
 //
 // OpenCensusCallTracer
 //
