@@ -208,7 +208,8 @@ ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const FilterConfig* filter_config_override,
+    absl::string_view /*filter_name*/) const {
   Json config = filter_config_override != nullptr
                     ? filter_config_override->config
                     : hcm_filter_config.config;

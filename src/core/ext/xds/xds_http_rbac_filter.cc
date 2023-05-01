@@ -546,12 +546,15 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const FilterConfig* filter_config_override,
+    absl::string_view filter_name) const {
   Json policy_json = filter_config_override != nullptr
                          ? filter_config_override->config
                          : hcm_filter_config.config;
-  // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
+  auto json_object = policy_json.object();
+  json_object.emplace("filter_name", std::string(filter_name));
+  // The policy JSON may be empty other than the filter name, that's allowed.
+  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(Json(json_object))};
 }
 
 }  // namespace grpc_core
