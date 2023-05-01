@@ -159,7 +159,7 @@ class Json {
   Type type() const {
     struct ValueFunctor {
       Json::Type operator()(const absl::monostate&) { return Type::kNull; }
-      Json::Type operator()(bool value) { return Type::kBoolean; }
+      Json::Type operator()(bool) { return Type::kBoolean; }
       Json::Type operator()(const NumberValue&) { return Type::kNumber; }
       Json::Type operator()(const std::string&) { return Type::kString; }
       Json::Type operator()(const Object&) { return Type::kObject; }
