@@ -2335,7 +2335,8 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
   // Internal API to allow first-party LB policies to access per-call
   // attributes set by the ConfigSelector.
-  absl::string_view GetCallAttribute(UniqueTypeName type) override;
+  grpc_core::ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2420,13 +2421,12 @@ class ClientChannel::LoadBalancedCall::Metadata
 // ClientChannel::LoadBalancedCall::LbCallState
 //
 
-absl::string_view
+grpc_core::ServiceConfigCallData::CallAttributeInterface*
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
-    UniqueTypeName type) {
+    UniqueTypeName type) const {
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       lb_call_->call_context()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  return ServiceConfigCallData::StringViewAttribute::FromCallData(
-      service_config_call_data, type);
+  return service_config_call_data->GetCallAttribute(type);
 }
 
 //

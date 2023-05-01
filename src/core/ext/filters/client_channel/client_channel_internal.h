@@ -48,7 +48,8 @@ namespace grpc_core {
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+  virtual grpc_core::ServiceConfigCallData::CallAttributeInterface*
+  GetCallAttribute(UniqueTypeName type) const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.

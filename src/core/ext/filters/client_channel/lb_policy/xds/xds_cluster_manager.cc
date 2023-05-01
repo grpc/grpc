@@ -123,8 +123,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
   class ClusterPicker : public SubchannelPicker {
    public:
     // Maintains a map of cluster names to pickers.
-    using ClusterMap =
-        std::map<std::string /*cluster_name*/, RefCountedPtr<SubchannelPicker>>;
+    using ClusterMap = std::map<std::string /*cluster_name*/,
+                                RefCountedPtr<SubchannelPicker>, std::less<>>;
 
     // It is required that the keys of cluster_map have to live at least as long
     // as the ClusterPicker instance.
@@ -230,9 +230,12 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto cluster_name =
-      call_state->GetCallAttribute(XdsClusterAttributeTypeName());
-  auto it = cluster_map_.find(std::string(cluster_name));
+  auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
+      call_state->GetCallAttribute(XdsClusterAttribute::TypeName()));
+  auto cluster_name = cluster_name_attribute != nullptr
+                          ? cluster_name_attribute->cluster()
+                          : absl::string_view();
+  auto it = cluster_map_.find(cluster_name);
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);
   }

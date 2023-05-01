@@ -46,30 +46,6 @@ class ServiceConfigCallData {
     virtual UniqueTypeName type() const = 0;
   };
 
-  class StringViewAttribute : public CallAttributeInterface {
-   public:
-    StringViewAttribute(UniqueTypeName type, absl::string_view value)
-        : type_(type), value_(value) {}
-
-    UniqueTypeName type() const override { return type_; }
-
-    absl::string_view value() { return value_; }
-
-    static absl::string_view FromCallData(const ServiceConfigCallData* data,
-                                          UniqueTypeName type) {
-      auto value =
-          static_cast<StringViewAttribute*>(data->GetCallAttribute(type));
-      if (value == nullptr) {
-        return absl::string_view();
-      }
-      return value->value();
-    }
-
-   private:
-    UniqueTypeName type_;
-    absl::string_view value_;
-  };
-
   using CallAttributes = std::map<UniqueTypeName, CallAttributeInterface*>;
 
   ServiceConfigCallData() : method_configs_(nullptr) {}

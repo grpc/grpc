@@ -5176,6 +5176,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_service_config",
         "grpc_xds_client",
+        "grpc_resolver_xds_header",
         "iomgr_fwd",
         "match",
         "pollset_set",
