@@ -289,9 +289,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
-    RecordMetadataInformation(absl::string_view metadata_info) {
-  RecordAnnotation(metadata_info);
-}
+    RecordMetadataInformation(absl::string_view metadata_info) {}
 
 //
 // OpenCensusCallTracer
