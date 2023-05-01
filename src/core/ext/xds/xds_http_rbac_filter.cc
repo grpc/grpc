@@ -19,6 +19,7 @@
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <string>
