@@ -225,7 +225,8 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const FilterConfig* filter_config_override,
+    absl::string_view /*filter_name*/) const {
   Json policy_json = filter_config_override != nullptr
                          ? filter_config_override->config
                          : hcm_filter_config.config;

@@ -30,8 +30,10 @@
 
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_core {
 
@@ -83,6 +85,15 @@ void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
   cq_verifier_.reset();
   fixture_.reset();
+// TODO(hork): locate the windows leak so we can enable end2end experiments.
+#ifndef GPR_WINDOWS
+  // Creating an EventEngine requires gRPC initialization, which the NoOp test
+  // does not do. Skip the EventEngine check if unnecessary.
+  if (grpc_is_initialized()) {
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
+  }
+#endif
   if (do_shutdown) {
     grpc_shutdown_blocking();
     // This will wait until gRPC shutdown has actually happened to make sure
