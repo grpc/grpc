@@ -82,11 +82,11 @@
 namespace grpc_core {
 namespace testing {
 
-using CallAttributes = std::vector<
-    std::unique_ptr<grpc_core::ServiceConfigCallData::CallAttributeInterface>>;
-
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
+  using CallAttributes = std::vector<
+      std::unique_ptr<ServiceConfigCallData::CallAttributeInterface>>;
+
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
   class SubchannelState {
@@ -881,13 +881,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Checks that the picker has round-robin behavior over the specified
   // set of addresses.
-  void ExpectRoundRobinPicks(
-      LoadBalancingPolicy::SubchannelPicker* picker,
-      absl::Span<const absl::string_view> addresses,
-      std::vector<std::unique_ptr<
-          grpc_core::ServiceConfigCallData::CallAttributeInterface>>
-          call_attributes = {},
-      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
+                             absl::Span<const absl::string_view> addresses,
+                             const CallAttributes& call_attributes = {},
+                             size_t num_iterations = 3,
+                             SourceLocation location = SourceLocation()) {
     auto picks =
         GetCompletePicks(picker, num_iterations * addresses.size(),
                          std::move(call_attributes), nullptr, location);

@@ -112,9 +112,11 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(update, policy_.get()), absl::OkStatus());
   }
 
-  CallAttributes MakeOverrideHostAttribute(absl::string_view host) {
+  LoadBalancingPolicyTest::CallAttributes MakeOverrideHostAttribute(
+      absl::string_view host) {
     CallAttributes override_host_attributes;
-    override_host_attributes.emplace_back(new XdsOverrideHostAttribute(host));
+    override_host_attributes.emplace_back(
+        std::make_unique<XdsOverrideHostAttribute>(host));
     return override_host_attributes;
   }
 
