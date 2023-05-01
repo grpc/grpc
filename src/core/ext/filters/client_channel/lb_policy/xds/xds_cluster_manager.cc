@@ -232,9 +232,10 @@ XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
       call_state->GetCallAttribute(XdsClusterAttribute::TypeName()));
-  auto cluster_name = cluster_name_attribute != nullptr
-                          ? cluster_name_attribute->cluster()
-                          : absl::string_view();
+  absl::string_view cluster_name;
+  if (cluster_name_attribute != nullptr) {
+    cluster_name = cluster_name_attribute->cluster();
+  }
   auto it = cluster_map_.find(cluster_name);
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);

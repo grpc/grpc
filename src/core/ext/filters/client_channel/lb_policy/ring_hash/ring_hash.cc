@@ -347,8 +347,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* hash_attribute = static_cast<RequestHashAttribute*>(
       call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
-  auto hash = hash_attribute != nullptr ? hash_attribute->request_hash()
-                                        : absl::string_view();
+  absl::string_view hash;
+  if (hash_attribute != nullptr) {
+    hash = hash_attribute->request_hash();
+  }
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(
