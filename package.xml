@@ -44,6 +44,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_audit_logging.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
@@ -928,6 +929,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_audit_logger_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_audit_logger_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap_grpc.cc" role="src" />

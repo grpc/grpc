@@ -44,6 +44,9 @@
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_audit_logger_registry.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
@@ -392,7 +395,30 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   return Json::FromObject(std::move(policy_json));
 }
 
-Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
+Json ParseAuditLoggerConfigsToJson(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_rbac_v3_RBAC_AuditLoggingOptions* audit_logging_options,
+    ValidationErrors* errors) {
+  Json::Array logger_configs_json;
+  size_t size;
+  const auto& registry =
+      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .audit_logger_registry();
+  const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const*
+      logger_configs =
+          envoy_config_rbac_v3_RBAC_AuditLoggingOptions_logger_configs(
+              audit_logging_options, &size);
+  for (size_t i = 0; i < size; ++i) {
+    ValidationErrors::ScopedField field(
+        errors, absl::StrCat(".logger_configs[", i, "]"));
+    logger_configs_json.emplace_back(registry.ConvertXdsAuditLoggerConfig(
+        context, logger_configs[i], errors));
+  }
+  return Json::FromArray(logger_configs_json);
+}
+
+Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
+                         const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
                          ValidationErrors* errors) {
   Json::Object rbac_json;
   const auto* rules = envoy_extensions_filters_http_rbac_v3_RBAC_rules(rbac);
@@ -424,6 +450,33 @@ Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
       }
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));
+    }
+    // Flatten the nested messages defined in rbac.proto
+    if (envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
+      ValidationErrors::ScopedField field(errors, ".audit_logging_options");
+      const auto* audit_logging_options =
+          envoy_config_rbac_v3_RBAC_audit_logging_options(rules);
+      int32_t audit_condition =
+          envoy_config_rbac_v3_RBAC_AuditLoggingOptions_audit_condition(
+              audit_logging_options);
+      switch (audit_condition) {
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_NONE:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_DENY:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_ALLOW:
+        case envoy_config_rbac_v3_RBAC_AuditLoggingOptions_ON_DENY_AND_ALLOW:
+          inner_rbac_json.emplace("audit_condition",
+                                  Json::FromNumber(audit_condition));
+          break;
+        default:
+          ValidationErrors::ScopedField field(errors, ".audit_condition");
+          errors->AddError("invalid audit condition");
+      }
+      if (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_logger_configs(
+              audit_logging_options)) {
+        inner_rbac_json.emplace("audit_loggers",
+                                ParseAuditLoggerConfigsToJson(
+                                    context, audit_logging_options, errors));
+      }
     }
     rbac_json.emplace("rules", Json::FromObject(std::move(inner_rbac_json)));
   }
@@ -461,7 +514,8 @@ XdsHttpRbacFilter::GenerateFilterConfig(
     errors->AddError("could not parse HTTP RBAC filter config");
     return absl::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), ParseHttpRbacToJson(rbac, errors)};
+  return FilterConfig{ConfigProtoName(),
+                      ParseHttpRbacToJson(context, rbac, errors)};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
@@ -489,7 +543,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
     rbac_json = Json::FromObject({});
   } else {
     ValidationErrors::ScopedField field(errors, ".rbac");
-    rbac_json = ParseHttpRbacToJson(rbac, errors);
+    rbac_json = ParseHttpRbacToJson(context, rbac, errors);
   }
   return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
@@ -506,12 +560,17 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const FilterConfig* filter_config_override,
+    absl::string_view filter_name) const {
   const Json& policy_json = filter_config_override != nullptr
                                 ? filter_config_override->config
                                 : hcm_filter_config.config;
-  // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
+  auto json_object = policy_json.object();
+  json_object.emplace("filter_name",
+                      Json::FromString(std::string(filter_name)));
+  // The policy JSON may be empty other than the filter name, that's allowed.
+  return ServiceConfigJsonEntry{"rbacPolicy",
+                                JsonDump(Json::FromObject(json_object))};
 }
 
 }  // namespace grpc_core

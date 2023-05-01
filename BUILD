@@ -23,6 +23,7 @@ load(
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 licenses(["reciprocal"])
 
@@ -57,6 +58,16 @@ config_setting(
 config_setting(
     name = "grpc_experiments_are_final_define",
     values = {"define": "grpc_experiments_are_final=true"},
+)
+
+bool_flag(
+    name = "disable_grpc_rls",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_no_rls_flag",
+    flag_values = {":disable_grpc_rls": "true"},
 )
 
 # When gRPC is build as shared library, binder transport code might still
@@ -110,6 +121,7 @@ selects.config_setting_group(
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
+        ":grpc_no_rls_flag",
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
         ":android",
@@ -220,6 +232,7 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
+    "include/grpc/grpc_audit_logging.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -388,6 +401,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
+    "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -790,6 +804,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_public_hdrs",
     hdrs = GRPC_PUBLIC_HDRS,
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -1734,6 +1752,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
@@ -1886,6 +1905,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",

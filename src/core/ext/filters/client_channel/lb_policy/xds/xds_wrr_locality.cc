@@ -346,14 +346,6 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // xds_wrr_locality was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_wrr_locality policy requires "
-          "configuration.  Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsWrrLocalityLbConfig>(
         json, JsonArgs(),
         "errors validating xds_wrr_locality LB policy config");

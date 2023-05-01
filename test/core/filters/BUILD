@@ -132,7 +132,11 @@ grpc_proto_fuzzer(
     ],
     language = "C++",
     proto = "filter_fuzzer.proto",
-    tags = ["no_windows"],
+    # TODO(ctiller): remove noautofuzz tag when this fuzzer is ready to be load bearing.
+    tags = [
+        "no_windows",
+        "noautofuzz",
+    ],
     uses_polling = False,
     deps = [
         "//:config",

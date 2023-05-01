@@ -77,8 +77,7 @@ TraceFlag grpc_lb_wrr_trace(false, "weighted_round_robin_lb");
 
 namespace {
 
-constexpr absl::string_view kWeightedRoundRobin =
-    "weighted_round_robin_experimental";
+constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
@@ -993,12 +992,6 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:weighted_round_robin policy "
-          "requires configuration. Please use loadBalancingConfig field of "
-          "service config instead.");
-    }
     return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
         json, JsonArgs(),
         "errors validating weighted_round_robin LB policy config");
