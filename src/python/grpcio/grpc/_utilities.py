@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Callable, Dict, Optional, Sequence
+from typing import Callable, Mapping, Optional, Sequence
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
@@ -45,10 +45,10 @@ class RpcMethodHandler(
 
 class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _name: str
-    _method_handlers: Dict[str, grpc.RpcMethodHandler]
+    _method_handlers: Mapping[str, grpc.RpcMethodHandler]
 
     def __init__(self, service: str,
-                 method_handlers: Dict[str, grpc.RpcMethodHandler]):
+                 method_handlers: Mapping[str, grpc.RpcMethodHandler]):
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
