@@ -807,7 +807,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (picker == nullptr) {
       return absl::nullopt;
     }
-    auto pick_result = DoPick(picker, std::move(call_attributes));
+    auto pick_result = DoPick(picker, call_attributes);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
@@ -887,9 +887,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                              const CallAttributes& call_attributes = {},
                              size_t num_iterations = 3,
                              SourceLocation location = SourceLocation()) {
-    auto picks =
-        GetCompletePicks(picker, num_iterations * addresses.size(),
-                         std::move(call_attributes), nullptr, location);
+    auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
+                                  call_attributes, nullptr, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
     EXPECT_TRUE(PicksAreRoundRobin(addresses, *picks))
         << "  Actual: " << absl::StrJoin(*picks, ", ")
