@@ -32,7 +32,7 @@ class _UnaryUnary(grpc_testing.UnaryUnaryChannelRpc):
                               initial_metadata: Optional[MetadataType]) -> None:
         self._rpc_state.send_initial_metadata(initial_metadata)
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> None:
         self._rpc_state.cancelled()
 
     def terminate(self, response: Any, trailing_metadata: MetadataType,
@@ -54,7 +54,7 @@ class _UnaryStream(grpc_testing.UnaryStreamChannelRpc):
     def send_response(self, response: Any) -> None:
         self._rpc_state.send_response(response)
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> None:
         self._rpc_state.cancelled()
 
     def terminate(self, trailing_metadata: MetadataType, code: grpc.StatusCode,
@@ -78,7 +78,7 @@ class _StreamUnary(grpc_testing.StreamUnaryChannelRpc):
     def requests_closed(self) -> bool:
         return self._rpc_state.requests_closed()
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> None:
         self._rpc_state.cancelled()
 
     def terminate(self, response: Any, trailing_metadata: MetadataType,
@@ -106,7 +106,7 @@ class _StreamStream(grpc_testing.StreamStreamChannelRpc):
     def requests_closed(self) -> bool:
         return self._rpc_state.requests_closed()
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> None:
         self._rpc_state.cancelled()
 
     def terminate(self, trailing_metadata: MetadataType, code: grpc.StatusCode,
