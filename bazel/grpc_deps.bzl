@@ -500,11 +500,11 @@ def grpc_deps():
     if "com_github_cncf_udpa" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_udpa",
-            sha256 = "fcd0b50c013452fda9c5e28c131c287b655ebb361271a76ad3bffc08b3ecd82e",
-            strip_prefix = "xds-32f1caf87195bf3390061c29f18987e51ca56a88",
+            sha256 = "aef36c29bd0ef95509f7f52693dbdafe4a2c2c5d1eb406bf68e6364a0d12e11b",
+            strip_prefix = "xds-4003588d1b747e37e911baa5a9c1c07fde4ca518",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz",
-                "https://github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz",
+                "https://github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz",
             ],
         )
 

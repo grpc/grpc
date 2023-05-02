@@ -34,7 +34,10 @@
 using grpc_core::BackendMetricData;
 
 namespace {
-// All utilization values must be in [0, 1].
+// CPU utilization values must be in [0, infy).
+bool IsCpuUtilizationValid(double cpu) { return cpu >= 0.0; }
+
+// Other utilization values must be in [0, 1].
 bool IsUtilizationValid(double utilization) {
   return utilization >= 0.0 && utilization <= 1.0;
 }
@@ -65,7 +68,7 @@ void ServerMetricRecorder::UpdateBackendMetricDataState(
 }
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsCpuUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization rejected: %f", this, value);
     }
@@ -220,7 +223,7 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
 
 experimental::CallMetricRecorder&
 BackendMetricState::RecordCpuUtilizationMetric(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsCpuUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this, value);
     }
@@ -330,7 +333,7 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
   }
   // Only overwrite if the value is set i.e. in the valid range.
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
-  if (IsUtilizationValid(cpu)) {
+  if (IsCpuUtilizationValid(cpu)) {
     data.cpu_utilization = cpu;
   }
   const double mem = mem_utilization_.load(std::memory_order_relaxed);

@@ -51,16 +51,16 @@ TEST_P(WrrTest, Basic) {
   ScopedExperimentalEnvVar env_var2("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   CreateAndStartBackends(3);
   // Expected weights = qps / (cpu_util + (eps/qps)) =
-  //   1/(0.4+0.4) : 1/(0.2+0.2) : 1/(0.1+0.1) = 1:2:4
+  //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
   backends_[0]->server_metric_recorder()->SetQps(100);
-  backends_[0]->server_metric_recorder()->SetEps(40);
-  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.4);
+  backends_[0]->server_metric_recorder()->SetEps(20);
+  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.2);
   backends_[1]->server_metric_recorder()->SetQps(100);
-  backends_[1]->server_metric_recorder()->SetEps(20);
-  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.2);
-  backends_[2]->server_metric_recorder()->SetQps(100);
-  backends_[2]->server_metric_recorder()->SetEps(10);
-  backends_[2]->server_metric_recorder()->SetCpuUtilization(0.1);
+  backends_[1]->server_metric_recorder()->SetEps(30);
+  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.3);
+  backends_[2]->server_metric_recorder()->SetQps(200);
+  backends_[2]->server_metric_recorder()->SetEps(20);
+  backends_[2]->server_metric_recorder()->SetCpuUtilization(1.5);
   auto cluster = default_cluster_;
   WrrLocality wrr_locality;
   wrr_locality.mutable_endpoint_picking_policy()
@@ -78,14 +78,14 @@ TEST_P(WrrTest, Basic) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   size_t num_picks = 0;
   SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
-    if (++num_picks == 7) {
+    if (++num_picks == 13) {
       gpr_log(GPR_INFO, "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
               backends_[0]->backend_service()->request_count(),
               backends_[1]->backend_service()->request_count(),
               backends_[2]->backend_service()->request_count());
-      if (backends_[0]->backend_service()->request_count() == 1 &&
-          backends_[1]->backend_service()->request_count() == 2 &&
-          backends_[2]->backend_service()->request_count() == 4) {
+      if (backends_[0]->backend_service()->request_count() == 6 &&
+          backends_[1]->backend_service()->request_count() == 4 &&
+          backends_[2]->backend_service()->request_count() == 3) {
         return false;
       }
       num_picks = 0;
