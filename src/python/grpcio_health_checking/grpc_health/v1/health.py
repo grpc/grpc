@@ -17,7 +17,7 @@ import collections
 from concurrent import futures
 import sys
 import threading
-from typing import Any, Callable, Mapping, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -88,8 +88,8 @@ def _watcher_to_send_response_callback_adapter(
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
     _lock: threading.RLock
-    _server_status: Mapping[str, int]
-    _send_response_callbacks: Mapping[str, Set[Callable[
+    _server_status: Dict[str, int]
+    _send_response_callbacks: Dict[str, Set[Callable[
         [_health_pb2.HealthCheckResponse], None]]]
     _gracefully_shutting_down: bool
 
