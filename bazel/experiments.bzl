@@ -24,6 +24,7 @@ EXPERIMENTS = {
             "transport_supplies_client_latency",
         ],
         "core_end2end_test": [
+            "event_engine_client",
             "promise_based_client_call",
             "promise_based_server_call",
         ],

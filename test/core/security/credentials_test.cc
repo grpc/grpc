@@ -2350,7 +2350,7 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
 
 TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2392,7 +2392,7 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",         // type;
       "audience_!@#$",            // audience;
@@ -2421,7 +2421,7 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
 TEST(CredentialsTest,
      TestExternalAccountCredsSuccessWithServiceAccountImpersonation) {
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
@@ -2453,7 +2453,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
@@ -2485,7 +2485,7 @@ TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
 TEST(CredentialsTest,
      TestExternalAccountCredsFailureInvalidServiceAccountImpersonationUrl) {
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",                           // type;
       "audience",                                   // audience;
@@ -2518,7 +2518,7 @@ TEST(CredentialsTest,
 TEST(CredentialsTest,
      TestExternalAccountCredsFailureTokenExchangeResponseMissingAccessToken) {
   ExecCtx exec_ctx;
-  Json credential_source("");
+  Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;

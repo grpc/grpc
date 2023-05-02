@@ -248,8 +248,8 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
         FindFilterConfigOverride(http_filter.name, vhost, route,
                                  cluster_weight);
     // Generate service config for filter.
-    auto method_config_field =
-        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
+    auto method_config_field = filter_impl->GenerateServiceConfig(
+        http_filter.config, config_override, http_filter.name);
     if (!method_config_field.ok()) {
       return absl::FailedPreconditionError(absl::StrCat(
           "failed to generate method config for HTTP filter ", http_filter.name,

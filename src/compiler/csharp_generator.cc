@@ -100,6 +100,14 @@ void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer* printer) {
       "null)]\n");
 }
 
+void GenerateObsoleteAttribute(grpc::protobuf::io::Printer* printer,
+                               bool is_deprecated) {
+  // Mark the code deprecated using the [ObsoleteAttribute] attribute.
+  if (is_deprecated) {
+    printer->Print("[global::System.ObsoleteAttribute]\n");
+  }
+}
+
 template <typename DescriptorType>
 bool GenerateDocCommentBody(grpc::protobuf::io::Printer* printer,
                             const DescriptorType* descriptor) {
@@ -439,6 +447,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
       "servicename", GetServiceClassName(service));
+  GenerateObsoleteAttribute(out, service->options().deprecated());
   out->Print(
       "[grpc::BindServiceMethod(typeof($classname$), "
       "\"BindService\")]\n",
@@ -450,6 +459,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
     GenerateDocCommentServerMethod(out, method);
+    GenerateObsoleteAttribute(out, method->options().deprecated());
     GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
@@ -475,6 +485,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
 void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print("/// <summary>Client for $servicename$</summary>\n", "servicename",
              GetServiceClassName(service));
+  GenerateObsoleteAttribute(out, service->options().deprecated());
   out->Print("public partial class $name$ : grpc::ClientBase<$name$>\n", "name",
              GetClientClassName(service));
   out->Print("{\n");
@@ -525,9 +536,11 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    const bool is_deprecated = method->options().deprecated();
     if (!method->client_streaming() && !method->server_streaming()) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
+      GenerateObsoleteAttribute(out, is_deprecated);
       GenerateGeneratedCodeAttribute(out);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
@@ -551,6 +564,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
       // overload taking CallOptions as a param
       GenerateDocCommentClientMethod(out, method, true, true);
+      GenerateObsoleteAttribute(out, is_deprecated);
       GenerateGeneratedCodeAttribute(out);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
@@ -573,6 +587,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     GenerateDocCommentClientMethod(out, method, false, false);
+    GenerateObsoleteAttribute(out, is_deprecated);
     GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
@@ -598,6 +613,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
     // overload taking CallOptions as a param
     GenerateDocCommentClientMethod(out, method, false, true);
+    GenerateObsoleteAttribute(out, is_deprecated);
     GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
@@ -739,6 +755,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
 
+  GenerateObsoleteAttribute(out, service->options().deprecated());
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
@@ -801,7 +818,7 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
-    out.Print("#pragma warning disable 0414, 1591, 8981\n");
+    out.Print("#pragma warning disable 0414, 1591, 8981, 0612\n");
 
     out.Print("#region Designer generated code\n");
     out.Print("\n");

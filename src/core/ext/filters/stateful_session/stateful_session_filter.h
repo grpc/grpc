@@ -30,11 +30,26 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
-UniqueTypeName XdsOverrideHostTypeName();
+class XdsOverrideHostAttribute
+    : public ServiceConfigCallData::CallAttributeInterface {
+ public:
+  static UniqueTypeName TypeName();
+
+  explicit XdsOverrideHostAttribute(absl::string_view host_name)
+      : host_name_(host_name) {}
+
+  absl::string_view host_name() const { return host_name_; }
+
+ private:
+  UniqueTypeName type() const override { return TypeName(); }
+
+  absl::string_view host_name_;
+};
 
 // A filter to provide cookie-based stateful session affinity.
 class StatefulSessionFilter : public ChannelFilter {
