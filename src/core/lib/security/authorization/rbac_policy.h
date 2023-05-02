@@ -172,22 +172,23 @@ struct Rbac {
   };
 
   Rbac() = default;
-  Rbac(Rbac::Action action, std::map<std::string, Policy> policies,
-       absl::string_view name);
+  Rbac(absl::string_view name, Rbac::Action action,
+       std::map<std::string, Policy> policies);
 
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
 
   std::string ToString() const;
 
-  Action action;
-  AuditCondition audit_condition;
-
-  std::map<std::string, Policy> policies;
-  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
-      logger_configs;
   // The authorization policy name or the HTTP RBAC filter name.
   std::string name;
+
+  Action action;
+  std::map<std::string, Policy> policies;
+
+  AuditCondition audit_condition;
+  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
+      logger_configs;
 };
 
 }  // namespace grpc_core

@@ -345,14 +345,14 @@ absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
                                          absl::string_view name) {
   auto policies_or = ParseRulesArray(json);
   if (!policies_or.ok()) return policies_or.status();
-  return Rbac(Rbac::Action::kDeny, std::move(policies_or.value()), name);
+  return Rbac(name, Rbac::Action::kDeny, std::move(policies_or.value()));
 }
 
 absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
                                           absl::string_view name) {
   auto policies_or = ParseRulesArray(json);
   if (!policies_or.ok()) return policies_or.status();
-  return Rbac(Rbac::Action::kAllow, std::move(policies_or.value()), name);
+  return Rbac(name, Rbac::Action::kAllow, std::move(policies_or.value()));
 }
 
 absl::StatusOr<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
@@ -420,7 +420,8 @@ ParseAuditLogger(const Json& json, size_t pos) {
   return result;
 }
 
-absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
+absl::Status ParseAuditLoggingOptions(const Json& json, RbacPolicies* rbacs) {
+  GPR_ASSERT(rbacs != nullptr);
   for (auto it = json.object().begin(); it != json.object().end(); ++it) {
     if (it->first == "audit_condition") {
       if (it->second.type() != Json::Type::kString) {
@@ -445,10 +446,10 @@ absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
         return absl::InvalidArgumentError(absl::StrFormat(
             "Unsupported \"audit_condition\" value %s.", condition));
       }
-      if (rbacs.deny_policy != absl::nullopt) {
-        rbacs.deny_policy->audit_condition = deny_condition;
+      if (rbacs->deny_policy.has_value()) {
+        rbacs->deny_policy->audit_condition = deny_condition;
       }
-      rbacs.allow_policy.audit_condition = allow_condition;
+      rbacs->allow_policy.audit_condition = allow_condition;
     } else if (it->first == "audit_loggers") {
       if (it->second.type() != Json::Type::kArray) {
         return absl::InvalidArgumentError("\"audit_loggers\" is not an array.");
@@ -463,19 +464,19 @@ absl::Status ParseAuditLoggingOptions(RbacPolicies& rbacs, const Json& json) {
         // return ok when marked as optional.
         if (result.value() != nullptr) {
           // Only move the logger config over if audit condition is not NONE.
-          if (rbacs.allow_policy.audit_condition !=
+          if (rbacs->allow_policy.audit_condition !=
               Rbac::AuditCondition::kNone) {
-            rbacs.allow_policy.logger_configs.push_back(
+            rbacs->allow_policy.logger_configs.push_back(
                 std::move(result.value()));
           }
-          if (rbacs.deny_policy != absl::nullopt &&
-              rbacs.deny_policy->audit_condition !=
+          if (rbacs->deny_policy.has_value() &&
+              rbacs->deny_policy->audit_condition !=
                   Rbac::AuditCondition::kNone) {
             // Parse again since it returns unique_ptr, but result should be ok
             // this time.
             auto result = ParseAuditLogger(loggers.at(i), i);
             GPR_ASSERT(result.ok());
-            rbacs.deny_policy->logger_configs.push_back(
+            rbacs->deny_policy->logger_configs.push_back(
                 std::move(result.value()));
           }
         }
@@ -553,7 +554,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
       return absl::InvalidArgumentError(
           "\"audit_logging_options\" is not an object.");
     }
-    absl::Status status = ParseAuditLoggingOptions(rbacs, it->second);
+    absl::Status status = ParseAuditLoggingOptions(it->second, &rbacs);
     if (!status.ok()) {
       return status;
     }

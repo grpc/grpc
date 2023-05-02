@@ -1146,7 +1146,6 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
       "  }"
       "}";
   auto rbacs = GenerateRbacPolicies(authz_policy);
-  std::cout << rbacs.status().message() << std::endl;
   ASSERT_TRUE(rbacs.ok());
   EXPECT_EQ(rbacs->allow_policy.name, "authz");
   EXPECT_EQ(rbacs->deny_policy->name, "authz");
@@ -1161,6 +1160,12 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
             "{\"foo\":true}");
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->ToString(),
             "{\"bar\":true}");
+  EXPECT_EQ(rbacs->allow_policy.ToString(),
+            "Rbac name=authz action=Allow audit_condition=OnAllow{\n{\n  "
+            "policy_name=allow_policy\n  Policy  {\n    Permissions{any}\n    "
+            "Principals{any}\n  }\n}\n{\n  "
+            "audit_logger=test_logger\n{\"foo\":true}\n}\n{\n  "
+            "audit_logger=test_logger\n{\"bar\":true}\n}\n}");
 }
 
 TEST_F(GenerateRbacPoliciesTest,
@@ -1200,7 +1205,7 @@ TEST_F(GenerateRbacPoliciesTest,
   EXPECT_EQ(rbacs->deny_policy->logger_configs.size(), 0);
 }
 
-TEST_F(GenerateRbacPoliciesTest, UnknownFIeldInAuditLoggingOptions) {
+TEST_F(GenerateRbacPoliciesTest, UnknownFieldInAuditLoggingOptions) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
