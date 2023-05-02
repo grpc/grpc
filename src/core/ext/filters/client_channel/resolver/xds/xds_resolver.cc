@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -48,7 +49,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 
 #define XXH_INLINE_ALL
