@@ -56,7 +56,7 @@ class Rpc(object):
             self._initial_metadata_sent = True
 
     def _call_back(self) -> None:
-        callbacks = tuple(self._callbacks)  # type: ignore[arg-type]
+        callbacks = tuple(self._callbacks)  # type: ignore
         self._callbacks = None
 
         def call_back() -> None:

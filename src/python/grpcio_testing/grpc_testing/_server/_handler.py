@@ -178,7 +178,7 @@ class _Handler(Handler):
                 if self._expiration_future is not None:
                     self._expiration_future.cancel()
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:  # type: ignore[union-attr]
+        for termination_callback in termination_callbacks:  # type: ignore
             termination_callback()
 
     def unary_response_termination(
@@ -224,7 +224,7 @@ class _Handler(Handler):
                 termination_callbacks = self._termination_callbacks
                 self._termination_callbacks = None
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:  # type: ignore[union-attr]
+        for termination_callback in termination_callbacks:  # type: ignore
             termination_callback()
 
     def set_expiration_future(self, expiration_future: grpc.Future) -> None:
