@@ -211,19 +211,19 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
     const std::string& locality_name = p.first;
     uint32_t weight = p.second;
     // Add weighted target entry.
-    weighted_targets[locality_name] = Json::Object{
-        {"weight", weight},
+    weighted_targets[locality_name] = Json::FromObject({
+        {"weight", Json::FromNumber(weight)},
         {"childPolicy", config->child_config()},
-    };
+    });
   }
-  Json child_config_json = Json::Array{
-      Json::Object{
+  Json child_config_json = Json::FromArray({
+      Json::FromObject({
           {"weighted_target_experimental",
-           Json::Object{
-               {"targets", std::move(weighted_targets)},
-           }},
-      },
-  };
+           Json::FromObject({
+               {"targets", Json::FromObject(std::move(weighted_targets))},
+           })},
+      }),
+  });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_wrr_locality_lb %p] generated child policy config: %s", this,

@@ -713,9 +713,11 @@ class XdsClientTest : public ::testing::Test {
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
-      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line() << ":\nexpected: "
-          << JsonDump(Json{xds_client_->bootstrap().node()->metadata()})
+      Json expected =
+          Json::FromObject(xds_client_->bootstrap().node()->metadata());
+      EXPECT_EQ(*metadata_json, expected)
+          << location.file() << ":" << location.line()
+          << ":\nexpected: " << JsonDump(expected)
           << "\nactual: " << JsonDump(*metadata_json);
     }
     EXPECT_EQ(request.node().user_agent_name(), "foo agent")

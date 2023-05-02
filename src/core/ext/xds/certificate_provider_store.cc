@@ -76,8 +76,8 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
     if (factory == nullptr) return;
     // Use plugin to validate and parse config.
     grpc_error_handle parse_error;
-    config =
-        factory->CreateCertificateProviderConfig(config_json, &parse_error);
+    config = factory->CreateCertificateProviderConfig(
+        Json::FromObject(std::move(config_json)), &parse_error);
     if (!parse_error.ok()) {
       errors->AddError(StatusToString(parse_error));
     }

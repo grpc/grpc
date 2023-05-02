@@ -486,7 +486,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
     if (protobuf_struct == nullptr) {
-      extension.value = Json::Object();  // Default to empty object.
+      extension.value = Json::FromObject({});  // Default to empty object.
     } else {
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {

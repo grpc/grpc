@@ -406,59 +406,68 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     return !missing_cluster;
   }
   Json::Object mechanism = {
-      {"clusterName", name},
-      {"max_concurrent_requests", state.update->max_concurrent_requests},
+      {"clusterName", Json::FromString(name)},
+      {"max_concurrent_requests",
+       Json::FromNumber(state.update->max_concurrent_requests)},
   };
   if (state.update->outlier_detection.has_value()) {
     auto& outlier_detection_update = state.update->outlier_detection.value();
     Json::Object outlier_detection;
     outlier_detection["interval"] =
-        outlier_detection_update.interval.ToJsonString();
-    outlier_detection["baseEjectionTime"] =
-        outlier_detection_update.base_ejection_time.ToJsonString();
-    outlier_detection["maxEjectionTime"] =
-        outlier_detection_update.max_ejection_time.ToJsonString();
+        Json::FromString(outlier_detection_update.interval.ToJsonString());
+    outlier_detection["baseEjectionTime"] = Json::FromString(
+        outlier_detection_update.base_ejection_time.ToJsonString());
+    outlier_detection["maxEjectionTime"] = Json::FromString(
+        outlier_detection_update.max_ejection_time.ToJsonString());
     outlier_detection["maxEjectionPercent"] =
-        outlier_detection_update.max_ejection_percent;
+        Json::FromNumber(outlier_detection_update.max_ejection_percent);
     if (outlier_detection_update.success_rate_ejection.has_value()) {
-      outlier_detection["successRateEjection"] = Json::Object{
+      outlier_detection["successRateEjection"] = Json::FromObject({
           {"stdevFactor",
-           outlier_detection_update.success_rate_ejection->stdev_factor},
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->stdev_factor)},
           {"enforcementPercentage",
-           outlier_detection_update.success_rate_ejection
-               ->enforcement_percentage},
+           Json::FromNumber(outlier_detection_update.success_rate_ejection
+                                ->enforcement_percentage)},
           {"minimumHosts",
-           outlier_detection_update.success_rate_ejection->minimum_hosts},
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->minimum_hosts)},
           {"requestVolume",
-           outlier_detection_update.success_rate_ejection->request_volume},
-      };
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->request_volume)},
+      });
     }
     if (outlier_detection_update.failure_percentage_ejection.has_value()) {
-      outlier_detection["failurePercentageEjection"] = Json::Object{
+      outlier_detection["failurePercentageEjection"] = Json::FromObject({
           {"threshold",
-           outlier_detection_update.failure_percentage_ejection->threshold},
+           Json::FromNumber(outlier_detection_update
+                                .failure_percentage_ejection->threshold)},
           {"enforcementPercentage",
-           outlier_detection_update.failure_percentage_ejection
-               ->enforcement_percentage},
+           Json::FromNumber(
+               outlier_detection_update.failure_percentage_ejection
+                   ->enforcement_percentage)},
           {"minimumHosts",
-           outlier_detection_update.failure_percentage_ejection->minimum_hosts},
-          {"requestVolume", outlier_detection_update
-                                .failure_percentage_ejection->request_volume},
-      };
+           Json::FromNumber(outlier_detection_update
+                                .failure_percentage_ejection->minimum_hosts)},
+          {"requestVolume",
+           Json::FromNumber(outlier_detection_update
+                                .failure_percentage_ejection->request_volume)},
+      });
     }
-    mechanism["outlierDetection"] = std::move(outlier_detection);
+    mechanism["outlierDetection"] =
+        Json::FromObject(std::move(outlier_detection));
   }
   Match(
       state.update->type,
       [&](const XdsClusterResource::Eds& eds) {
-        mechanism["type"] = "EDS";
+        mechanism["type"] = Json::FromString("EDS");
         if (!eds.eds_service_name.empty()) {
-          mechanism["edsServiceName"] = eds.eds_service_name;
+          mechanism["edsServiceName"] = Json::FromString(eds.eds_service_name);
         }
       },
       [&](const XdsClusterResource::LogicalDns& logical_dns) {
-        mechanism["type"] = "LOGICAL_DNS";
-        mechanism["dnsHostname"] = logical_dns.hostname;
+        mechanism["type"] = Json::FromString("LOGICAL_DNS");
+        mechanism["dnsHostname"] = Json::FromString(logical_dns.hostname);
       },
       [&](const XdsClusterResource::Aggregate&) { GPR_ASSERT(0); });
   if (state.update->lrs_load_reporting_server.has_value()) {
@@ -468,11 +477,11 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   if (!state.update->override_host_statuses.empty()) {
     Json::Array status_list;
     for (const auto& status : state.update->override_host_statuses) {
-      status_list.emplace_back(status.ToString());
+      status_list.emplace_back(Json::FromString(status.ToString()));
     }
-    mechanism["overrideHostStatus"] = std::move(status_list);
+    mechanism["overrideHostStatus"] = Json::FromArray(std::move(status_list));
   }
-  discovery_mechanisms->emplace_back(std::move(mechanism));
+  discovery_mechanisms->emplace_back(Json::FromObject(std::move(mechanism)));
   return true;
 }
 
@@ -514,15 +523,17 @@ void CdsLb::OnClusterChanged(const std::string& name,
     auto it = watchers_.find(config_->cluster());
     GPR_ASSERT(it != watchers_.end());
     // Construct config for child policy.
-    Json json = Json::Array{
-        Json::Object{
+    Json json = Json::FromArray({
+        Json::FromObject({
             {"xds_cluster_resolver_experimental",
-             Json::Object{
-                 {"xdsLbPolicy", it->second.update->lb_policy_config},
-                 {"discoveryMechanisms", std::move(discovery_mechanisms)},
-             }},
-        },
-    };
+             Json::FromObject({
+                 {"xdsLbPolicy",
+                  Json::FromArray(it->second.update->lb_policy_config)},
+                 {"discoveryMechanisms",
+                  Json::FromArray(std::move(discovery_mechanisms))},
+             })},
+        }),
+    });
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, JsonDump(json, /*indent=*/1).c_str());

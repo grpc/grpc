@@ -51,7 +51,7 @@ class RoundRobinLbPolicyConfigFactory
       const XdsResourceType::DecodeContext& /*context*/,
       absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
       int /*recursion_depth*/) override {
-    return Json::Object{{"round_robin", Json::Object()}};
+    return Json::Object{{"round_robin", Json::FromObject({})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -84,7 +84,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
             resource);
     if (enable_oob_load_report != nullptr &&
         google_protobuf_BoolValue_value(enable_oob_load_report)) {
-      config["enableOobLoadReport"] = true;
+      config["enableOobLoadReport"] = Json::FromBool(true);
     }
     // oob_reporting_period
     auto* duration_proto =
@@ -93,7 +93,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".oob_reporting_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["oobReportingPeriod"] = duration.ToJsonString();
+      config["oobReportingPeriod"] = Json::FromString(duration.ToJsonString());
     }
     // blackout_period
     duration_proto =
@@ -102,7 +102,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".blackout_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["blackoutPeriod"] = duration.ToJsonString();
+      config["blackoutPeriod"] = Json::FromString(duration.ToJsonString());
     }
     // weight_update_period
     duration_proto =
@@ -111,7 +111,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".weight_update_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["weightUpdatePeriod"] = duration.ToJsonString();
+      config["weightUpdatePeriod"] = Json::FromString(duration.ToJsonString());
     }
     // weight_expiration_period
     duration_proto =
@@ -120,7 +120,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".weight_expiration_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["weightExpirationPeriod"] = duration.ToJsonString();
+      config["weightExpirationPeriod"] =
+          Json::FromString(duration.ToJsonString());
     }
     // error_utilization_penalty
     auto* error_utilization_penalty =
@@ -133,9 +134,10 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       if (value < 0.0) {
         errors->AddError("value must be non-negative");
       }
-      config["errorUtilizationPenalty"] = value;
+      config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
-    return Json::Object{{"weighted_round_robin", std::move(config)}};
+    return Json::Object{
+        {"weighted_round_robin", Json::FromObject(std::move(config))}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -197,10 +199,10 @@ class RingHashLbPolicyConfigFactory
     }
     return Json::Object{
         {"ring_hash_experimental",
-         Json::Object{
-             {"minRingSize", min_ring_size},
-             {"maxRingSize", max_ring_size},
-         }},
+         Json::FromObject({
+             {"minRingSize", Json::FromNumber(min_ring_size)},
+             {"maxRingSize", Json::FromNumber(max_ring_size)},
+         })},
     };
   }
 
@@ -238,7 +240,8 @@ class WrrLocalityLbPolicyConfigFactory
         context, endpoint_picking_policy, errors, recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
-         Json::Object{{"childPolicy", std::move(child_policy)}}}};
+         Json::FromObject(
+             {{"childPolicy", Json::FromArray(std::move(child_policy))}})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -306,8 +309,9 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     if (serialized_value != nullptr) {
       auto config_factory_it = policy_config_factories_.find(extension->type);
       if (config_factory_it != policy_config_factories_.end()) {
-        return Json::Array{config_factory_it->second->ConvertXdsLbPolicyConfig(
-            this, context, *serialized_value, errors, recursion_depth)};
+        return Json::Array{Json::FromObject(
+            config_factory_it->second->ConvertXdsLbPolicyConfig(
+                this, context, *serialized_value, errors, recursion_depth))};
       }
     }
     // Check for custom LB policy type.
@@ -316,7 +320,7 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
         CoreConfiguration::Get().lb_policy_registry().LoadBalancingPolicyExists(
             extension->type, nullptr)) {
       return Json::Array{
-          Json::Object{{std::string(extension->type), std::move(*json)}}};
+          Json::FromObject({{std::string(extension->type), std::move(*json)}})};
     }
     // Unsupported type.  Continue to next entry.
   }

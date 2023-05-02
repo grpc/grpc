@@ -159,7 +159,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "{\"weighted_round_robin\":{"
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
-            "\"errorUtilizationPenalty\":5.000000,"
+            "\"errorUtilizationPenalty\":5,"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""

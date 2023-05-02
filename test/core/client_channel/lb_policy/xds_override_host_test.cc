@@ -51,13 +51,22 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"},
+      absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
+                                                                  "HEALTHY"},
       std::string child_policy = "round_robin") {
-    Json::Object child_policy_config = {{child_policy, Json::Object()}};
-    return MakeConfig(Json::Array{Json::Object{
-        {"xds_override_host_experimental",
-         Json::Object{{"childPolicy", Json::Array{{child_policy_config}}},
-                      {"overrideHostStatus", override_host_status}}}}});
+    Json child_policy_config =
+        Json::FromObject({{child_policy, Json::FromObject({})}});
+    Json::Array override_host_status_array;
+    for (const absl::string_view host_status : override_host_status) {
+      override_host_status_array.push_back(
+          Json::FromString(std::string(host_status)));
+    }
+    return MakeConfig(Json::FromArray({Json::FromObject(
+        {{"xds_override_host_experimental",
+          Json::FromObject(
+              {{"childPolicy", Json::FromArray({child_policy_config})},
+               {"overrideHostStatus",
+                Json::FromArray(override_host_status_array)}})}})}));
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -101,9 +110,10 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const std::pair<const absl::string_view,
                                  XdsHealthStatus::HealthStatus>>
           addresses_and_statuses,
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"}) {
+      absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
+                                                                  "HEALTHY"}) {
     LoadBalancingPolicy::UpdateArgs update;
-    update.config = MakeXdsOverrideHostConfig(std::move(override_host_status));
+    update.config = MakeXdsOverrideHostConfig(override_host_status);
     update.addresses.emplace();
     for (auto address_and_status : addresses_and_statuses) {
       update.addresses->push_back(MakeAddressWithHealthStatus(
