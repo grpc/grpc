@@ -23,7 +23,6 @@ import warnings
 
 import grpc
 from grpc._cython import cygrpc as _cygrpc
-
 from grpc._simple_stubs import stream_stream
 from grpc._simple_stubs import stream_unary
 from grpc._simple_stubs import unary_stream

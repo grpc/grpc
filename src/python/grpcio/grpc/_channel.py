@@ -1830,7 +1830,7 @@ class _ChannelConnectivityState(object):
         self.callbacks_and_connectivities = []
         self.delivering = False
 
-# pytype: disable=ignored-type-comment
+
 def _deliveries(
     state: _ChannelConnectivityState,
 ) -> List[Callable[[grpc.ChannelConnectivity], None]]:
@@ -1843,7 +1843,7 @@ def _deliveries(
         if callback_connectivity is not state.connectivity:
             callbacks_needing_update.append(callback)
             callback_and_connectivity[1] = state.connectivity
-    return callbacks_needing_update  # type: ignore[return-value]
+    return callbacks_needing_update  # type: ignore
 
 
 def _deliver(
@@ -1887,7 +1887,6 @@ def _spawn_delivery(
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
-# pytype: disable=ignored-type-comment
 def _poll_connectivity(state: _ChannelConnectivityState,
                        channel: cygrpc.Channel,
                        initial_try_to_connect: bool) -> None:
@@ -1905,7 +1904,7 @@ def _poll_connectivity(state: _ChannelConnectivityState,
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
         if callbacks:
-            _spawn_delivery(state, callbacks)  # type: ignore[arg-type]
+            _spawn_delivery(state, callbacks)  # type: ignore
     while True:
         event = channel.watch_connectivity_state(
             connectivity, time.time() + 0.2
@@ -1930,10 +1929,9 @@ def _poll_connectivity(state: _ChannelConnectivityState,
                     ]
                 )
                 if not state.delivering:
-                    callbacks = _deliveries(state)  # type: ignore[assignment]
+                    callbacks = _deliveries(state)  # type: ignore
                     if callbacks:
-                        _spawn_delivery(state,
-                                        callbacks)  # type: ignore[arg-type]
+                        _spawn_delivery(state, callbacks)  # type: ignore
 
 
 def _subscribe(state: _ChannelConnectivityState,
