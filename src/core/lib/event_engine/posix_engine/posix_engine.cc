@@ -49,6 +49,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -497,12 +498,20 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresHostnameRequest*> request =
       GrpcAresHostnameRequest::Create(
-          name, default_port, options_.dns_server, /*check_port=*/true, timeout,
+          name, default_port, options_.dns_server, timeout,
           std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
-    event_engine_->Run([cb = std::move(on_resolve),
-                        status = request.status()]() mutable { cb(status); });
+    event_engine_->Run(
+        [cb = std::move(on_resolve), status = request.status()]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          {
+            // Destroys the closure before ExecCtx destroys.
+            auto c = std::move(cb);
+            c(status);
+          }
+        });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -516,7 +525,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
        this](absl::StatusOr<GrpcAresHostnameRequest::Result> result) mutable {
         {
           grpc_core::MutexLock lock(&mu_);
-          // on_resolved called, no longer inflight.
+          // on_resolve called, no longer inflight.
           GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
         on_resolve(std::move(result));
@@ -529,12 +538,20 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   PosixEventPoller* poller = poller_manager_->Poller();
   GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresSRVRequest*> request = GrpcAresSRVRequest::Create(
-      name, timeout, options_.dns_server, /*check_port=*/false,
+      name, timeout, options_.dns_server,
       std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
-    event_engine_->Run([cb = std::move(on_resolve),
-                        status = request.status()]() mutable { cb(status); });
+    event_engine_->Run(
+        [cb = std::move(on_resolve), status = request.status()]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          {
+            // Destroys the closure before ExecCtx destroys.
+            auto c = std::move(cb);
+            c(status);
+          }
+        });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -548,7 +565,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
        this](absl::StatusOr<GrpcAresSRVRequest::Result> result) mutable {
         {
           grpc_core::MutexLock lock(&mu_);
-          // on_resolved called, no longer inflight.
+          // on_resolve called, no longer inflight.
           GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
         on_resolve(std::move(result));
@@ -561,12 +578,20 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
   PosixEventPoller* poller = poller_manager_->Poller();
   GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresTXTRequest*> request = GrpcAresTXTRequest::Create(
-      name, timeout, options_.dns_server, /*check_port=*/false,
+      name, timeout, options_.dns_server,
       std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
-    event_engine_->Run([cb = std::move(on_resolve),
-                        status = request.status()]() mutable { cb(status); });
+    event_engine_->Run(
+        [cb = std::move(on_resolve), status = request.status()]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          {
+            // Destroys the closure before ExecCtx destroys.
+            auto c = std::move(cb);
+            c(status);
+          }
+        });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -579,7 +604,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
                      this](absl::StatusOr<std::string> result) mutable {
     {
       grpc_core::MutexLock lock(&mu_);
-      // on_resolved called, no longer inflight.
+      // on_resolve called, no longer inflight.
       GPR_ASSERT(inflight_requests_.erase(handle) == 1);
     }
     on_resolve(std::move(result));

@@ -11,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -48,11 +52,10 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
         handle_(handle) {}
 
   ~GrpcPolledFdPosix() override {
-    // c-ares library will close the fd inside grpc_fd. This fd may be picked up
-    // immediately by another thread, and should not be closed by the following
-    // grpc_fd_orphan.
+    // c-ares library will close the fd. This fd may be picked up immediately by
+    // another thread and should not be closed by the following OrphanHandle.
     int phony_release_fd;
-    handle_->OrphanHandle(/*on_done*/ nullptr, &phony_release_fd,
+    handle_->OrphanHandle(/*on_done=*/nullptr, &phony_release_fd,
                           "c-ares query finished");
   }
 
@@ -109,3 +112,5 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H

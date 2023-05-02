@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
@@ -51,32 +52,68 @@ extern grpc_core::TraceFlag grpc_trace_ares_wrapper;
     }                                                                         \
   } while (0)
 
-class GrpcPolledFd;
-class GrpcPolledFdFactory;
-
+// Base class of the c-ares based DNS lookup functionality. The actual concrete
+// leaf class represents each type of request i.e. A/AAAA, SRV, TXT.
+// GrpcAresRequest handles the logics to initialize and destroy the c-ares
+// channel (one channel for one request). Sets the name servers configuration
+// for the channel. And interacts with c-ares sockets/fds and gRPC poller. It
+// also handles logics to start and cancel timers.
 class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
  public:
   ~GrpcAresRequest() override;
 
+  // Cancels an inflight request, returns true if cancel succeeds and will start
+  // the shutdown process.
   bool Cancel() ABSL_LOCKS_EXCLUDED(mu_);
   void Orphan() override {}
 
  protected:
-  absl::Status Initialize(absl::string_view dns_server, bool check_port)
-      ABSL_LOCKS_EXCLUDED(mu_);
-
-  GrpcAresRequest(absl::string_view name,
-                  absl::optional<absl::string_view> default_port,
-                  EventEngine::Duration timeout,
+  GrpcAresRequest(absl::string_view name, EventEngine::Duration timeout,
                   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                   EventEngine* event_engine);
 
+  // The workhorse function. Gets the live sockets/fds used by c-ares, creates
+  // FdNode if it is not currently tracked in fd_node_list_. Registers the
+  // socket with the poller for read and/or write based on c-ares's demand. And
+  // shutdown and destroys the poller handles whose sockets are no longer in use
+  // by c-ares.
+  // This function is called in every opportunities when there might be a change
+  // to c-ares' sockets for the channel.
   void Work() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Common logic to start the query timeout timer and the ares backup poll
+  // timer. This is only called in each leaf class' Start method.
   void StartTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Common logic to cancel the query timeout timer and the ares backup poll
+  // timer. This is called when the request is cancelled or shutting down.
   void CancelTimers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // These 2 methods are deliberately thread-unsafe and should only be called in
+  // the factory methods of the leaf classes as part of initialization.
+  absl::StatusOr<std::string> ParseNameToResolve();
+  absl::Status InitializeAresOptions(absl::string_view dns_server);
+
+  grpc_core::Mutex mu_;
+  bool initialized_ ABSL_GUARDED_BY(mu_) = false;
+  // name to resolve
+  const std::string name_ ABSL_GUARDED_BY(mu_);
+  // ares channel
+  ares_channel channel_ ABSL_GUARDED_BY(mu_) = nullptr;
+  // host to resolve, parsed from name_
+  std::string host_ ABSL_GUARDED_BY(mu_);
+  bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
+  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
+  EventEngine* event_engine_;
 
  private:
+  // A FdNode saves (not owns) a live socket/fd which c-ares creates and owns a
+  // GrpcPolledFd object which has a platform-agnostic interface to interact
+  // with the poller. The liveness of the socket means that c-ares needs us to
+  // monitor r/w events on this socket and notifies c-ares when such events have
+  // happened which we achieve through the GrpcPolledFd object. FdNode also
+  // handles the shutdown (maybe due to socket no longer used, finished request,
+  // cancel or timeout) and the destruction of the poller handle. Note that
+  // FdNode does not own the socket and it's the c-ares' responsibility to
+  // close the socket (possibly through ares_destroy).
   struct FdNode {
     FdNode() = default;
     FdNode(ares_socket_t as, GrpcPolledFd* polled_fd);
@@ -84,14 +121,15 @@ class GrpcAresRequest
     std::unique_ptr<GrpcPolledFd> polled_fd;
     // next fd node
     FdNode* next = nullptr;
-    /// if the readable closure has been registered
+    // true if the readable closure has been registered
     bool readable_registered = false;
-    /// if the writable closure has been registered
+    // true if the writable closure has been registered
     bool writable_registered = false;
     bool already_shutdown = false;
   };
 
-  // Per ares_channel linked-list of FdNodes
+  // A linked-list of FdNodes. Support operations such as pop a FdNode which has
+  // a specific socket/fd that c-ares owns.
   class FdNodeList {
    public:
     class FdNodeListIterator {
@@ -160,45 +198,29 @@ class GrpcAresRequest
   void ShutdownPolledFdsLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
- protected:
-  grpc_core::Mutex mu_;
-  bool initialized_ ABSL_GUARDED_BY(mu_) = false;
-  /// name to resolve
-  const std::string name_ ABSL_GUARDED_BY(mu_);
-  const std::string default_port_ ABSL_GUARDED_BY(mu_);
-  // ares channel
-  ares_channel channel_ ABSL_GUARDED_BY(mu_) = nullptr;
-  /// host to resolve, parsed from name_
-  absl::string_view host_ ABSL_GUARDED_BY(mu_);
-  /// port, parsed from name_ or is default_port_
-  int port_ ABSL_GUARDED_BY(mu_) = 0;
-  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
-  bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
-  std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_);
   const EventEngine::Duration timeout_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<FdNodeList> fd_node_list_ ABSL_GUARDED_BY(mu_);
   absl::optional<EventEngine::TaskHandle> query_timeout_handle_
       ABSL_GUARDED_BY(mu_);
   absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mu_);
-  EventEngine* event_engine_;
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
 };
 
 // A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
-// lookup
+// lookups.
 class GrpcAresHostnameRequest final : public GrpcAresRequest {
  public:
   using Result = std::vector<EventEngine::ResolvedAddress>;
 
   static absl::StatusOr<GrpcAresHostnameRequest*> Create(
       absl::string_view name, absl::string_view default_port,
-      absl::string_view dns_server, bool check_port,
-      EventEngine::Duration timeout,
+      absl::string_view dns_server, EventEngine::Duration timeout,
       std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
-  // Starting a request, on_resolve is guaranteed to be called with Result or
-  // failure status unless the request was cancelled.
+  // Starting a request, on_resolve will be called with Result or failure status
+  // unless the request was successfully cancelled.
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -217,16 +239,20 @@ class GrpcAresHostnameRequest final : public GrpcAresRequest {
   ~GrpcAresHostnameRequest() override;
 
   bool ResolveAsIPLiteralLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void LogResolvedAddressesList(const char* input_output_str)
+  void LogResolvedAddressesListLocked(absl::string_view input_output_str)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void SortResolvedAddresses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void OnResolve(
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result)
+  void SortResolvedAddressesLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void OnResolveLocked(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // This method is deliberately thread-unsafe and should only be called in
+  // Create as part of initialization.
+  absl::Status ParsePort(absl::string_view port);
 
+  // port, parsed from name_ or default_port_
+  int port_ ABSL_GUARDED_BY(mu_) = 0;
+  const std::string default_port_ ABSL_GUARDED_BY(mu_);
   size_t pending_queries_ ABSL_GUARDED_BY(mu_) = 0;
-  std::vector<EventEngine::ResolvedAddress> result_;
-  absl::Status error_ ABSL_GUARDED_BY(mu_);
+  absl::StatusOr<Result> result_ ABSL_GUARDED_BY(mu_);
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_
       ABSL_GUARDED_BY(mu_);
 };
@@ -237,12 +263,12 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
 
   static absl::StatusOr<GrpcAresSRVRequest*> Create(
       absl::string_view name, EventEngine::Duration timeout,
-      absl::string_view dns_server, bool check_port,
+      absl::string_view dns_server,
       std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
-  // Starting a request, on_resolve is guaranteed to be called with Result or
-  // failure status unless the request was cancelled.
+  // Starting a request, on_resolve will be called with Result or failure status
+  // unless the request was successfully cancelled.
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -258,10 +284,9 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
                      EventEngine* event_engine);
   ~GrpcAresSRVRequest() override;
 
-  void OnResolve(absl::StatusOr<Result> result)
+  void OnResolveLocked(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  std::string service_name_;
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 
@@ -271,12 +296,12 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
 
   static absl::StatusOr<GrpcAresTXTRequest*> Create(
       absl::string_view name, EventEngine::Duration timeout,
-      absl::string_view dns_server, bool check_port,
+      absl::string_view dns_server,
       std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
       EventEngine* event_engine);
 
-  // Starting a request, on_resolve is guaranteed to be called with Result or
-  // failure status unless the request was cancelled.
+  // Starting a request, on_resolve will be called with Result or failure status
+  // unless the request was successfully cancelled.
   void Start(absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve)
       ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -292,10 +317,9 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
                      EventEngine* event_engine);
   ~GrpcAresTXTRequest() override;
 
-  void OnResolve(absl::StatusOr<Result> result)
+  void OnResolveLocked(absl::StatusOr<Result> result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  std::string config_name_;
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 

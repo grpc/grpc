@@ -24,7 +24,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -67,14 +66,6 @@ class GrpcPolledFdFactory {
   // Optionally configures the ares channel after creation
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
-
-// Creates a new polled fd factory.
-// Note that even though ownership of mu is not transferred, the mu
-// parameter is guaranteed to be alive for the the whole lifetime of
-// the resulting GrpcPolledFdFactory as well as any GrpcPolledFd
-// returned by the factory.
-// std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-//     grpc_core::Mutex* mu);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

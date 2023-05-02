@@ -1956,6 +1956,7 @@ grpc_cc_library(
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
     ],

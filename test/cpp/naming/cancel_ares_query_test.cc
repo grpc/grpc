@@ -314,7 +314,7 @@ void TestCancelDuringActiveQuery(
     expected_status_code = GRPC_STATUS_UNAVAILABLE;
     if (grpc_core::IsEventEngineDnsEnabled()) {
       expected_error_message_substring =
-          "name=dont-care-since-wont-be-resolved.test.com: DNS query cancelled";
+          absl::StrCat("errors resolving ", name);
     } else {
       expected_error_message_substring =
           absl::StrCat("DNS resolution failed for ", name);
