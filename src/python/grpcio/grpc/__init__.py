@@ -23,8 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import (Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple,
-                    TypeVar)
+from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
