@@ -18,7 +18,7 @@ import asyncio
 import logging
 import random
 import time
-from typing import Optional, List, Callable
+from typing import Callable, List, Optional
 
 import grpc
 from grpc.experimental import aio

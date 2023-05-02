@@ -211,8 +211,7 @@ class StrictFakeTime(grpc_testing.Time):
     def time(self) -> float:
         return self._time
 
-    def call_in(self, behavior: Callable[[], Any],
-                delay: float) -> _Future:
+    def call_in(self, behavior: Callable[[], Any], delay: float) -> _Future:
         if delay <= 0.0:
             _call_in_thread((behavior,))
         else:
@@ -221,8 +220,7 @@ class StrictFakeTime(grpc_testing.Time):
                 self._state.times_to_behaviors[time].append(behavior)
         return _Future(self._state, behavior, time)
 
-    def call_at(self, behavior: Callable[[], Any],
-                time: float) -> _Future:
+    def call_at(self, behavior: Callable[[], Any], time: float) -> _Future:
         with self._state.condition:
             if time <= self._time:
                 _call_in_thread((behavior,))

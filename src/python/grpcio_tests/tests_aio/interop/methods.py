@@ -446,7 +446,8 @@ async def test_interoperability(
     if method is None:
         raise NotImplementedError(f'Test case "{case}" not implemented!')
     else:
-        num_params = len(inspect.signature(method).parameters)  # type: ignore[arg-type]
+        num_params = len(
+            inspect.signature(method).parameters)  # type: ignore[arg-type]
         if num_params == 1:
             await method(stub)  # type: ignore[operator]
         elif num_params == 2:

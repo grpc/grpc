@@ -610,8 +610,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
             if self._state.code is None:
                 if not self._state.callbacks:
                     self._state.callbacks = []
-                self._state.callbacks.append(functools.partial(
-                    fn, self))
+                self._state.callbacks.append(functools.partial(fn, self))
                 return
 
         fn(self)
@@ -1464,7 +1463,7 @@ class _ChannelConnectivityState(object):
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
-    callbacks_and_connectivities: List[Sequence[Union[Callable[
+    callbacks_and_connectivities: List[List[Union[Callable[
         [grpc.ChannelConnectivity], None], Optional[grpc.ChannelConnectivity]]]]
     delivering: bool
 

@@ -109,7 +109,8 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable
     _exception: Exception
     _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
+    def __init__(self, exception: Exception,
+                 traceback: Optional[types.TracebackType]):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback
