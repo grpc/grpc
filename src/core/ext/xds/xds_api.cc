@@ -114,11 +114,8 @@ void PopulateMetadataValue(const XdsApiContext& context,
       google_protobuf_Value_set_string_value(
           value_pb, StdStringToUpbString(value.string()));
       break;
-    case Json::Type::kTrue:
-      google_protobuf_Value_set_bool_value(value_pb, true);
-      break;
-    case Json::Type::kFalse:
-      google_protobuf_Value_set_bool_value(value_pb, false);
+    case Json::Type::kBoolean:
+      google_protobuf_Value_set_bool_value(value_pb, value.boolean());
       break;
     case Json::Type::kObject: {
       google_protobuf_Struct* struct_value =

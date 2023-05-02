@@ -1179,9 +1179,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // above.
   if (!policy_name.has_value()) policy_name = "pick_first";
   // Now that we have the policy name, construct an empty config for it.
-  Json config_json = Json::Array{Json::Object{
-      {std::string(*policy_name), Json::Object{}},
-  }};
+  Json config_json = Json::FromArray({Json::FromObject({
+      {std::string(*policy_name), Json::FromObject({})},
+  })});
   auto lb_policy_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           config_json);

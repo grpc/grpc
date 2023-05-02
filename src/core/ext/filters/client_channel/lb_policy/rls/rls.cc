@@ -780,15 +780,15 @@ absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
           errors->AddError("child policy config is not an object");
         } else {
           Json::Object child_config = child_config_json.object();
-          child_config[field] = Json(value);
-          array.emplace_back(
-              Json::Object{{child_name, std::move(child_config)}});
+          child_config[field] = Json::FromString(value);
+          array.emplace_back(Json::FromObject(
+              {{child_name, Json::FromObject(std::move(child_config))}}));
         }
       }
     }
   }
   if (errors->size() != original_num_errors) return absl::nullopt;
-  return array;
+  return Json::FromArray(std::move(array));
 }
 
 void RlsLb::ChildPolicyWrapper::StartUpdate() {
@@ -2472,7 +2472,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
           // a child policy for a given target.
           for (const Json& config : child_policy_config_.array()) {
             if (config.object().begin()->first == (*parsed_config)->name()) {
-              child_policy_config_ = Json::Array{config};
+              child_policy_config_ = Json::FromArray({config});
               break;
             }
           }
