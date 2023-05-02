@@ -75,7 +75,7 @@ _INVALID_METADATA_TEST_CASES = (
         TypeError,
         (("normal", object()),),
     ),
-)
+)  # type: ignore
 
 _NON_OK_CODE = grpc.StatusCode.NOT_FOUND
 _DETAILS = "Test details!"
