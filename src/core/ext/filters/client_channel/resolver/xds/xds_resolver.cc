@@ -207,9 +207,20 @@ class XdsResolver : public Resolver {
     if (xds_client_ != nullptr) xds_client_->ResetBackoff();
   }
 
- private:
-  friend class grpc_core::ClusterState;
+  void MaybeRemoveUnusedClusters();
 
+  void Run(std::function<void()> callback, DebugLocation location) {
+    work_serializer_->Run(std::move(callback), location);
+  }
+
+  ClusterState::ClusterStateMap::iterator Emplace(
+      absl::string_view cluster_name,
+      WeakRefCountedPtr<ClusterState> cluster_state) {
+    return cluster_state_map_.emplace(cluster_name, std::move(cluster_state))
+        .first;
+  }
+
+ private:
   class ListenerWatcher : public XdsListenerResourceType::WatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
@@ -374,7 +385,6 @@ class XdsResolver : public Resolver {
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
-  void MaybeRemoveUnusedClusters();
   uint64_t channel_id() const { return channel_id_; }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -1179,16 +1189,13 @@ XdsClusterMap::Find(absl::string_view name) const {
 ClusterState::ClusterState(RefCountedPtr<XdsResolver> resolver,
                            const std::string& cluster_name)
     : resolver_(std::move(resolver)),
-      it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
-              .first) {}
+      it_(resolver_->Emplace(cluster_name, WeakRef())) {}
 
 void ClusterState::Orphan() {
   auto* resolver = resolver_.get();
-  resolver->work_serializer_->Run(
-      [resolver = std::move(resolver_)]() {
-        resolver->MaybeRemoveUnusedClusters();
-      },
-      DEBUG_LOCATION);
+  resolver->Run([resolver = std::move(
+                     resolver_)]() { resolver->MaybeRemoveUnusedClusters(); },
+                DEBUG_LOCATION);
 }
 
 XdsClusterLbDataAttribute::XdsClusterLbDataAttribute(
