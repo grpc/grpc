@@ -374,10 +374,8 @@ ParseAuditLogger(const Json& json, size_t pos) {
   auto it = json.object().find("is_optional");
   if (it != json.object().end()) {
     switch (it->second.type()) {
-      case Json::Type::kTrue:
-        is_optional = true;
-        break;
-      case Json::Type::kFalse:
+      case Json::Type::kBoolean:
+        is_optional = it->second.boolean();
         break;
       default:
         return absl::InvalidArgumentError(absl::StrFormat(
@@ -394,7 +392,8 @@ ParseAuditLogger(const Json& json, size_t pos) {
         absl::StrFormat("\"audit_loggers[%d].name\" is not a string.", pos));
   }
   absl::string_view name = it->second.string();
-  Json config = Json::Object();
+  // The config defaults to an empty object.
+  Json config = Json::FromObject(Json::Object());
   it = json.object().find("config");
   if (it != json.object().end()) {
     if (it->second.type() != Json::Type::kObject) {
