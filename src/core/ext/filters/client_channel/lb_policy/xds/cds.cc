@@ -743,13 +743,6 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // xds was mentioned as a policy in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:cds policy requires configuration. "
-          "Please use loadBalancingConfig field of service config instead.");
-    }
     return LoadRefCountedFromJson<CdsLbConfig>(
         json, JsonArgs(), "errors validating cds LB policy config");
   }

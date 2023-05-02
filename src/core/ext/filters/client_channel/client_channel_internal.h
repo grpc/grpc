@@ -22,7 +22,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -38,13 +37,18 @@
 // ClientChannel that is not normally accessible via external APIs.
 //
 
+// Channel arg key for health check service name.
+#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
+  "grpc.internal.health_check_service_name"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+  virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.

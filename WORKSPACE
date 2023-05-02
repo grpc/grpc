@@ -85,29 +85,32 @@ pip_parse(
 
 http_archive(
     name = "build_bazel_rules_swift",
-    sha256 = "12057b7aa904467284eee640de5e33853e51d8e31aae50b3fb25d2823d51c6b8",
-    url = "https://github.com/bazelbuild/rules_swift/releases/download/1.0.0/rules_swift.1.0.0.tar.gz",
-)
-
-http_archive(
-    name = "rules_pods",
-    urls = ["https://github.com/pinterest/PodToBUILD/releases/download/4.1.0-412495/PodToBUILD.zip"],
+    sha256 = "bf2861de6bf75115288468f340b0c4609cc99cc1ccc7668f0f71adfd853eedb3",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/1.7.1/rules_swift.1.7.1.tar.gz",
 )
 
 load(
     "@build_bazel_rules_swift//swift:repositories.bzl",
     "swift_rules_dependencies",
 )
-load(
-    "@rules_pods//BazelExtensions:workspace.bzl",
-    "new_pod_repository",
-)
 
 swift_rules_dependencies()
 
-new_pod_repository(
-    name = "CronetFramework",
-    is_dynamic_framework = True,
-    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
-    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
-)
+# TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
+#
+#http_archive(
+#    name = "rules_pods",
+#    urls = ["https://github.com/pinterest/PodToBUILD/releases/download/4.1.0-412495/PodToBUILD.zip"],
+#)
+#
+#load(
+#    "@rules_pods//BazelExtensions:workspace.bzl",
+#    "new_pod_repository",
+#)
+#
+#new_pod_repository(
+#    name = "CronetFramework",
+#    is_dynamic_framework = True,
+#    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
+#    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
+#)

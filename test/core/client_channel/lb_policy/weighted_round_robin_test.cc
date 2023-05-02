@@ -47,7 +47,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -106,8 +105,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config = Json::Array{
-          Json::Object{{"weighted_round_robin_experimental", json_}}};
+      Json config = Json::Array{Json::Object{{"weighted_round_robin", json_}}};
       gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
       return MakeConfig(config);
     }
@@ -155,7 +153,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       return true;
     };
     ON_CALL(*mock_ee_, Cancel(::testing::_)).WillByDefault(cancel);
-    lb_policy_ = MakeLbPolicy("weighted_round_robin_experimental");
+    lb_policy_ = MakeLbPolicy("weighted_round_robin");
   }
 
   ~WeightedRoundRobinTest() override {

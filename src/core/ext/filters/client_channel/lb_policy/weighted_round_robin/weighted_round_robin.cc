@@ -59,6 +59,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
@@ -76,8 +77,7 @@ TraceFlag grpc_lb_wrr_trace(false, "weighted_round_robin_lb");
 
 namespace {
 
-constexpr absl::string_view kWeightedRoundRobin =
-    "weighted_round_robin_experimental";
+constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
@@ -272,6 +272,10 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<WeightedRoundRobin*>(policy())->work_serializer();
+    }
+
     std::string CountersString() const {
       return absl::StrCat("num_subchannels=", num_subchannels(),
                           " num_ready=", num_ready_,
@@ -988,12 +992,6 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:weighted_round_robin policy "
-          "requires configuration. Please use loadBalancingConfig field of "
-          "service config instead.");
-    }
     return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
         json, JsonArgs(),
         "errors validating weighted_round_robin LB policy config");
