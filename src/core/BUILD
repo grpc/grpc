@@ -5175,8 +5175,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "arena_promise",
         "channel_args",
         "channel_fwd",
+        "context",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_header",
