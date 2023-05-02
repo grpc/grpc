@@ -16,11 +16,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -59,6 +59,7 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -93,7 +94,7 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-UniqueTypeName XdsClusterAttributeTypeName() {
+UniqueTypeName XdsClusterAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_cluster_name");
   return kFactory.Create();
 }
@@ -731,13 +732,15 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
+  call_config.call_attributes[XdsClusterAttribute::TypeName()] =
+      args.arena->New<XdsClusterAttribute>(it->first);
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
+  call_config.call_attributes[RequestHashAttribute::TypeName()] =
+      args.arena->New<RequestHashAttribute>(hash_value);
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };

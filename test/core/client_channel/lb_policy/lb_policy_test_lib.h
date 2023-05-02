@@ -76,6 +76,7 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -84,6 +85,9 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
+  using CallAttributes = std::vector<
+      std::unique_ptr<ServiceConfigCallData::CallAttributeInterface>>;
+
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
   class SubchannelState {
@@ -464,10 +468,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // A fake CallState implementation, for use in PickArgs.
   class FakeCallState : public ClientChannelLbCallState {
    public:
-    explicit FakeCallState(
-        const std::map<UniqueTypeName, absl::string_view>& attributes) {
+    explicit FakeCallState(const CallAttributes& attributes) {
       for (const auto& p : attributes) {
-        attributes_.emplace(p.first, std::string(p.second));
+        attributes_.emplace(p->type(), p.get());
       }
     }
 
@@ -484,12 +487,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return allocation;
     }
 
-    absl::string_view GetCallAttribute(UniqueTypeName type) override {
-      return attributes_[type];
+    ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+        UniqueTypeName type) const override {
+      auto it = attributes_.find(type);
+      if (it != attributes_.end()) {
+        return it->second;
+      }
+      return nullptr;
     }
 
     std::vector<void*> allocations_;
-    std::map<UniqueTypeName, std::string> attributes_;
+    std::map<UniqueTypeName, ServiceConfigCallData::CallAttributeInterface*>
+        attributes_;
   };
 
   // A fake BackendMetricAccessor implementation, for passing to
@@ -699,11 +708,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // the old list followed by one READY update where the picker is using the
   // new list.  Returns a picker if the reported states match expectations.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  WaitForRoundRobinListChange(
-      absl::Span<const absl::string_view> old_addresses,
-      absl::Span<const absl::string_view> new_addresses,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {},
-      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+  WaitForRoundRobinListChange(absl::Span<const absl::string_view> old_addresses,
+                              absl::Span<const absl::string_view> new_addresses,
+                              const CallAttributes& call_attributes = {},
+                              size_t num_iterations = 3,
+                              SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for expected RR addresses...");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
     size_t num_picks =
@@ -762,7 +771,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {}) {
+      const CallAttributes& call_attributes = {}) {
     ExecCtx exec_ctx;
     FakeMetadata metadata({});
     FakeCallState call_state(call_attributes);
@@ -770,10 +779,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(
-      LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {},
-      SourceLocation location = SourceLocation()) {
+  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
+                        const CallAttributes call_attributes = {},
+                        SourceLocation location = SourceLocation()) {
     ASSERT_NE(picker, nullptr);
     auto pick_result = DoPick(picker, call_attributes);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
@@ -791,7 +799,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // automatically to represent a complete call with no backend metric data.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {},
+      const CallAttributes& call_attributes = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
       SourceLocation location = SourceLocation()) {
@@ -827,7 +835,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // list of addresses, or nullopt if a non-complete pick was returned.
   absl::optional<std::vector<std::string>> GetCompletePicks(
       LoadBalancingPolicy::SubchannelPicker* picker, size_t num_picks,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {},
+      const CallAttributes& call_attributes = {},
       std::vector<
           std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>>*
           subchannel_call_trackers = nullptr,
@@ -874,11 +882,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Checks that the picker has round-robin behavior over the specified
   // set of addresses.
-  void ExpectRoundRobinPicks(
-      LoadBalancingPolicy::SubchannelPicker* picker,
-      absl::Span<const absl::string_view> addresses,
-      const std::map<UniqueTypeName, absl::string_view>& call_attributes = {},
-      size_t num_iterations = 3, SourceLocation location = SourceLocation()) {
+  void ExpectRoundRobinPicks(LoadBalancingPolicy::SubchannelPicker* picker,
+                             absl::Span<const absl::string_view> addresses,
+                             const CallAttributes& call_attributes = {},
+                             size_t num_iterations = 3,
+                             SourceLocation location = SourceLocation()) {
     auto picks = GetCompletePicks(picker, num_iterations * addresses.size(),
                                   call_attributes, nullptr, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
