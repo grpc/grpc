@@ -113,7 +113,8 @@ class HeaderMatcher {
                                               int64_t range_start = 0,
                                               int64_t range_end = 0,
                                               bool present_match = false,
-                                              bool invert_match = false);
+                                              bool invert_match = false,
+                                              bool case_sensitive = true);
 
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);

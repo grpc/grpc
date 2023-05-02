@@ -141,6 +141,19 @@ TEST(HeaderMatcherTest, StringMatcher) {
   EXPECT_FALSE(header_matcher->Match(absl::nullopt));
 }
 
+TEST(HeaderMatcherTest, StringMatcherCaseInsensitive) {
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"exact", /*range_start=*/0,
+                            /*range_end=*/0, /*present_match=*/false,
+                            /*invert_match=*/false, /*case_sensitive=*/false);
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_TRUE(header_matcher->Match("exact"));
+  EXPECT_TRUE(header_matcher->Match("Exact"));
+  EXPECT_FALSE(header_matcher->Match("exacz"));
+  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
+}
+
 TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
   auto header_matcher =
       HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
