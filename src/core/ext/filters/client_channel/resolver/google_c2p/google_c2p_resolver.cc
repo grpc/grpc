@@ -247,7 +247,8 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
                    {"type", Json::FromString("google_default")},
                }),
            })},
-          {"server_features", Json::FromArray({Json::FromString("xds_v3")})},
+          {"server_features",
+           Json::FromArray({Json::FromString("ignore_resource_deletion")})},
       }),
   });
   Json bootstrap = Json::FromObject({
