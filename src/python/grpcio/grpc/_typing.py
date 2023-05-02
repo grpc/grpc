@@ -19,12 +19,14 @@ from typing import (TYPE_CHECKING, Any, AsyncIterable, Callable, Iterable,
 from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
+    from grpc import ServicerContext
     from grpc import StreamStreamClientInterceptor
     from grpc import StreamUnaryClientInterceptor
     from grpc import UnaryStreamClientInterceptor
     from grpc import UnaryUnaryClientInterceptor
     from grpc._server import _Context
     from grpc._server import _RPCState
+    from grpc.aio._base_server import ServicerContext as AioServicerContext
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
@@ -76,3 +78,4 @@ InterceptorType = Union['UnaryUnaryClientInterceptor',
                         'UnaryStreamClientInterceptor',
                         'StreamUnaryClientInterceptor',
                         'StreamStreamClientInterceptor']
+ServicerContextType = Union['ServicerContext', 'AioServicerContext']

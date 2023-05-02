@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Callable, Mapping, Optional, Iterable
+from typing import Callable, List, Mapping, Optional
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
@@ -78,7 +78,7 @@ class _ChannelReadyFuture(grpc.Future):
     _channel: grpc.Channel
     _matured: bool
     _cancelled: bool
-    _done_callbacks: Optional[Iterable[Callable]]
+    _done_callbacks: Optional[List[Callable]]
 
     def __init__(self, channel: grpc.Channel):
         self._condition = threading.Condition()

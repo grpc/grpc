@@ -87,11 +87,12 @@ def _stream_stream_service(
 
 class _Serverish(_common.Serverish):
     _descriptors_to_servicers: Mapping[descriptor.ServiceDescriptor, Any]
-    _time: float
+    _time: grpc_testing.Time
 
     def __init__(self,
                  descriptors_to_servicers: Mapping[descriptor.ServiceDescriptor,
-                                                   Any], time: float):
+                                                   Any],
+                 time: grpc_testing.Time):
         self._descriptors_to_servicers = descriptors_to_servicers
         self._time = time
 
@@ -165,9 +166,9 @@ def _deadline_and_handler(
 
 class _Server(grpc_testing.Server):
     _serverish: _Serverish
-    _time: float
+    _time: grpc_testing.Time
 
-    def __init__(self, serverish: _Serverish, time: float):
+    def __init__(self, serverish: _Serverish, time: grpc_testing.Time):
         self._serverish = serverish
         self._time = time
 
@@ -213,5 +214,5 @@ class _Server(grpc_testing.Server):
 
 
 def server_from_descriptor_to_servicers(descriptors_to_servicers: Mapping[
-    descriptor.ServiceDescriptor, Any], time: float) -> _Server:
+    descriptor.ServiceDescriptor, Any], time: grpc_testing.Time) -> _Server:
     return _Server(_Serverish(descriptors_to_servicers, time), time)

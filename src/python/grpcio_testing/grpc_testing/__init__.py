@@ -716,7 +716,7 @@ def channel(service_descriptors: Iterator[descriptor.ServiceDescriptor],
 
 
 def server_from_dictionary(descriptors_to_servicers: Mapping[
-    descriptor.ServiceDescriptor, Any], time: float) -> Server:
+    descriptor.ServiceDescriptor, Any], time: Time) -> Server:
     """Creates a Server for use in tests of a gRPC Python-using system.
 
     Args:

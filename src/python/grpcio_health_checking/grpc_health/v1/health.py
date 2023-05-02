@@ -100,10 +100,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._lock = threading.RLock()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
-        self.Watch.__func__.experimental_non_blocking = (
-            experimental_non_blocking
-        )
-        self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
+        self.Watch.__func__.experimental_non_blocking = experimental_non_blocking  # type: ignore[attr-defined]
+        self.Watch.__func__.experimental_thread_pool = experimental_thread_pool  # type: ignore[attr-defined]
         self._gracefully_shutting_down = False
 
     def _on_close_callback(self, send_response_callback: Callable[

@@ -44,8 +44,8 @@ class TestChannelReady(AioTestBase):
     async def test_channel_ready_success(self):
         # Start `channel_ready` as another Task
         channel_ready_task = self.loop.create_task(
-            self._channel.channel_ready()
-        )
+            self._channel.channel_ready())
+        server = None
 
         # Wait for TRANSIENT_FAILURE
         await _common.block_until_certain_state(

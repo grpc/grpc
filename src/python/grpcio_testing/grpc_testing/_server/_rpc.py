@@ -14,7 +14,7 @@
 
 import logging
 import threading
-from typing import Any, Callable, Optional, Iterable, List
+from typing import Any, Callable, Iterable, List, Optional
 
 import grpc
 from grpc._typing import MetadataType
@@ -33,7 +33,7 @@ class Rpc(object):
     _pending_trailing_metadata: Optional[MetadataType]
     _pending_code: Optional[grpc.StatusCode]
     _pending_details: Optional[str]
-    _callbacks: Optional[Iterable[Callable[[], Any]]]
+    _callbacks: Optional[List[Callable[[], Any]]]
     _active: bool
     _rpc_errors: List[grpc.RpcError]
 
@@ -153,7 +153,9 @@ class Rpc(object):
             if self._callbacks is None:
                 return False
             else:
-                self._callbacks.append(callback)  # ty1pe: ignore
+                if not self._callbacks:
+                    self._callbacks = []
+                self._callbacks.append(callback)
                 return True
 
     def invocation_metadata(self) -> Optional[MetadataType]:

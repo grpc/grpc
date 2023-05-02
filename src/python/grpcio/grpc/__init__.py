@@ -23,7 +23,8 @@ import logging
 import sys
 import threading
 import types
-from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple
+from typing import (Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple,
+                    TypeVar)
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -39,6 +40,7 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
+from grpc._typing import ServicerContextType
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1604,7 +1606,7 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior: Callable[[Any, ServicerContext], Any],
+    behavior: Callable[[Any, ServicerContextType], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1634,7 +1636,7 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior: Callable[[Any, ServicerContext], GeneralIterableType],
+    behavior: Callable[[Any, ServicerContextType], GeneralIterableType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1665,7 +1667,7 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior: Callable[[GeneralIterableType, ServicerContext], Any],
+    behavior: Callable[[GeneralIterableType, ServicerContextType], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None
 ) -> RpcMethodHandler:
@@ -1697,7 +1699,7 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior: Callable[[GeneralIterableType, ServicerContext],
+    behavior: Callable[[GeneralIterableType, ServicerContextType],
                        GeneralIterableType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None

@@ -14,12 +14,12 @@
 
 import abc
 import threading
-from typing import Any, Callable, Optional, List, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import grpc
 from grpc._typing import MetadataType
-from grpc_testing import _common
 from grpc_testing import Time
+from grpc_testing import _common
 
 _CLIENT_INACTIVE = grpc.StatusCode.UNKNOWN
 
@@ -127,7 +127,9 @@ class _Handler(Handler):
     def add_termination_callback(self, callback: Callable[[], None]) -> bool:
         with self._condition:
             if self._code is None:
-                self._termination_callbacks.append(callback)  # type: ignore[union-attr]
+                if not self._termination_callbacks:
+                    self._termination_callbacks = []
+                self._termination_callbacks.append(callback)
                 return True
             else:
                 return False
