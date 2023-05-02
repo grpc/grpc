@@ -240,14 +240,9 @@ class XdsResolver : public Resolver {
   // back into the WorkSerializer to remove the entry from the map.
   class ClusterState : public DualRefCounted<ClusterState> {
    public:
-    using ClusterStateMap =
-        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
-
-    ClusterState(RefCountedPtr<XdsResolver> resolver,
-                 const std::string& cluster_name)
+    ClusterState(RefCountedPtr<XdsResolver> resolver, std::string cluster_name)
         : resolver_(std::move(resolver)),
-          it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
-                  .first) {}
+          cluster_name_(std::move(cluster_name)) {}
 
     void Orphan() override {
       auto* resolver = resolver_.get();
@@ -258,11 +253,11 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
 
-    const std::string& cluster() const { return it_->first; }
+    const std::string& cluster_name() const { return cluster_name_; }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
-    ClusterStateMap::iterator it_;
+    std::string cluster_name_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -351,7 +346,8 @@ class XdsResolver : public Resolver {
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map_;
 
-  ClusterState::ClusterStateMap cluster_state_map_;
+  std::map<absl::string_view, WeakRefCountedPtr<ClusterState>>
+      cluster_state_map_;
 };
 
 //
@@ -601,9 +597,12 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
-      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
+      resolver_->cluster_state_map_.emplace(new_cluster_state->cluster_name(),
+                                            new_cluster_state->WeakRef());
+      clusters_[new_cluster_state->cluster_name()] =
+          std::move(new_cluster_state);
     } else {
-      clusters_[it->second->cluster()] = it->second->Ref();
+      clusters_[it->second->cluster_name()] = it->second->Ref();
     }
   }
 }
