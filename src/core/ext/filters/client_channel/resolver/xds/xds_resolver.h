@@ -30,7 +30,8 @@ namespace grpc_core {
 class XdsClusterMap;
 class ClusterState;
 
-class XdsClusterLbDataAttribute : public ServiceConfigCallData::CallAttributeInterface {
+class XdsClusterLbDataAttribute
+    : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName() {
     static UniqueTypeName::Factory factory("xds_cluster_lb_data");
