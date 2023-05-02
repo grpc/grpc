@@ -4553,6 +4553,7 @@ grpc_cc_library(
         "closure",
         "error",
         "grpc_lb_subchannel_list",
+        "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
@@ -5142,8 +5143,10 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "grpc_service_config",
         "unique_type_name",
         "//:gpr_platform",
     ],
@@ -5174,6 +5177,7 @@ grpc_cc_library(
         "channel_fwd",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
+        "grpc_resolver_xds_header",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",
