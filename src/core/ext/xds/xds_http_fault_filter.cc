@@ -139,14 +139,14 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     }
     // Set the abort_code, even if it's OK
     fault_injection_policy_json["abortCode"] =
-        grpc_status_code_to_string(abort_grpc_status_code);
+        Json::FromString(grpc_status_code_to_string(abort_grpc_status_code));
     // Set the headers if we enabled header abort injection control
     if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
             fault_abort)) {
       fault_injection_policy_json["abortCodeHeader"] =
-          "x-envoy-fault-abort-grpc-request";
+          Json::FromString("x-envoy-fault-abort-grpc-request");
       fault_injection_policy_json["abortPercentageHeader"] =
-          "x-envoy-fault-abort-percentage";
+          Json::FromString("x-envoy-fault-abort-percentage");
     }
     // Set the fraction percent
     auto* percent =
@@ -154,9 +154,9 @@ XdsHttpFaultFilter::GenerateFilterConfig(
             fault_abort);
     if (percent != nullptr) {
       fault_injection_policy_json["abortPercentageNumerator"] =
-          envoy_type_v3_FractionalPercent_numerator(percent);
+          Json::FromNumber(envoy_type_v3_FractionalPercent_numerator(percent));
       fault_injection_policy_json["abortPercentageDenominator"] =
-          GetDenominator(percent);
+          Json::FromNumber(GetDenominator(percent));
     }
   }
   // Section 2: Parse the delay injection config
@@ -171,15 +171,16 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     if (delay_duration != nullptr) {
       ValidationErrors::ScopedField field(errors, ".fixed_delay");
       Duration duration = ParseDuration(delay_duration, errors);
-      fault_injection_policy_json["delay"] = duration.ToJsonString();
+      fault_injection_policy_json["delay"] =
+          Json::FromString(duration.ToJsonString());
     }
     // Set the headers if we enabled header delay injection control
     if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
             fault_delay)) {
       fault_injection_policy_json["delayHeader"] =
-          "x-envoy-fault-delay-request";
+          Json::FromString("x-envoy-fault-delay-request");
       fault_injection_policy_json["delayPercentageHeader"] =
-          "x-envoy-fault-delay-request-percentage";
+          Json::FromString("x-envoy-fault-delay-request-percentage");
     }
     // Set the fraction percent
     auto* percent =
@@ -187,9 +188,9 @@ XdsHttpFaultFilter::GenerateFilterConfig(
             fault_delay);
     if (percent != nullptr) {
       fault_injection_policy_json["delayPercentageNumerator"] =
-          envoy_type_v3_FractionalPercent_numerator(percent);
+          Json::FromNumber(envoy_type_v3_FractionalPercent_numerator(percent));
       fault_injection_policy_json["delayPercentageDenominator"] =
-          GetDenominator(percent);
+          Json::FromNumber(GetDenominator(percent));
     }
   }
   // Section 3: Parse the maximum active faults
@@ -198,10 +199,10 @@ XdsHttpFaultFilter::GenerateFilterConfig(
           http_fault);
   if (max_fault_wrapper != nullptr) {
     fault_injection_policy_json["maxFaults"] =
-        google_protobuf_UInt32Value_value(max_fault_wrapper);
+        Json::FromNumber(google_protobuf_UInt32Value_value(max_fault_wrapper));
   }
   return FilterConfig{ConfigProtoName(),
-                      std::move(fault_injection_policy_json)};
+                      Json::FromObject(std::move(fault_injection_policy_json))};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>

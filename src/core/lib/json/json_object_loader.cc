@@ -91,13 +91,11 @@ bool LoadNumber::IsNumber() const { return true; }
 
 void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
                         ValidationErrors* errors) const {
-  if (json.type() == Json::Type::kTrue) {
-    *static_cast<bool*>(dst) = true;
-  } else if (json.type() == Json::Type::kFalse) {
-    *static_cast<bool*>(dst) = false;
-  } else {
+  if (json.type() != Json::Type::kBoolean) {
     errors->AddError("is not a boolean");
+    return;
   }
+  *static_cast<bool*>(dst) = json.boolean();
 }
 
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,

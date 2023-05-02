@@ -98,7 +98,8 @@ void ValidateJsonEnd(const Json& json, bool end) {
   auto it = json.object().find("end");
   if (end) {
     ASSERT_NE(it, json.object().end());
-    EXPECT_EQ(it->second.type(), Json::Type::kTrue);
+    ASSERT_EQ(it->second.type(), Json::Type::kBoolean);
+    EXPECT_TRUE(it->second.boolean());
   } else {
     ASSERT_EQ(it, json.object().end());
   }

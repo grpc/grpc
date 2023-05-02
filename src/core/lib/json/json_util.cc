@@ -37,18 +37,13 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
 
 bool ExtractJsonBool(const Json& json, absl::string_view field_name,
                      bool* output, std::vector<grpc_error_handle>* error_list) {
-  switch (json.type()) {
-    case Json::Type::kTrue:
-      *output = true;
-      return true;
-    case Json::Type::kFalse:
-      *output = false;
-      return true;
-    default:
-      error_list->push_back(GRPC_ERROR_CREATE(
-          absl::StrCat("field:", field_name, " error:type should be BOOLEAN")));
-      return false;
+  if (json.type() != Json::Type::kBoolean) {
+    error_list->push_back(GRPC_ERROR_CREATE(
+        absl::StrCat("field:", field_name, " error:type should be BOOLEAN")));
+    return false;
   }
+  *output = json.boolean();
+  return true;
 }
 
 bool ExtractJsonArray(const Json& json, absl::string_view field_name,
