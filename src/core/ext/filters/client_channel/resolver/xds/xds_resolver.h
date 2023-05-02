@@ -26,11 +26,32 @@
 
 namespace grpc_core {
 
+// Forward declaration only, implementation is private
+class XdsClusterMap;
+class ClusterState;
+
+class XdsClusterLbDataAttribute : public ServiceConfigCallData::CallAttributeInterface {
+ public:
+  static UniqueTypeName TypeName() {
+    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
+    return factory.Create();
+  }
+
+  explicit XdsClusterLbDataAttribute(RefCountedPtr<XdsClusterMap> cluster_map);
+
+  bool LockClusterConfig(absl::string_view cluster_name);
+
+  UniqueTypeName type() const override { return TypeName(); }
+
+ private:
+  RefCountedPtr<XdsClusterMap> cluster_map_;
+  RefCountedPtr<ClusterState> locked_cluster_config_;
+};
+
 class XdsClusterAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName();
-
   explicit XdsClusterAttribute(absl::string_view cluster) : cluster_(cluster) {}
 
   absl::string_view cluster() const { return cluster_; }
