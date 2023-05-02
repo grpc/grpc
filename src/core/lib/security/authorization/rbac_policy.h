@@ -172,7 +172,7 @@ struct Rbac {
   };
 
   Rbac() = default;
-  Rbac(absl::string_view name, Rbac::Action action,
+  Rbac(std::string name, Rbac::Action action,
        std::map<std::string, Policy> policies);
 
   Rbac(Rbac&& other) noexcept;

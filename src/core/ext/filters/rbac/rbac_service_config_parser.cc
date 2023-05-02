@@ -757,8 +757,9 @@ Rbac RbacConfig::RbacPolicy::TakeAsRbac() {
   if (!rules.has_value()) {
     // No enforcing to be applied. An empty deny policy with an empty map
     // is equivalent to no enforcing.
-    return Rbac(name, Rbac::Action::kDeny, {});
+    return Rbac(std::move(name), Rbac::Action::kDeny, {});
   }
+  // TODO(lwge): This also needs to take the name.
   return rules->TakeAsRbac();
 }
 

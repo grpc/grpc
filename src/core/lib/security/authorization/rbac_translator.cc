@@ -345,14 +345,16 @@ absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
                                          absl::string_view name) {
   auto policies_or = ParseRulesArray(json);
   if (!policies_or.ok()) return policies_or.status();
-  return Rbac(name, Rbac::Action::kDeny, std::move(policies_or.value()));
+  return Rbac(std::string(name), Rbac::Action::kDeny,
+              std::move(policies_or.value()));
 }
 
 absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
                                           absl::string_view name) {
   auto policies_or = ParseRulesArray(json);
   if (!policies_or.ok()) return policies_or.status();
-  return Rbac(name, Rbac::Action::kAllow, std::move(policies_or.value()));
+  return Rbac(std::string(name), Rbac::Action::kAllow,
+              std::move(policies_or.value()));
 }
 
 absl::StatusOr<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
@@ -393,7 +395,7 @@ ParseAuditLogger(const Json& json, size_t pos) {
   }
   absl::string_view name = it->second.string();
   // The config defaults to an empty object.
-  Json config = Json::FromObject(Json::Object());
+  Json config = Json::FromObject({});
   it = json.object().find("config");
   if (it != json.object().end()) {
     if (it->second.type() != Json::Type::kObject) {
