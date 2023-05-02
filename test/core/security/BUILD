@@ -460,19 +460,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "matchers_test",
-    srcs = ["matchers_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "rbac_translator_test",
     srcs = ["rbac_translator_test.cc"],
     external_deps = ["gtest"],
