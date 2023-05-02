@@ -28,7 +28,7 @@ from ._typing import SerializingFunction
 
 
 class _ServicePipeline(object):
-    interceptors: Tuple[grpc.ServerInterceptor]
+    interceptors: Tuple[grpc.ServerInterceptor, ...]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
@@ -130,9 +130,9 @@ class _FailureOutcome(
     grpc.RpcError, grpc.Future, grpc.Call
 ):  # pylint: disable=too-many-ancestors
     _exception: Exception
-    _traceback: types.TracebackType
+    _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback

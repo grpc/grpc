@@ -1329,7 +1329,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         """Accesses the value to be used as detail bytes upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -2250,7 +2250,7 @@ def intercept_channel(channel: Channel,
     return _interceptor.intercept_channel(channel, *interceptors)
 
 
-def server(thread_pool: Optional[futures.ThreadPoolExecutor],
+def server(thread_pool: futures.ThreadPoolExecutor,
            handlers: Optional[Sequence[GenericRpcHandler]] = None,
            interceptors: Optional[Sequence[ServerInterceptor]] = None,
            options: Optional[Sequence[ChannelArgumentType]] = None,

@@ -33,17 +33,17 @@ from tests.unit import resources
 class GenericStub(object):
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
-            '/grpc.testing.BenchmarkService/UnaryCall')  # type: ignore
+            '/grpc.testing.BenchmarkService/UnaryCall')  # ty1pe: ignore
         self.StreamingFromServer = channel.unary_stream(
-            '/grpc.testing.BenchmarkService/StreamingFromServer')  # type: ignore
+            '/grpc.testing.BenchmarkService/StreamingFromServer'
+        )  # ty1pe: ignore
         self.StreamingCall = channel.stream_stream(
-            '/grpc.testing.BenchmarkService/StreamingCall')  # type: ignore
+            '/grpc.testing.BenchmarkService/StreamingCall')  # ty1pe: ignore
 
 
 class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
-    _response_callbacks:  List[Callable]
-
+    _response_callbacks: List[Callable]
 
     def __init__(
         self,

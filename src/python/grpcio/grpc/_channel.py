@@ -130,7 +130,7 @@ class _RPCState(object):
     details: Optional[str]
     debug_error_string: Optional[str]
     cancelled: bool
-    callbacks: List[NullaryCallbackType]
+    callbacks: Optional[List[NullaryCallbackType]]
     fork_epoch: Optional[int]
     rpc_start_time: Optional[float]  # In relative seconds
     rpc_end_time: Optional[float]  # In relative seconds
@@ -191,7 +191,7 @@ def _handle_event(
     state: _RPCState,
     response_deserializer: Optional[DeserializingFunction],
 ) -> List[NullaryCallbackType]:
-    callbacks = []
+    callbacks: List[NullaryCallbackType] = []
     for batch_operation in event.batch_operations:
         operation_type = batch_operation.type()
         state.due.remove(operation_type)
@@ -223,9 +223,8 @@ def _handle_event(
                     state.code = code
                     state.details = batch_operation.details()
                     state.debug_error_string = batch_operation.error_string()
-            state.rpc_end_time = time.perf_counter()
-            _observability.maybe_record_rpc_latency(state)
-            callbacks.extend(state.callbacks)
+            if state.callbacks:
+                callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks
 
@@ -676,7 +675,10 @@ class _SingleThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                self._state.callbacks.append(functools.partial(fn, self))
+                if not self._state.callbacks:
+                    self._state.callbacks = []
+                self._state.callbacks.append(functools.partial(
+                    fn, self))
                 return
 
         fn(self)
@@ -924,7 +926,10 @@ class _MultiThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                self._state.callbacks.append(functools.partial(fn, self))
+                if not self._state.callbacks:
+                    self._state.callbacks = []
+                self._state.callbacks.append(functools.partial(
+                    fn, self))  # ty1pe: ignore
                 return
 
         fn(self)
@@ -1844,8 +1849,9 @@ def _deliveries(
         ) = callback_and_connectivity
         if callback_connectivity is not state.connectivity:
             callbacks_needing_update.append(callback)
-            callback_and_connectivity[1] = state.connectivity
-    return callbacks_needing_update
+            callback_and_connectivity[
+                1] = state.connectivity  # type: ignore[index]
+    return callbacks_needing_update  # type: ignore[return-value]
 
 
 def _deliver(
@@ -1874,17 +1880,15 @@ def _deliver(
 
 
 def _spawn_delivery(
-    state: _ChannelConnectivityState,
-    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
-) -> None:
-    delivering_thread = cygrpc.ForkManagedThread(
-        target=_deliver,
-        args=(
-            state,
-            state.connectivity,
-            callbacks,
-        ),
-    )
+        state: _ChannelConnectivityState,
+        callbacks: Tuple[Callable[[grpc.ChannelConnectivity], None],
+                         ...]) -> None:
+    delivering_thread = cygrpc.ForkManagedThread(target=_deliver,
+                                                 args=(
+                                                     state,
+                                                     state.connectivity,
+                                                     callbacks,
+                                                 ))
     delivering_thread.setDaemon(True)
     delivering_thread.start()
     state.delivering = True
@@ -1906,9 +1910,10 @@ def _poll_connectivity(state: _ChannelConnectivityState,
             callback for callback, _ in state.callbacks_and_connectivities
         )
         for callback_and_connectivity in state.callbacks_and_connectivities:
-            callback_and_connectivity[1] = state.connectivity
+            callback_and_connectivity[
+                1] = state.connectivity  # type: ignore[index]
         if callbacks:
-            _spawn_delivery(state, callbacks)
+            _spawn_delivery(state, callbacks)  # type: ignore[arg-type]
     while True:
         event = channel.watch_connectivity_state(
             connectivity, time.time() + 0.2
@@ -1933,9 +1938,10 @@ def _poll_connectivity(state: _ChannelConnectivityState,
                     ]
                 )
                 if not state.delivering:
-                    callbacks = _deliveries(state)
+                    callbacks = _deliveries(state)  # type: ignore[assignment]
                     if callbacks:
-                        _spawn_delivery(state, callbacks)
+                        _spawn_delivery(state,
+                                        callbacks)  # type: ignore[arg-type]
 
 
 def _subscribe(state: _ChannelConnectivityState,

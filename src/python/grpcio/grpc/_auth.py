@@ -44,7 +44,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
             in inspect.getfullargspec(credentials.get_access_token).args
         )
 
-    def __call__(self, context: Optional[grpc.AuthMetadataContext],
+    def __call__(self, context: grpc.AuthMetadataContext,
                  callback: grpc.AuthMetadataPluginCallback):
         try:
             if self._is_jwt:
@@ -69,6 +69,6 @@ class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     def __init__(self, access_token: str):
         self._access_token = access_token
 
-    def __call__(self, context: Optional[grpc.AuthMetadataContext],
+    def __call__(self, context: grpc.AuthMetadataContext,
                  callback: grpc.AuthMetadataPluginCallback):
         _sign_request(callback, self._access_token, None)

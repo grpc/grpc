@@ -13,7 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# CONFIG_PATH="$(dirname ${0})/bazel_style.cfg"
-# "$(dirname "${0}")/../.."
 python3 -m pip install mypy==1.2.0
 mypy --explicit-package-bases --config "setup.cfg"

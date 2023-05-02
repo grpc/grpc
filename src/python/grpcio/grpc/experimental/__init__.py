@@ -130,4 +130,5 @@ if sys.version_info > (3, 6):
     from grpc._simple_stubs import stream_unary
     from grpc._simple_stubs import unary_stream
     from grpc._simple_stubs import unary_unary
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)  # type: ignore
+    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream
+                        )  # type: ignore[assignment]

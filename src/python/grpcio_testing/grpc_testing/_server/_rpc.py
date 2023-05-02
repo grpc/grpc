@@ -56,7 +56,7 @@ class Rpc(object):
             self._initial_metadata_sent = True
 
     def _call_back(self) -> None:
-        callbacks = tuple(self._callbacks)  # type: ignore
+        callbacks = tuple(self._callbacks)  # type: ignore[arg-type]
         self._callbacks = None
 
         def call_back() -> None:
@@ -94,7 +94,7 @@ class Rpc(object):
 
     def add_rpc_error(self, rpc_error: grpc.RpcError) -> None:
         with self._condition:
-            self._rpc_errors.append(rpc_error)  # type: ignore
+            self._rpc_errors.append(rpc_error)  # ty1pe: ignore
 
     def application_cancel(self) -> None:
         with self._condition:
@@ -153,7 +153,7 @@ class Rpc(object):
             if self._callbacks is None:
                 return False
             else:
-                self._callbacks.append(callback)  # type: ignore
+                self._callbacks.append(callback)  # ty1pe: ignore
                 return True
 
     def invocation_metadata(self) -> Optional[MetadataType]:

@@ -47,12 +47,14 @@ class Handler(_common.ServerRpcHandler):
 
     @abc.abstractmethod
     def unary_response_termination(
-            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
+        self
+    ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def stream_response_termination(
-            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
+            self
+    ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
 
@@ -125,7 +127,7 @@ class _Handler(Handler):
     def add_termination_callback(self, callback: Callable[[], None]) -> bool:
         with self._condition:
             if self._code is None:
-                self._termination_callbacks.append(callback)  # type: ignore
+                self._termination_callbacks.append(callback)  # type: ignore[union-attr]
                 return True
             else:
                 return False
@@ -174,11 +176,12 @@ class _Handler(Handler):
                 if self._expiration_future is not None:
                     self._expiration_future.cancel()
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:  # type: ignore
+        for termination_callback in termination_callbacks:  # type: ignore[union-attr]
             termination_callback()
 
     def unary_response_termination(
-            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
+        self
+    ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
@@ -197,7 +200,8 @@ class _Handler(Handler):
                     )
 
     def stream_response_termination(
-            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
+            self
+    ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
@@ -218,7 +222,7 @@ class _Handler(Handler):
                 termination_callbacks = self._termination_callbacks
                 self._termination_callbacks = None
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:  # type: ignore
+        for termination_callback in termination_callbacks:  # type: ignore[union-attr]
             termination_callback()
 
     def set_expiration_future(self, expiration_future: grpc.Future) -> None:

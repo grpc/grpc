@@ -14,7 +14,7 @@
 
 import sys
 import types
-from typing import Tuple, Union
+from typing import cast, Tuple, Union
 
 _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
 _MINIMUM_VERSION = (3, 5, 0)
@@ -103,7 +103,7 @@ def protos(protobuf_path: str) -> types.ModuleType:  # pylint: disable=unused-ar
       A module object corresponding to the message code for the indicated
       .proto file. Equivalent to a generated _pb2.py file.
     """
-    return _call_with_lazy_import("protos", protobuf_path)  # pytype: disable=bad-return-type
+    return cast(types.ModuleType, _call_with_lazy_import("protos", protobuf_path))
 
 
 def services(protobuf_path: str) -> types.ModuleType:  # pylint: disable=unused-argument
@@ -140,7 +140,7 @@ def services(protobuf_path: str) -> types.ModuleType:  # pylint: disable=unused-
       A module object corresponding to the stub/service code for the indicated
       .proto file. Equivalent to a generated _pb2_grpc.py file.
     """
-    return _call_with_lazy_import("services", protobuf_path)  # pytype: disable=bad-return-type
+    return cast(types.ModuleType, _call_with_lazy_import("services", protobuf_path))
 
 
 def protos_and_services(
@@ -166,4 +166,4 @@ def protos_and_services(
     """
     protos_and_services_modules = _call_with_lazy_import(
         "protos_and_services", protobuf_path)
-    return protos_and_services_modules  # pytype: disable=bad-return-type
+    return cast(Tuple[types.ModuleType, types.ModuleType], protos_and_services_modules)

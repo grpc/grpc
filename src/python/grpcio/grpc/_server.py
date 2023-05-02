@@ -173,7 +173,7 @@ class _GenericMethod(_Method):
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -260,6 +260,7 @@ def _get_initial_metadata_operation(
 
 def _abort(state: _RPCState, call: cygrpc.Call,
            code: Union[cygrpc.StatusCode, int], details: bytes) -> None:
+    operations: Tuple[Any, ...]
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
         effective_details = details if state.details is None else state.details
@@ -471,7 +472,7 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -704,9 +705,9 @@ def _reset_per_message_state(state: _RPCState) -> None:
         state.disable_next_compression = False
 
 
-def _send_response(
-    rpc_event: cygrpc.BaseEvent, state: _RPCState, serialized_response: bytes
-) -> bool:
+def _send_response(rpc_event: cygrpc.BaseEvent, state: _RPCState,
+                   serialized_response: bytes) -> bool:
+    operations: Tuple[Any, ...]
     with state.condition:
         if not _is_rpc_state_active(state):
             return False
@@ -1104,7 +1105,7 @@ class _ServerState(object):
     generic_handlers: List[grpc.GenericRpcHandler]
     registered_method_handlers: Dict[str, grpc.RpcMethodHandler]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
-    thread_pool: Optional[futures.ThreadPoolExecutor]
+    thread_pool: futures.ThreadPoolExecutor
     stage: _ServerStage
     termination_event: threading.Event
     shutdown_events: List[threading.Event]
@@ -1119,7 +1120,7 @@ class _ServerState(object):
                  server: cygrpc.Server,
                  generic_handlers: Sequence[grpc.GenericRpcHandler],
                  interceptor_pipeline: Optional[_interceptor._ServicePipeline],
-                 thread_pool: Optional[futures.ThreadPoolExecutor],
+                 thread_pool: futures.ThreadPoolExecutor,
                  maximum_concurrent_rpcs: Optional[int]):
         self.lock = threading.RLock()
         self.completion_queue = completion_queue
@@ -1376,7 +1377,7 @@ class _Server(grpc.Server):
     _state: _ServerState
 
     # pylint: disable=too-many-arguments
-    def __init__(self, thread_pool: Optional[futures.ThreadPoolExecutor],
+    def __init__(self, thread_pool: futures.ThreadPoolExecutor,
                  generic_handlers: Sequence[grpc.GenericRpcHandler],
                  interceptors: Sequence[grpc.ServerInterceptor],
                  options: Sequence[ChannelArgumentType],
@@ -1458,7 +1459,7 @@ class _Server(grpc.Server):
             self._state.server_deallocated = True
 
 
-def create_server(thread_pool: Optional[futures.ThreadPoolExecutor],
+def create_server(thread_pool: futures.ThreadPoolExecutor,
                   generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
                   interceptors: Sequence[grpc.ServerInterceptor],
                   options: Sequence[ChannelArgumentType],
