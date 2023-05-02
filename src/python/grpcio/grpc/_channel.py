@@ -1492,8 +1492,7 @@ def _deliveries(
         callback, callback_connectivity, = callback_and_connectivity
         if callback_connectivity is not state.connectivity:
             callbacks_needing_update.append(callback)
-            callback_and_connectivity[
-                1] = state.connectivity  # type: ignore[index]
+            callback_and_connectivity[1] = state.connectivity
     return callbacks_needing_update  # type: ignore[return-value]
 
 
@@ -1550,8 +1549,7 @@ def _poll_connectivity(state: _ChannelConnectivityState,
             callback for callback, unused_but_known_to_be_none_connectivity in
             state.callbacks_and_connectivities)
         for callback_and_connectivity in state.callbacks_and_connectivities:
-            callback_and_connectivity[
-                1] = state.connectivity  # type: ignore[index]
+            callback_and_connectivity[1] = state.connectivity
         if callbacks:
             _spawn_delivery(state, callbacks)  # type: ignore[arg-type]
     while True:

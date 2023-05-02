@@ -93,6 +93,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         [_health_pb2.HealthCheckResponse], None]]]
     _gracefully_shutting_down: bool
 
+    # pylint: disable=line-too-long
     def __init__(self,
                  experimental_non_blocking: bool = True,
                  experimental_thread_pool: Optional[
