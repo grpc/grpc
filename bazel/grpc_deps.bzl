@@ -253,16 +253,17 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "5b1c190c76db49da5714682ff53dcabd9d4d47cc577fc9070c1aa9a68cc0dc99",
-            strip_prefix = "protobuf-23.0-rc2",
+            sha256 = "8692fc34f3939159fe51dcf0ed5d567998eefb76e340e3f66b5b480cd22aedca",
+            strip_prefix = "protobuf-e01953476c583a9bea34ab24bbcb6e6028a77f1f",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/releases/download/v23.0-rc2/protobuf-23.0-rc2.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/releases/download/v23.0-rc2/protobuf-23.0-rc2.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/23.x
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/e01953476c583a9bea34ab24bbcb6e6028a77f1f.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/e01953476c583a9bea34ab24bbcb6e6028a77f1f.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
                 # workaround for https://github.com/protocolbuffers/upb/issues/1239
-                "@com_github_grpc_grpc//third_party:protobuf2.patch",
+                # "@com_github_grpc_grpc//third_party:protobuf2.patch",
             ],
             patch_args = ["-p1"],
         )
