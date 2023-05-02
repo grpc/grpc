@@ -99,7 +99,7 @@ class State(_common.ChannelRpcHandler):
                     )
 
     def termination(
-            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, str]:
+            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
                 if self._code is None:

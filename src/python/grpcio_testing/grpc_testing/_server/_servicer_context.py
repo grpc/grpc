@@ -17,15 +17,16 @@ from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence
 import grpc
 from grpc._typing import MetadataType
 from grpc_testing import _common
+from grpc_testing import Time
 from grpc_testing._server import _rpc
 
 
 class ServicerContext(grpc.ServicerContext):
     _rpc: _rpc.Rpc
-    _time: float
+    _time: Time
     _deadline: float
 
-    def __init__(self, rpc: _rpc.Rpc, time: float, deadline: float):
+    def __init__(self, rpc: _rpc.Rpc, time: Time, deadline: float):
         self._rpc = rpc
         self._time = time
         self._deadline = deadline
@@ -42,7 +43,7 @@ class ServicerContext(grpc.ServicerContext):
         else:
             return 0.0
 
-    def cancel(self) -> bool:
+    def cancel(self) -> None:
         self._rpc.application_cancel()
 
     def add_callback(self, callback: Callable[[], Any]) -> bool:

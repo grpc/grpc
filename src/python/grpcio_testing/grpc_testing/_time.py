@@ -14,6 +14,7 @@
 """Test times."""
 
 import collections
+from collections.abc import Iterable
 import logging
 import threading
 import time as _time
@@ -27,7 +28,7 @@ logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-def _call(behaviors: Callable[[], Any]):
+def _call(behaviors: Iterable[Callable[[], Any]]):
     for behavior in behaviors:
         try:
             behavior()
@@ -218,7 +219,7 @@ class StrictFakeTime(grpc_testing.Time):
         return self._time
 
     def call_in(self, behavior: Callable[[], Any],
-                delay: Optional[float]) -> _Future:
+                delay: float) -> _Future:
         if delay <= 0.0:
             _call_in_thread((behavior,))
         else:
@@ -228,7 +229,7 @@ class StrictFakeTime(grpc_testing.Time):
         return _Future(self._state, behavior, time)
 
     def call_at(self, behavior: Callable[[], Any],
-                time: Optional[float]) -> _Future:
+                time: float) -> _Future:
         with self._state.condition:
             if time <= self._time:
                 _call_in_thread((behavior,))

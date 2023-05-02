@@ -14,7 +14,7 @@
 
 import logging
 import threading
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Iterable, List
 
 import grpc
 from grpc._typing import MetadataType
@@ -26,16 +26,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Rpc(object):
-    _condition = threading.Condition
-    _handler = _handler.Handler
-    _invocation_metadata = MetadataType
-    _initial_metadata_sent = bool
-    _pending_trailing_metadata = Optional[MetadataType]
-    _pending_code = Optional[grpc.StatusCode]
-    _pending_details = Optional[str]
-    _callbacks = Sequence[Callable[[], Any]]
-    _active = Optional[bool]
-    _rpc_errors = Sequence[grpc.RpcError]
+    _condition: threading.Condition
+    _handler: _handler.Handler
+    _invocation_metadata: MetadataType
+    _initial_metadata_sent: bool
+    _pending_trailing_metadata: Optional[MetadataType]
+    _pending_code: Optional[grpc.StatusCode]
+    _pending_details: Optional[str]
+    _callbacks: Optional[Iterable[Callable[[], Any]]]
+    _active: bool
+    _rpc_errors: List[grpc.RpcError]
 
     def __init__(self, handler: _handler.Handler,
                  invocation_metadata: MetadataType):
@@ -56,7 +56,7 @@ class Rpc(object):
             self._initial_metadata_sent = True
 
     def _call_back(self) -> None:
-        callbacks = tuple(self._callbacks)
+        callbacks = tuple(self._callbacks)  # type: ignore
         self._callbacks = None
 
         def call_back() -> None:
@@ -94,7 +94,7 @@ class Rpc(object):
 
     def add_rpc_error(self, rpc_error: grpc.RpcError) -> None:
         with self._condition:
-            self._rpc_errors.append(rpc_error)
+            self._rpc_errors.append(rpc_error)  # type: ignore
 
     def application_cancel(self) -> None:
         with self._condition:
@@ -153,7 +153,7 @@ class Rpc(object):
             if self._callbacks is None:
                 return False
             else:
-                self._callbacks.append(callback)
+                self._callbacks.append(callback)  # type: ignore
                 return True
 
     def invocation_metadata(self) -> Optional[MetadataType]:

@@ -70,7 +70,7 @@ class _Call(grpc.Call):
     def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
-    def cancel(self) -> bool:
+    def cancel(self) -> None:
         _cancel(self._handler)
 
     def is_active(self) -> bool:
@@ -100,7 +100,7 @@ class _RpcErrorCall(grpc.RpcError, grpc.Call):
     def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
-    def cancel(self) -> bool:
+    def cancel(self) -> None:
         _cancel(self._handler)
 
     def is_active(self) -> bool:
@@ -318,7 +318,7 @@ class ResponseIteratorCall(grpc.Call):
     def next(self) -> Any:
         return _next(self._handler)
 
-    def cancel(self) -> bool:
+    def cancel(self) -> None:
         _cancel(self._handler)
 
     def is_active(self) -> bool:

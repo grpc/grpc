@@ -14,11 +14,12 @@
 
 import abc
 import threading
-from typing import Any, Callable, Optional, Sequence, Tuple
+from typing import Any, Callable, Optional, List, Tuple
 
 import grpc
 from grpc._typing import MetadataType
 from grpc_testing import _common
+from grpc_testing import Time
 
 _CLIENT_INACTIVE = grpc.StatusCode.UNKNOWN
 
@@ -46,27 +47,27 @@ class Handler(_common.ServerRpcHandler):
 
     @abc.abstractmethod
     def unary_response_termination(
-            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, str]:
+            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def stream_response_termination(
-            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, str]:
+            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
 
 class _Handler(Handler):
     _condition: threading.Condition
-    _requests = Sequence
-    _requests_closed = bool
-    _initial_metadata = Optional[MetadataType]
-    _responses = Sequence
-    _trailing_metadata = Optional[MetadataType]
-    _code = Optional[grpc.StatusCode]
-    _details = Optional[str]
-    _unary_response = Any
-    _expiration_future = Optional[grpc.Future]
-    _termination_callbacks = Sequence[Callable[[], None]]
+    _requests: List
+    _requests_closed: bool
+    _initial_metadata: Optional[MetadataType]
+    _responses: List
+    _trailing_metadata: Optional[MetadataType]
+    _code: Optional[grpc.StatusCode]
+    _details: Optional[str]
+    _unary_response: Any
+    _expiration_future: Optional[grpc.Future]
+    _termination_callbacks: Optional[List[Callable[[], None]]]
 
     def __init__(self, requests_closed: bool):
         self._condition = threading.Condition()
@@ -124,7 +125,7 @@ class _Handler(Handler):
     def add_termination_callback(self, callback: Callable[[], None]) -> bool:
         with self._condition:
             if self._code is None:
-                self._termination_callbacks.append(callback)
+                self._termination_callbacks.append(callback)  # type: ignore
                 return True
             else:
                 return False
@@ -173,11 +174,11 @@ class _Handler(Handler):
                 if self._expiration_future is not None:
                     self._expiration_future.cancel()
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:
+        for termination_callback in termination_callbacks:  # type: ignore
             termination_callback()
 
     def unary_response_termination(
-            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, str]:
+            self) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
@@ -196,7 +197,7 @@ class _Handler(Handler):
                     )
 
     def stream_response_termination(
-            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, str]:
+            self) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
@@ -217,7 +218,7 @@ class _Handler(Handler):
                 termination_callbacks = self._termination_callbacks
                 self._termination_callbacks = None
                 self._condition.notify_all()
-        for termination_callback in termination_callbacks:
+        for termination_callback in termination_callbacks:  # type: ignore
             termination_callback()
 
     def set_expiration_future(self, expiration_future: grpc.Future) -> None:
@@ -229,7 +230,7 @@ def handler_without_deadline(requests_closed: bool) -> _Handler:
     return _Handler(requests_closed)
 
 
-def handler_with_deadline(requests_closed: bool, time: float,
+def handler_with_deadline(requests_closed: bool, time: Time,
                           deadline: float) -> _Handler:
     handler = _Handler(requests_closed)
     expiration_future = time.call_at(handler.expire, deadline)

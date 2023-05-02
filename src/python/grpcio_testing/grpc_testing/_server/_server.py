@@ -151,7 +151,7 @@ class _Serverish(_common.Serverish):
 
 
 def _deadline_and_handler(
-        requests_closed: bool, time: float,
+        requests_closed: bool, time: grpc_testing.Time,
         timeout: Optional[float]) -> Tuple[Optional[float], _handler.Handler]:
     if timeout is None:
         return None, _handler.handler_without_deadline(requests_closed)
