@@ -193,6 +193,7 @@ struct RbacConfig {
       void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
     };
 
+    std::string name;
     absl::optional<Rules> rules;
 
     Rbac TakeAsRbac();
@@ -756,14 +757,16 @@ Rbac RbacConfig::RbacPolicy::TakeAsRbac() {
   if (!rules.has_value()) {
     // No enforcing to be applied. An empty deny policy with an empty map
     // is equivalent to no enforcing.
-    return Rbac(Rbac::Action::kDeny, {});
+    return Rbac(std::move(name), Rbac::Action::kDeny, {});
   }
+  // TODO(lwge): This also needs to take the name.
   return rules->TakeAsRbac();
 }
 
 const JsonLoaderInterface* RbacConfig::RbacPolicy::JsonLoader(const JsonArgs&) {
   static const auto* loader = JsonObjectLoader<RbacPolicy>()
                                   .OptionalField("rules", &RbacPolicy::rules)
+                                  .Field("filter_name", &RbacPolicy::name)
                                   .Finish();
   return loader;
 }

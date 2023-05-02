@@ -927,6 +927,7 @@ grpc_cc_library(
         "grpc_trace",
         "ref_counted_ptr",
         "//src/core:error",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",

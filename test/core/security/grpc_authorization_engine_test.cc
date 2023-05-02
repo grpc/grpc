@@ -31,7 +31,7 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
-  Rbac rbac(Rbac::Action::kAllow, std::move(policies));
+  Rbac rbac("authz", Rbac::Action::kAllow, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
@@ -46,7 +46,7 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
       Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
-  Rbac rbac(Rbac::Action::kAllow, std::move(policies));
+  Rbac rbac("authz", Rbac::Action::kAllow, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
@@ -72,7 +72,7 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
-  Rbac rbac(Rbac::Action::kDeny, std::move(policies));
+  Rbac rbac("authz", Rbac::Action::kDeny, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
@@ -87,7 +87,7 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
       Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
-  Rbac rbac(Rbac::Action::kDeny, std::move(policies));
+  Rbac rbac("authz", Rbac::Action::kDeny, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
