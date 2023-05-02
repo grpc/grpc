@@ -24,6 +24,11 @@ import warnings
 import grpc
 from grpc._cython import cygrpc as _cygrpc
 
+from grpc._simple_stubs import stream_stream
+from grpc._simple_stubs import stream_unary
+from grpc._simple_stubs import unary_stream
+from grpc._simple_stubs import unary_unary
+
 _EXPERIMENTAL_APIS_USED = set()
 
 
@@ -118,17 +123,13 @@ def wrap_server_method_handler(wrapper, handler):
 
 
 __all__ = (
-    "ChannelOptions",
-    "ExperimentalApiWarning",
-    "UsageError",
-    "insecure_channel_credentials",
-    "wrap_server_method_handler",
+    'ChannelOptions',
+    'ExperimentalApiWarning',
+    'UsageError',
+    'insecure_channel_credentials',
+    'wrap_server_method_handler',
+    'unary_unary',
+    'unary_stream',
+    'stream_unary',
+    'stream_stream',
 )
-
-if sys.version_info > (3, 6):
-    from grpc._simple_stubs import stream_stream
-    from grpc._simple_stubs import stream_unary
-    from grpc._simple_stubs import unary_stream
-    from grpc._simple_stubs import unary_unary
-    methods = (unary_unary, unary_stream, stream_unary, stream_stream)
-    __all__ = __all__ + methods  # type: ignore[assignment]

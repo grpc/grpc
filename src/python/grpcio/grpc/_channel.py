@@ -1830,7 +1830,7 @@ class _ChannelConnectivityState(object):
         self.callbacks_and_connectivities = []
         self.delivering = False
 
-
+# pytype: disable=ignored-type-comment
 def _deliveries(
     state: _ChannelConnectivityState,
 ) -> List[Callable[[grpc.ChannelConnectivity], None]]:
@@ -1887,6 +1887,7 @@ def _spawn_delivery(
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
+# pytype: disable=ignored-type-comment
 def _poll_connectivity(state: _ChannelConnectivityState,
                        channel: cygrpc.Channel,
                        initial_try_to_connect: bool) -> None:
