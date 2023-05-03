@@ -29,7 +29,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -39,7 +38,6 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/transport/connectivity_state.h"
