@@ -44,7 +44,8 @@ using experimental::AuditLogger;
 class GrpcAuthorizationEngine : public AuthorizationEngine {
  public:
   // Builds GrpcAuthorizationEngine without any policies.
-  explicit GrpcAuthorizationEngine(Rbac::Action action) : action_(action) {}
+  explicit GrpcAuthorizationEngine(Rbac::Action action)
+      : action_(action), audit_condition_(Rbac::AuditCondition::kNone) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
   explicit GrpcAuthorizationEngine(Rbac policy);
 
