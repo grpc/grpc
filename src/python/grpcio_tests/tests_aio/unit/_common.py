@@ -47,7 +47,7 @@ async def block_until_certain_state(
         state = channel.get_state()
 
 
-def inject_callbacks(call: Union[aio.Call, aio._base_server.ServicerContext]):
+def inject_callbacks(call: Union[aio.Call, aio.ServicerContext]):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
