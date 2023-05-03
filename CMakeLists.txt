@@ -26257,10 +26257,12 @@ if(gRPC_INSTALL)
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
     NAMESPACE gRPC::
   )
-  install(EXPORT gRPCPluginTargets
-    DESTINATION ${gRPC_INSTALL_CMAKEDIR}
-    NAMESPACE gRPC::
-  )
+  if(gRPC_BUILD_CODEGEN)
+    install(EXPORT gRPCPluginTargets
+      DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+      NAMESPACE gRPC::
+    )
+  endif()
 endif()
 
 include(CMakePackageConfigHelpers)
