@@ -80,18 +80,16 @@ grpc_core::TraceFlag grpc_trace_ares_wrapper_address_sorting(
 grpc_core::TraceFlag grpc_trace_ares_wrapper_stacktrace(
     false, "ares_wrapper_stacktrace");
 
-#define GRPC_ARES_WRAPPER_STACK_TRACE()                                \
-  do {                                                                 \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper_stacktrace)) { \
-      absl::optional<std::string> stacktrace =                         \
-          grpc_core::GetCurrentStackTrace();                           \
-      if (stacktrace.has_value()) {                                    \
-        gpr_log(GPR_DEBUG, "%s", stacktrace->c_str());                 \
-      } else {                                                         \
-        gpr_log(GPR_DEBUG, "stacktrace unavailable");                  \
-      }                                                                \
-    }                                                                  \
-  } while (0)
+void PrintCurrentStackTrace() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper_stacktrace)) {
+    absl::optional<std::string> stacktrace = grpc_core::GetCurrentStackTrace();
+    if (stacktrace.has_value()) {
+      gpr_log(GPR_DEBUG, "%s", stacktrace->c_str());
+    } else {
+      gpr_log(GPR_DEBUG, "stacktrace unavailable");
+    }
+  }
+}
 
 grpc_core::TraceFlag grpc_trace_ares_wrapper(false,
                                              "event_engine_ares_wrapper");
@@ -110,7 +108,7 @@ bool IsIpv6LoopbackAvailable() {
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
   return PosixSocketWrapper::IsIpv6LoopbackAvailable();
 #elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  // TODO(yijiem): (debt) move pieces for Windows
+  // TODO(yijiem): make this portable for Windows
   return false;
 #else
 #error "Unsupported platform"
@@ -138,14 +136,14 @@ void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
         request->host_.c_str(), ares_strerror(status));
     GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
                                 request, error_msg.c_str());
-    GRPC_ARES_WRAPPER_STACK_TRACE();
+    PrintCurrentStackTrace();
     request->OnResolveLocked(GRPC_ERROR_CREATE(error_msg));
     return;
   }
   GRPC_ARES_WRAPPER_TRACE_LOG(
       "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
       request, harg->qtype, request->host_.c_str());
-  GRPC_ARES_WRAPPER_STACK_TRACE();
+  PrintCurrentStackTrace();
 
   std::vector<EventEngine::ResolvedAddress> resolved_addresses;
   for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
@@ -314,7 +312,7 @@ GrpcAresRequest::GrpcAresRequest(
 GrpcAresRequest::~GrpcAresRequest() {
   if (initialized_) {
     ares_destroy(channel_);
-    GRPC_ARES_WRAPPER_STACK_TRACE();
+    PrintCurrentStackTrace();
   }
   GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
@@ -527,7 +525,7 @@ void GrpcAresRequest::OnReadable(FdNode* fd_node, absl::Status status) {
   fd_node->readable_registered = false;
   GRPC_ARES_WRAPPER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
                               fd_node->as, this, status.ToString().c_str());
-  GRPC_ARES_WRAPPER_STACK_TRACE();
+  PrintCurrentStackTrace();
   if (status.ok() && !shutting_down_) {
     do {
       ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
