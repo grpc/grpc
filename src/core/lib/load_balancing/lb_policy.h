@@ -92,6 +92,10 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
+///
+/// LB policies are assumed to start in state CONNECTING the first time
+/// that UpdateLocked() is called.  They do not need to call the
+/// helper's UpdateState() method to report a picker for that state.
 // TODO(roth): Once we move to EventManager-based polling, remove the
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
