@@ -88,7 +88,7 @@ absl::StatusOr<std::string> ChooseServiceConfig(
         continue;
       }
     }
-    return JsonDump(choice.service_config);
+    return JsonDump(Json::FromObject(choice.service_config));
   }
   // No matching service config was found
   return "";

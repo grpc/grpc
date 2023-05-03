@@ -215,11 +215,10 @@ class XdsResolver : public Resolver {
     work_serializer_->Run(std::move(callback), location);
   }
 
-  ClusterState::ClusterStateMap::iterator Emplace(
+  void Emplace(
       absl::string_view cluster_name,
       WeakRefCountedPtr<ClusterState> cluster_state) {
-    return cluster_state_map_.emplace(cluster_name, std::move(cluster_state))
-        .first;
+    cluster_state_map_.emplace(cluster_name, std::move(cluster_state));
   }
 
  private:
@@ -412,7 +411,8 @@ class XdsResolver : public Resolver {
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map_;
 
-  ClusterState::ClusterStateMap cluster_state_map_;
+  std::map<absl::string_view, WeakRefCountedPtr<ClusterState>>
+      cluster_state_map_;
 };
 
 //
