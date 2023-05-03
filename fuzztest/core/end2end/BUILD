@@ -82,7 +82,6 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "//test/core/end2end:cq_verifier",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -94,6 +93,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
+        "//test/core/end2end:cq_verifier",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
@@ -255,7 +255,6 @@ grpc_cc_test(
     shard_count = 50,
     tags = ["core_end2end_test"],
     deps = [
-        "//test/core/end2end:cq_verifier",
         "end2end_test_lib",
         "fixture_support",
         "http_proxy",
@@ -296,6 +295,7 @@ grpc_cc_test(
         "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:time",
+        "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
     ],

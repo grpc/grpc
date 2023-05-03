@@ -16,7 +16,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/end2end", visibility = "tests")
+grpc_package(
+    name = "test/core/end2end",
+    visibility = "tests",
+)
 
 grpc_cc_library(
     name = "cq_verifier",
@@ -54,7 +57,6 @@ grpc_cc_library(
     language = "C++",
     visibility = ["//:__subpackages__"],
 )
-
 
 grpc_cc_test(
     name = "bad_server_response_test",
