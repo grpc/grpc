@@ -32,6 +32,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"

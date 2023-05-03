@@ -22,6 +22,8 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/lib/transport/connectivity_state.h"
 
 // IWYU pragma: no_include <type_traits>
