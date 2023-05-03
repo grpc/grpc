@@ -440,7 +440,7 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
 }
 
 void Encoder::EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
-                                  Slice value, size_t transport_length) {
+                                  Slice value, size_t) {
   if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
