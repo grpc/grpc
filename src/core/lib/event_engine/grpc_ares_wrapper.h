@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>  // for size_t
+#include <stddef.h>
 
 #include <memory>
 #include <string>
