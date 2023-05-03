@@ -76,7 +76,7 @@ TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
 
 namespace {
 
-// TODO(yijiem): build a portable solution for Windows
+// TODO(yijiem): make this portable for Windows
 constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
 constexpr char kHealthCheckRecordName[] =
@@ -229,8 +229,8 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 #define EXPECT_UNKNOWN_ERROR(result) \
   EXPECT_EQ((result).status().code(), absl::StatusCode::kUnknown)
 
-// Verifies that an ExecCtx exists for the thread in which the destructor
-// invokes.
+// Verifies that an ExecCtx exists for the thread on which the destructor is
+// invoked.
 class ExecCtxVerifier {
  public:
   explicit ExecCtxVerifier(grpc_closure* destroy_closure)
