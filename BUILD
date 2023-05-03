@@ -1909,6 +1909,7 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
+        "legacy_context",
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
