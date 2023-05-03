@@ -126,9 +126,11 @@ for line in sys.stdin:
     key = (line[0] + key_tail).strip()
     value = value.strip().encode('ascii')
     if args.huff:
-        from hpack.huffman_constants import REQUEST_CODES, REQUEST_CODES_LENGTH
         from hpack.huffman import HuffmanEncoder
-        value = HuffmanEncoder(REQUEST_CODES, REQUEST_CODES_LENGTH).encode(value)
+        from hpack.huffman_constants import REQUEST_CODES
+        from hpack.huffman_constants import REQUEST_CODES_LENGTH
+        value = HuffmanEncoder(REQUEST_CODES,
+                               REQUEST_CODES_LENGTH).encode(value)
     vals.append((key, value))
 
 # generate frame payload binary data
@@ -139,7 +141,8 @@ payload_len = 0
 n = 0
 for key, value in vals:
     payload_line = []
-    _COMPRESSORS[args.compression](payload_line, n, len(vals), key, value, args.huff)
+    _COMPRESSORS[args.compression](payload_line, n, len(vals), key, value,
+                                   args.huff)
     n += 1
     payload_len += len(payload_line)
     payload_bytes.append(payload_line)
@@ -165,7 +168,6 @@ if not args.no_framing:
     ])
 
 hex_bytes = [ord(c) for c in "abcdefABCDEF0123456789"]
-
 
 # dump bytes
 _OUTPUTS[args.output](payload_bytes)

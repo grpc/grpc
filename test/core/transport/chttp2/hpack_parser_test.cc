@@ -77,7 +77,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   ~ParseTest() override {
     {
-      grpc_core::ExecCtx exec_ctx;
+      ExecCtx exec_ctx;
       parser_.reset();
     }
 
@@ -85,7 +85,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   }
 
   void SetUp() override {
-    parser_ = std::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<HPackParser>();
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
       EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
@@ -96,7 +96,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   static bool IsStreamError(const absl::Status& status) {
     intptr_t stream_id;
-    return grpc_error_get_int(status, grpc_core::StatusIntProperty::kStreamId,
+    return grpc_error_get_int(status, StatusIntProperty::kStreamId,
                               &stream_id);
   }
 
@@ -104,12 +104,12 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                   absl::optional<size_t> max_metadata_size,
                   absl::string_view hexstring,
                   absl::StatusOr<absl::string_view> expect, uint32_t flags) {
-    grpc_core::MemoryAllocator memory_allocator =
-        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+    MemoryAllocator memory_allocator =
+        MemoryAllocator(ResourceQuota::Default()
                                        ->memory_quota()
                                        ->CreateMemoryAllocator("test"));
-    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-    grpc_core::ExecCtx exec_ctx;
+    auto arena = MakeScopedArena(1024, &memory_allocator);
+    ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
     size_t nslices;
@@ -120,14 +120,14 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
         (flags & kEndOfStream)
-            ? grpc_core::HPackParser::Boundary::EndOfStream
+            ? HPackParser::Boundary::EndOfStream
             : ((flags & kEndOfHeaders)
-                   ? grpc_core::HPackParser::Boundary::EndOfHeaders
-                   : grpc_core::HPackParser::Boundary::None),
-        flags & kWithPriority ? grpc_core::HPackParser::Priority::Included
-                              : grpc_core::HPackParser::Priority::None,
-        grpc_core::HPackParser::LogInfo{
-            1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+                   ? HPackParser::Boundary::EndOfHeaders
+                   : HPackParser::Boundary::None),
+        flags & kWithPriority ? HPackParser::Priority::Included
+                              : HPackParser::Priority::None,
+        HPackParser::LogInfo{
+            1, HPackParser::LogInfo::kHeaders, false});
 
     grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
                       &slices, &nslices);
@@ -140,7 +140,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
     bool saw_error = false;
     for (i = 0; i < nslices; i++) {
-      grpc_core::ExecCtx exec_ctx;
+      ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
       if (!err.ok() && (flags & kFailureIsConnectionError) == 0) {
         EXPECT_TRUE(IsStreamError(err)) << err;
@@ -180,7 +180,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
    public:
     std::string result() { return out_; }
 
-    void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    void Encode(const Slice& key, const Slice& value) {
       out_.append(absl::StrCat(key.as_string_view(), ": ",
                                value.as_string_view(), "\n"));
     }
@@ -195,7 +195,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     std::string out_;
   };
 
-  std::unique_ptr<grpc_core::HPackParser> parser_;
+  std::unique_ptr<HPackParser> parser_;
 };
 
 TEST_P(ParseTest, WholeSlices) {
