@@ -46,7 +46,7 @@ bool ShouldLog(const Decision& decision,
 }  // namespace
 
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
-    : name_(policy.name),
+    : name_(std::move(policy.name)),
       action_(policy.action),
       audit_condition_(policy.audit_condition) {
   for (auto& sub_policy : policy.policies) {
