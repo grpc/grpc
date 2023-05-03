@@ -523,8 +523,6 @@ grpc_cc_library(
     defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/status:statusor",
-        "absl/strings",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -588,8 +586,6 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/base:core_headers",
-        "absl/status:statusor",
-        "absl/strings",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -1228,7 +1224,6 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
-        "absl/strings",
         "absl/time",
         "absl/types:optional",
         "absl/functional:any_invocable",

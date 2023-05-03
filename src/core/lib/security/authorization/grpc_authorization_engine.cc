@@ -66,16 +66,16 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(
     GrpcAuthorizationEngine&& other) noexcept
     : name_(std::move(other.name_)),
       action_(other.action_),
-      audit_condition_(other.audit_condition_),
       policies_(std::move(other.policies_)),
+      audit_condition_(other.audit_condition_),
       audit_loggers_(std::move(other.audit_loggers_)) {}
 
 GrpcAuthorizationEngine& GrpcAuthorizationEngine::operator=(
     GrpcAuthorizationEngine&& other) noexcept {
   name_ = std::move(other.name_);
   action_ = other.action_;
-  audit_condition_ = other.audit_condition_;
   policies_ = std::move(other.policies_);
+  audit_condition_ = other.audit_condition_;
   audit_loggers_ = std::move(other.audit_loggers_);
   return *this;
 }

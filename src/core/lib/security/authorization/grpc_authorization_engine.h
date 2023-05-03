@@ -68,8 +68,8 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
   std::string name_;
   Rbac::Action action_;
-  Rbac::AuditCondition audit_condition_;
   std::vector<Policy> policies_;
+  Rbac::AuditCondition audit_condition_;
   std::vector<std::unique_ptr<AuditLogger>> audit_loggers_;
 };
 
