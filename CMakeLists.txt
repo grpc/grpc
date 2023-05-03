@@ -1520,8 +1520,8 @@ target_link_libraries(gpr
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
-    android
-    log
+    PUBLIC android
+    PUBLIC log
   )
 endif()
 
