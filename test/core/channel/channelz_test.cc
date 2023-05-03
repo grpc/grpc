@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 
 #include "absl/status/status.h"
@@ -53,9 +54,8 @@ class CallCountingHelperPeer {
   explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
 
   gpr_timespec last_call_started_time() const {
-    CallCountingHelper::CounterData data;
-    node_->CollectData(&data);
-    return gpr_cycle_counter_to_time(data.last_call_started_cycle);
+    return gpr_cycle_counter_to_time(
+        node_->last_call_started_cycle_.load(std::memory_order_relaxed));
   }
 
  private:

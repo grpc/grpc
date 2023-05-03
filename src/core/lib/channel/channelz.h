@@ -122,8 +122,6 @@ class BaseNode : public RefCounted<BaseNode> {
 //   - perform rendering of the above items
 class CallCountingHelper {
  public:
-  CallCountingHelper();
-
   void RecordCallStarted();
   void RecordCallFailed();
   void RecordCallSucceeded();
@@ -135,44 +133,10 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
-  // TODO(soheil): add a proper PerCPU helper and use it here.
-  struct AtomicCounterData {
-    // Define the ctors so that we can use this structure in InlinedVector.
-    AtomicCounterData() = default;
-    AtomicCounterData(const AtomicCounterData& that)
-        : calls_started(that.calls_started.load(std::memory_order_relaxed)),
-          calls_succeeded(that.calls_succeeded.load(std::memory_order_relaxed)),
-          calls_failed(that.calls_failed.load(std::memory_order_relaxed)),
-          last_call_started_cycle(
-              that.last_call_started_cycle.load(std::memory_order_relaxed)) {}
-
-    std::atomic<int64_t> calls_started{0};
-    std::atomic<int64_t> calls_succeeded{0};
-    std::atomic<int64_t> calls_failed{0};
-    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
-    // Make sure the size is exactly one cache line.
-    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(std::atomic<intptr_t>) -
-                    sizeof(std::atomic<gpr_cycle_counter>)];
-  };
-  // TODO(soheilhy,veblush): Revist this after abseil integration.
-  // This has a problem when using abseil inlined_vector because it
-  // carries an alignment attribute properly but our allocator doesn't
-  // respect this. To avoid UBSAN errors, this should be removed with
-  // abseil inlined_vector.
-  // GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
-
-  struct CounterData {
-    int64_t calls_started = 0;
-    int64_t calls_succeeded = 0;
-    int64_t calls_failed = 0;
-    gpr_cycle_counter last_call_started_cycle = 0;
-  };
-
-  // collects the sharded data into one CounterData struct.
-  void CollectData(CounterData* out);
-
-  std::vector<AtomicCounterData> per_cpu_counter_data_storage_;
-  size_t num_cores_ = 0;
+  std::atomic<int64_t> calls_started_{0};
+  std::atomic<int64_t> calls_succeeded_{0};
+  std::atomic<int64_t> calls_failed_{0};
+  std::atomic<gpr_cycle_counter> last_call_started_cycle_{0};
 };
 
 // Handles channelz bookkeeping for channels

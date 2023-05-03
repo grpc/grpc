@@ -68,69 +68,38 @@ std::string BaseNode::RenderJsonString() {
 // CallCountingHelper
 //
 
-CallCountingHelper::CallCountingHelper() {
-  num_cores_ = std::max(1u, gpr_cpu_num_cores());
-  per_cpu_counter_data_storage_.reserve(num_cores_);
-  for (size_t i = 0; i < num_cores_; ++i) {
-    per_cpu_counter_data_storage_.emplace_back();
-  }
-}
-
 void CallCountingHelper::RecordCallStarted() {
-  AtomicCounterData& data =
-      per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
-  data.calls_started.fetch_add(1, std::memory_order_relaxed);
-  data.last_call_started_cycle.store(gpr_get_cycle_counter(),
-                                     std::memory_order_relaxed);
+  calls_started_.fetch_add(1, std::memory_order_relaxed);
+  last_call_started_cycle_.store(gpr_get_cycle_counter(),
+                                 std::memory_order_relaxed);
 }
 
 void CallCountingHelper::RecordCallFailed() {
-  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_failed.fetch_add(1, std::memory_order_relaxed);
+  calls_failed_.fetch_add(1, std::memory_order_relaxed);
 }
 
 void CallCountingHelper::RecordCallSucceeded() {
-  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_succeeded.fetch_add(1, std::memory_order_relaxed);
-}
-
-void CallCountingHelper::CollectData(CounterData* out) {
-  for (size_t core = 0; core < num_cores_; ++core) {
-    AtomicCounterData& data = per_cpu_counter_data_storage_[core];
-
-    out->calls_started += data.calls_started.load(std::memory_order_relaxed);
-    out->calls_succeeded +=
-        per_cpu_counter_data_storage_[core].calls_succeeded.load(
-            std::memory_order_relaxed);
-    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.load(
-        std::memory_order_relaxed);
-    const gpr_cycle_counter last_call =
-        per_cpu_counter_data_storage_[core].last_call_started_cycle.load(
-            std::memory_order_relaxed);
-    if (last_call > out->last_call_started_cycle) {
-      out->last_call_started_cycle = last_call;
-    }
-  }
+  calls_succeeded_.fetch_add(1, std::memory_order_relaxed);
 }
 
 void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
-  CounterData data;
-  CollectData(&data);
-  if (data.calls_started != 0) {
-    (*json)["callsStarted"] =
-        Json::FromString(absl::StrCat(data.calls_started));
+  auto calls_started = calls_started_.load(std::memory_order_relaxed);
+  auto calls_succeeded = calls_succeeded_.load(std::memory_order_relaxed);
+  auto calls_failed = calls_failed_.load(std::memory_order_relaxed);
+  auto last_call_started_cycle =
+      last_call_started_cycle_.load(std::memory_order_relaxed);
+  if (calls_started != 0) {
+    (*json)["callsStarted"] = Json::FromString(absl::StrCat(calls_started));
     gpr_timespec ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(data.last_call_started_cycle),
-        GPR_CLOCK_REALTIME);
+        gpr_cycle_counter_to_time(last_call_started_cycle), GPR_CLOCK_REALTIME);
     (*json)["lastCallStartedTimestamp"] =
         Json::FromString(gpr_format_timespec(ts));
   }
-  if (data.calls_succeeded != 0) {
-    (*json)["callsSucceeded"] =
-        Json::FromString(absl::StrCat(data.calls_succeeded));
+  if (calls_succeeded != 0) {
+    (*json)["callsSucceeded"] = Json::FromString(absl::StrCat(calls_succeeded));
   }
-  if (data.calls_failed != 0) {
-    (*json)["callsFailed"] = Json::FromString(absl::StrCat(data.calls_failed));
+  if (calls_failed != 0) {
+    (*json)["callsFailed"] = Json::FromString(absl::StrCat(calls_failed));
   }
 }
 
