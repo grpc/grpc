@@ -139,14 +139,11 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
         absl::UnavailableError(StatusToString(call_config.status()))));
     return std::move(r);
   }
-  auto& ctx = GetContext<
-      grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA];
-  ctx.value = GetContext<Arena>()->New<ServiceConfigCallData>(
-      std::move(call_config->service_config), call_config->method_configs,
-      ServiceConfigCallData::CallAttributes{});
-  ctx.destroy = [](void* p) {
-    static_cast<ServiceConfigCallData*>(p)->~ServiceConfigCallData();
-  };
+  auto* service_config_call_data =
+      GetContext<Arena>()->New<ServiceConfigCallData>(
+          GetContext<Arena>(), GetContext<grpc_call_context_element>());
+  service_config_call_data->SetServiceConfig(
+      std::move(call_config->service_config), call_config->method_configs);
   return next_promise_factory(std::move(call_args));
 }
 
