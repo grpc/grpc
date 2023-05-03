@@ -1753,7 +1753,6 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
-        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
