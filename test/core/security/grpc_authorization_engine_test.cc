@@ -21,8 +21,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "gmock/gmock.h"
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
 
@@ -46,7 +44,7 @@ using experimental::RegisterAuditLoggerFactory;
 
 // This test class copies the audit context.
 struct TestAuditContext {
-  TestAuditContext(const AuditContext& context)
+  explicit TestAuditContext(const AuditContext& context)
       : rpc_method(context.rpc_method()),
         principal(context.principal()),
         policy_name(context.policy_name()),
@@ -62,10 +60,11 @@ struct TestAuditContext {
 
 class TestAuditLogger : public AuditLogger {
  public:
-  TestAuditLogger(std::vector<std::unique_ptr<TestAuditContext>>& contexts)
+  explicit TestAuditLogger(
+      std::vector<std::unique_ptr<TestAuditContext>>& contexts)
       : contexts_(contexts) {}
 
-  void Log(const AuditContext& context) {
+  void Log(const AuditContext& context) override {
     contexts_.push_back(std::make_unique<TestAuditContext>(context));
   }
 
@@ -75,7 +74,7 @@ class TestAuditLogger : public AuditLogger {
 
 class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
-  TestAuditLoggerFactory(
+  explicit TestAuditLoggerFactory(
       std::vector<std::unique_ptr<TestAuditContext>>& contexts)
       : contexts_(contexts) {}
 
