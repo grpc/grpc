@@ -958,7 +958,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/resource_quota.h',
                       'src/core/lib/resource_quota/thread_quota.h',
                       'src/core/lib/resource_quota/trace.h',
-                      'src/core/lib/security/authorization/audit_logging.cc',
                       'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',

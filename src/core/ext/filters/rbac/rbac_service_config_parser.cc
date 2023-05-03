@@ -722,6 +722,9 @@ const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::Policy::JsonLoader(
 
 Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac() {
   Rbac rbac;
+  // TODO(lwge): This is to fix msan failure for now. Add proper conversion once
+  // audit logging support is added.
+  rbac.audit_condition = Rbac::AuditCondition::kNone;
   rbac.action = static_cast<Rbac::Action>(action);
   for (auto& p : policies) {
     rbac.policies.emplace(p.first, p.second.TakeAsRbacPolicy());

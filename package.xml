@@ -1440,6 +1440,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider_vtable.cc" role="src" />
