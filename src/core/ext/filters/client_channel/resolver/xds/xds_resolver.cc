@@ -124,15 +124,15 @@ class ClusterState : public DualRefCounted<ClusterState> {
       std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
   ClusterState(RefCountedPtr<XdsResolver> resolver,
-               const std::string& cluster_name);
+               absl::string_view cluster_name);
 
   void Orphan() override;
 
-  const std::string& cluster() const { return it_->first; }
+  const std::string& cluster_name() const { return cluster_name_; }
 
  private:
   RefCountedPtr<XdsResolver> resolver_;
-  ClusterStateMap::iterator it_;
+  std::string cluster_name_;
 };
 
 class XdsClusterMap : public RefCounted<XdsClusterMap> {
@@ -140,8 +140,6 @@ class XdsClusterMap : public RefCounted<XdsClusterMap> {
   bool operator==(const XdsClusterMap& other) const {
     return clusters_ == other.clusters_;
   }
-
-  void clear() { clusters_.clear(); }
 
   bool contains(absl::string_view name) const {
     return clusters_.find(name) != clusters_.end();
@@ -580,7 +578,7 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
     gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
             resolver_.get(), this);
   }
-  cluster_map_->clear();
+  cluster_map_.reset();
   resolver_->MaybeRemoveUnusedClusters();
 }
 
@@ -670,7 +668,9 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (!cluster_map_->contains(name)) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      cluster_map_->Put(MakeRefCounted<ClusterState>(resolver_, name));
+      auto cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
+      resolver_->Emplace(name, cluster_state->WeakRef());
+      cluster_map_->Put(std::move(cluster_state));
     } else {
       cluster_map_->Put(it->second->Ref());
     }
@@ -813,9 +813,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };
-  auto lb_data =
-      args.arena->ManagedNew<XdsClusterLbDataAttribute>(cluster_map_);
-  call_config.call_attributes[XdsClusterLbDataAttribute::TypeName()] = lb_data;
+  auto lb_data = args.arena->ManagedNew<XdsClusterDataAttribute>(cluster_map_);
+  call_config.call_attributes[XdsClusterDataAttribute::TypeName()] = lb_data;
   return std::move(call_config);
 }
 
@@ -1177,7 +1176,7 @@ void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
 }
 
 void XdsClusterMap::Put(RefCountedPtr<ClusterState> state) {
-  absl::string_view cluster_name = state->cluster();
+  absl::string_view cluster_name = state->cluster_name();
   clusters_.emplace(cluster_name, std::move(state));
 }
 
@@ -1191,9 +1190,8 @@ XdsClusterMap::Find(absl::string_view name) const {
 }
 
 ClusterState::ClusterState(RefCountedPtr<XdsResolver> resolver,
-                           const std::string& cluster_name)
-    : resolver_(std::move(resolver)),
-      it_(resolver_->Emplace(cluster_name, WeakRef())) {}
+                           absl::string_view cluster_name)
+    : resolver_(std::move(resolver)), cluster_name_(cluster_name) {}
 
 void ClusterState::Orphan() {
   auto* resolver = resolver_.get();
@@ -1202,24 +1200,23 @@ void ClusterState::Orphan() {
                 DEBUG_LOCATION);
 }
 
-XdsClusterLbDataAttribute::XdsClusterLbDataAttribute(
+XdsClusterDataAttribute::XdsClusterDataAttribute(
     RefCountedPtr<XdsClusterMap> cluster_map)
     : cluster_map_(std::move(cluster_map)) {}
 
-bool XdsClusterLbDataAttribute::LockClusterConfig(
+RefCountedPtr<ClusterState> XdsClusterDataAttribute::LockAndGetClusterConfig(
     absl::string_view cluster_name) {
   if (cluster_map_ == nullptr) {
     gpr_log(GPR_ERROR, "Cluster map already released");
-    return false;
+    return nullptr;
   }
   auto cluster_info = cluster_map_->Find(cluster_name);
-  if (cluster_info.has_value()) {
-    locked_cluster_config_ = cluster_info->second;
-    cluster_map_.reset();
-    return true;
+  if (!cluster_info.has_value()) {
+    return nullptr;
   }
-  gpr_log(GPR_INFO, "Cluster %s not found", std::string(cluster_name).c_str());
-  return false;
+  auto cluster = cluster_info->second;
+  cluster_map_.reset();
+  return cluster;
 }
 
 }  // namespace grpc_core

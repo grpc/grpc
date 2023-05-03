@@ -31,7 +31,7 @@ namespace grpc_core {
 class XdsClusterMap;
 class ClusterState;
 
-class XdsClusterLbDataAttribute
+class XdsClusterDataAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName() {
@@ -39,15 +39,15 @@ class XdsClusterLbDataAttribute
     return factory.Create();
   }
 
-  explicit XdsClusterLbDataAttribute(RefCountedPtr<XdsClusterMap> cluster_map);
+  explicit XdsClusterDataAttribute(RefCountedPtr<XdsClusterMap> cluster_map);
 
-  bool LockClusterConfig(absl::string_view cluster_name);
+  RefCountedPtr<ClusterState> LockAndGetClusterConfig(
+      absl::string_view cluster_name);
 
   UniqueTypeName type() const override { return TypeName(); }
 
  private:
   RefCountedPtr<XdsClusterMap> cluster_map_;
-  RefCountedPtr<ClusterState> locked_cluster_config_;
 };
 
 class XdsClusterAttribute
