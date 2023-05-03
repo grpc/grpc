@@ -33,7 +33,7 @@ namespace {
 
 using Decision = AuthorizationEngine::Decision;
 
-bool ShouldLog(const Decision& decision, const Rbac::AuditCondition condition) {
+bool ShouldLog(const Decision& decision, const Rbac::AuditCondition& condition) {
   return condition == Rbac::AuditCondition::kOnDenyAndAllow ||
          (decision.type == Decision::Type::kAllow &&
           condition == Rbac::AuditCondition::kOnAllow) ||
