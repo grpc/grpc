@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <initializer_list>
@@ -65,6 +66,13 @@ void InitDNSTests() {}
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#ifdef GPR_WINDOWS
+class EventEngineDNSTest : public EventEngineTest {};
+
+// TODO(yijiem): make the test run on Windows
+TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
+#else
+
 namespace {
 
 // TODO(yijiem): build a portable solution for Windows
@@ -95,15 +103,11 @@ class EventEngineDNSTest : public EventEngineTest {
     }
     // 1. launch dns_server
     int port = grpc_pick_unused_port_or_die();
-    ASSERT_NE(port, 0)
-        << "pick unused port failed, maybe the port server is not running? "
-           "Start it with tools/run_tests/start_port_server.py";
     // <path to python wrapper> <path to dns_server.py> -p <port> -r <path to
     // records config>
     _dns_server.server_process = new grpc::SubProcess(
         {kPythonWrapper, kDNSServerPath, "-p", std::to_string(port), "-r",
          kDNSTestRecordGroupsYamlPath});
-    // TODO(yijiem): no way to check whether it fails or not
     _dns_server.port = port;
 
     // 2. wait until dns_server is up (health check)
@@ -114,17 +118,17 @@ class EventEngineDNSTest : public EventEngineTest {
       // <port>
       grpc::SubProcess tcp_connect({kPythonWrapper, kTCPConnectPath, "-s",
                                     "localhost", "-p", std::to_string(port)});
-      // TODO(yijiem): no way to check whether it fails or not
-      if (tcp_connect.Join()) {
+      int status = tcp_connect.Join();
+      // TODO(yijiem): make this portable for Windows
+      if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
         // 2.2 make an A-record query to dns_server
         // <path to python wrapper> <path to dns_resolver.py> -s <hostname> -p
         // <port> -n <domain name to query>
-        std::string command = absl::StrJoin(
-            {kPythonWrapper.c_str(), kDNSResolverPath.c_str(), "-s",
-             "127.0.0.1", "-p", std::to_string(port).c_str(), "-n",
-             kHealthCheckRecordName},
+        std::string command = absl::StrJoin<absl::string_view>(
+            {kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1", "-p",
+             std::to_string(port), "-n", kHealthCheckRecordName},
             " ");
-        // TODO(yijiem): build a portable solution for Windows
+        // TODO(yijiem): make this portable for Windows
         FILE* f = popen(command.c_str(), "r");
         GPR_ASSERT(f != nullptr);
         char buf[128] = {};
@@ -263,7 +267,7 @@ TEST_F(EventEngineDNSTest, MissingDefaultPort) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
@@ -287,7 +291,7 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         EXPECT_THAT(grpc_core::StatusGetChildren(result.status()),
@@ -317,7 +321,7 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     Pointwise(ResolvedAddressEq(),
@@ -348,7 +352,7 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     UnorderedPointwise(
@@ -389,7 +393,7 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     UnorderedPointwise(
@@ -426,7 +430,7 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
   bool verified = false;
   dns_resolver->LookupHostname(
       [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(
             *result,
@@ -466,7 +470,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
   bool verified = false;
   dns_resolver->LookupSRV(
       [&verified, &kExpectedRecords, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<SRVRecord>> result) {
+          absl::StatusOr<std::vector<SRVRecord> > result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result, Pointwise(SRVRecordEq(), kExpectedRecords));
         verified = true;
@@ -491,7 +495,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
   bool verified = false;
   dns_resolver->LookupSRV(
       [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<SRVRecord>> result) {
+          absl::StatusOr<std::vector<SRVRecord> > result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
@@ -672,3 +676,5 @@ TEST_F(EventEngineDNSTest, MultithreadedCancel) {
     yarn[i].join();
   }
 }
+
+#endif  // GPR_WINDOWS
