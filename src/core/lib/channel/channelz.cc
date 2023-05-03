@@ -29,7 +29,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/cpu.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
