@@ -103,7 +103,7 @@ class ServiceConfigCallData {
 
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
-  ChunkedVector<CallAttributeInterface*, 10> call_attributes_;
+  ChunkedVector<CallAttributeInterface*, 4> call_attributes_;
 };
 
 }  // namespace grpc_core
