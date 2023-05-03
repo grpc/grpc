@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -47,6 +46,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/slice/slice.h"
 
