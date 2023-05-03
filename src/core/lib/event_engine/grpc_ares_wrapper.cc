@@ -40,7 +40,6 @@
 
 #include <address_sorting/address_sorting.h>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"

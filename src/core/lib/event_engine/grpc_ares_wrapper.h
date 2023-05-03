@@ -38,7 +38,6 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {

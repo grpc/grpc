@@ -5041,7 +5041,6 @@ grpc_cc_library(
         "validation_errors",
         "//:backoff",
         "//:debug_location",
-        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",

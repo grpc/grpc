@@ -17,14 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include <ares.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
