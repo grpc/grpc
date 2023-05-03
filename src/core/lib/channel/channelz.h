@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -139,6 +140,28 @@ class CallCountingHelper {
   std::atomic<gpr_cycle_counter> last_call_started_cycle_{0};
 };
 
+class PerCpuCallCountingHelper {
+ public:
+  void RecordCallStarted();
+  void RecordCallFailed();
+  void RecordCallSucceeded();
+
+  // Common rendering of the call count data and last_call_started_timestamp.
+  void PopulateCallCounts(Json::Object* json);
+
+ private:
+  // testing peer friend.
+  friend class testing::CallCountingHelperPeer;
+
+  struct alignas(GPR_CACHELINE_SIZE) PerCpuData {
+    std::atomic<int64_t> calls_started{0};
+    std::atomic<int64_t> calls_succeeded{0};
+    std::atomic<int64_t> calls_failed{0};
+    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
+  };
+  PerCpu<PerCpuData> per_cpu_data_;
+};
+
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
@@ -235,7 +258,7 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  CallCountingHelper call_counter_;
+  PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
   std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
