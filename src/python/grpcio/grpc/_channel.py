@@ -1486,14 +1486,14 @@ class _ChannelConnectivityState(object):
 
 def _deliveries(
     state: _ChannelConnectivityState
-) -> List[Callable[[grpc.ChannelConnectivity], None]]:
+) -> Tuple[Callable[[grpc.ChannelConnectivity], None], ...]:
     callbacks_needing_update = []
     for callback_and_connectivity in state.callbacks_and_connectivities:
         callback, callback_connectivity, = callback_and_connectivity
         if callback_connectivity is not state.connectivity:
             callbacks_needing_update.append(callback)
             callback_and_connectivity[1] = state.connectivity
-    return callbacks_needing_update  # type: ignore
+    return tuple(callbacks_needing_update)  # type: ignore
 
 
 def _deliver(
