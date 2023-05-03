@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <address_sorting/address_sorting.h>
+#include <ares.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

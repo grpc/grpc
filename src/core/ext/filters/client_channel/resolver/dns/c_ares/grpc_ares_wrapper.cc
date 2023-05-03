@@ -81,6 +81,11 @@ grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
 
 grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
+grpc_ares_request::grpc_ares_request()
+    : dns_server_addr(new ares_addr_port_node) {}
+
+grpc_ares_request::~grpc_ares_request() { delete dns_server_addr; }
+
 typedef struct fd_node {
   // default constructor exists only for linked list manipulation
   fd_node() : ev_driver(nullptr) {}
@@ -830,27 +835,27 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
                          dns_server.data());
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
-      r->dns_server_addr.family = AF_INET;
+      r->dns_server_addr->family = AF_INET;
       struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
-      memcpy(&r->dns_server_addr.addr.addr4, &in->sin_addr,
+      memcpy(&r->dns_server_addr->addr.addr4, &in->sin_addr,
              sizeof(struct in_addr));
-      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr->tcp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr->udp_port = grpc_sockaddr_get_port(&addr);
     } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
                                         /*log_errors=*/false)) {
-      r->dns_server_addr.family = AF_INET6;
+      r->dns_server_addr->family = AF_INET6;
       struct sockaddr_in6* in6 =
           reinterpret_cast<struct sockaddr_in6*>(addr.addr);
-      memcpy(&r->dns_server_addr.addr.addr6, &in6->sin6_addr,
+      memcpy(&r->dns_server_addr->addr.addr6, &in6->sin6_addr,
              sizeof(struct in6_addr));
-      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr->tcp_port = grpc_sockaddr_get_port(&addr);
+      r->dns_server_addr->udp_port = grpc_sockaddr_get_port(&addr);
     } else {
       return GRPC_ERROR_CREATE(
           absl::StrCat("cannot parse authority ", dns_server));
     }
     int status =
-        ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
+        ares_set_servers_ports(r->ev_driver->channel, r->dns_server_addr);
     if (status != ARES_SUCCESS) {
       return GRPC_ERROR_CREATE(absl::StrCat(
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
