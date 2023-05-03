@@ -61,27 +61,28 @@ struct TestAuditContext {
 class TestAuditLogger : public AuditLogger {
  public:
   explicit TestAuditLogger(
-      std::vector<std::unique_ptr<TestAuditContext>>& contexts)
+      std::vector<std::unique_ptr<TestAuditContext>>* contexts)
       : contexts_(contexts) {}
 
   void Log(const AuditContext& context) override {
-    contexts_.push_back(std::make_unique<TestAuditContext>(context));
+    contexts_->push_back(std::make_unique<TestAuditContext>(context));
   }
 
  private:
-  std::vector<std::unique_ptr<TestAuditContext>>& contexts_;
+  std::vector<std::unique_ptr<TestAuditContext>>* contexts_;
 };
 
 class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
-  explicit TestAuditLoggerFactory(
-      std::vector<std::unique_ptr<TestAuditContext>>& contexts)
-      : contexts_(contexts) {}
-
   class TestAuditLoggerConfig : public AuditLoggerFactory::Config {
     absl::string_view name() const override { return kLoggerName; }
     std::string ToString() const override { return ""; }
   };
+
+  explicit TestAuditLoggerFactory(
+      std::vector<std::unique_ptr<TestAuditContext>>* contexts)
+      : contexts_(contexts) {}
+
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json&) override {
@@ -94,14 +95,14 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   }
 
  private:
-  std::vector<std::unique_ptr<TestAuditContext>>& contexts_;
+  std::vector<std::unique_ptr<TestAuditContext>>* contexts_;
 };
 
 class GrpcAuthorizationEngineTest : public ::testing::Test {
  protected:
   void SetUp() override {
     RegisterAuditLoggerFactory(
-        std::make_unique<TestAuditLoggerFactory>(contexts_));
+        std::make_unique<TestAuditLoggerFactory>(&contexts_));
     evaluate_args_util_.AddPairToMetadata(":path", kRpcMethod.data());
     evaluate_args_util_.AddPropertyToAuthContext(
         GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, kSpiffeId.data());

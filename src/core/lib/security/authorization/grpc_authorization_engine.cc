@@ -56,9 +56,9 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
         std::move(sub_policy.second));
     policies_.push_back(std::move(policy));
   }
-  for (size_t i = 0; i < policy.logger_configs.size(); ++i) {
-    auto logger = AuditLoggerRegistry::CreateAuditLogger(
-        std::move(policy.logger_configs[i]));
+  for (auto& logger_config : policy.logger_configs) {
+    auto logger =
+        AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
     GPR_ASSERT(logger != nullptr);
     audit_loggers_.push_back(std::move(logger));
   }
