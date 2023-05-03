@@ -612,7 +612,7 @@ def grpc_package(name, visibility = "private", features = []):
         features: The features to enable.
     """
     if visibility == "tests":
-        visibility = ["//test:__subpackages__"]
+        visibility = ["//test:__subpackages__", "//fuzztest:__subpackages__"]
     elif visibility == "public":
         visibility = ["//visibility:public"]
     elif visibility == "private":
