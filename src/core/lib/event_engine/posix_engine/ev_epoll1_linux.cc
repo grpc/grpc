@@ -349,7 +349,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
       }
     }
     write_closure_->SetShutdown(why);
-    write_closure_->SetShutdown(why);
+    error_closure_->SetShutdown(why);
   }
 }
 

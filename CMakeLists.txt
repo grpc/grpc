@@ -4411,6 +4411,7 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -26260,10 +26261,12 @@ if(gRPC_INSTALL)
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
     NAMESPACE gRPC::
   )
-  install(EXPORT gRPCPluginTargets
-    DESTINATION ${gRPC_INSTALL_CMAKEDIR}
-    NAMESPACE gRPC::
-  )
+  if(gRPC_BUILD_CODEGEN)
+    install(EXPORT gRPCPluginTargets
+      DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+      NAMESPACE gRPC::
+    )
+  endif()
 endif()
 
 include(CMakePackageConfigHelpers)
