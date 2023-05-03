@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from grpc import UnaryUnaryClientInterceptor
     from grpc._server import _Context
     from grpc._server import _RPCState
-    from grpc.aio._base_server import ServicerContext as AioServicerContext
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
@@ -78,4 +77,3 @@ InterceptorType = Union['UnaryUnaryClientInterceptor',
                         'UnaryStreamClientInterceptor',
                         'StreamUnaryClientInterceptor',
                         'StreamStreamClientInterceptor']
-ServicerContextType = Union['ServicerContext', 'AioServicerContext']
