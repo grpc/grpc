@@ -94,7 +94,7 @@ class Rpc(object):
 
     def add_rpc_error(self, rpc_error: grpc.RpcError) -> None:
         with self._condition:
-            self._rpc_errors.append(rpc_error)  # ty1pe: ignore
+            self._rpc_errors.append(rpc_error)  # type: ignore
 
     def application_cancel(self) -> None:
         with self._condition:
