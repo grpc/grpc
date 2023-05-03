@@ -72,6 +72,7 @@
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
@@ -896,6 +897,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
 }
 
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
@@ -923,6 +925,7 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
@@ -945,6 +948,7 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
