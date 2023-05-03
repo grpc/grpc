@@ -15,6 +15,8 @@
 Houses py_grpc_run_time_type_check_test.
 """
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 _COPIED_MAIN_SUFFIX = ".typeguard.main"
 
 def py_grpc_run_time_type_check_test(
@@ -48,6 +50,7 @@ def py_grpc_run_time_type_check_test(
     )
     augmented_deps = deps + [
         ":{}".format(lib_name),
+        requirement("typeguard"),
     ]
 
     # The main file needs to be in the same package as the test file.
@@ -63,6 +66,7 @@ def py_grpc_run_time_type_check_test(
     native.py_test(
         name = name + ".typeguard",
         args = [name],
+        data = data,
         deps = augmented_deps,
         srcs = [copied_main_filename],
         main = copied_main_filename,

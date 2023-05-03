@@ -928,7 +928,7 @@ class _MultiThreadedRendezvous(
                 if not self._state.callbacks:
                     self._state.callbacks = []
                 self._state.callbacks.append(functools.partial(
-                    fn, self))  # ty1pe: ignore
+                    fn, self))  # type: ignore
                 return
 
         fn(self)
