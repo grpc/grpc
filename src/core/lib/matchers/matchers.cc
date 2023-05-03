@@ -162,9 +162,8 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
     bool invert_match, bool case_sensitive) {
   if (static_cast<int>(type) < 5) {
     // Only for EXACT, PREFIX, SUFFIX, SAFE_REGEX and CONTAINS.
-    absl::StatusOr<StringMatcher> string_matcher =
-        StringMatcher::Create(static_cast<StringMatcher::Type>(type), matcher,
-                              case_sensitive);
+    absl::StatusOr<StringMatcher> string_matcher = StringMatcher::Create(
+        static_cast<StringMatcher::Type>(type), matcher, case_sensitive);
     if (!string_matcher.ok()) {
       return string_matcher.status();
     }

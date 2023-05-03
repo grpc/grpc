@@ -65,6 +65,7 @@
 #include "src/proto/grpc/testing/xds/v3/range.pb.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.pb.h"
+#include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
