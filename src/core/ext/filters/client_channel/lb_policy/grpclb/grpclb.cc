@@ -190,9 +190,9 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     const Json* child_policy_config_json;
     auto it = json.object().find("childPolicy");
     if (it == json.object().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
+      child_policy_config_json_tmp = Json::FromArray({Json::FromObject({
+          {"round_robin", Json::FromObject({})},
+      })});
       child_policy_config_json = &child_policy_config_json_tmp;
     } else {
       child_policy_config_json = &it->second;

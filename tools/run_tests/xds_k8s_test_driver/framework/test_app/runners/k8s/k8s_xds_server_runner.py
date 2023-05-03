@@ -103,16 +103,13 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             secure_mode: bool = False,
             replica_count: int = 1,
             log_to_stdout: bool = False) -> List[XdsTestServer]:
+        if not maintenance_port:
+            maintenance_port = self._get_default_maintenance_port(secure_mode)
+
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
-        # maintenance services can be reached independently from the security
+        # maintenance services can be reached independently of the security
         # configuration under test.
-        if maintenance_port is None:
-            if not secure_mode:
-                maintenance_port = self.DEFAULT_MAINTENANCE_PORT
-            else:
-                maintenance_port = self.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
-
         if secure_mode and maintenance_port == test_port:
             raise ValueError('port and maintenance_port must be different '
                              'when running test server in secure mode')
@@ -193,22 +190,43 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name,
                                                       replica_count)
-        servers = []
+        servers: List[XdsTestServer] = []
         for pod in pods:
-            if self.debug_use_port_forwarding:
-                pf = self._start_port_forwarding_pod(pod, maintenance_port)
-                rpc_port, rpc_host = pf.local_port, pf.local_address
-            else:
-                rpc_port, rpc_host = maintenance_port, None
-
             servers.append(
-                XdsTestServer(ip=pod.status.pod_ip,
-                              rpc_port=test_port,
-                              hostname=pod.metadata.name,
-                              maintenance_port=rpc_port,
-                              secure_mode=secure_mode,
-                              rpc_host=rpc_host))
+                self._xds_test_server_for_pod(pod,
+                                              test_port=test_port,
+                                              maintenance_port=maintenance_port,
+                                              secure_mode=secure_mode))
         return servers
+
+    def _get_default_maintenance_port(self, secure_mode: bool) -> int:
+        if not secure_mode:
+            maintenance_port = self.DEFAULT_MAINTENANCE_PORT
+        else:
+            maintenance_port = self.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
+        return maintenance_port
+
+    def _xds_test_server_for_pod(self,
+                                 pod: k8s.V1Pod,
+                                 *,
+                                 test_port: int = DEFAULT_TEST_PORT,
+                                 maintenance_port: Optional[int] = None,
+                                 secure_mode: bool = False) -> XdsTestServer:
+        if maintenance_port is None:
+            maintenance_port = self._get_default_maintenance_port(secure_mode)
+
+        if self.debug_use_port_forwarding:
+            pf = self._start_port_forwarding_pod(pod, maintenance_port)
+            rpc_port, rpc_host = pf.local_port, pf.local_address
+        else:
+            rpc_port, rpc_host = maintenance_port, None
+
+        return XdsTestServer(ip=pod.status.pod_ip,
+                             rpc_port=test_port,
+                             hostname=pod.metadata.name,
+                             maintenance_port=rpc_port,
+                             secure_mode=secure_mode,
+                             rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.deployment or force:
