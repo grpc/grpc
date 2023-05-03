@@ -896,6 +896,29 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(JsonDump(config->config), "{\"rules\":{\"action\":0}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
