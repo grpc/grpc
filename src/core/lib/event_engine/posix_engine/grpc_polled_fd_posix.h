@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -110,4 +110,4 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_POLLED_FD_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H
