@@ -127,13 +127,13 @@ TEST_F(CertificateProviderStoreTest, Basic) {
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::Object(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
             {"fake_plugin_2",
              {"fake2", fake_factory_2->CreateCertificateProviderConfig(
-                           Json::Object(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
             {"fake_plugin_3",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::Object(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
         };
         auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
         // Test for creating certificate providers with known plugin
@@ -175,7 +175,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::Object(), nullptr)}}};
+                           Json::FromObject({}), nullptr)}}};
         auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
         // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
         std::vector<std::thread> threads;

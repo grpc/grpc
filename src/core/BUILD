@@ -2766,6 +2766,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_audit_logging",
+    srcs = [
+        "lib/security/authorization/audit_logging.cc",
+    ],
+    hdrs = [
+        "lib/security/authorization/audit_logging.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "json",
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_authorization_base",
     srcs = [
         "lib/security/authorization/authorization_policy_provider_vtable.cc",
@@ -3334,7 +3356,10 @@ grpc_cc_library(
     hdrs = [
         "lib/json/json.h",
     ],
-    external_deps = ["absl/types:variant"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     deps = ["//:gpr"],
 )
 
@@ -3915,6 +3940,7 @@ grpc_cc_library(
     srcs = [
         "ext/xds/certificate_provider_store.cc",
         "ext/xds/file_watcher_certificate_provider_factory.cc",
+        "ext/xds/xds_audit_logger_registry.cc",
         "ext/xds/xds_bootstrap_grpc.cc",
         "ext/xds/xds_certificate_provider.cc",
         "ext/xds/xds_client_grpc.cc",
@@ -3937,6 +3963,7 @@ grpc_cc_library(
     hdrs = [
         "ext/xds/certificate_provider_store.h",
         "ext/xds/file_watcher_certificate_provider_factory.h",
+        "ext/xds/xds_audit_logger_registry.h",
         "ext/xds/xds_bootstrap_grpc.h",
         "ext/xds/xds_certificate_provider.h",
         "ext/xds/xds_client_grpc.h",
@@ -4578,6 +4605,7 @@ grpc_cc_library(
         "closure",
         "error",
         "grpc_lb_subchannel_list",
+        "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
@@ -5167,8 +5195,10 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "grpc_service_config",
         "unique_type_name",
         "//:gpr_platform",
     ],
@@ -5199,6 +5229,7 @@ grpc_cc_library(
         "channel_fwd",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
+        "grpc_resolver_xds_header",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",

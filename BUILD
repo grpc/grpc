@@ -23,6 +23,7 @@ load(
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 licenses(["reciprocal"])
 
@@ -57,6 +58,16 @@ config_setting(
 config_setting(
     name = "grpc_experiments_are_final_define",
     values = {"define": "grpc_experiments_are_final=true"},
+)
+
+bool_flag(
+    name = "disable_grpc_rls",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_no_rls_flag",
+    flag_values = {":disable_grpc_rls": "true"},
 )
 
 # When gRPC is build as shared library, binder transport code might still
@@ -110,6 +121,7 @@ selects.config_setting_group(
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
+        ":grpc_no_rls_flag",
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
         ":android",
@@ -179,11 +191,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gracious"  # @unused
+g_stands_for = "galvanized"  # @unused
 
 core_version = "32.0.0"  # @unused
 
-version = "1.55.0-dev"  # @unused
+version = "1.56.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -220,6 +232,7 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
+    "include/grpc/grpc_audit_logging.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -388,6 +401,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
+    "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -790,6 +804,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_public_hdrs",
     hdrs = GRPC_PUBLIC_HDRS,
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -909,6 +927,7 @@ grpc_cc_library(
         "grpc_trace",
         "ref_counted_ptr",
         "//src/core:error",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
@@ -1220,15 +1239,15 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
+        "//src/core:lib/channel/call_tracer.cc",
         "//src/core:lib/channel/channel_stack.cc",
         "//src/core:lib/channel/channel_stack_builder_impl.cc",
         "//src/core:lib/channel/channel_trace.cc",
         "//src/core:lib/channel/channelz.cc",
         "//src/core:lib/channel/channelz_registry.cc",
         "//src/core:lib/channel/connected_channel.cc",
-        "//src/core:lib/channel/server_call_tracer_filter.cc",
         "//src/core:lib/channel/promise_based_filter.cc",
-        "//src/core:lib/channel/call_tracer.cc",
+        "//src/core:lib/channel/server_call_tracer_filter.cc",
         "//src/core:lib/channel/status_util.cc",
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/compression_internal.cc",
@@ -1309,6 +1328,7 @@ grpc_cc_library(
         "//src/core:lib/surface/server.cc",
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
+        "//src/core:lib/transport/batch_builder.cc",
         "//src/core:lib/transport/connectivity_state.cc",
         "//src/core:lib/transport/error_utils.cc",
         "//src/core:lib/transport/metadata_batch.cc",
@@ -1317,7 +1337,6 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
-        "//src/core:lib/transport/batch_builder.cc",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1399,6 +1418,7 @@ grpc_cc_library(
         "//src/core:lib/surface/lame_client.h",
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
+        "//src/core:lib/transport/batch_builder.h",
         "//src/core:lib/transport/connectivity_state.h",
         "//src/core:lib/transport/custom_metadata.h",
         "//src/core:lib/transport/error_utils.h",
@@ -1409,7 +1429,6 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
-        "//src/core:lib/transport/batch_builder.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1734,6 +1753,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
@@ -1886,6 +1906,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",

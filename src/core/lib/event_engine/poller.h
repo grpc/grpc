@@ -43,7 +43,7 @@ class Poller {
   //  * Poller::WorkResult::kKicked if it was Kicked. A poller that was Kicked
   //  may still process some events and if so, it may have run the
   //  schedule_poll_again callback function synchronously. When the poller
-  //  returns Poller::WorkResult::kKicked it's upto the user to determine
+  //  returns Poller::WorkResult::kKicked it's up to the user to determine
   //  if the schedule_poll_again callback has run or not.
   //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred. The
   //  schedule_poll_again callback is not run in this case.

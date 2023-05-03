@@ -19,28 +19,125 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
 
 namespace grpc_core {
 
-// A JSON value, which can be any one of object, array, string,
-// number, true, false, or null.
+// A JSON value, which can be any one of null, boolean, number, string,
+// object, or array.
 class Json {
  public:
-  // TODO(roth): Currently, numbers are stored internally as strings,
-  // which makes the API a bit cumbersome to use. When we have time,
-  // consider whether there's a better alternative (e.g., maybe storing
-  // each numeric type as the native C++ type and automatically converting
-  // to string as needed).
-  enum class Type { kNull, kTrue, kFalse, kNumber, kString, kObject, kArray };
+  // The JSON type.
+  enum class Type {
+    kNull,     // No payload.  Default type when using the zero-arg ctor.
+    kBoolean,  // Use boolean() for payload.
+    kNumber,   // Numbers are stored in string form to avoid precision
+               // and integer capacity issues.  Use string() for payload.
+    kString,   // Use string() for payload.
+    kObject,   // Use object() for payload.
+    kArray,    // Use array() for payload.
+  };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
+
+  // Factory method for kBoolean.
+  static Json FromBool(bool b) {
+    Json json;
+    json.value_ = b;
+    return json;
+  }
+
+  // Factory methods for kNumber.
+  static Json FromNumber(const std::string& str) {
+    Json json;
+    json.value_ = NumberValue{str};
+    return json;
+  }
+  static Json FromNumber(const char* str) {
+    Json json;
+    json.value_ = NumberValue{std::string(str)};
+    return json;
+  }
+  static Json FromNumber(std::string&& str) {
+    Json json;
+    json.value_ = NumberValue{std::move(str)};
+    return json;
+  }
+  static Json FromNumber(int32_t value) {
+    Json json;
+    json.value_ = NumberValue{absl::StrCat(value)};
+    return json;
+  }
+  static Json FromNumber(uint32_t value) {
+    Json json;
+    json.value_ = NumberValue{absl::StrCat(value)};
+    return json;
+  }
+  static Json FromNumber(int64_t value) {
+    Json json;
+    json.value_ = NumberValue{absl::StrCat(value)};
+    return json;
+  }
+  static Json FromNumber(uint64_t value) {
+    Json json;
+    json.value_ = NumberValue{absl::StrCat(value)};
+    return json;
+  }
+  static Json FromNumber(double value) {
+    Json json;
+    json.value_ = NumberValue{absl::StrCat(value)};
+    return json;
+  }
+
+  // Factory methods for kString.
+  static Json FromString(const std::string& str) {
+    Json json;
+    json.value_ = str;
+    return json;
+  }
+  static Json FromString(const char* str) {
+    Json json;
+    json.value_ = std::string(str);
+    return json;
+  }
+  static Json FromString(std::string&& str) {
+    Json json;
+    json.value_ = std::move(str);
+    return json;
+  }
+
+  // Factory methods for kObject.
+  static Json FromObject(const Object& object) {
+    Json json;
+    json.value_ = object;
+    return json;
+  }
+  static Json FromObject(Object&& object) {
+    Json json;
+    json.value_ = std::move(object);
+    return json;
+  }
+
+  // Factory methods for kArray.
+  static Json FromArray(const Array& array) {
+    Json json;
+    json.value_ = array;
+    return json;
+  }
+  static Json FromArray(Array&& array) {
+    Json json;
+    json.value_ = std::move(array);
+    return json;
+  }
 
   Json() = default;
 
@@ -58,97 +155,11 @@ class Json {
     return *this;
   }
 
-  // Construct from copying a string.
-  // If is_number is true, the type will be kNumber instead of kString.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const std::string& string, bool is_number = false)
-      : value_(is_number ? Value(NumberValue{string}) : Value(string)) {}
-  Json& operator=(const std::string& string) {
-    value_ = string;
-    return *this;
-  }
-
-  // Same thing for C-style strings, both const and mutable.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
-  Json& operator=(const char* string) {
-    *this = std::string(string);
-    return *this;
-  }
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
-  Json& operator=(char* string) {
-    *this = std::string(string);
-    return *this;
-  }
-
-  // Construct by moving a string.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(std::string&& string) : value_(Value(std::move(string))) {}
-  Json& operator=(std::string&& string) {
-    value_ = Value(std::move(string));
-    return *this;
-  }
-
-  // Construct from bool.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(bool b) : value_(b) {}
-  Json& operator=(bool b) {
-    value_ = b;
-    return *this;
-  }
-
-  // Construct from any numeric type.
-  template <typename NumericType>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(NumericType number) : value_(NumberValue{std::to_string(number)}) {}
-  template <typename NumericType>
-  Json& operator=(NumericType number) {
-    value_ = NumberValue{std::to_string(number)};
-    return *this;
-  }
-
-  // Construct by copying object.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Object& object) : value_(object) {}
-  Json& operator=(const Object& object) {
-    value_ = object;
-    return *this;
-  }
-
-  // Construct by moving object.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Object&& object) : value_(std::move(object)) {}
-  Json& operator=(Object&& object) {
-    value_ = std::move(object);
-    return *this;
-  }
-
-  // Construct by copying array.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Array& array) : value_(array) {}
-  Json& operator=(const Array& array) {
-    value_ = array;
-    return *this;
-  }
-
-  // Construct by moving array.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Array&& array) : value_(std::move(array)) {}
-  Json& operator=(Array&& array) {
-    value_ = std::move(array);
-    return *this;
-  }
-
   // Returns the JSON type.
   Type type() const {
     struct ValueFunctor {
       Json::Type operator()(const absl::monostate&) { return Type::kNull; }
-      Json::Type operator()(bool value) {
-        return value ? Type::kTrue : Type::kFalse;
-      }
+      Json::Type operator()(bool) { return Type::kBoolean; }
       Json::Type operator()(const NumberValue&) { return Type::kNumber; }
       Json::Type operator()(const std::string&) { return Type::kString; }
       Json::Type operator()(const Object&) { return Type::kObject; }
@@ -157,13 +168,24 @@ class Json {
     return absl::visit(ValueFunctor(), value_);
   }
 
-  // Accessor methods.
+  // Payload accessor for kBoolean.
+  // Must not be called for other types.
+  bool boolean() const { return absl::get<bool>(value_); }
+
+  // Payload accessor for kNumber or kString.
+  // Must not be called for other types.
   const std::string& string() const {
     const NumberValue* num = absl::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
     return absl::get<std::string>(value_);
   }
+
+  // Payload accessor for kObject.
+  // Must not be called for other types.
   const Object& object() const { return absl::get<Object>(value_); }
+
+  // Payload accessor for kArray.
+  // Must not be called for other types.
   const Array& array() const { return absl::get<Array>(value_); }
 
   bool operator==(const Json& other) const { return value_ == other.value_; }
@@ -178,7 +200,7 @@ class Json {
     }
   };
   using Value = absl::variant<absl::monostate,  // kNull
-                              bool,             // kTrue or kFalse
+                              bool,             // kBoolean
                               NumberValue,      // kNumber
                               std::string,      // kString
                               Object,           // kObject

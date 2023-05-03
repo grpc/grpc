@@ -69,7 +69,10 @@ TEST(ExamineStackTest, AbseilStackProvider) {
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
-  EXPECT_THAT(*stack_trace, ::testing::HasSubstr("GetCurrentStackTrace"));
+  // Expect to see some gtest signature on the stack (this used to be
+  // GetCurrentStackTrace, but some operating systems have trouble with the leaf
+  // function).
+  EXPECT_THAT(*stack_trace, ::testing::HasSubstr("testing::"));
 #endif
 }
 
