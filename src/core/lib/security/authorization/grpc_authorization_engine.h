@@ -32,7 +32,6 @@
 
 namespace grpc_core {
 
-using experimental::AuditContext;
 using experimental::AuditLogger;
 
 // GrpcAuthorizationEngine can be either an Allow engine or Deny engine. This
