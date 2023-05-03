@@ -669,7 +669,8 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
-      resolver_->Emplace(name, cluster_state->WeakRef());
+      resolver_->Emplace(cluster_state->cluster_name(),
+                         cluster_state->WeakRef());
       cluster_map_->Put(std::move(cluster_state));
     } else {
       cluster_map_->Put(it->second->Ref());
