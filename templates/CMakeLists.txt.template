@@ -812,10 +812,12 @@
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
-    install(EXPORT gRPCPluginTargets
-      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
-      NAMESPACE gRPC::
-    )
+    if(gRPC_BUILD_CODEGEN)
+      install(EXPORT gRPCPluginTargets
+        DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+        NAMESPACE gRPC::
+      )
+    endif()
   endif()
 
   include(CMakePackageConfigHelpers)
