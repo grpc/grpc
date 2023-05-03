@@ -56,9 +56,7 @@ class GuardValidator(object):
 
     def _is_c_core_header(self, fpath):
         return 'include' in fpath and not (
-            'grpc++' in fpath or
-            'grpcpp' in fpath or
-            'event_engine' in fpath or
+            'grpc++' in fpath or 'grpcpp' in fpath or 'event_engine' in fpath or
             fpath.endswith('/grpc_audit_logging.h') or
             fpath.endswith('/json.h'))
 
