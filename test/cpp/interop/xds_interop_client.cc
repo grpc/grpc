@@ -45,6 +45,7 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
@@ -580,6 +581,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 }
 
 int main(int argc, char** argv) {
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      grpc::testing::RegisterRpcBehaviorLbPolicy);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.

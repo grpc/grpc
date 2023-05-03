@@ -22,16 +22,17 @@
 
 #include <string.h>
 
+#include <string>
 #include <type_traits>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
-    "how gRPC C core is processing requests via debug logs.");
+#include "src/core/lib/config/config_vars.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -77,9 +78,14 @@ void TraceFlagList::Add(TraceFlag* flag) {
 
 void TraceFlagList::LogAllTracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
-  TraceFlag* t;
-  for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+  for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
     gpr_log(GPR_DEBUG, "\t%s", t->name_);
+  }
+}
+
+void TraceFlagList::SaveTo(std::map<std::string, bool>& values) {
+  for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    values[t->name_] = t->enabled();
   }
 }
 
@@ -89,6 +95,14 @@ TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
                 "TraceFlag needs to be trivially destructible.");
   set_enabled(default_enabled);
   TraceFlagList::Add(this);
+}
+
+SavedTraceFlags::SavedTraceFlags() { TraceFlagList::SaveTo(values_); }
+
+void SavedTraceFlags::Restore() {
+  for (const auto& flag : values_) {
+    TraceFlagList::Set(flag.first.c_str(), flag.second);
+  }
 }
 
 }  // namespace grpc_core
@@ -138,14 +152,8 @@ static void parse(const char* s) {
   gpr_free(strings);
 }
 
-void grpc_tracer_init(const char* env_var_name) {
-  (void)env_var_name;  // suppress unused variable error
-  grpc_tracer_init();
-}
-
 void grpc_tracer_init() {
-  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
-  parse(value.get());
+  parse(std::string(grpc_core::ConfigVars::Get().Trace()).c_str());
 }
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {

@@ -25,11 +25,9 @@
 #include <map>
 #include <utility>
 
-#include <google/protobuf/timestamp.pb.h>
-
+#include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
@@ -48,8 +46,12 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/uuid_v4.h"
 #include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+
+// IWYU pragma: no_include "google/protobuf/struct.pb.h"
+// IWYU pragma: no_include "google/protobuf/timestamp.pb.h"
 
 namespace grpc {
 namespace internal {
@@ -207,7 +209,8 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
 void EntryToJsonStructProto(LoggingSink::Entry entry,
                             ::google::protobuf::Struct* json_payload) {
   (*json_payload->mutable_fields())["callId"].set_string_value(
-      absl::StrCat(entry.call_id));
+      grpc_core::GenerateUUIDv4(absl::Uint128High64(entry.call_id),
+                                absl::Uint128Low64(entry.call_id)));
   (*json_payload->mutable_fields())["sequenceId"].set_number_value(
       entry.sequence_id);
   (*json_payload->mutable_fields())["type"].set_string_value(

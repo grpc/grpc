@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/xds_audit_logger_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -161,6 +162,9 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   const XdsLbPolicyRegistry& lb_policy_registry() const {
     return lb_policy_registry_;
   }
+  const XdsAuditLoggerRegistry& audit_logger_registry() const {
+    return audit_logger_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -177,6 +181,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   XdsHttpFilterRegistry http_filter_registry_;
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
+  XdsAuditLoggerRegistry audit_logger_registry_;
 };
 
 }  // namespace grpc_core

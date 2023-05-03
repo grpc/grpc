@@ -94,9 +94,6 @@
 // Client channel filter
 //
 
-#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
-  "grpc.internal.health_check_service_name"
-
 namespace grpc_core {
 
 using internal::ClientChannelMethodParsedConfig;
@@ -400,7 +397,7 @@ class DynamicTerminationFilter::CallData {
             calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
-        service_config_call_data->call_dispatch_controller(),
+        [service_config_call_data]() { service_config_call_data->Commit(); },
         /*is_transparent_retry=*/false);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO,
@@ -479,8 +476,8 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
 //
 
 // This class is a wrapper for Subchannel that hides details of the
-// channel's implementation (such as the health check service name and
-// connected subchannel) from the LB policy API.
+// channel's implementation (such as the connected subchannel) from the
+// LB policy API.
 //
 // Note that no synchronization is needed here, because even if the
 // underlying subchannel is shared between channels, this wrapper will only
@@ -488,14 +485,12 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
 // control plane work_serializer.
 class ClientChannel::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(ClientChannel* chand, RefCountedPtr<Subchannel> subchannel,
-                    absl::optional<std::string> health_check_service_name)
+  SubchannelWrapper(ClientChannel* chand, RefCountedPtr<Subchannel> subchannel)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
                                 ? "SubchannelWrapper"
                                 : nullptr),
         chand_(chand),
-        subchannel_(std::move(subchannel)),
-        health_check_service_name_(std::move(health_check_service_name)) {
+        subchannel_(std::move(subchannel)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
@@ -548,7 +543,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     watcher_wrapper = new WatcherWrapper(std::move(watcher),
                                          Ref(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
-        health_check_service_name_,
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
@@ -557,8 +551,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto it = watcher_map_.find(watcher);
     GPR_ASSERT(it != watcher_map_.end());
-    subchannel_->CancelConnectivityStateWatch(health_check_service_name_,
-                                              it->second);
+    subchannel_->CancelConnectivityStateWatch(it->second);
     watcher_map_.erase(it);
   }
 
@@ -675,17 +668,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
                   std::string(keepalive_throttling.value()).c_str());
         }
       }
-      // Ignore update if the parent WatcherWrapper has been replaced
-      // since this callback was scheduled.
-      if (watcher_ != nullptr) {
-        // Propagate status only in state TF.
-        // We specifically want to avoid propagating the status for
-        // state IDLE that the real subchannel gave us only for the
-        // purpose of keepalive propagation.
-        watcher_->OnConnectivityStateChange(
-            state, state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status
-                                                           : absl::OkStatus());
-      }
+      // Propagate status only in state TF.
+      // We specifically want to avoid propagating the status for
+      // state IDLE that the real subchannel gave us only for the
+      // purpose of keepalive propagation.
+      watcher_->OnConnectivityStateChange(
+          state,
+          state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
     }
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
@@ -695,7 +684,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   ClientChannel* chand_;
   RefCountedPtr<Subchannel> subchannel_;
-  absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -908,13 +896,6 @@ class ClientChannel::ClientChannelControlHelper
       ServerAddress address, const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    // Determine health check service name.
-    absl::optional<std::string> health_check_service_name;
-    if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
-      health_check_service_name =
-          args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
-    }
-    // Construct channel args for subchannel.
     ChannelArgs subchannel_args = ClientChannel::MakeSubchannelArgs(
         args, address.args(), chand_->subchannel_pool_,
         chand_->default_authority_);
@@ -926,8 +907,7 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(
-        chand_, std::move(subchannel), std::move(health_check_service_name));
+    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel));
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -1121,12 +1101,11 @@ OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller,
-    bool is_transparent_retry) {
+    absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   return OrphanablePtr<FilterBasedLoadBalancedCall>(
       args.arena->New<FilterBasedLoadBalancedCall>(
           this, args, pollent, on_call_destruction_complete,
-          call_dispatch_controller, is_transparent_retry));
+          std::move(on_commit), is_transparent_retry));
 }
 
 ChannelArgs ClientChannel::MakeSubchannelArgs(
@@ -1200,9 +1179,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // above.
   if (!policy_name.has_value()) policy_name = "pick_first";
   // Now that we have the policy name, construct an empty config for it.
-  Json config_json = Json::Array{Json::Object{
-      {std::string(*policy_name), Json::Object{}},
-  }};
+  Json config_json = Json::FromArray({Json::FromObject({
+      {std::string(*policy_name), Json::FromObject({})},
+  })});
   auto lb_policy_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           config_json);
@@ -1849,7 +1828,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
       arena()->New<ClientChannelServiceConfigCallData>(
           std::move(call_config->service_config), call_config->method_configs,
           std::move(call_config->call_attributes),
-          call_config->call_dispatch_controller, call_context());
+          std::move(call_config->on_commit), call_context());
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -2010,9 +1989,8 @@ void ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch(
     grpc_deadline_state_client_start_transport_stream_op_batch(
         &calld->deadline_state_, batch);
   }
-  // Intercept recv_trailing_metadata to call CallDispatchController::Commit(),
-  // in case we wind up failing the call before we get down to the retry
-  // or LB call layer.
+  // Intercept recv_trailing_metadata to commit the call, in case we wind up
+  // failing the call before we get down to the retry or LB call layer.
   if (batch->recv_trailing_metadata) {
     calld->original_recv_trailing_metadata_ready_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
@@ -2337,7 +2315,7 @@ void ClientChannel::FilterBasedCallData::
             service_config_call_data);
   }
   if (service_config_call_data != nullptr) {
-    service_config_call_data->call_dispatch_controller()->Commit();
+    service_config_call_data->Commit();
   }
   // Chain to original callback.
   Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
@@ -2357,7 +2335,8 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
   // Internal API to allow first-party LB policies to access per-call
   // attributes set by the ConfigSelector.
-  absl::string_view GetCallAttribute(UniqueTypeName type) override;
+  ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2442,15 +2421,12 @@ class ClientChannel::LoadBalancedCall::Metadata
 // ClientChannel::LoadBalancedCall::LbCallState
 //
 
-absl::string_view
+ServiceConfigCallData::CallAttributeInterface*
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
-    UniqueTypeName type) {
+    UniqueTypeName type) const {
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       lb_call_->call_context()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  auto& call_attributes = service_config_call_data->call_attributes();
-  auto it = call_attributes.find(type);
-  if (it == call_attributes.end()) return absl::string_view();
-  return it->second;
+  return service_config_call_data->GetCallAttribute(type);
 }
 
 //
@@ -2518,14 +2494,13 @@ ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, grpc_call_context_element* call_context,
-    ConfigSelector::CallDispatchController* call_dispatch_controller,
-    bool is_transparent_retry)
+    absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      call_dispatch_controller_(call_dispatch_controller) {
+      on_commit_(std::move(on_commit)) {
   CreateCallAttemptTracer(call_context, is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
@@ -2661,7 +2636,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
       return error;
     }
     // Pick succeeded.
-    call_dispatch_controller_->Commit();
+    Commit();
     return absl::OkStatus();
   }
 }
@@ -2762,9 +2737,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelImpl(
 ClientChannel::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller,
-    bool is_transparent_retry)
-    : LoadBalancedCall(chand, args.context, call_dispatch_controller,
+    absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
+    : LoadBalancedCall(chand, args.context, std::move(on_commit),
                        is_transparent_retry),
       deadline_(args.deadline),
       arena_(args.arena),
@@ -3131,7 +3105,7 @@ class ClientChannel::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
                 lb_call->lb_call_canceller_);
       }
       if (lb_call->lb_call_canceller_ == self && !error.ok()) {
-        lb_call->call_dispatch_controller()->Commit();
+        lb_call->Commit();
         // Remove pick from list of queued picks.
         lb_call->RemoveCallFromLbQueuedCallsLocked();
         // Remove from queued picks list.

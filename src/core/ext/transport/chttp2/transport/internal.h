@@ -35,6 +35,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -76,10 +77,6 @@
 // First bit of the reference count, stored in the high order bits (with the low
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
-
-namespace grpc_core {
-class ContextList;
-}
 
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
@@ -436,6 +433,8 @@ struct grpc_chttp2_transport
 
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
+  // True if pings should be acked
+  bool ack_pings = true;
   // next bdp ping timer handle
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_bdp_ping_timer_handle;
@@ -465,6 +464,8 @@ struct grpc_chttp2_transport
   bool keepalive_ping_started = false;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
+  // Soft limit on max header size.
+  uint32_t max_header_list_size_soft_limit = 0;
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
@@ -709,7 +710,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc);
+                                       const char* desc,
+                                       grpc_core::DebugLocation whence = {});
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)

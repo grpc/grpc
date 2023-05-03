@@ -43,9 +43,10 @@ class ServerMetricRecorder {
  public:
   // Factory method. Use this to create.
   static std::unique_ptr<ServerMetricRecorder> Create();
-  /// Records the server CPU utilization in the range [0, 1].
-  /// Values outside of the valid range are rejected.
-  /// Overrides the stored value when called again with a valid value.
+  /// Records the server CPU utilization in the range [0, infy).
+  /// Values may be larger than 1.0 when the usage exceeds the reporter
+  /// dependent notion of soft limits. Values outside of the valid range are
+  /// rejected. Overrides the stored value when called again with a valid value.
   void SetCpuUtilization(double value);
   /// Records the server memory utilization in the range [0, 1].
   /// Values outside of the valid range are rejected.
@@ -55,6 +56,10 @@ class ServerMetricRecorder {
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
   void SetQps(double value);
+  /// Records number of errors per second to the server in the range [0, infy).
+  /// Values outside of the valid range are rejected.
+  /// Overrides the stored value when called again with a valid value.
+  void SetEps(double value);
   /// Records a named resource utilization value in the range [0, 1].
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with the same name.
@@ -74,6 +79,8 @@ class ServerMetricRecorder {
   void ClearMemoryUtilization();
   /// Clears number of queries per second to the server if recorded.
   void ClearQps();
+  /// Clears number of errors per second to the server if recorded.
+  void ClearEps();
   /// Clears a named utilization value if exists.
   void ClearNamedUtilization(string_ref name);
 

@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM alpine:3.11
+  FROM alpine:3.15
   
   # Install Git and basic packages.
   RUN apk update && apk add ${'\\'}
@@ -53,6 +53,7 @@
 
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
-    
+  <%include file="../../git-jenkins.include"/>
+
   # Define the default command.
   CMD ["bash"]

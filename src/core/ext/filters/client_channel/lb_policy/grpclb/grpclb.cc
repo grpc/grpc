@@ -188,11 +188,11 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
+      child_policy_config_json_tmp = Json::FromArray({Json::FromObject({
+          {"round_robin", Json::FromObject({})},
+      })});
       child_policy_config_json = &child_policy_config_json_tmp;
     } else {
       child_policy_config_json = &it->second;

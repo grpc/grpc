@@ -25,6 +25,7 @@
 
 #include <openssl/crypto.h>
 
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -38,9 +39,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -141,8 +141,7 @@ typedef enum { SUCCESS, FAIL } test_result;
 #define SSL_TEST(request_type, cert_type, result)                              \
   {                                                                            \
     {TEST_NAME(request_type, cert_type, result),                               \
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                                \
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                          \
+     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
      "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
         result                                                                 \
@@ -150,7 +149,7 @@ typedef enum { SUCCESS, FAIL } test_result;
 
 // All test configurations
 struct CoreTestConfigWrapper {
-  CoreTestConfiguration config;
+  grpc_core::CoreTestConfiguration config;
   test_result result;
 };
 
@@ -194,7 +193,7 @@ static CoreTestConfigWrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static void simple_request_body(CoreTestFixture* f,
+static void simple_request_body(grpc_core::CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
@@ -239,7 +238,7 @@ class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
   }
   void TearDown() override { fixture_.reset(); }
 
-  std::unique_ptr<CoreTestFixture> fixture_;
+  std::unique_ptr<grpc_core::CoreTestFixture> fixture_;
 };
 
 TEST_P(H2SslCertTest, SimpleRequestBody) {
@@ -276,7 +275,9 @@ int main(int argc, char** argv) {
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.default_ssl_roots_file_path = roots_filename;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
