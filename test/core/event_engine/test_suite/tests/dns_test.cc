@@ -229,7 +229,7 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 #define EXPECT_UNKNOWN_ERROR(result) \
   EXPECT_EQ((result).status().code(), absl::StatusCode::kUnknown)
 
-// Verifies that an ExecCtx exists for the thread on which the destructor is
+// Verifies that an ExecCtx exists on the thread from which the destructor is
 // invoked.
 class ExecCtxVerifier {
  public:

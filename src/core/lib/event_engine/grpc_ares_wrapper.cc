@@ -942,7 +942,7 @@ absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
     absl::string_view name, absl::string_view default_port,
     absl::string_view dns_server, EventEngine::Duration timeout,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) {
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto* request = new GrpcAresHostnameRequest(
       name, default_port, timeout, std::move(polled_fd_factory), event_engine);
   absl::StatusOr<std::string> result = request->ParseNameToResolve();
@@ -967,7 +967,7 @@ absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) {
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto* request = new GrpcAresSRVRequest(
       name, timeout, std::move(polled_fd_factory), event_engine);
   absl::StatusOr<std::string> result = request->ParseNameToResolve();
@@ -993,7 +993,7 @@ absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
     absl::string_view dns_server,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) {
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto* request = new GrpcAresTXTRequest(
       name, timeout, std::move(polled_fd_factory), event_engine);
   absl::StatusOr<std::string> result = request->ParseNameToResolve();
