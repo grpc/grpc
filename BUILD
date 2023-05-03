@@ -746,6 +746,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_public_hdrs",
     hdrs = GPR_PUBLIC_HDRS,
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",
