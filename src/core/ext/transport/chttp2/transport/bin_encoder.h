@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <grpc/slice.h>
 
 // base64 encode a slice. Returns a new slice, does not take ownership of the

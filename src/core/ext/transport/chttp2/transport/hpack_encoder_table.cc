@@ -16,8 +16,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
-#include <inttypes.h>
-
 #include <algorithm>
 
 #include <grpc/support/log.h>

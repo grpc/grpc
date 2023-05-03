@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <tuple>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
