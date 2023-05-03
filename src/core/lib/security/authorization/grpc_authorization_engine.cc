@@ -20,6 +20,8 @@
 #include <map>
 #include <utility>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 
