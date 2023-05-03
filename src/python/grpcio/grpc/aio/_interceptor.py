@@ -17,16 +17,10 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
-from typing import (
-    AsyncIterable,
-    Awaitable,
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+import typing
+from typing import (AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable,
+                    Callable, Generic, Iterator, List, Optional, Sequence,
+                    Union)
 
 import grpc
 from grpc._cython import cygrpc
@@ -43,7 +37,7 @@ from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
-from ._typing import EOFType
+from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseIterableType
@@ -111,7 +105,7 @@ class ClientCallDetails(
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
 
-    method: str
+    method: bytes
     timeout: Optional[float]
     metadata: Optional[Metadata]
     credentials: Optional[grpc.CallCredentials]
@@ -307,7 +301,7 @@ class InterceptedCall:
     """
 
     _interceptors_task: asyncio.Task
-    _pending_add_done_callbacks: Sequence[DoneCallbackType]
+    _pending_add_done_callbacks: List[DoneCallbackType]
 
     def __init__(self, interceptors_task: asyncio.Task) -> None:
         self._interceptors_task = interceptors_task
@@ -431,7 +425,7 @@ class InterceptedCall:
 
         return await call.trailing_metadata()
 
-    async def code(self) -> grpc.StatusCode:
+    async def code(self) -> Optional[grpc.StatusCode]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -441,7 +435,7 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -473,8 +467,9 @@ class _InterceptedUnaryResponseMixin:
         return response
 
 
-class _InterceptedStreamResponseMixin:
-    _response_aiter: Optional[AsyncIterable[ResponseType]]
+class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+    _response_aiter: Optional[AsyncIterator[ResponseType]]
+    _interceptors_task: asyncio.Task
 
     def _init_stream_response_mixin(self) -> None:
         # Is initalized later, otherwise if the iterator is not finally
@@ -482,13 +477,12 @@ class _InterceptedStreamResponseMixin:
         self._response_aiter = None
 
     async def _wait_for_interceptor_task_response_iterator(
-        self,
-    ) -> ResponseType:
+            self) -> AsyncGenerator[ResponseType, None]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -500,22 +494,23 @@ class _InterceptedStreamResponseMixin:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        try:
-            return await self._response_aiter.asend(None)
-        except StopAsyncIteration:
-            return cygrpc.EOF
+        return await self._response_aiter.asend(None)  # type: ignore
 
 
-class _InterceptedStreamRequestMixin:
+class _InterceptedStreamRequestMixin(Generic[RequestType]):
+
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[asyncio.Queue]
     _status_code_task: Optional[asyncio.Task]
+    _loop: asyncio.AbstractEventLoop
+    _interceptors_task: asyncio.Task
 
     _FINISH_ITERATOR_SENTINEL = object()
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType]
-    ) -> RequestIterableType:
+    ) -> Optional[RequestIterableType]:
+
         if request_iterator is None:
             # We provide our own request iterator which is a proxy
             # of the futures writes that will be done by the caller.
@@ -542,9 +537,8 @@ class _InterceptedStreamRequestMixin:
                 break
             yield value
 
-    async def _write_to_iterator_queue_interruptible(
-        self, request: RequestType, call: InterceptedCall
-    ):
+    async def _write_to_iterator_queue_interruptible(self, request: object,
+                                                     call: InterceptedCall):
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
@@ -554,12 +548,9 @@ class _InterceptedStreamRequestMixin:
         await asyncio.wait(
             (
                 self._loop.create_task(
-                    self._write_to_iterator_queue.put(request)
-                ),
-                self._status_code_task,
-            ),
-            return_when=asyncio.FIRST_COMPLETED,
-        )
+                    self._write_to_iterator_queue.put(request)),  # type: ignore
+                self._status_code_task),
+            return_when=asyncio.FIRST_COMPLETED)
 
     async def write(self, request: RequestType) -> None:
         # If no queue was created it means that requests
@@ -617,20 +608,15 @@ class InterceptedUnaryUnaryCall(
     _channel: cygrpc.AioChannel
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        interceptors: Sequence[UnaryUnaryClientInterceptor],
-        request: RequestType,
-        timeout: Optional[float],
-        metadata: Metadata,
-        credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        channel: cygrpc.AioChannel,
-        method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        loop: asyncio.AbstractEventLoop,
-    ) -> None:
+    def __init__(self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+                 request: RequestType, timeout: Optional[float],
+                 metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction],
+                 loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._channel = channel
         interceptors_task = loop.create_task(
@@ -650,17 +636,14 @@ class InterceptedUnaryUnaryCall(
 
     # pylint: disable=too-many-arguments
     async def _invoke(
-        self,
-        interceptors: Sequence[UnaryUnaryClientInterceptor],
-        method: bytes,
-        timeout: Optional[float],
-        metadata: Optional[Metadata],
+        self, interceptors: Sequence[UnaryUnaryClientInterceptor],
+        method: bytes, timeout: Optional[float],
+        metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        request: RequestType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-    ) -> UnaryUnaryCall:
+        wait_for_ready: Optional[bool], request: RequestType,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction]
+    ) -> _base_call.UnaryUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -673,8 +656,7 @@ class InterceptedUnaryUnaryCall(
                     _run_interceptor, interceptors[1:]
                 )
                 call_or_response = await interceptors[0].intercept_unary_unary(
-                    continuation, client_call_details, request
-                )
+                    continuation, client_call_details, request)  # type: ignore
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
@@ -713,23 +695,18 @@ class InterceptedUnaryStreamCall(
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _last_returned_call_from_interceptors = Optional[_base_call.UnaryStreamCall]
+    _last_returned_call_from_interceptors: Optional[_base_call.UnaryStreamCall]
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        interceptors: Sequence[UnaryStreamClientInterceptor],
-        request: RequestType,
-        timeout: Optional[float],
-        metadata: Metadata,
-        credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        channel: cygrpc.AioChannel,
-        method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        loop: asyncio.AbstractEventLoop,
-    ) -> None:
+    def __init__(self, interceptors: Sequence[UnaryStreamClientInterceptor],
+                 request: RequestType, timeout: Optional[float],
+                 metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction],
+                 loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._channel = channel
         self._init_stream_response_mixin()
@@ -751,17 +728,14 @@ class InterceptedUnaryStreamCall(
 
     # pylint: disable=too-many-arguments
     async def _invoke(
-        self,
-        interceptors: Sequence[UnaryStreamClientInterceptor],
-        method: bytes,
-        timeout: Optional[float],
-        metadata: Optional[Metadata],
+        self, interceptors: Sequence[UnaryStreamClientInterceptor],
+        method: bytes, timeout: Optional[float],
+        metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        request: RequestType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-    ) -> UnaryStreamCall:
+        wait_for_ready: Optional[bool], request: RequestType,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction]
+    ) -> _base_call.UnaryStreamCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -769,16 +743,17 @@ class InterceptedUnaryStreamCall(
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryStreamCall:
+
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
                 )
 
                 call_or_response_iterator = await interceptors[
-                    0
-                ].intercept_unary_stream(
-                    continuation, client_call_details, request
-                )
+                    0].intercept_unary_stream(
+                        continuation,  # type: ignore
+                        client_call_details,
+                        request)
 
                 if isinstance(
                     call_or_response_iterator, _base_call.UnaryStreamCall
@@ -787,12 +762,10 @@ class InterceptedUnaryStreamCall(
                         call_or_response_iterator
                     )
                 else:
-                    self._last_returned_call_from_interceptors = (
-                        UnaryStreamCallResponseIterator(
-                            self._last_returned_call_from_interceptors,
-                            call_or_response_iterator,
-                        )
-                    )
+                    self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator(
+                        self.
+                        _last_returned_call_from_interceptors,  # type: ignore
+                        call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
                 self._last_returned_call_from_interceptors = UnaryStreamCall(
@@ -837,20 +810,15 @@ class InterceptedStreamUnaryCall(
     _channel: cygrpc.AioChannel
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        interceptors: Sequence[StreamUnaryClientInterceptor],
-        request_iterator: Optional[RequestIterableType],
-        timeout: Optional[float],
-        metadata: Metadata,
-        credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        channel: cygrpc.AioChannel,
-        method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        loop: asyncio.AbstractEventLoop,
-    ) -> None:
+    def __init__(self, interceptors: Sequence[StreamUnaryClientInterceptor],
+                 request_iterator: Optional[RequestIterableType],
+                 timeout: Optional[float], metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction],
+                 loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._channel = channel
         request_iterator = self._init_stream_request_mixin(request_iterator)
@@ -871,23 +839,21 @@ class InterceptedStreamUnaryCall(
 
     # pylint: disable=too-many-arguments
     async def _invoke(
-        self,
-        interceptors: Sequence[StreamUnaryClientInterceptor],
-        method: bytes,
-        timeout: Optional[float],
-        metadata: Optional[Metadata],
+        self, interceptors: Sequence[StreamUnaryClientInterceptor],
+        method: bytes, timeout: Optional[float],
+        metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
-        request_iterator: RequestIterableType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-    ) -> StreamUnaryCall:
+        request_iterator: Optional[RequestIterableType],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction]
+    ) -> _base_call.StreamUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: Iterator[StreamUnaryClientInterceptor],
+            interceptors: List[StreamUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: Optional[RequestIterableType]
         ) -> _base_call.StreamUnaryCall:
             if interceptors:
                 continuation = functools.partial(
@@ -895,8 +861,9 @@ class InterceptedStreamUnaryCall(
                 )
 
                 return await interceptors[0].intercept_stream_unary(
-                    continuation, client_call_details, request_iterator
-                )
+                    continuation,  # type: ignore
+                    client_call_details,
+                    request_iterator)  # type: ignore
             else:
                 return StreamUnaryCall(
                     request_iterator,
@@ -932,25 +899,18 @@ class InterceptedStreamStreamCall(
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _last_returned_call_from_interceptors = Optional[
-        _base_call.StreamStreamCall
-    ]
+    _last_returned_call_from_interceptors: Optional[_base_call.StreamStreamCall]
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        interceptors: Sequence[StreamStreamClientInterceptor],
-        request_iterator: Optional[RequestIterableType],
-        timeout: Optional[float],
-        metadata: Metadata,
-        credentials: Optional[grpc.CallCredentials],
-        wait_for_ready: Optional[bool],
-        channel: cygrpc.AioChannel,
-        method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        loop: asyncio.AbstractEventLoop,
-    ) -> None:
+    def __init__(self, interceptors: Sequence[StreamStreamClientInterceptor],
+                 request_iterator: Optional[RequestIterableType],
+                 timeout: Optional[float], metadata: MetadataType,
+                 credentials: Optional[grpc.CallCredentials],
+                 wait_for_ready: Optional[bool], channel: cygrpc.AioChannel,
+                 method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction],
+                 loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._channel = channel
         self._init_stream_response_mixin()
@@ -973,23 +933,21 @@ class InterceptedStreamStreamCall(
 
     # pylint: disable=too-many-arguments
     async def _invoke(
-        self,
-        interceptors: Sequence[StreamStreamClientInterceptor],
-        method: bytes,
-        timeout: Optional[float],
-        metadata: Optional[Metadata],
+        self, interceptors: Sequence[StreamStreamClientInterceptor],
+        method: bytes, timeout: Optional[float],
+        metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
-        request_iterator: RequestIterableType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-    ) -> StreamStreamCall:
+        request_iterator: Optional[RequestIterableType],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction]
+    ) -> _base_call.StreamStreamCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: Optional[RequestIterableType]
         ) -> _base_call.StreamStreamCall:
             if interceptors:
                 continuation = functools.partial(
@@ -997,10 +955,10 @@ class InterceptedStreamStreamCall(
                 )
 
                 call_or_response_iterator = await interceptors[
-                    0
-                ].intercept_stream_stream(
-                    continuation, client_call_details, request_iterator
-                )
+                    0].intercept_stream_stream(
+                        continuation,  # type: ignore
+                        client_call_details,
+                        request_iterator)  # type: ignore
 
                 if isinstance(
                     call_or_response_iterator, _base_call.StreamStreamCall
@@ -1009,12 +967,10 @@ class InterceptedStreamStreamCall(
                         call_or_response_iterator
                     )
                 else:
-                    self._last_returned_call_from_interceptors = (
-                        StreamStreamCallResponseIterator(
-                            self._last_returned_call_from_interceptors,
-                            call_or_response_iterator,
-                        )
-                    )
+                    self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator(
+                        self.
+                        _last_returned_call_from_interceptors,  # type: ignore
+                        call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
                 self._last_returned_call_from_interceptors = StreamStreamCall(
@@ -1044,8 +1000,7 @@ class InterceptedStreamStreamCall(
 
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     """Final UnaryUnaryCall class finished with a response."""
-
-    _response: ResponseType
+    _response: ResponseType  # type: ignore
 
     def __init__(self, response: ResponseType) -> None:
         self._response = response
@@ -1091,7 +1046,8 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         pass
 
 
-class _StreamCallResponseIterator:
+class _StreamCallResponseIterator(Generic[ResponseType]):
+
     _call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]
     _response_iterator: AsyncIterable[ResponseType]
 
@@ -1124,14 +1080,14 @@ class _StreamCallResponseIterator:
     async def trailing_metadata(self) -> Optional[Metadata]:
         return await self._call.trailing_metadata()
 
-    async def code(self) -> grpc.StatusCode:
+    async def code(self) -> Optional[grpc.StatusCode]:
         return await self._call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
-        return await self._call.debug_error_string()
+        return await self._call.debug_error_string()  # type: ignore
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
@@ -1175,4 +1131,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag
+        return self._call._done_writing_flag  # type: ignore

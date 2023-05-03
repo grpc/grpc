@@ -313,7 +313,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           A map of strings to an iterable of bytes for each auth property.
         """
 
-    def time_remaining(self) -> float:
+    def time_remaining(self) -> float:  # type: ignore
         """Describes the length of allowed time remaining for the RPC.
 
         Returns:
@@ -362,7 +362,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
             object as its only argument.
         """
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> bool:  # type: ignore
         """Return True if the RPC is cancelled.
 
         The RPC is cancelled when the cancellation was requested with cancel().
@@ -373,7 +373,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           A bool indicates whether the RPC is cancelled or not.
         """
 
-    def done(self) -> bool:
+    def done(self) -> bool:  # type: ignore
         """Return True if the RPC is done.
 
         An RPC is done if the RPC is completed, cancelled or aborted.
