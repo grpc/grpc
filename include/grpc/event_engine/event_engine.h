@@ -283,8 +283,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a on_shutdown will never be called.
   ///
   /// If this method returns a Listener, then \a on_shutdown will be invoked
-  /// exactly once, when the Listener is shut down. The status passed to it will
-  /// indicate if there was a problem during shutdown.
+  /// exactly once when the Listener is shut down, and only after all
+  /// \a on_accept callbacks have finished executing. The status passed to it
+  /// will indicate if there was a problem during shutdown.
   ///
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
