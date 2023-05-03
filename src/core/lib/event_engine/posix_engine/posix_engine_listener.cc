@@ -278,7 +278,7 @@ void PosixEngineListenerImpl::TriggerShutdown() {
 }
 
 PosixEngineListenerImpl::~PosixEngineListenerImpl() {
-  // This should get invoked only after all the AsyncConnectionAcceptor's have
+  // This should get invoked only after all the AsyncConnectionAcceptors have
   // been destroyed. This is because each AsyncConnectionAcceptor has a
   // shared_ptr ref to the parent PosixEngineListenerImpl.
   if (on_shutdown_ != nullptr) {
