@@ -131,6 +131,8 @@ static void epoll_set_shutdown() {
     close(g_epoll_set.epfd);
     g_epoll_set.epfd = -1;
   }
+  gpr_atm_no_barrier_store(&g_epoll_set.num_events, 0);
+  gpr_atm_no_barrier_store(&g_epoll_set.cursor, 0);
 }
 
 //******************************************************************************
