@@ -36,7 +36,9 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input);
 // grpc_slice y = grpc_chttp2_huffman_compress(x);
 // grpc_core::CSliceUnref( x);
 // return y;
+// *wire_size is the length of the base64 encoded string prior to huffman
+// compression (as is needed for hpack table math)
 grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
-    const grpc_slice& input);
+    const grpc_slice& input, uint32_t* wire_size);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H

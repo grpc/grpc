@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
+#include <inttypes.h>
+
 #include <algorithm>
 
 #include <grpc/support/log.h>
@@ -23,6 +25,8 @@
 namespace grpc_core {
 
 uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
+  GPR_DEBUG_ASSERT(element_size >= 32);
+
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
   GPR_DEBUG_ASSERT(element_size <= MaxEntrySize());
 

@@ -20,49 +20,60 @@
 
 #include <stdlib.h>
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
+namespace grpc_core {
+namespace {
+
+const uint32_t kFailureIsConnectionError = 1;
+const uint32_t kWithPriority = 2;
+const uint32_t kEndOfStream = 4;
+const uint32_t kEndOfHeaders = 8;
+
 struct TestInput {
-  const char* input;
-  const char* expected_parse;
+  absl::string_view input;
+  absl::StatusOr<absl::string_view> expected_parse;
+  uint32_t flags;
 };
 
 struct Test {
   absl::optional<size_t> table_size;
+  absl::optional<size_t> max_metadata_size;
   std::vector<TestInput> inputs;
 };
 
 class ParseTest : public ::testing::TestWithParam<Test> {
  public:
-  ParseTest() {
-    grpc_init();
-    parser_ = std::make_unique<grpc_core::HPackParser>();
-  }
+  ParseTest() { grpc_init(); }
 
   ~ParseTest() override {
     {
@@ -74,6 +85,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   }
 
   void SetUp() override {
+    parser_ = std::make_unique<grpc_core::HPackParser>();
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
       EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
@@ -82,15 +94,23 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     }
   }
 
-  void TestVector(grpc_slice_split_mode mode, const char* hexstring,
-                  std::string expect) {
+  static bool IsStreamError(const absl::Status& status) {
+    intptr_t stream_id;
+    return grpc_error_get_int(status, grpc_core::StatusIntProperty::kStreamId,
+                              &stream_id);
+  }
+
+  void TestVector(grpc_slice_split_mode mode,
+                  absl::optional<size_t> max_metadata_size,
+                  absl::string_view hexstring,
+                  absl::StatusOr<absl::string_view> expect, uint32_t flags) {
     grpc_core::MemoryAllocator memory_allocator =
         grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                        ->memory_quota()
                                        ->CreateMemoryAllocator("test"));
     auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_core::ExecCtx exec_ctx;
-    grpc_slice input = parse_hexstring(hexstring);
+    auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
     size_t nslices;
     size_t i;
@@ -98,32 +118,61 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     grpc_metadata_batch b(arena.get());
 
     parser_->BeginFrame(
-        &b, 4096, 4096, grpc_core::HPackParser::Boundary::None,
-        grpc_core::HPackParser::Priority::None,
+        &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
+        (flags & kEndOfStream)
+            ? grpc_core::HPackParser::Boundary::EndOfStream
+            : ((flags & kEndOfHeaders)
+                   ? grpc_core::HPackParser::Boundary::EndOfHeaders
+                   : grpc_core::HPackParser::Boundary::None),
+        flags & kWithPriority ? grpc_core::HPackParser::Priority::Included
+                              : grpc_core::HPackParser::Priority::None,
         grpc_core::HPackParser::LogInfo{
             1, grpc_core::HPackParser::LogInfo::kHeaders, false});
 
-    grpc_split_slices(mode, &input, 1, &slices, &nslices);
-    grpc_slice_unref(input);
+    grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
+                      &slices, &nslices);
+    auto cleanup_slices = absl::MakeCleanup([slices, nslices] {
+      for (size_t i = 0; i < nslices; i++) {
+        grpc_slice_unref(slices[i]);
+      }
+      gpr_free(slices);
+    });
 
+    bool saw_error = false;
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (!err.ok()) {
-        grpc_core::Crash(
-            absl::StrFormat("Unexpected parse error: %s",
-                            grpc_core::StatusToString(err).c_str()));
+      if (!err.ok() && (flags & kFailureIsConnectionError) == 0) {
+        EXPECT_TRUE(IsStreamError(err)) << err;
+      }
+      if (!saw_error && !err.ok()) {
+        // one byte at a time mode might fail with a stream error early
+        if (mode == GRPC_SLICE_SPLIT_ONE_BYTE &&
+            (flags & kFailureIsConnectionError) && IsStreamError(err)) {
+          continue;
+        }
+        grpc_status_code code;
+        std::string message;
+        grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message,
+                              nullptr, nullptr);
+        EXPECT_EQ(code, static_cast<grpc_status_code>(expect.status().code()))
+            << err;
+        EXPECT_THAT(message, ::testing::HasSubstr(expect.status().message()))
+            << err;
+        saw_error = true;
+        if (flags & kFailureIsConnectionError) return;
       }
     }
 
-    for (i = 0; i < nslices; i++) {
-      grpc_slice_unref(slices[i]);
+    if (!saw_error) {
+      EXPECT_TRUE(expect.ok()) << expect.status();
     }
-    gpr_free(slices);
 
-    TestEncoder encoder;
-    b.Encode(&encoder);
-    EXPECT_EQ(encoder.result(), expect);
+    if (expect.ok()) {
+      TestEncoder encoder;
+      b.Encode(&encoder);
+      EXPECT_EQ(encoder.result(), *expect) << "Input: " << hexstring;
+    }
   }
 
  private:
@@ -151,13 +200,15 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
 TEST_P(ParseTest, WholeSlices) {
   for (const auto& input : GetParam().inputs) {
-    TestVector(GRPC_SLICE_SPLIT_MERGE_ALL, input.input, input.expected_parse);
+    TestVector(GRPC_SLICE_SPLIT_MERGE_ALL, GetParam().max_metadata_size,
+               input.input, input.expected_parse, input.flags);
   }
 }
 
 TEST_P(ParseTest, OneByteAtATime) {
   for (const auto& input : GetParam().inputs) {
-    TestVector(GRPC_SLICE_SPLIT_ONE_BYTE, input.input, input.expected_parse);
+    TestVector(GRPC_SLICE_SPLIT_ONE_BYTE, GetParam().max_metadata_size,
+               input.input, input.expected_parse, input.flags);
   }
 }
 
@@ -165,6 +216,7 @@ INSTANTIATE_TEST_SUITE_P(
     ParseTest, ParseTest,
     ::testing::Values(
         Test{
+            {},
             {},
             {
                 // D.2.1
@@ -181,6 +233,7 @@ INSTANTIATE_TEST_SUITE_P(
                 {"82", ":method: GET\n"},
             }},
         Test{{},
+             {},
              {
                  // D.3.1
                  {"8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -206,6 +259,7 @@ INSTANTIATE_TEST_SUITE_P(
                   "custom-key: custom-value\n"},
              }},
         Test{{},
+             {},
              {
                  // D.4.1
                  {"8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -231,6 +285,7 @@ INSTANTIATE_TEST_SUITE_P(
                   "custom-key: custom-value\n"},
              }},
         Test{{256},
+             {},
              {
                  // D.5.1
                  {"4803 3330 3258 0770 7269 7661 7465 611d"
@@ -265,6 +320,7 @@ INSTANTIATE_TEST_SUITE_P(
                   "version=1\n"},
              }},
         Test{{256},
+             {},
              {
                  // D.6.1
                  {"4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -296,15 +352,334 @@ INSTANTIATE_TEST_SUITE_P(
                   "version=1\n"},
              }},
         Test{{},
+             {1024},
+             {{"3fc43fc4", absl::InternalError("Attempt to make hpack table"),
+               kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"3ba4a41007f0a40f2d62696e8b632a5b29a40fa4a4281007f0",
+               absl::InternalError("Invalid HPACK index received"),
+               kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"2aa41007f0a40f2d62696e8163a41f1f00275bf0692862a4dbf0f00963",
+               absl::InternalError(
+                   "More than two max table size changes in a single frame"),
+               kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"2aa41007f0a40f2d62696e8363271f00275bf06928626e2d213fa40fdbf0212"
+               "8215cf00963",
+               absl::InternalError("illegal base64 encoding")}}},
+        Test{{},
+             {},
+             {{"a4a41007f0a40f2d62696e8b635b29282d2762696e3b0921213fa41fdbf0211"
+               "007f07b282d62696ef009215c0921e51fe91b3b3f47ed5b282821215cf0",
+               absl::InternalError(
+                   "More than two max table size changes in a single frame"),
+               kFailureIsConnectionError}}},
+        Test{
+            {},
+            {},
+            {{"696969696969696969696969696969696969696969696969696969696969696"
+              "969696969696969696969696969696969696969696969696969696969696969"
+              "6969696969696969696969696969bababababababababababababababababab"
+              "abababababababababababababababababababababababababababababababa"
+              "bababababababababababababababababababababababababababababababab"
+              "abababababaa4a41007f0a40f2d62696e8bffffffffffffffffffffffffffff"
+              "ffffffffffff632a5b29a428a42d0fdbf027f0628363696e092121",
+              absl::InternalError("integer overflow in hpack integer decoding"),
+              kEndOfHeaders | kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"0e 00 00 df",
+               absl::InternalError(
+                   "Error parsing ':status' metadata: error=not an integer")}}},
+        Test{{},
+             {},
              {
                  // Binary metadata: created using:
                  // tools/codegen/core/gen_header_frame.py
-                 //    --compression inc --no_framing --hex
+                 //    --compression inc --no_framing --output hexstr
                  //    < test/core/transport/chttp2/binary-metadata.headers
                  {"40 09 61 2e 62 2e 63 2d 62 69 6e 0c 62 32 31 6e 4d 6a 41 79 "
                   "4d 51 3d 3d",
                   "a.b.c-bin: omg2021\n"},
-             }}));
+             }},
+        Test{{},
+             {},
+             {// Binary metadata: created using:
+              // tools/codegen/core/gen_header_frame.py
+              //    --compression inc --no_framing --output hexstr
+              //    < test/core/transport/chttp2/bad-base64.headers
+              {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+               "27732074756573646179",
+               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                   "error=illegal base64 encoding")},
+              {"be", absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                         "error=illegal base64 encoding")}}},
+        Test{{},
+             {},
+             {// created using:
+              // tools/codegen/core/gen_header_frame.py
+              //    --compression inc --no_framing --output hexstr
+              //    < test/core/transport/chttp2/bad-te.headers
+              {"400274650767617262616765",
+               absl::InternalError("Error parsing 'te' metadata")},
+              {"be", absl::InternalError("Error parsing 'te' metadata")}}},
+        Test{{},
+             128,
+             {
+                 {// Generated with: tools/codegen/core/gen_header_frame.py
+                  // --compression inc --output hexstr --no_framing <
+                  // test/core/transport/chttp2/large-metadata.headers
+                  "40096164616c64726964610a6272616e64796275636b40086164616c6772"
+                  "696d04746f6f6b4008616d6172616e74680a6272616e64796275636b4008"
+                  "616e67656c6963610762616767696e73",
+                  absl::ResourceExhaustedError(
+                      "received metadata size exceeds hard limit")},
+                 // Should be able to look up the added elements individually
+                 // (do not corrupt the hpack table test!)
+                 {"be", "angelica: baggins\n"},
+                 {"bf", "amaranth: brandybuck\n"},
+                 {"c0", "adalgrim: took\n"},
+                 {"c1", "adaldrida: brandybuck\n"},
+                 // But not as a whole - that exceeds metadata limits for one
+                 // request again
+                 {"bebfc0c1", absl::ResourceExhaustedError(
+                                  "received metadata size exceeds hard limit")},
+             }},
+        Test{
+            {},
+            {},
+            {{"be", absl::InternalError("Invalid HPACK index received"),
+              kFailureIsConnectionError}},
+        },
+        Test{
+            {},
+            {},
+            {{"80", absl::InternalError("Illegal hpack op code"),
+              kFailureIsConnectionError}},
+        },
+        Test{
+            {},
+            {},
+            {{"29", "", kFailureIsConnectionError}},
+        },
+        Test{
+            {},
+            {},
+            {{"", "", kWithPriority}},
+        },
+        Test{
+            {},
+            {},
+            {{"f5", absl::InternalError("Invalid HPACK index received"),
+              kFailureIsConnectionError}},
+        },
+        Test{
+            {},
+            {},
+            {{"0f", ""}},
+        },
+        Test{
+            {},
+            {},
+            {{"7f", ""}},
+        },
+        Test{
+            {},
+            {},
+            {{"1bffffff7c1b", ""}},
+        },
+        Test{
+            {},
+            {},
+            {{"ffffffffff00ff",
+              absl::InternalError("Invalid HPACK index received"),
+              kFailureIsConnectionError}},
+        },
+        Test{
+            {},
+            {},
+            {{"ff8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8"
+              "d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d"
+              "8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8"
+              "d8d8d8d8d8d8d8d",
+              absl::InternalError("integer overflow in hpack integer decoding"),
+              kFailureIsConnectionError}}},
+        Test{
+            {},
+            {9},
+            {{"3f6672616d6573207ba2020656e645f6f665f686561646572733a2074727565a"
+              "2020656e645f6f665f73747265616d3a2074727565a202073746f705f6275666"
+              "66572696e675f61667465725f7365676d656e74733a2039a202070617273653a"
+              "20225c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c30"
+              "30305c3030305c3030305c3030305c3030305c3030305c3030305c3030305c",
+              absl::ResourceExhaustedError(
+                  "received metadata size exceeds hard limit"),
+              kWithPriority}}},
+        Test{{},
+             {},
+             {{"52046772706300073a737461747573033230300e7f",
+               ":status: 200\naccept-ranges: grpc\n"}}},
+        Test{{},
+             {},
+             {{"a4a41007f0a40f2d62696e8beda42d5b63272129a410626907",
+               absl::InternalError("illegal base64 encoding")}}},
+        Test{
+            // haiku segment: 149bytes*2, a:a segment: 34 bytes
+            // So we arrange for one less than the total so we force a hpack
+            // table overflow
+            {149 * 2 + 34 - 1},
+            {},
+            {
+                {// Generated with: tools/codegen/core/gen_header_frame.py
+                 // --compression inc --output hexstr --no_framing <
+                 // test/core/transport/chttp2/long-base64.headers
+                 "4005782d62696e70516d467a5a545930494756755932396b6157356e4f67"
+                 "704a644342305957746c6379426961573568636e6b675a47463059534268"
+                 "626d5167625746725a584d6761585167644756346443344b56584e6c5a6e5"
+                 "67349475a766369427a644739796157356e49475a706247567a4c673d3d",
+                 // Haiku by Bard.
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // Should go into the hpack table (x-bin: ... is 149 bytes long
+                // by hpack rules)
+                {"be",
+                 "x-bin: Base64 encoding:\nIt takes binary data and "
+                 "makes it text.\nUseful for storing files.\n"},
+                // Add another copy
+                {"4005782d62696e70516d467a5a545930494756755932396b6157356e4f67"
+                 "704a644342305957746c6379426961573568636e6b675a47463059534268"
+                 "626d5167625746725a584d6761585167644756346443344b56584e6c5a6e5"
+                 "67349475a766369427a644739796157356e49475a706247567a4c673d3d",
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // 149*2 == 298, so we should have two copies in the hpack table
+                {"bebf",
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // Add some very short headers (should push the first long thing
+                // out)
+                // Generated with: tools/codegen/core/gen_header_frame.py
+                // --compression inc --output hexstr --no_framing <
+                // test/core/transport/chttp2/short.headers
+                {"4001610161", "a: a\n"},
+                // First two entries should be what was just pushed and then one
+                // long entry
+                {"bebf",
+                 "a: a\nx-bin: Base64 encoding:\nIt takes binary data and "
+                 "makes "
+                 "it text.\nUseful for storing files.\n"},
+                // Third entry should be unprobable (it's no longer in the
+                // table!)
+                {"c0", absl::InternalError("Invalid HPACK index received"),
+                 true},
+            }},
+        Test{
+            // haiku segment: 149bytes*2, a:a segment: 34 bytes
+            // So we arrange for one less than the total so we force a hpack
+            // table overflow
+            {149 * 2 + 34 - 1},
+            {},
+            {
+                {// Generated with: tools/codegen/core/gen_header_frame.py
+                 // --compression inc --output hexstr --no_framing --huff <
+                 // test/core/transport/chttp2/long-base64.headers
+                 "4005782d62696edbd94e1f7fbbf983262e36f313fd47c9bab54d5e592f5d0"
+                 "73e49a09eae987c9b9c95759bf7161073dd7678e9d9347cb0d9fbf9a261fe"
+                 "6c9a4c5c5a92f359b8fe69a3f6ae28c98bf7b90d77dc989ff43e4dd59317e"
+                 "d71e2e3ef3cd041",
+                 // Haiku by Bard.
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // Should go into the hpack table (x-bin: ... is 149 bytes long
+                // by hpack rules)
+                {"be",
+                 "x-bin: Base64 encoding:\nIt takes binary data and "
+                 "makes it text.\nUseful for storing files.\n"},
+                // Add another copy
+                {"4005782d62696edbd94e1f7fbbf983262e36f313fd47c9bab54d5e592f5d0"
+                 "73e49a09eae987c9b9c95759bf7161073dd7678e9d9347cb0d9fbf9a261fe"
+                 "6c9a4c5c5a92f359b8fe69a3f6ae28c98bf7b90d77dc989ff43e4dd59317e"
+                 "d71e2e3ef3cd041",
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // 149*2 == 298, so we should have two copies in the hpack table
+                {"bebf",
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"
+                 "x-bin: Base64 encoding:\nIt takes binary data and makes it "
+                 "text.\nUseful for storing files.\n"},
+                // Add some very short headers (should push the first long thing
+                // out)
+                // Generated with: tools/codegen/core/gen_header_frame.py
+                // --compression inc --output hexstr --no_framing <
+                // test/core/transport/chttp2/short.headers
+                {"4001610161", "a: a\n"},
+                // First two entries should be what was just pushed and then one
+                // long entry
+                {"bebf",
+                 "a: a\nx-bin: Base64 encoding:\nIt takes binary data and "
+                 "makes "
+                 "it text.\nUseful for storing files.\n"},
+                // Third entry should be unprobable (it's no longer in the
+                // table!)
+                {"c0", absl::InternalError("Invalid HPACK index received"),
+                 kFailureIsConnectionError},
+            }},
+        Test{{}, {}, {{"7a", ""}}},
+        Test{{},
+             {},
+             {{"60",
+               absl::InternalError("Incomplete header at the end of a "
+                                   "header/continuation sequence"),
+               kEndOfStream | kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"89", ":status: 204\n"},
+              {"89", ":status: 204\n"},
+              {"393939393939393939393939393939393939393939",
+               absl::InternalError(
+                   "More than two max table size changes in a single frame"),
+               kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"4005782d62696edbd94e1f7fbbf983267e36a313fd47c9bab54d5e592f5d",
+               ""}}},
+        Test{{}, {}, {{"72656672657368", ""}}},
+        Test{{}, {}, {{"66e6645f74", ""}, {"66645f74", ""}}},
+        Test{{},
+             {},
+             {{// Generated with: tools/codegen/core/gen_header_frame.py
+               // --compression inc --output hexstr --no_framing <
+               // test/core/transport/chttp2/MiXeD-CaSe.headers
+               "400a4d695865442d436153651073686f756c64206e6f74207061727365",
+               absl::InternalError("Illegal header key: MiXeD-CaSe")},
+              {// Looking up with hpack indices should work, but also return
+               // error
+               "be", absl::InternalError("Illegal header key: MiXeD-CaSe")}}},
+        Test{
+            {},
+            {},
+            {{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              absl::InternalError("integer overflow in hpack integer decoding"),
+              kFailureIsConnectionError}}},
+        Test{{},
+             {},
+             {{"dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadad"
+               "adadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada"
+               "dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadad"
+               "adadadadadadadadadadadadadadadadadadada",
+               absl::InternalError("Invalid HPACK index received"),
+               kWithPriority | kFailureIsConnectionError}}}));
+
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
