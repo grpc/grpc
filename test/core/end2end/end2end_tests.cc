@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
+#include "end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
@@ -290,6 +291,38 @@ void CoreEnd2endTest::ForceInitialized() {
     fixture().InitServer(ChannelArgs());
     fixture().InitClient(ChannelArgs());
   }
+}
+
+void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
+                                           absl::string_view name,
+                                           MakeTestFn make_test,
+                                           SourceLocation) {
+  auto& tests = tests_by_suite_[suite];
+  GPR_ASSERT(tests.count(name) == 0);
+  tests[name] = std::move(make_test);
+}
+
+void CoreEnd2endTestRegistry::RegisterSuite(
+    absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
+    SourceLocation) {
+  GPR_ASSERT(suites_.count(suite) == 0);
+  suites_[suite] = std::move(configs);
+}
+
+std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
+  GPR_ASSERT(tests_by_suite_.size() == suites_.size());
+  std::vector<Test> tests;
+  for (const auto& suite_configs : suites_) {
+    GPR_ASSERT(suite_configs.second.size() > 0);
+    GPR_ASSERT(tests_by_suite_.count(suite_configs.first) == 1);
+    for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
+      for (const auto* config : suite_configs.second) {
+        tests.push_back(Test{suite_configs.first, test_factory.first, config,
+                             test_factory.second});
+      }
+    }
+  }
+  return tests;
 }
 
 }  // namespace grpc_core

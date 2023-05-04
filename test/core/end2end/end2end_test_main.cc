@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
@@ -963,7 +964,7 @@ class ConfigQuery {
         }
       }
     }
-    return ::testing::ValuesIn(out);
+    return out;
   }
 
  private:
@@ -973,112 +974,86 @@ class ConfigQuery {
   std::vector<std::regex> excluded_names_;
 };
 
-// Produce a nice name to print next to each test case for gtest.
-inline const char* NameFromConfig(
-    const ::testing::TestParamInfo<const CoreTestConfiguration*>& config) {
-  return config.param->name;
-}
+CORE_END2END_TEST_SUITE(CoreEnd2endTest, ConfigQuery().Run());
 
-INSTANTIATE_TEST_SUITE_P(CoreEnd2endTests, CoreEnd2endTest, ConfigQuery().Run(),
-                         NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    SecureEnd2endTest,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    SecureEnd2endTests, SecureEnd2endTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_SECURE).Run(),
-    NameFromConfig);
+CORE_END2END_TEST_SUITE(CoreLargeSendTest,
+                        ConfigQuery()
+                            .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
+                                             FEATURE_MASK_ENABLES_TRACES)
+                            .Run());
 
-INSTANTIATE_TEST_SUITE_P(CoreLargeSendTests, CoreLargeSendTest,
-                         ConfigQuery()
-                             .ExcludeFeatures(FEATURE_MASK_1BYTE_AT_A_TIME |
-                                              FEATURE_MASK_ENABLES_TRACES)
-                             .Run(),
-                         NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    CoreDeadlineTest,
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    CoreDeadlineTests, CoreDeadlineTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run(),
-    NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    CoreClientChannelTest,
+    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    CoreClientChannelTests, CoreClientChannelTest,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run(),
-    NameFromConfig);
-
-INSTANTIATE_TEST_SUITE_P(
-    Http2SingleHopTests, Http2SingleHopTest,
+CORE_END2END_TEST_SUITE(
+    Http2SingleHopTest,
     ConfigQuery()
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_ENABLES_TRACES)
-        .Run(),
-    NameFromConfig);
+        .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    RetryTests, RetryTest,
-    ConfigQuery()
-        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
-        .Run(),
-    NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    RetryTest, ConfigQuery()
+                   .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+                   .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY)
+                   .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    WriteBufferingTests, WriteBufferingTest,
+CORE_END2END_TEST_SUITE(
+    WriteBufferingTest,
     ConfigQuery()
         .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING)
-        .Run(),
-    NameFromConfig);
+        .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    Http2Tests, Http2Test,
-    ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run(), NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    Http2Test, ConfigQuery().EnforceFeatures(FEATURE_MASK_IS_HTTP2).Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    RetryHttp2Tests, RetryHttp2Test,
-    ConfigQuery()
-        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
-                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
-        .Run(),
-    NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    RetryHttp2Test, ConfigQuery()
+                        .EnforceFeatures(FEATURE_MASK_IS_HTTP2 |
+                                         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+                        .ExcludeFeatures(FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                                         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
+                        .Run());
 
-// TODO(ctiller): Resolve the ResourceQuota / EventEngine listener problems and
-// re-enable this test.
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(ResourceQuotaTest);
-INSTANTIATE_TEST_SUITE_P(
-    ResourceQuotaTests, ResourceQuotaTest,
+CORE_END2END_TEST_SUITE(
+    ResourceQuotaTest,
     ConfigQuery()
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_1BYTE_AT_A_TIME |
                          FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT)
         .ExcludeName("Chttp2.*Uds.*")
         .ExcludeName("Chttp2HttpProxy")
-        .Run(),
-    NameFromConfig);
+        .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    PerCallCredsTests, PerCallCredsTest,
+CORE_END2END_TEST_SUITE(
+    PerCallCredsTest,
     ConfigQuery()
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS)
-        .Run(),
-    NameFromConfig);
+        .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    PerCallCredsOnInsecureTests, PerCallCredsOnInsecureTest,
+CORE_END2END_TEST_SUITE(
+    PerCallCredsOnInsecureTest,
     ConfigQuery()
         .EnforceFeatures(
             FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE)
-        .Run(),
-    NameFromConfig);
+        .Run());
 
-INSTANTIATE_TEST_SUITE_P(
-    NoLoggingTests, NoLoggingTest,
-    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run(),
-    NameFromConfig);
+CORE_END2END_TEST_SUITE(
+    NoLoggingTest,
+    ConfigQuery().ExcludeFeatures(FEATURE_MASK_ENABLES_TRACES).Run());
 
-INSTANTIATE_TEST_SUITE_P(ProxyAuthTests, ProxyAuthTest,
-                         ConfigQuery().AllowName("Chttp2HttpProxy").Run(),
-                         NameFromConfig);
+CORE_END2END_TEST_SUITE(ProxyAuthTest,
+                        ConfigQuery().AllowName("Chttp2HttpProxy").Run());
 
 }  // namespace grpc_core
 
@@ -1089,5 +1064,14 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  const auto all_tests = grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
+  for (const auto& test : all_tests) {
+    ::testing::RegisterTest(absl::StrCat(test.suite).c_str(),
+                            absl::StrCat(test.name).c_str(), nullptr,
+                            test.config->name, __FILE__, __LINE__,
+                            [test = &test]() -> grpc_core::CoreEnd2endTest* {
+                              return test->make_test(test->config);
+                            });
+  }
   return RUN_ALL_TESTS();
 }

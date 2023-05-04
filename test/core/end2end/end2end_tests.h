@@ -198,9 +198,13 @@ struct CoreTestConfiguration {
 //   older compilers, and it's tremendously convenient to be able to do so. So
 //   we use std::string for return types here - performance isn't particularly
 //   important, so an extra copy is fine.
-class CoreEnd2endTest
-    : public ::testing::TestWithParam<const CoreTestConfiguration*> {
+class CoreEnd2endTest : public ::testing::Test {
  public:
+  void TestInfrastructureSetParam(const CoreTestConfiguration* param) {
+    param_ = param;
+  }
+  const CoreTestConfiguration* GetParam() { return param_; }
+
   void SetUp() override;
   void TearDown() override;
 
@@ -700,6 +704,7 @@ class CoreEnd2endTest
     return *cq_verifier_;
   }
 
+  const CoreTestConfiguration* param_ = nullptr;
   std::unique_ptr<CoreTestFixture> fixture_;
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
@@ -742,6 +747,53 @@ class NoLoggingTest : public CoreEnd2endTest {};
 // Test suite for tests that verify proxy authentication
 class ProxyAuthTest : public CoreEnd2endTest {};
 
+using MakeTestFn = absl::AnyInvocable<CoreEnd2endTest*(
+    const CoreTestConfiguration* config) const>;
+
+class CoreEnd2endTestRegistry {
+ public:
+  CoreEnd2endTestRegistry(const CoreEnd2endTestRegistry&) = delete;
+  CoreEnd2endTestRegistry& operator=(const CoreEnd2endTestRegistry&) = delete;
+
+  static CoreEnd2endTestRegistry& Get() {
+    static CoreEnd2endTestRegistry* singleton = new CoreEnd2endTestRegistry;
+    return *singleton;
+  }
+
+  struct Test {
+    absl::string_view suite;
+    absl::string_view name;
+    const CoreTestConfiguration* config;
+    const MakeTestFn& make_test;
+  };
+
+  void RegisterTest(absl::string_view suite, absl::string_view name,
+                    MakeTestFn run_test, SourceLocation where = {});
+
+  void RegisterSuite(absl::string_view suite,
+                     std::vector<const CoreTestConfiguration*> configs,
+                     SourceLocation where);
+
+  std::vector<Test> AllTests();
+
+  // Enforce passing a type so that we can check it exists (saves typos)
+  template <typename T>
+  absl::void_t<T> RegisterSuiteT(
+      absl::string_view suite,
+      std::vector<const CoreTestConfiguration*> configs,
+      SourceLocation where = {}) {
+    return RegisterSuite(suite, std::move(configs), where);
+  }
+
+ private:
+  CoreEnd2endTestRegistry() = default;
+
+  std::map<absl::string_view, std::vector<const CoreTestConfiguration*>>
+      suites_;
+  std::map<absl::string_view, std::map<absl::string_view, MakeTestFn>>
+      tests_by_suite_;
+};
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
@@ -749,6 +801,31 @@ class ProxyAuthTest : public CoreEnd2endTest {};
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
 
-#define CORE_END2END_TEST(suite, name) TEST_P(suite, name)
+#define CORE_END2END_TEST(suite, name)                                       \
+  class CoreEnd2endTest_##suite##_##name : public ::grpc_core::suite {       \
+   public:                                                                   \
+    CoreEnd2endTest_##suite##_##name() {}                                    \
+    void TestBody() override;                                                \
+                                                                             \
+   private:                                                                  \
+    static ::grpc_core::CoreEnd2endTest* Run(                                \
+        const ::grpc_core::CoreTestConfiguration* config) {                  \
+      auto* test = new CoreEnd2endTest_##suite##_##name;                     \
+      test->TestInfrastructureSetParam(config);                              \
+      return test;                                                           \
+    }                                                                        \
+    static int registered_;                                                  \
+  };                                                                         \
+  int CoreEnd2endTest_##suite##_##name::registered_ =                        \
+      (grpc_core::CoreEnd2endTestRegistry::Get().RegisterTest(#suite, #name, \
+                                                              &Run),         \
+       0);                                                                   \
+  void CoreEnd2endTest_##suite##_##name::TestBody()
+
+#define CORE_END2END_TEST_SUITE(suite, configs)              \
+  static int registered_##suite =                            \
+      (grpc_core::CoreEnd2endTestRegistry::Get()             \
+           .template RegisterSuiteT<suite>(#suite, configs), \
+       0)
 
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H

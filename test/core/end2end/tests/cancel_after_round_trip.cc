@@ -78,7 +78,8 @@ CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterRoundTrip) {
                        Duration::Seconds(5));
 }
 
-CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+CORE_END2END_TEST(CoreClientChannelTest,
+                  DeadlineAfterRoundTripWithServiceConfig) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
