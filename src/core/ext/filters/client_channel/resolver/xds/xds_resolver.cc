@@ -47,7 +47,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/slice/slice.h"
 
