@@ -23,6 +23,8 @@
 
 #include "absl/functional/any_invocable.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
