@@ -308,7 +308,6 @@ grpc_cc_test(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:grpc_unsecure",
-        "//:legacy_context",
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",

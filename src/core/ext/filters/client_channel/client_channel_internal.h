@@ -23,13 +23,13 @@
 
 #include "absl/functional/any_invocable.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -54,13 +54,17 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
 // Internal type for ServiceConfigCallData.  Handles call commits.
 class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
  public:
-  ClientChannelServiceConfigCallData(Arena* arena,
-                                     grpc_call_context_element* call_context)
-      : ServiceConfigCallData(arena, call_context) {}
-
-  void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
-    GPR_ASSERT(on_commit_ == nullptr);
-    on_commit_ = std::move(on_commit);
+  ClientChannelServiceConfigCallData(
+      RefCountedPtr<ServiceConfig> service_config,
+      const ServiceConfigParser::ParsedConfigVector* method_configs,
+      ServiceConfigCallData::CallAttributes call_attributes,
+      absl::AnyInvocable<void()> on_commit,
+      grpc_call_context_element* call_context)
+      : ServiceConfigCallData(std::move(service_config), method_configs,
+                              std::move(call_attributes)),
+        on_commit_(std::move(on_commit)) {
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
 
   void Commit() {
@@ -69,6 +73,11 @@ class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
   }
 
  private:
+  static void Destroy(void* ptr) {
+    auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
+    self->~ClientChannelServiceConfigCallData();
+  }
+
   absl::AnyInvocable<void()> on_commit_;
 };
 
