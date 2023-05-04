@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
+#include <stdio.h>
+
 #include <string>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/config/config_vars.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {

@@ -75,7 +75,7 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], 
     CORPUS_DIR = native.package_name() + "/" + corpus
     deps = deps + ["@com_google_libprotobuf_mutator//:libprotobuf_mutator"]
 
-    if 'gtest' not in external_deps:
+    if "gtest" not in external_deps:
         external_deps = external_deps + ["gtest"]
 
     if proto != None:

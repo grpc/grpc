@@ -23,7 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
-#include "end2end_tests.h"
+#include "test/core/end2end/end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
@@ -332,7 +332,7 @@ std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
   GPR_ASSERT(tests_by_suite_.size() == suites_.size());
   std::vector<Test> tests;
   for (const auto& suite_configs : suites_) {
-    if (suite_configs.second.size() == 0) {
+    if (suite_configs.second.empty()) {
       CrashWithStdio(
           absl::StrCat("Suite ", suite_configs.first, " has no tests"));
     }

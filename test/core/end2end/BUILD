@@ -572,7 +572,6 @@ grpc_cc_binary(
     srcs = ["seed_end2end_corpus.cc"] + END2END_TEST_SRCS,
     external_deps = [
         "absl/cleanup",
-        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -643,6 +642,7 @@ grpc_proto_fuzzer(
     srcs = ["end2end_test_fuzzer.cc"] + END2END_TEST_SRCS,
     corpus = "end2end_test_corpus",
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
