@@ -102,6 +102,7 @@ def stream_stream_inline(behavior):
   Returns:
     An face.MethodImplementation derived from the given behavior.
   """
+    # pylint: disable=line-too-long
     return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
                                  style.Service.INLINE, None, None, None,
                                  behavior, None, None, None, None)  # pytype: disable=wrong-arg-count
