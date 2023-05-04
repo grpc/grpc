@@ -15,8 +15,6 @@
 import abc
 import logging
 import sys
-import threading
-import types
 from typing import Any, Generic, Optional, TypeVar
 
 import grpc  # pytype: disable=pyi-error
@@ -77,14 +75,19 @@ class GrpcObservability(Generic[PyCapsule], metaclass=abc.ABCMeta):
 
 def _observability_init(grpc_observability: GrpcObservability) -> None:
     try:
-        setattr(grpc, "_grpc_observability", grpc_observability)
+        grpc._observability._grpc_observability_stub = grpc_observability
         _cygrpc.set_server_call_tracer_factory(grpc_observability)
     except Exception as e:  # pylint:disable=broad-except
         _LOGGER.exception("grpc.observability initiazation failed with %s", e)
 
 
 def get_grpc_observability() -> Optional[GrpcObservability]:
-    return getattr(grpc, '_grpc_observability', None)
+    observability_stub: Optional[GrpcObservability]
+    try:
+        observability_stub = grpc._observability._grpc_observability_stub
+    except AttributeError:
+        observability_stub = None
+    return observability_stub
 
 
 def delete_call_tracer(client_call_tracer_capsule: PyCapsule) -> None:
