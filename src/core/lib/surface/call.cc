@@ -2183,7 +2183,7 @@ class PromiseBasedCall : public Call,
   void StartRecvMessage(const grpc_op& op, const Completion& completion,
                         FirstPromise first,
                         PipeReceiver<MessageHandle>* receiver,
-                        Party::BulkSpawner& spawner);
+                        bool cancel_on_error, Party::BulkSpawner& spawner);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
                         PipeSender<MessageHandle>* sender,
                         Party::BulkSpawner& spawner);
@@ -2538,7 +2538,8 @@ template <typename FirstPromiseFactory>
 void PromiseBasedCall::StartRecvMessage(
     const grpc_op& op, const Completion& completion,
     FirstPromiseFactory first_promise_factory,
-    PipeReceiver<MessageHandle>* receiver, Party::BulkSpawner& spawner) {
+    PipeReceiver<MessageHandle>* receiver, bool cancel_on_error,
+    Party::BulkSpawner& spawner) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
@@ -2549,7 +2550,7 @@ void PromiseBasedCall::StartRecvMessage(
       [first_promise_factory = std::move(first_promise_factory), receiver]() {
         return Seq(first_promise_factory(), receiver->Next());
       },
-      [this,
+      [this, cancel_on_error,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
         if (result.has_value()) {
@@ -2580,6 +2581,7 @@ void PromiseBasedCall::StartRecvMessage(
           }
           failed_before_recv_message_.store(true);
           FailCompletion(completion);
+          if (cancel_on_error) CancelWithError(absl::CancelledError());
           *recv_message_ = nullptr;
         } else {
           if (grpc_call_trace.enabled()) {
@@ -2873,7 +2875,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this]() {
               return server_initial_metadata_.receiver.AwaitClosed();
             },
-            &server_to_client_messages_.receiver, spawner);
+            &server_to_client_messages_.receiver, false, spawner);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         spawner.Spawn(
@@ -3328,7 +3330,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         }
         StartRecvMessage(
             op, completion, []() { return []() { return Empty{}; }; },
-            client_to_server_messages_, spawner);
+            client_to_server_messages_, true, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
         auto metadata = arena()->MakePooled<ServerMetadata>(arena());

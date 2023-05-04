@@ -1428,6 +1428,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/party.h )
   s.files += %w( src/core/lib/promise/pipe.h )
   s.files += %w( src/core/lib/promise/poll.h )
+  s.files += %w( src/core/lib/promise/prioritized_race.h )
   s.files += %w( src/core/lib/promise/promise.h )
   s.files += %w( src/core/lib/promise/race.h )
   s.files += %w( src/core/lib/promise/seq.h )

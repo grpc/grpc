@@ -845,6 +845,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -2204,6 +2205,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -10109,6 +10111,18 @@ targets:
   - linux
   - posix
   - mac
+- name: prioritized_race_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  src:
+  - test/core/promise/prioritized_race_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test

@@ -3470,6 +3470,7 @@ grpc_cc_library(
         "//src/core:percent_encoding",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:prioritized_race",
         "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
