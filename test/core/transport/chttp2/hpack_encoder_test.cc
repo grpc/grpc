@@ -193,7 +193,7 @@ static void verify(
     bool is_eof, const char* expected,
     const std::vector<std::pair<std::string, std::string>>& header_fields) {
   const grpc_core::Slice merged(EncodeHeaderIntoBytes(is_eof, header_fields));
-  const grpc_core::Slice expect(parse_hexstring(expected));
+  const grpc_core::Slice expect(grpc_core::ParseHexstring(expected));
 
   EXPECT_EQ(merged, expect);
 }
@@ -341,6 +341,66 @@ TEST(HpackEncoderTest, TestContinuationHeaders) {
   verify_continuation_headers("key2", value2, true);
 
   delete g_compressor;
+}
+
+TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
+  grpc_metadata_batch b(arena.get());
+  // Haiku by Bard
+  b.Append("grpc-trace-bin",
+           grpc_core::Slice::FromStaticString(
+               "Base64, a tool\nTo encode binary data into "
+               "text\nSo it can be shared."),
+           CrashOnAppendError);
+  grpc_transport_one_way_stats stats;
+  stats = {};
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef,  // stream_id
+      true,        // is_eof
+      false,       // use_true_binary_metadata
+      150,         // max_frame_size
+      &stats};
+  grpc_core::HPackCompressor compressor;
+  compressor.EncodeHeaders(hopt, b, &output);
+  grpc_slice_buffer_destroy(&output);
+
+  EXPECT_EQ(compressor.test_only_table_size(), 136);
+}
+
+TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
+  grpc_metadata_batch b(arena.get());
+  // Haiku by Bard
+  b.Append("grpc-trace-bin",
+           grpc_core::Slice::FromStaticString(
+               "Base64, a tool\nTo encode binary data into "
+               "text\nSo it can be shared."),
+           CrashOnAppendError);
+  grpc_transport_one_way_stats stats;
+  stats = {};
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef,  // stream_id
+      true,        // is_eof
+      true,        // use_true_binary_metadata
+      150,         // max_frame_size
+      &stats};
+  grpc_core::HPackCompressor compressor;
+  compressor.EncodeHeaders(hopt, b, &output);
+  grpc_slice_buffer_destroy(&output);
+
+  EXPECT_EQ(compressor.test_only_table_size(), 114);
 }
 
 int main(int argc, char** argv) {
