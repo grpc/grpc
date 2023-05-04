@@ -22,7 +22,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -48,7 +47,8 @@ namespace grpc_core {
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+  virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.

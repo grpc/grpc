@@ -59,7 +59,7 @@ namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 
-UniqueTypeName XdsOverrideHostTypeName() {
+UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_override_host");
   return kFactory.Create();
 }
@@ -160,8 +160,8 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     }
     // We have a valid cookie, so add the call attribute to be used by the
     // xds_override_host LB policy.
-    service_config_call_data->SetCallAttribute(XdsOverrideHostTypeName(),
-                                               *cookie_value);
+    service_config_call_data->SetCallAttribute(
+        GetContext<Arena>()->New<XdsOverrideHostAttribute>(*cookie_value));
   }
   // Intercept server initial metadata.
   call_args.server_initial_metadata->InterceptAndMap(

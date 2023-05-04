@@ -1382,6 +1382,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
+    src/core/ext/xds/xds_audit_logger_registry.cc \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_bootstrap_grpc.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
@@ -1578,6 +1579,7 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
+    src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_authorization_engine.cc \
@@ -1732,6 +1734,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
@@ -2221,6 +2224,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
@@ -3325,6 +3329,7 @@ src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c: $(OPENSSL_DEP
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_audit_logger_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap_grpc.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
@@ -3350,6 +3355,7 @@ src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/json/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/audit_logging.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)

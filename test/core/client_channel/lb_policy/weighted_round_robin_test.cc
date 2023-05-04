@@ -47,7 +47,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -81,33 +80,34 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
 
     ConfigBuilder& SetEnableOobLoadReport(bool value) {
-      json_["enableOobLoadReport"] = value;
+      json_["enableOobLoadReport"] = Json::FromBool(value);
       return *this;
     }
     ConfigBuilder& SetOobReportingPeriod(Duration duration) {
-      json_["oobReportingPeriod"] = duration.ToJsonString();
+      json_["oobReportingPeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetBlackoutPeriod(Duration duration) {
-      json_["blackoutPeriod"] = duration.ToJsonString();
+      json_["blackoutPeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetWeightUpdatePeriod(Duration duration) {
-      json_["weightUpdatePeriod"] = duration.ToJsonString();
+      json_["weightUpdatePeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetWeightExpirationPeriod(Duration duration) {
-      json_["weightExpirationPeriod"] = duration.ToJsonString();
+      json_["weightExpirationPeriod"] =
+          Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetErrorUtilizationPenalty(float value) {
-      json_["errorUtilizationPenalty"] = value;
+      json_["errorUtilizationPenalty"] = Json::FromNumber(value);
       return *this;
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config = Json::Array{
-          Json::Object{{"weighted_round_robin_experimental", json_}}};
+      Json config = Json::FromArray({Json::FromObject(
+          {{"weighted_round_robin", Json::FromObject(json_)}})});
       gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
       return MakeConfig(config);
     }
@@ -155,7 +155,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       return true;
     };
     ON_CALL(*mock_ee_, Cancel(::testing::_)).WillByDefault(cancel);
-    lb_policy_ = MakeLbPolicy("weighted_round_robin_experimental");
+    lb_policy_ = MakeLbPolicy("weighted_round_robin");
   }
 
   ~WeightedRoundRobinTest() override {

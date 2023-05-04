@@ -62,7 +62,17 @@ _SECURITY = flags.DEFINE_enum('security',
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
-flags.mark_flag_as_required("resource_suffix")
+flags.mark_flag_as_required(xds_flags.RESOURCE_SUFFIX.name)
+
+
+@flags.multi_flags_validator((xds_flags.SERVER_XDS_PORT.name, _CMD.name),
+                             message="Run outside of a test suite, must provide"
+                             " the exact port value (must be greater than 0).")
+def _check_server_xds_port_flag(flags_dict):
+    if flags_dict[_CMD.name] not in ('create', 'cycle'):
+        return True
+    return flags_dict[xds_flags.SERVER_XDS_PORT.name] > 0
+
 
 # Type aliases
 _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner

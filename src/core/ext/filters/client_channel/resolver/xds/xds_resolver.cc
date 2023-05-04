@@ -16,11 +16,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -59,6 +59,7 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -93,7 +94,7 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-UniqueTypeName XdsClusterAttributeTypeName() {
+UniqueTypeName XdsClusterAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_cluster_name");
   return kFactory.Create();
 }
@@ -239,14 +240,9 @@ class XdsResolver : public Resolver {
   // back into the WorkSerializer to remove the entry from the map.
   class ClusterState : public DualRefCounted<ClusterState> {
    public:
-    using ClusterStateMap =
-        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
-
-    ClusterState(RefCountedPtr<XdsResolver> resolver,
-                 const std::string& cluster_name)
+    ClusterState(RefCountedPtr<XdsResolver> resolver, std::string cluster_name)
         : resolver_(std::move(resolver)),
-          it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
-                  .first) {}
+          cluster_name_(std::move(cluster_name)) {}
 
     void Orphan() override {
       auto* resolver = resolver_.get();
@@ -257,11 +253,11 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
 
-    const std::string& cluster() const { return it_->first; }
+    const std::string& cluster_name() const { return cluster_name_; }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
-    ClusterStateMap::iterator it_;
+    std::string cluster_name_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -350,7 +346,8 @@ class XdsResolver : public Resolver {
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map_;
 
-  ClusterState::ClusterStateMap cluster_state_map_;
+  std::map<absl::string_view, WeakRefCountedPtr<ClusterState>>
+      cluster_state_map_;
 };
 
 //
@@ -600,9 +597,12 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
-      clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
+      resolver_->cluster_state_map_.emplace(new_cluster_state->cluster_name(),
+                                            new_cluster_state->WeakRef());
+      clusters_[new_cluster_state->cluster_name()] =
+          std::move(new_cluster_state);
     } else {
-      clusters_[it->second->cluster()] = it->second->Ref();
+      clusters_[it->second->cluster_name()] = it->second->Ref();
     }
   }
 }
@@ -731,13 +731,15 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
+  call_config.call_attributes[XdsClusterAttribute::TypeName()] =
+      args.arena->New<XdsClusterAttribute>(it->first);
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
+  call_config.call_attributes[RequestHashAttribute::TypeName()] =
+      args.arena->New<RequestHashAttribute>(hash_value);
   call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
     cluster_state.reset();
   };
