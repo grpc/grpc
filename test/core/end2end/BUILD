@@ -181,12 +181,9 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
-    name = "core_end2end_tests",
-    timeout = "long",
-    srcs = [
-        "end2end_test_main.cc",
-        "tests/bad_ping.cc",
+END2END_TEST_SRCS = [
+    "end2end_test_suites.cc",
+            "tests/bad_ping.cc",
         "tests/binary_metadata.cc",
         "tests/call_creds.cc",
         "tests/call_host_override.cc",
@@ -275,7 +272,14 @@ grpc_cc_test(
         "tests/trailing_metadata.cc",
         "tests/write_buffering.cc",
         "tests/write_buffering_at_end.cc",
-    ],
+]
+
+grpc_cc_test(
+    name = "core_end2end_tests",
+    timeout = "long",
+    srcs = [
+        "end2end_test_main.cc",
+    ] + END2END_TEST_SRCS,
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
