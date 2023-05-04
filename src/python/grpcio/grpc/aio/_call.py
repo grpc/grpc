@@ -19,8 +19,8 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import (Any, AsyncGenerator, AsyncIterator, Generator, Generic,
-                    Optional, Tuple)
+from typing import (Any, AsyncGenerator, AsyncIterator, Generator, Optional,
+                    Tuple)
 
 import grpc
 from grpc import _common

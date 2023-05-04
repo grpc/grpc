@@ -20,8 +20,8 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import (Any, AsyncIterator, Awaitable, Generator, Generic,
-                    Optional, Union)
+from typing import (Any, AsyncIterator, Generator, Generic, Optional,
+                    Union)
 
 import grpc
 

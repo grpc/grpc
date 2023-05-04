@@ -17,10 +17,8 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
-import typing
 from typing import (AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable,
-                    Callable, Generic, Iterator, List, Optional, Sequence,
-                    Union)
+                    Callable, Generic, List, Optional, Sequence, Union)
 
 import grpc
 from grpc._cython import cygrpc
@@ -703,8 +701,7 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
                     self._last_returned_call_from_interceptors = call_or_response_iterator
                 else:
                     self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator(
-                        self.
-                        _last_returned_call_from_interceptors,  # type: ignore
+                        self._last_returned_call_from_interceptors,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
@@ -712,9 +709,12 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
                     request, _timeout_to_deadline(client_call_details.timeout),
                     client_call_details.metadata,
                     client_call_details.credentials,
-                    client_call_details.wait_for_ready, self._channel,
-                    client_call_details.method, request_serializer,
-                    response_deserializer, self._loop)
+                    client_call_details.wait_for_ready,
+                    self._channel,
+                    client_call_details.method,
+                    request_serializer,
+                    response_deserializer,
+                    self._loop)
 
                 return self._last_returned_call_from_interceptors
 
@@ -868,8 +868,7 @@ class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
                     self._last_returned_call_from_interceptors = call_or_response_iterator
                 else:
                     self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator(
-                        self.
-                        _last_returned_call_from_interceptors,  # type: ignore
+                        self._last_returned_call_from_interceptors,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
