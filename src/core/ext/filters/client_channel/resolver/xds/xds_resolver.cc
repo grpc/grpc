@@ -30,7 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -135,8 +134,10 @@ class ClusterState : public DualRefCounted<ClusterState> {
   std::string cluster_name_;
 };
 
-// Cluster map held by the XdsConfigSelector. It is passed in the call arguments
-// so that filters and load balancing policies can access it
+// A map containing cluster refs held by the XdsConfigSelector. A ref to
+// this map will be taken by each call processed by the XdsConfigSelector,
+// stored in a the call's call attributes, and later unreffed
+// by the ClusterSelection filter.
 class XdsClusterMap : public RefCounted<XdsClusterMap> {
  public:
   explicit XdsClusterMap(
@@ -206,16 +207,6 @@ class XdsResolver : public Resolver {
 
   void ResetBackoffLocked() override {
     if (xds_client_ != nullptr) xds_client_->ResetBackoff();
-  }
-
-  RefCountedPtr<ClusterState> GetClusterState(absl::string_view cluster_name) {
-    auto it = cluster_state_map_.find(cluster_name);
-    if (it == cluster_state_map_.end()) {
-      auto cluster = MakeRefCounted<ClusterState>(Ref(), cluster_name);
-      cluster_state_map_.emplace(cluster->cluster_name(), cluster->WeakRef());
-      return cluster;
-    }
-    return it->second->Ref();
   }
 
   void MaybeRemoveUnusedClustersInWorkSerializer() {
@@ -375,20 +366,21 @@ class XdsResolver : public Resolver {
                   [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
                       .value);
       GPR_ASSERT(service_config_call_data != nullptr);
-      auto* cluster_data = static_cast<XdsClusterDataAttribute*>(
+      auto* cluster_data = static_cast<XdsClusterMapAttribute*>(
           service_config_call_data->GetCallAttribute(
-              XdsClusterDataAttribute::TypeName()));
-      if (cluster_data != nullptr) {
-        auto* cluster = static_cast<XdsClusterAttribute*>(
-            service_config_call_data->GetCallAttribute(
-                XdsClusterAttribute::TypeName()));
+              XdsClusterMapAttribute::TypeName()));
+      auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
+          service_config_call_data->GetCallAttribute(
+              XdsClusterAttribute::TypeName()));
+      if (cluster_data != nullptr && cluster_name_attribute != nullptr) {
+        auto cluster =
+            cluster_data->GetClusterState(cluster_name_attribute->cluster());
+        cluster_data->ReleaseClusterMap();
         if (cluster != nullptr) {
           service_config_call_data->SetOnCommit(
-              [locked_cluster = cluster_data->LockAndGetClusterConfig(
-                   cluster->cluster())]() mutable { locked_cluster.reset(); });
+              [cluster = std::move(cluster)]() mutable { cluster.reset(); });
         }
       }
-
       return next_promise_factory(std::move(call_args));
     }
 
@@ -398,6 +390,17 @@ class XdsResolver : public Resolver {
 
     ChannelFilter::Args filter_args_;
   };
+
+  RefCountedPtr<ClusterState> GetOrCreateClusterState(
+      absl::string_view cluster_name) {
+    auto it = cluster_state_map_.find(cluster_name);
+    if (it == cluster_state_map_.end()) {
+      auto cluster = MakeRefCounted<ClusterState>(Ref(), cluster_name);
+      cluster_state_map_.emplace(cluster->cluster_name(), cluster->WeakRef());
+      return cluster;
+    }
+    return it->second->Ref();
+  }
 
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
@@ -506,6 +509,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // invalid data.
   route_table_.reserve(resolver_->current_virtual_host_->routes.size());
   std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters;
+  auto maybe_add_cluster = [&](absl::string_view cluster_name) {
+    if (clusters.find(cluster_name) != clusters.end()) return;
+    auto cluster_state = resolver_->GetOrCreateClusterState(cluster_name);
+    absl::string_view name = cluster_state->cluster_name();
+    clusters.emplace(name, std::move(cluster_state));
+  };
   for (auto& route : resolver_->current_virtual_host_->routes) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
@@ -524,32 +533,32 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
         route_action->max_stream_duration =
             resolver_->current_listener_.http_max_stream_duration;
       }
-      absl::StatusOr<std::vector<std::string>> status_or_cluster_names = Match(
+      Match(
           route_action->action,
           // cluster name
           [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
-                  cluster_name) -> absl::StatusOr<std::vector<std::string>> {
+                  cluster_name) {
             auto result = CreateMethodConfig(route_entry.route, nullptr);
             if (!result.ok()) {
-              return result.status();
+              *status = result.status();
+              return;
             }
             route_entry.method_config = std::move(*result);
-            return std::vector<std::string>{std::string(
-                absl::StrCat("cluster:", cluster_name.cluster_name))};
+            maybe_add_cluster(
+                absl::StrCat("cluster:", cluster_name.cluster_name));
           },
           // WeightedClusters
           [&](const std::vector<
               XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
-                  weighted_clusters)
-              -> absl::StatusOr<std::vector<std::string>> {
+                  weighted_clusters) {
             uint32_t end = 0;
-            std::vector<std::string> cluster_names;
             for (const auto& weighted_cluster : weighted_clusters) {
               Route::ClusterWeightState cluster_weight_state;
               auto result =
                   CreateMethodConfig(route_entry.route, &weighted_cluster);
               if (!result.ok()) {
-                return result.status();
+                *status = result.status();
+                return;
               }
               cluster_weight_state.method_config = std::move(*result);
               end += weighted_cluster.weight;
@@ -557,35 +566,25 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
               cluster_weight_state.cluster = weighted_cluster.name;
               route_entry.weighted_cluster_state.push_back(
                   std::move(cluster_weight_state));
-              cluster_names.emplace_back(
+              maybe_add_cluster(
                   absl::StrCat("cluster:", weighted_cluster.name));
             }
-            return cluster_names;
           },
           // ClusterSpecifierPlugin
           [&](const XdsRouteConfigResource::Route::RouteAction::
-                  ClusterSpecifierPluginName& cluster_specifier_plugin_name)
-              -> absl::StatusOr<std::vector<std::string>> {
+                  ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
             auto result = CreateMethodConfig(route_entry.route, nullptr);
             if (!result.ok()) {
-              return result.status();
+              *status = result.status();
+              return;
             }
             route_entry.method_config = std::move(*result);
-            return std::vector<std::string>{std::string(absl::StrCat(
+            maybe_add_cluster(absl::StrCat(
                 "cluster_specifier_plugin:",
-                cluster_specifier_plugin_name.cluster_specifier_plugin_name))};
+                cluster_specifier_plugin_name.cluster_specifier_plugin_name));
           });
-      if (!status_or_cluster_names.ok()) {
-        *status = status_or_cluster_names.status();
+      if (!status->ok()) {
         return;
-      }
-      for (const auto& cluster_name : *status_or_cluster_names) {
-        auto it = clusters.find(cluster_name);
-        if (it == clusters.end()) {
-          auto cluster_state = resolver_->GetClusterState(cluster_name);
-          absl::string_view name = cluster_state->cluster_name();
-          clusters.emplace(name, std::move(cluster_state));
-        }
       }
     }
   }
@@ -833,8 +832,8 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   hash_value[hash_string.size()] = '\0';
   call_config.call_attributes[RequestHashAttribute::TypeName()] =
       args.arena->New<RequestHashAttribute>(hash_value);
-  auto lb_data = args.arena->ManagedNew<XdsClusterDataAttribute>(cluster_map_);
-  call_config.call_attributes[XdsClusterDataAttribute::TypeName()] = lb_data;
+  call_config.call_attributes[XdsClusterMapAttribute::TypeName()] =
+      args.arena->ManagedNew<XdsClusterMapAttribute>(cluster_map_);
   return std::move(call_config);
 }
 
@@ -1209,13 +1208,14 @@ ClusterState::ClusterState(RefCountedPtr<XdsResolver> resolver,
 
 void ClusterState::Orphan() {
   resolver_->MaybeRemoveUnusedClustersInWorkSerializer();
+  resolver_.reset();
 }
 
-XdsClusterDataAttribute::XdsClusterDataAttribute(
+XdsClusterMapAttribute::XdsClusterMapAttribute(
     RefCountedPtr<XdsClusterMap> cluster_map)
     : cluster_map_(std::move(cluster_map)) {}
 
-RefCountedPtr<ClusterState> XdsClusterDataAttribute::LockAndGetClusterConfig(
+RefCountedPtr<ClusterState> XdsClusterMapAttribute::GetClusterState(
     absl::string_view cluster_name) {
   if (cluster_map_ == nullptr) {
     return nullptr;
@@ -1224,8 +1224,9 @@ RefCountedPtr<ClusterState> XdsClusterDataAttribute::LockAndGetClusterConfig(
   if (cluster == nullptr) {
     return nullptr;
   }
-  cluster_map_.reset();
   return cluster;
 }
+
+void XdsClusterMapAttribute::ReleaseClusterMap() { cluster_map_.reset(); }
 
 }  // namespace grpc_core
