@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "DISABLED_ClientFilterChannelInitFails"
+config: "Chttp2SimplSslFullstackTls12"

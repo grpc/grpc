@@ -1,0 +1,3 @@
+suite: "CoreDeadlineTest"
+test: "DeadlineInAVacuum"
+config: "Chttp2SimpleSslWithOauth2FullstackTls13"
