@@ -198,7 +198,9 @@ with open('test/core/util/fuzz_config_vars.h', 'w') as H:
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    print("ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);", file=H)
+    print(
+        "ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
+        file=H)
     print(
         "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
         file=H)
@@ -235,7 +237,8 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
     print(
         "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
         file=C)
-    print("  ConfigVars::SetOverrides(OverridesFromFuzzConfigVars(vars));", file=C)
+    print("  ConfigVars::SetOverrides(OverridesFromFuzzConfigVars(vars));",
+          file=C)
     print("}", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)

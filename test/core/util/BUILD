@@ -388,6 +388,7 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
+    external_deps = ["absl/types:optional"],
     deps = [
         "fuzz_config_vars_proto",
         "//:config_vars",

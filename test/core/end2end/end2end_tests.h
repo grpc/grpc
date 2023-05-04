@@ -811,15 +811,15 @@ class CoreEnd2endTestRegistry {
   GTEST_SKIP() << "Skipping test for minstack"
 
 #define CORE_END2END_TEST(suite, name)                                       \
-  class CoreEnd2endTest_##suite##_##name : public ::grpc_core::suite {       \
+  class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
    public:                                                                   \
     CoreEnd2endTest_##suite##_##name() {}                                    \
     void TestBody() override { RunTest(); }                                  \
     void RunTest() override;                                                 \
                                                                              \
    private:                                                                  \
-    static ::grpc_core::CoreEnd2endTest* Run(                                \
-        const ::grpc_core::CoreTestConfiguration* config) {                  \
+    static grpc_core::CoreEnd2endTest* Run(                                  \
+        const grpc_core::CoreTestConfiguration* config) {                    \
       auto* test = new CoreEnd2endTest_##suite##_##name;                     \
       test->TestInfrastructureSetParam(config);                              \
       return test;                                                           \

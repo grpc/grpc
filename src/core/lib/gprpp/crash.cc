@@ -16,6 +16,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <string>

@@ -43,7 +43,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
