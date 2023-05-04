@@ -1812,23 +1812,22 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
             chand(), this);
   }
   if (!config_selector.ok()) return config_selector.status();
-  // Use the ConfigSelector to determine the config for the call.
-  auto call_config =
-      (*config_selector)->GetCallConfig({send_initial_metadata(), arena()});
-  if (!call_config.ok()) {
-    return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(call_config.status(), "ConfigSelector"));
-  }
   // Create a ClientChannelServiceConfigCallData for the call.  This stores
   // a ref to the ServiceConfig and caches the right set of parsed configs
   // to use for the call.  The ClientChannelServiceConfigCallData will store
   // itself in the call context, so that it can be accessed by filters
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
-      arena()->New<ClientChannelServiceConfigCallData>(
-          std::move(call_config->service_config), call_config->method_configs,
-          std::move(call_config->call_attributes),
-          std::move(call_config->on_commit), call_context());
+      arena()->New<ClientChannelServiceConfigCallData>(arena(), call_context());
+  // Use the ConfigSelector to determine the config for the call.
+  absl::Status call_config_status =
+      (*config_selector)
+          ->GetCallConfig(
+              {send_initial_metadata(), arena(), service_config_call_data});
+  if (!call_config_status.ok()) {
+    return absl_status_to_grpc_error(
+        MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector"));
+  }
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(

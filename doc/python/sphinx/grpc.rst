@@ -112,7 +112,7 @@ gRPC Exceptions
 .. autoexception:: RpcError
 
 
-Shared Context
+RPC Context
 ^^^^^^^^^^^^^^
 
 .. autoclass:: RpcContext

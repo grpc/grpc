@@ -47,6 +47,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -71,7 +72,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -311,7 +311,7 @@ class XdsResolver : public Resolver {
              *cluster_map_ == *other_xds->cluster_map_;
     }
 
-    absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override;
+    absl::Status GetCallConfig(GetCallConfigArgs args) override;
 
     std::vector<const grpc_channel_filter*> GetFilters() override {
       return filters_;
@@ -720,8 +720,8 @@ absl::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-absl::StatusOr<ConfigSelector::CallConfig>
-XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
+absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
+    GetCallConfigArgs args) {
   Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
   GPR_ASSERT(path != nullptr);
   auto route_index = XdsRouting::GetRouteForRequest(
@@ -817,24 +817,25 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   if (!hash.has_value()) {
     hash = absl::Uniform<uint64_t>(absl::BitGen());
   }
-  CallConfig call_config;
+  // Populate service config call data.
   if (method_config != nullptr) {
-    call_config.method_configs =
+    auto* parsed_method_configs =
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
-    call_config.service_config = std::move(method_config);
+    args.service_config_call_data->SetServiceConfig(std::move(method_config),
+                                                    parsed_method_configs);
   }
-  call_config.call_attributes[XdsClusterAttribute::TypeName()] =
-      args.arena->New<XdsClusterAttribute>(cluster->cluster_name());
+  args.service_config_call_data->SetCallAttribute(
+      args.arena->New<XdsClusterAttribute>(cluster->cluster_name()));
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[RequestHashAttribute::TypeName()] =
-      args.arena->New<RequestHashAttribute>(hash_value);
-  call_config.call_attributes[XdsClusterMapAttribute::TypeName()] =
-      args.arena->ManagedNew<XdsClusterMapAttribute>(cluster_map_);
-  return std::move(call_config);
+  args.service_config_call_data->SetCallAttribute(
+      args.arena->New<RequestHashAttribute>(hash_value));
+  args.service_config_call_data->SetCallAttribute(
+      args.arena->ManagedNew<XdsClusterMapAttribute>(cluster_map_));
+  return absl::OkStatus();
 }
 
 //
