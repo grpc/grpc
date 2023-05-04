@@ -67,6 +67,11 @@ class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
 
+  void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
+    GPR_ASSERT(on_commit_ == nullptr);
+    on_commit_ = std::move(on_commit);
+  }
+
   void Commit() {
     auto on_commit = std::move(on_commit_);
     if (on_commit != nullptr) on_commit();
