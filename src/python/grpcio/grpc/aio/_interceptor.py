@@ -760,8 +760,9 @@ class InterceptedUnaryStreamCall(
                         call_or_response_iterator
                     )
                 else:
+                    _last_returned = self._last_returned_call_from_interceptors
                     self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator(
-                        self._last_returned_call_from_interceptors,  # type: ignore
+                        _last_returned,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
@@ -770,12 +771,9 @@ class InterceptedUnaryStreamCall(
                     _timeout_to_deadline(client_call_details.timeout),
                     client_call_details.metadata,
                     client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop)
+                    client_call_details.wait_for_ready, self._channel,
+                    client_call_details.method, request_serializer,
+                    response_deserializer, self._loop)
 
                 return self._last_returned_call_from_interceptors
 
@@ -790,12 +788,10 @@ class InterceptedUnaryStreamCall(
         raise NotImplementedError()
 
 
-class InterceptedStreamUnaryCall(
-    _InterceptedUnaryResponseMixin,
-    _InterceptedStreamRequestMixin,
-    InterceptedCall,
-    _base_call.StreamUnaryCall,
-):
+# pylint:disable=too-many-ancestors
+class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
+                                 _InterceptedStreamRequestMixin,
+                                 InterceptedCall, _base_call.StreamUnaryCall):
     """Used for running a `StreamUnaryCall` wrapped by interceptors.
 
     For the `__await__` method is it is proxied to the intercepted call only when
@@ -885,12 +881,10 @@ class InterceptedStreamUnaryCall(
         raise NotImplementedError()
 
 
-class InterceptedStreamStreamCall(
-    _InterceptedStreamResponseMixin,
-    _InterceptedStreamRequestMixin,
-    InterceptedCall,
-    _base_call.StreamStreamCall,
-):
+# pylint:disable=too-many-ancestors
+class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
+                                  _InterceptedStreamRequestMixin,
+                                  InterceptedCall, _base_call.StreamStreamCall):
     """Used for running a `StreamStreamCall` wrapped by interceptors."""
 
     _loop: asyncio.AbstractEventLoop
@@ -963,8 +957,9 @@ class InterceptedStreamStreamCall(
                         call_or_response_iterator
                     )
                 else:
+                    _last_returned = self._last_returned_call_from_interceptors
                     self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator(
-                        self._last_returned_call_from_interceptors,  # type: ignore
+                        _last_returned,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:

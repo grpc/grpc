@@ -226,7 +226,7 @@ class ChannelCache:
 @experimental_api
 # pylint: disable=too-many-locals
 def unary_unary(
-        request: RequestType,
+        request: Any,
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -317,7 +317,7 @@ def unary_unary(
 @experimental_api
 # pylint: disable=too-many-locals
 def unary_stream(
-    request: RequestType,
+    request: Any,
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -329,9 +329,8 @@ def unary_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
-    _registered_method: Optional[bool] = False,
-) -> Iterator[ResponseType]:
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+) -> Iterator[Any]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.
@@ -408,7 +407,7 @@ def unary_stream(
 @experimental_api
 # pylint: disable=too-many-locals
 def stream_unary(
-        request_iterator: Iterator[RequestType],
+        request_iterator: Iterator[Any],
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -498,7 +497,7 @@ def stream_unary(
 @experimental_api
 # pylint: disable=too-many-locals
 def stream_stream(
-    request_iterator: Iterator[RequestType],
+    request_iterator: Iterator[Any],
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -510,9 +509,8 @@ def stream_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
-    _registered_method: Optional[bool] = False,
-) -> Iterator[ResponseType]:
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+) -> Iterator[Any]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.

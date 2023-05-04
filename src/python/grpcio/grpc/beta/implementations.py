@@ -39,9 +39,9 @@ def metadata_call_credentials(metadata_plugin, name=None):
         def wrapped_callback(beta_metadata, error):
             callback(_metadata.unbeta(beta_metadata), error)
 
-        metadata_plugin(context, wrapped_callback)
+        metadata_plugin(context, wrapped_callback)  # pytype: disable=wrong-arg-types
 
-    return grpc.metadata_call_credentials(plugin, name=name)
+    return grpc.metadata_call_credentials(plugin, name=name)  # pytype: disable=wrong-arg-types
 
 
 def google_call_credentials(credentials):
