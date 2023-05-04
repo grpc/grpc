@@ -247,9 +247,8 @@ class ClientChannel {
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void UpdateStateLocked(
-      grpc_connectivity_state state, const absl::Status& status,
-      const char* reason)
+  void UpdateStateLocked(grpc_connectivity_state state,
+                         const absl::Status& status, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateStateAndPickerLocked(
