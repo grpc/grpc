@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2015 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
-#define GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
+syntax = "proto3";
 
-#include "absl/strings/string_view.h"
+package hpack_sync_fuzzer;
 
-#include "src/core/lib/slice/slice.h"
+message Empty {}
 
-namespace grpc_core {
-Slice ParseHexstring(absl::string_view hexstring);
+message StringKeyValue {
+    string key = 1;
+    string value = 2;
 }
 
-#endif  // GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
+message IndexedKeyValue {
+    uint32 index = 1;
+    string value = 2;
+}
+
+message Header {
+    oneof ty {
+        uint32 indexed = 1;
+        StringKeyValue literal_inc_idx = 2;
+        StringKeyValue literal_not_idx = 3;
+        IndexedKeyValue literal_not_idx_from_idx = 4;
+    }
+}
+
+message Msg {
+  bool use_true_binary_metadata = 1;
+  repeated Header headers = 2;
+}
