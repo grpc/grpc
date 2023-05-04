@@ -574,6 +574,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "prioritized_race",
+    language = "c++",
+    public_hdrs = ["lib/promise/prioritized_race.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "loop",
     external_deps = [
         "absl/status",
@@ -3292,6 +3299,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "grpc_audit_logging",
         "grpc_authorization_base",
         "grpc_matchers",
         "resolved_address",

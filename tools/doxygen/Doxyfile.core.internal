@@ -2205,6 +2205,7 @@ src/core/lib/promise/party.cc \
 src/core/lib/promise/party.h \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
+src/core/lib/promise/prioritized_race.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
@@ -2235,6 +2236,8 @@ src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
 src/core/lib/resource_quota/trace.cc \
 src/core/lib/resource_quota/trace.h \
+src/core/lib/security/authorization/audit_logging.cc \
+src/core/lib/security/authorization/audit_logging.h \
 src/core/lib/security/authorization/authorization_engine.h \
 src/core/lib/security/authorization/authorization_policy_provider.h \
 src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \

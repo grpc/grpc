@@ -1115,6 +1115,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_event_engine_test)
   endif()
+  add_dependencies(buildtests_cxx prioritized_race_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
@@ -2196,6 +2197,7 @@ add_library(grpc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -3222,7 +3224,6 @@ add_library(grpc++
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -6854,7 +6855,6 @@ add_executable(binder_transport_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -9928,7 +9928,6 @@ add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -10621,7 +10620,6 @@ add_executable(fake_binder_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -11960,7 +11958,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_audit_logging_test
-  src/core/lib/security/authorization/audit_logging.cc
   test/core/security/grpc_audit_logging_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16704,6 +16701,43 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(prioritized_race_test
+  test/core/promise/prioritized_race_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(prioritized_race_test PUBLIC cxx_std_14)
+target_include_directories(prioritized_race_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(prioritized_race_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -21834,7 +21868,6 @@ add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -22549,7 +22582,6 @@ add_executable(wire_reader_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -22651,7 +22683,6 @@ add_executable(wire_writer_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/core/lib/security/authorization/audit_logging.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc

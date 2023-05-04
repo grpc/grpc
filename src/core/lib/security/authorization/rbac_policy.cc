@@ -32,7 +32,10 @@ namespace grpc_core {
 
 Rbac::Rbac(std::string name, Rbac::Action action,
            std::map<std::string, Policy> policies)
-    : name(std::move(name)), action(action), policies(std::move(policies)) {}
+    : name(std::move(name)),
+      action(action),
+      policies(std::move(policies)),
+      audit_condition(Rbac::AuditCondition::kNone) {}
 
 Rbac::Rbac(Rbac&& other) noexcept
     : name(std::move(other.name)),
