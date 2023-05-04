@@ -21,6 +21,24 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
+#include <algorithm>
+#include <functional>
+#include <initializer_list>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -30,20 +48,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <algorithm>
-#include <functional>
-#include <initializer_list>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-#include <map>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -54,8 +59,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/meta/type_traits.h"
 
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY 1 << 0
@@ -207,6 +210,7 @@ class CoreEnd2endTest : public ::testing::Test {
 
   void SetUp() override;
   void TearDown() override;
+  virtual void RunTest() = 0;
 
   class Call;
   struct RegisteredCall {
@@ -805,7 +809,8 @@ class CoreEnd2endTestRegistry {
   class CoreEnd2endTest_##suite##_##name : public ::grpc_core::suite {       \
    public:                                                                   \
     CoreEnd2endTest_##suite##_##name() {}                                    \
-    void TestBody() override;                                                \
+    void TestBody() override { RunTest(); }                                  \
+    void RunTest() override;                                                 \
                                                                              \
    private:                                                                  \
     static ::grpc_core::CoreEnd2endTest* Run(                                \
@@ -820,7 +825,7 @@ class CoreEnd2endTestRegistry {
       (grpc_core::CoreEnd2endTestRegistry::Get().RegisterTest(#suite, #name, \
                                                               &Run),         \
        0);                                                                   \
-  void CoreEnd2endTest_##suite##_##name::TestBody()
+  void CoreEnd2endTest_##suite##_##name::RunTest()
 
 #define CORE_END2END_TEST_SUITE(suite, configs)              \
   static int registered_##suite =                            \

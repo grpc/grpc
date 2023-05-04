@@ -108,5 +108,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
 
+  fprintf(stderr, "%s/%s/%s\n", msg.suite().c_str(), msg.test().c_str(),
+          msg.config().c_str());
+
   auto test = config_it->second();
+  test->SetUp();
+  test->RunTest();
+  test->TearDown();
 }
