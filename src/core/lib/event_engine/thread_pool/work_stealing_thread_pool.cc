@@ -239,8 +239,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown() && pool_->IsQuiesced()) break;
     MaybeStartNewThread();
   }
-  pool_.reset();
   thread_running_.store(false);
+  pool_.reset();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
