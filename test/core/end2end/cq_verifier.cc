@@ -33,6 +33,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "cq_verifier.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
@@ -198,8 +199,9 @@ std::string TagStr(void* tag) {
 namespace grpc_core {
 
 CqVerifier::CqVerifier(grpc_completion_queue* cq,
-                       absl::AnyInvocable<void(Failure)> fail)
-    : cq_(cq), fail_(std::move(fail)) {}
+                       absl::AnyInvocable<void(Failure) const> fail,
+                       absl::AnyInvocable<void() const> step_fn)
+    : cq_(cq), fail_(std::move(fail)), step_fn_(std::move(step_fn)) {}
 
 CqVerifier::~CqVerifier() { Verify(); }
 
@@ -274,11 +276,24 @@ bool IsMaybe(const CqVerifier::ExpectedResult& r) {
 }
 }  // namespace
 
+grpc_event CqVerifier::Step(gpr_timespec deadline) {
+  if (step_fn_ != nullptr) {
+    do {
+      grpc_event r = grpc_completion_queue_next(
+          cq_, gpr_inf_past(deadline.clock_type), nullptr);
+      if (r.type != GRPC_QUEUE_TIMEOUT) return r;
+      step_fn_();
+    } while (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+    return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
+  }
+  return grpc_completion_queue_next(cq_, deadline, nullptr);
+}
+
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
-    grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
+    grpc_event ev = Step(deadline);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
     if (ev.type != GRPC_OP_COMPLETE) {
       FailUnexpectedEvent(&ev, location);
@@ -334,7 +349,7 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
   GPR_ASSERT(expectations_.empty());
-  grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
+  grpc_event ev = Step(deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     FailUnexpectedEvent(&ev, location);
   }

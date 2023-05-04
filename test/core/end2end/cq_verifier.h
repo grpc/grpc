@@ -77,7 +77,8 @@ class CqVerifier {
   // will produce nicer failure messages.
   explicit CqVerifier(
       grpc_completion_queue* cq,
-      absl::AnyInvocable<void(Failure)> fail = FailUsingGprCrash);
+      absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
+      absl::AnyInvocable<void() const> step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -117,11 +118,12 @@ class CqVerifier {
   void FailUnexpectedEvent(grpc_event* ev,
                            const SourceLocation& location) const;
   bool AllMaybes() const;
+  grpc_event Step(gpr_timespec deadline);
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
-  absl::AnyInvocable<void()> step_fn_;
-  mutable absl::AnyInvocable<void(Failure)> fail_;
+  absl::AnyInvocable<void(Failure) const> fail_;
+  absl::AnyInvocable<void() const> step_fn_;
 };
 
 }  // namespace grpc_core

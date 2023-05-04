@@ -210,6 +210,10 @@ class CoreEnd2endTest : public ::testing::Test {
   void TearDown() override;
   virtual void RunTest() = 0;
 
+  void SetCqVerifierStepFn(absl::AnyInvocable<void() const> step_fn) {
+    step_fn_ = std::move(step_fn);
+  }
+
   class Call;
   struct RegisteredCall {
     void* p;
@@ -707,7 +711,7 @@ class CoreEnd2endTest : public ::testing::Test {
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          fixture().cq(), CqVerifier::FailUsingGtestFail);
+          fixture().cq(), CqVerifier::FailUsingGtestFail, std::move(step_fn_));
     }
     return *cq_verifier_;
   }
@@ -718,6 +722,7 @@ class CoreEnd2endTest : public ::testing::Test {
   int expectations_ = 0;
   bool initialized_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
+  absl::AnyInvocable<void() const> step_fn_ = nullptr;
 };
 
 // Define names for additional test suites.

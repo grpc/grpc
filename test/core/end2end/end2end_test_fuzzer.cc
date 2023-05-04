@@ -108,6 +108,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
           msg.config().c_str());
 
   auto test = config_it->second();
+  test->SetCqVerifierStepFn([&engine]() { engine->Tick(); });
   test->SetPostGrpcInitFunc([]() {
     grpc_timer_manager_set_threading(false);
     grpc_core::ExecCtx exec_ctx;
