@@ -309,11 +309,33 @@ void CoreEnd2endTestRegistry::RegisterSuite(
   suites_[suite] = std::move(configs);
 }
 
+namespace {
+template <typename Map>
+std::vector<absl::string_view> KeysFrom(const Map& map) {
+  std::vector<absl::string_view> out;
+  out.reserve(map.size());
+  for (const auto& elem : map) {
+    out.push_back(elem.first);
+  }
+  return out;
+}
+}  // namespace
+
 std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
+  if (tests_by_suite_.size() != suites_.size()) {
+    CrashWithStdio(absl::StrCat(
+        "ERROR: Some suites are not registered:\n",
+        "TESTS use suites: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\nSUITES have: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\n"));
+  }
   GPR_ASSERT(tests_by_suite_.size() == suites_.size());
   std::vector<Test> tests;
   for (const auto& suite_configs : suites_) {
-    GPR_ASSERT(suite_configs.second.size() > 0);
+    if (suite_configs.second.size() == 0) {
+      CrashWithStdio(
+          absl::StrCat("Suite ", suite_configs.first, " has no tests"));
+    }
     GPR_ASSERT(tests_by_suite_.count(suite_configs.first) == 1);
     for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
       for (const auto* config : suite_configs.second) {

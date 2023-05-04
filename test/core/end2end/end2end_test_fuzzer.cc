@@ -46,6 +46,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -78,6 +79,12 @@
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
+
+int force_experiments = []() {
+  grpc_core::ForceEnableExperiment("event_engine_client", true);
+  grpc_core::ForceEnableExperiment("event_engine_listener", true);
+  return 1;
+}();
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;

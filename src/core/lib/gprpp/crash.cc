@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {
@@ -27,6 +29,13 @@ namespace grpc_core {
 void Crash(absl::string_view message, SourceLocation location) {
   gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_ERROR, "%s",
           std::string(message).c_str());
+  abort();
+}
+
+void CrashWithStdio(absl::string_view message, SourceLocation location) {
+  fputs(absl::StrCat(location.file(), ":", location.line(), ": ", message, "\n")
+            .c_str(),
+        stderr);
   abort();
 }
 

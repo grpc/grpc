@@ -924,24 +924,6 @@ class ConfigQuery {
         AllConfigs());
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : *kConfigs) {
-      if (IsEventEngineClientEnabled() &&
-          // Ignore disabled test suites
-          (((exclude_features_ &
-             FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0) ||
-           // Ignore disabled tests
-           ((config.feature_mask &
-             FEATURE_MASK_DISABLE_EVENT_ENGINE_CLIENT_EXPERIMENT) != 0))) {
-        continue;
-      }
-      if (IsEventEngineListenerEnabled() &&
-          // Ignore disabled test suites
-          (((exclude_features_ &
-             FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0) ||
-           // Ignore disabled tests
-           ((config.feature_mask &
-             FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT) != 0))) {
-        continue;
-      }
       if ((config.feature_mask & enforce_features_) == enforce_features_ &&
           (config.feature_mask & exclude_features_) == 0) {
         bool allowed = allowed_names_.empty();
@@ -1027,8 +1009,7 @@ CORE_END2END_TEST_SUITE(
     ResourceQuotaTest,
     ConfigQuery()
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                         FEATURE_MASK_1BYTE_AT_A_TIME |
-                         FEATURE_MASK_DISABLE_EVENT_ENGINE_LISTENER_EXPERIMENT)
+                         FEATURE_MASK_1BYTE_AT_A_TIME)
         .ExcludeName("Chttp2.*Uds.*")
         .ExcludeName("Chttp2HttpProxy")
         .Run());

@@ -55,6 +55,10 @@ auto MakeVec(F init) {
 }
 
 CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
+  if (IsEventEngineListenerEnabled()) {
+    GTEST_SKIP() << "Not with event engine listener";
+  }
+
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 1024 * 1024);
