@@ -3098,8 +3098,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    absl::StatusOr<CallConfig> GetCallConfig(
-        GetCallConfigArgs /*args*/) override {
+    absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
 
