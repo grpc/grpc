@@ -131,21 +131,34 @@ struct WireValue {
       : data(std::move(slice)),
         huffman_prefix(huffman_prefix),
         insert_null_before_wire_value(insert_null_before_wire_value),
-        length(data.length() + (insert_null_before_wire_value ? 1 : 0)) {}
+        length(data.length() + (insert_null_before_wire_value ? 1 : 0)),
+        hpack_length(length) {}
+  WireValue(uint8_t huffman_prefix, bool insert_null_before_wire_value,
+            Slice slice, size_t hpack_length)
+      : data(std::move(slice)),
+        huffman_prefix(huffman_prefix),
+        insert_null_before_wire_value(insert_null_before_wire_value),
+        length(data.length() + (insert_null_before_wire_value ? 1 : 0)),
+        hpack_length(hpack_length + (insert_null_before_wire_value ? 1 : 0)) {}
   Slice data;
   const uint8_t huffman_prefix;
   const bool insert_null_before_wire_value;
   const size_t length;
+  const size_t hpack_length;
 };
 
+// Construct a wire value from a slice.
+// true_binary_enabled => use the true binary system
+// is_bin_hdr => the header is -bin suffixed
 WireValue GetWireValue(Slice value, bool true_binary_enabled, bool is_bin_hdr) {
   if (is_bin_hdr) {
     if (true_binary_enabled) {
       return WireValue(0x00, true, std::move(value));
     } else {
-      return WireValue(0x80, false,
-                       Slice(grpc_chttp2_base64_encode_and_huffman_compress(
-                           value.c_slice())));
+      uint32_t hpack_length;
+      Slice output(grpc_chttp2_base64_encode_and_huffman_compress(
+          value.c_slice(), &hpack_length));
+      return WireValue(0x80, false, std::move(output), hpack_length);
     }
   } else {
     // TODO(ctiller): opportunistically compress non-binary headers
@@ -184,6 +197,8 @@ class BinaryStringValue {
   }
 
   Slice data() { return std::move(wire_value_.data); }
+
+  uint32_t hpack_length() { return wire_value_.hpack_length; }
 
  private:
   WireValue wire_value_;
@@ -232,14 +247,21 @@ void Encoder::EmitIndexed(uint32_t elem_index) {
   w.Write(0x80, output_.AddTiny(w.length()));
 }
 
-void Encoder::EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
-                                                     Slice value_slice) {
+uint32_t Encoder::EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
+                                                         Slice value_slice) {
+  auto key_len = key_slice.length();
+  auto value_len = value_slice.length();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, output_.AddTiny(key.prefix_length()));
   output_.Append(key.key());
   NonBinaryStringValue emit(std::move(value_slice));
   emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
+  // Allocate an index in the hpack table for this newly emitted entry.
+  // (we do so here because we know the length of the key and value)
+  uint32_t index = compressor_->table_.AllocateIndex(
+      key_len + value_len + hpack_constants::kEntryOverhead);
   output_.Append(emit.data());
+  return index;
 }
 
 void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
@@ -252,14 +274,20 @@ void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
   output_.Append(emit.data());
 }
 
-void Encoder::EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
-                                                  Slice value_slice) {
+uint32_t Encoder::EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
+                                                      Slice value_slice) {
+  auto key_len = key_slice.length();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, output_.AddTiny(key.prefix_length()));
   output_.Append(key.key());
   BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
   emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
+  // Allocate an index in the hpack table for this newly emitted entry.
+  // (we do so here because we know the length of the key and value)
+  uint32_t index = compressor_->table_.AllocateIndex(
+      key_len + emit.hpack_length() + hpack_constants::kEntryOverhead);
   output_.Append(emit.data());
+  return index;
 }
 
 void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
@@ -308,8 +336,7 @@ void SliceIndex::EmitTo(absl::string_view key, const Slice& value,
         encoder->EmitIndexed(table.DynamicIndex(it->index));
       } else {
         // Not current, emit a new literal and update the index.
-        it->index = table.AllocateIndex(transport_length);
-        encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+        it->index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
             Slice::FromStaticString(key), value.Ref());
       }
       // Bubble this entry up if we can - ensures that the most used values end
@@ -327,9 +354,8 @@ void SliceIndex::EmitTo(absl::string_view key, const Slice& value,
     prev = it;
   }
   // No hit, emit a new literal and add it to the index.
-  uint32_t index = table.AllocateIndex(transport_length);
-  encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
-                                                  value.Ref());
+  uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      Slice::FromStaticString(key), value.Ref());
   values_.emplace_back(value.Ref(), index);
 }
 
@@ -386,7 +412,7 @@ void Compressor<HttpStatusMetadata, HttpStatusCompressor>::EncodeWith(
   if (GPR_LIKELY(index != 0)) {
     encoder->EmitIndexed(index);
   } else {
-    encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(
         Slice::FromStaticString(":status"), Slice::FromInt64(status));
   }
 }
@@ -414,13 +440,12 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
 }
 
 void Encoder::EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
-                                  Slice value, size_t transport_length) {
+                                  Slice value, size_t) {
   if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
-    *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
-                                           std::move(value));
+    *index = EmitLitHdrWithNonBinaryStringKeyIncIdx(
+        Slice::FromStaticString(key), std::move(value));
   }
 }
 
@@ -431,10 +456,8 @@ void Encoder::EncodeIndexedKeyWithBinaryValue(uint32_t* index,
     EmitLitHdrWithBinaryStringKeyNotIdx(
         compressor_->table_.DynamicIndex(*index), std::move(value));
   } else {
-    *index = compressor_->table_.AllocateIndex(key.length() + value.length() +
-                                               hpack_constants::kEntryOverhead);
-    EmitLitHdrWithBinaryStringKeyIncIdx(Slice::FromStaticString(key),
-                                        std::move(value));
+    *index = EmitLitHdrWithBinaryStringKeyIncIdx(Slice::FromStaticString(key),
+                                                 std::move(value));
   }
 }
 
@@ -474,11 +497,9 @@ void TimeoutCompressorImpl::EncodeWith(absl::string_view key,
     previous_timeouts_.pop_back();
   }
   Slice encoded = timeout.Encode();
-  uint32_t index = table.AllocateIndex(key.length() + encoded.length() +
-                                       hpack_constants::kEntryOverhead);
+  uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      Slice::FromStaticString(key), std::move(encoded));
   previous_timeouts_.push_back(PreviousTimeout{timeout, index});
-  encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
-                                                  std::move(encoded));
 }
 
 Encoder::Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,

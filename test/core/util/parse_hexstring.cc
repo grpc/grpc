@@ -21,17 +21,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-grpc_slice parse_hexstring(const char* hexstring) {
+namespace grpc_core {
+Slice ParseHexstring(absl::string_view hexstring) {
   size_t nibbles = 0;
-  const char* p = nullptr;
   uint8_t* out;
   uint8_t temp;
   grpc_slice slice;
 
-  for (p = hexstring; *p; p++) {
-    nibbles += (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f');
+  for (auto c : hexstring) {
+    nibbles += (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
   }
 
   GPR_ASSERT((nibbles & 1) == 0);
@@ -41,13 +42,13 @@ grpc_slice parse_hexstring(const char* hexstring) {
 
   nibbles = 0;
   temp = 0;
-  for (p = hexstring; *p; p++) {
-    if (*p >= '0' && *p <= '9') {
-      temp = static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(*p - '0');
+  for (auto c : hexstring) {
+    if (c >= '0' && c <= '9') {
+      temp = static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(c - '0');
       nibbles++;
-    } else if (*p >= 'a' && *p <= 'f') {
+    } else if (c >= 'a' && c <= 'f') {
       temp =
-          static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(*p - 'a' + 10);
+          static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(c - 'a' + 10);
       nibbles++;
     }
     if (nibbles == 2) {
@@ -56,5 +57,6 @@ grpc_slice parse_hexstring(const char* hexstring) {
     }
   }
 
-  return slice;
+  return Slice(slice);
 }
+}  // namespace grpc_core
