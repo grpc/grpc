@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2015 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include "test/core/end2end/end2end_tests.h"
+syntax = "proto3";
 
-namespace grpc_core {
-CORE_END2END_TEST(CoreEnd2endTest, NoOp) {}
-}  // namespace grpc_core
+package core_end2end_test_fuzzer;
+
+import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
+import "test/core/util/fuzz_config_vars.proto";
+
+message Msg {
+    string suite = 1;
+    string test = 2;
+    string config = 3;
+
+    fuzzing_event_engine.Actions event_engine_actions = 10;
+    grpc.testing.FuzzConfigVars config_vars = 11;
+}

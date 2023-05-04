@@ -16,8 +16,6 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {

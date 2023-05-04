@@ -12,60 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <inttypes.h>
-#include <string.h>
-
-#include <algorithm>
-#include <atomic>
-#include <functional>
-#include <initializer_list>
-#include <map>
-#include <memory>
-#include <regex>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "end2end_tests.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/fixtures/h2_oauth2_common.h"
-#include "test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h"
-#include "test/core/end2end/fixtures/h2_ssl_tls_common.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
-#include "test/core/end2end/fixtures/http_proxy_fixture.h"
-#include "test/core/end2end/fixtures/inproc_fixture.h"
-#include "test/core/end2end/fixtures/local_util.h"
-#include "test/core/end2end/fixtures/proxy.h"
-#include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/end2end/fixtures/sockpair_fixture.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

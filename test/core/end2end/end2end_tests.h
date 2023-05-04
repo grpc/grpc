@@ -21,21 +21,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include <algorithm>
-#include <functional>
-#include <initializer_list>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-#include "gtest/gtest.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -45,7 +30,20 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <algorithm>
+#include <functional>
+#include <initializer_list>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+#include <map>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -56,6 +54,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
 
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY 1 << 0

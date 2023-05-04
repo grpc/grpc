@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,15 @@
 
 #include <inttypes.h>
 #include <string.h>
-
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <algorithm>
 #include <atomic>
 #include <functional>
@@ -29,21 +37,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "end2end_tests.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/host_port.h"
