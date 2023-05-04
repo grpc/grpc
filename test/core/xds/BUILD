@@ -243,6 +243,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
