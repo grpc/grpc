@@ -18,15 +18,10 @@
 
 #include "test/core/util/fuzz_config_vars.h"
 
-#include <string>
-
-#include "absl/types/optional.h"
-
-#include "src/core/lib/config/config_vars.h"
-
 namespace grpc_core {
 
-void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {
+ConfigVars::Overrides OverridesFromFuzzConfigVars(
+    const grpc::testing::FuzzConfigVars& vars) {
   ConfigVars::Overrides overrides;
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
@@ -46,7 +41,10 @@ void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {
   if (vars.has_stacktrace_minloglevel()) {
     overrides.stacktrace_minloglevel = vars.stacktrace_minloglevel();
   }
-  ConfigVars::SetOverrides(overrides);
+  return overrides;
+}
+void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {
+  ConfigVars::SetOverrides(OverridesFromFuzzConfigVars(vars));
 }
 
 }  // namespace grpc_core

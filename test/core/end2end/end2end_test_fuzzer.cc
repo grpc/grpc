@@ -45,14 +45,17 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
@@ -67,11 +70,17 @@
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
+
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   static const auto all_tests =
@@ -104,15 +113,30 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   if (config_it == test_it->second.end()) return;
 
   // TODO(ctiller): make this per fixture?
-  grpc_core::ConfigVars::Overrides overrides;
+  grpc_core::ConfigVars::Overrides overrides =
+      grpc_core::OverridesFromFuzzConfigVars(msg.config_vars());
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      [actions = msg.event_engine_actions()]() {
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
+      });
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
   fprintf(stderr, "%s/%s/%s\n", msg.suite().c_str(), msg.test().c_str(),
           msg.config().c_str());
 
   auto test = config_it->second();
+  test->SetPostGrpcInitFunc([]() {
+    grpc_timer_manager_set_threading(false);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Executor::SetThreadingAll(false);
+  });
   test->SetUp();
   test->RunTest();
   test->TearDown();
+
+  engine->UnsetGlobalHooks();
 }

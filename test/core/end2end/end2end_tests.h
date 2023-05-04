@@ -689,12 +689,18 @@ class CoreEnd2endTest : public ::testing::Test {
         grpc_timeout_milliseconds_to_deadline(duration.millis()));
   }
 
+  void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
+    GPR_ASSERT(fixture_ == nullptr);
+    post_grpc_init_func_ = std::move(fn);
+  }
+
  private:
   void ForceInitialized();
 
   CoreTestFixture& fixture() {
     if (fixture_ == nullptr) {
       grpc_init();
+      post_grpc_init_func_();
       fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
     }
     return *fixture_;
@@ -713,6 +719,7 @@ class CoreEnd2endTest : public ::testing::Test {
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;
+  absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
 };
 
 // Define names for additional test suites.

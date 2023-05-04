@@ -14,15 +14,7 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+
 #include <algorithm>
 #include <atomic>
 #include <functional>
@@ -38,6 +30,17 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"

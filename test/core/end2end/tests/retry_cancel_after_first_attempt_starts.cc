@@ -14,9 +14,10 @@
 // limitations under the License.
 //
 
+#include "absl/types/optional.h"
+
 #include <grpc/grpc.h>
 
-#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"

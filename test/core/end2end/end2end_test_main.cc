@@ -15,14 +15,15 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+
 #include "src/core/lib/config/config_vars.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/util/test_config.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/str_cat.h"
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
