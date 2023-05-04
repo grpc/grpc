@@ -1576,6 +1576,7 @@ grpc_cc_library(
         "//src/core:lib/channel/context.h",
     ],
     language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
         "//src/core:context",
