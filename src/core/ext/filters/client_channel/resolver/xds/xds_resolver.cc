@@ -141,7 +141,7 @@ class ClusterState : public DualRefCounted<ClusterState> {
 class XdsClusterMap : public RefCounted<XdsClusterMap> {
  public:
   explicit XdsClusterMap(
-      const std::map<absl::string_view, RefCountedPtr<ClusterState>>& clusters)
+      std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters)
       : clusters_(std::move(clusters)) {}
 
   bool operator==(const XdsClusterMap& other) const {
