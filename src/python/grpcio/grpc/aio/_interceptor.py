@@ -700,8 +700,9 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
                               _base_call.UnaryStreamCall):
                     self._last_returned_call_from_interceptors = call_or_response_iterator
                 else:
+                    _last_returned = self._last_returned_call_from_interceptors
                     self._last_returned_call_from_interceptors = UnaryStreamCallResponseIterator(
-                        self._last_returned_call_from_interceptors,  # type: ignore
+                        _last_returned,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:
@@ -709,12 +710,9 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
                     request, _timeout_to_deadline(client_call_details.timeout),
                     client_call_details.metadata,
                     client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop)
+                    client_call_details.wait_for_ready, self._channel,
+                    client_call_details.method, request_serializer,
+                    response_deserializer, self._loop)
 
                 return self._last_returned_call_from_interceptors
 
@@ -727,6 +725,7 @@ class InterceptedUnaryStreamCall(_InterceptedStreamResponseMixin,
         raise NotImplementedError()
 
 
+# pylint:disable=too-many-ancestors
 class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
                                  _InterceptedStreamRequestMixin,
                                  InterceptedCall, _base_call.StreamUnaryCall):
@@ -804,6 +803,7 @@ class InterceptedStreamUnaryCall(_InterceptedUnaryResponseMixin,
         raise NotImplementedError()
 
 
+# pylint:disable=too-many-ancestors
 class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
                                   _InterceptedStreamRequestMixin,
                                   InterceptedCall, _base_call.StreamStreamCall):
@@ -867,8 +867,9 @@ class InterceptedStreamStreamCall(_InterceptedStreamResponseMixin,
                               _base_call.StreamStreamCall):
                     self._last_returned_call_from_interceptors = call_or_response_iterator
                 else:
+                    _last_returned = self._last_returned_call_from_interceptors
                     self._last_returned_call_from_interceptors = StreamStreamCallResponseIterator(
-                        self._last_returned_call_from_interceptors,  # type: ignore
+                        _last_returned,  # type: ignore
                         call_or_response_iterator)
                 return self._last_returned_call_from_interceptors
             else:

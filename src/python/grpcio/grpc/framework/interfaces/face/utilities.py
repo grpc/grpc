@@ -51,7 +51,7 @@ def unary_unary_inline(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
                                  style.Service.INLINE, behavior, None, None,
-                                 None, None, None, None, None)
+                                 None, None, None, None, None)  # pytype: disable=wrong-arg-count
 
 
 def unary_stream_inline(behavior):
@@ -67,7 +67,7 @@ def unary_stream_inline(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
                                  style.Service.INLINE, None, behavior, None,
-                                 None, None, None, None, None)
+                                 None, None, None, None, None)  # pytype: disable=wrong-arg-count
 
 
 def stream_unary_inline(behavior):
@@ -83,7 +83,7 @@ def stream_unary_inline(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
                                  style.Service.INLINE, None, None, behavior,
-                                 None, None, None, None, None)
+                                 None, None, None, None, None)  # pytype: disable=wrong-arg-count
 
 
 def stream_stream_inline(behavior):
@@ -99,7 +99,7 @@ def stream_stream_inline(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
                                  style.Service.INLINE, None, None, None,
-                                 behavior, None, None, None, None)
+                                 behavior, None, None, None, None)  # pytype: disable=wrong-arg-count
 
 
 def unary_unary_event(behavior):
@@ -115,7 +115,7 @@ def unary_unary_event(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
                                  style.Service.EVENT, None, None, None, None,
-                                 behavior, None, None, None)
+                                 behavior, None, None, None)  # pytype: disable=wrong-arg-count
 
 
 def unary_stream_event(behavior):
@@ -131,7 +131,7 @@ def unary_stream_event(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
                                  style.Service.EVENT, None, None, None, None,
-                                 None, behavior, None, None)
+                                 None, behavior, None, None)  # pytype: disable=wrong-arg-count
 
 
 def stream_unary_event(behavior):
@@ -148,7 +148,7 @@ def stream_unary_event(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
                                  style.Service.EVENT, None, None, None, None,
-                                 None, None, behavior, None)
+                                 None, None, behavior, None)  # pytype: disable=wrong-arg-count
 
 
 def stream_stream_event(behavior):
@@ -165,4 +165,4 @@ def stream_stream_event(behavior):
   """
     return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
                                  style.Service.EVENT, None, None, None, None,
-                                 None, None, None, behavior)
+                                 None, None, None, behavior)  # pytype: disable=wrong-arg-count

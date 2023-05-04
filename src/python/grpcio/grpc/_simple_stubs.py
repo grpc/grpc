@@ -167,7 +167,7 @@ class ChannelCache:
 
 @experimental_api
 def unary_unary(
-        request: RequestType,
+        request: Any,
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -248,7 +248,7 @@ def unary_unary(
 
 @experimental_api
 def unary_stream(
-    request: RequestType,
+    request: Any,
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -261,7 +261,7 @@ def unary_stream(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
-) -> Iterator[ResponseType]:
+) -> Iterator[Any]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.
@@ -328,7 +328,7 @@ def unary_stream(
 
 @experimental_api
 def stream_unary(
-        request_iterator: Iterator[RequestType],
+        request_iterator: Iterator[Any],
         target: str,
         method: str,
         request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -408,7 +408,7 @@ def stream_unary(
 
 @experimental_api
 def stream_stream(
-    request_iterator: Iterator[RequestType],
+    request_iterator: Iterator[Any],
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -421,7 +421,7 @@ def stream_stream(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
-) -> Iterator[ResponseType]:
+) -> Iterator[Any]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.
