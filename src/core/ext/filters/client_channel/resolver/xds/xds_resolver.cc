@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -46,7 +47,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -275,7 +275,7 @@ class XdsResolver : public Resolver {
              clusters_ == other_xds->clusters_;
     }
 
-    absl::Status GetCallConfig(GetCallConfigArgs args) override;
+    absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override;
 
     std::vector<const grpc_channel_filter*> GetFilters() override {
       return filters_;
@@ -628,8 +628,8 @@ absl::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
-    GetCallConfigArgs args) {
+absl::StatusOr<ConfigSelector::CallConfig>
+XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
   GPR_ASSERT(path != nullptr);
   auto route_index = XdsRouting::GetRouteForRequest(
@@ -725,25 +725,25 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   if (!hash.has_value()) {
     hash = absl::Uniform<uint64_t>(absl::BitGen());
   }
-  // Populate service config call data.
+  CallConfig call_config;
   if (method_config != nullptr) {
-    auto* parsed_method_configs =
+    call_config.method_configs =
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
-    args.service_config_call_data->SetServiceConfig(std::move(method_config),
-                                                    parsed_method_configs);
+    call_config.service_config = std::move(method_config);
   }
-  args.service_config_call_data->SetCallAttribute(
-      args.arena->New<XdsClusterAttribute>(it->first));
+  call_config.call_attributes[XdsClusterAttribute::TypeName()] =
+      args.arena->New<XdsClusterAttribute>(it->first);
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  args.service_config_call_data->SetCallAttribute(
-      args.arena->New<RequestHashAttribute>(hash_value));
-  args.service_config_call_data->SetOnCommit(
-      [cluster_state = it->second->Ref()]() mutable { cluster_state.reset(); });
-  return absl::OkStatus();
+  call_config.call_attributes[RequestHashAttribute::TypeName()] =
+      args.arena->New<RequestHashAttribute>(hash_value);
+  call_config.on_commit = [cluster_state = it->second->Ref()]() mutable {
+    cluster_state.reset();
+  };
+  return std::move(call_config);
 }
 
 //

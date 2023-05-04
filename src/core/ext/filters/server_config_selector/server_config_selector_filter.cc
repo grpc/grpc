@@ -38,7 +38,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -140,11 +139,14 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
         absl::UnavailableError(StatusToString(call_config.status()))));
     return std::move(r);
   }
-  auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(
-          GetContext<Arena>(), GetContext<grpc_call_context_element>());
-  service_config_call_data->SetServiceConfig(
-      std::move(call_config->service_config), call_config->method_configs);
+  auto& ctx = GetContext<
+      grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA];
+  ctx.value = GetContext<Arena>()->New<ServiceConfigCallData>(
+      std::move(call_config->service_config), call_config->method_configs,
+      ServiceConfigCallData::CallAttributes{});
+  ctx.destroy = [](void* p) {
+    static_cast<ServiceConfigCallData*>(p)->~ServiceConfigCallData();
+  };
   return next_promise_factory(std::move(call_args));
 }
 

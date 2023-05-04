@@ -24,19 +24,21 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -52,7 +54,20 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   struct GetCallConfigArgs {
     grpc_metadata_batch* initial_metadata;
     Arena* arena;
-    ClientChannelServiceConfigCallData* service_config_call_data;
+  };
+
+  struct CallConfig {
+    // The per-method parsed configs that will be passed to
+    // ServiceConfigCallData.
+    const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    // A ref to the service config that contains method_configs, held by
+    // the call to ensure that method_configs lives long enough.
+    RefCountedPtr<ServiceConfig> service_config;
+    // Call attributes that will be accessible to LB policy implementations.
+    ServiceConfigCallData::CallAttributes call_attributes;
+    // To be called exactly once, when the call has been committed to a
+    // particular subchannel (i.e., after all LB picks are complete).
+    absl::AnyInvocable<void()> on_commit;
   };
 
   ~ConfigSelector() override = default;
@@ -72,7 +87,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   // Returns the call config to use for the call, or a status to fail
   // the call with.
-  virtual absl::Status GetCallConfig(GetCallConfigArgs args) = 0;
+  virtual absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) = 0;
 
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
@@ -102,14 +117,14 @@ class DefaultConfigSelector : public ConfigSelector {
 
   const char* name() const override { return "default"; }
 
-  absl::Status GetCallConfig(GetCallConfigArgs args) override {
+  absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override {
+    CallConfig call_config;
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
     GPR_ASSERT(path != nullptr);
-    auto* parsed_method_configs =
+    call_config.method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
-    args.service_config_call_data->SetServiceConfig(service_config_,
-                                                    parsed_method_configs);
-    return absl::OkStatus();
+    call_config.service_config = service_config_;
+    return std::move(call_config);
   }
 
   // Only comparing the ConfigSelector itself, not the underlying

@@ -149,7 +149,6 @@ grpc_proto_fuzzer(
         "//:grpc_security_base",
         "//:handshaker",
         "//:iomgr_timer",
-        "//:legacy_context",
         "//:ref_counted_ptr",
         "//:tsi_base",
         "//src/core:activity",
