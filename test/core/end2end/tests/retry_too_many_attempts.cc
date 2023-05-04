@@ -32,7 +32,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
-TEST_P(RetryTest, RetryTooManyAttempts) {
+CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -34,7 +34,7 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
-TEST_P(RetryTest, RetryServerPushbackDisabled) {
+CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -23,7 +23,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreEnd2endTest, ShutdownFinishesTags) {
+CORE_END2END_TEST(CoreEnd2endTest, ShutdownFinishesTags) {
   // upon shutdown, the server should finish all requested calls indicating
   // no new call
   auto s = RequestCall(101);

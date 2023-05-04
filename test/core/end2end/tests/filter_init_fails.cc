@@ -113,7 +113,7 @@ void RegisterFilter(grpc_channel_stack_type type) {
       });
 }
 
-TEST_P(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set("channel_init_fails", true));
@@ -138,7 +138,7 @@ TEST_P(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
   ShutdownAndDestroyServer();
 };
 
-TEST_P(CoreEnd2endTest, ServerFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
   RegisterFilter(GRPC_SERVER_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -157,7 +157,7 @@ TEST_P(CoreEnd2endTest, ServerFilterCallInitFails) {
   ShutdownAndDestroyServer();
 };
 
-TEST_P(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   InitServer(ChannelArgs());
@@ -176,7 +176,7 @@ TEST_P(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
 }
 
-TEST_P(CoreEnd2endTest, ClientFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -195,7 +195,8 @@ TEST_P(CoreEnd2endTest, ClientFilterCallInitFails) {
   EXPECT_EQ(server_status.message(), "access denied");
 }
 
-TEST_P(CoreClientChannelTest, DISABLED_SubchannelFilterChannelInitFails) {
+CORE_END2END_TEST(CoreClientChannelTest,
+                  DISABLED_SubchannelFilterChannelInitFails) {
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
@@ -230,7 +231,7 @@ TEST_P(CoreClientChannelTest, DISABLED_SubchannelFilterChannelInitFails) {
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_UNAVAILABLE);
 }
 
-TEST_P(CoreClientChannelTest, SubchannelFilterCallInitFails) {
+CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;

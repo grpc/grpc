@@ -48,7 +48,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(Http2Test, MaxAgeForciblyClose) {
+CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()
@@ -109,7 +109,7 @@ TEST_P(Http2Test, MaxAgeForciblyClose) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
 }
 
-TEST_P(Http2Test, MaxAgeGracefullyClose) {
+CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()

@@ -54,7 +54,7 @@ auto MakeVec(F init) {
   return v;
 }
 
-TEST_P(ResourceQuotaTest, ResourceQuota) {
+CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 1024 * 1024);

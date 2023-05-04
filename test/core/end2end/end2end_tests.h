@@ -749,4 +749,6 @@ class ProxyAuthTest : public CoreEnd2endTest {};
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
 
+#define CORE_END2END_TEST(suite, name) TEST_P(suite, name)
+
 #endif  // GRPC_TEST_CORE_END2END_END2END_TESTS_H
