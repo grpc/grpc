@@ -96,18 +96,16 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   static bool IsStreamError(const absl::Status& status) {
     intptr_t stream_id;
-    return grpc_error_get_int(status, StatusIntProperty::kStreamId,
-                              &stream_id);
+    return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
   }
 
   void TestVector(grpc_slice_split_mode mode,
                   absl::optional<size_t> max_metadata_size,
                   absl::string_view hexstring,
                   absl::StatusOr<absl::string_view> expect, uint32_t flags) {
-    MemoryAllocator memory_allocator =
-        MemoryAllocator(ResourceQuota::Default()
-                                       ->memory_quota()
-                                       ->CreateMemoryAllocator("test"));
+    MemoryAllocator memory_allocator = MemoryAllocator(
+        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+            "test"));
     auto arena = MakeScopedArena(1024, &memory_allocator);
     ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
@@ -121,13 +119,11 @@ class ParseTest : public ::testing::TestWithParam<Test> {
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
         (flags & kEndOfStream)
             ? HPackParser::Boundary::EndOfStream
-            : ((flags & kEndOfHeaders)
-                   ? HPackParser::Boundary::EndOfHeaders
-                   : HPackParser::Boundary::None),
+            : ((flags & kEndOfHeaders) ? HPackParser::Boundary::EndOfHeaders
+                                       : HPackParser::Boundary::None),
         flags & kWithPriority ? HPackParser::Priority::Included
                               : HPackParser::Priority::None,
-        HPackParser::LogInfo{
-            1, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
 
     grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
                       &slices, &nslices);
@@ -215,23 +211,23 @@ TEST_P(ParseTest, OneByteAtATime) {
 INSTANTIATE_TEST_SUITE_P(
     ParseTest, ParseTest,
     ::testing::Values(
-        Test{
-            {},
-            {},
-            {
-                // D.2.1
-                {"400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
-                 "746f 6d2d 6865 6164 6572",
-                 "custom-key: custom-header\n"},
-                // D.2.2
-                {"040c 2f73 616d 706c 652f 7061 7468", ":path: /sample/path\n"},
-                // D.2.3
-                {"1008 7061 7373 776f 7264 0673 6563 7265"
-                 "74",
-                 "password: secret\n"},
-                // D.2.4
-                {"82", ":method: GET\n"},
-            }},
+        Test{{},
+             {},
+             {
+                 // D.2.1
+                 {"400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
+                  "746f 6d2d 6865 6164 6572",
+                  "custom-key: custom-header\n", 0},
+                 // D.2.2
+                 {"040c 2f73 616d 706c 652f 7061 7468", ":path: /sample/path\n",
+                  0},
+                 // D.2.3
+                 {"1008 7061 7373 776f 7264 0673 6563 7265"
+                  "74",
+                  "password: secret\n", 0},
+                 // D.2.4
+                 {"82", ":method: GET\n", 0},
+             }},
         Test{{},
              {},
              {
@@ -241,14 +237,16 @@ INSTANTIATE_TEST_SUITE_P(
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
-                  ":scheme: http\n"},
+                  ":scheme: http\n",
+                  0},
                  // D.3.2
                  {"8286 84be 5808 6e6f 2d63 6163 6865",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"
-                  "cache-control: no-cache\n"},
+                  "cache-control: no-cache\n",
+                  0},
                  // D.3.3
                  {"8287 85bf 400a 6375 7374 6f6d 2d6b 6579"
                   "0c63 7573 746f 6d2d 7661 6c75 65",
@@ -256,7 +254,8 @@ INSTANTIATE_TEST_SUITE_P(
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: https\n"
-                  "custom-key: custom-value\n"},
+                  "custom-key: custom-value\n",
+                  0},
              }},
         Test{{},
              {},
@@ -267,14 +266,16 @@ INSTANTIATE_TEST_SUITE_P(
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
-                  ":scheme: http\n"},
+                  ":scheme: http\n",
+                  0},
                  // D.4.2
                  {"8286 84be 5886 a8eb 1064 9cbf",
                   ":path: /\n"
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: http\n"
-                  "cache-control: no-cache\n"},
+                  "cache-control: no-cache\n",
+                  0},
                  // D.4.3
                  {"8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
                   "a849 e95b b8e8 b4bf",
@@ -282,7 +283,8 @@ INSTANTIATE_TEST_SUITE_P(
                   ":authority: www.example.com\n"
                   ":method: GET\n"
                   ":scheme: https\n"
-                  "custom-key: custom-value\n"},
+                  "custom-key: custom-value\n",
+                  0},
              }},
         Test{{256},
              {},
@@ -296,13 +298,15 @@ INSTANTIATE_TEST_SUITE_P(
                   ":status: 302\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
-                  "location: https://www.example.com\n"},
+                  "location: https://www.example.com\n",
+                  0},
                  // D.5.2
                  {"4803 3330 37c1 c0bf",
                   ":status: 307\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
-                  "location: https://www.example.com\n"},
+                  "location: https://www.example.com\n",
+                  0},
                  // D.5.3
                  {"88c1 611d 4d6f 6e2c 2032 3120 4f63 7420"
                   "3230 3133 2032 303a 3133 3a32 3220 474d"
@@ -317,7 +321,8 @@ INSTANTIATE_TEST_SUITE_P(
                   "location: https://www.example.com\n"
                   "content-encoding: gzip\n"
                   "set-cookie: foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; "
-                  "version=1\n"},
+                  "version=1\n",
+                  0},
              }},
         Test{{256},
              {},
@@ -330,13 +335,15 @@ INSTANTIATE_TEST_SUITE_P(
                   ":status: 302\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
-                  "location: https://www.example.com\n"},
+                  "location: https://www.example.com\n",
+                  0},
                  // D.6.2
                  {"4883 640e ffc1 c0bf",
                   ":status: 307\n"
                   "cache-control: private\n"
                   "date: Mon, 21 Oct 2013 20:13:21 GMT\n"
-                  "location: https://www.example.com\n"},
+                  "location: https://www.example.com\n",
+                  0},
                  // D.6.3
                  {"88c1 6196 d07a be94 1054 d444 a820 0595"
                   "040b 8166 e084 a62d 1bff c05a 839b d9ab"
@@ -349,7 +356,8 @@ INSTANTIATE_TEST_SUITE_P(
                   "location: https://www.example.com\n"
                   "content-encoding: gzip\n"
                   "set-cookie: foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; "
-                  "version=1\n"},
+                  "version=1\n",
+                  0},
              }},
         Test{{},
              {1024},
@@ -370,7 +378,7 @@ INSTANTIATE_TEST_SUITE_P(
              {},
              {{"2aa41007f0a40f2d62696e8363271f00275bf06928626e2d213fa40fdbf0212"
                "8215cf00963",
-               absl::InternalError("illegal base64 encoding")}}},
+               absl::InternalError("illegal base64 encoding"), 0}}},
         Test{{},
              {},
              {{"a4a41007f0a40f2d62696e8b635b29282d2762696e3b0921213fa41fdbf0211"
@@ -394,7 +402,8 @@ INSTANTIATE_TEST_SUITE_P(
              {},
              {{"0e 00 00 df",
                absl::InternalError(
-                   "Error parsing ':status' metadata: error=not an integer")}}},
+                   "Error parsing ':status' metadata: error=not an integer"),
+               0}}},
         Test{{},
              {},
              {
@@ -404,7 +413,7 @@ INSTANTIATE_TEST_SUITE_P(
                  //    < test/core/transport/chttp2/binary-metadata.headers
                  {"40 09 61 2e 62 2e 63 2d 62 69 6e 0c 62 32 31 6e 4d 6a 41 79 "
                   "4d 51 3d 3d",
-                  "a.b.c-bin: omg2021\n"},
+                  "a.b.c-bin: omg2021\n", 0},
              }},
         Test{{},
              {},
@@ -415,9 +424,12 @@ INSTANTIATE_TEST_SUITE_P(
               {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
                "27732074756573646179",
                absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "error=illegal base64 encoding")},
-              {"be", absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                         "error=illegal base64 encoding")}}},
+                                   "error=illegal base64 encoding"),
+               0},
+              {"be",
+               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                   "error=illegal base64 encoding"),
+               0}}},
         Test{{},
              {},
              {// created using:
@@ -425,8 +437,8 @@ INSTANTIATE_TEST_SUITE_P(
               //    --compression inc --no_framing --output hexstr
               //    < test/core/transport/chttp2/bad-te.headers
               {"400274650767617262616765",
-               absl::InternalError("Error parsing 'te' metadata")},
-              {"be", absl::InternalError("Error parsing 'te' metadata")}}},
+               absl::InternalError("Error parsing 'te' metadata"), 0},
+              {"be", absl::InternalError("Error parsing 'te' metadata"), 0}}},
         Test{{},
              128,
              {
@@ -437,17 +449,20 @@ INSTANTIATE_TEST_SUITE_P(
                   "696d04746f6f6b4008616d6172616e74680a6272616e64796275636b4008"
                   "616e67656c6963610762616767696e73",
                   absl::ResourceExhaustedError(
-                      "received metadata size exceeds hard limit")},
+                      "received metadata size exceeds hard limit"),
+                  0},
                  // Should be able to look up the added elements individually
                  // (do not corrupt the hpack table test!)
-                 {"be", "angelica: baggins\n"},
-                 {"bf", "amaranth: brandybuck\n"},
-                 {"c0", "adalgrim: took\n"},
-                 {"c1", "adaldrida: brandybuck\n"},
+                 {"be", "angelica: baggins\n", 0},
+                 {"bf", "amaranth: brandybuck\n", 0},
+                 {"c0", "adalgrim: took\n", 0},
+                 {"c1", "adaldrida: brandybuck\n", 0},
                  // But not as a whole - that exceeds metadata limits for one
                  // request again
-                 {"bebfc0c1", absl::ResourceExhaustedError(
-                                  "received metadata size exceeds hard limit")},
+                 {"bebfc0c1",
+                  absl::ResourceExhaustedError(
+                      "received metadata size exceeds hard limit"),
+                  0},
              }},
         Test{
             {},
@@ -480,17 +495,17 @@ INSTANTIATE_TEST_SUITE_P(
         Test{
             {},
             {},
-            {{"0f", ""}},
+            {{"0f", "", 0}},
         },
         Test{
             {},
             {},
-            {{"7f", ""}},
+            {{"7f", "", 0}},
         },
         Test{
             {},
             {},
-            {{"1bffffff7c1b", ""}},
+            {{"1bffffff7c1b", "", 0}},
         },
         Test{
             {},
@@ -523,11 +538,11 @@ INSTANTIATE_TEST_SUITE_P(
         Test{{},
              {},
              {{"52046772706300073a737461747573033230300e7f",
-               ":status: 200\naccept-ranges: grpc\n"}}},
+               ":status: 200\naccept-ranges: grpc\n", 0}}},
         Test{{},
              {},
              {{"a4a41007f0a40f2d62696e8beda42d5b63272129a410626907",
-               absl::InternalError("illegal base64 encoding")}}},
+               absl::InternalError("illegal base64 encoding"), 0}}},
         Test{
             // haiku segment: 149bytes*2, a:a segment: 34 bytes
             // So we arrange for one less than the total so we force a hpack
@@ -544,41 +559,46 @@ INSTANTIATE_TEST_SUITE_P(
                  "67349475a766369427a644739796157356e49475a706247567a4c673d3d",
                  // Haiku by Bard.
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // Should go into the hpack table (x-bin: ... is 149 bytes long
                 // by hpack rules)
                 {"be",
                  "x-bin: Base64 encoding:\nIt takes binary data and "
-                 "makes it text.\nUseful for storing files.\n"},
+                 "makes it text.\nUseful for storing files.\n",
+                 0},
                 // Add another copy
                 {"4005782d62696e70516d467a5a545930494756755932396b6157356e4f67"
                  "704a644342305957746c6379426961573568636e6b675a47463059534268"
                  "626d5167625746725a584d6761585167644756346443344b56584e6c5a6e5"
                  "67349475a766369427a644739796157356e49475a706247567a4c673d3d",
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // 149*2 == 298, so we should have two copies in the hpack table
                 {"bebf",
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
                  "text.\nUseful for storing files.\n"
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // Add some very short headers (should push the first long thing
                 // out)
                 // Generated with: tools/codegen/core/gen_header_frame.py
                 // --compression inc --output hexstr --no_framing <
                 // test/core/transport/chttp2/short.headers
-                {"4001610161", "a: a\n"},
+                {"4001610161", "a: a\n", 0},
                 // First two entries should be what was just pushed and then one
                 // long entry
                 {"bebf",
                  "a: a\nx-bin: Base64 encoding:\nIt takes binary data and "
                  "makes "
-                 "it text.\nUseful for storing files.\n"},
+                 "it text.\nUseful for storing files.\n",
+                 0},
                 // Third entry should be unprobable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
-                 true},
+                 kFailureIsConnectionError},
             }},
         Test{
             // haiku segment: 149bytes*2, a:a segment: 34 bytes
@@ -596,43 +616,48 @@ INSTANTIATE_TEST_SUITE_P(
                  "d71e2e3ef3cd041",
                  // Haiku by Bard.
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // Should go into the hpack table (x-bin: ... is 149 bytes long
                 // by hpack rules)
                 {"be",
                  "x-bin: Base64 encoding:\nIt takes binary data and "
-                 "makes it text.\nUseful for storing files.\n"},
+                 "makes it text.\nUseful for storing files.\n",
+                 0},
                 // Add another copy
                 {"4005782d62696edbd94e1f7fbbf983262e36f313fd47c9bab54d5e592f5d0"
                  "73e49a09eae987c9b9c95759bf7161073dd7678e9d9347cb0d9fbf9a261fe"
                  "6c9a4c5c5a92f359b8fe69a3f6ae28c98bf7b90d77dc989ff43e4dd59317e"
                  "d71e2e3ef3cd041",
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // 149*2 == 298, so we should have two copies in the hpack table
                 {"bebf",
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
                  "text.\nUseful for storing files.\n"
                  "x-bin: Base64 encoding:\nIt takes binary data and makes it "
-                 "text.\nUseful for storing files.\n"},
+                 "text.\nUseful for storing files.\n",
+                 0},
                 // Add some very short headers (should push the first long thing
                 // out)
                 // Generated with: tools/codegen/core/gen_header_frame.py
                 // --compression inc --output hexstr --no_framing <
                 // test/core/transport/chttp2/short.headers
-                {"4001610161", "a: a\n"},
+                {"4001610161", "a: a\n", 0},
                 // First two entries should be what was just pushed and then one
                 // long entry
                 {"bebf",
                  "a: a\nx-bin: Base64 encoding:\nIt takes binary data and "
                  "makes "
-                 "it text.\nUseful for storing files.\n"},
+                 "it text.\nUseful for storing files.\n",
+                 0},
                 // Third entry should be unprobable (it's no longer in the
                 // table!)
                 {"c0", absl::InternalError("Invalid HPACK index received"),
                  kFailureIsConnectionError},
             }},
-        Test{{}, {}, {{"7a", ""}}},
+        Test{{}, {}, {{"7a", "", 0}}},
         Test{{},
              {},
              {{"60",
@@ -641,8 +666,8 @@ INSTANTIATE_TEST_SUITE_P(
                kEndOfStream | kFailureIsConnectionError}}},
         Test{{},
              {},
-             {{"89", ":status: 204\n"},
-              {"89", ":status: 204\n"},
+             {{"89", ":status: 204\n", 0},
+              {"89", ":status: 204\n", 0},
               {"393939393939393939393939393939393939393939",
                absl::InternalError(
                    "More than two max table size changes in a single frame"),
@@ -650,19 +675,20 @@ INSTANTIATE_TEST_SUITE_P(
         Test{{},
              {},
              {{"4005782d62696edbd94e1f7fbbf983267e36a313fd47c9bab54d5e592f5d",
-               ""}}},
-        Test{{}, {}, {{"72656672657368", ""}}},
-        Test{{}, {}, {{"66e6645f74", ""}, {"66645f74", ""}}},
-        Test{{},
-             {},
-             {{// Generated with: tools/codegen/core/gen_header_frame.py
-               // --compression inc --output hexstr --no_framing <
-               // test/core/transport/chttp2/MiXeD-CaSe.headers
-               "400a4d695865442d436153651073686f756c64206e6f74207061727365",
-               absl::InternalError("Illegal header key: MiXeD-CaSe")},
-              {// Looking up with hpack indices should work, but also return
-               // error
-               "be", absl::InternalError("Illegal header key: MiXeD-CaSe")}}},
+               "", 0}}},
+        Test{{}, {}, {{"72656672657368", "", 0}}},
+        Test{{}, {}, {{"66e6645f74", "", 0}, {"66645f74", "", 0}}},
+        Test{
+            {},
+            {},
+            {{// Generated with: tools/codegen/core/gen_header_frame.py
+              // --compression inc --output hexstr --no_framing <
+              // test/core/transport/chttp2/MiXeD-CaSe.headers
+              "400a4d695865442d436153651073686f756c64206e6f74207061727365",
+              absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+             {// Looking up with hpack indices should work, but also return
+              // error
+              "be", absl::InternalError("Illegal header key: MiXeD-CaSe"), 0}}},
         Test{
             {},
             {},

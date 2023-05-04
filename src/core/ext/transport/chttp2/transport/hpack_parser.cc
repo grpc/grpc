@@ -89,8 +89,7 @@ absl::Status EnsureStreamError(absl::Status error) {
 
 bool IsStreamError(const absl::Status& status) {
   intptr_t stream_id;
-  return grpc_error_get_int(status, StatusIntProperty::kStreamId,
-                            &stream_id);
+  return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
 }
 
 class MetadataSizeLimitExceededEncoder {

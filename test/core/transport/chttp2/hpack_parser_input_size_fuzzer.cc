@@ -70,16 +70,13 @@ class TestEncoder {
 
 bool IsStreamError(const absl::Status& status) {
   intptr_t stream_id;
-  return grpc_error_get_int(status, StatusIntProperty::kStreamId,
-                            &stream_id);
+  return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
 }
 
 absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
                                        Slice input) {
-  MemoryAllocator memory_allocator =
-      MemoryAllocator(ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   auto arena = MakeScopedArena(1024, &memory_allocator);
   ExecCtx exec_ctx;
   grpc_slice* slices;
@@ -89,10 +86,9 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   grpc_metadata_batch b(arena.get());
 
   HPackParser parser;
-  parser.BeginFrame(&b, 1024, 1024, HPackParser::Boundary::None,
-                    HPackParser::Priority::None,
-                    HPackParser::LogInfo{
-                        1, HPackParser::LogInfo::kHeaders, false});
+  parser.BeginFrame(
+      &b, 1024, 1024, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
 
   grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1, &slices,
                     &nslices);

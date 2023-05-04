@@ -52,8 +52,7 @@ absl::Status DoesNotConformTo(absl::string_view x, const char* err_desc) {
                                           absl::BytesToHexString(x), ")"));
 }
 
-absl::Status ConformsTo(absl::string_view x,
-                        const BitSet<256>& legal_bits,
+absl::Status ConformsTo(absl::string_view x, const BitSet<256>& legal_bits,
                         const char* err_desc) {
   for (uint8_t c : x) {
     if (!legal_bits.is_set(c)) {
