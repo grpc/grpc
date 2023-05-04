@@ -120,6 +120,7 @@ class CqVerifier {
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
+  absl::AnyInvocable<void()> step_fn_;
   mutable absl::AnyInvocable<void(Failure)> fail_;
 };
 
