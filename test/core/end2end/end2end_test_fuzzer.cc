@@ -42,17 +42,24 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+namespace grpc_event_engine {
+namespace experimental {
+extern bool g_event_engine_supports_fd;
+}
+}  // namespace grpc_event_engine
+
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 int force_experiments = []() {
+  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
   grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_core::ForceEnableExperiment("event_engine_listener", true);
   return 1;
 }();
-
-using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   static const auto all_tests =
