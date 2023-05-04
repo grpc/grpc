@@ -10143,7 +10143,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: prioritized_race_test
   gtest: true
   build: test
