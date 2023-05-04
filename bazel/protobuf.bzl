@@ -19,18 +19,18 @@ _PROTO_EXTENSION = ".proto"
 _VIRTUAL_IMPORTS = "/_virtual_imports/"
 
 _WELL_KNOWN_PROTOS_BASE = [
-	"any_proto",
-	"api_proto",
-	"compiler_plugin_proto",
-	"descriptor_proto",
-	"duration_proto",
-	"empty_proto",
-	"field_mask_proto",
-	"source_context_proto",
-	"struct_proto",
-	"timestamp_proto",
-	"type_proto",
-	"wrappers_proto",
+    "any_proto",
+    "api_proto",
+    "compiler_plugin_proto",
+    "descriptor_proto",
+    "duration_proto",
+    "empty_proto",
+    "field_mask_proto",
+    "source_context_proto",
+    "struct_proto",
+    "timestamp_proto",
+    "type_proto",
+    "wrappers_proto",
 ]
 
 def well_known_proto_libs():
@@ -46,7 +46,7 @@ def is_well_known(label):
     # reversions of this change as well as for continuing compatiblity with repos
     # that happen to pull in older versions of protobuf.
     all_wkt_targets = (["@com_google_protobuf//:" + b for b in _WELL_KNOWN_PROTOS_BASE] +
-                ["@com_google_protobuf//src/google/protobuf:" + b for b in _WELL_KNOWN_PROTOS_BASE])
+                       ["@com_google_protobuf//src/google/protobuf:" + b for b in _WELL_KNOWN_PROTOS_BASE])
     return label in all_wkt_targets
 
 def get_proto_root(workspace_root):
