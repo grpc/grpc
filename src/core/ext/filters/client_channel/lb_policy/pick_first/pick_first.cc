@@ -340,22 +340,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         MakeRefCounted<TransientFailurePicker>(status));
     channel_control_helper()->RequestReresolution();
   }
-// FIXME: is it okay to remove this?
-// general question: what state should be assumed by parent when
-// creating a child?  we sometimes assume IDLE, other times CONNECTING.
-// Note: ring_hash in particular currently assumes IDLE, because it's
-// dealing with subchannels.  That may be an argument for PF to assume
-// IDLE and not initially try to connect until it sees an RPC -- but
-// then the channel's connectivity state would go CONNECTING -> IDLE ->
-// CONNECTING.
-#if 0
-  // Otherwise, if this is the initial update, report CONNECTING.
-  else if (subchannel_list_.get() == nullptr) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
-  }
-#endif
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
   if (latest_pending_subchannel_list_->size() == 0 || selected_ == nullptr) {

@@ -54,7 +54,6 @@ TEST_F(PickFirstTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-// FIXME: should this move here or stay where it was?
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.

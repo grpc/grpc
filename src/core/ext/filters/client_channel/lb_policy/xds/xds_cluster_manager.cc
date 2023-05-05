@@ -200,7 +200,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
     RefCountedPtr<SubchannelPicker> picker_;
-    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
+    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
 
     // States for delayed removal.
     absl::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
@@ -409,7 +409,8 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
     RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
     const std::string& name)
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
-      name_(name) {
+      name_(name),
+      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_manager_lb %p] created ClusterChild %p for %s",
