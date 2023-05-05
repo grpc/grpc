@@ -33,7 +33,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 

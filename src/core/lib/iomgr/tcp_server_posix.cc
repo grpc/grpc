@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#include "exec_ctx.h"
-
 #include <grpc/event_engine/event_engine.h>
 #endif
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 

@@ -28,6 +28,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>

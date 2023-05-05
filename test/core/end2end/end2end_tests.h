@@ -19,8 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <algorithm>
 #include <functional>
@@ -41,6 +41,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
