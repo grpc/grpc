@@ -281,8 +281,6 @@ TEST(TcpSocketUtilsTest, ResolvedAddressToNormalizedStringTest) {
 
 #ifdef GRPC_HAVE_VSOCK
   EventEngine::ResolvedAddress inputvm = *VSockaddrPopulate("-1:12345");
-  struct sockaddr_vm* sock_vm = reinterpret_cast<struct sockaddr_vm*>(
-      const_cast<sockaddr*>(inputvm.address()));
   EXPECT_EQ(ResolvedAddressToNormalizedString(inputvm).value(),
             absl::StrCat((uint32_t)-1, ":12345"));
 #endif

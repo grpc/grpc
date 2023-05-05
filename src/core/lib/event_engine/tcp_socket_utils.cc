@@ -368,11 +368,9 @@ absl::StatusOr<std::string> ResolvedAddressToString(
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
-#ifdef GRPC_HAVE_VSOCK
-  if (addr->sa_family == AF_VSOCK) {
+  if (ResolvedAddressIsVSock(resolved_addr)) {
     return ResolvedAddrToVsockPathIfPossible(&resolved_addr);
   }
-#endif  // GRPC_HAVE_VSOCK
 
   const void* ip = nullptr;
   int port = 0;
