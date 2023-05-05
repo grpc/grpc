@@ -27,7 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_args.h"
@@ -40,7 +40,6 @@ namespace grpc_core {
 namespace {
 
 using experimental::AuditLoggerRegistry;
-using LoggerConfig = experimental::AuditLoggerFactory::Config;
 
 // RbacConfig: one or more RbacPolicy structs
 struct RbacConfig {
