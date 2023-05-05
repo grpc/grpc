@@ -480,6 +480,7 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
+        self._check_pod_restart_time()
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -493,6 +494,34 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
                                    force_namespace=self.force_cleanup)
+
+    def _check_pod_restart_time(self) -> None:
+        # We should fail test if pod restarted during test (b/269192257).
+        logger.info('Checking Pods restart times')
+        client_restarts = self._get_restarts(self.client_runner.k8s_namespace,
+                                             self.client_runner.deployment)
+        self.assertEqual(client_restarts,
+                         0,
+                         msg=('Client pods unexpectedly restarted %d times during test',
+                              client_restarts))
+        sever_restarts = self._get_restarts(self.server_runner.k8s_namespace,
+                                            self.server_runner.deployment)
+        self.assertEqual(sever_restarts,
+                         0,
+                         msg=('Server pods unexpectedly restarted %d times during test',
+                              client_restarts))
+
+    def _get_restarts(self, k8s_namespace: k8s.KubernetesNamespace,
+                      deployment: k8s.V1Deployment) -> int:
+        total_restart: int = 0
+        pods: List[k8s.V1Pod]
+        if not k8s_namespace or not deployment:
+            return total_restart
+        pods = k8s_namespace.list_deployment_pods(deployment)
+        for pod in pods:
+            total_restart = sum(status.restart_count
+                                for status in pod.status.container_statuses)
+        return total_restart
 
 
 class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
