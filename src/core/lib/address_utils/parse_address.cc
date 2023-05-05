@@ -20,6 +20,9 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

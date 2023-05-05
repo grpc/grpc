@@ -16,7 +16,11 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
 #include <errno.h>
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"

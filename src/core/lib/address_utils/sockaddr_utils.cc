@@ -22,6 +22,9 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
 #include <string.h>
 
 #include <initializer_list>
