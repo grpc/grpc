@@ -19,7 +19,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
-#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include "test/core/end2end/end2end_tests.h"
