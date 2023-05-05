@@ -37,7 +37,7 @@ namespace grpc_core {
 namespace experimental {
 
 constexpr absl::string_view kName = "stdout_logger";
-const char kLogFormat[] =
+constexpr char kLogFormat[] =
     "{\"grpc_audit_log\":{\"timestamp\":%d,\"rpc_method\":\"%s\",\"principal\":"
     "\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\",\"authorized\":%s}}"
     "\n";
