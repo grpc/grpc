@@ -134,7 +134,8 @@ class grpc_alts_channel_security_connector final
       absl::string_view host, grpc_auth_context*) override {
     if (host.empty() || host != target_name_) {
       return grpc_core::Immediate(absl::UnauthenticatedError(absl::StrFormat(
-          "ALTS call host [%s] does not match target name [%s].", host, target_name_));
+          "ALTS call host [%s] does not match target name [%s].", host,
+          target_name_)));
     }
     return grpc_core::ImmediateOkStatus();
   }
