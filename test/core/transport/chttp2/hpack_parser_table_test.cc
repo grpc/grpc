@@ -37,7 +37,7 @@ void AssertIndex(const HPackTable* tbl, uint32_t idx, const char* key,
                  const char* value) {
   const auto* md = tbl->Lookup(idx);
   ASSERT_NE(md, nullptr);
-  EXPECT_EQ(md->DebugString(), absl::StrCat(key, ": ", value));
+  EXPECT_EQ(md->md.DebugString(), absl::StrCat(key, ": ", value));
 }
 }  // namespace
 
@@ -119,8 +119,12 @@ TEST(HpackParserTableTest, ManyAdditions) {
     std::string value = absl::StrCat("VALUE.", i);
     auto key_slice = Slice::FromCopiedString(key);
     auto value_slice = Slice::FromCopiedString(value);
-    auto memento =
-        HPackTable::Memento(std::move(key_slice), std::move(value_slice));
+    auto memento = HPackTable::Memento{
+        ParsedMetadata<grpc_metadata_batch>(
+            ParsedMetadata<grpc_metadata_batch>::FromSlicePair{},
+            std::move(key_slice), std::move(value_slice),
+            key.length() + value.length() + 32),
+        absl::OkStatus()};
     auto add_err = tbl.Add(std::move(memento));
     ASSERT_EQ(add_err, absl::OkStatus());
     AssertIndex(&tbl, 1 + hpack_constants::kLastStaticEntry, key.c_str(),
