@@ -469,8 +469,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update.lrs_load_reporting_server.emplace(
-        static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
+//    cds_update.lrs_load_reporting_server.emplace(
+//        static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a
