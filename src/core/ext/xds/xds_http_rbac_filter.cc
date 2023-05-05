@@ -49,12 +49,23 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
 namespace {
+
+// TODO(lwge): Remove once the feature is stable.
+bool XdsRbacAuditLoggingEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 Json ParseRegexMatcherToJson(
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher) {
@@ -453,7 +464,8 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
                               Json::FromObject(std::move(policies_object)));
     }
     // Flatten the nested messages defined in rbac.proto
-    if (envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
+    if (XdsRbacAuditLoggingEnabled() &&
+        envoy_config_rbac_v3_RBAC_has_audit_logging_options(rules)) {
       ValidationErrors::ScopedField field(errors, ".audit_logging_options");
       const auto* audit_logging_options =
           envoy_config_rbac_v3_RBAC_audit_logging_options(rules);

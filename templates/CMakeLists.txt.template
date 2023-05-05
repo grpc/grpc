@@ -217,9 +217,6 @@
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
-  set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
-  set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
-
   if(gRPC_BUILD_TESTS)
     set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
     set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
