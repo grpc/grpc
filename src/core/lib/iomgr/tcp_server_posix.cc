@@ -19,6 +19,7 @@
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <grpc/event_engine/event_engine.h>
 #endif
 
 #include <grpc/support/port_platform.h>
@@ -268,7 +269,8 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
+  if (grpc_event_engine::experimental::UseEventEngineListener() &&
+      grpc_event_engine::experimental::EventEngineSupportsFd()) {
     // This will trigger asynchronous execution of the on_shutdown_complete
     // callback when appropriate. That callback will delete the server
     s->ee_listener.reset();
@@ -798,13 +800,18 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 }
 
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
+      old_listener;
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
-  if (grpc_event_engine::experimental::UseEventEngineListener() &&
-      grpc_event_engine::experimental::EventEngineSupportsFd()) {
-    static_cast<grpc_event_engine::experimental::PosixListenerWithFdSupport*>(
-        s->ee_listener.get())
-        ->ShutdownListeningFds();
+  if (grpc_event_engine::experimental::UseEventEngineListener()) {
+    if (grpc_event_engine::experimental::EventEngineSupportsFd()) {
+      static_cast<grpc_event_engine::experimental::PosixListenerWithFdSupport*>(
+          s->ee_listener.get())
+          ->ShutdownListeningFds();
+    } else {
+      old_listener = std::move(s->ee_listener);
+    }
   }
   /* shutdown all fd's */
   if (s->active_ports) {

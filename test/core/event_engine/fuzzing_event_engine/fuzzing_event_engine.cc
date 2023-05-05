@@ -94,6 +94,10 @@ FuzzingEventEngine::FuzzingEventEngine(
   }
 
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
+  g_orig_gpr_now_impl = gpr_now_impl;
+  gpr_now_impl = GlobalNowImpl;
+  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
+  g_fuzzing_event_engine = this;
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
   auto update_delay = [](std::map<intptr_t, Duration>* map,
@@ -119,10 +123,6 @@ FuzzingEventEngine::FuzzingEventEngine(
     update_delay(&task_delays_, delay, std::chrono::seconds(30));
   }
 
-  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
-  g_fuzzing_event_engine = this;
-  g_orig_gpr_now_impl = gpr_now_impl;
-  gpr_now_impl = GlobalNowImpl;
   previous_pick_port_functions_ = grpc_set_pick_port_functions(
       grpc_pick_port_functions{+[]() -> int {
                                  grpc_core::MutexLock lock(&*mu_);

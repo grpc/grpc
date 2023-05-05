@@ -112,7 +112,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
 
   auto test = config_it->second();
   test->SetCrashOnStepFailure();
-  test->SetCqVerifierStepFn([&engine]() {
+  test->SetCqVerifierStepFn([engine = std::move(engine)]() {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     engine->Tick();
@@ -126,6 +126,4 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   test->SetUp();
   test->RunTest();
   test->TearDown();
-
-  engine->UnsetGlobalHooks();
 }

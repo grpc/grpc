@@ -23,7 +23,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
-#include "test/core/end2end/end2end_tests.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
@@ -34,6 +33,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_core {
@@ -84,7 +84,19 @@ void CoreEnd2endTest::SetUp() {
 
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
+  ShutdownAndDestroyServer();
+  ShutdownAndDestroyClient();
   cq_verifier_.reset();
+  if (cq_ != nullptr) {
+    grpc_completion_queue_shutdown(cq_);
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
+                                      nullptr);
+    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+    grpc_completion_queue_destroy(cq_);
+    cq_ = nullptr;
+  }
   fixture_.reset();
 // TODO(hork): locate the windows leak so we can enable end2end experiments.
 #ifndef GPR_WINDOWS
@@ -103,6 +115,8 @@ void CoreEnd2endTest::TearDown() {
       gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
     }
   }
+  GPR_ASSERT(client_ == nullptr);
+  GPR_ASSERT(server_ == nullptr);
   initialized_ = false;
 }
 
@@ -260,24 +274,22 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
     return Call(grpc_channel_create_call(
-        test_.fixture().client(), parent_call_, propagation_mask_,
-        test_.fixture().cq(), Slice::FromCopiedString(u->method).c_slice(),
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        Slice::FromCopiedString(u->method).c_slice(),
         host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
   } else {
     return Call(grpc_channel_create_registered_call(
-        test_.fixture().client(), parent_call_, propagation_mask_,
-        test_.fixture().cq(), absl::get<void*>(call_selector_), deadline_,
-        nullptr));
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        absl::get<void*>(call_selector_), deadline_, nullptr));
   }
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
     : impl_(std::make_unique<Impl>()) {
   test.ForceInitialized();
-  grpc_server_request_call(test.fixture().server(), impl_->call.call_ptr(),
+  grpc_server_request_call(test.server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,
-                           test.fixture().cq(), test.fixture().cq(),
-                           CqVerifier::tag(tag));
+                           test.cq(), test.cq(), CqVerifier::tag(tag));
 }
 
 absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
@@ -288,8 +300,8 @@ absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    fixture().InitServer(ChannelArgs());
-    fixture().InitClient(ChannelArgs());
+    InitServer(ChannelArgs());
+    InitClient(ChannelArgs());
   }
 }
 

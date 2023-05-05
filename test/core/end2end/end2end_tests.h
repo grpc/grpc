@@ -85,6 +85,8 @@
 namespace grpc_core {
 class CoreTestFixture {
  public:
+  virtual ~CoreTestFixture() = default;
+  /*
   virtual ~CoreTestFixture() {
     ShutdownServer();
     ShutdownClient();
@@ -130,26 +132,27 @@ class CoreTestFixture {
     grpc_channel_destroy(client_);
     client_ = nullptr;
   }
+*/
 
-  virtual grpc_server* MakeServer(const ChannelArgs& args) = 0;
-  virtual grpc_channel* MakeClient(const ChannelArgs& args) = 0;
+  virtual grpc_server* MakeServer(const ChannelArgs& args,
+                                  grpc_completion_queue* cq) = 0;
+  virtual grpc_channel* MakeClient(const ChannelArgs& args,
+                                   grpc_completion_queue* cq) = 0;
 
+  /*
  protected:
   void SetServer(grpc_server* server);
   void SetClient(grpc_channel* client);
 
  private:
   void DrainCq() {
-    grpc_event ev;
-    do {
-      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
-                                      nullptr);
-    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+
   }
 
   grpc_completion_queue* cq_ = grpc_completion_queue_create_for_next(nullptr);
   grpc_server* server_ = nullptr;
   grpc_channel* client_ = nullptr;
+*/
 };
 
 Slice RandomSlice(size_t length);
@@ -623,67 +626,87 @@ class CoreEnd2endTest : public ::testing::Test {
   // will be provided).
   void InitClient(const ChannelArgs& args) {
     initialized_ = true;
-    fixture().InitClient(args);
+    if (client_ != nullptr) ShutdownAndDestroyClient();
+    auto& f = fixture();
+    client_ = f.MakeClient(args, cq_);
+    GPR_ASSERT(client_ != nullptr);
   }
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
   // will be provided).
   void InitServer(const ChannelArgs& args) {
     initialized_ = true;
-    fixture().InitServer(args);
+    if (server_ != nullptr) ShutdownAndDestroyServer();
+    auto& f = fixture();
+    server_ = f.MakeServer(args, cq_);
+    GPR_ASSERT(server_ != nullptr);
   }
   // Remove the client.
-  void ShutdownAndDestroyClient() { fixture().ShutdownClient(); }
+  void ShutdownAndDestroyClient() {
+    if (client_ == nullptr) return;
+    grpc_channel_destroy(client_);
+    client_ = nullptr;
+  }
   // Shutdown the server; notify tag on completion.
   void ShutdownServerAndNotify(int tag) {
-    grpc_server_shutdown_and_notify(fixture().server(), fixture().cq(),
-                                    CqVerifier::tag(tag));
+    grpc_server_shutdown_and_notify(server_, cq_, CqVerifier::tag(tag));
   }
   // Destroy the server.
-  void DestroyServer() { fixture().DestroyServer(); }
-  // Shutdown then destroy the server.
-  void ShutdownAndDestroyServer() { fixture().ShutdownServer(); }
-  // Cancel any calls on the server.
-  void CancelAllCallsOnServer() {
-    grpc_server_cancel_all_calls(fixture().server());
+  void DestroyServer() {
+    if (server_ == nullptr) return;
+    grpc_server_destroy(server_);
+    server_ = nullptr;
   }
+  // Shutdown then destroy the server.
+  void ShutdownAndDestroyServer() {
+    if (server_ == nullptr) return;
+    ShutdownServerAndNotify(-1);
+    Expect(-1, AnyStatus{});
+    Step();
+    DestroyServer();
+  }
+  // Cancel any calls on the server.
+  void CancelAllCallsOnServer() { grpc_server_cancel_all_calls(server_); }
   // Ping the server from the client
   void PingServerFromClient(int tag) {
-    grpc_channel_ping(fixture().client(), fixture().cq(), CqVerifier::tag(tag),
-                      nullptr);
+    grpc_channel_ping(client_, cq_, CqVerifier::tag(tag), nullptr);
   }
   // Register a call on the client, return its handle.
   RegisteredCall RegisterCallOnClient(const char* method, const char* host) {
     ForceInitialized();
     return RegisteredCall{
-        grpc_channel_register_call(fixture().client(), method, host, nullptr)};
+        grpc_channel_register_call(client_, method, host, nullptr)};
   }
 
   // Return the current connectivity state of the client.
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect) {
-    return grpc_channel_check_connectivity_state(fixture().client(),
-                                                 try_to_connect);
+    return grpc_channel_check_connectivity_state(client_, try_to_connect);
   }
 
   // Watch the connectivity state of the client.
   void WatchConnectivityState(grpc_connectivity_state last_observed_state,
                               Duration deadline, int tag) {
     grpc_channel_watch_connectivity_state(
-        fixture().client(), last_observed_state,
-        grpc_timeout_milliseconds_to_deadline(deadline.millis()),
-        fixture().cq(), CqVerifier::tag(tag));
+        client_, last_observed_state,
+        grpc_timeout_milliseconds_to_deadline(deadline.millis()), cq_,
+        CqVerifier::tag(tag));
   }
 
   // Return the client channel.
   grpc_channel* client() {
     ForceInitialized();
-    return fixture().client();
+    return client_;
   }
 
   // Return the server channel.
   grpc_server* server() {
     ForceInitialized();
-    return fixture().server();
+    return server_;
+  }
+
+  grpc_completion_queue* cq() {
+    ForceInitialized();
+    return cq_;
   }
 
   // Given a duration, return a timestamp that is that duration in the future -
@@ -705,6 +728,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (fixture_ == nullptr) {
       grpc_init();
       post_grpc_init_func_();
+      cq_ = grpc_completion_queue_create_for_next(nullptr);
       fixture_ = GetParam()->create_fixture(ChannelArgs(), ChannelArgs());
     }
     return *fixture_;
@@ -712,8 +736,9 @@ class CoreEnd2endTest : public ::testing::Test {
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
+      fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          fixture().cq(),
+          cq_,
           crash_on_step_failure_ ? CqVerifier::FailUsingGprCrash
                                  : CqVerifier::FailUsingGtestFail,
           std::move(step_fn_));
@@ -723,6 +748,9 @@ class CoreEnd2endTest : public ::testing::Test {
 
   const CoreTestConfiguration* param_ = nullptr;
   std::unique_ptr<CoreTestFixture> fixture_;
+  grpc_completion_queue* cq_ = nullptr;
+  grpc_server* server_ = nullptr;
+  grpc_channel* client_ = nullptr;
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;

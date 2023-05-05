@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
@@ -108,19 +109,21 @@ void AddFailAuthCheckIfNeeded(const ChannelArgs& args,
 
 class CensusFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     GPR_ASSERT(
         grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server);
     return server;
   }
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     auto* creds = grpc_insecure_credentials_create();
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds,
@@ -134,14 +137,15 @@ class CensusFixture : public CoreTestFixture {
 
 class CompressionFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     auto* server = grpc_server_create(
         args.SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                         GRPC_COMPRESS_GZIP)
             .ToC()
             .get(),
         nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     GPR_ASSERT(
@@ -150,7 +154,8 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_start(server);
     return server;
   }
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create(
         localaddr_.c_str(), creds,
@@ -228,17 +233,19 @@ class FdFixture : public CoreTestFixture {
   FdFixture() { create_sockets(fd_pair_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     ExecCtx exec_ctx;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_start(server);
     grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
     grpc_server_add_channel_from_fd(server, fd_pair_[1], creds);
     grpc_server_credentials_release(creds);
     return server;
   }
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     ExecCtx exec_ctx;
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create_from_fd("fixture_client", fd_pair_[0],
@@ -275,18 +282,13 @@ class HttpProxyFilter : public CoreTestFixture {
  public:
   explicit HttpProxyFilter(const ChannelArgs& client_args)
       : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
-  ~HttpProxyFilter() override {
-    // Need to shut down the proxy users before closing the proxy (otherwise we
-    // become stuck).
-    ShutdownClient();
-    ShutdownServer();
-    grpc_end2end_http_proxy_destroy(proxy_);
-  }
+  ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     GPR_ASSERT(
@@ -296,7 +298,8 @@ class HttpProxyFilter : public CoreTestFixture {
     return server;
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     // If testing for proxy auth, add credentials to proxy uri
     absl::optional<std::string> proxy_auth_str =
         args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
@@ -349,9 +352,10 @@ class ProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     GPR_ASSERT(grpc_server_add_http2_port(
@@ -361,7 +365,8 @@ class ProxyFixture : public CoreTestFixture {
     return server;
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create(
         grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
@@ -425,7 +430,8 @@ class SslProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args) override {
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
     grpc_slice cert_slice, key_slice;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
@@ -447,7 +453,7 @@ class SslProxyFixture : public CoreTestFixture {
     }
 
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
@@ -455,7 +461,8 @@ class SslProxyFixture : public CoreTestFixture {
     return server;
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     auto* client = grpc_channel_create(
@@ -486,12 +493,14 @@ class FixtureWithTracing final : public CoreTestFixture {
     // g_fixture_slowdown_factor = 1;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args) override {
-    return fixture_->MakeServer(args);
+  grpc_server* MakeServer(const ChannelArgs& args,
+                          grpc_completion_queue* cq) override {
+    return fixture_->MakeServer(args, cq);
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args) override {
-    return fixture_->MakeClient(args);
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue* cq) override {
+    return fixture_->MakeClient(args, cq);
   }
 
  private:
@@ -517,10 +526,11 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs {
 #ifdef GRPC_POSIX_SOCKET
-    CoreTestConfiguration{"Chttp2Fd", FEATURE_MASK_IS_HTTP2, nullptr,
-                          [](const ChannelArgs&, const ChannelArgs&) {
-                            return std::make_unique<FdFixture>();
-                          }},
+    CoreTestConfiguration{
+        "Chttp2Fd", FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ, nullptr,
+        [](const ChannelArgs&, const ChannelArgs&) {
+          return std::make_unique<FdFixture>();
+        }},
 #endif
         CoreTestConfiguration{
             "Chttp2FakeSecurityFullstack",
@@ -592,7 +602,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalUdsPercentEncoded",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -609,7 +619,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalUds",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -642,14 +652,16 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{
             "Chttp2FullstackWithProxy",
             FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
               return std::make_unique<ProxyFixture>(client_args, server_args);
             }},
         CoreTestConfiguration{
             "Chttp2HttpProxy",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& client_args, const ChannelArgs&) {
               return std::make_unique<HttpProxyFilter>(client_args);
@@ -821,7 +833,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
 #ifdef GPR_LINUX
         CoreTestConfiguration{
             "Chttp2FullstackUdsAbstractNamespace",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
@@ -835,7 +848,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
 #ifdef GRPC_HAVE_UNIX_SOCKET
         CoreTestConfiguration{
             "Chttp2FullstackUds",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
