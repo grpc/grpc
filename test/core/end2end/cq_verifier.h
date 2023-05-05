@@ -30,6 +30,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
