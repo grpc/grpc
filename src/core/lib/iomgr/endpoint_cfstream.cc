@@ -240,7 +240,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb, bool /*urgent*/,
+                         grpc_closure* cb, bool urgent,
                          int /*min_progress_size*/) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
@@ -258,8 +258,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, void* /*arg*/,
-                          int /*max_frame_size*/) {
+                          grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu",
@@ -305,15 +304,14 @@ absl::string_view CFStreamGetLocalAddress(grpc_endpoint* ep) {
   return ep_impl->local_address;
 }
 
-int CFStreamGetFD(grpc_endpoint* /*ep*/) { return 0; }
+int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
 
-bool CFStreamCanTrackErr(grpc_endpoint* /*ep*/) { return false; }
+bool CFStreamCanTrackErr(grpc_endpoint* ep) { return false; }
 
-void CFStreamAddToPollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {}
-void CFStreamAddToPollsetSet(grpc_endpoint* /*ep*/,
-                             grpc_pollset_set* /*pollset*/) {}
-void CFStreamDeleteFromPollsetSet(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
+void CFStreamAddToPollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
+void CFStreamAddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
+void CFStreamDeleteFromPollsetSet(grpc_endpoint* ep,
+                                  grpc_pollset_set* pollset) {}
 
 static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamWrite,
