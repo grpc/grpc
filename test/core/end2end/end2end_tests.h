@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <algorithm>
 #include <functional>
@@ -41,6 +42,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
@@ -563,7 +565,7 @@ class CoreEnd2endTest : public ::testing::Test {
             SourceLocation whence = {}) {
     fprintf(stderr, "step test %s nexp=%d\n",
             timeout.has_value() ? timeout->ToString().c_str() : "null",
-            (int)expectations_);
+            expectations_);
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;

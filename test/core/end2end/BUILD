@@ -278,10 +278,10 @@ END2END_TEST_SRCS = [
 ]
 
 END2END_TEST_DATA = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ]
+    "//src/core/tsi/test_creds:ca.pem",
+    "//src/core/tsi/test_creds:server1.key",
+    "//src/core/tsi/test_creds:server1.pem",
+]
 
 grpc_cc_test(
     name = "core_end2end_tests",
@@ -506,6 +506,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:slice",
         "//src/core:time",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -643,6 +644,7 @@ grpc_proto_fuzzer(
     size = "enormous",
     srcs = ["end2end_test_fuzzer.cc"] + END2END_TEST_SRCS,
     corpus = "end2end_test_corpus",
+    data = END2END_TEST_DATA,
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",
@@ -654,14 +656,13 @@ grpc_proto_fuzzer(
     ],
     language = "C++",
     proto = None,
+    shard_count = 50,
     tags = [
         "no_mac",
         "no_windows",
     ],
     uses_event_engine = False,
     uses_polling = False,
-    shard_count = 50,
-    data = END2END_TEST_DATA,
     deps = [
         "cq_verifier",
         "end2end_test_fuzzer_proto",
