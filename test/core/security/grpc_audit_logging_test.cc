@@ -25,7 +25,10 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/grpc_audit_logging.h>
 
@@ -115,8 +118,9 @@ TEST(StdoutLoggerTest, LoggerFactoryExistenceChecks) {
 }
 
 TEST(StdoutLoggerTest, BadLoggerConfig) {
+  auto invalid_value = Json::FromBool(false);
   auto result =
-      AuditLoggerRegistry::ParseConfig("stdout_logger", Json::FromBool(false));
+      AuditLoggerRegistry::ParseConfig("stdout_logger", invalid_value);
   ASSERT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   ASSERT_EQ(result.status().message(), "config is not a json object")
       << result.status();
@@ -131,18 +135,22 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
   AuditContext context("method", "spiffe", "policy", "rule", true);
   ::testing::internal::CaptureStdout();
   logger->Log(context);
-  auto output = ::testing::internal::GetCapturedStdout();
-  std::cout << output << '\n';
-  auto log_or = JsonParse(output);
+  auto log_or = JsonParse(::testing::internal::GetCapturedStdout());
   ASSERT_TRUE(log_or.ok());
   ASSERT_EQ(log_or.value().type(), Json::Type::kObject);
   auto it = log_or.value().object().find("grpc_audit_log");
   ASSERT_NE(it, log_or.value().object().end());
   ASSERT_EQ(it->second.type(), Json::Type::kObject);
   auto object = it->second.object();
+  // Check if the recorded timestamp is close to now.
+  absl::Time t1 = absl::Now();
   ASSERT_NE(object.find("timestamp"), object.end());
   EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kNumber);
-  // Check the value of everything except time stamp.
+  uint64_t ts;
+  ASSERT_TRUE(absl::SimpleAtoi(object.find("timestamp")->second.string(), &ts));
+  absl::Time t2 = absl::FromUnixSeconds(ts);
+  EXPECT_TRUE(t1 - t2 < absl::Seconds(10));
+  // Check exact values of everything else.
   std::map<std::string, std::string> fields = {{"rpc_method", "method"},
                                                {"principal", "spiffe"},
                                                {"policy_name", "policy"},

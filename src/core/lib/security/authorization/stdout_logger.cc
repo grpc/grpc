@@ -39,7 +39,8 @@ namespace experimental {
 constexpr absl::string_view kName = "stdout_logger";
 const char kLogFormat[] =
     "{\"grpc_audit_log\":{\"timestamp\":%d,\"rpc_method\":\"%s\",\"principal\":"
-    "\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\",\"authorized\":%s}}";
+    "\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\",\"authorized\":%s}}"
+    "\n";
 
 void StdoutAuditLogger::Log(const AuditContext& context) {
   absl::FPrintF(stdout, kLogFormat, absl::ToUnixSeconds(absl::Now()),
