@@ -61,23 +61,24 @@
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
-#define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY 1 << 0
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 1 << 1
+#define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY (1 << 0)
+#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION (1 << 1)
 // Feature mask supports call credentials with a minimum security level of
 // GRPC_PRIVACY_AND_INTEGRITY.
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 1 << 2
+#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS (1 << 2)
 // Feature mask supports call credentials with a minimum security level of
 // GRPC_SECURTITY_NONE.
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE 1 << 3
-#define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING 1 << 4
-#define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL 1 << 5
-#define FEATURE_MASK_IS_HTTP2 1 << 6
-#define FEATURE_MASK_ENABLES_TRACES 1 << 7
-#define FEATURE_MASK_1BYTE_AT_A_TIME 1 << 8
-#define FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING 1 << 9
-#define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST 1 << 10
-#define FEATURE_MASK_IS_MINSTACK 1 << 11
-#define FEATURE_MASK_IS_SECURE 1 << 12
+#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE (1 << 3)
+#define FEATURE_MASK_SUPPORTS_REQUEST_PROXYING (1 << 4)
+#define FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL (1 << 5)
+#define FEATURE_MASK_IS_HTTP2 (1 << 6)
+#define FEATURE_MASK_ENABLES_TRACES (1 << 7)
+#define FEATURE_MASK_1BYTE_AT_A_TIME (1 << 8)
+#define FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING (1 << 9)
+#define FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST (1 << 10)
+#define FEATURE_MASK_IS_MINSTACK (1 << 11)
+#define FEATURE_MASK_IS_SECURE (1 << 12)
+#define FEATURE_MASK_DO_NOT_FUZZ (1 << 13)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -213,6 +214,7 @@ class CoreEnd2endTest : public ::testing::Test {
   void SetCqVerifierStepFn(absl::AnyInvocable<void() const> step_fn) {
     step_fn_ = std::move(step_fn);
   }
+  void SetCrashOnStepFailure() { crash_on_step_failure_ = true; }
 
   class Call;
   struct RegisteredCall {
@@ -711,7 +713,10 @@ class CoreEnd2endTest : public ::testing::Test {
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          fixture().cq(), CqVerifier::FailUsingGtestFail, std::move(step_fn_));
+          fixture().cq(),
+          crash_on_step_failure_ ? CqVerifier::FailUsingGprCrash
+                                 : CqVerifier::FailUsingGtestFail,
+          std::move(step_fn_));
     }
     return *cq_verifier_;
   }
@@ -721,6 +726,7 @@ class CoreEnd2endTest : public ::testing::Test {
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;
+  bool crash_on_step_failure_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void() const> step_fn_ = nullptr;
 };

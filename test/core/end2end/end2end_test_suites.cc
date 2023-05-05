@@ -659,7 +659,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
             "foo.test.google.fr",
             [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
               return std::make_unique<SslProxyFixture>(client_args,

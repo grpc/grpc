@@ -23,6 +23,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "end2end_tests.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -72,6 +73,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
                                    grpc_core::CoreEnd2endTest>() const>>>>
         tests;
     for (const auto& test : all_tests) {
+      if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
       tests[test.suite][test.name].emplace(test.config->name, [&test]() {
         return std::unique_ptr<grpc_core::CoreEnd2endTest>(
             test.make_test(test.config));
@@ -98,8 +100,9 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        return std::make_unique<FuzzingEventEngine>(
-            FuzzingEventEngine::Options(), actions);
+        FuzzingEventEngine::Options options;
+        options.final_tick_length = grpc_core::Duration::Milliseconds(1);
+        return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
@@ -108,7 +111,13 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
           msg.config().c_str());
 
   auto test = config_it->second();
-  test->SetCqVerifierStepFn([&engine]() { engine->Tick(); });
+  test->SetCrashOnStepFailure();
+  test->SetCqVerifierStepFn([&engine]() {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    engine->Tick();
+    grpc_timer_manager_tick();
+  });
   test->SetPostGrpcInitFunc([]() {
     grpc_timer_manager_set_threading(false);
     grpc_core::ExecCtx exec_ctx;
