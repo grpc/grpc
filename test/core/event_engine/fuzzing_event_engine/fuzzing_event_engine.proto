@@ -17,8 +17,7 @@ syntax = "proto3";
 package fuzzing_event_engine;
 
 message Actions {
-    // Map of tick event (0..??) to the amount to increment the timer by.
-    repeated Delay tick_lengths = 1;
+    reserved 1;
     // Map of task id to the amount to delay execution of the task by.
     repeated Delay run_delay = 2;
     // Order in which to bind port numbers.

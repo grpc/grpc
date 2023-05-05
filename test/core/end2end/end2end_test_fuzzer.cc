@@ -63,6 +63,8 @@ int force_experiments = []() {
 }();
 
 DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
+  grpc_core::g_is_fuzzing_core_e2e_tests = true;
+
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
@@ -100,24 +102,29 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        FuzzingEventEngine::Options options;
-        options.final_tick_length = grpc_core::Duration::Milliseconds(1);
-        return std::make_unique<FuzzingEventEngine>(options, actions);
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  fprintf(stderr, "%s/%s/%s\n", msg.suite().c_str(), msg.test().c_str(),
-          msg.config().c_str());
+  fprintf(stderr, "*** RUNNING %s/%s/%s ***\n", msg.suite().c_str(),
+          msg.test().c_str(), msg.config().c_str());
 
   auto test = config_it->second();
   test->SetCrashOnStepFailure();
-  test->SetCqVerifierStepFn([engine = std::move(engine)]() {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    engine->Tick();
-    grpc_timer_manager_tick();
-  });
+  test->SetQuiesceEventEngine(
+      [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
+        static_cast<FuzzingEventEngine*>(ee.get())->TickUntilIdle();
+      });
+  test->SetCqVerifierStepFn(
+      [engine = std::move(engine)](
+          grpc_event_engine::experimental::EventEngine::Duration max_step) {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        engine->Tick(max_step);
+        grpc_timer_manager_tick();
+      });
   test->SetPostGrpcInitFunc([]() {
     grpc_timer_manager_set_threading(false);
     grpc_core::ExecCtx exec_ctx;

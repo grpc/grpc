@@ -34,9 +34,10 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_core {
+
+bool g_is_fuzzing_core_e2e_tests = false;
 
 Slice RandomSlice(size_t length) {
   size_t i;
@@ -103,7 +104,7 @@ void CoreEnd2endTest::TearDown() {
   // Creating an EventEngine requires gRPC initialization, which the NoOp test
   // does not do. Skip the EventEngine check if unnecessary.
   if (grpc_is_initialized()) {
-    grpc_event_engine::experimental::WaitForSingleOwner(
+    quiesce_event_engine_(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 #endif

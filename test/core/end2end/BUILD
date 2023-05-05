@@ -277,17 +277,19 @@ END2END_TEST_SRCS = [
     "tests/write_buffering_at_end.cc",
 ]
 
+END2END_TEST_DATA = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ]
+
 grpc_cc_test(
     name = "core_end2end_tests",
     timeout = "long",
     srcs = [
         "end2end_test_main.cc",
     ] + END2END_TEST_SRCS,
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
+    data = END2END_TEST_DATA,
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",
@@ -658,6 +660,8 @@ grpc_proto_fuzzer(
     ],
     uses_event_engine = False,
     uses_polling = False,
+    shard_count = 50,
+    data = END2END_TEST_DATA,
     deps = [
         "cq_verifier",
         "end2end_test_fuzzer_proto",

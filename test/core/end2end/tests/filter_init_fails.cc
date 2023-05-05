@@ -139,6 +139,8 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
+  SKIP_IF_FUZZING();
+
   RegisterFilter(GRPC_SERVER_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -177,6 +179,8 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
+  SKIP_IF_FUZZING();
+
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

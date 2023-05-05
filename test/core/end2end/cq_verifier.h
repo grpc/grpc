@@ -78,7 +78,9 @@ class CqVerifier {
   explicit CqVerifier(
       grpc_completion_queue* cq,
       absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
-      absl::AnyInvocable<void() const> step_fn = nullptr);
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -123,7 +125,9 @@ class CqVerifier {
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
   absl::AnyInvocable<void(Failure) const> fail_;
-  absl::AnyInvocable<void() const> step_fn_;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_;
 };
 
 }  // namespace grpc_core

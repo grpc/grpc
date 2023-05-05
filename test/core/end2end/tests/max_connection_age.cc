@@ -111,6 +111,8 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
 
 CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_FUZZING();
+
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)

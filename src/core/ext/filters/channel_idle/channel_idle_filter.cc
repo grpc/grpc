@@ -99,6 +99,7 @@ struct MaxAgeFilter::Config {
   // would not create connection storms by itself, but if there happened to be a
   // connection storm it could cause it to repeat at a fixed period.
   static Config FromChannelArgs(const ChannelArgs& args) {
+    fprintf(stderr, "args: %s\n", args.ToString().c_str());
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
             .value_or(kDefaultMaxConnectionAge);
@@ -166,12 +167,15 @@ void MaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
+    fprintf(stderr, "max connection age: %s\n",
+            max_connection_age_.ToString().c_str());
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
             Sleep(Timestamp::Now() + max_connection_age_),
             // Then send a goaway.
             [this] {
+              fprintf(stderr, "Sending goaway\n");
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
                                      "max_age send_goaway");
               // Jump out of the activity to send the goaway.

@@ -63,9 +63,7 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 }  // namespace
 
 FuzzingEventEngine::FuzzingEventEngine(
-    Options options, const fuzzing_event_engine::Actions& actions)
-    : final_tick_length_(options.final_tick_length) {
-  tick_increments_.clear();
+    Options options, const fuzzing_event_engine::Actions& actions) {
   task_delays_.clear();
   tasks_by_id_.clear();
   tasks_by_time_.clear();
@@ -116,9 +114,6 @@ FuzzingEventEngine::FuzzingEventEngine(
     }
   };
 
-  for (const auto& delay : actions.tick_lengths()) {
-    update_delay(&tick_increments_, delay, std::chrono::hours(24));
-  }
   for (const auto& delay : actions.run_delay()) {
     update_delay(&task_delays_, delay, std::chrono::seconds(30));
   }
@@ -131,10 +126,7 @@ FuzzingEventEngine::FuzzingEventEngine(
                                +[](int) {}});
 }
 
-void FuzzingEventEngine::FuzzingDone() {
-  grpc_core::MutexLock lock(&*mu_);
-  tick_increments_.clear();
-}
+void FuzzingEventEngine::FuzzingDone() {}
 
 gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   // TODO(ctiller): add a facility to track realtime and monotonic clocks
@@ -145,20 +137,29 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   return {secs.count(), static_cast<int32_t>((d - secs).count()), clock_type};
 }
 
-void FuzzingEventEngine::Tick() {
+void FuzzingEventEngine::Tick(Duration max_time) {
   std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&*mu_);
-    // Increment time
-    auto tick_it = tick_increments_.find(current_tick_);
-    if (tick_it != tick_increments_.end()) {
-      now_ += tick_it->second;
-      GPR_ASSERT(now_.time_since_epoch().count() >= 0);
-      tick_increments_.erase(tick_it);
-    } else if (tick_increments_.empty()) {
-      now_ += final_tick_length_;
-      GPR_ASSERT(now_.time_since_epoch().count() >= 0);
+    Duration incr = max_time;
+    // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
+    // timers are gone)
+    if (!tasks_by_time_.empty()) {
+      incr = std::min(incr, tasks_by_time_.begin()->first - now_);
     }
+    if (incr < exponential_gate_time_increment_) {
+      exponential_gate_time_increment_ = std::chrono::milliseconds(1);
+    } else {
+      incr = std::min(incr, exponential_gate_time_increment_);
+      exponential_gate_time_increment_ +=
+          exponential_gate_time_increment_ / 1000;
+    }
+    incr = std::max(incr, std::chrono::duration_cast<Duration>(
+                              std::chrono::milliseconds(1)));
+    fprintf(stderr, "@%ld STEP: %ld\n", now_.time_since_epoch().count(),
+            incr.count());
+    now_ += incr;
+    GPR_ASSERT(now_.time_since_epoch().count() >= 0);
     ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {

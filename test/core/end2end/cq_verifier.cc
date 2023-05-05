@@ -198,9 +198,11 @@ std::string TagStr(void* tag) {
 
 namespace grpc_core {
 
-CqVerifier::CqVerifier(grpc_completion_queue* cq,
-                       absl::AnyInvocable<void(Failure) const> fail,
-                       absl::AnyInvocable<void() const> step_fn)
+CqVerifier::CqVerifier(
+    grpc_completion_queue* cq, absl::AnyInvocable<void(Failure) const> fail,
+    absl::AnyInvocable<
+        void(grpc_event_engine::experimental::EventEngine::Duration) const>
+        step_fn)
     : cq_(cq), fail_(std::move(fail)), step_fn_(std::move(step_fn)) {}
 
 CqVerifier::~CqVerifier() { Verify(); }
@@ -278,14 +280,20 @@ bool IsMaybe(const CqVerifier::ExpectedResult& r) {
 
 grpc_event CqVerifier::Step(gpr_timespec deadline) {
   if (step_fn_ != nullptr) {
-    do {
+    while (true) {
       grpc_event r = grpc_completion_queue_next(
           cq_, gpr_inf_past(deadline.clock_type), nullptr);
+      fprintf(stderr, "%s\n", grpc_event_string(&r).c_str());
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
-      step_fn_();
-    } while (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+      auto now = gpr_now(deadline.clock_type);
+      fprintf(stderr, "%d.%09d :: %d.%09d\n", (int)now.tv_sec, now.tv_nsec,
+              (int)deadline.tv_sec, deadline.tv_nsec);
+      if (gpr_time_cmp(deadline, now) < 0) break;
+      step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
+    }
     return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
   }
+  fprintf(stderr, "NOSTEPFN\n");
   return grpc_completion_queue_next(cq_, deadline, nullptr);
 }
 

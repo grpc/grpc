@@ -561,7 +561,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalAbstractUdsPercentEncoded",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -726,7 +726,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
             }},
         CoreTestConfiguration{
-            "Chttp2SocketPair", FEATURE_MASK_IS_HTTP2, nullptr,
+            "Chttp2SocketPair",
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ, nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SockpairFixture>(ChannelArgs());
             }},

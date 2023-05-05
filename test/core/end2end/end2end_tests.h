@@ -58,6 +58,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/test_config.h"
 
 // Test feature flags.
@@ -86,73 +87,11 @@ namespace grpc_core {
 class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() = default;
-  /*
-  virtual ~CoreTestFixture() {
-    ShutdownServer();
-    ShutdownClient();
-    grpc_completion_queue_shutdown(cq());
-    DrainCq();
-    grpc_completion_queue_destroy(cq());
-  }
-
-  grpc_completion_queue* cq() { return cq_; }
-  grpc_server* server() { return server_; }
-  grpc_channel* client() { return client_; }
-
-  void InitServer(const ChannelArgs& args) {
-    if (server_ != nullptr) ShutdownServer();
-    server_ = MakeServer(args);
-    GPR_ASSERT(server_ != nullptr);
-  }
-  void InitClient(const ChannelArgs& args) {
-    if (client_ != nullptr) ShutdownClient();
-    client_ = MakeClient(args);
-    GPR_ASSERT(client_ != nullptr);
-  }
-
-  void ShutdownServer() {
-    if (server_ == nullptr) return;
-    grpc_server_shutdown_and_notify(server_, cq_, server_);
-    grpc_event ev;
-    do {
-      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
-                                      nullptr);
-    } while (ev.type != GRPC_OP_COMPLETE || ev.tag != server_);
-    DestroyServer();
-  }
-
-  void DestroyServer() {
-    if (server_ == nullptr) return;
-    grpc_server_destroy(server_);
-    server_ = nullptr;
-  }
-
-  void ShutdownClient() {
-    if (client_ == nullptr) return;
-    grpc_channel_destroy(client_);
-    client_ = nullptr;
-  }
-*/
 
   virtual grpc_server* MakeServer(const ChannelArgs& args,
                                   grpc_completion_queue* cq) = 0;
   virtual grpc_channel* MakeClient(const ChannelArgs& args,
                                    grpc_completion_queue* cq) = 0;
-
-  /*
- protected:
-  void SetServer(grpc_server* server);
-  void SetClient(grpc_channel* client);
-
- private:
-  void DrainCq() {
-
-  }
-
-  grpc_completion_queue* cq_ = grpc_completion_queue_create_for_next(nullptr);
-  grpc_server* server_ = nullptr;
-  grpc_channel* client_ = nullptr;
-*/
 };
 
 Slice RandomSlice(size_t length);
@@ -214,10 +153,19 @@ class CoreEnd2endTest : public ::testing::Test {
   void TearDown() override;
   virtual void RunTest() = 0;
 
-  void SetCqVerifierStepFn(absl::AnyInvocable<void() const> step_fn) {
+  void SetCqVerifierStepFn(
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn) {
     step_fn_ = std::move(step_fn);
   }
   void SetCrashOnStepFailure() { crash_on_step_failure_ = true; }
+  void SetQuiesceEventEngine(
+      absl::AnyInvocable<
+          void(std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
+          quiesce_event_engine) {
+    quiesce_event_engine_ = std::move(quiesce_event_engine);
+  }
 
   class Call;
   struct RegisteredCall {
@@ -613,6 +561,9 @@ class CoreEnd2endTest : public ::testing::Test {
   // no events occur.
   void Step(absl::optional<Duration> timeout = absl::nullopt,
             SourceLocation whence = {}) {
+    fprintf(stderr, "step test %s nexp=%d\n",
+            timeout.has_value() ? timeout->ToString().c_str() : "null",
+            (int)expectations_);
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;
@@ -756,7 +707,13 @@ class CoreEnd2endTest : public ::testing::Test {
   bool initialized_ = false;
   bool crash_on_step_failure_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
-  absl::AnyInvocable<void() const> step_fn_ = nullptr;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_ = nullptr;
+  absl::AnyInvocable<void(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
+      quiesce_event_engine_ =
+          grpc_event_engine::experimental::WaitForSingleOwner;
 };
 
 // Define names for additional test suites.
@@ -842,12 +799,17 @@ class CoreEnd2endTestRegistry {
       tests_by_suite_;
 };
 
+extern bool g_is_fuzzing_core_e2e_tests;
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
 #define SKIP_IF_MINSTACK()                                 \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
+
+#define SKIP_IF_FUZZING() \
+  if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
 
 #define CORE_END2END_TEST(suite, name)                                       \
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
