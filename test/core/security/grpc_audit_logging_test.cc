@@ -26,10 +26,12 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -71,7 +73,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   }
 };
 
-class AuditLoggingTest : public ::testing::Test {
+class AuditLoggerRegistryTest : public ::testing::Test {
  protected:
   void SetUp() override {
     RegisterAuditLoggerFactory(std::make_unique<TestAuditLoggerFactory>());
@@ -81,14 +83,18 @@ class AuditLoggingTest : public ::testing::Test {
 
 }  // namespace
 
-TEST_F(AuditLoggingTest, SuccessfulLoggerCreation) {
+//
+// AuditLoggerRegistryTest
+//
+
+TEST_F(AuditLoggerRegistryTest, SuccessfulLoggerCreation) {
   auto result = AuditLoggerRegistry::ParseConfig(kName, Json());
   ASSERT_TRUE(result.ok());
   ASSERT_NE(AuditLoggerRegistry::CreateAuditLogger(std::move(result.value())),
             nullptr);
 }
 
-TEST_F(AuditLoggingTest, UnknownLogger) {
+TEST_F(AuditLoggerRegistryTest, UnknownLogger) {
   auto result = AuditLoggerRegistry::ParseConfig("unknown_logger", Json());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kNotFound);
   EXPECT_EQ(result.status().message(),
@@ -96,9 +102,61 @@ TEST_F(AuditLoggingTest, UnknownLogger) {
       << result.status();
 }
 
-TEST_F(AuditLoggingTest, AuditLoggerFactoryExistenceChecks) {
+TEST_F(AuditLoggerRegistryTest, LoggerFactoryExistenceChecks) {
   EXPECT_TRUE(AuditLoggerRegistry::FactoryExists(kName));
   EXPECT_FALSE(AuditLoggerRegistry::FactoryExists("unknown_logger"));
+}
+
+//
+//  StdoutLoggerTest
+//
+
+TEST(StdoutLoggerTest, LoggerFactoryExistenceChecks) {
+  EXPECT_TRUE(AuditLoggerRegistry::FactoryExists("stdout_logger"));
+}
+
+TEST(StdoutLoggerTest, BadLoggerConfig) {
+  auto result =
+      AuditLoggerRegistry::ParseConfig("stdout_logger", Json::FromBool(false));
+  ASSERT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  ASSERT_EQ(result.status().message(), "config is not a json object")
+      << result.status();
+}
+
+TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
+  auto result =
+      AuditLoggerRegistry::ParseConfig("stdout_logger", Json::FromObject({}));
+  ASSERT_TRUE(result.ok());
+  auto logger =
+      AuditLoggerRegistry::CreateAuditLogger(std::move(result.value()));
+  AuditContext context("method", "spiffe", "policy", "rule", true);
+  ::testing::internal::CaptureStdout();
+  logger->Log(context);
+  auto output = ::testing::internal::GetCapturedStdout();
+  std::cout << output << '\n';
+  auto log_or = JsonParse(output);
+  ASSERT_TRUE(log_or.ok());
+  ASSERT_EQ(log_or.value().type(), Json::Type::kObject);
+  auto it = log_or.value().object().find("grpc_audit_log");
+  ASSERT_NE(it, log_or.value().object().end());
+  ASSERT_EQ(it->second.type(), Json::Type::kObject);
+  auto object = it->second.object();
+  ASSERT_NE(object.find("timestamp"), object.end());
+  EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kNumber);
+  // Check the value of everything except time stamp.
+  std::map<std::string, std::string> fields = {{"rpc_method", "method"},
+                                               {"principal", "spiffe"},
+                                               {"policy_name", "policy"},
+                                               {"matched_rule", "rule"}};
+  for (const auto& p : fields) {
+    auto it = object.find(p.first);
+    ASSERT_NE(it, object.end());
+    ASSERT_EQ(it->second.type(), Json::Type::kString);
+    EXPECT_EQ(it->second.string(), p.second);
+  }
+  ASSERT_NE(object.find("authorized"), object.end());
+  ASSERT_EQ(object.find("authorized")->second.type(), Json::Type::kBoolean);
+  EXPECT_EQ(object.find("authorized")->second.boolean(), true);
 }
 
 }  // namespace testing

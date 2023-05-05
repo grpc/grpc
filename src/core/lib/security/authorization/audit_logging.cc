@@ -35,6 +35,7 @@
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/authorization/stdout_logger.h"
 
 namespace grpc_core {
 namespace experimental {
@@ -42,6 +43,12 @@ namespace experimental {
 Mutex* AuditLoggerRegistry::mu = new Mutex();
 
 AuditLoggerRegistry* AuditLoggerRegistry::registry = new AuditLoggerRegistry();
+
+AuditLoggerRegistry::AuditLoggerRegistry() {
+  auto factory = std::make_unique<StdoutAuditLoggerFactory>();
+  absl::string_view name = factory->name();
+  GPR_ASSERT(logger_factories_map_.emplace(name, std::move(factory)).second);
+}
 
 void AuditLoggerRegistry::RegisterFactory(
     std::unique_ptr<AuditLoggerFactory> factory) {
