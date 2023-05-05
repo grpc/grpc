@@ -15,7 +15,6 @@
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
 #include <memory>
-#include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
