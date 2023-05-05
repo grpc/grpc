@@ -414,13 +414,13 @@ void LocalityStatsPopulate(
   }
   // Set total counts.
   envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_successful_requests(
-      output, snapshot.total_successful_requests);
+      output, snapshot.total_successful_requests * 100);
   envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_requests_in_progress(
-      output, snapshot.total_requests_in_progress);
+      output, snapshot.total_requests_in_progress * 100);
   envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_error_requests(
-      output, snapshot.total_error_requests);
+      output, snapshot.total_error_requests * 100);
   envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_issued_requests(
-      output, snapshot.total_issued_requests);
+      output, snapshot.total_issued_requests * 100);
   // Add backend metrics.
   for (const auto& p : snapshot.backend_metrics) {
     const std::string& metric_name = p.first;
@@ -431,9 +431,9 @@ void LocalityStatsPopulate(
     envoy_config_endpoint_v3_EndpointLoadMetricStats_set_metric_name(
         load_metric, StdStringToUpbString(metric_name));
     envoy_config_endpoint_v3_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
-        load_metric, metric_value.num_requests_finished_with_metric);
+        load_metric, metric_value.num_requests_finished_with_metric * 100);
     envoy_config_endpoint_v3_EndpointLoadMetricStats_set_total_metric_value(
-        load_metric, metric_value.total_metric_value);
+        load_metric, metric_value.total_metric_value * 100);
   }
 }
 
