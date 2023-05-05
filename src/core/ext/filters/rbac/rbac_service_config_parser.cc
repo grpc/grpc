@@ -20,20 +20,27 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc_audit_logging.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 
 namespace grpc_core {
 
 namespace {
+
+using experimental::AuditLoggerRegistry;
+using LoggerConfig = experimental::AuditLoggerFactory::Config;
 
 // RbacConfig: one or more RbacPolicy structs
 struct RbacConfig {
@@ -179,8 +186,21 @@ struct RbacConfig {
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
       };
 
+      // AuditLogger: the name of logger and its config in json
+      struct AuditLogger {
+        std::string name;
+        Json::Object config;
+
+        static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+        void JsonPostLoad(const Json&, const JsonArgs&,
+                          ValidationErrors* errors);
+      };
+
       int action;
       std::map<std::string, Policy> policies;
+      // Defaults to 0 since its json field is optional.
+      int audit_condition = 0;
+      std::vector<AuditLogger> audit_loggers;
 
       Rules() = default;
       Rules(const Rules&) = delete;
@@ -188,7 +208,7 @@ struct RbacConfig {
       Rules(Rules&&) = default;
       Rules& operator=(Rules&&) = default;
 
-      Rbac TakeAsRbac();
+      Rbac TakeAsRbac(std::string name);
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
       void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
     };
@@ -717,27 +737,63 @@ const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::Policy::JsonLoader(
 }
 
 //
+// RbacConfig::RbacPolicy::Rules::AuditLogger
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::AuditLogger::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<AuditLogger>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::AuditLogger::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  // Should have exactly one field as the logger name.
+  if (json.object().size() != 1) {
+    errors->AddError("audit logger should have exactly one field");
+  }
+  name = json.object().begin()->first;
+  auto config_or =
+      LoadJsonObjectField<Json::Object>(json.object(), args, name, errors);
+  if (config_or.has_value()) {
+    config = std::move(config_or.value());
+  }
+}
+
+//
 // RbacConfig::RbacPolicy::Rules
 //
 
-Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac() {
+Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac(std::string name) {
   Rbac rbac;
-  // TODO(lwge): This is to fix msan failure for now. Add proper conversion once
-  // audit logging support is added.
-  rbac.audit_condition = Rbac::AuditCondition::kNone;
+  rbac.name = std::move(name);
   rbac.action = static_cast<Rbac::Action>(action);
+  rbac.audit_condition = static_cast<Rbac::AuditCondition>(audit_condition);
   for (auto& p : policies) {
     rbac.policies.emplace(p.first, p.second.TakeAsRbacPolicy());
+  }
+  for (auto& logger : audit_loggers) {
+    auto config_or = AuditLoggerRegistry::ParseConfig(
+        logger.name, Json::FromObject(std::move(logger.config)));
+    // The config should have been validated when the service config is
+    // generated.
+    GPR_ASSERT(config_or.ok());
+    rbac.logger_configs.push_back(std::move(config_or.value()));
   }
   return rbac;
 }
 
 const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::JsonLoader(
     const JsonArgs&) {
-  static const auto* loader = JsonObjectLoader<Rules>()
-                                  .Field("action", &Rules::action)
-                                  .OptionalField("policies", &Rules::policies)
-                                  .Finish();
+  // Audit logger configs handled in post load.
+  static const auto* loader =
+      JsonObjectLoader<Rules>()
+          .Field("action", &Rules::action)
+          .OptionalField("policies", &Rules::policies)
+          .OptionalField("audit_condition", &Rules::audit_condition)
+          .OptionalField("audit_loggers", &Rules::audit_loggers)
+          .Finish();
   return loader;
 }
 
@@ -749,6 +805,15 @@ void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json&, const JsonArgs&,
       rbac_action != Rbac::Action::kDeny) {
     ValidationErrors::ScopedField field(errors, ".action");
     errors->AddError("unknown action");
+  }
+  auto rbac_audit_condition =
+      static_cast<Rbac::AuditCondition>(audit_condition);
+  if (rbac_audit_condition != Rbac::AuditCondition::kNone &&
+      rbac_audit_condition != Rbac::AuditCondition::kOnAllow &&
+      rbac_audit_condition != Rbac::AuditCondition::kOnDeny &&
+      rbac_audit_condition != Rbac::AuditCondition::kOnDenyAndAllow) {
+    ValidationErrors::ScopedField field(errors, ".audit_condition");
+    errors->AddError("unknown audit condition");
   }
 }
 
@@ -762,8 +827,7 @@ Rbac RbacConfig::RbacPolicy::TakeAsRbac() {
     // is equivalent to no enforcing.
     return Rbac(std::move(name), Rbac::Action::kDeny, {});
   }
-  // TODO(lwge): This also needs to take the name.
-  return rules->TakeAsRbac();
+  return rules->TakeAsRbac(std::move(name));
 }
 
 const JsonLoaderInterface* RbacConfig::RbacPolicy::JsonLoader(const JsonArgs&) {
