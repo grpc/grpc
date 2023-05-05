@@ -19,7 +19,6 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
