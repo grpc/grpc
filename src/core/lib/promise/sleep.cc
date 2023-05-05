@@ -42,8 +42,6 @@ Poll<absl::Status> Sleep::operator()() {
   // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
   ExecCtx::Get()->InvalidateNow();
   const auto now = Timestamp::Now();
-  fprintf(stderr, "SLEEP: now=%s deadline=%s\n", now.ToString().c_str(),
-          deadline_.ToString().c_str());
   // If the deadline is earlier than now we can just return.
   if (deadline_ <= now) return absl::OkStatus();
   if (closure_ == nullptr) {

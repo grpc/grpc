@@ -19,6 +19,8 @@
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include "exec_ctx.h"
+
 #include <grpc/event_engine/event_engine.h>
 #endif
 
@@ -178,9 +180,6 @@ static grpc_error_handle CreateEventEngineListener(
         std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
             s->memory_quota));
   } else {
-    auto on_shutdown_complete_cb =
-        grpc_event_engine::experimental::GrpcClosureToStatusCallback(
-            shutdown_complete);
     EventEngine::Listener::AcceptCallback accept_cb =
         [s](std::unique_ptr<EventEngine::Endpoint> ep,
             MemoryAllocator memory_allocator) {
@@ -189,12 +188,18 @@ static grpc_error_handle CreateEventEngineListener(
                               grpc_event_engine_endpoint_create(std::move(ep)),
                           nullptr, nullptr);
         };
-    listener = grpc_event_engine::experimental::GetDefaultEventEngine()
-                   ->CreateListener(
-                       std::move(accept_cb), std::move(on_shutdown_complete_cb),
-                       config,
-                       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
-                           s->memory_quota));
+    auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+    listener = ee->CreateListener(
+        std::move(accept_cb),
+        [s, ee, shutdown_complete](absl::Status status) {
+          grpc_event_engine::experimental::RunEventEngineClosure(
+              shutdown_complete, absl_status_to_grpc_error(status));
+          delete s->fd_handler;
+          delete s;
+        },
+        config,
+        std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
+            s->memory_quota));
   }
   if (!listener.ok()) {
     delete s;
@@ -269,8 +274,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  if (grpc_event_engine::experimental::UseEventEngineListener() &&
-      grpc_event_engine::experimental::EventEngineSupportsFd()) {
+  if (grpc_event_engine::experimental::UseEventEngineListener()) {
     // This will trigger asynchronous execution of the on_shutdown_complete
     // callback when appropriate. That callback will delete the server
     s->ee_listener.reset();

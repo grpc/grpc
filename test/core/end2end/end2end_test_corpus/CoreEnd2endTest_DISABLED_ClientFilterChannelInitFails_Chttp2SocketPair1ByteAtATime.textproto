@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "DISABLED_ClientFilterChannelInitFails"
-config: "Chttp2SocketPair1ByteAtATime"

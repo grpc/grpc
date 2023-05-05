@@ -156,8 +156,6 @@ void FuzzingEventEngine::Tick(Duration max_time) {
     }
     incr = std::max(incr, std::chrono::duration_cast<Duration>(
                               std::chrono::milliseconds(1)));
-    fprintf(stderr, "@%ld STEP: %ld\n", now_.time_since_epoch().count(),
-            incr.count());
     now_ += incr;
     GPR_ASSERT(now_.time_since_epoch().count() >= 0);
     ++current_tick_;

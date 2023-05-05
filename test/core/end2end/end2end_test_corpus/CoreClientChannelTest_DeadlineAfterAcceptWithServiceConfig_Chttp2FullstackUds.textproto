@@ -1,3 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "DeadlineAfterAcceptWithServiceConfig"
-config: "Chttp2FullstackUds"

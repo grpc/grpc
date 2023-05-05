@@ -19,6 +19,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
+#include "end2end_tests.h"
 #include "gtest/gtest.h"
 
 #include "test/core/end2end/end2end_tests.h"
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   const auto all_tests = grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   for (const auto& test : all_tests) {
+    if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
     auto text =
         absl::StrCat("suite: \"", test.suite, "\"\n", "test: \"", test.name,
                      "\"\n", "config: \"", test.config->name, "\"\n");

@@ -310,6 +310,7 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
                                            absl::string_view name,
                                            MakeTestFn make_test,
                                            SourceLocation) {
+  if (absl::StartsWith(name, "DISABLED_")) return;
   auto& tests = tests_by_suite_[suite];
   GPR_ASSERT(tests.count(name) == 0);
   tests[name] = std::move(make_test);

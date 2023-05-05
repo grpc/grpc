@@ -578,7 +578,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
                               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                   FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                  FEATURE_MASK_IS_HTTP2,
+                                  FEATURE_MASK_IS_HTTP2 |
+                                  FEATURE_MASK_DO_NOT_FUZZ,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
@@ -589,7 +590,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{"Chttp2FullstackLocalIpv6",
                               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                   FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                  FEATURE_MASK_IS_HTTP2,
+                                  FEATURE_MASK_IS_HTTP2 |
+                                  FEATURE_MASK_DO_NOT_FUZZ,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
@@ -733,7 +735,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
         CoreTestConfiguration{
             "Chttp2SocketPair1ByteAtATime",
-            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME, nullptr,
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME |
+                FEATURE_MASK_DO_NOT_FUZZ,
+            nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SockpairFixture>(
                   ChannelArgs()
@@ -743,7 +747,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
         CoreTestConfiguration{
             "Chttp2SocketPairMinstack",
-            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_MINSTACK, nullptr,
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_MINSTACK |
+                FEATURE_MASK_DO_NOT_FUZZ,
+            nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SockpairWithMinstackFixture>(
                   ChannelArgs());
@@ -780,7 +786,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: certificate watcher provider + async external verifier
             // extra: TLS 1.3
             "Chttp2CertWatcherProviderAsyncVerifierTls13",
-            kH2TLSFeatureMask,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
@@ -794,7 +800,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: certificate watcher provider + sync external verifier
             // extra: TLS 1.2
             "Chttp2CertWatcherProviderSyncVerifierTls12",
-            kH2TLSFeatureMask,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
@@ -887,7 +893,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
 #ifdef GRPC_POSIX_WAKEUP_FD
         CoreTestConfiguration{
             "Chttp2FullstackWithPipeWakeup",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {

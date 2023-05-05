@@ -561,9 +561,6 @@ class CoreEnd2endTest : public ::testing::Test {
   // no events occur.
   void Step(absl::optional<Duration> timeout = absl::nullopt,
             SourceLocation whence = {}) {
-    fprintf(stderr, "step test %s nexp=%d\n",
-            timeout.has_value() ? timeout->ToString().c_str() : "null",
-            (int)expectations_);
     if (expectations_ == 0) {
       cq_verifier().VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;

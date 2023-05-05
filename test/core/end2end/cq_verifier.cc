@@ -282,17 +282,13 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
     while (true) {
       grpc_event r = grpc_completion_queue_next(
           cq_, gpr_inf_past(deadline.clock_type), nullptr);
-      fprintf(stderr, "%s\n", grpc_event_string(&r).c_str());
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
       auto now = gpr_now(deadline.clock_type);
-      fprintf(stderr, "%d.%09d :: %d.%09d\n", (int)now.tv_sec, now.tv_nsec,
-              (int)deadline.tv_sec, deadline.tv_nsec);
       if (gpr_time_cmp(deadline, now) < 0) break;
       step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
     }
     return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
   }
-  fprintf(stderr, "NOSTEPFN\n");
   return grpc_completion_queue_next(cq_, deadline, nullptr);
 }
 

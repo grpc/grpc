@@ -1,3 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "DISABLED_SubchannelFilterChannelInitFails"
-config: "Chttp2HttpProxy"
