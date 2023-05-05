@@ -2083,32 +2083,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cf_event_engine",
-    srcs = [
-        "lib/event_engine/cf_engine/cf_engine.cc",
-        "lib/event_engine/cf_engine/cfstream_endpoint.cc",
-    ],
-    hdrs = [
-        "lib/event_engine/cf_engine/cf_engine.h",
-        "lib/event_engine/cf_engine/cfstream_endpoint.h",
-        "lib/event_engine/cf_engine/cftype_unique_ref.h",
-    ],
-    external_deps = ["absl/strings:str_format"],
+    srcs = ["lib/event_engine/cf_engine/cf_engine.cc"],
+    hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
     deps = [
         "event_engine_common",
-        "event_engine_tcp_socket_utils",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
-        "posix_event_engine_closure",
-        "posix_event_engine_event_poller",
-        "posix_event_engine_lockfree_event",
         "posix_event_engine_timer_manager",
-        "ref_counted",
-        "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:ref_counted_ptr",
-        "//:sockaddr_utils",
     ],
 )
 
@@ -2181,21 +2165,6 @@ grpc_cc_library(
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
         "//:windows_other": ["windows_event_engine"],
-        "//:mac": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:mac_x86_64": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:mac_arm64": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:ios": ["cf_event_engine"],
-        "//:tvos": ["cf_event_engine"],
-        "//:watchos": ["cf_event_engine"],
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [

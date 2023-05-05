@@ -19,8 +19,6 @@
 
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
-#include "test/core/event_engine/test_suite/tests/client_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
 #include "test/core/util/test_config.h"
 
@@ -30,15 +28,8 @@ int main(int argc, char** argv) {
   auto factory = []() {
     return std::make_unique<grpc_event_engine::experimental::CFEventEngine>();
   };
-  auto oracle_factory = []() {
-    return std::make_unique<
-        grpc_event_engine::experimental::PosixOracleEventEngine>();
-  };
-  SetEventEngineFactories(factory, oracle_factory);
+  SetEventEngineFactories(factory, factory);
   grpc_event_engine::experimental::InitTimerTests();
-  grpc_event_engine::experimental::InitClientTests();
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
