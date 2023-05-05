@@ -336,9 +336,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
-  // subchannel_list_.
-  if (subchannel_list_.get() == nullptr) {
-    subchannel_list_ = std::move(latest_pending_subchannel_list_);
+  // child_list_.
+  if (child_list_.get() == nullptr) {
+    child_list_ = std::move(latest_pending_child_list_);
   }
   return absl::OkStatus();
 }
