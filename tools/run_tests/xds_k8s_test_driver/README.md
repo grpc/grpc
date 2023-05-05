@@ -168,6 +168,9 @@ END
 # Unless you're using GCP VM with preconfigured Application Default Credentials, acquire them for your user
 gcloud auth application-default login
 
+# install authentication plugin for kubectl
+gcloud components install gke-gcloud-auth-plugin
+
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}"
 
