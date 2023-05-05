@@ -17,13 +17,13 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "end2end_tests.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>

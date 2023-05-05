@@ -285,8 +285,8 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
       fprintf(stderr, "%s\n", grpc_event_string(&r).c_str());
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
       auto now = gpr_now(deadline.clock_type);
-      fprintf(stderr, "%d.%09d :: %d.%09d\n", (int)now.tv_sec, now.tv_nsec,
-              (int)deadline.tv_sec, deadline.tv_nsec);
+      fprintf(stderr, "%d.%09d :: %d.%09d\n", static_cast<int>(now.tv_sec),
+              now.tv_nsec, static_cast<int>(deadline.tv_sec), deadline.tv_nsec);
       if (gpr_time_cmp(deadline, now) < 0) break;
       step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
     }

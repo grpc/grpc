@@ -14,6 +14,7 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
