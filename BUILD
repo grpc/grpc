@@ -1224,6 +1224,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "legacy_context",
     ],
 )
 
@@ -1375,7 +1376,6 @@ grpc_cc_library(
         "//src/core:lib/channel/channelz.h",
         "//src/core:lib/channel/channelz_registry.h",
         "//src/core:lib/channel/connected_channel.h",
-        "//src/core:lib/channel/context.h",
         "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
@@ -1500,6 +1500,7 @@ grpc_cc_library(
         "iomgr_buffer_list",
         "iomgr_internal_errqueue",
         "iomgr_timer",
+        "legacy_context",
         "orphanable",
         "parse_address",
         "promise",
@@ -1586,6 +1587,19 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+    ],
+)
+
+grpc_cc_library(
+    name = "legacy_context",
+    hdrs = [
+        "//src/core:lib/channel/context.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "//src/core:context",
     ],
 )
 
@@ -1756,6 +1770,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "handshaker",
+        "legacy_context",
         "promise",
         "ref_counted_ptr",
         "stats",
@@ -1915,6 +1930,7 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
+        "legacy_context",
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
@@ -1986,6 +2002,7 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
+        "legacy_context",
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
@@ -2301,6 +2318,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
+        "legacy_context",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2971,6 +2989,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "legacy_context",
         "orphanable",
         "parse_address",
         "protobuf_duration_upb",
@@ -3475,6 +3494,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "legacy_context",
         "promise",
         "//src/core:activity",
         "//src/core:arena",
@@ -3847,6 +3867,7 @@ grpc_cc_library(
         "http_trace",
         "httpcli",
         "iomgr_buffer_list",
+        "legacy_context",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
