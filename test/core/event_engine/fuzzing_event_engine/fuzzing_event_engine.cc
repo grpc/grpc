@@ -56,6 +56,7 @@ EventEngine::ResolvedAddress PortToAddress(int port) {
 }  // namespace
 
 grpc_core::NoDestruct<grpc_core::Mutex> FuzzingEventEngine::mu_;
+grpc_core::NoDestruct<grpc_core::Mutex> FuzzingEventEngine::now_mu_;
 
 namespace {
 const intptr_t kTaskHandleSalt = 12345;
@@ -142,6 +143,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
   std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&*mu_);
+    grpc_core::MutexLock now_lock(&*now_mu_);
     Duration incr = max_time;
     // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
     // timers are gone)
@@ -186,7 +188,7 @@ void FuzzingEventEngine::TickUntilIdle() {
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(&*now_mu_);
   return now_;
 }
 
@@ -489,6 +491,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   }
   auto task = std::make_shared<Task>(id, std::move(closure));
   tasks_by_id_.emplace(id, task);
+  grpc_core::MutexLock lock(&*now_mu_);
   tasks_by_time_.emplace(now_ + when, std::move(task));
   return TaskHandle{id, kTaskHandleSalt};
 }
@@ -513,7 +516,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
     return gpr_inf_future(clock_type);
   }
   GPR_ASSERT(g_fuzzing_event_engine != nullptr);
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(&*now_mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
 

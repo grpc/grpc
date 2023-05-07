@@ -827,7 +827,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: static data provider + async external verifier
             // extra: TLS 1.3
             "Chttp2StaticProviderAsyncVerifierTls13",
-            kH2TLSFeatureMask,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(

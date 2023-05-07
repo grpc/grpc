@@ -133,4 +133,5 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   test->SetUp();
   test->RunTest();
   test->TearDown();
+  GPR_ASSERT(!::testing::Test::HasFailure());
 }

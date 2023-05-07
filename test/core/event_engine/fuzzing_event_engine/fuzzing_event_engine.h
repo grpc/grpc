@@ -240,17 +240,19 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(now_mu_);
   static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   static grpc_core::NoDestruct<grpc_core::Mutex> mu_;
+  static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
+      ABSL_ACQUIRED_AFTER(mu_);
 
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
-  intptr_t current_tick_ ABSL_GUARDED_BY(mu_);
-  Time now_ ABSL_GUARDED_BY(mu_);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
+  Time now_ ABSL_GUARDED_BY(now_mu_);
   std::map<intptr_t, Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
