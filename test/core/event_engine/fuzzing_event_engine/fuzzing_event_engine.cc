@@ -80,6 +80,7 @@ FuzzingEventEngine::FuzzingEventEngine(
   // Allow the fuzzer to assign ports.
   // Once this list is exhausted, we fall back to a deterministic algorithm.
   for (auto port : actions.assign_ports()) {
+    if (port == 0 || port > 65535) continue;
     free_ports_.push(port);
     fuzzer_mentioned_ports_.insert(port);
   }
