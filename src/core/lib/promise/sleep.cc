@@ -16,9 +16,6 @@
 
 #include "src/core/lib/promise/sleep.h"
 
-#include <stdio.h>
-
-#include <string>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>
