@@ -108,9 +108,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  fprintf(stderr, "*** RUNNING %s/%s/%s ***\n", msg.suite().c_str(),
-          msg.test().c_str(), msg.config().c_str());
-
   auto test = config_it->second();
   test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
