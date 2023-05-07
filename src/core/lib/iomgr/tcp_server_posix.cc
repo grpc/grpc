@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/atm.h>
+
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -190,6 +192,7 @@ static grpc_error_handle CreateEventEngineListener(
     listener = ee->CreateListener(
         std::move(accept_cb),
         [s, ee, shutdown_complete](absl::Status status) {
+          GPR_ASSERT(gpr_atm_no_barrier_load(&s->refs.count) == 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
           delete s->fd_handler;
@@ -802,8 +805,6 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 }
 
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
-      old_listener;
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
@@ -811,8 +812,6 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
       static_cast<grpc_event_engine::experimental::PosixListenerWithFdSupport*>(
           s->ee_listener.get())
           ->ShutdownListeningFds();
-    } else {
-      old_listener = std::move(s->ee_listener);
     }
   }
   /* shutdown all fd's */
