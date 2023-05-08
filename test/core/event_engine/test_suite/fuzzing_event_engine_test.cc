@@ -15,7 +15,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 #include <atomic>
-#include <chrono>
 #include <thread>
 
 #include <gtest/gtest.h>
