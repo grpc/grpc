@@ -60,6 +60,8 @@ const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
+const char* const description_work_stealing =
+    "If set, use a work stealing thread pool implementation in EventEngine";
 }  // namespace
 
 namespace grpc_core {
@@ -85,6 +87,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write, false},
     {"trace_record_callops", description_trace_record_callops, false},
     {"event_engine_dns", description_event_engine_dns, false},
+    {"work_stealing", description_work_stealing, false},
 };
 
 }  // namespace grpc_core

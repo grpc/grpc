@@ -82,7 +82,7 @@ gRPC Metadata
 .. autoclass:: Metadata
 
 
-Shared Context
+RPC Context
 ^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: RpcContext

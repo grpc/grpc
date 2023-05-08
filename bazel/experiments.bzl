@@ -27,9 +27,7 @@ EXPERIMENTS = {
             "event_engine_client",
             "promise_based_client_call",
             "promise_based_server_call",
-        ],
-        "cpp_end2end_test": [
-            "promise_based_server_call",
+            "work_stealing",
         ],
         "endpoint_test": [
             "tcp_frame_size_tuning",
@@ -53,9 +51,6 @@ EXPERIMENTS = {
             "free_large_allocator",
             "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
-        ],
-        "xds_end2end_test": [
-            "promise_based_server_call",
         ],
     },
     "on": {
