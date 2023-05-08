@@ -186,7 +186,7 @@ class GRPC_DLL ExecCtx {
   void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
 
   /// Gets pointer to current exec_ctx.
-  static ExecCtx* Get() { return exec_ctx_; }
+  static ExecCtx* Get() { return exec_ctx(); }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
@@ -201,8 +201,8 @@ class GRPC_DLL ExecCtx {
   static void operator delete(void* /* p */) { abort(); }
 
  private:
-  /// Set exec_ctx_ to exec_ctx.
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
+  /// Set exec_ctx() to ctx.
+  static void Set(ExecCtx* ctx) { exec_ctx() = ctx; }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
@@ -211,7 +211,9 @@ class GRPC_DLL ExecCtx {
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   ScopedTimeCache time_cache_;
-  static thread_local ExecCtx* exec_ctx_;
+
+  // cannot be thread_local data member (e.g. exec_ctx_) on windows
+  static ExecCtx*& exec_ctx();
   ExecCtx* last_exec_ctx_ = Get();
 };
 
@@ -282,7 +284,7 @@ class GRPC_DLL ApplicationCallbackExecCtx {
         }
         (*f->functor_run)(f, f->internal_success);
       }
-      callback_exec_ctx_ = nullptr;
+      callback_exec_ctx() = nullptr;
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
         Fork::DecExecCtxCount();
       }
@@ -294,14 +296,14 @@ class GRPC_DLL ApplicationCallbackExecCtx {
 
   uintptr_t Flags() { return flags_; }
 
-  static ApplicationCallbackExecCtx* Get() { return callback_exec_ctx_; }
+  static ApplicationCallbackExecCtx* Get() { return callback_exec_ctx(); }
 
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
     if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
         Fork::IncExecCtxCount();
       }
-      callback_exec_ctx_ = exec_ctx;
+      callback_exec_ctx() = exec_ctx;
     }
   }
 
@@ -326,7 +328,9 @@ class GRPC_DLL ApplicationCallbackExecCtx {
   uintptr_t flags_{0u};
   grpc_completion_queue_functor* head_{nullptr};
   grpc_completion_queue_functor* tail_{nullptr};
-  static thread_local ApplicationCallbackExecCtx* callback_exec_ctx_;
+
+  // cannot be thread_local data member (e.g. callback_exec_ctx_) on windows
+  static ApplicationCallbackExecCtx*& callback_exec_ctx();
 };
 
 template <typename F>
