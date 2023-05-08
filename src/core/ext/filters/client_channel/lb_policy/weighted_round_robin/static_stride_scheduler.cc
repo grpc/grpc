@@ -32,6 +32,7 @@ namespace grpc_core {
 
 namespace {
 constexpr uint16_t kMaxWeight = std::numeric_limits<uint16_t>::max();
+constexpr uint16_t kMaxRatio = 10;
 }  // namespace
 
 absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
@@ -45,10 +46,10 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
   const size_t n = float_weights.size();
   size_t num_zero_weight_channels = 0;
   double sum = 0;
-  float max = 0;
+  float unscaled_max = 0;
   for (const float weight : float_weights) {
     sum += weight;
-    max = std::max(max, weight);
+    unscaled_max = std::max(unscaled_max, weight);
     if (weight == 0) {
       ++num_zero_weight_channels;
     }
@@ -59,6 +60,13 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
   // Mean of non-zero weights before scaling to `kMaxWeight`.
   const double unscaled_mean =
       sum / static_cast<double>(n - num_zero_weight_channels);
+  const double ratio = unscaled_max / unscaled_mean;
+
+  // Adjust max value such that ratio does not exceed kMaxRatio. This should
+  // ensure that we on average do at most kMaxRatio rounds for picks.
+  if (ratio > kMaxRatio) {
+    unscaled_max = kMaxRatio * unscaled_mean;
+  }
 
   // Scale weights such that the largest is equal to `kMaxWeight`. This should
   // be accurate enough once we convert to an integer. Quantisation errors won't
@@ -66,15 +74,19 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
   // TODO(b/190488683): it may be more stable over updates if we try to keep
   // `scaling_factor` consistent, and only change it when we can't accurately
   // represent the new weights.
-  const double scaling_factor = kMaxWeight / max;
+  const double scaling_factor = kMaxWeight / unscaled_max;
+
+  // Note that since we cap the weights to stay within kMaxRatio, `mean` might
+  // not match the actual mean of the values that end up in the scheduler.
   const uint16_t mean = std::lround(scaling_factor * unscaled_mean);
 
   std::vector<uint16_t> weights;
   weights.reserve(n);
   for (size_t i = 0; i < n; ++i) {
+    const double capped_weight = std::min(float_weights[i], unscaled_max);
     weights.push_back(float_weights[i] == 0
                           ? mean
-                          : std::lround(float_weights[i] * scaling_factor));
+                          : std::lround(capped_weight * scaling_factor));
   }
 
   GPR_ASSERT(weights.size() == float_weights.size());
