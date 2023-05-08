@@ -19,11 +19,9 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <functional>
-#include <string>
 #include <utility>
 
 #include "absl/types/optional.h"
