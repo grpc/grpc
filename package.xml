@@ -1037,8 +1037,6 @@
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/ares_driver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/ares_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/common_closures.h" role="src" />
@@ -1050,10 +1048,13 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/executor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_polled_fd_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_ares_wrapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_ares_wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_polled_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc" role="src" />
@@ -1063,6 +1064,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
