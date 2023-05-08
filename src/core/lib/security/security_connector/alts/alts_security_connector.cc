@@ -132,7 +132,7 @@ class grpc_alts_channel_security_connector final
   }
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context*) override {
+      absl::string_view, grpc_auth_context*) override {
     return grpc_core::ImmediateOkStatus();
   }
 
