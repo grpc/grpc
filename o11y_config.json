@@ -1,0 +1,10 @@
+{
+    "project_id":"xuan-test-project",
+    "cloud_trace":{
+       "sampling_rate":0.99
+    },
+    "cloud_monitoring":{},
+    "labels":{
+       "DATA_CENTER":"us-west1-a"
+    }
+ }

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "observability_main.h"
-#include "server_call_tracer.h"
-#include "client_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/observability_main.h"
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
 
 #include "absl/strings/string_view.h"
 
