@@ -23,6 +23,7 @@ load(
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 licenses(["reciprocal"])
 
@@ -57,6 +58,16 @@ config_setting(
 config_setting(
     name = "grpc_experiments_are_final_define",
     values = {"define": "grpc_experiments_are_final=true"},
+)
+
+bool_flag(
+    name = "disable_grpc_rls",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_no_rls_flag",
+    flag_values = {":disable_grpc_rls": "true"},
 )
 
 # When gRPC is build as shared library, binder transport code might still
@@ -110,6 +121,7 @@ selects.config_setting_group(
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
+        ":grpc_no_rls_flag",
         # Disable RLS support on mobile platforms where it is not likely to be
         # needed and where reducing the binary size is more important.
         ":android",
@@ -220,6 +232,7 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
+    "include/grpc/grpc_audit_logging.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -388,6 +401,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
+    "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -790,6 +804,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_public_hdrs",
     hdrs = GRPC_PUBLIC_HDRS,
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -909,6 +927,7 @@ grpc_cc_library(
         "grpc_trace",
         "ref_counted_ptr",
         "//src/core:error",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
@@ -1185,6 +1204,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "legacy_context",
     ],
 )
 
@@ -1336,7 +1356,6 @@ grpc_cc_library(
         "//src/core:lib/channel/channelz.h",
         "//src/core:lib/channel/channelz_registry.h",
         "//src/core:lib/channel/connected_channel.h",
-        "//src/core:lib/channel/context.h",
         "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
@@ -1461,6 +1480,7 @@ grpc_cc_library(
         "iomgr_buffer_list",
         "iomgr_internal_errqueue",
         "iomgr_timer",
+        "legacy_context",
         "orphanable",
         "parse_address",
         "promise",
@@ -1520,6 +1540,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:notification",
         "//src/core:packed_table",
+        "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
@@ -1547,6 +1568,19 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+    ],
+)
+
+grpc_cc_library(
+    name = "legacy_context",
+    hdrs = [
+        "//src/core:lib/channel/context.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "//src/core:context",
     ],
 )
 
@@ -1717,6 +1751,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "handshaker",
+        "legacy_context",
         "promise",
         "ref_counted_ptr",
         "stats",
@@ -1735,6 +1770,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
@@ -1875,6 +1911,7 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
+        "legacy_context",
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
@@ -1887,6 +1924,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
@@ -1945,6 +1983,7 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
         "iomgr_timer",
+        "legacy_context",
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_args",
@@ -2259,6 +2298,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
+        "legacy_context",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2915,6 +2955,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
+        "channel_stack_builder",
         "config",
         "config_vars",
         "debug_location",
@@ -2927,6 +2968,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "legacy_context",
         "orphanable",
         "parse_address",
         "protobuf_duration_upb",
@@ -3113,6 +3155,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -3430,6 +3473,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "legacy_context",
         "promise",
         "//src/core:activity",
         "//src/core:arena",
@@ -3444,6 +3488,7 @@ grpc_cc_library(
         "//src/core:percent_encoding",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:prioritized_race",
         "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -3800,6 +3845,7 @@ grpc_cc_library(
         "http_trace",
         "httpcli",
         "iomgr_buffer_list",
+        "legacy_context",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

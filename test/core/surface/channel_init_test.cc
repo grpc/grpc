@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -159,6 +160,9 @@ TEST(ChannelInitTest, CanAddMultipleTerminalFilters) {
   EXPECT_EQ(
       GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs().Set("baz", true)),
       std::vector<std::string>({"foo", "baz"}));
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL,
+                           ChannelArgs().Set("bar", true).Set("baz", true)),
+            std::vector<std::string>());
 }
 
 TEST(ChannelInitTest, CanAddBeforeAllOnce) {

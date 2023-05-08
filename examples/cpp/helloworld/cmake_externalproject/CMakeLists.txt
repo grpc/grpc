@@ -119,7 +119,6 @@ ExternalProject_Add(grpc
         -DgRPC_BUILD_MSVC_MP_COUNT:STRING=-1
         -Dutf8_range_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/utf8_range/lib/cmake/utf8_range
         -DgRPC_PROTOBUF_PROVIDER:STRING=package
-        -DgRPC_PROTOBUF_PACKAGE_TYPE:STRING=CONFIG
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -DgRPC_RE2_PROVIDER:STRING=package
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2

@@ -29,26 +29,21 @@ Typical usage examples:
     python -m bin.run_channelz --helpfull
 """
 import hashlib
-import logging
 
 from absl import app
 from absl import flags
+from absl import logging
 
+from bin.lib import common
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.rpc import grpc_channelz
 from framework.test_app import client_app
 from framework.test_app import server_app
 
-logger = logging.getLogger(__name__)
 # Flags
-_SERVER_RPC_HOST = flags.DEFINE_string('server_rpc_host',
-                                       default='127.0.0.1',
-                                       help='Server RPC host')
-_CLIENT_RPC_HOST = flags.DEFINE_string('client_rpc_host',
-                                       default='127.0.0.1',
-                                       help='Client RPC host')
 _SECURITY = flags.DEFINE_enum('security',
                               default=None,
                               enum_values=[
@@ -59,7 +54,13 @@ _SECURITY = flags.DEFINE_enum('security',
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
-flags.mark_flag_as_required("resource_suffix")
+flags.mark_flag_as_required(xds_flags.RESOURCE_SUFFIX.name)
+flags.register_validator(xds_flags.SERVER_XDS_PORT.name,
+                         lambda val: val > 0,
+                         message="Run outside of a test suite, must provide"
+                         " the exact port value (must be greater than 0).")
+
+logger = logging.get_absl_logger()
 
 # Type aliases
 _Channel = grpc_channelz.Channel
@@ -165,8 +166,8 @@ def debug_basic_setup(test_client, test_server):
     server_sock: _Socket = test_server.get_server_socket_matching_client(
         client_sock)
 
-    print(f'Client socket:\n{client_sock}\n')
-    print(f'Matching server:\n{server_sock}\n')
+    logger.debug('Client socket: %s\n', client_sock)
+    logger.debug('Matching server socket: %s\n', server_sock)
 
 
 def main(argv):
@@ -176,45 +177,61 @@ def main(argv):
     # Must be called before KubernetesApiManager or GcpApiManager init.
     xds_flags.set_socket_default_timeout_from_flag()
 
+    # Flags.
+    should_port_forward: bool = xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+    is_secure: bool = bool(_SECURITY.value)
+
+    # Setup.
+    gcp_api_manager = gcp.api.GcpApiManager()
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
 
-    # Resource names.
-    resource_prefix: str = xds_flags.RESOURCE_PREFIX.value
-
-    # Server
-    server_name = xds_flags.SERVER_NAME.value
-    server_namespace = resource_prefix
-    server_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
-    server_pod = get_deployment_pods(server_k8s_ns, server_name)[0]
-    test_server: _XdsTestServer = _XdsTestServer(
-        ip=server_pod.status.pod_ip,
-        rpc_port=xds_flags.SERVER_PORT.value,
-        hostname=server_pod.metadata.name,
-        xds_host=xds_flags.SERVER_XDS_HOST.value,
-        xds_port=xds_flags.SERVER_XDS_PORT.value,
-        rpc_host=_SERVER_RPC_HOST.value)
+    # Server.
+    server_namespace = common.make_server_namespace(k8s_api_manager)
+    server_runner = common.make_server_runner(
+        server_namespace,
+        gcp_api_manager,
+        port_forwarding=should_port_forward,
+        secure=is_secure)
+    # Find server pod.
+    server_pod: k8s.V1Pod = common.get_server_pod(server_runner,
+                                                  xds_flags.SERVER_NAME.value)
 
     # Client
-    client_name = xds_flags.CLIENT_NAME.value
-    client_namespace = resource_prefix
-    client_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
-    client_pod = get_deployment_pods(client_k8s_ns, client_name)[0]
-    test_client: _XdsTestClient = _XdsTestClient(
-        ip=client_pod.status.pod_ip,
-        rpc_port=xds_flags.CLIENT_PORT.value,
-        server_target=test_server.xds_uri,
-        hostname=client_pod.metadata.name,
-        rpc_host=_CLIENT_RPC_HOST.value)
+    client_namespace = common.make_client_namespace(k8s_api_manager)
+    client_runner = common.make_client_runner(
+        client_namespace,
+        gcp_api_manager,
+        port_forwarding=should_port_forward,
+        secure=is_secure)
+    # Find client pod.
+    client_pod: k8s.V1Pod = common.get_client_pod(client_runner,
+                                                  xds_flags.CLIENT_NAME.value)
 
-    if _SECURITY.value in ('mtls', 'tls', 'plaintext'):
-        debug_security_setup_positive(test_client, test_server)
-    elif _SECURITY.value == ('mtls_error', 'server_authz_error'):
-        debug_security_setup_negative(test_client)
-    else:
-        debug_basic_setup(test_client, test_server)
+    # Ensure port forwarding stopped.
+    common.register_graceful_exit(server_runner, client_runner)
 
-    test_client.close()
-    test_server.close()
+    # Create server app for the server pod.
+    test_server: _XdsTestServer = common.get_test_server_for_pod(
+        server_runner,
+        server_pod,
+        test_port=xds_flags.SERVER_PORT.value,
+        secure_mode=is_secure)
+    test_server.set_xds_address(xds_flags.SERVER_XDS_HOST.value,
+                                xds_flags.SERVER_XDS_PORT.value)
+
+    # Create client app for the client pod.
+    test_client: _XdsTestClient = common.get_test_client_for_pod(
+        client_runner, client_pod, server_target=test_server.xds_uri)
+
+    with test_client, test_server:
+        if _SECURITY.value in ('mtls', 'tls', 'plaintext'):
+            debug_security_setup_positive(test_client, test_server)
+        elif _SECURITY.value in ('mtls_error', 'server_authz_error'):
+            debug_security_setup_negative(test_client)
+        else:
+            debug_basic_setup(test_client, test_server)
+
+    logger.info('SUCCESS!')
 
 
 if __name__ == '__main__':

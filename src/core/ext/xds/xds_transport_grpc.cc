@@ -47,6 +47,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
@@ -255,7 +256,8 @@ grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type(), server.channel_creds_config());
+          server.channel_creds_type(),
+          Json::FromObject(server.channel_creds_config()));
   return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }

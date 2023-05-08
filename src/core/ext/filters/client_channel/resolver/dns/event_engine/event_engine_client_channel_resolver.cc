@@ -31,6 +31,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
@@ -128,7 +129,7 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     void OnBalancerHostnamesResolved(
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
-    void OnTXTResolved(absl::StatusOr<std::string> service_config);
+    void OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config);
     // Returns a Result if resolution is complete.
     // callers must release the lock and call OnRequestComplete if a Result is
     // returned. This is because OnRequestComplete may Orphan the resolver,
@@ -251,7 +252,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         resolver_.get(), resolver_->name_to_resolve().c_str());
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
-            absl::StatusOr<std::string> service_config) {
+            absl::StatusOr<std::vector<std::string>> service_config) {
           self->OnTXTResolved(std::move(service_config));
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
@@ -388,7 +389,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnTXTResolved(absl::StatusOr<std::string> service_config) {
+    OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
   ValidationErrors::ScopedField field(&errors_, "txt lookup");
   absl::optional<Resolver::Result> result;
   {
@@ -400,7 +401,21 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
-      service_config_json_ = absl::StrCat("grpc_config=", *service_config);
+      constexpr char kServiceConfigAttributePrefix[] = "grpc_config=";
+      auto result = std::find_if(service_config->begin(), service_config->end(),
+                                 [&](absl::string_view s) {
+                                   return absl::StartsWith(
+                                       s, kServiceConfigAttributePrefix);
+                                 });
+      if (result != service_config->end()) {
+        service_config_json_ =
+            result->substr(sizeof(kServiceConfigAttributePrefix));
+      } else {
+        service_config_json_ = absl::UnavailableError(absl::StrCat(
+            "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
+            " in TXT records"));
+        errors_.AddError(service_config_json_.status().message());
+      }
     }
     result = OnResolvedLocked();
   }

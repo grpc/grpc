@@ -37,6 +37,10 @@ class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
   /// Returns the file descriptor associated with the posix endpoint.
   virtual int GetWrappedFd() = 0;
 
+  /// Returns if the Endpoint supports tracking events from errmsg queues on
+  /// posix systems.
+  virtual bool CanTrackErrors() = 0;
+
   /// Shutdown the endpoint. This function call should trigger execution of
   /// any pending endpoint Read/Write callbacks with appropriate error
   /// absl::Status. After this function call any subsequent endpoint

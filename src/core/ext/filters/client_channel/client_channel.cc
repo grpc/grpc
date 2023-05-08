@@ -1181,9 +1181,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // above.
   if (!policy_name.has_value()) policy_name = "pick_first";
   // Now that we have the policy name, construct an empty config for it.
-  Json config_json = Json::Array{Json::Object{
-      {std::string(*policy_name), Json::Object{}},
-  }};
+  Json config_json = Json::FromArray({Json::FromObject({
+      {std::string(*policy_name), Json::FromObject({})},
+  })});
   auto lb_policy_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           config_json);
@@ -1814,23 +1814,22 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
             chand(), this);
   }
   if (!config_selector.ok()) return config_selector.status();
-  // Use the ConfigSelector to determine the config for the call.
-  auto call_config =
-      (*config_selector)->GetCallConfig({send_initial_metadata(), arena()});
-  if (!call_config.ok()) {
-    return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(call_config.status(), "ConfigSelector"));
-  }
   // Create a ClientChannelServiceConfigCallData for the call.  This stores
   // a ref to the ServiceConfig and caches the right set of parsed configs
   // to use for the call.  The ClientChannelServiceConfigCallData will store
   // itself in the call context, so that it can be accessed by filters
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
-      arena()->New<ClientChannelServiceConfigCallData>(
-          std::move(call_config->service_config), call_config->method_configs,
-          std::move(call_config->call_attributes),
-          std::move(call_config->on_commit), call_context());
+      arena()->New<ClientChannelServiceConfigCallData>(arena(), call_context());
+  // Use the ConfigSelector to determine the config for the call.
+  absl::Status call_config_status =
+      (*config_selector)
+          ->GetCallConfig(
+              {send_initial_metadata(), arena(), service_config_call_data});
+  if (!call_config_status.ok()) {
+    return absl_status_to_grpc_error(
+        MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector"));
+  }
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -2337,7 +2336,8 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
   // Internal API to allow first-party LB policies to access per-call
   // attributes set by the ConfigSelector.
-  absl::string_view GetCallAttribute(UniqueTypeName type) override;
+  ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2422,15 +2422,12 @@ class ClientChannel::LoadBalancedCall::Metadata
 // ClientChannel::LoadBalancedCall::LbCallState
 //
 
-absl::string_view
+ServiceConfigCallData::CallAttributeInterface*
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
-    UniqueTypeName type) {
+    UniqueTypeName type) const {
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       lb_call_->call_context()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  auto& call_attributes = service_config_call_data->call_attributes();
-  auto it = call_attributes.find(type);
-  if (it == call_attributes.end()) return absl::string_view();
-  return it->second;
+  return service_config_call_data->GetCallAttribute(type);
 }
 
 //
