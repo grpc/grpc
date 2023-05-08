@@ -500,16 +500,20 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         logger.info('Checking Pods restart times')
         client_restarts = self._get_restarts(self.client_runner.k8s_namespace,
                                              self.client_runner.deployment)
-        self.assertEqual(client_restarts,
-                         0,
-                         msg=('Client pods unexpectedly restarted %d times during test',
-                              client_restarts))
+        self.assertEqual(
+            client_restarts,
+            0,
+            msg=
+            ('Client pods unexpectedly restarted {client_restarts} times during test.'
+            ))
         sever_restarts = self._get_restarts(self.server_runner.k8s_namespace,
                                             self.server_runner.deployment)
-        self.assertEqual(sever_restarts,
-                         0,
-                         msg=('Server pods unexpectedly restarted %d times during test',
-                              client_restarts))
+        self.assertEqual(
+            sever_restarts,
+            0,
+            msg=
+            ('Server pods unexpectedly restarted {sever_restarts} times during test.'
+            ))
 
     def _get_restarts(self, k8s_namespace: k8s.KubernetesNamespace,
                       deployment: k8s.V1Deployment) -> int:
