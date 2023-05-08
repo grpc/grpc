@@ -5217,6 +5217,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
+        "//:legacy_context",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
