@@ -206,6 +206,25 @@ TEST(StaticStrideSchedulerTest, MaxIsClampedForHighRatio) {
                                  1, 1, 1, 1, 1));
 }
 
+TEST(StaticStrideSchedulerTest, MinIsClampedForHighRatio) {
+  uint32_t sequence = 0;
+  const std::vector<float> weights{100, 1e-10};
+  const absl::optional<StaticStrideScheduler> scheduler =
+      StaticStrideScheduler::Make(absl::MakeSpan(weights),
+                                  [&] { return sequence++; });
+  ASSERT_TRUE(scheduler.has_value());
+
+  // We pick 201 elements and ensure that the second channel (with epsilon
+  // weight) also gets picked. The math is: mean value of elements is ~50, so
+  // the first channel keeps its weight of 100, but the second element's weight
+  // gets capped from below to 50*0.01 = 0.5.
+  std::vector<int> picks(weights.size());
+  for (int i = 0; i < 201; ++i) {
+    ++picks[scheduler->Pick()];
+  }
+  EXPECT_THAT(picks, ElementsAre(200, 1));
+}
+
 }  // namespace
 }  // namespace grpc_core
 
