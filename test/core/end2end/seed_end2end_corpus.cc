@@ -15,13 +15,17 @@
 #include <stdio.h>
 
 #include <queue>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
