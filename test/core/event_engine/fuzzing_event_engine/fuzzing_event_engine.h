@@ -51,7 +51,9 @@ namespace experimental {
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
 class FuzzingEventEngine : public EventEngine {
  public:
-  struct Options {};
+  struct Options {
+    Duration max_delay_run_after = std::chrono::seconds(30);
+  };
   explicit FuzzingEventEngine(Options options,
                               const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
@@ -250,6 +252,7 @@ class FuzzingEventEngine : public EventEngine {
 
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
+  const Duration max_delay_run_after_;
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
   intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
   Time now_ ABSL_GUARDED_BY(now_mu_);

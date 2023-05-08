@@ -65,7 +65,8 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 }  // namespace
 
 FuzzingEventEngine::FuzzingEventEngine(
-    Options options, const fuzzing_event_engine::Actions& actions) {
+    Options options, const fuzzing_event_engine::Actions& actions)
+    : max_delay_run_after_(options.max_delay_run_after) {
   task_delays_.clear();
   tasks_by_id_.clear();
   tasks_by_time_.clear();
@@ -118,7 +119,7 @@ FuzzingEventEngine::FuzzingEventEngine(
   };
 
   for (const auto& delay : actions.run_delay()) {
-    update_delay(&task_delays_, delay, std::chrono::seconds(30));
+    update_delay(&task_delays_, delay, max_delay_run_after_);
   }
 
   previous_pick_port_functions_ = grpc_set_pick_port_functions(
@@ -487,6 +488,8 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   const auto delay_it = task_delays_.find(id);
   // Under fuzzer configuration control, maybe make the task run later.
   if (delay_it != task_delays_.end()) {
+    fprintf(stderr, "DELAY %d BY %ld\n", static_cast<int>(id),
+            delay_it->second.count());
     when += delay_it->second;
     task_delays_.erase(delay_it);
   }
