@@ -126,7 +126,6 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  auto s = RequestCall(101);
   Expect(1, true);
   Step();
   // Inproc channel returns invalid_argument and other clients return
@@ -151,7 +150,6 @@ CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  auto s = RequestCall(101);
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
