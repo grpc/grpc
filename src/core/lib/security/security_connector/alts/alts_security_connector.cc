@@ -23,11 +23,9 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
