@@ -248,9 +248,6 @@ class XdsResolver : public Resolver {
   // back into the WorkSerializer to remove the entry from the map.
   class ClusterState : public DualRefCounted<ClusterState> {
    public:
-    using ClusterStateMap =
-        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
-
     ClusterState(RefCountedPtr<XdsResolver> resolver,
                  absl::string_view cluster_name)
         : resolver_(std::move(resolver)), cluster_name_(cluster_name) {}
@@ -375,8 +372,7 @@ class XdsResolver : public Resolver {
               XdsClusterAttribute::TypeName()));
       if (cluster_data != nullptr && cluster_name_attribute != nullptr) {
         auto cluster =
-            cluster_data->GetClusterState(cluster_name_attribute->cluster());
-        cluster_data->ReleaseClusterMap();
+            cluster_data->LockAndGetCluster(cluster_name_attribute->cluster());
         if (cluster != nullptr) {
           service_config_call_data->SetOnCommit(
               [cluster = std::move(cluster)]() mutable { cluster.reset(); });
@@ -414,15 +410,17 @@ class XdsResolver : public Resolver {
     explicit XdsClusterMapAttribute(RefCountedPtr<XdsClusterMap> cluster_map)
         : cluster_map_(std::move(cluster_map)) {}
 
-    RefCountedPtr<ClusterState> GetClusterState(
+    // This method can be called only once. The first call will release the
+    // reference to the cluster map, and subsequent calls will return nullptr.
+    RefCountedPtr<ClusterState> LockAndGetCluster(
         absl::string_view cluster_name) {
       if (cluster_map_ == nullptr) {
         return nullptr;
       }
-      return cluster_map_->Find(cluster_name);
+      auto cluster = cluster_map_->Find(cluster_name);
+      cluster_map_.reset();
+      return cluster;
     }
-
-    void ReleaseClusterMap() { cluster_map_.reset(); }
 
     UniqueTypeName type() const override { return TypeName(); }
 
