@@ -600,15 +600,16 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
     grpc_core::MutexLock lock(&mu_);
     inflight_requests_.insert(handle);
   }
-  (*request)->Start([on_resolve = std::move(on_resolve), handle,
-                     this](absl::StatusOr<std::string> result) mutable {
-    {
-      grpc_core::MutexLock lock(&mu_);
-      // on_resolve called, no longer inflight.
-      GPR_ASSERT(inflight_requests_.erase(handle) == 1);
-    }
-    on_resolve(std::move(result));
-  });
+  (*request)->Start(
+      [on_resolve = std::move(on_resolve), handle,
+       this](absl::StatusOr<std::vector<std::string>> result) mutable {
+        {
+          grpc_core::MutexLock lock(&mu_);
+          // on_resolve called, no longer inflight.
+          GPR_ASSERT(inflight_requests_.erase(handle) == 1);
+        }
+        on_resolve(std::move(result));
+      });
   return handle;
 }
 

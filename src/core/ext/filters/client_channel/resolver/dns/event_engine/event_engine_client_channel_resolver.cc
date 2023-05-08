@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
@@ -226,8 +227,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->name_to_resolve().c_str());
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-              addresses) mutable {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
         self->OnHostnameResolved(std::move(addresses));
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
@@ -241,9 +241,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     srv_handle_ = event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) mutable {
-          self->OnSRVResolved(std::move(srv_records));
-        },
+                srv_records) { self->OnSRVResolved(std::move(srv_records)); },
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()),
         resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
@@ -408,6 +406,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
+      // Find service config in TXT record.
       constexpr char kServiceConfigAttributePrefix[] = "grpc_config=";
       auto result = std::find_if(service_config->begin(), service_config->end(),
                                  [&](absl::string_view s) {
@@ -415,8 +414,12 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                        s, kServiceConfigAttributePrefix);
                                  });
       if (result != service_config->end()) {
+        // Found a service config record.
         service_config_json_ =
-            result->substr(sizeof(kServiceConfigAttributePrefix));
+            result->substr(std::strlen(kServiceConfigAttributePrefix));
+        GRPC_EVENT_ENGINE_RESOLVER_TRACE(
+            "DNSResolver::%p found service config: %s",
+            event_engine_resolver_.get(), service_config_json_->c_str());
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,

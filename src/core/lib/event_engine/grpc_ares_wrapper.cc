@@ -14,8 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
+#include "grpc_ares_wrapper.h"
 
+#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -118,9 +119,6 @@ struct HostbynameArg {
   GrpcAresHostnameRequest* request;
   const char* qtype;
 };
-
-constexpr char g_service_config_attribute_prefix[] = "grpc_config=";
-constexpr size_t g_prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
 
 }  // namespace
 
@@ -246,33 +244,26 @@ void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
     r->OnResolveLocked(GRPC_ERROR_CREATE(error_msg));
     return;
   }
-  // Find service config in TXT record.
-  struct ares_txt_ext* result = nullptr;
-  for (result = reply; result != nullptr; result = result->next) {
-    if (result->record_start &&
-        memcmp(result->txt, g_service_config_attribute_prefix, g_prefix_len) ==
-            0) {
-      break;
+  Result result;
+  for (struct ares_txt_ext* part = reply; part != nullptr; part = part->next) {
+    if (part->record_start) {
+      result.emplace_back(reinterpret_cast<char*>(part->txt), part->length);
+    } else {
+      absl::StrAppend(
+          &result.back(),
+          std::string(reinterpret_cast<char*>(part->txt), part->length));
     }
   }
-  std::string service_config_json_out;
-  // Found a service config record.
-  if (result != nullptr) {
-    size_t service_config_len = result->length - g_prefix_len;
-    service_config_json_out.append(
-        reinterpret_cast<char*>(result->txt) + g_prefix_len,
-        service_config_len);
-    for (result = result->next; result != nullptr && !result->record_start;
-         result = result->next) {
-      service_config_json_out.append(reinterpret_cast<char*>(result->txt),
-                                     result->length);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request: %p, got %zu TXT records", r,
+                              result.size());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper)) {
+    for (const auto& record : result) {
+      gpr_log(GPR_INFO, "%s", record.c_str());
     }
-    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p found service config: %s", r,
-                                service_config_json_out.c_str());
   }
   // Clean up.
   ares_free_data(reply);
-  r->OnResolveLocked(std::move(service_config_json_out));
+  r->OnResolveLocked(std::move(result));
 }
 
 GrpcAresRequest::FdNode::FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
@@ -324,10 +315,9 @@ absl::StatusOr<std::string> GrpcAresRequest::ParseNameToResolve()
   grpc_core::SplitHostPort(name_, &host_, &port);
   absl::Status error;
   if (host_.empty()) {
-    error =
-        grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                           grpc_core::StatusStrProperty::kTargetAddress, name_);
-    return error;
+    return grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                              grpc_core::StatusStrProperty::kTargetAddress,
+                              name_);
   }
   return port;
 }
@@ -905,7 +895,7 @@ void GrpcAresTXTRequest::Start(
   // Holds a ref across this function since OnResolve might be called inline
   // inside ares_search.
   auto self = Ref(DEBUG_LOCATION, "Start");
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
   on_resolve_ = std::move(on_resolve);
   // Query the TXT record

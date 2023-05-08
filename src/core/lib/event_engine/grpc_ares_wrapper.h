@@ -104,7 +104,7 @@ class GrpcAresRequest
   EventEngine* event_engine_;
 
  private:
-  // A FdNode saves (not owns) a live socket/fd which c-ares creates and owns a
+  // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
   // GrpcPolledFd object which has a platform-agnostic interface to interact
   // with the poller. The liveness of the socket means that c-ares needs us to
   // monitor r/w events on this socket and notifies c-ares when such events have
@@ -291,7 +291,7 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
 
 class GrpcAresTXTRequest final : public GrpcAresRequest {
  public:
-  using Result = std::string;
+  using Result = std::vector<std::string>;
 
   static absl::StatusOr<GrpcAresTXTRequest*> Create(
       absl::string_view name, EventEngine::Duration timeout,

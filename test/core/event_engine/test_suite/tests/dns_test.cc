@@ -173,6 +173,7 @@ namespace {
 
 using grpc_event_engine::experimental::EventEngine;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
+using testing::ElementsAre;
 using testing::Pointwise;
 using testing::UnorderedPointwise;
 
@@ -511,7 +512,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
 TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   // clang-format off
   const std::string kExpectedRecord =
-      "[{"
+      "grpc_config=[{"
         "\"serviceConfig\":{"
           "\"loadBalancingPolicy\":\"round_robin\","
           "\"methodConfig\":[{"
@@ -538,9 +539,9 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   bool verified = false;
   dns_resolver->LookupTXT(
       [&verified, &kExpectedRecord, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::string> result) {
+          absl::StatusOr<std::vector<std::string> > result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_EQ(*result, kExpectedRecord);
+        EXPECT_THAT(*result, ElementsAre(kExpectedRecord));
         verified = true;
       },
       "_grpc_config.simple-service.dns-test.event-engine.",
@@ -563,7 +564,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
   bool verified = false;
   dns_resolver->LookupTXT(
       [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::string> result) {
+          absl::StatusOr<std::vector<std::string> > result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
@@ -625,7 +626,7 @@ TEST_F(EventEngineDNSTest, TestQueryTimeout) {
   bool verified = false;
   dns_resolver->LookupTXT(
       [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::string> result) {
+          absl::StatusOr<std::vector<std::string> > result) {
         EXPECT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
