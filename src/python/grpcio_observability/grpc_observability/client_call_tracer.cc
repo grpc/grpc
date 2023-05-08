@@ -64,7 +64,6 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
       RecordSpan(context_.Span().ToCensusData());
     }
   }
-  // Export span data.
 }
 
 
@@ -94,7 +93,7 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   context_.AddChildSpan();
   return new PythonOpenCensusCallAttemptTracer(
-      this, attempt_num, is_transparent_retry, false /* arena_allocated */);
+      this, attempt_num, is_transparent_retry);
 }
 
 //
@@ -102,10 +101,8 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
 //
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::PythonOpenCensusCallAttemptTracer(
-    PythonOpenCensusCallTracer* parent, uint64_t attempt_num,
-    bool is_transparent_retry, bool arena_allocated)
+    PythonOpenCensusCallTracer* parent, uint64_t attempt_num, bool is_transparent_retry)
     : parent_(parent),
-      arena_allocated_(arena_allocated),
       context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
   if (parent_->tracing_enabled_) {
@@ -234,11 +231,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     }
   }
 
-  if (arena_allocated_) {
-    this->~PythonOpenCensusCallAttemptTracer();
-  } else {
-    delete this;
-  }
+  delete this;
 }
 
 

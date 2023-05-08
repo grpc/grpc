@@ -18,8 +18,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include <grpc/slice.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -30,13 +28,13 @@
 #include "absl/strings/escaping.h"
 #include "absl/numeric/int128.h"
 
-#include "src/python/grpcio_observability/grpc_observability/constants.h"
-#include "src/python/grpcio_observability/grpc_observability/sampler.h"
-
+#include <grpc/slice.h>
 #include <grpc/status.h>
 
 #include "src/cpp/ext/filters/census/rpc_encoding.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/python/grpcio_observability/grpc_observability/constants.h"
+#include "src/python/grpcio_observability/grpc_observability/sampler.h"
 
 #ifndef GRPC_PYRHON_OPENCENSUS_H
 #define GRPC_PYRHON_OPENCENSUS_H

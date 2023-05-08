@@ -45,8 +45,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   class PythonOpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
     PythonOpenCensusCallAttemptTracer(PythonOpenCensusCallTracer* parent,
-                                uint64_t attempt_num, bool is_transparent_retry,
-                                bool arena_allocated);
+                                uint64_t attempt_num, bool is_transparent_retry);
     std::string TraceId() override {
       return absl::BytesToHexString(absl::string_view(context_.SpanContext().TraceId()));
     }
@@ -84,7 +83,6 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     // Maximum size of tags that are sent on the wire.
     static constexpr uint32_t kMaxTagsLen = 2048;
     PythonOpenCensusCallTracer* parent_;
-    const bool arena_allocated_;
     PythonCensusContext context_;
     // Start time (for measuring latency).
     absl::Time start_time_;
@@ -96,8 +94,6 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   };
 
   explicit PythonOpenCensusCallTracer(
-                                // grpc_call_context_element* call_context,
-                                // grpc_core::Slice path, grpc_core::Arena* arena,
                                 char* method, char* trace_id, char* parent_span_id,
                                 bool tracing_enabled);
   ~PythonOpenCensusCallTracer() override;
