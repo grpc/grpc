@@ -573,3 +573,16 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return (isinstance(deployment, V1Deployment) and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
+
+
+def get_pod_restarts(k8s_namespace: KubernetesNamespace,
+                     deployment: V1Deployment) -> int:
+    total_restart: int = 0
+    pods: List[V1Pod]
+    if not k8s_namespace or not deployment:
+        return total_restart
+    pods = k8s_namespace.list_deployment_pods(deployment)
+    for pod in pods:
+        total_restart = sum(
+            status.restart_count for status in pod.status.container_statuses)
+    return total_restart
