@@ -1891,7 +1891,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<GrpcLbConfig>(
+    return LoadFromJson<RefCountedPtr<GrpcLbConfig>>(
         json, JsonArgs(), "errors validating grpclb LB policy config");
   }
 };

@@ -754,7 +754,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<CdsLbConfig>(
+    return LoadFromJson<RefCountedPtr<CdsLbConfig>>(
         json, JsonArgs(), "errors validating cds LB policy config");
   }
 };
