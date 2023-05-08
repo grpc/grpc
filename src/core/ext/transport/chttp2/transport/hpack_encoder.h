@@ -62,9 +62,12 @@ class Encoder {
 
   void AdvertiseTableSizeChange();
   void EmitIndexed(uint32_t index);
-  void EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
-                                              Slice value_slice);
-  void EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice, Slice value_slice);
+  GRPC_MUST_USE_RESULT
+  uint32_t EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
+                                                  Slice value_slice);
+  GRPC_MUST_USE_RESULT
+  uint32_t EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
+                                               Slice value_slice);
   void EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice, Slice value_slice);
   void EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
                                            Slice value_slice);
@@ -234,12 +237,9 @@ class Compressor<MetadataTrait, SmallIntegralValuesCompressor<N>> {
     }
     auto key = Slice::FromStaticString(MetadataTrait::key());
     auto encoded_value = MetadataTrait::Encode(value);
-    size_t transport_length =
-        key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
     if (index != nullptr) {
-      *index = table.AllocateIndex(transport_length);
-      encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
-                                                      std::move(encoded_value));
+      *index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+          std::move(key), std::move(encoded_value));
     } else {
       encoder->EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key),
                                                       std::move(encoded_value));

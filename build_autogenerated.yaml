@@ -846,6 +846,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -864,6 +865,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
@@ -1619,6 +1621,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -2206,6 +2209,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -2966,7 +2970,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -2998,7 +3001,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -4991,7 +4993,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -5024,7 +5025,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6473,7 +6473,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6506,7 +6505,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6897,7 +6895,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6930,7 +6927,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -8026,10 +8022,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/audit_logging.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/audit_logging.cc
   - test/core/security/grpc_audit_logging_test.cc
   deps:
   - grpc_test_util
@@ -10135,6 +10129,18 @@ targets:
   - linux
   - posix
   - mac
+- name: prioritized_race_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  src:
+  - test/core/promise/prioritized_race_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
@@ -12299,7 +12305,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12331,7 +12336,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12614,7 +12618,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12647,7 +12650,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12723,7 +12725,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12756,7 +12757,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -13417,6 +13417,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
