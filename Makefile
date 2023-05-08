@@ -1459,7 +1459,9 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -1468,6 +1470,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -2007,7 +2010,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -2016,6 +2021,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \

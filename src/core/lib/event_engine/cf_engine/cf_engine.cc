@@ -16,8 +16,11 @@
 
 #ifdef GPR_APPLE
 
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -44,7 +47,9 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {}
+    : thread_pool_(
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      timer_manager_(thread_pool_) {}
 
 CFEventEngine::~CFEventEngine() {
   {
@@ -59,7 +64,7 @@ CFEventEngine::~CFEventEngine() {
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>

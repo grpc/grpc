@@ -13,134 +13,98 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/work_queue.h"
+#include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 
 #include <thread>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/gprpp/time.h"
 #include "test/core/util/test_config.h"
+
+// TODO(hork): parameterize these tests for other WorkQueue implementations.
 
 namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
+using ::grpc_event_engine::experimental::BasicWorkQueue;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::WorkQueue;
 
-TEST(WorkQueueTest, StartsEmpty) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, StartsEmpty) {
+  BasicWorkQueue queue;
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, TakesClosures) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, TakesClosures) {
+  BasicWorkQueue queue;
   bool ran = false;
   AnyInvocableClosure closure([&ran] { ran = true; });
   queue.Add(&closure);
   ASSERT_FALSE(queue.Empty());
-  EventEngine::Closure* popped = queue.PopFront();
+  EventEngine::Closure* popped = queue.PopMostRecent();
   ASSERT_NE(popped, nullptr);
   popped->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, TakesAnyInvocables) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, TakesAnyInvocables) {
+  BasicWorkQueue queue;
   bool ran = false;
   queue.Add([&ran] { ran = true; });
   ASSERT_FALSE(queue.Empty());
-  EventEngine::Closure* popped = queue.PopFront();
+  EventEngine::Closure* popped = queue.PopMostRecent();
   ASSERT_NE(popped, nullptr);
   popped->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, BecomesEmptyOnPopBack) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, BecomesEmptyOnPopOldest) {
+  BasicWorkQueue queue;
   bool ran = false;
   queue.Add([&ran] { ran = true; });
   ASSERT_FALSE(queue.Empty());
-  EventEngine::Closure* closure = queue.PopBack();
+  EventEngine::Closure* closure = queue.PopOldest();
   ASSERT_NE(closure, nullptr);
   closure->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, PopFrontIsFIFO) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, PopMostRecentIsLIFO) {
+  BasicWorkQueue queue;
   int flag = 0;
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
-  queue.PopFront()->Run();
-  EXPECT_TRUE(flag & 1);
-  EXPECT_FALSE(flag & 2);
-  queue.PopFront()->Run();
-  EXPECT_TRUE(flag & 1);
-  EXPECT_TRUE(flag & 2);
-  ASSERT_TRUE(queue.Empty());
-}
-
-TEST(WorkQueueTest, PopBackIsLIFO) {
-  WorkQueue queue;
-  int flag = 0;
-  queue.Add([&flag] { flag |= 1; });
-  queue.Add([&flag] { flag |= 2; });
-  queue.PopBack()->Run();
+  queue.PopMostRecent()->Run();
   EXPECT_FALSE(flag & 1);
   EXPECT_TRUE(flag & 2);
-  queue.PopBack()->Run();
+  queue.PopMostRecent()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
-  WorkQueue queue;
-  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
-  queue.Add([] {});
-  ASSERT_LE(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::Now());
-  auto* popped = queue.PopFront();
-  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
-  // prevent leaks by executing or deleting the closure
-  delete popped;
+TEST(BasicWorkQueueTest, PopOldestIsFIFO) {
+  BasicWorkQueue queue;
+  int flag = 0;
+  queue.Add([&flag] { flag |= 1; });
+  queue.Add([&flag] { flag |= 2; });
+  queue.PopOldest()->Run();
+  EXPECT_TRUE(flag & 1);
+  EXPECT_FALSE(flag & 2);
+  queue.PopOldest()->Run();
+  EXPECT_TRUE(flag & 1);
+  EXPECT_TRUE(flag & 2);
+  ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
-  WorkQueue queue;
-  AnyInvocableClosure closure([] {});
-  queue.Add(&closure);
-  absl::SleepFor(absl::Milliseconds(2));
-  queue.Add(&closure);
-  absl::SleepFor(absl::Milliseconds(2));
-  queue.Add(&closure);
-  absl::SleepFor(absl::Milliseconds(2));
-  auto oldest_ts = queue.OldestEnqueuedTimestamp();
-  ASSERT_LE(oldest_ts, grpc_core::Timestamp::Now());
-  // pop the oldest, and ensure the next oldest is younger
-  EventEngine::Closure* popped = queue.PopFront();
-  ASSERT_NE(popped, nullptr);
-  auto second_oldest_ts = queue.OldestEnqueuedTimestamp();
-  ASSERT_GT(second_oldest_ts, oldest_ts);
-  // pop the oldest, and ensure the last one is youngest
-  popped = queue.PopFront();
-  ASSERT_NE(popped, nullptr);
-  auto youngest_ts = queue.OldestEnqueuedTimestamp();
-  ASSERT_GT(youngest_ts, second_oldest_ts);
-  ASSERT_GT(youngest_ts, oldest_ts);
-}
-
-TEST(WorkQueueTest, ThreadedStress) {
-  WorkQueue queue;
+TEST(BasicWorkQueueTest, ThreadedStress) {
+  BasicWorkQueue queue;
   constexpr int thd_count = 33;
   constexpr int element_count_per_thd = 3333;
   std::vector<std::thread> threads;
@@ -156,7 +120,7 @@ TEST(WorkQueueTest, ThreadedStress) {
       }
       int run_count = 0;
       while (run_count < element_count_per_thd) {
-        if (auto* c = queue.PopFront()) {
+        if (auto* c = queue.PopMostRecent()) {
           c->Run();
           ++run_count;
         }

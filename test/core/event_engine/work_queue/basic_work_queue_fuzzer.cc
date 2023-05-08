@@ -25,7 +25,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/work_queue.h"
+#include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/work_queue/work_queue_fuzzer.pb.h"
 
@@ -51,9 +51,9 @@ class WorkQueueFuzzer {
           deque_.push_back(CreateClosureWrappedInvocable(action.add().key()));
         }
       } break;
-      case work_queue_fuzzer::Action::kPopFront: {
+      case work_queue_fuzzer::Action::kPopMostRecent: {
         // pop front closures, executing both to check they are a pair
-        auto* wq_c = work_queue_.PopFront();
+        auto* wq_c = work_queue_.PopMostRecent();
         if (wq_c == nullptr) {
           if (!work_queue_.Empty() || !deque_.empty()) abort();
         } else {
@@ -63,9 +63,9 @@ class WorkQueueFuzzer {
           dq_c->Run();
         }
       } break;
-      case work_queue_fuzzer::Action::kPopBack: {
+      case work_queue_fuzzer::Action::kPopOldest: {
         // pop back closures, executing both to check they are a pair
-        auto* wq_c = work_queue_.PopBack();
+        auto* wq_c = work_queue_.PopOldest();
         if (wq_c == nullptr) {
           if (!work_queue_.Empty() || !deque_.empty()) abort();
         } else {
@@ -113,7 +113,7 @@ class WorkQueueFuzzer {
   }
 
   void CheckEqual() {
-    while (auto* wq_c = work_queue_.PopBack()) {
+    while (auto* wq_c = work_queue_.PopOldest()) {
       if (deque_.empty()) abort();
       auto* dq_c = deque_.back();
       deque_.pop_back();
@@ -122,7 +122,7 @@ class WorkQueueFuzzer {
     }
   }
 
-  WorkQueue work_queue_;
+  BasicWorkQueue work_queue_;
   std::deque<EventEngine::Closure*> deque_;
   // Closures are always added in pairs and checked in paris.
   // When checking, each popped closure encounters one of these situations:

@@ -44,6 +44,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -333,14 +334,14 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(executor_) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 }
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(executor_) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the
