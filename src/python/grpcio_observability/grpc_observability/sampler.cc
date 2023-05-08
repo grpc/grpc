@@ -41,7 +41,8 @@ uint64_t CalculateThreshold(double probability) {
 }
 
 uint64_t CalculateThresholdFromBuffer(const std::string trace_id) {
-  const uint8_t* buf = reinterpret_cast<const uint8_t*>(absl::HexStringToBytes(trace_id).c_str());
+  const std::string trace_id_bytes = absl::HexStringToBytes(trace_id);
+  const uint8_t* buf = reinterpret_cast<const uint8_t*>(trace_id_bytes.c_str());
   uint64_t res = 0;
   for (int i = 0; i < 8; ++i) {
     res |= (static_cast<uint64_t>(buf[i]) << (i * 8));

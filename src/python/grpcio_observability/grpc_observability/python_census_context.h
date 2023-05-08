@@ -205,7 +205,6 @@ class Span final {
   uint64_t child_span_count_ = 0;
 };
 
-// Thread compatible.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}

@@ -75,7 +75,7 @@ void* CreateServerCallTracerFactory() {
 
 void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
   auto now = std::chrono::system_clock::now();
-  auto status = CensusDataBufferCV.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
+  CensusDataBufferCV.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
 }
 
 

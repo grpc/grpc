@@ -131,7 +131,6 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
   if (PythonOpenCensusStatsEnabled()) {
     grpc_slice tags = grpc_empty_slice();
-    // TODO(unknown): Add in tagging serialization.
     size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
     if (encoded_tags_len > 0) {
       send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
@@ -181,9 +180,9 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
       FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
     }
 
+    std::string final_status = absl::StatusCodeToString(status_code_);
     std::vector<Label> labels = context_.Labels();
     labels.emplace_back(Label{kClientMethod, std::string(parent_->method_)});
-    std::string final_status = absl::StatusCodeToString(status_code_);
     labels.emplace_back(Label{kClientStatus, final_status});
     RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->outgoing.data_bytes : 0), labels);
     RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->incoming.data_bytes : 0), labels);
@@ -202,8 +201,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordCancel(
-    absl::Status /*cancel_error*/) {
-}
+    absl::Status /*cancel_error*/) {}
 
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
