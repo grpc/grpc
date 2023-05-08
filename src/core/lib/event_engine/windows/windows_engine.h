@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
@@ -41,20 +41,10 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// event engine is shut down before we shut down iomgr.
+// EventEngine is shut down before we shut down iomgr.
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  constexpr static TaskHandle invalid_handle{-1, -1};
-  constexpr static EventEngine::ConnectionHandle invalid_connection_handle{-1,
-                                                                           -1};
-
-  class WindowsListener : public EventEngine::Listener {
-   public:
-    ~WindowsListener() override;
-    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    absl::Status Start() override;
-  };
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;
@@ -98,6 +88,13 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
+  // Retrieve the base executor.
+  // This is public because most classes that know the concrete
+  // WindowsEventEngine type are effectively friends.
+  // Not intended for external use.
+  Executor* executor() { return executor_.get(); }
+  IOCP* poller() { return &iocp_; }
+
  private:
   // State of an active connection.
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
@@ -136,14 +133,14 @@ class WindowsEventEngine : public EventEngine,
   // In this case, the connection_state->mu is already locked, and timer
   // cancellation is not possible.
   bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
   // Completes the connection cancellation logic after checking handle validity
   // and optionally cancelling deadline timers.
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(ConnectionState::mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
 
-  class TimerClosure;
+  struct TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
@@ -164,4 +161,4 @@ class WindowsEventEngine : public EventEngine,
 
 #endif
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H

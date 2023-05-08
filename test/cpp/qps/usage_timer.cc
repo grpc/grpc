@@ -24,6 +24,8 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/crash.h"
 #ifdef __linux__
 #include <sys/resource.h>
 #include <sys/time.h>

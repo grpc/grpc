@@ -28,7 +28,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
@@ -128,26 +130,34 @@ static void read_scheduler(void* data, grpc_error_handle /* error */) {
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
 
+static void read_and_write_test_read_handler_read_done(
+    read_and_write_test_state* state, int read_done_state) {
+  gpr_log(GPR_DEBUG, "Read handler done");
+  gpr_mu_lock(g_mu);
+  state->read_done = read_done_state;
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
+  gpr_mu_unlock(g_mu);
+}
+
 static void read_and_write_test_read_handler(void* data,
                                              grpc_error_handle error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
-
+  if (!error.ok()) {
+    read_and_write_test_read_handler_read_done(state, 1);
+    return;
+  }
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
-  if (state->bytes_read == state->target_bytes || !error.ok()) {
-    gpr_log(GPR_DEBUG, "Read handler done");
-    gpr_mu_lock(g_mu);
-    state->read_done = 1 + (error.ok());
-    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
-    gpr_mu_unlock(g_mu);
-  } else if (error.ok()) {
-    // We perform many reads one after another. If grpc_endpoint_read and the
-    // read_handler are both run inline, we might end up growing the stack
-    // beyond the limit. Schedule the read on ExecCtx to avoid this.
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
-                            absl::OkStatus());
+  if (state->bytes_read == state->target_bytes) {
+    read_and_write_test_read_handler_read_done(state, 2);
+    return;
   }
+  // We perform many reads one after another. If grpc_endpoint_read and the
+  // read_handler are both run inline, we might end up growing the stack
+  // beyond the limit. Schedule the read on ExecCtx to avoid this.
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
+                          absl::OkStatus());
 }
 
 static void write_scheduler(void* data, grpc_error_handle /* error */) {

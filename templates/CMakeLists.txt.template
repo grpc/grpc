@@ -154,7 +154,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.5.1)
+  cmake_minimum_required(VERSION 3.8)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -217,9 +217,6 @@
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
-  set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
-  set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
-
   if(gRPC_BUILD_TESTS)
     set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
     set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
@@ -264,25 +261,11 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C11 standard
-  if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)
-  endif()
-
-  # Add c++14 flags
-  if (NOT DEFINED CMAKE_CXX_STANDARD)
+  if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
+    # AppleClang defaults to C++98, so we bump it to C++14.
+    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
     set(CMAKE_CXX_STANDARD 14)
-  else()
-    if (CMAKE_CXX_STANDARD LESS 14)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
-    endif()
-  endif()
-  if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  endif()
-  if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-  endif()
+  endif ()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
@@ -369,6 +352,11 @@
   include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
   include(cmake/download_archive.cmake)
+
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    include(cmake/systemd.cmake)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
+  endif()
 
   % for external_proto_library in external_proto_libraries:
   % if len(external_proto_library.urls) > 1:
@@ -655,6 +643,8 @@
   % endfor
   )
 
+  target_compile_features(${lib.name} PUBLIC cxx_std_14)
+
   set_target_properties(${lib.name} PROPERTIES
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
@@ -759,7 +749,7 @@
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
-
+  target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
@@ -819,10 +809,12 @@
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
-    install(EXPORT gRPCPluginTargets
-      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
-      NAMESPACE gRPC::
-    )
+    if(gRPC_BUILD_CODEGEN)
+      install(EXPORT gRPCPluginTargets
+        DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+        NAMESPACE gRPC::
+      )
+    endif()
   endif()
 
   include(CMakePackageConfigHelpers)
@@ -840,6 +832,7 @@
   install(FILES
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findre2.cmake
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findsystemd.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 

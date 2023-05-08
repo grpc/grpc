@@ -20,6 +20,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 
 #ifndef OPENSSL_IS_BORINGSSL

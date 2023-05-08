@@ -27,6 +27,7 @@ _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
 _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) // 3]
 
 _UNARY_UNARY = '/test/UnaryUnary'
+_UNARY_UNARY_NESTED_EXCEPTION = '/test/UnaryUnaryNestedException'
 _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
@@ -46,6 +47,10 @@ class _Handler(object):
                 'testvalue',
             ),))
         return request
+
+    def handle_unary_unary_with_nested_exception(self, request,
+                                                 servicer_context):
+        raise test_control.NestedDefect()
 
     def handle_unary_stream(self, request, servicer_context):
         for _ in range(test_constants.STREAM_LENGTH):
@@ -128,6 +133,11 @@ class _GenericHandler(grpc.GenericRpcHandler):
                                   self._handler.handle_stream_stream)
         elif handler_call_details.method == _DEFECTIVE_GENERIC_RPC_HANDLER:
             return self._handler.defective_generic_rpc_handler()
+        elif handler_call_details.method == _UNARY_UNARY_NESTED_EXCEPTION:
+            return _MethodHandler(
+                False, False, None, None,
+                self._handler.handle_unary_unary_with_nested_exception, None,
+                None, None)
         else:
             return None
 
@@ -174,6 +184,10 @@ def _stream_stream_multi_callable(channel):
 
 def _defective_handler_multi_callable(channel):
     return channel.unary_unary(_DEFECTIVE_GENERIC_RPC_HANDLER)
+
+
+def _defective_nested_exception_handler_multi_callable(channel):
+    return channel.unary_unary(_UNARY_UNARY_NESTED_EXCEPTION)
 
 
 class InvocationDefectsTest(unittest.TestCase):
@@ -251,6 +265,19 @@ class InvocationDefectsTest(unittest.TestCase):
     def testDefectiveGenericRpcHandlerUnaryResponse(self):
         request = b'\x07\x08'
         multi_callable = _defective_handler_multi_callable(self._channel)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            multi_callable(request,
+                           metadata=(('test',
+                                      'DefectiveGenericRpcHandlerUnary'),))
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
+
+    def testNestedExceptionGenericRpcHandlerUnaryResponse(self):
+        request = b'\x07\x08'
+        multi_callable = _defective_nested_exception_handler_multi_callable(
+            self._channel)
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(request,

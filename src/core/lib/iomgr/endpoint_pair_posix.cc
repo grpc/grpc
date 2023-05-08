@@ -37,6 +37,7 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -54,8 +55,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
-                                                   grpc_channel_args* args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
+    const char* name, const grpc_channel_args* args) {
   int sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);

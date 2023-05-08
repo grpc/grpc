@@ -19,6 +19,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -37,7 +38,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -101,8 +102,6 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
 
  private:
   std::map<std::string, Child> cluster_map_;
@@ -125,8 +124,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
   class ClusterPicker : public SubchannelPicker {
    public:
     // Maintains a map of cluster names to pickers.
-    using ClusterMap =
-        std::map<std::string /*cluster_name*/, RefCountedPtr<SubchannelPicker>>;
+    using ClusterMap = std::map<std::string /*cluster_name*/,
+                                RefCountedPtr<SubchannelPicker>, std::less<>>;
 
     // It is required that the keys of cluster_map have to live at least as long
     // as the ClusterPicker instance.
@@ -231,11 +230,14 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
-  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
-      args.call_state);
-  auto cluster_name =
-      call_state->GetCallAttribute(XdsClusterAttributeTypeName());
-  auto it = cluster_map_.find(std::string(cluster_name));
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
+  auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
+      call_state->GetCallAttribute(XdsClusterAttribute::TypeName()));
+  absl::string_view cluster_name;
+  if (cluster_name_attribute != nullptr) {
+    cluster_name = cluster_name_attribute->cluster();
+  }
+  auto it = cluster_map_.find(cluster_name);
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);
   }
@@ -330,7 +332,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_ready = 0;
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  size_t num_transient_failures = 0;
   for (const auto& p : children_) {
     const auto& child_name = p.first;
     const ClusterChild* child = p.second.get();
@@ -353,7 +354,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        ++num_transient_failures;
         break;
       }
       default:
@@ -642,8 +642,8 @@ void XdsClusterManagerLbConfig::Child::JsonPostLoad(const Json& json,
                                                     const JsonArgs&,
                                                     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".childPolicy");
-  auto it = json.object_value().find("childPolicy");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("childPolicy");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -666,16 +666,6 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
   return loader;
 }
 
-void XdsClusterManagerLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
-                                             ValidationErrors* errors) {
-  if (cluster_map_.empty()) {
-    ValidationErrors::ScopedField field(errors, ".children");
-    if (!errors->FieldHasErrors()) {
-      errors->AddError("no valid children configured");
-    }
-  }
-}
-
 class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -687,14 +677,6 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // xds_cluster_manager was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_manager policy requires "
-          "configuration.  Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
     return LoadRefCountedFromJson<XdsClusterManagerLbConfig>(
         json, JsonArgs(),
         "errors validating xds_cluster_manager LB policy config");

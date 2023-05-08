@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,12 +30,16 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-/// This defines an interface that posix specific event engines endpoints
+/// This defines an interface that posix specific EventEngines endpoints
 /// may implement to support additional file descriptor related functionality.
 class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
  public:
   /// Returns the file descriptor associated with the posix endpoint.
   virtual int GetWrappedFd() = 0;
+
+  /// Returns if the Endpoint supports tracking events from errmsg queues on
+  /// posix systems.
+  virtual bool CanTrackErrors() = 0;
 
   /// Shutdown the endpoint. This function call should trigger execution of
   /// any pending endpoint Read/Write callbacks with appropriate error
@@ -52,7 +56,7 @@ class PosixEndpointWithFdSupport : public EventEngine::Endpoint {
                             on_release_fd) = 0;
 };
 
-/// Defines an interface that posix event engine listeners may implement to
+/// Defines an interface that posix EventEngine listeners may implement to
 /// support additional file descriptor related functionality.
 class PosixListenerWithFdSupport : public EventEngine::Listener {
  public:
@@ -98,7 +102,7 @@ class PosixListenerWithFdSupport : public EventEngine::Listener {
   virtual void ShutdownListeningFds() = 0;
 };
 
-/// Defines an interface that posix event engines may implement to
+/// Defines an interface that posix EventEngines may implement to
 /// support additional file descriptor related functionality.
 class PosixEventEngineWithFdSupport : public EventEngine {
  public:
@@ -118,7 +122,7 @@ class PosixEventEngineWithFdSupport : public EventEngine {
   /// new client connection.
   /// \a is_external - A boolean indicating whether the new client connection
   /// is accepted by an external listener_fd or by a listener_fd that is
-  /// managed by the event engine listener.
+  /// managed by the EventEngine listener.
   /// \a memory_allocator - The callback may use the provided memory
   /// allocator to handle memory allocation operations.
   /// \a pending_data - If specified, it holds any pending data that may have
@@ -155,4 +159,4 @@ class PosixEventEngineWithFdSupport : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H

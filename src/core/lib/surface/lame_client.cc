@@ -76,7 +76,10 @@ ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
     CallArgs args, NextPromiseFactory) {
   // TODO(ctiller): remove if check once promise_based_filter is removed (Close
   // is still needed)
-  if (args.incoming_messages != nullptr) args.incoming_messages->Close();
+  if (args.server_to_client_messages != nullptr) {
+    args.server_to_client_messages->Close();
+  }
+  args.client_initial_metadata_outstanding.Complete(true);
   return Immediate(ServerMetadataFromStatus(error_));
 }
 

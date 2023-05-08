@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
-#define GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
 
 // Scaffolding to allow the per-call part of a filter to be authored in a
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
-
-// TODO(ctiller): When removing this file, also reduce the number of *'s on the
-// server initial metadata latch.
 
 #include <grpc/support/port_platform.h>
 
@@ -28,6 +25,7 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>
@@ -35,6 +33,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -45,7 +44,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -60,11 +58,11 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -119,7 +117,7 @@ class ChannelFilter {
   }
 
  private:
-  // TODO(ctiller): remove once per-channel-stack event engines land
+  // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
@@ -137,6 +135,7 @@ static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
 static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
 static constexpr uint8_t kFilterExaminesInboundMessages = 8;
+static constexpr uint8_t kFilterExaminesCallContext = 16;
 
 namespace promise_filter_detail {
 
@@ -152,9 +151,27 @@ class InvalidChannelFilter : public ChannelFilter {
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
- public:
+ protected:
+  // Hook to allow interception of messages on the send/receive path by
+  // PipeSender and PipeReceiver, as appropriate according to whether we're
+  // client or server.
+  class Interceptor {
+   public:
+    virtual PipeSender<MessageHandle>* Push() = 0;
+    virtual PipeReceiver<MessageHandle>* Pull() = 0;
+    virtual PipeReceiver<MessageHandle>* original_receiver() = 0;
+    virtual PipeSender<MessageHandle>* original_sender() = 0;
+    virtual void GotPipe(PipeSender<MessageHandle>*) = 0;
+    virtual void GotPipe(PipeReceiver<MessageHandle>*) = 0;
+    virtual ~Interceptor() = default;
+  };
+
   BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args,
-               uint8_t flags);
+               uint8_t flags,
+               absl::FunctionRef<Interceptor*()> make_send_interceptor,
+               absl::FunctionRef<Interceptor*()> make_recv_interceptor);
+
+ public:
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
@@ -167,7 +184,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  std::string ActivityDebugTag() const override { return DebugTag(); }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
@@ -182,7 +199,8 @@ class BaseCallData : public Activity, private Wakeable {
         public promise_detail::Context<grpc_polling_entity>,
         public promise_detail::Context<CallFinalization>,
         public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine> {
+            grpc_event_engine::experimental::EventEngine>,
+        public promise_detail::Context<CallContext> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -192,7 +210,8 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_) {}
+              call_data->event_engine_),
+          promise_detail::Context<CallContext>(call_data->call_context_) {}
   };
 
   class Flusher {
@@ -203,7 +222,11 @@ class BaseCallData : public Activity, private Wakeable {
 
     void Resume(grpc_transport_stream_op_batch* batch) {
       GPR_ASSERT(!call_->is_last());
-      release_.push_back(batch);
+      if (batch->HasOp()) {
+        release_.push_back(batch);
+      } else if (batch->on_complete != nullptr) {
+        Complete(batch);
+      }
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,
@@ -221,6 +244,8 @@ class BaseCallData : public Activity, private Wakeable {
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
+
+    BaseCallData* call() const { return call_; }
 
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
@@ -265,10 +290,59 @@ class BaseCallData : public Activity, private Wakeable {
                                                Arena::PooledDeleter(nullptr));
   }
 
-  static grpc_metadata_batch* UnwrapMetadata(
-      Arena::PoolPtr<grpc_metadata_batch> p) {
-    return p.release();
-  }
+  class ReceiveInterceptor final : public Interceptor {
+   public:
+    explicit ReceiveInterceptor(Arena* arena) : pipe_{arena} {}
+
+    PipeReceiver<MessageHandle>* original_receiver() override {
+      return &pipe_.receiver;
+    }
+    PipeSender<MessageHandle>* original_sender() override { abort(); }
+
+    void GotPipe(PipeReceiver<MessageHandle>* receiver) override {
+      GPR_ASSERT(receiver_ == nullptr);
+      receiver_ = receiver;
+    }
+
+    void GotPipe(PipeSender<MessageHandle>*) override { abort(); }
+
+    PipeSender<MessageHandle>* Push() override { return &pipe_.sender; }
+    PipeReceiver<MessageHandle>* Pull() override {
+      GPR_ASSERT(receiver_ != nullptr);
+      return receiver_;
+    }
+
+   private:
+    Pipe<MessageHandle> pipe_;
+    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+  };
+
+  class SendInterceptor final : public Interceptor {
+   public:
+    explicit SendInterceptor(Arena* arena) : pipe_{arena} {}
+
+    PipeReceiver<MessageHandle>* original_receiver() override { abort(); }
+    PipeSender<MessageHandle>* original_sender() override {
+      return &pipe_.sender;
+    }
+
+    void GotPipe(PipeReceiver<MessageHandle>*) override { abort(); }
+
+    void GotPipe(PipeSender<MessageHandle>* sender) override {
+      GPR_ASSERT(sender_ == nullptr);
+      sender_ = sender;
+    }
+
+    PipeSender<MessageHandle>* Push() override {
+      GPR_ASSERT(sender_ != nullptr);
+      return sender_;
+    }
+    PipeReceiver<MessageHandle>* Pull() override { return &pipe_.receiver; }
+
+   private:
+    Pipe<MessageHandle> pipe_;
+    PipeSender<MessageHandle>* sender_ = nullptr;
+  };
 
   // State machine for sending messages: handles intercepting send_message ops
   // and forwarding them through pipes to the promise, then getting the result
@@ -277,9 +351,11 @@ class BaseCallData : public Activity, private Wakeable {
   // these members for filters that don't need to intercept sent messages.
   class SendMessage {
    public:
-    explicit SendMessage(BaseCallData* base)
-        : base_(base), pipe_(base->arena()) {}
-    PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
+    SendMessage(BaseCallData* base, Interceptor* interceptor)
+        : base_(base), interceptor_(interceptor) {}
+    ~SendMessage() { interceptor_->~Interceptor(); }
+
+    Interceptor* interceptor() { return interceptor_; }
 
     // Start a send_message op.
     void StartOp(CapturedBatch batch);
@@ -287,16 +363,19 @@ class BaseCallData : public Activity, private Wakeable {
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be sent as we don't know the pipe that the
     // promise expects to send on.
-    void GotPipe(PipeReceiver<MessageHandle>* receiver);
+    template <typename T>
+    void GotPipe(T* pipe);
     // Called from client/server polling to do the send message part of the
     // work.
-    void WakeInsideCombiner(Flusher* flusher);
+    void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
-    void Done(const ServerMetadata& metadata);
+    void Done(const ServerMetadata& metadata, Flusher* flusher);
     // Return true if we have a batch captured (for debug logs)
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
     // Return true if we're not actively sending a message.
     bool IsIdle() const;
+    // Return true if we've released the message for forwarding down the stack.
+    bool IsForwarded() const { return state_ == State::kForwardedBatch; }
 
    private:
     enum class State : uint8_t {
@@ -324,6 +403,8 @@ class BaseCallData : public Activity, private Wakeable {
       kCancelledButNotYetPolled,
       // We're done.
       kCancelled,
+      // We're done, but we haven't gotten a status yet
+      kCancelledButNoStatus,
     };
     static const char* StateString(State);
 
@@ -331,11 +412,9 @@ class BaseCallData : public Activity, private Wakeable {
 
     BaseCallData* const base_;
     State state_ = State::kInitial;
-    Pipe<MessageHandle> pipe_;
-    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+    Interceptor* const interceptor_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
-    absl::optional<NextResult<MessageHandle>> next_result_;
+    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
     CapturedBatch batch_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
@@ -351,9 +430,11 @@ class BaseCallData : public Activity, private Wakeable {
   // these members for filters that don't need to intercept sent messages.
   class ReceiveMessage {
    public:
-    explicit ReceiveMessage(BaseCallData* base)
-        : base_(base), pipe_(base->arena()) {}
-    PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
+    ReceiveMessage(BaseCallData* base, Interceptor* interceptor)
+        : base_(base), interceptor_(interceptor) {}
+    ~ReceiveMessage() { interceptor_->~Interceptor(); }
+
+    Interceptor* interceptor() { return interceptor_; }
 
     // Start a recv_message op.
     void StartOp(CapturedBatch& batch);
@@ -361,10 +442,11 @@ class BaseCallData : public Activity, private Wakeable {
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be received as we don't know the pipe that the
     // promise expects to forward them with.
-    void GotPipe(PipeSender<MessageHandle>* sender);
+    template <typename T>
+    void GotPipe(T* pipe);
     // Called from client/server polling to do the receive message part of the
     // work.
-    void WakeInsideCombiner(Flusher* flusher);
+    void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
 
@@ -403,28 +485,37 @@ class BaseCallData : public Activity, private Wakeable {
       // stack: we need to keep track of that until we get the completion so
       // that we do the right thing in OnComplete.
       kCancelledWhilstForwarding,
+      // The same, but before we got the pipe
+      kCancelledWhilstForwardingNoPipe,
       // Call got terminated whilst we had a recv_message batch completed, and
       // we've now received the completion.
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
-      // Completed successfully while we're processing a recv message.
+      // The same, but before we got the pipe
+      kBatchCompletedButCancelledNoPipe,
+      // Completed successfully while we're processing a recv message - see
+      // kPushedToPipe.
       kCompletedWhilePushedToPipe,
+      // Completed successfully while we're processing a recv message - see
+      // kPulledFromPipe.
       kCompletedWhilePulledFromPipe,
+      // Completed successfully while we were waiting to process
+      // kBatchCompleted.
+      kCompletedWhileBatchCompleted,
     };
     static const char* StateString(State);
 
     void OnComplete(absl::Status status);
 
     BaseCallData* const base_;
-    Pipe<MessageHandle> pipe_;
-    PipeSender<MessageHandle>* sender_;
+    Interceptor* const interceptor_;
     State state_ = State::kInitial;
     uint32_t scratch_flags_;
     absl::optional<SliceBuffer>* intercepted_slice_buffer_;
     uint32_t* intercepted_flags_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
-    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
@@ -436,15 +527,8 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* call_combiner() const { return call_combiner_; }
   Timestamp deadline() const { return deadline_; }
   grpc_call_stack* call_stack() const { return call_stack_; }
-  Latch<ServerMetadata*>* server_initial_metadata_latch() const {
-    return server_initial_metadata_latch_;
-  }
-  PipeReceiver<MessageHandle>* outgoing_messages_pipe() const {
-    return send_message_ == nullptr ? nullptr : send_message_->outgoing_pipe();
-  }
-  PipeSender<MessageHandle>* incoming_messages_pipe() const {
-    return receive_message_ == nullptr ? nullptr
-                                       : receive_message_->incoming_pipe();
+  Pipe<ServerMetadataHandle>* server_initial_metadata_pipe() const {
+    return server_initial_metadata_pipe_;
   }
   SendMessage* send_message() const { return send_message_; }
   ReceiveMessage* receive_message() const { return receive_message_; }
@@ -461,8 +545,8 @@ class BaseCallData : public Activity, private Wakeable {
 
  private:
   // Wakeable implementation.
-  void Wakeup() final;
-  void Drop() final;
+  void Wakeup(WakeupMask) final;
+  void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
 
@@ -472,9 +556,10 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
   CallFinalization finalization_;
+  CallContext* call_context_ = nullptr;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
-  Latch<ServerMetadata*>* const server_initial_metadata_latch_;
+  Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
   grpc_event_engine::experimental::EventEngine* event_engine_;
@@ -487,9 +572,11 @@ class ClientCallData : public BaseCallData {
   ~ClientCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+  std::string DebugTag() const override;
 
  private:
   // At what stage is our handling of send initial metadata?
@@ -587,6 +674,8 @@ class ClientCallData : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Polling related data. Non-null if we're actively polling
   PollContext* poll_ctx_ = nullptr;
+  // Initial metadata outstanding token
+  ClientInitialMetadataOutstandingToken initial_metadata_outstanding_token_;
 };
 
 class ServerCallData : public BaseCallData {
@@ -596,9 +685,11 @@ class ServerCallData : public BaseCallData {
   ~ServerCallData() override;
 
   // Activity implementation.
-  void ForceImmediateRepoll() final;
+  void ForceImmediateRepoll(WakeupMask) final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+  std::string DebugTag() const override;
 
  protected:
   absl::string_view ClientOrServerString() const override { return "SVR"; }
@@ -625,6 +716,9 @@ class ServerCallData : public BaseCallData {
     // - so we'll wait for that to complete before processing the trailing
     // metadata.
     kQueuedBehindSendMessage,
+    // We saw the op, and are waiting for the promise to complete
+    // to forward it. First however we need to close sends.
+    kQueuedButHaventClosedSends,
     // We saw the op, and are waiting for the promise to complete
     // to forward it.
     kQueued,
@@ -792,7 +886,7 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(ChannelArgs::FromC(args->channel_args),
+    auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
       static_assert(
@@ -854,4 +948,4 @@ MakePromiseBasedFilter(const char* name) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_PROMISE_BASED_FILTER_H

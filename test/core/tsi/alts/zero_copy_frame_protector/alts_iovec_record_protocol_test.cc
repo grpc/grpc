@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 constexpr size_t kMaxDataSize = 1024;

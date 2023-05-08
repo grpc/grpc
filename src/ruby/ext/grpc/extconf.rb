@@ -115,6 +115,9 @@ $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
+  # ruby_abi_version is only available in development versions: https://github.com/ruby/ruby/pull/6231
+  return false if RUBY_PATCHLEVEL >= 0
+
   m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
   if m.nil?
     puts "Failed to parse ruby version: #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
@@ -181,6 +184,25 @@ if grpc_config == 'opt'
     o.puts 'strip: $(DLLIB)'
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  end
+  File.rename('Makefile.new', 'Makefile')
+end
+if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
+  # Note: this env var setting is intended to work around a problem observed
+  # with the ginstall command on grpc's macos automated test infrastructure,
+  # and is not  guaranteed to work in the wild.
+  # Also see https://github.com/rake-compiler/rake-compiler/issues/210.
+  puts 'Overriding the generated Makefile install target to use cp'
+  File.open('Makefile.new', 'w') do |o|
+    File.foreach('Makefile') do |i|
+      if i.start_with?('INSTALL_PROG = ')
+        override = 'INSTALL_PROG = cp'
+        puts "Replacing generated Makefile line: |#{i}|, with: |#{override}|"
+        o.puts override
+      else
+        o.puts i
+      end
+    end
   end
   File.rename('Makefile.new', 'Makefile')
 end

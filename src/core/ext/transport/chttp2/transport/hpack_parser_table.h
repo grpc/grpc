@@ -16,14 +16,16 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
 #include <vector>
+
+#include "absl/status/status.h"
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -45,7 +47,10 @@ class HPackTable {
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
-  using Memento = ParsedMetadata<grpc_metadata_batch>;
+  struct Memento {
+    ParsedMetadata<grpc_metadata_batch> md;
+    absl::Status parse_status;
+  };
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {
@@ -67,6 +72,9 @@ class HPackTable {
 
   // Current entry count in the table.
   uint32_t num_entries() const { return entries_.num_entries(); }
+
+  // Current size of the table.
+  uint32_t test_only_table_size() const { return mem_used_; }
 
  private:
   struct StaticMementos {
@@ -134,4 +142,4 @@ class HPackTable {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H

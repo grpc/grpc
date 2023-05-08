@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,11 +58,14 @@ struct PosixTcpOptions {
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
+  // Let the system decide the proper buffer size.
+  static constexpr int kReadBufferSizeUnset = -1;
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
+  int tcp_receive_buffer_size = kReadBufferSizeUnset;
   bool tcp_tx_zero_copy_enabled = kZerocpTxEnabledDefault;
   int keep_alive_time_ms = 0;
   int keep_alive_timeout_ms = 0;
@@ -238,9 +241,6 @@ class PosixSocketWrapper {
     DSMODE_DUALSTACK
   };
 
-  // Tries to set the socket to dualstack. Returns true on success.
-  bool SetSocketDualStack();
-
   // Returns the underlying file-descriptor.
   int Fd() const { return fd_; }
 
@@ -313,4 +313,4 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

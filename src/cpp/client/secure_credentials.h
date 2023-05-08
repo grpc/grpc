@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
-#define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+#ifndef GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H
+#define GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H
 
 #include <stddef.h>
 
@@ -131,4 +131,4 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+#endif  // GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H

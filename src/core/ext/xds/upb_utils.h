@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_UPB_UTILS_H
-#define GRPC_CORE_EXT_XDS_UPB_UTILS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_UPB_UTILS_H
+#define GRPC_SRC_CORE_EXT_XDS_UPB_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 
 namespace grpc_core {
 
@@ -42,4 +42,4 @@ inline std::string UpbStringToStdString(const upb_StringView& str) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_UPB_UTILS_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_UPB_UTILS_H

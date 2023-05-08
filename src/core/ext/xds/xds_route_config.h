@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
-#define GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,7 +33,7 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -249,4 +249,4 @@ class XdsRouteConfigResourceType
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H

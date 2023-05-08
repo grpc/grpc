@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -46,6 +47,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -138,7 +140,11 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
    private:
     PickerList pickers_;
-    absl::BitGen bit_gen_;
+
+    // TODO(roth): Consider using a separate thread-local BitGen for each CPU
+    // to avoid the need for this mutex.
+    Mutex mu_;
+    absl::BitGen bit_gen_ ABSL_GUARDED_BY(&mu_);
   };
 
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
@@ -247,8 +253,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     PickArgs args) {
   // Generate a random number in [0, total weight).
-  const uint64_t key =
-      absl::Uniform<uint64_t>(bit_gen_, 0, pickers_.back().first);
+  const uint64_t key = [&]() {
+    MutexLock lock(&mu_);
+    return absl::Uniform<uint64_t>(bit_gen_, 0, pickers_.back().first);
+  }();
   // Find the index in pickers_ corresponding to key.
   size_t mid = 0;
   size_t start_index = 0;
@@ -641,8 +649,8 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
       state == GRPC_CHANNEL_READY) {
     connectivity_state_ = state;
   }
-  // Notify the LB policy.
-  weighted_target_policy_->UpdateStateLocked();
+  // Update the LB policy's state if this child is not deactivated.
+  if (weight_ != 0) weighted_target_policy_->UpdateStateLocked();
 }
 
 void WeightedTargetLb::WeightedChild::DeactivateLocked() {
@@ -722,8 +730,8 @@ const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader(
 void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(
     const Json& json, const JsonArgs&, ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".childPolicy");
-  auto it = json.object_value().find("childPolicy");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("childPolicy");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -756,7 +764,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
+    if (json.type() == Json::Type::kNull) {
       // weighted_target was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       return absl::InvalidArgumentError(

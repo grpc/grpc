@@ -21,6 +21,7 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -29,6 +30,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -59,9 +61,9 @@ bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
     return true;
   }
 
-  gpr_log(GPR_ERROR, "Error status code: %d (expected: %d), message: %s",
-          s.error_code(), expected_code, s.error_message().c_str());
-  abort();
+  grpc_core::Crash(absl::StrFormat(
+      "Error status code: %d (expected: %d), message: %s", s.error_code(),
+      expected_code, s.error_message().c_str()));
 }
 
 Status Http2Client::SendUnaryCall(SimpleResponse* response) {

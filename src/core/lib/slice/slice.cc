@@ -283,7 +283,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
     subset = grpc_slice_sub_no_ref(source, begin, end);
     // Bump the refcount
     if (subset.refcount != grpc_slice_refcount::NoopRefcount()) {
-      subset.refcount->Ref();
+      subset.refcount->Ref({});
     }
   }
   return subset;
@@ -332,7 +332,7 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
           tail.refcount = source->refcount;
           // Bump the refcount
           if (tail.refcount != grpc_slice_refcount::NoopRefcount()) {
-            tail.refcount->Ref();
+            tail.refcount->Ref({});
           }
           break;
       }
@@ -378,7 +378,7 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     head.refcount = source->refcount;
     // Bump the refcount
     if (head.refcount != grpc_slice_refcount::NoopRefcount()) {
-      head.refcount->Ref();
+      head.refcount->Ref({});
     }
     // Point into the source array
     head.data.refcounted.bytes = source->data.refcounted.bytes;
@@ -480,7 +480,7 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   }
 
   const uint8_t* last = haystack_bytes + haystack_len - needle_len;
-  for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {
+  for (const uint8_t* cur = haystack_bytes; cur <= last; ++cur) {
     if (0 == memcmp(cur, needle_bytes, needle_len)) {
       return static_cast<int>(cur - haystack_bytes);
     }

@@ -74,6 +74,48 @@ static void BM_Arena_Batch(benchmark::State& state) {
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
 
+struct TestThingToAllocate {
+  int a;
+  int b;
+  int c;
+  int d;
+};
+
+static void BM_Arena_MakePooled_Small(benchmark::State& state) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(1024, &memory_allocator);
+  for (auto _ : state) {
+    a->MakePooled<TestThingToAllocate>();
+  }
+  a->Destroy();
+}
+BENCHMARK(BM_Arena_MakePooled_Small);
+
+static void BM_Arena_MakePooled3_Small(benchmark::State& state) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(1024, &memory_allocator);
+  for (auto _ : state) {
+    auto x = a->MakePooled<TestThingToAllocate>();
+    auto y = a->MakePooled<TestThingToAllocate>();
+    auto z = a->MakePooled<TestThingToAllocate>();
+  }
+  a->Destroy();
+}
+BENCHMARK(BM_Arena_MakePooled3_Small);
+
+static void BM_Arena_NewDeleteComparison_Small(benchmark::State& state) {
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(std::make_unique<TestThingToAllocate>());
+  }
+}
+BENCHMARK(BM_Arena_NewDeleteComparison_Small);
+
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
 namespace benchmark {

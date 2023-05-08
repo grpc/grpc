@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <queue>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
 
 #include <grpcpp/security/binder_security_policy.h>
 
@@ -99,9 +101,11 @@ class WireReaderImpl : public WireReader {
  private:
   absl::Status ProcessStreamingTransaction(transaction_code_t code,
                                            ReadableParcel* parcel);
-  absl::Status ProcessStreamingTransactionImpl(transaction_code_t code,
-                                               ReadableParcel* parcel,
-                                               int* cancellation_flags)
+  absl::Status ProcessStreamingTransactionImpl(
+      transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags,
+      // The queue saves the actions needed to be done "WITHOUT" `mu_`.
+      // It prevents deadlock against wire writer issues.
+      std::queue<absl::AnyInvocable<void() &&>>& deferred_func_queue)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
@@ -153,4 +157,4 @@ class WireReaderImpl : public WireReader {
 
 }  // namespace grpc_binder
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H

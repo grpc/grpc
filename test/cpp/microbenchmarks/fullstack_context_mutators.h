@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
 
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -28,6 +28,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -137,4 +138,4 @@ const std::vector<std::string> RandomAsciiMetadata<length>::kValues =
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
-#define GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
+#ifndef GRPC_TEST_CORE_UTIL_STACK_TRACER_H
+#define GRPC_TEST_CORE_UTIL_STACK_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,4 +45,4 @@ void InitializeStackTracer(const char* argv0);
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_UTIL_EXAMINE_STACK_H
+#endif  // GRPC_TEST_CORE_UTIL_STACK_TRACER_H

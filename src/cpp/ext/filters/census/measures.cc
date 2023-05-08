@@ -24,6 +24,8 @@
 
 #include <grpcpp/opencensus.h>
 
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
+
 namespace grpc {
 
 using ::opencensus::stats::MeasureDouble;
@@ -95,6 +97,15 @@ MeasureInt64 RpcClientStartedRpcs() {
                              "The total number of client RPCs ever opened, "
                              "including those that have not been completed.",
                              kCount);
+  return measure;
+}
+
+MeasureDouble RpcClientTransportLatency() {
+  static const auto measure = MeasureDouble::Register(
+      experimental::kRpcClientTransportLatencyMeasureName,
+      "Time between first byte of request sent to last byte of response "
+      "received on the transport",
+      kUnitMilliseconds);
   return measure;
 }
 
@@ -170,5 +181,16 @@ MeasureInt64 RpcServerReceivedMessagesPerRpc() {
       "Number of messages received per RPC", kCount);
   return measure;
 }
+
+namespace internal {
+
+MeasureDouble RpcClientApiLatency() {
+  static const auto measure = MeasureDouble::Register(
+      kRpcClientApiLatencyMeasureName,
+      "End-to-end time taken to complete an RPC", kUnitMilliseconds);
+  return measure;
+}
+
+}  // namespace internal
 
 }  // namespace grpc

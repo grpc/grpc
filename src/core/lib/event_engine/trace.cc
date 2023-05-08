@@ -16,3 +16,10 @@
 #include "src/core/lib/debug/trace.h"
 
 grpc_core::TraceFlag grpc_event_engine_trace(false, "event_engine");
+grpc_core::TraceFlag grpc_event_engine_dns_trace(false, "event_engine_dns");
+grpc_core::TraceFlag grpc_event_engine_endpoint_trace(false,
+                                                      "event_engine_endpoint");
+grpc_core::TraceFlag grpc_event_engine_endpoint_data_trace(
+    false, "event_engine_endpoint_data");
+grpc_core::TraceFlag grpc_event_engine_poller_trace(false,
+                                                    "event_engine_poller");

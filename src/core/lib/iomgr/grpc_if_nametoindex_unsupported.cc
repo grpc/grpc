@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 
 uint32_t grpc_if_nametoindex(char* name) {

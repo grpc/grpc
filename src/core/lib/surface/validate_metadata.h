@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
-#define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#define GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,10 +25,19 @@
 
 #include <cstring>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/error.h"
+
+namespace grpc_core {
+
+absl::Status ValidateHeaderKeyIsLegal(absl::string_view key);
+
+}
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice);
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
@@ -45,4 +54,4 @@ inline int grpc_is_refcounted_slice_binary_header(const grpc_slice& slice) {
                                    slice.data.refcounted.length);
 }
 
-#endif  // GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H

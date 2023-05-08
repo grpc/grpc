@@ -743,6 +743,9 @@ extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 typedef void(*gpr_set_log_function_type)(gpr_log_func func);
 extern gpr_set_log_function_type gpr_set_log_function_import;
 #define gpr_set_log_function gpr_set_log_function_import
+typedef void(*gpr_assertion_failed_type)(const char* filename, int line, const char* message);
+extern gpr_assertion_failed_type gpr_assertion_failed_import;
+#define gpr_assertion_failed gpr_assertion_failed_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

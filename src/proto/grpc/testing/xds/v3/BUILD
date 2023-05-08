@@ -385,6 +385,22 @@ grpc_proto_library(
     ],
 )
 
+# Contains stdout audit logger.
+grpc_proto_library(
+    name = "audit_logger_stream_proto",
+    srcs = [
+        "audit_logger_stream.proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "client_side_weighted_round_robin_proto",
+    srcs = [
+        "client_side_weighted_round_robin.proto",
+    ],
+    well_known_protos = True,
+)
+
 grpc_proto_library(
     name = "ring_hash_proto",
     srcs = [

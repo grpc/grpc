@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef TEST_QPS_INTERARRIVAL_H
-#define TEST_QPS_INTERARRIVAL_H
+#ifndef GRPC_TEST_CPP_QPS_INTERARRIVAL_H
+#define GRPC_TEST_CPP_QPS_INTERARRIVAL_H
 
 #include <chrono>
 #include <cmath>
@@ -105,4 +105,4 @@ class InterarrivalTimer {
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_TEST_CPP_QPS_INTERARRIVAL_H

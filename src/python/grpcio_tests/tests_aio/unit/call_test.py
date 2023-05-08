@@ -16,6 +16,7 @@
 import asyncio
 import datetime
 import logging
+import random
 import unittest
 
 import grpc
@@ -35,6 +36,9 @@ _REQUEST_PAYLOAD_SIZE = 7
 _LOCAL_CANCEL_DETAILS_EXPECTATION = 'Locally cancelled by application!'
 _RESPONSE_INTERVAL_US = int(_SHORT_TIMEOUT_S * 1000 * 1000)
 _INFINITE_INTERVAL_US = 2**31 - 1
+
+_NONDETERMINISTIC_ITERATIONS = 50
+_NONDETERMINISTIC_SERVER_SLEEP_MAX_US = 1000
 
 
 class _MulticallableTestMixin():
@@ -380,6 +384,64 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_cancel_unary_stream_with_many_interleavings(self):
+        """ A cheap alternative to a structured fuzzer.
+
+        Certain classes of error only appear for very specific interleavings of
+        coroutines. Rather than inserting semi-private asyncio.Events throughout
+        the implementation on which to coordinate and explicilty waiting on those
+        in tests, we instead search for bugs over the space of interleavings by
+        stochastically varying the durations of certain events within the test.
+        """
+
+        # We range over several orders of magnitude to ensure that switching platforms
+        # (i.e. to slow CI machines) does not result in this test becoming a no-op.
+        sleep_ranges = (10.0**-i for i in range(1, 4))
+        for sleep_range in sleep_ranges:
+            for _ in range(_NONDETERMINISTIC_ITERATIONS):
+                interval_us = random.randrange(
+                    _NONDETERMINISTIC_SERVER_SLEEP_MAX_US)
+                sleep_secs = sleep_range * random.random()
+
+                coro_started = asyncio.Event()
+
+                # Configs the server method to block forever
+                request = messages_pb2.StreamingOutputCallRequest()
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(
+                        size=1,
+                        interval_us=interval_us,
+                    ))
+
+                # Invokes the actual RPC
+                call = self._stub.StreamingOutputCall(request)
+
+                unhandled_error = False
+
+                async def another_coro():
+                    nonlocal unhandled_error
+                    coro_started.set()
+                    try:
+                        await call.read()
+                    except asyncio.CancelledError:
+                        pass
+                    except Exception as e:
+                        unhandled_error = True
+                        raise
+
+                task = self.loop.create_task(another_coro())
+                await coro_started.wait()
+                await asyncio.sleep(sleep_secs)
+
+                task.cancel()
+
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+                self.assertFalse(unhandled_error)
 
     async def test_cancel_unary_stream_in_task_using_read(self):
         coro_started = asyncio.Event()

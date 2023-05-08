@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -96,7 +97,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
-  grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  std::ignore = grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
@@ -104,7 +105,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   }
 }
 
-static void pollset_destroy(grpc_pollset* pollset) {}
+static void pollset_destroy(grpc_pollset* /* pollset */) {}
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
@@ -215,7 +216,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
     specific_worker =
         pop_front_worker(&p->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
     if (specific_worker != NULL) {
-      grpc_pollset_kick(p, specific_worker);
+      std::ignore = grpc_pollset_kick(p, specific_worker);
     } else if (p->is_iocp_worker) {
       grpc_iocp_kick();
     } else {

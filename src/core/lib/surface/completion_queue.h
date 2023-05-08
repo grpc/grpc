@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
-#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#define GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
 
 // Internal API for completion queues
 
@@ -97,4 +97,4 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     grpc_completion_queue_functor* shutdown_callback);
 
-#endif  // GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H

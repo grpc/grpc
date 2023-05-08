@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPR_SPINLOCK_H
-#define GRPC_CORE_LIB_GPR_SPINLOCK_H
+#ifndef GRPC_SRC_CORE_LIB_GPR_SPINLOCK_H
+#define GRPC_SRC_CORE_LIB_GPR_SPINLOCK_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,4 +50,4 @@ struct gpr_spinlock {
   do {                          \
   } while (!gpr_spinlock_trylock((lock)))
 
-#endif  // GRPC_CORE_LIB_GPR_SPINLOCK_H
+#endif  // GRPC_SRC_CORE_LIB_GPR_SPINLOCK_H

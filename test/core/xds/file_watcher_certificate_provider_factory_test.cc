@@ -18,6 +18,8 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
+#include <initializer_list>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -27,6 +29,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/json/json_reader.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -47,7 +50,7 @@ TEST(FileWatcherConfigTest, Basic) {
       "  \"refresh_interval\": \"%ds\""
       "}",
       kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kRefreshInterval);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -67,7 +70,7 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
       "  \"ca_certificate_file\": \"%s\""
       "}",
       kIdentityCertFile, kPrivateKeyFile, kRootCertFile);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -85,7 +88,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
       "  \"ca_certificate_file\": \"%s\""
       "}",
       kRootCertFile);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -104,7 +107,7 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
       "  \"private_key_file\": \"%s\""
       "}",
       kIdentityCertFile, kPrivateKeyFile);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -124,7 +127,7 @@ TEST(FileWatcherConfigTest, WrongTypes) {
       "  \"ca_certificate_file\": 123,"
       "  \"refresh_interval\": 123"
       "}";
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -145,7 +148,7 @@ TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
       "  \"certificate_file\": \"%s\""
       "}",
       kIdentityCertFile);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -162,7 +165,7 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
       "  \"private_key_file\": \"%s\""
       "}",
       kPrivateKeyFile);
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =
@@ -174,8 +177,8 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
 }
 
 TEST(FileWatcherConfigTest, EmptyJsonObject) {
-  std::string json_str = absl::StrFormat("{}");
-  auto json = Json::Parse(json_str);
+  std::string json_str = "{}";
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error;
   auto config =

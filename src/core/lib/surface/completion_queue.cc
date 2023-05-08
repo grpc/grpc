@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>
@@ -538,7 +539,8 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   cq->poller_vtable = poller_vtable;
 
   // One for destroy(), one for pollset_shutdown
-  new (&cq->owning_refs) grpc_core::RefCount(2);
+  new (&cq->owning_refs) grpc_core::RefCount(
+      2, grpc_trace_cq_refcount.enabled() ? "completion_queue" : nullptr);
 
   poller_vtable->init(POLLSET_FROM_CQ(cq), &cq->mu);
   vtable->init(DATA_FROM_CQ(cq), shutdown_callback);

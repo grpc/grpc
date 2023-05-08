@@ -31,6 +31,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -348,6 +349,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+               std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
@@ -370,6 +372,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
                    grpc_core::HPackParser::Priority::None,
                    grpc_core::HPackParser::LogInfo{

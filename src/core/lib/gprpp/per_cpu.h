@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_PER_CPU_H
-#define GRPC_CORE_LIB_GPRPP_PER_CPU_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
+#define GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <memory>
 
 #include <grpc/support/cpu.h>
@@ -29,7 +31,11 @@ namespace grpc_core {
 template <typename T>
 class PerCpu {
  public:
-  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu()]; }
+  explicit PerCpu(size_t max = std::numeric_limits<size_t>::max())
+      : cpus_(std::min<size_t>(max, gpr_cpu_num_cores())),
+        data_{new T[cpus_]} {}
+
+  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
 
   T* begin() { return data_.get(); }
   T* end() { return data_.get() + cpus_; }
@@ -37,10 +43,10 @@ class PerCpu {
   const T* end() const { return data_.get() + cpus_; }
 
  private:
-  const size_t cpus_ = gpr_cpu_num_cores();
-  std::unique_ptr<T[]> data_{new T[cpus_]};
+  const size_t cpus_;
+  std::unique_ptr<T[]> data_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_PER_CPU_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H

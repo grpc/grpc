@@ -30,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -141,7 +142,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  int writes_performed() const { return stats_->num_writes; }
+  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
 
  private:
   grpc_passthru_endpoint_stats* stats_;

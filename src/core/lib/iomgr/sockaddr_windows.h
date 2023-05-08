@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -54,4 +54,4 @@ typedef struct in6_addr grpc_in6_addr;
 
 #endif
 
-#endif  // GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H

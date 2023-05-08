@@ -13,6 +13,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+
 #include <memory>
 #include <set>
 #include <string>
@@ -31,6 +34,8 @@
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -39,6 +44,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -299,6 +305,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
           }
         }
+        if (request->has_param() && request->param().has_backend_metrics()) {
+          const auto& request_metrics = request->param().backend_metrics();
+          auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          for (const auto& p : request_metrics.named_metrics()) {
+            char* key = static_cast<char*>(
+                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+            strncpy(key, p.first.data(), p.first.size());
+            key[p.first.size()] = '\0';
+            recorder->RecordNamedMetric(key, p.second);
+          }
+        }
         return status;
       }
 
@@ -327,8 +344,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
      private:
       grpc_core::Mutex mu_;
-      std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
-      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
+      std::set<std::string> clients_ ABSL_GUARDED_BY(&mu_);
+      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -345,6 +362,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
     backend_service2() {
       return &backend_service2_;
+    }
+    grpc::experimental::ServerMetricRecorder* server_metric_recorder() const {
+      return server_metric_recorder_.get();
     }
 
     // If XdsTestType::use_xds_credentials() and use_xds_enabled_server()
@@ -366,6 +386,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         backend_service1_;
     BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
         backend_service2_;
+    std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
   };
 
   // A server thread for the xDS server.
@@ -394,8 +415,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       ignore_resource_deletion_ = true;
       return *this;
     }
-    BootstrapBuilder& SetDefaultServer(const std::string& server) {
-      top_server_ = server;
+    // If ignore_if_set is true, sets the default server only if it has
+    // not already been set.
+    BootstrapBuilder& SetDefaultServer(const std::string& server,
+                                       bool ignore_if_set = false) {
+      if (!ignore_if_set || top_server_.empty()) top_server_ = server;
       return *this;
     }
     BootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
@@ -411,9 +435,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
     BootstrapBuilder& AddAuthority(
-        const std::string& authority, const std::string& servers = "",
+        const std::string& authority, const std::string& server = "",
         const std::string& client_listener_resource_name_template = "") {
-      authorities_[authority] = {servers,
+      authorities_[authority] = {server,
                                  client_listener_resource_name_template};
       return *this;
     }
@@ -701,6 +725,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
 
     RpcOptions() {}
 
@@ -760,6 +785,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
+    RpcOptions& set_backend_metrics(
+        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+      backend_metrics = std::move(metrics);
+      return *this;
+    }
+
     // Populates context and request.
     void SetupRpc(ClientContext* context, EchoRequest* request) const;
   };
@@ -768,7 +799,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // If response is non-null, it will be populated with the response.
   // Returns the status of the RPC.
   Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
-                 EchoResponse* response = nullptr);
+                 EchoResponse* response = nullptr,
+                 std::multimap<std::string, std::string>*
+                     server_initial_metadata = nullptr);
 
   // Internal helper function for SendRpc().
   template <typename Stub>
@@ -1024,6 +1057,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     return num_rpcs;
   }
 
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a connection failure.
+  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+
   // Returns the contents of the specified file.
   static std::string ReadFile(const char* file_path);
 
@@ -1064,3 +1101,5 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H

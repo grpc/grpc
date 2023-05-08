@@ -32,6 +32,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -99,10 +100,11 @@ void grpc_postfork_child() {
   if (!skipped_handler) {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::Fork::child_postfork_func reset_polling_engine =
-        grpc_core::Fork::GetResetChildPollingEngineFunc();
-    if (reset_polling_engine != nullptr) {
-      reset_polling_engine();
+    for (auto* reset_polling_engine :
+         grpc_core::Fork::GetResetChildPollingEngineFunc()) {
+      if (reset_polling_engine != nullptr) {
+        reset_polling_engine();
+      }
     }
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);

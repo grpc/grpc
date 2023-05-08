@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
-#define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,4 +28,4 @@
 // Calls gpr_dump on a slice.
 char* grpc_dump_slice(const grpc_slice& slice, uint32_t flags);
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H

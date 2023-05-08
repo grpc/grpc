@@ -52,7 +52,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:

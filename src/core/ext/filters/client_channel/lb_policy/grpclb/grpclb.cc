@@ -58,10 +58,11 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <inttypes.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -107,6 +108,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -186,11 +188,11 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
+      child_policy_config_json_tmp = Json::FromArray({Json::FromObject({
+          {"round_robin", Json::FromObject({})},
+      })});
       child_policy_config_json = &child_policy_config_json_tmp;
     } else {
       child_policy_config_json = &it->second;
@@ -388,19 +390,15 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
     //
-    // Note: This is called from the picker, so it will be invoked in
-    // the channel's data plane mutex, NOT the control plane
-    // work_serializer.  It should not be accessed by any other part of the LB
-    // policy.
+    // Note: This is called from the picker, NOT from inside the control
+    // plane work_serializer.
     const char* ShouldDrop();
 
    private:
     std::vector<GrpcLbServer> serverlist_;
 
-    // Guarded by the channel's data plane mutex, NOT the control
-    // plane work_serializer.  It should not be accessed by anything but the
-    // picker via the ShouldDrop() method.
-    size_t drop_index_ = 0;
+    // Accessed from the picker, so needs synchronization.
+    std::atomic<size_t> drop_index_{0};
   };
 
   class Picker : public SubchannelPicker {
@@ -716,8 +714,8 @@ bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
 
 const char* GrpcLb::Serverlist::ShouldDrop() {
   if (serverlist_.empty()) return nullptr;
-  GrpcLbServer& server = serverlist_[drop_index_];
-  drop_index_ = (drop_index_ + 1) % serverlist_.size();
+  size_t index = drop_index_.fetch_add(1, std::memory_order_relaxed);
+  GrpcLbServer& server = serverlist_[index % serverlist_.size()];
   return server.drop ? server.load_balance_token : nullptr;
 }
 
@@ -792,10 +790,9 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
       static_cast<const TokenAndClientStatsAttribute*>(
           address.GetAttribute(kGrpcLbAddressAttributeKey));
   if (attribute == nullptr) {
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
-            parent_.get(), address.ToString().c_str());
-    abort();
+    Crash(absl::StrFormat(
+        "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
+        parent_.get(), address.ToString().c_str()));
   }
   std::string lb_token = attribute->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = attribute->client_stats();
@@ -1165,13 +1162,15 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    char* response_slice_str =
-        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-            "Ignoring.",
-            grpclb_policy(), this, response_slice_str);
-    gpr_free(response_slice_str);
+    if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+      char* response_slice_str =
+          grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
+      gpr_log(GPR_ERROR,
+              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
+              "Ignoring.",
+              grpclb_policy(), this, response_slice_str);
+      gpr_free(response_slice_str);
+    }
   } else {
     switch (response.type) {
       case response.INITIAL: {
@@ -1532,7 +1531,7 @@ void GrpcLb::ShutdownLocked() {
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
-    grpc_channel_destroy(lb_channel_);
+    grpc_channel_destroy_internal(lb_channel_);
     lb_channel_ = nullptr;
   }
 }

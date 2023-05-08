@@ -33,6 +33,7 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -89,19 +90,25 @@ void ServerTryCancel(ServerContext* context);
 class TestServiceSignaller {
  public:
   void ClientWaitUntilRpcStarted() {
+    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
     cv_rpc_started_.wait(lock, [this] { return rpc_started_; });
+    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilRpcStarted ***");
   }
   void ServerWaitToContinue() {
+    gpr_log(GPR_DEBUG, "*** enter ServerWaitToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
+    gpr_log(GPR_DEBUG, "*** leave ServerWaitToContinue ***");
   }
   void SignalClientThatRpcStarted() {
+    gpr_log(GPR_DEBUG, "*** SignalClientThatRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
     rpc_started_ = true;
     cv_rpc_started_.notify_one();
   }
   void SignalServerToContinue() {
+    gpr_log(GPR_DEBUG, "*** SignalServerToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     server_should_continue_ = true;
     cv_server_continue_.notify_one();

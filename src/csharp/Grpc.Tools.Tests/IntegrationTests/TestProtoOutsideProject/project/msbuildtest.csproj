@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+ <!--
+     Note: common properties and targets for tests are imported from the
+     Directory.Build.props and Directory.Build.targets files in the parent directoty
+  -->
+
+  <!-- The protobuf compiler settings to test -->
+
+  <!-- From issue 29161 -->
+  <PropertyGroup>
+    <!-- full path to parent directory -->
+    <ParentDir>$(MSBuildThisFileDirectory)..\</ParentDir>
+    <ProtoApiRepoBaseDir>$(ParentDir)api\</ProtoApiRepoBaseDir>
+    <AutoGenOutputBaseDir>$(TestOutDir)\generated\</AutoGenOutputBaseDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <Protobuf Include = "$(ProtoApiRepoBaseDir)\**\*.proto"
+              Link = "ProtoApi\%(RecursiveDir)%(Filename)%(Extension)"
+              Access = "Public"
+              ProtoCompile = "True"
+              ProtoRoot = "$(ProtoApiRepoBaseDir)"
+              CompileOutputs = "true"
+              OutputDir = "$(AutoGenOutputBaseDir)"
+              GrpcOutputDir = "$(AutoGenOutputBaseDir)"
+              GrpcServices = "client" />
+  </ItemGroup>
+  
+</Project>

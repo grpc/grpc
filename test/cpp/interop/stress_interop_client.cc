@@ -22,9 +22,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 
@@ -186,8 +189,7 @@ bool StressTestInteropClient::RunTest(TestCaseType test_case) {
       break;
     }
     default: {
-      gpr_log(GPR_ERROR, "Invalid test case (%d)", test_case);
-      GPR_ASSERT(false);
+      grpc_core::Crash(absl::StrFormat("Invalid test case (%d)", test_case));
       break;
     }
   }

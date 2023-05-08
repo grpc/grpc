@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <memory>
 
 #include "gmock/gmock.h"
@@ -177,8 +178,7 @@ TEST_F(ForEachTest, NextResultHeldThroughCallback) {
                           // sender->reset() line above yet either, as
                           // the Push() should block until this code
                           // completes.
-                          EXPECT_TRUE(absl::holds_alternative<Pending>(
-                              (*sender)->Push(2)()));
+                          EXPECT_TRUE((*sender)->Push(2)().pending());
                           num_received++;
                           EXPECT_EQ(num_received, i);
                           return TrySeq(
@@ -188,8 +188,7 @@ TEST_F(ForEachTest, NextResultHeldThroughCallback) {
                                 // Perform the same test verifying the same
                                 // properties for NextResult holding: all should
                                 // still be true.
-                                EXPECT_TRUE(absl::holds_alternative<Pending>(
-                                    (*sender)->Push(2)()));
+                                EXPECT_TRUE((*sender)->Push(2)().pending());
                                 return absl::OkStatus();
                               });
                         })),

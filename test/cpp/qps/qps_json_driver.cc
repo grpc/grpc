@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
@@ -111,9 +112,7 @@ ConstructPerWorkerCredentialTypesMap() {
     std::string addr = next_entry.substr(0, comma);
     std::string cred_type = next_entry.substr(comma + 1, std::string::npos);
     if (out.find(addr) != out.end()) {
-      gpr_log(GPR_ERROR,
-              "Found duplicate addr in per_worker_credential_types.");
-      abort();
+      grpc_core::Crash("Found duplicate addr in per_worker_credential_types.");
     }
     out[addr] = cred_type;
   }
@@ -236,10 +235,9 @@ static bool QpsDriver() {
   if ((!scfile && !scjson && !absl::GetFlag(FLAGS_quit)) ||
       (scfile && (scjson || absl::GetFlag(FLAGS_quit))) ||
       (scjson && absl::GetFlag(FLAGS_quit))) {
-    gpr_log(GPR_ERROR,
-            "Exactly one of --scenarios_file, --scenarios_json, "
-            "or --quit must be set");
-    abort();
+    grpc_core::Crash(
+        "Exactly one of --scenarios_file, --scenarios_json, "
+        "or --quit must be set");
   }
 
   auto per_worker_credential_types = ConstructPerWorkerCredentialTypesMap();

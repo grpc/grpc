@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/support/slice.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,

@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -611,6 +612,17 @@ class LrsServiceImpl
    public:
     // Stats for a given locality.
     struct LocalityStats {
+      struct LoadMetric {
+        uint64_t num_requests_finished_with_metric;
+        double total_metric_value;
+        LoadMetric& operator+=(const LoadMetric& other) {
+          num_requests_finished_with_metric +=
+              other.num_requests_finished_with_metric;
+          total_metric_value += other.total_metric_value;
+          return *this;
+        }
+      };
+
       LocalityStats() {}
 
       // Converts from proto message class.
@@ -624,13 +636,21 @@ class LrsServiceImpl
             total_error_requests(
                 upstream_locality_stats.total_error_requests()),
             total_issued_requests(
-                upstream_locality_stats.total_issued_requests()) {}
+                upstream_locality_stats.total_issued_requests()) {
+        for (const auto& s : upstream_locality_stats.load_metric_stats()) {
+          load_metrics[s.metric_name()] += LoadMetric{
+              s.num_requests_finished_with_metric(), s.total_metric_value()};
+        }
+      }
 
       LocalityStats& operator+=(const LocalityStats& other) {
         total_successful_requests += other.total_successful_requests;
         total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
+        for (const auto& p : other.load_metrics) {
+          load_metrics[p.first] += p.second;
+        }
         return *this;
       }
 
@@ -638,6 +658,7 @@ class LrsServiceImpl
       uint64_t total_requests_in_progress = 0;
       uint64_t total_error_requests = 0;
       uint64_t total_issued_requests = 0;
+      std::map<std::string, LoadMetric> load_metrics;
     };
 
     ClientStats() {}
@@ -704,7 +725,11 @@ class LrsServiceImpl
 
   void Shutdown();
 
-  std::vector<ClientStats> WaitForLoadReport();
+  // Returns an empty vector if the timeout elapses with no load report.
+  // TODO(roth): Change the default here to a finite duration and verify
+  // that it doesn't cause failures in any existing tests.
+  std::vector<ClientStats> WaitForLoadReport(
+      absl::Duration timeout = absl::InfiniteDuration());
 
  private:
   using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;

@@ -15,8 +15,8 @@
 // limitations under the License.
 //
 //
-#ifndef GRPC_TEST_CPP_PROTO_SERVER_REFLECTION_DATABSE_H
-#define GRPC_TEST_CPP_PROTO_SERVER_REFLECTION_DATABSE_H
+#ifndef GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
+#define GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
 
 #include <mutex>
 #include <unordered_map>
@@ -39,7 +39,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
   explicit ProtoReflectionDescriptorDatabase(
-      const std::shared_ptr<grpc::Channel>& channel);
+      const std::shared_ptr<grpc::ChannelInterface>& channel);
 
   ~ProtoReflectionDescriptorDatabase() override;
 
@@ -109,4 +109,4 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_METRICS_SERVER_H
+#endif  // GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H

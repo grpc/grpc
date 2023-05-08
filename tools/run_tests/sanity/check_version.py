@@ -56,7 +56,7 @@ else:
     check_version = lambda version: True
 
 with open('build_handwritten.yaml', 'r') as f:
-    build_yaml = yaml.load(f.read())
+    build_yaml = yaml.safe_load(f.read())
 
 settings = build_yaml['settings']
 

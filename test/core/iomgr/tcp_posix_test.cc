@@ -16,7 +16,10 @@
 //
 //
 
+#include "absl/time/time.h"
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -37,10 +40,14 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -523,11 +530,15 @@ static void write_test(size_t num_bytes, size_t slice_size,
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
+struct release_fd_arg {
+  std::atomic<int> fd_released_done{0};
+  grpc_core::Notification notify;
+};
+
 void on_fd_released(void* arg, grpc_error_handle /*errors*/) {
-  int* done = static_cast<int*>(arg);
-  *done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  release_fd_arg* rel_fd = static_cast<release_fd_arg*>(arg);
+  rel_fd->fd_released_done = 1;
+  rel_fd->notify.Notify();
 }
 
 // Do a read_test, then release fd and try to read/write again. Verify that
@@ -542,8 +553,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
       grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure fd_released_cb;
-  int fd_released_done = 0;
-  GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &fd_released_done,
+  release_fd_arg rel_fd;
+  GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &rel_fd,
                     grpc_schedule_on_exec_ctx);
 
   gpr_log(GPR_INFO,
@@ -560,14 +571,30 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].type = GRPC_ARG_POINTER;
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(
-      grpc_fd_create(sv[1], "read_test", false),
-      TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-              grpc_core::ChannelArgs::FromC(&args))),
-      "test");
-  GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+  if (grpc_event_engine::experimental::UseEventEngineListener()) {
+    // Create an event engine wrapped endpoint to test release_fd operations.
+    auto eeep =
+        reinterpret_cast<
+            grpc_event_engine::experimental::PosixEventEngineWithFdSupport*>(
+            grpc_event_engine::experimental::GetDefaultEventEngine().get())
+            ->CreatePosixEndpointFromFd(
+                sv[1],
+                grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                    grpc_core::ChannelArgs::FromC(&args)),
+                memory_quota->CreateMemoryAllocator("test"));
+    ep = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+        std::move(eeep));
+  } else {
+    ep = grpc_tcp_create(
+        grpc_fd_create(sv[1], "read_test", false),
+        TcpOptionsFromEndpointConfig(
+            grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                grpc_core::ChannelArgs::FromC(&args))),
+        "test");
+    GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+  }
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -600,17 +627,9 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
-  gpr_mu_lock(g_mu);
-  while (!fd_released_done) {
-    grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
-    gpr_log(GPR_DEBUG, "wakeup: fd_released_done=%d", fd_released_done);
-  }
-  gpr_mu_unlock(g_mu);
-  GPR_ASSERT(fd_released_done == 1);
+  rel_fd.notify.WaitForNotificationWithTimeout(absl::Seconds(20));
+  GPR_ASSERT(rel_fd.fd_released_done == 1);
   GPR_ASSERT(fd == sv[1]);
-
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   drain_socket_blocking(fd, written_bytes, written_bytes);
   written_bytes = fill_socket_partial(fd, num_bytes);

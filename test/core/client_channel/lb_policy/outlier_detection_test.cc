@@ -17,13 +17,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
-#include <map>
-#include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -45,83 +43,94 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   class ConfigBuilder {
    public:
     ConfigBuilder() {
-      SetChildPolicy(Json::Object{{"round_robin", Json::Object()}});
+      SetChildPolicy(Json::Object{{"round_robin", Json::FromObject({})}});
     }
 
     ConfigBuilder& SetInterval(Duration duration) {
-      json_["interval"] = duration.ToJsonString();
+      json_["interval"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetBaseEjectionTime(Duration duration) {
-      json_["baseEjectionTime"] = duration.ToJsonString();
+      json_["baseEjectionTime"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetMaxEjectionTime(Duration duration) {
-      json_["maxEjectionTime"] = duration.ToJsonString();
+      json_["maxEjectionTime"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetMaxEjectionPercent(uint32_t value) {
-      json_["maxEjectionPercent"] = value;
+      json_["maxEjectionPercent"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetChildPolicy(Json::Object child_policy) {
-      json_["childPolicy"] = Json::Array{std::move(child_policy)};
+      json_["childPolicy"] =
+          Json::FromArray({Json::FromObject(std::move(child_policy))});
       return *this;
     }
 
     ConfigBuilder& SetSuccessRateStdevFactor(uint32_t value) {
-      GetSuccessRate()["stdevFactor"] = value;
+      GetSuccessRate()["stdevFactor"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateEnforcementPercentage(uint32_t value) {
-      GetSuccessRate()["enforcementPercentage"] = value;
+      GetSuccessRate()["enforcementPercentage"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateMinHosts(uint32_t value) {
-      GetSuccessRate()["minimumHosts"] = value;
+      GetSuccessRate()["minimumHosts"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateRequestVolume(uint32_t value) {
-      GetSuccessRate()["requestVolume"] = value;
+      GetSuccessRate()["requestVolume"] = Json::FromNumber(value);
       return *this;
     }
 
     ConfigBuilder& SetFailurePercentageThreshold(uint32_t value) {
-      GetFailurePercentage()["threshold"] = value;
+      GetFailurePercentage()["threshold"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageEnforcementPercentage(uint32_t value) {
-      GetFailurePercentage()["enforcementPercentage"] = value;
+      GetFailurePercentage()["enforcementPercentage"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageMinimumHosts(uint32_t value) {
-      GetFailurePercentage()["minimumHosts"] = value;
+      GetFailurePercentage()["minimumHosts"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageRequestVolume(uint32_t value) {
-      GetFailurePercentage()["requestVolume"] = value;
+      GetFailurePercentage()["requestVolume"] = Json::FromNumber(value);
       return *this;
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config =
-          Json::Array{Json::Object{{"outlier_detection_experimental", json_}}};
+      Json::Object fields = json_;
+      if (success_rate_.has_value()) {
+        fields["successRateEjection"] = Json::FromObject(*success_rate_);
+      }
+      if (failure_percentage_.has_value()) {
+        fields["failurePercentageEjection"] =
+            Json::FromObject(*failure_percentage_);
+      }
+      Json config = Json::FromArray(
+          {Json::FromObject({{"outlier_detection_experimental",
+                              Json::FromObject(std::move(fields))}})});
       return MakeConfig(config);
     }
 
    private:
     Json::Object& GetSuccessRate() {
-      auto it = json_.emplace("successRateEjection", Json::Object()).first;
-      return *it->second.mutable_object();
+      if (!success_rate_.has_value()) success_rate_.emplace();
+      return *success_rate_;
     }
 
     Json::Object& GetFailurePercentage() {
-      auto it =
-          json_.emplace("failurePercentageEjection", Json::Object()).first;
-      return *it->second.mutable_object();
+      if (!failure_percentage_.has_value()) failure_percentage_.emplace();
+      return *failure_percentage_;
     }
 
     Json::Object json_;
+    absl::optional<Json::Object> success_rate_;
+    absl::optional<Json::Object> failure_percentage_;
   };
 
   OutlierDetectionTest()

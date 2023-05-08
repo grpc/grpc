@@ -69,14 +69,12 @@ class ReflectionClientTest(unittest.TestCase):
         file_desc = self.desc_pool.FindFileByName(file_name)
         self.assertEqual(file_name, file_desc.name)
         self.assertEqual(_PROTO_PACKAGE_NAME, file_desc.package)
-        self.assertEqual("proto3", file_desc.syntax)
         self.assertIn("TestService", file_desc.services_by_name)
 
         file_name = _EMPTY_PROTO_FILE_NAME
         file_desc = self.desc_pool.FindFileByName(file_name)
         self.assertEqual(file_name, file_desc.name)
         self.assertEqual(_PROTO_PACKAGE_NAME, file_desc.package)
-        self.assertEqual("proto3", file_desc.syntax)
         self.assertIn("Empty", file_desc.message_types_by_name)
 
     def testFindFileError(self):

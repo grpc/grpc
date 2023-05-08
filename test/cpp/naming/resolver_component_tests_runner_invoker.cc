@@ -25,11 +25,14 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>
@@ -88,21 +91,18 @@ void InvokeResolverComponentTestsRunner(
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
-      gpr_log(GPR_INFO,
-              "Resolver component test test-runner exited with code %d",
-              WEXITSTATUS(status));
-      abort();
+      grpc_core::Crash(absl::StrFormat(
+          "Resolver component test test-runner exited with code %d",
+          WEXITSTATUS(status)));
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended from signal %d",
-            WTERMSIG(status));
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Resolver component test test-runner ended from signal %d",
+        WTERMSIG(status)));
   } else {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended with unknown status %d",
-            status);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Resolver component test test-runner ended with unknown status %d",
+        status));
   }
   gpr_mu_lock(&test_driver_mu);
   gpr_cv_signal(&test_driver_cv);

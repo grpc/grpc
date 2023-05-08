@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_PROMISE_H
-#define GRPC_CORE_LIB_PROMISE_PROMISE_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
+#define GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -34,7 +33,7 @@ namespace grpc_core {
 // Most of the time we just pass around the functor, but occasionally
 // it pays to have a type erased variant, which we define here.
 template <typename T>
-using Promise = std::function<Poll<T>()>;
+using Promise = absl::AnyInvocable<Poll<T>()>;
 
 // Helper to execute a promise immediately and return either the result or
 // nothing.
@@ -42,7 +41,7 @@ template <typename Promise>
 auto NowOrNever(Promise promise)
     -> absl::optional<typename promise_detail::PromiseLike<Promise>::Result> {
   auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
-  if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+  if (auto* p = r.value_if_ready()) {
     return std::move(*p);
   }
   return {};
@@ -93,4 +92,4 @@ auto WithResult(F f) ->
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_PROMISE_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H

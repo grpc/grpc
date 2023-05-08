@@ -16,24 +16,28 @@
 //
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
-#define GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
+#ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
+#include <string>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/span_id.h"
+#include "opencensus/trace/trace_id.h"
 
-#include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
@@ -56,26 +60,39 @@
 #define GRPC_ARG_ENABLE_OBSERVABILITY "grpc.experimental.enable_observability"
 
 namespace grpc {
+namespace internal {
 
-class OpenCensusCallTracer : public grpc_core::CallTracer {
+class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
     OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
                                 uint64_t attempt_num, bool is_transparent_retry,
                                 bool arena_allocated);
+
+    std::string TraceId() override {
+      return context_.Context().trace_id().ToHex();
+    }
+
+    std::string SpanId() override {
+      return context_.Context().span_id().ToHex();
+    }
+
+    bool IsSampled() override { return context_.Span().IsSampled(); }
+
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /*peer_string*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(
-        const grpc_core::SliceBuffer& /*send_message*/) override;
+    void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
+    void RecordSendCompressedMessage(
+        const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /*recv_initial_metadata*/,
-        uint32_t /*flags*/) override {}
+        grpc_metadata_batch* /*recv_initial_metadata*/) override {}
     void RecordReceivedMessage(
-        const grpc_core::SliceBuffer& /*recv_message*/) override;
+        const grpc_core::SliceBuffer& recv_message) override;
+    void RecordReceivedDecompressedMessage(
+        const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
@@ -102,14 +119,27 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(const grpc_call_element_args* args,
+  explicit OpenCensusCallTracer(grpc_call_context_element* call_context,
+                                grpc_core::Slice path, grpc_core::Arena* arena,
                                 bool tracing_enabled);
   ~OpenCensusCallTracer() override;
+
+  std::string TraceId() override {
+    return context_.Context().trace_id().ToHex();
+  }
+
+  std::string SpanId() override { return context_.Context().span_id().ToHex(); }
+
+  bool IsSampled() override { return context_.Span().IsSampled(); }
 
   void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
+
+  // APIs to record API call latency
+  void RecordApiLatency(absl::Duration api_latency,
+                        absl::StatusCode status_code_);
 
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
@@ -120,7 +150,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   absl::string_view method_;
   experimental::CensusContext context_;
   grpc_core::Arena* arena_;
-  bool tracing_enabled_;
+  const bool tracing_enabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -132,6 +162,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 
-};  // namespace grpc
+}  // namespace internal
+}  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_FILTERS_OPEN_CENSUS_CALL_TRACER_H
+#endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H

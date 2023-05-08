@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
-#define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -113,4 +113,4 @@ class PidController {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H

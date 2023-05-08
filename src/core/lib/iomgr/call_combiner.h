@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
-#define GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -171,8 +171,8 @@ class CallCombinerClosureList {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO,
               "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%p error=%s reason=%s",
-              call_combiner, closures_[0].closure,
+              "holding call_combiner %p: closure=%s error=%s reason=%s",
+              call_combiner, closures_[0].closure->DebugString().c_str(),
               StatusToString(closures_[0].error).c_str(), closures_[0].reason);
     }
     // This will release the call combiner.
@@ -211,4 +211,4 @@ class CallCombinerClosureList {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H

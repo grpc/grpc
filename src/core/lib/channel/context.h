@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
-#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,7 +36,14 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Value is a CallTracer object.
+  /// Value is a CallTracerAnnotationInterface. (ClientCallTracer object on the
+  /// client-side call, or ServerCallTracer on the server-side.)
+  GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+
+  /// Value is a CallTracerInterface (ServerCallTracer on the server-side,
+  /// CallAttemptTracer on a subchannel call.)
+  /// TODO(yashykt): Maybe come up with a better name. This will go away in the
+  /// future anyway, so not super important.
   GRPC_CONTEXT_CALL_TRACER,
 
   /// Reserved for traffic_class_context.
@@ -44,6 +51,10 @@ typedef enum {
 
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
+
+  /// Holds a pointer to BackendMetricProvider associated with this call on
+  /// the server.
+  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
@@ -60,4 +71,4 @@ template <>
 struct ContextType<grpc_call_context_element> {};
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H

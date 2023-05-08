@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_HTTP_PARSER_H
-#define GRPC_CORE_LIB_HTTP_PARSER_H
+#ifndef GRPC_SRC_CORE_LIB_HTTP_PARSER_H
+#define GRPC_SRC_CORE_LIB_HTTP_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -127,4 +127,4 @@ void grpc_http_response_destroy(grpc_http_response* response);
 
 extern grpc_core::TraceFlag grpc_http1_trace;
 
-#endif  // GRPC_CORE_LIB_HTTP_PARSER_H
+#endif  // GRPC_SRC_CORE_LIB_HTTP_PARSER_H

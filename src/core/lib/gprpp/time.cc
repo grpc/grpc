@@ -18,12 +18,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <initializer_list>
 #include <limits>
 #include <string>
 #include <utility>
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"

@@ -20,8 +20,12 @@
 
 #include "src/core/lib/iomgr/polling_entity.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set) {
@@ -70,8 +74,8 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
   }
 }
 
@@ -90,7 +94,7 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
   }
 }

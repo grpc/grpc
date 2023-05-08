@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
-#define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
+#ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
+#define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 
 #include <grpc/support/sync.h>
 
@@ -228,4 +228,4 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture);
 void tsi_test_frame_protector_do_round_trip_no_handshake(
     tsi_test_frame_protector_fixture* fixture);
 
-#endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
+#endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

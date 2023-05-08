@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
-#define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -37,6 +37,13 @@ typedef struct grpc_transport_vtable {
   // Memory required for a single stream element - this is allocated by upper
   // layers and initialized by the transport
   size_t sizeof_stream;  // = sizeof(transport stream)
+
+  // HACK: inproc does not handle stream op batch callbacks correctly (receive
+  // ops are required to complete prior to on_complete triggering).
+  // This flag is used to disable coalescing of batches in connected_channel for
+  // that specific transport.
+  // TODO(ctiller): This ought not be necessary once we have promises complete.
+  bool hacky_disable_stream_op_batch_coalescing_in_connected_channel;
 
   // name of this transport implementation
   const char* name;
@@ -92,4 +99,4 @@ struct grpc_transport {
   const grpc_transport_vtable* vtable;
 };
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H

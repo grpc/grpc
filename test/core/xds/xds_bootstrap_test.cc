@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -46,6 +47,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "test/core/util/test_config.h"
@@ -55,7 +58,6 @@ namespace testing {
 namespace {
 
 TEST(XdsBootstrapTest, Basic) {
-  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -143,7 +145,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///lb");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << Json{server->channel_creds_config()}.Dump();
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -157,7 +159,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///xds_server");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << Json{server->channel_creds_config()}.Dump();
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
@@ -170,7 +172,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///xds_server2");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << Json{server->channel_creds_config()}.Dump();
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id(), "foo");
   EXPECT_EQ(bootstrap->node()->cluster(), "bar");
@@ -182,16 +184,15 @@ TEST(XdsBootstrapTest, Basic) {
                   ::testing::Pair(
                       ::testing::Eq("bar"),
                       ::testing::AllOf(
-                          ::testing::Property(&Json::type, Json::Type::NUMBER),
-                          ::testing::Property(&Json::string_value, "2"))),
+                          ::testing::Property(&Json::type, Json::Type::kNumber),
+                          ::testing::Property(&Json::string, "2"))),
                   ::testing::Pair(
                       ::testing::Eq("foo"),
                       ::testing::AllOf(
-                          ::testing::Property(&Json::type, Json::Type::NUMBER),
-                          ::testing::Property(&Json::string_value, "1")))));
+                          ::testing::Property(&Json::type, Json::Type::kNumber),
+                          ::testing::Property(&Json::string, "1")))));
   EXPECT_EQ(bootstrap->server_listener_resource_name_template(),
             "example/resource");
-  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, ValidWithoutNode) {
@@ -495,7 +496,6 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
-  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -530,11 +530,9 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
             ".client_listener_resource_name_template error:"
             "field must begin with \"xdstp://xds.example.com/\"]")
       << bootstrap.status();
-  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
-  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -561,7 +559,6 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "field:authorities[\"xds.example.com\"].xds_servers[0].server_uri "
       "error:field not present]")
       << bootstrap.status();
-  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class FakeCertificateProviderFactory : public CertificateProviderFactory {
@@ -592,15 +589,15 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
   CreateCertificateProviderConfig(const Json& config_json,
                                   grpc_error_handle* error) override {
     std::vector<grpc_error_handle> error_list;
-    EXPECT_EQ(config_json.type(), Json::Type::OBJECT);
-    auto it = config_json.object_value().find("value");
-    if (it == config_json.object_value().end()) {
+    EXPECT_EQ(config_json.type(), Json::Type::kObject);
+    auto it = config_json.object().find("value");
+    if (it == config_json.object().end()) {
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
-    } else if (it->second.type() != Json::Type::NUMBER) {
+    } else if (it->second.type() != Json::Type::kNumber) {
       *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
     } else {
       int value = 0;
-      EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));
+      EXPECT_TRUE(absl::SimpleAtoi(it->second.string(), &value));
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(value);
     }
     return nullptr;
@@ -702,7 +699,6 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
 }
 
 TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
-  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "    {"
       "      \"server_uri\": \"fake:///lb\","
@@ -714,7 +710,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "      ],"
       "      \"ignore\": 0"
       "    }";
-  auto json = Json::Parse(json_str);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   auto xds_server = LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(*json);
   ASSERT_TRUE(xds_server.ok()) << xds_server.status();
@@ -723,7 +719,6 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(output);
   ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
-  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 }  // namespace

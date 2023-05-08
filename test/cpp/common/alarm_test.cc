@@ -266,6 +266,30 @@ TEST(AlarmTest, NegativeExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+// Infinite past or unix epoch should fire immediately.
+TEST(AlarmTest, InfPastExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+  alarm.Set(&cq, gpr_inf_past(GPR_CLOCK_REALTIME), junk);
+
+  void* output_tag;
+  bool ok;
+  CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+
+  alarm.Set(&cq, std::chrono::system_clock::time_point(), junk);
+  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
 TEST(AlarmTest, Cancellation) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);

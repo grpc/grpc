@@ -26,14 +26,17 @@
 #include <new>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
@@ -172,8 +175,6 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
-  if (batch->cancel_stream) {
-  }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     closures->Add(
@@ -196,8 +197,6 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
 
 void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
-  if (batch->cancel_stream) {
-  }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     grpc_core::ExecCtx::Run(
@@ -273,14 +272,38 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
 
 namespace grpc_core {
 
-ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
-  auto hdl =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-  hdl->Set(GrpcStatusMetadata(), static_cast<grpc_status_code>(status.code()));
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
+                                              Arena* arena) {
+  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,
+                        nullptr, nullptr);
+  hdl->Set(GrpcStatusMetadata(), code);
   if (!status.ok()) {
-    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status.message()));
+    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
   }
   return hdl;
+}
+
+std::string Message::DebugString() const {
+  std::string out = absl::StrCat(payload_.Length(), "b");
+  auto flags = flags_;
+  auto explain = [&flags, &out](uint32_t flag, absl::string_view name) {
+    if (flags & flag) {
+      flags &= ~flag;
+      absl::StrAppend(&out, ":", name);
+    }
+  };
+  explain(GRPC_WRITE_BUFFER_HINT, "write_buffer");
+  explain(GRPC_WRITE_NO_COMPRESS, "no_compress");
+  explain(GRPC_WRITE_THROUGH, "write_through");
+  explain(GRPC_WRITE_INTERNAL_COMPRESS, "compress");
+  explain(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED, "was_compressed");
+  if (flags != 0) {
+    absl::StrAppend(&out, ":huh=0x", absl::Hex(flags));
+  }
+  return out;
 }
 
 }  // namespace grpc_core

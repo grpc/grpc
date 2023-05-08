@@ -16,12 +16,13 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
 #include <string>
 
 #include <gtest/gtest.h>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -33,13 +34,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -53,8 +53,6 @@
 namespace grpc {
 namespace testing {
 namespace {
-
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
@@ -186,15 +184,16 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_call* s;
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq,
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   grpc_auth_context* auth = grpc_call_auth_context(s);
@@ -227,12 +226,12 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -273,12 +272,13 @@ TEST(H2SessionReuseTest, SingleReuse) {
                  cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
 
-  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  grpc_server_shutdown_and_notify(server, cq, grpc_core::CqVerifier::tag(1000));
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
                                     nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
+  } while (ev.type != GRPC_OP_COMPLETE ||
+           ev.tag != grpc_core::CqVerifier::tag(1000));
   grpc_server_destroy(server);
 
   grpc_completion_queue_shutdown(cq);
@@ -292,7 +292,9 @@ TEST(H2SessionReuseTest, SingleReuse) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

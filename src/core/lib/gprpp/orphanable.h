@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
-#define GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_ORPHANABLE_H
+#define GRPC_SRC_CORE_LIB_GPRPP_ORPHANABLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -69,7 +69,7 @@ inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
 }
 
 // A type of Orphanable with internal ref-counting.
-template <typename Child, UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
+template <typename Child, typename UnrefBehavior = UnrefDelete>
 class InternallyRefCounted : public Orphanable {
  public:
   // Not copyable nor movable.
@@ -99,12 +99,12 @@ class InternallyRefCounted : public Orphanable {
 
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      unref_behavior_(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      unref_behavior_(static_cast<Child*>(this));
     }
   }
 
@@ -115,8 +115,9 @@ class InternallyRefCounted : public Orphanable {
   }
 
   RefCount refs_;
+  GPR_NO_UNIQUE_ADDRESS UnrefBehavior unref_behavior_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_ORPHANABLE_H

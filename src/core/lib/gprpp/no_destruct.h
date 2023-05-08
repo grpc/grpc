@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_NO_DESTRUCT_H
-#define GRPC_CORE_LIB_GPRPP_NO_DESTRUCT_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_NO_DESTRUCT_H
+#define GRPC_SRC_CORE_LIB_GPRPP_NO_DESTRUCT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -92,4 +92,4 @@ NoDestruct<T> NoDestructSingleton<T>::value_;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_NO_DESTRUCT_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_NO_DESTRUCT_H

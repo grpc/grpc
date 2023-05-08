@@ -44,6 +44,13 @@ namespace grpc_core {
 //
 
 FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
+  // Tests should not fail to read any messages from the client.
+  {
+    MutexLock lock(&mu_);
+    if (transport_->abort_on_undrained_messages()) {
+      GPR_ASSERT(from_client_messages_.empty());
+    }
+  }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
   // synchronously, since those operations will trigger code in
   // XdsClient that acquires its mutex, but it was already holding its
@@ -57,6 +64,10 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
+  {
+    MutexLock lock(&mu_);
+    orphaned_ = true;
+  }
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -64,6 +75,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
+  GPR_ASSERT(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   cv_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
@@ -132,6 +144,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
     event_handler = event_handler_->Ref();
   }
   event_handler->OnStatusReceived(std::move(status));
+}
+
+bool FakeXdsTransportFactory::FakeStreamingCall::Orphaned() {
+  MutexLock lock(&mu_);
+  return orphaned_;
 }
 
 //
@@ -217,7 +234,8 @@ FakeXdsTransportFactory::Create(
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      std::move(on_connectivity_failure), auto_complete_messages_from_client_);
+      std::move(on_connectivity_failure), auto_complete_messages_from_client_,
+      abort_on_undrained_messages_);
   entry = transport->Ref();
   return transport;
 }
@@ -232,6 +250,11 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
   MutexLock lock(&mu_);
   auto_complete_messages_from_client_ = value;
+}
+
+void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
+  MutexLock lock(&mu_);
+  abort_on_undrained_messages_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>

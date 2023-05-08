@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
-#define GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,8 +24,8 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "upb/arena.h"
-#include "upb/def.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -94,4 +94,4 @@ class XdsClusterSpecifierPluginRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H

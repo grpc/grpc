@@ -119,17 +119,17 @@ def _run(port: int, maintenance_port: int, secure_mode: bool,
         logger.info("Maintenance server listening on port %d", maintenance_port)
         server.wait_for_termination()
     else:
+        maintenance_server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE))
+        _configure_maintenance_server(maintenance_server, maintenance_port)
+        maintenance_server.start()
+        logger.info("Maintenance server listening on port %d", maintenance_port)
         test_server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE),
             xds=secure_mode)
         _configure_test_server(test_server, port, secure_mode, server_id)
         test_server.start()
         logger.info("Test server listening on port %d", port)
-        maintenance_server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE))
-        _configure_maintenance_server(maintenance_server, maintenance_port)
-        maintenance_server.start()
-        logger.info("Maintenance server listening on port %d", maintenance_port)
         test_server.wait_for_termination()
         maintenance_server.wait_for_termination()
 

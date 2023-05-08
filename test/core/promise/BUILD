@@ -46,6 +46,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "interceptor_list_test",
+    srcs = ["interceptor_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_context",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:interceptor_list",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     external_deps = ["gtest"],
@@ -62,7 +80,10 @@ grpc_cc_test(
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:cancel_callback"],
+    deps = [
+        "//src/core:cancel_callback",
+        "//src/core:poll",
+    ],
 )
 
 grpc_cc_test(
@@ -78,10 +99,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "arena_promise_test",
     srcs = ["arena_promise_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = [
         "promise_test",
@@ -109,7 +127,10 @@ grpc_cc_test(
     # is.
     name = "promise_map_test",
     srcs = ["map_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -128,7 +149,24 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:race"],
+    deps = [
+        "//src/core:poll",
+        "//src/core:race",
+    ],
+)
+
+grpc_cc_test(
+    name = "prioritized_race_test",
+    srcs = ["prioritized_race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:poll",
+        "//src/core:prioritized_race",
+    ],
 )
 
 grpc_cc_test(
@@ -143,7 +181,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:promise",
         "//src/core:poll",
         "//src/core:promise_factory",
     ],
@@ -206,10 +243,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -231,10 +265,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "try_seq_metadata_test",
     srcs = ["try_seq_metadata_test.cc"],
-    external_deps = [
-        "absl/types:variant",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -265,6 +296,7 @@ grpc_cc_test(
         "//:promise",
         "//src/core:activity",
         "//src/core:join",
+        "//src/core:poll",
         "//src/core:seq",
         "//src/core:wait_set",
     ],
@@ -287,25 +319,6 @@ grpc_cc_test(
         "//src/core:basic_join",
         "//src/core:join",
         "//src/core:latch",
-        "//src/core:seq",
-    ],
-)
-
-grpc_cc_test(
-    name = "observable_test",
-    srcs = ["observable_test.cc"],
-    external_deps = [
-        "absl/status",
-        "gtest",
-    ],
-    language = "c++",
-    tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "test_wakeup_schedulers",
-        "//:promise",
-        "//src/core:observable",
         "//src/core:seq",
     ],
 )
@@ -369,6 +382,7 @@ grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "gtest",
     ],
@@ -379,6 +393,7 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:gpr",
+        "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:basic_join",
@@ -392,11 +407,31 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "mpsc_test",
+    srcs = ["mpsc_test.cc"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:mpsc",
+    ],
+)
+
 grpc_proto_fuzzer(
     name = "promise_fuzzer",
     srcs = ["promise_fuzzer.cc"],
     corpus = "promise_fuzzer_corpus",
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/types:optional",
     ],
@@ -436,6 +471,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "event_engine_wakeup_scheduler_test",
+    srcs = ["event_engine_wakeup_scheduler_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:activity",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:notification",
+        "//src/core:poll",
+    ],
+)
+
+grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
     external_deps = ["gtest"],
@@ -457,16 +512,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "try_concurrently_test",
-    srcs = ["try_concurrently_test.cc"],
+    name = "party_test",
+    srcs = ["party_test.cc"],
     external_deps = [
-        "absl/status",
-        "absl/strings",
+        "absl/base:core_headers",
         "gtest",
     ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_concurrently"],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
+        "//src/core:1999",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
+        "//src/core:notification",
+        "//src/core:poll",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:sleep",
+        "//src/core:time",
+    ],
 )

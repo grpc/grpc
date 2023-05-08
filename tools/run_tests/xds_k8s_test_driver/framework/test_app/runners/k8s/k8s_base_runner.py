@@ -23,6 +23,7 @@ from typing import List, Optional
 import mako.template
 import yaml
 
+from framework.helpers import retryers
 import framework.helpers.datetime
 import framework.helpers.highlighter
 import framework.helpers.rand
@@ -121,7 +122,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                           cls.TEMPLATE_DIR_RELATIVE_PATH)
         return templates_path.joinpath(template_name).resolve()
 
-    def _create_from_template(self, template_name, **kwargs):
+    def _create_from_template(self, template_name, **kwargs) -> object:
         template_file = self._template_file_from_name(template_name)
         logger.debug("Loading k8s manifest template: %s", template_file)
 
@@ -135,7 +136,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         if next(manifests, False):
             raise _RunnerError('Exactly one document expected in manifest '
                                f'{template_file}')
-        k8s_objects = self.k8s_namespace.apply_manifest(manifest)
+
+        k8s_objects = self.k8s_namespace.create_single_resource(manifest)
         if len(k8s_objects) != 1:
             raise _RunnerError('Expected exactly one object must created from '
                                f'manifest {template_file}')
@@ -276,9 +278,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
-        except k8s.ApiException as e:
-            logger.info('Deployment %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Deployment %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -289,9 +290,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service %s', name)
         try:
             self.k8s_namespace.delete_service(name)
-        except k8s.ApiException as e:
-            logger.info('Service %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Service %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -302,9 +302,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service account %s', name)
         try:
             self.k8s_namespace.delete_service_account(name)
-        except k8s.ApiException as e:
-            logger.info('Service account %s deletion failed, error: %s %s',
-                        name, e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Service account %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -315,9 +314,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
-        except k8s.ApiException as e:
-            logger.info('Namespace %s deletion failed, error: %s %s',
-                        self.k8s_namespace.name, e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Namespace %s deletion failed: %s',
+                        self.k8s_namespace.name, e)
             return
 
         if wait_for_deletion:

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
-#define GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,4 +31,4 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
 extern grpc_core::TraceFlag grpc_inproc_trace;
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H

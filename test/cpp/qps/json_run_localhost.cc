@@ -30,6 +30,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"

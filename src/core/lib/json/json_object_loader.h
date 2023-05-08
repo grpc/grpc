@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
-#define GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
+#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
+#define GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -485,7 +486,7 @@ class Vec<T, 0> {
 
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
-// Returns false if the JSON object was not of type Json::Type::OBJECT.
+// Returns false if the JSON object was not of type Json::Type::kObject.
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ValidationErrors* errors);
 
@@ -589,7 +590,9 @@ absl::StatusOr<T> LoadFromJson(
   ValidationErrors errors;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &errors);
-  if (!errors.ok()) return errors.status(error_prefix);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
+  }
   return std::move(result);
 }
 
@@ -600,7 +603,9 @@ absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
   ValidationErrors errors;
   auto result = MakeRefCounted<T>();
   json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(), &errors);
-  if (!errors.ok()) return errors.status(error_prefix);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
+  }
   return std::move(result);
 }
 
@@ -631,4 +636,4 @@ absl::optional<T> LoadJsonObjectField(const Json::Object& json,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
+#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H

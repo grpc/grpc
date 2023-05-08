@@ -33,6 +33,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 ////////////////////////////////////////////////////////////////////////////////
+/// The EventEngine Interface
+///
+/// Overview
+/// --------
+///
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
 ///
@@ -44,7 +49,8 @@ namespace experimental {
 ///
 /// A default cross-platform EventEngine instance is provided by gRPC.
 ///
-/// LIFESPAN AND OWNERSHIP
+/// Lifespan and Ownership
+/// ----------------------
 ///
 /// gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 /// that the engines remain available until they are no longer needed. Depending
@@ -71,6 +77,19 @@ namespace experimental {
 ///    std::unique_ptr<Server> server(builder.BuildAndStart());
 ///    server->Wait();
 ///
+///
+/// Blocking EventEngine Callbacks
+/// -----------------------------
+///
+/// Doing blocking work in EventEngine callbacks is generally not advisable.
+/// While gRPC's default EventEngine implementations have some capacity to scale
+/// their thread pools to avoid starvation, this is not an instantaneous
+/// process. Further, user-provided EventEngines may not be optimized to handle
+/// excessive blocking work at all.
+///
+/// *Best Practice* : Occasional blocking work may be fine, but we do not
+/// recommend running a mostly blocking workload in EventEngine threads.
+///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
@@ -85,6 +104,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// caller - the EventEngine will never delete a Closure, and upon
   /// cancellation, the EventEngine will simply forget the Closure exists. The
   /// caller is responsible for all necessary cleanup.
+
   class Closure {
    public:
     Closure() = default;
@@ -102,12 +122,20 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
+    static const TaskHandle kInvalid;
+    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
+    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
+    static const ConnectionHandle kInvalid;
+    friend bool operator==(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
+    friend bool operator!=(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
   };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -127,7 +155,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     socklen_t size() const;
 
    private:
-    char address_[MAX_SIZE_BYTES];
+    char address_[MAX_SIZE_BYTES] = {};
     socklen_t size_ = 0;
   };
 
@@ -159,10 +187,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
-    /// \a buffer, and the \a on_read callback is called. The caller must ensure
-    /// that the callback has access to the buffer when executed later.
-    /// Ownership of the buffer is not transferred. Valid slices *may* be placed
-    /// into the buffer even if the callback is invoked with a non-OK Status.
+    /// \a buffer. If the read succeeds immediately, it returns true and the \a
+    /// on_read callback is not executed. Otherwise it returns false and the \a
+    /// on_read callback executes asynchronously when the read completes. The
+    /// caller must ensure that the callback has access to the buffer when it
+    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
+    /// be placed into the buffer even if the callback is invoked with a non-OK
+    /// Status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -173,7 +204,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
@@ -191,12 +222,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     };
     /// Writes data out on the connection.
     ///
-    /// \a on_writable is called when the connection is ready for more data. The
-    /// Slices within the \a data buffer may be mutated at will by the Endpoint
-    /// until \a on_writable is called. The \a data SliceBuffer will remain
-    /// valid after calling \a Write, but its state is otherwise undefined.  All
-    /// bytes in \a data must have been written before calling \a on_writable
-    /// unless an error has occurred.
+    /// If the write succeeds immediately, it returns true and the
+    /// \a on_writable callback is not executed. Otherwise it returns false and
+    /// the \a on_writable callback is called asynchronously when the connection
+    /// is ready for more data. The Slices within the \a data buffer may be
+    /// mutated at will by the Endpoint until \a on_writable is called. The \a
+    /// data SliceBuffer will remain valid after calling \a Write, but its state
+    /// is otherwise undefined.  All bytes in \a data must have been written
+    /// before calling \a on_writable unless an error has occurred.
     ///
     /// There can be at most one outstanding write per Endpoint at any given
     /// time. An outstanding write is one in which the \a on_writable callback
@@ -207,7 +240,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                        SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
@@ -250,8 +283,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a on_shutdown will never be called.
   ///
   /// If this method returns a Listener, then \a on_shutdown will be invoked
-  /// exactly once, when the Listener is shut down. The status passed to it will
-  /// indicate if there was a problem during shutdown.
+  /// exactly once when the Listener is shut down, and only after all
+  /// \a on_accept callbacks have finished executing. The status passed to it
+  /// will indicate if there was a problem during shutdown.
   ///
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
@@ -292,6 +326,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
       intptr_t keys[2];
+      static const LookupTaskHandle kInvalid;
+      friend bool operator==(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
+      friend bool operator!=(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
     };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
@@ -379,6 +418,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
   /// not be deleted after it has been run, ownership remains with the caller.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns. For example, if the caller must release a lock before the
+  /// closure can proceed, running the closure immediately would cause a
+  /// deadlock.
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
@@ -389,12 +433,18 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a Run returns.
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
@@ -407,6 +457,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
+  ///
+  /// Implementations must not execute the closure in the calling thread before
+  /// \a RunAfter returns.
   virtual TaskHandle RunAfter(Duration when,
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.

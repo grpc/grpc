@@ -16,23 +16,25 @@
 //
 //
 
-#include <grpc/support/log.h>
 #include <grpcpp/support/client_interceptor.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
 
 namespace internal {
 experimental::ClientInterceptorFactoryInterface*
     g_global_client_interceptor_factory = nullptr;
-}
+
+}  // namespace internal
 
 namespace experimental {
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory) {
   if (internal::g_global_client_interceptor_factory != nullptr) {
-    GPR_ASSERT(false &&
-               "It is illegal to call RegisterGlobalClientInterceptorFactory "
-               "multiple times.");
+    grpc_core::Crash(
+        "It is illegal to call RegisterGlobalClientInterceptorFactory "
+        "multiple times.");
   }
   internal::g_global_client_interceptor_factory = factory;
 }

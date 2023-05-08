@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -48,13 +49,13 @@ namespace internal {
 namespace {
 
 // Loads the contents of the file pointed by env var
-// GRPC_OBSERVABILITY_CONFIG_FILE. If unset, falls back to the contents of
-// GRPC_OBSERVABILITY_CONFIG.
+// GRPC_GCP_OBSERVABILITY_CONFIG_FILE. If unset, falls back to the contents of
+// GRPC_GCP_OBSERVABILITY_CONFIG.
 absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
-  // First, try GRPC_OBSERVABILITY_CONFIG_FILE
+  // First, try GRPC_GCP_OBSERVABILITY_CONFIG_FILE
   std::string contents_str;
-  auto path = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
-  if (path.has_value()) {
+  auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
+  if (path.has_value() && !path.value().empty()) {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
@@ -67,15 +68,15 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_slice_unref(contents);
     return std::move(contents_str);
   }
-  // Next, try GRPC_OBSERVABILITY_CONFIG env var.
-  auto env_config = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG");
-  if (env_config.has_value()) {
+  // Next, try GRPC_GCP_OBSERVABILITY_CONFIG env var.
+  auto env_config = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
+  if (env_config.has_value() && !env_config.value().empty()) {
     return std::move(*env_config);
   }
   // No observability config found.
   return absl::FailedPreconditionError(
-      "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
-      "GRPC_OBSERVABILITY_CONFIG "
+      "Environment variables GRPC_GCP_OBSERVABILITY_CONFIG_FILE or "
+      "GRPC_GCP_OBSERVABILITY_CONFIG "
       "not defined");
 }
 
@@ -168,7 +169,7 @@ absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
   if (!config_contents.ok()) {
     return config_contents.status();
   }
-  auto config_json = grpc_core::Json::Parse(*config_contents);
+  auto config_json = grpc_core::JsonParse(*config_contents);
   if (!config_json.ok()) {
     return config_json.status();
   }

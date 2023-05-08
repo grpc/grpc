@@ -7,94 +7,117 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/type/metadata/v3/metadata.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Sub envoy_type_metadata_v3_MetadataKey_submsgs[1] = {
-  {.submsg = &envoy_type_metadata_v3_MetadataKey_PathSegment_msginit},
+static const upb_MiniTableSub envoy_type_metadata_v3_MetadataKey_submsgs[1] = {
+  {.submsg = &envoy_type_metadata_v3_MetadataKey_PathSegment_msg_init},
 };
 
-static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKey__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_type_metadata_v3_MetadataKey__fields[2] = {
+  {1, UPB_SIZE(4, 0), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 16), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKey_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKey_msg_init = {
   &envoy_type_metadata_v3_MetadataKey_submsgs[0],
   &envoy_type_metadata_v3_MetadataKey__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+    {0x001000003f000012, &upb_prm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKey_PathSegment__fields[1] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_type_metadata_v3_MetadataKey_PathSegment__fields[1] = {
+  {1, UPB_SIZE(4, 8), -1, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKey_PathSegment_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKey_PathSegment_msg_init = {
   NULL,
   &envoy_type_metadata_v3_MetadataKey_PathSegment__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_pos_1bt},
+  })
 };
 
-static const upb_MiniTable_Sub envoy_type_metadata_v3_MetadataKind_submsgs[4] = {
-  {.submsg = &envoy_type_metadata_v3_MetadataKind_Request_msginit},
-  {.submsg = &envoy_type_metadata_v3_MetadataKind_Route_msginit},
-  {.submsg = &envoy_type_metadata_v3_MetadataKind_Cluster_msginit},
-  {.submsg = &envoy_type_metadata_v3_MetadataKind_Host_msginit},
+static const upb_MiniTableSub envoy_type_metadata_v3_MetadataKind_submsgs[4] = {
+  {.submsg = &envoy_type_metadata_v3_MetadataKind_Request_msg_init},
+  {.submsg = &envoy_type_metadata_v3_MetadataKind_Route_msg_init},
+  {.submsg = &envoy_type_metadata_v3_MetadataKind_Cluster_msg_init},
+  {.submsg = &envoy_type_metadata_v3_MetadataKind_Host_msg_init},
 };
 
-static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKind__fields[4] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_type_metadata_v3_MetadataKind__fields[4] = {
+  {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 8), -1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(4, 8), -1, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKind_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKind_msg_init = {
   &envoy_type_metadata_v3_MetadataKind_submsgs[0],
   &envoy_type_metadata_v3_MetadataKind__fields[0],
-  UPB_SIZE(8, 16), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(8, 16), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_pom_1bt_max64b},
+    {0x0008000002010012, &upb_pom_1bt_max64b},
+    {0x000800000302001a, &upb_pom_1bt_max64b},
+    {0x0008000004030022, &upb_pom_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Request_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Request_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Route_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Route_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Cluster_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Cluster_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
-const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Host_msginit = {
+const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Host_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTable *messages_layout[7] = {
-  &envoy_type_metadata_v3_MetadataKey_msginit,
-  &envoy_type_metadata_v3_MetadataKey_PathSegment_msginit,
-  &envoy_type_metadata_v3_MetadataKind_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Request_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Route_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Cluster_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Host_msginit,
+  &envoy_type_metadata_v3_MetadataKey_msg_init,
+  &envoy_type_metadata_v3_MetadataKey_PathSegment_msg_init,
+  &envoy_type_metadata_v3_MetadataKind_msg_init,
+  &envoy_type_metadata_v3_MetadataKind_Request_msg_init,
+  &envoy_type_metadata_v3_MetadataKind_Route_msg_init,
+  &envoy_type_metadata_v3_MetadataKind_Cluster_msg_init,
+  &envoy_type_metadata_v3_MetadataKind_Host_msg_init,
 };
 
-const upb_MiniTable_File envoy_type_metadata_v3_metadata_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_type_metadata_v3_metadata_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -103,5 +126,5 @@ const upb_MiniTable_File envoy_type_metadata_v3_metadata_proto_upb_file_layout =
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -43,12 +43,12 @@ class Poller {
   //  * Poller::WorkResult::kKicked if it was Kicked. A poller that was Kicked
   //  may still process some events and if so, it may have run the
   //  schedule_poll_again callback function synchronously. When the poller
-  //  returns Poller::WorkResult::kKicked tts upto the user to determine
+  //  returns Poller::WorkResult::kKicked it's up to the user to determine
   //  if the schedule_poll_again callback has run or not.
   //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred. The
   //  schedule_poll_again callback is not run in this case.
   //  * Poller::WorkResult::kOk, otherwise indicating that the
-  //  schedule_poll_again callback function was run synchonously before some
+  //  schedule_poll_again callback function was run synchronously before some
   //  events were processed.
   virtual WorkResult Work(EventEngine::Duration timeout,
                           absl::FunctionRef<void()> schedule_poll_again) = 0;
@@ -59,4 +59,4 @@ class Poller {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H

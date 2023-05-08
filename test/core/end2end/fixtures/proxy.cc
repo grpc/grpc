@@ -18,7 +18,6 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <string>
@@ -34,6 +33,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/surface/call.h"
@@ -210,7 +210,7 @@ static void on_p2s_sent_message(void* arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  grpc_byte_buffer_destroy(pc->c2p_msg);
+  grpc_byte_buffer_destroy(std::exchange(pc->c2p_msg, nullptr));
   if (!pc->proxy->shutdown && success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
@@ -454,8 +454,7 @@ static void thread_main(void* arg) {
         proxy->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
-        gpr_log(GPR_ERROR, "Should never reach here");
-        abort();
+        grpc_core::Crash("Should never reach here");
       case GRPC_QUEUE_SHUTDOWN:
         return;
       case GRPC_OP_COMPLETE:

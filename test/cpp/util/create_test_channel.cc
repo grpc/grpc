@@ -24,6 +24,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(std::string, grpc_test_use_grpclb_with_child_policy, "",
@@ -235,7 +236,18 @@ std::shared_ptr<Channel> CreateTestChannel(
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  ChannelArguments channel_args;
+  return CreateTestChannel(server, credential_type, creds,
+                           std::move(interceptor_creators),
+                           {} /* channel_args */);
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const std::string& server, const std::string& credential_type,
+    const std::shared_ptr<CallCredentials>& creds,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators,
+    ChannelArguments channel_args) {
   MaybeSetCustomChannelArgs(&channel_args);
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
