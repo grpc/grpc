@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryLbFail"
-config: "Chttp2FakeSecurityFullstack"

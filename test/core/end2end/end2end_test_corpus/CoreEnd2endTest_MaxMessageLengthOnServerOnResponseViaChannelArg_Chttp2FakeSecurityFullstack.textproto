@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "MaxMessageLengthOnServerOnResponseViaChannelArg"
-config: "Chttp2FakeSecurityFullstack"

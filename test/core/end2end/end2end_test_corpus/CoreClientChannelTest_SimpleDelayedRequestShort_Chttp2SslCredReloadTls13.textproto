@@ -1,3 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "SimpleDelayedRequestShort"
-config: "Chttp2SslCredReloadTls13"

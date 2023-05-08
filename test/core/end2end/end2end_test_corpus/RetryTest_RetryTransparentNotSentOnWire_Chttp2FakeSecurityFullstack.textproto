@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryTransparentNotSentOnWire"
-config: "Chttp2FakeSecurityFullstack"

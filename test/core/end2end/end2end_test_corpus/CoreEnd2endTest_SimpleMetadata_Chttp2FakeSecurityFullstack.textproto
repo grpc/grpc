@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "SimpleMetadata"
-config: "Chttp2FakeSecurityFullstack"

@@ -1,3 +1,0 @@
-suite: "SecureEnd2endTest"
-test: "FileWatcherInitDenyRequestNoMatchInPolicy"
-config: "Chttp2SimplSslFullstackTls12"

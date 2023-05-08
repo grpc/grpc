@@ -1,3 +1,0 @@
-suite: "CoreDeadlineTest"
-test: "DeadlineInAVacuum"
-config: "Chttp2FakeSecurityFullstack"

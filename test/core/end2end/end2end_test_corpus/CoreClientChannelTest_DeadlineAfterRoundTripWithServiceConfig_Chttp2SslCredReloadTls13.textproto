@@ -1,3 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "DeadlineAfterRoundTripWithServiceConfig"
-config: "Chttp2SslCredReloadTls13"

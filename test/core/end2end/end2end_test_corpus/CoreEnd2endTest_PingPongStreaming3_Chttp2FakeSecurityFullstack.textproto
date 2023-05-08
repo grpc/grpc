@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "PingPongStreaming3"
-config: "Chttp2FakeSecurityFullstack"

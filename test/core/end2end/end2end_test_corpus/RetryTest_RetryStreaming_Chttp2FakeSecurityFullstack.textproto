@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryStreaming"
-config: "Chttp2FakeSecurityFullstack"

@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "CancelAfterAccept"
-config: "Chttp2FakeSecurityFullstack"

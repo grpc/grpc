@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryCancelAfterFirstAttemptStarts"
-config: "Chttp2FakeSecurityFullstack"

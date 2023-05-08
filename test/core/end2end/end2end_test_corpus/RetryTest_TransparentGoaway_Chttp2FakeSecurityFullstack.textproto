@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "TransparentGoaway"
-config: "Chttp2FakeSecurityFullstack"

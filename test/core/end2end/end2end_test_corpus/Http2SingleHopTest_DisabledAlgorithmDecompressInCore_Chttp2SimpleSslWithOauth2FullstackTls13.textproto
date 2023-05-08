@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "DisabledAlgorithmDecompressInCore"
-config: "Chttp2SimpleSslWithOauth2FullstackTls13"

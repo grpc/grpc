@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "RequestWithPayload"
-config: "Chttp2FakeSecurityFullstack"

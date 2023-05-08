@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "StreamingErrorResponse"
-config: "Chttp2FakeSecurityFullstack"

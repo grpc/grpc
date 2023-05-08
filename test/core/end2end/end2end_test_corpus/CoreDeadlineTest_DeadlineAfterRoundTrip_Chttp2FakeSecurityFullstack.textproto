@@ -1,3 +1,0 @@
-suite: "CoreDeadlineTest"
-test: "DeadlineAfterRoundTrip"
-config: "Chttp2FakeSecurityFullstack"

@@ -1,3 +1,0 @@
-suite: "NoLoggingTest"
-test: "NoLoggingTest"
-config: "Chttp2FakeSecurityFullstack"

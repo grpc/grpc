@@ -1,3 +1,0 @@
-suite: "Http2Test"
-test: "MaxMessageLengthOnClientOnResponseWithCompression"
-config: "Chttp2FakeSecurityFullstack"

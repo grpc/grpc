@@ -1,3 +1,0 @@
-suite: "PerCallCredsOnInsecureTest"
-test: "RequestWithServerRejectingClientCreds"
-config: "Chttp2FakeSecurityFullstack"

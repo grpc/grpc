@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore"
-config: "Chttp2FakeSecurityFullstack"

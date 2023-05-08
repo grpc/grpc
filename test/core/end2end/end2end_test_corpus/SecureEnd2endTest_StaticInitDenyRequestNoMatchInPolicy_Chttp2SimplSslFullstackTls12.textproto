@@ -1,3 +1,0 @@
-suite: "SecureEnd2endTest"
-test: "StaticInitDenyRequestNoMatchInPolicy"
-config: "Chttp2SimplSslFullstackTls12"

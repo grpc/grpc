@@ -1,3 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "DisappearingServer"
-config: "Chttp2SimplSslFullstackTls12"
