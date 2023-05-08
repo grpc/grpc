@@ -61,6 +61,10 @@ void BM_MultithreadedWorkQueuePopOldest(benchmark::State& state) {
   state.counters["pop_rate"] = benchmark::Counter(
       element_count * state.iterations(), benchmark::Counter::kIsRate);
   state.counters["pop_attempts"] = pop_attempts;
+  // Rough measurement of queue contention.
+  // WorkQueue::Pop* may return nullptr when the queue is non-empty, usually
+  // when under thread contention. hit_rate is the ratio of pop attempts to
+  // closure executions.
   state.counters["hit_rate"] =
       benchmark::Counter(element_count * state.iterations() / pop_attempts,
                          benchmark::Counter::kAvgThreads);

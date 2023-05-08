@@ -85,6 +85,11 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // Runs a large number of closures and multiple simulated fork events,
   // ensuring that only some fixed number of closures are executed between fork
   // events.
+  //
+  // Why: Python relies on fork support, and fork behaves poorly in the presence
+  // of threads, but non-deterministically. gRPC has had problems in this space.
+  // This test exercises a subset of the fork logic, the pieces we can control
+  // without an actual OS fork.
   constexpr int expected_runcount = 1000;
   constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
