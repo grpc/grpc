@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -29,11 +30,30 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto all_tests = grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
+  // We want to produce a set of test cases that exercise all known tests under
+  // all known configurations... and we want to include all known experiments in
+  // that set.
+  // Beyond that, we sort of don't care and expect the fuzzer to do its job.
+  std::set<std::pair<std::string, std::string>> suite_and_test_pairs;
+  std::set<std::string> configs;
+  std::queue<std::string> experiments;
+  for (size_t i = 0; i < grpc_core::kNumExperiments; i++) {
+    experiments.push(grpc_core::g_experiment_metadata[i].name);
+  }
   for (const auto& test : all_tests) {
     if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
+    const bool added_suite =
+        suite_and_test_pairs.emplace(test.suite, test.name).second;
+    const bool added_config = configs.emplace(test.config->name).second;
+    if (!added_suite && !added_config) continue;
     auto text =
         absl::StrCat("suite: \"", test.suite, "\"\n", "test: \"", test.name,
                      "\"\n", "config: \"", test.config->name, "\"\n");
+    if (!experiments.empty()) {
+      absl::StrAppend(&text, "config_vars {\n  experiments: \"",
+                      experiments.front(), "\"\n}\n");
+      experiments.pop();
+    }
     auto file =
         absl::StrCat("test/core/end2end/end2end_test_corpus/", test.suite, "_",
                      test.name, "_", test.config->name, ".textproto");
