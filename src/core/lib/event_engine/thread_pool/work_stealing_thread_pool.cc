@@ -263,6 +263,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   if (busy_thread_count < living_thread_count) {
     if (!pool_->queue_.Empty()) {
       pool_->work_signal()->Signal();
+      backoff_.Reset();
     }
     // Idle threads will eventually wake up for an attempt at work stealing.
     return;
