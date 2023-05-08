@@ -1387,18 +1387,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_executor",
-    hdrs = [
-        "lib/event_engine/executor/executor.h",
-    ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = [
-        "//:event_engine_base_hdrs",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "event_engine_time_util",
     srcs = ["lib/event_engine/time_util.cc"],
     hdrs = ["lib/event_engine/time_util.h"],
@@ -1410,20 +1398,31 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_work_queue",
+    hdrs = [
+        "lib/event_engine/work_queue/work_queue.h",
+    ],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_basic_work_queue",
     srcs = [
-        "lib/event_engine/work_queue.cc",
+        "lib/event_engine/work_queue/basic_work_queue.cc",
     ],
     hdrs = [
-        "lib/event_engine/work_queue.h",
+        "lib/event_engine/work_queue/basic_work_queue.h",
     ],
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/types:optional",
     ],
     deps = [
         "common_event_engine_closures",
-        "time",
+        "event_engine_work_queue",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -1471,23 +1470,36 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_thread_pool",
-    srcs = ["lib/event_engine/thread_pool.cc"],
+    srcs = [
+        "lib/event_engine/thread_pool/original_thread_pool.cc",
+        "lib/event_engine/thread_pool/thread_pool_factory.cc",
+        "lib/event_engine/thread_pool/work_stealing_thread_pool.cc",
+    ],
     hdrs = [
-        "lib/event_engine/thread_pool.h",
+        "lib/event_engine/thread_pool/original_thread_pool.h",
+        "lib/event_engine/thread_pool/thread_pool.h",
+        "lib/event_engine/thread_pool/work_stealing_thread_pool.h",
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/time",
     ],
     deps = [
-        "event_engine_executor",
+        "common_event_engine_closures",
+        "event_engine_basic_work_queue",
         "event_engine_thread_local",
+        "event_engine_trace",
+        "event_engine_work_queue",
+        "experiments",
         "forkable",
         "time",
         "useful",
+        "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1961,6 +1973,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -1981,7 +1994,6 @@ grpc_cc_library(
         "common_event_engine_closures",
         "error",
         "event_engine_common",
-        "event_engine_executor",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
@@ -2015,9 +2027,9 @@ grpc_cc_library(
     ],
     deps = [
         "error",
-        "event_engine_executor",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
+        "event_engine_thread_pool",
         "event_engine_time_util",
         "event_engine_trace",
         "//:debug_location",
@@ -2044,6 +2056,7 @@ grpc_cc_library(
     deps = [
         "error",
         "event_engine_tcp_socket_utils",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "status_helper",
         "windows_iocp",
@@ -2072,6 +2085,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "error",
         "event_engine_tcp_socket_utils",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "windows_endpoint",
         "windows_iocp",
@@ -2087,6 +2101,7 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
     deps = [
         "event_engine_common",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",

@@ -33,7 +33,7 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
