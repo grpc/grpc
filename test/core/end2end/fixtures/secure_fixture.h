@@ -61,7 +61,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     return server;
   }
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& in_args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     auto args = MutateClientArgs(in_args);
     auto* creds = MakeClientCreds(args);
     auto* client =

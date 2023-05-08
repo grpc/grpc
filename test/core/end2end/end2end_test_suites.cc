@@ -122,7 +122,7 @@ class CensusFixture : public CoreTestFixture {
     return server;
   }
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     auto* creds = grpc_insecure_credentials_create();
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds,
@@ -154,7 +154,7 @@ class CompressionFixture : public CoreTestFixture {
     return server;
   }
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create(
         localaddr_.c_str(), creds,
@@ -244,7 +244,7 @@ class FdFixture : public CoreTestFixture {
     return server;
   }
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     ExecCtx exec_ctx;
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create_from_fd("fixture_client", fd_pair_[0],
@@ -298,7 +298,7 @@ class HttpProxyFilter : public CoreTestFixture {
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     // If testing for proxy auth, add credentials to proxy uri
     absl::optional<std::string> proxy_auth_str =
         args.GetOwnedString(GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
@@ -365,7 +365,7 @@ class ProxyFixture : public CoreTestFixture {
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create(
         grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
@@ -461,7 +461,7 @@ class SslProxyFixture : public CoreTestFixture {
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     auto* client = grpc_channel_create(

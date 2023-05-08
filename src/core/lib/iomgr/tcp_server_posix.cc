@@ -181,8 +181,7 @@ static grpc_error_handle CreateEventEngineListener(
             s->memory_quota));
   } else {
     EventEngine::Listener::AcceptCallback accept_cb =
-        [s](std::unique_ptr<EventEngine::Endpoint> ep,
-            MemoryAllocator memory_allocator) {
+        [s](std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
           s->on_accept_cb(s->on_accept_cb_arg,
                           grpc_event_engine::experimental::
                               grpc_event_engine_endpoint_create(std::move(ep)),

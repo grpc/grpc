@@ -37,7 +37,6 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
       : FuzzingEventEngine(
             []() {
               Options options;
-              options.final_tick_length = std::chrono::milliseconds(10);
               return options;
             }(),
             fuzzing_event_engine::Actions()),

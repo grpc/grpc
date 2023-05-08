@@ -92,7 +92,7 @@ class SockpairFixture : public CoreTestFixture {
     return server;
   }
   grpc_channel* MakeClient(const ChannelArgs& in_args,
-                           grpc_completion_queue* cq) override {
+                           grpc_completion_queue*) override {
     ExecCtx exec_ctx;
     auto args = CoreConfiguration::Get()
                     .channel_args_preconditioning()
