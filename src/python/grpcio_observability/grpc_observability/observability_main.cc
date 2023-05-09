@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "observability_main.h"
-#include "server_call_tracer.h"
-#include "client_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/observability_main.h"
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
 
 #include "absl/strings/string_view.h"
 
@@ -56,7 +56,6 @@ void RecordSpan(SpanCensusData span_census_data) {
 
 
 void NativeObservabilityInit() {
-    setbuf(stdout, nullptr);
     kCensusDataBuffer= new std::queue<CensusData>;
 }
 
@@ -75,7 +74,7 @@ void* CreateServerCallTracerFactory() {
 
 void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
   auto now = std::chrono::system_clock::now();
-  auto status = CensusDataBufferCV.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
+  CensusDataBufferCV.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
 }
 
 

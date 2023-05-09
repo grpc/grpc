@@ -25,15 +25,15 @@ cdef const char* CLIENT_CALL_TRACER = "gcp_opencensus_client_call_tracer"
 cdef const char* SERVER_CALL_TRACER_FACTORY = "gcp_opencensus_server_call_tracer_factory"
 
 
-def set_server_call_tracer_factory(object grpc_observability) -> None:
-  capsule = grpc_observability.create_server_call_tracer_factory()
+def set_server_call_tracer_factory(object observability_plugin) -> None:
+  capsule = observability_plugin.create_server_call_tracer_factory()
   capsule_ptr = cpython.PyCapsule_GetPointer(capsule, SERVER_CALL_TRACER_FACTORY)
   _register_server_call_tracer_factory(capsule_ptr)
 
 
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
-  observability = _observability.get_grpc_observability()
-  if not (observability and observability._tracing_enabled()):
+  observability_plugin = _observability._grpc_observability_stub
+  if not (observability_plugin and observability_plugin.tracing_enabled):
     return
   cdef ServerCallTracer* server_call_tracer
   server_call_tracer = static_cast['ServerCallTracer*'](_get_call_tracer(event.call.c_call))
@@ -41,14 +41,14 @@ def maybe_save_server_trace_context(RequestCallEvent event) -> None:
   trace_id = _decode(codecs.decode(server_call_tracer.TraceId(), 'hex_codec'))
   span_id = _decode(codecs.decode(server_call_tracer.SpanId(), 'hex_codec'))
   is_sampled = server_call_tracer.IsSampled()
-  observability.save_trace_context(trace_id, span_id, is_sampled)
+  observability_plugin.save_trace_context(trace_id, span_id, is_sampled)
 
 
 cdef void maybe_set_client_call_tracer_on_call(_CallState call_state, bytes method_name) except *:
-  observability = _observability.get_grpc_observability()
-  if not (observability and observability._observability_enabled()):
+  observability_plugin = _observability._grpc_observability_stub
+  if not (observability_plugin and observability_plugin.observability_enabled):
     return
-  capsule = observability.create_client_call_tracer_capsule(method_name)
+  capsule = observability_plugin.create_client_call_tracer(method_name)
   capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
   _set_call_tracer(call_state.c_call, capsule_ptr)
   call_state.call_tracer_capsule = capsule

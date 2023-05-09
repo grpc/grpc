@@ -14,7 +14,6 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-import importlib
 import logging
 import threading
 import time
@@ -28,7 +27,8 @@ from opencensus.trace import trace_options as trace_options_module
 
 _LOGGER = logging.getLogger(__name__)
 
-PyCapsule = TypeVar('PyCapsule')
+ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
+ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 grpc_observability = Any  # grpc_observability.py imports this module.
 
 GRPC_STATUS_CODE_TO_STRING = {
@@ -83,7 +83,7 @@ class GcpObservabilityPythonConfig:
         self.sampling_rate = sampling_rate
 
 
-class GCPOpenCensusObservability(grpc.GrpcObservability):
+class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
 
@@ -97,9 +97,9 @@ class GCPOpenCensusObservability(grpc.GrpcObservability):
             raise ValueError("Invalid configuration")
 
         if self.config.tracing_enabled:
-            self._enable_tracing(True)
+            self.enable_tracing(True)
         if self.config.stats_enabled:
-            self._enable_stats(True)
+            self.enable_stats(True)
 
     def init(self, exporter: "grpc_observability.Exporter" = None) -> None:
         if exporter:
@@ -107,10 +107,11 @@ class GCPOpenCensusObservability(grpc.GrpcObservability):
         else:
             # 2. Creating measures and register views.
             # 3. Create and Saves Tracer and Sampler to ContextVar.
-            open_census = importlib.import_module(
-                "grpc_observability._open_census")
-            self.exporter = open_census.OpenCensusExporter(
-                self.config.get().labels)
+            pass  # Actual implementation of OC exporter
+            # open_census = importlib.import_module(
+            #     "grpc_observability._open_census")
+            # self.exporter = open_census.OpenCensusExporter(
+            #     self.config.get().labels)
 
         # 4. Start exporting thread.
         try:
@@ -127,8 +128,8 @@ class GCPOpenCensusObservability(grpc.GrpcObservability):
     def exit(self) -> None:
         # Sleep for 0.5s so all data can be flushed.
         time.sleep(0.5)
-        self._enable_tracing(False)
-        self._enable_stats(False)
+        self.enable_tracing(False)
+        self.enable_stats(False)
         _cyobservability.at_observability_exit()
 
     def __enter__(self) -> None:
@@ -137,27 +138,29 @@ class GCPOpenCensusObservability(grpc.GrpcObservability):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.exit()
 
-    def create_client_call_tracer_capsule(self, method_name: bytes) -> PyCapsule:
+    def create_client_call_tracer(
+            self, method_name: bytes) -> ClientCallTracerCapsule:
         current_span = execution_context.get_current_span()
         if current_span:
             # Propagate existing OC context
             trace_id = current_span.context_tracer.trace_id.encode('utf8')
             parent_span_id = current_span.span_id.encode('utf8')
-            capsule = _cyobservability.create_client_call_tracer_capsule(
+            capsule = _cyobservability.create_client_call_tracer(
                 method_name, trace_id, parent_span_id)
         else:
             trace_id = span_context_module.generate_trace_id().encode('utf8')
-            capsule = _cyobservability.create_client_call_tracer_capsule(
+            capsule = _cyobservability.create_client_call_tracer(
                 method_name, trace_id)
         return capsule
 
-    def create_server_call_tracer_factory(self) -> PyCapsule:
+    def create_server_call_tracer_factory(
+            self) -> ServerCallTracerFactoryCapsule:
         capsule = _cyobservability.create_server_call_tracer_factory_capsule()
         return capsule
 
     def delete_client_call_tracer(
-            self, client_call_tracer_capsule: PyCapsule) -> None:
-        _cyobservability.delete_client_call_tracer(client_call_tracer_capsule)
+            self, client_call_tracer: ClientCallTracerCapsule) -> None:
+        _cyobservability.delete_client_call_tracer(client_call_tracer)
 
     def save_trace_context(self, trace_id: str, span_id: str,
                            is_sampled: bool) -> None:
