@@ -2292,7 +2292,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
-    visibility = ["//visibility:public"],
+    visibility = ["@grpc:public"],
     deps = ["gpr_platform"],
 )
 

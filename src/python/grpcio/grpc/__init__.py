@@ -21,7 +21,7 @@ import sys
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
-from grpc._observability import GrpcObservability
+from grpc._observability import ObservabilityPlugin
 from grpc._observability import _observability_init
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
@@ -2109,7 +2109,7 @@ __all__ = (
     'channel_ready_future', 'insecure_channel', 'secure_channel',
     'intercept_channel', 'server', 'protos', 'services', 'protos_and_services',
     'xds_channel_credentials', 'xds_server_credentials',
-    'insecure_server_credentials', '_observability_init', 'GrpcObservability')
+    'insecure_server_credentials')
 
 ############################### Extension Shims ################################
 

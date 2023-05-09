@@ -12,33 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import abc
 import logging
-import sys
+import threading
 from typing import Any, Generic, Optional, TypeVar
 
-import grpc  # pytype: disable=pyi-error
 from grpc._cython import cygrpc as _cygrpc
 
 _LOGGER = logging.getLogger(__name__)
 
 _channel = Any  # _channel.py imports this module.
-PyCapsule = TypeVar('PyCapsule')
+ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
+ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
+
+_lock: threading.RLock = threading.RLock()
+_grpc_observability_stub: Optional[ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
 
 
-class GrpcObservability(Generic[PyCapsule], metaclass=abc.ABCMeta):
-    # we need to add hooks so that the GCP observability package can register functions with
-    # the grpcio module and so can any other observability module conforming to the interface.
-    _TRACING_ENABLED: bool = False
-    _STATS_ENABLED: bool = False
+class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
+                                  ServerCallTracerFactoryCapsule],
+                          metaclass=abc.ABCMeta):
+    """
+    Note: Any future methods added to this interface cannot have the @abc.abstractmethod annotation.
+    """
+    _tracing_enabled: bool = False
+    _stats_enabled: bool = False
 
     @abc.abstractmethod
-    def create_client_call_tracer_capsule(self, method_name: bytes) -> PyCapsule:
+    def create_client_call_tracer(
+            self, method_name: bytes) -> ClientCallTracerCapsule:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def delete_client_call_tracer(
-            self, client_call_tracer_capsule: PyCapsule) -> None:
+            self, client_call_tracer: ClientCallTracerCapsule) -> None:
         # delte client call tracer have to be called on o11y package side.
         # Call it for both segregated and integrated call (`_process_integrated_call_tag`)
         raise NotImplementedError()
@@ -49,7 +58,8 @@ class GrpcObservability(Generic[PyCapsule], metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def create_server_call_tracer_factory(self) -> PyCapsule:
+    def create_server_call_tracer_factory(
+            self) -> ServerCallTracerFactoryCapsule:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -57,50 +67,52 @@ class GrpcObservability(Generic[PyCapsule], metaclass=abc.ABCMeta):
                            status_code: Any) -> None:
         raise NotImplementedError()
 
-    def _enable_tracing(self, enable: bool) -> None:
-        self._TRACING_ENABLED = enable
+    def enable_tracing(self, enable: bool) -> None:
+        self._tracing_enabled = enable
 
-    def _enable_stats(self, enable: bool) -> None:
-        self._STATS_ENABLED = enable
+    def enable_stats(self, enable: bool) -> None:
+        self._stats_enabled = enable
 
-    def _tracing_enabled(self) -> bool:
-        return self._TRACING_ENABLED
+    @property
+    def tracing_enabled(self) -> bool:
+        return self._tracing_enabled
 
-    def _stats_enabled(self) -> bool:
-        return self._STATS_ENABLED
+    @property
+    def stats_enabled(self) -> bool:
+        return self._stats_enabled
 
-    def _observability_enabled(self) -> bool:
-        return self._tracing_enabled() or self._stats_enabled()
+    @property
+    def observability_enabled(self) -> bool:
+        return self.tracing_enabled or self.stats_enabled
 
 
-def _observability_init(grpc_observability: GrpcObservability) -> None:
+def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
+    global _grpc_observability_stub  # pylint: disable=global-statement
     try:
-        grpc._observability._grpc_observability_stub = grpc_observability
-        _cygrpc.set_server_call_tracer_factory(grpc_observability)
+        with _lock:
+            _grpc_observability_stub = observability_plugin
+        _cygrpc.set_server_call_tracer_factory(observability_plugin)
+    # TODO(xuanwn): Change to specific exception
     except Exception as e:  # pylint:disable=broad-except
-        _LOGGER.exception("grpc.observability initiazation failed with %s", e)
+        _LOGGER.exception("grpc.observability initialization failed with %s", e)
 
 
-def get_grpc_observability() -> Optional[GrpcObservability]:
-    observability_stub: Optional[GrpcObservability]
-    try:
-        observability_stub = grpc._observability._grpc_observability_stub
-    except AttributeError:
-        observability_stub = None
-    return observability_stub
-
-
-def delete_call_tracer(client_call_tracer_capsule: PyCapsule) -> None:
-    observability = get_grpc_observability()
-    if not (observability and observability._observability_enabled()):
+def delete_call_tracer(
+        client_call_tracer_capsule: "ClientCallTracerCapsule") -> None:
+    global _grpc_observability_stub  # pylint: disable=global-statement
+    if not (_grpc_observability_stub and
+            _grpc_observability_stub.observability_enabled):
         return
-    observability.delete_client_call_tracer(client_call_tracer_capsule)
+    _grpc_observability_stub.delete_client_call_tracer(
+        client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
-    observability = get_grpc_observability()
-    if not (observability and observability._stats_enabled()):
+    global _grpc_observability_stub  # pylint: disable=global-statement
+    if not (_grpc_observability_stub and
+            _grpc_observability_stub.stats_enabled):
         return
     rpc_latency = state.rpc_end_time - state.rpc_start_time
     rpc_latency_ms = rpc_latency.total_seconds() * 1000
-    observability.record_rpc_latency(state.method, rpc_latency_ms, state.code)
+    _grpc_observability_stub.record_rpc_latency(state.method, rpc_latency_ms,
+                                                state.code)
