@@ -19,7 +19,6 @@ import logging
 import threading
 from typing import Any, Generic, Optional, TypeVar
 
-import grpc  # pytype: disable=pyi-error
 from grpc._cython import cygrpc as _cygrpc
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
 ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 
 _lock: threading.RLock = threading.RLock()
-_grpc_observability_stub: Optional[ObservabilityPlugin] = None
+_grpc_observability_stub: Optional[ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
 
 
 class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
@@ -88,7 +87,7 @@ class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
 
 
 def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
-    global _grpc_observability_stub
+    global _grpc_observability_stub  # pylint: disable=global-statement
     try:
         with _lock:
             _grpc_observability_stub = observability_plugin
@@ -99,21 +98,21 @@ def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
 
 
 def delete_call_tracer(
-        client_call_tracer_capsule: ClientCallTracerCapsule) -> None:
-    global _grpc_observability_stub
-    observability_plugin = _grpc_observability_stub
-    if not (observability_plugin and
-            observability_plugin.observability_enabled):
+        client_call_tracer_capsule: "ClientCallTracerCapsule") -> None:
+    global _grpc_observability_stub  # pylint: disable=global-statement
+    if not (_grpc_observability_stub and
+            _grpc_observability_stub.observability_enabled):
         return
-    observability_plugin.delete_client_call_tracer(client_call_tracer_capsule)
+    _grpc_observability_stub.delete_client_call_tracer(
+        client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
-    global _grpc_observability_stub
-    observability_plugin = _grpc_observability_stub
-    if not (observability_plugin and observability_plugin.stats_enabled):
+    global _grpc_observability_stub  # pylint: disable=global-statement
+    if not (_grpc_observability_stub and
+            _grpc_observability_stub.stats_enabled):
         return
     rpc_latency = state.rpc_end_time - state.rpc_start_time
     rpc_latency_ms = rpc_latency.total_seconds() * 1000
-    observability_plugin.record_rpc_latency(state.method, rpc_latency_ms,
-                                            state.code)
+    _grpc_observability_stub.record_rpc_latency(state.method, rpc_latency_ms,
+                                                state.code)
