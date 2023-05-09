@@ -435,6 +435,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (skip_cancelled_check) {
     request->mutable_param()->set_skip_cancelled_check(true);
   }
+  if (backend_metrics.has_value()) {
+    *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
+  }
 }
 
 //
@@ -746,7 +749,8 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
   // Initialize XdsClient state.
-  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
+  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()),
+                           /*ignore_if_set=*/true);
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());

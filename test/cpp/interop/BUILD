@@ -244,6 +244,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        ":rpc_behavior_lb_policy",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
@@ -444,5 +445,23 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "rpc_behavior_lb_policy",
+    srcs = [
+        "rpc_behavior_lb_policy.cc",
+    ],
+    hdrs = [
+        "rpc_behavior_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
     ],
 )

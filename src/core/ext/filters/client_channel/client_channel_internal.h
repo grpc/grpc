@@ -21,16 +21,15 @@
 
 #include <utility>
 
-#include "absl/strings/string_view.h"
+#include "absl/functional/any_invocable.h"
 
-#include "src/core/ext/filters/client_channel/config_selector.h"
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_parser.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -38,75 +37,39 @@
 // ClientChannel that is not normally accessible via external APIs.
 //
 
+// Channel arg key for health check service name.
+#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
+  "grpc.internal.health_check_service_name"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+  virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const = 0;
 };
 
-// Internal type for ServiceConfigCallData.  Provides access to the
-// CallDispatchController.
+// Internal type for ServiceConfigCallData.  Handles call commits.
 class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
  public:
-  ClientChannelServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      ServiceConfigCallData::CallAttributes call_attributes,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs,
-                              std::move(call_attributes)),
-        call_dispatch_controller_(call_dispatch_controller) {
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
+  ClientChannelServiceConfigCallData(Arena* arena,
+                                     grpc_call_context_element* call_context)
+      : ServiceConfigCallData(arena, call_context) {}
+
+  void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
+    GPR_ASSERT(on_commit_ == nullptr);
+    on_commit_ = std::move(on_commit);
   }
 
-  ConfigSelector::CallDispatchController* call_dispatch_controller() {
-    return &call_dispatch_controller_;
+  void Commit() {
+    auto on_commit = std::move(on_commit_);
+    if (on_commit != nullptr) on_commit();
   }
 
  private:
-  // A wrapper for the CallDispatchController returned by the ConfigSelector.
-  // Handles the case where the ConfigSelector doees not return any
-  // CallDispatchController.
-  // Also ensures that we call Commit() at most once, which allows the
-  // client channel code to call Commit() when the call is complete in case
-  // it wasn't called earlier, without needing to know whether or not it was.
-  class CallDispatchControllerWrapper
-      : public ConfigSelector::CallDispatchController {
-   public:
-    explicit CallDispatchControllerWrapper(
-        ConfigSelector::CallDispatchController* call_dispatch_controller)
-        : call_dispatch_controller_(call_dispatch_controller) {}
-
-    bool ShouldRetry() override {
-      if (call_dispatch_controller_ != nullptr) {
-        return call_dispatch_controller_->ShouldRetry();
-      }
-      return true;
-    }
-
-    void Commit() override {
-      if (call_dispatch_controller_ != nullptr && !commit_called_) {
-        call_dispatch_controller_->Commit();
-        commit_called_ = true;
-      }
-    }
-
-   private:
-    ConfigSelector::CallDispatchController* call_dispatch_controller_;
-    bool commit_called_ = false;
-  };
-
-  static void Destroy(void* ptr) {
-    auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
-    self->~ClientChannelServiceConfigCallData();
-  }
-
-  CallDispatchControllerWrapper call_dispatch_controller_;
+  absl::AnyInvocable<void()> on_commit_;
 };
 
 }  // namespace grpc_core

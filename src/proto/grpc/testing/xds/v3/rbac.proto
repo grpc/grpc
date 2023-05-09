@@ -97,6 +97,45 @@ message RBAC {
     LOG = 2;
   }
 
+  message AuditLoggingOptions {
+    // Deny and allow here refer to RBAC decisions, not actions.
+    enum AuditCondition {
+      // Never audit.
+      NONE = 0;
+
+      // Audit when RBAC denies the request.
+      ON_DENY = 1;
+
+      // Audit when RBAC allows the request.
+      ON_ALLOW = 2;
+
+      // Audit whether RBAC allows or denies the request.
+      ON_DENY_AND_ALLOW = 3;
+    }
+
+    // [#not-implemented-hide:]
+    message AuditLoggerConfig {
+      // Typed logger configuration.
+      //
+      // [#extension-category: envoy.rbac.audit_loggers]
+      core.v3.TypedExtensionConfig audit_logger = 1;
+
+      // If true, when the logger is not supported, the data plane will not NACK but simply ignore it.
+      bool is_optional = 2;
+    }
+
+    // Condition for the audit logging to happen.
+    // If this condition is met, all the audit loggers configured here will be invoked.
+    //
+    // [#not-implemented-hide:]
+    AuditCondition audit_condition = 1;
+
+    // Configurations for RBAC-based authorization audit loggers.
+    //
+    // [#not-implemented-hide:]
+    repeated AuditLoggerConfig logger_configs = 2;
+  }
+
   // The action to take if a policy matches. Every action either allows or denies a request,
   // and can also carry out action-specific operations.
   //
@@ -116,6 +155,12 @@ message RBAC {
   // Maps from policy name to policy. A match occurs when at least one policy matches the request.
   // The policies are evaluated in lexicographic order of the policy name.
   map<string, Policy> policies = 2;
+
+  // Audit logging options that include the condition for audit logging to happen
+  // and audit logger configurations.
+  //
+  // [#not-implemented-hide:]
+  AuditLoggingOptions audit_logging_options = 3;
 }
 
 // Policy specifies a role and the principals that are assigned/denied the role.

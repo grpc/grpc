@@ -65,17 +65,13 @@ class Oauth2Fixture : public SecureFixture {
     return nullptr;
   }
 
-  static void process_oauth2_success(void*, grpc_auth_context* ctx,
+  static void process_oauth2_success(void*, grpc_auth_context*,
                                      const grpc_metadata* md, size_t md_count,
                                      grpc_process_auth_metadata_done_cb cb,
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
     GPR_ASSERT(oauth2 != nullptr);
-    grpc_auth_context_add_cstring_property(ctx, client_identity_property_name(),
-                                           client_identity());
-    GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
-                   ctx, client_identity_property_name()) == 1);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
   }
 

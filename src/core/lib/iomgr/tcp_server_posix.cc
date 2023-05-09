@@ -52,6 +52,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -78,23 +79,9 @@ static std::atomic<int64_t> num_dropped_connections{0};
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
 using ::grpc_event_engine::experimental::SliceBuffer;
-
-class MemoryAllocatorFactoryWrapper
-    : public grpc_event_engine::experimental::MemoryAllocatorFactory {
- public:
-  explicit MemoryAllocatorFactoryWrapper(
-      grpc_core::MemoryQuotaRefPtr memory_quota)
-      : memory_quota_(std::move(memory_quota)) {}
-
-  MemoryAllocator CreateMemoryAllocator(absl::string_view name) override {
-    return memory_quota_->CreateMemoryAllocator(name);
-  }
-
- private:
-  grpc_core::MemoryQuotaRefPtr memory_quota_;
-};
 
 static grpc_error_handle CreateEventEngineListener(
     grpc_tcp_server* s, grpc_closure* shutdown_complete,
@@ -189,7 +176,9 @@ static grpc_error_handle CreateEventEngineListener(
         delete s->fd_handler;
         delete s;
       },
-      config, std::make_unique<MemoryAllocatorFactoryWrapper>(s->memory_quota));
+      config,
+      std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
+          s->memory_quota));
   if (!listener.ok()) {
     delete s;
     *server = nullptr;

@@ -252,20 +252,17 @@ class CLanguage(object):
             _check_compiler(self.args.compiler, [
                 'default',
                 'cmake',
-                'cmake_ninja_vs2017',
-                'cmake_vs2017',
+                'cmake_ninja_vs2019',
                 'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
 
             activate_vs_tools = ''
-            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+            if self.args.compiler == 'cmake_ninja_vs2019' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
                 # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = 'Ninja'
-                activate_vs_tools = '2017'
-            elif self.args.compiler == 'cmake_vs2017':
-                cmake_generator = 'Visual Studio 15 2017'
+                activate_vs_tools = '2019'
             elif self.args.compiler == 'cmake_vs2019':
                 cmake_generator = 'Visual Studio 16 2019'
             else:
@@ -338,9 +335,13 @@ class CLanguage(object):
                     continue
                 if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
                     continue
+
                 if self.platform == 'windows':
-                    binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
-                        self.config.build_config], target['name'])
+                    if self._cmake_generator_windows == 'Ninja':
+                        binary = 'cmake/build/%s.exe' % target['name']
+                    else:
+                        binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
+                            self.config.build_config], target['name'])
                 else:
                     binary = 'cmake/build/%s' % target['name']
 
@@ -782,7 +783,7 @@ class PythonLanguage(object):
         elif args.compiler == 'pypy3':
             return (pypy32_config,)
         elif args.compiler == 'python_alpine':
-            return (python38_config,)
+            return (python39_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
                 python37_config,
@@ -1470,8 +1471,7 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
-        'cmake_ninja_vs2017',
-        'cmake_vs2017',
+        'cmake_ninja_vs2019',
         'cmake_vs2019',
         'mono',
     ],

@@ -242,6 +242,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   void HandleCompressionAlgorithmNotAccepted(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
 
+  gpr_cycle_counter start_time() const { return start_time_; }
+
  private:
   RefCountedPtr<Channel> channel_;
   Arena* const arena_;
@@ -263,6 +265,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
   mutable Mutex peer_mu_;
   Slice peer_string_;
+  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -706,7 +709,6 @@ class FilterStackCall final : public Call {
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 
   /// has grpc_call_unref been called
   bool destroy_called_ = false;
@@ -868,7 +870,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_call_element_args call_args = {
       call->call_stack(), args->server_transport_data,
       call->context_,     path,
-      call->start_time_,  call->send_deadline(),
+      call->start_time(), call->send_deadline(),
       call->arena(),      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
@@ -950,7 +952,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
                         &(c->final_info_.error_string));
   c->status_error_.set(absl::OkStatus());
   c->final_info_.stats.latency =
-      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time_);
+      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time());
   grpc_call_stack_destroy(c->call_stack(), &c->final_info_,
                           GRPC_CLOSURE_INIT(&c->release_call_, ReleaseCall, c,
                                             grpc_schedule_on_exec_ctx));
@@ -1995,27 +1997,26 @@ class PromiseBasedCall : public Call,
 
   void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  Timestamp deadline() {
+    MutexLock lock(&deadline_mu_);
+    return deadline_;
+  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
 
   virtual ServerCallContext* server_call_context() { return nullptr; }
+  bool failed_before_recv_message() const final {
+    return failed_before_recv_message_.load(std::memory_order_relaxed);
+  }
 
   using Call::arena;
 
  protected:
-  class ScopedBatchCoalescer : public BatchBuilder,
-                               public promise_detail::Context<BatchBuilder> {
-   public:
-    explicit ScopedBatchCoalescer(PromiseBasedCall* call)
-        : BatchBuilder(&call->batch_payload_),
-          promise_detail::Context<BatchBuilder>(
-              promise_detail::KeepExistingIfPresent{}, this) {}
-  };
-
   class ScopedContext
       : public ScopedActivity,
-        public ScopedBatchCoalescer,
+        public BatchBuilder,
+        public promise_detail::Context<BatchBuilder>,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
@@ -2023,7 +2024,8 @@ class PromiseBasedCall : public Call,
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
-          ScopedBatchCoalescer(call),
+          BatchBuilder(&call->batch_payload_),
+          promise_detail::Context<BatchBuilder>(this),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
@@ -2152,6 +2154,8 @@ class PromiseBasedCall : public Call,
     final_info.stats = final_stats_;
     final_info.final_status = status;
     final_info.error_string = status_details;
+    final_info.stats.latency =
+        gpr_cycle_counter_sub(gpr_get_cycle_counter(), start_time());
     finalization_.Run(&final_info);
   }
 
@@ -2178,9 +2182,11 @@ class PromiseBasedCall : public Call,
   template <typename FirstPromise>
   void StartRecvMessage(const grpc_op& op, const Completion& completion,
                         FirstPromise first,
-                        PipeReceiver<MessageHandle>* receiver);
+                        PipeReceiver<MessageHandle>* receiver,
+                        bool cancel_on_error, Party::BulkSpawner& spawner);
   void StartSendMessage(const grpc_op& op, const Completion& completion,
-                        PipeSender<MessageHandle>* sender);
+                        PipeSender<MessageHandle>* sender,
+                        Party::BulkSpawner& spawner);
 
   void set_completed() { finished_.Set(); }
 
@@ -2325,6 +2331,7 @@ class PromiseBasedCall : public Call,
   // GRPC_OP_SEND_MESSAGE (one count each), and 0 once those payloads have been
   // pushed onto the outgoing pipe.
   std::atomic<uint8_t> sends_queued_{0};
+  std::atomic<bool> failed_before_recv_message_{false};
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
@@ -2351,16 +2358,7 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
       Party(arena, initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
-    GPR_ASSERT(args.pollset_set_alternative == nullptr &&
-               "Only one of 'cq' and 'pollset_set_alternative' should be "
-               "non-nullptr.");
     GRPC_CQ_INTERNAL_REF(args.cq, "bind");
-    call_context_.pollent_ =
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args.cq));
-  }
-  if (args.pollset_set_alternative != nullptr) {
-    call_context_.pollent_ = grpc_polling_entity_create_from_pollset_set(
-        args.pollset_set_alternative);
   }
 }
 
@@ -2473,8 +2471,6 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
 void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
   cq_ = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
-  call_context_.pollent_ =
-      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
 void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
@@ -2513,14 +2509,15 @@ void PromiseBasedCall::Run() {
 
 void PromiseBasedCall::StartSendMessage(const grpc_op& op,
                                         const Completion& completion,
-                                        PipeSender<MessageHandle>* sender) {
+                                        PipeSender<MessageHandle>* sender,
+                                        Party::BulkSpawner& spawner) {
   QueueSend();
   SliceBuffer send;
   grpc_slice_buffer_swap(
       &op.data.send_message.send_message->data.raw.slice_buffer,
       send.c_slice_buffer());
   auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
-  Spawn(
+  spawner.Spawn(
       "call_send_message",
       [this, sender, msg = std::move(msg)]() mutable {
         EnactSend();
@@ -2537,20 +2534,23 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
       });
 }
 
-template <typename FirstPromise>
-void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
-                                        const Completion& completion,
-                                        FirstPromise first_promise,
-                                        PipeReceiver<MessageHandle>* receiver) {
+template <typename FirstPromiseFactory>
+void PromiseBasedCall::StartRecvMessage(
+    const grpc_op& op, const Completion& completion,
+    FirstPromiseFactory first_promise_factory,
+    PipeReceiver<MessageHandle>* receiver, bool cancel_on_error,
+    Party::BulkSpawner& spawner) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
   recv_message_ = op.data.recv_message.recv_message;
-  Spawn(
+  spawner.Spawn(
       "call_recv_message",
-      Seq(std::move(first_promise), [receiver]() { return receiver->Next(); }),
-      [this,
+      [first_promise_factory = std::move(first_promise_factory), receiver]() {
+        return Seq(first_promise_factory(), receiver->Next());
+      },
+      [this, cancel_on_error,
        completion = AddOpToCompletion(completion, PendingOp::kReceiveMessage)](
           NextResult<MessageHandle> result) mutable {
         if (result.has_value()) {
@@ -2579,7 +2579,9 @@ void PromiseBasedCall::StartRecvMessage(const grpc_op& op,
                     "finishes: received end-of-stream with error",
                     DebugTag().c_str());
           }
+          failed_before_recv_message_.store(true);
           FailCompletion(completion);
+          if (cancel_on_error) CancelWithError(absl::CancelledError());
           *recv_message_ = nullptr;
         } else {
           if (grpc_call_trace.enabled()) {
@@ -2611,6 +2613,8 @@ void CallContext::UpdateDeadline(Timestamp deadline) {
   call_->UpdateDeadline(deadline);
 }
 
+Timestamp CallContext::deadline() const { return call_->deadline(); }
+
 ServerCallContext* CallContext::server_call_context() {
   return call_->server_call_context();
 }
@@ -2641,6 +2645,17 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
       : PromiseBasedCall(arena, 1, *args) {
     global_stats().IncrementClientCallsCreated();
+    if (args->cq != nullptr) {
+      GPR_ASSERT(args->pollset_set_alternative == nullptr &&
+                 "Only one of 'cq' and 'pollset_set_alternative' should be "
+                 "non-nullptr.");
+      polling_entity_.Set(
+          grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq)));
+    }
+    if (args->pollset_set_alternative != nullptr) {
+      polling_entity_.Set(grpc_polling_entity_create_from_pollset_set(
+          args->pollset_set_alternative));
+    }
     ScopedContext context(this);
     send_initial_metadata_ =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
@@ -2693,7 +2708,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
   absl::string_view GetServerAuthority() const override { abort(); }
   bool is_trailers_only() const override { return is_trailers_only_; }
-  bool failed_before_recv_message() const override { return false; }
 
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
@@ -2712,13 +2726,15 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                    const Completion& completion);
   // Start the underlying promise.
   void StartPromise(ClientMetadataHandle client_initial_metadata,
-                    const Completion& completion);
+                    const Completion& completion, Party::BulkSpawner& spawner);
   // Start receiving initial metadata
   void StartRecvInitialMetadata(grpc_metadata_array* array,
-                                const Completion& completion);
+                                const Completion& completion,
+                                Party::BulkSpawner& spawner);
   void StartRecvStatusOnClient(
       const Completion& completion,
-      grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args);
+      grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
+      Party::BulkSpawner& spawner);
   // Publish status out to the application.
   void PublishStatus(
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
@@ -2730,6 +2746,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<ServerMetadataHandle> server_initial_metadata_{arena()};
   Latch<ServerMetadataHandle> server_trailing_metadata_;
   Latch<ServerMetadataHandle> cancel_error_;
+  Latch<grpc_polling_entity> polling_entity_;
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_;
@@ -2739,30 +2756,35 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   // In the latter case real world code sometimes does not sent the initial
   // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
+  // TODO(ctiller): delete when we remove the filter based API (may require some
+  // cleanup in wrapped languages: they depend on this to hold slice refs)
+  ServerMetadataHandle recv_initial_metadata_;
+  ServerMetadataHandle recv_trailing_metadata_;
 };
 
 void ClientPromiseBasedCall::StartPromise(
-    ClientMetadataHandle client_initial_metadata,
-    const Completion& completion) {
+    ClientMetadataHandle client_initial_metadata, const Completion& completion,
+    Party::BulkSpawner& spawner) {
   auto token = ClientInitialMetadataOutstandingToken::New(arena());
-  Spawn("call_send_initial_metadata", token.Wait(),
-        [this, completion = AddOpToCompletion(completion,
-                                              PendingOp::kSendInitialMetadata)](
-            bool result) mutable {
-          if (!result) FailCompletion(completion);
-          FinishOpOnCompletion(&completion, PendingOp::kSendInitialMetadata);
-        });
-  Spawn(
+  spawner.Spawn(
+      "call_send_initial_metadata", token.Wait(),
+      [this,
+       completion = AddOpToCompletion(
+           completion, PendingOp::kSendInitialMetadata)](bool result) mutable {
+        if (!result) FailCompletion(completion);
+        FinishOpOnCompletion(&completion, PendingOp::kSendInitialMetadata);
+      });
+  spawner.Spawn(
       "client_promise",
       [this, client_initial_metadata = std::move(client_initial_metadata),
        token = std::move(token)]() mutable {
         return Race(
             cancel_error_.Wait(),
-            Map(channel()->channel_stack()->MakeClientCallPromise(
-                    CallArgs{std::move(client_initial_metadata),
-                             std::move(token), &server_initial_metadata_.sender,
-                             &client_to_server_messages_.receiver,
-                             &server_to_client_messages_.sender}),
+            Map(channel()->channel_stack()->MakeClientCallPromise(CallArgs{
+                    std::move(client_initial_metadata), std::move(token),
+                    &polling_entity_, &server_initial_metadata_.sender,
+                    &client_to_server_messages_.receiver,
+                    &server_to_client_messages_.sender}),
                 [this](ServerMetadataHandle trailing_metadata) {
                   // If we're cancelled the transport doesn't get to return
                   // stats.
@@ -2813,7 +2835,7 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
-  ScopedBatchCoalescer coalescer(this);
+  Party::BulkSpawner spawner(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -2832,25 +2854,31 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                 (op.flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
                 (op.flags &
                  GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
-        StartPromise(std::move(send_initial_metadata_), completion);
+        StartPromise(std::move(send_initial_metadata_), completion, spawner);
       } break;
       case GRPC_OP_RECV_INITIAL_METADATA: {
         StartRecvInitialMetadata(
-            op.data.recv_initial_metadata.recv_initial_metadata, completion);
+            op.data.recv_initial_metadata.recv_initial_metadata, completion,
+            spawner);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
-        StartRecvStatusOnClient(completion, op.data.recv_status_on_client);
+        StartRecvStatusOnClient(completion, op.data.recv_status_on_client,
+                                spawner);
       } break;
       case GRPC_OP_SEND_MESSAGE:
-        StartSendMessage(op, completion, &client_to_server_messages_.sender);
+        StartSendMessage(op, completion, &client_to_server_messages_.sender,
+                         spawner);
         break;
       case GRPC_OP_RECV_MESSAGE:
-        StartRecvMessage(op, completion,
-                         server_initial_metadata_.receiver.AwaitClosed(),
-                         &server_to_client_messages_.receiver);
+        StartRecvMessage(
+            op, completion,
+            [this]() {
+              return server_initial_metadata_.receiver.AwaitClosed();
+            },
+            &server_to_client_messages_.receiver, false, spawner);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        Spawn(
+        spawner.Spawn(
             "send_close_from_client",
             [this]() {
               client_to_server_messages_.sender.Close();
@@ -2890,28 +2918,31 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::StartRecvInitialMetadata(
-    grpc_metadata_array* array, const Completion& completion) {
-  Spawn("recv_initial_metadata",
-        Race(server_initial_metadata_.receiver.Next(),
-             Map(finished(),
-                 [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
-        [this, array,
-         completion =
-             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
-            NextResult<ServerMetadataHandle> next_metadata) mutable {
-          server_initial_metadata_.sender.Close();
-          ServerMetadataHandle metadata;
-          if (next_metadata.has_value()) {
-            is_trailers_only_ = false;
-            metadata = std::move(next_metadata.value());
-          } else {
-            is_trailers_only_ = true;
-            metadata = arena()->MakePooled<ServerMetadata>(arena());
-          }
-          ProcessIncomingInitialMetadata(*metadata);
-          PublishMetadataArray(metadata.get(), array);
-          FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
-        });
+    grpc_metadata_array* array, const Completion& completion,
+    Party::BulkSpawner& spawner) {
+  spawner.Spawn(
+      "recv_initial_metadata",
+      Race(server_initial_metadata_.receiver.Next(),
+           Map(finished(),
+               [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
+      [this, array,
+       completion =
+           AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
+          NextResult<ServerMetadataHandle> next_metadata) mutable {
+        server_initial_metadata_.sender.Close();
+        ServerMetadataHandle metadata;
+        if (next_metadata.has_value()) {
+          is_trailers_only_ = false;
+          metadata = std::move(next_metadata.value());
+        } else {
+          is_trailers_only_ = true;
+          metadata = arena()->MakePooled<ServerMetadata>(arena());
+        }
+        ProcessIncomingInitialMetadata(*metadata);
+        PublishMetadataArray(metadata.get(), array);
+        recv_initial_metadata_ = std::move(metadata);
+        FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
+      });
 }
 
 void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
@@ -2958,39 +2989,42 @@ std::string MakeErrorString(const ServerMetadata* trailing_metadata) {
 
 void ClientPromiseBasedCall::StartRecvStatusOnClient(
     const Completion& completion,
-    grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args) {
+    grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
+    Party::BulkSpawner& spawner) {
   ForceCompletionSuccess(completion);
-  Spawn("recv_status_on_client", server_trailing_metadata_.Wait(),
-        [this, op_args,
-         completion =
-             AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient)](
-            ServerMetadataHandle trailing_metadata) mutable {
-          const grpc_status_code status =
-              trailing_metadata->get(GrpcStatusMetadata())
-                  .value_or(GRPC_STATUS_UNKNOWN);
-          *op_args.status = status;
-          absl::string_view message_string;
-          if (Slice* message =
-                  trailing_metadata->get_pointer(GrpcMessageMetadata())) {
-            message_string = message->as_string_view();
-            *op_args.status_details = message->Ref().TakeCSlice();
-          } else {
-            *op_args.status_details = grpc_empty_slice();
-          }
-          if (message_string.empty()) {
-            RunFinalization(status, nullptr);
-          } else {
-            std::string error_string(message_string);
-            RunFinalization(status, error_string.c_str());
-          }
-          if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
-            *op_args.error_string =
-                gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
-          }
-          PublishMetadataArray(trailing_metadata.get(),
-                               op_args.trailing_metadata);
-          FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
-        });
+  spawner.Spawn(
+      "recv_status_on_client", server_trailing_metadata_.Wait(),
+      [this, op_args,
+       completion =
+           AddOpToCompletion(completion, PendingOp::kReceiveStatusOnClient)](
+          ServerMetadataHandle trailing_metadata) mutable {
+        const grpc_status_code status =
+            trailing_metadata->get(GrpcStatusMetadata())
+                .value_or(GRPC_STATUS_UNKNOWN);
+        *op_args.status = status;
+        absl::string_view message_string;
+        if (Slice* message =
+                trailing_metadata->get_pointer(GrpcMessageMetadata())) {
+          message_string = message->as_string_view();
+          *op_args.status_details = message->Ref().TakeCSlice();
+        } else {
+          *op_args.status_details = grpc_empty_slice();
+        }
+        if (message_string.empty()) {
+          RunFinalization(status, nullptr);
+        } else {
+          std::string error_string(message_string);
+          RunFinalization(status, error_string.c_str());
+        }
+        if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
+          *op_args.error_string =
+              gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
+        }
+        PublishMetadataArray(trailing_metadata.get(),
+                             op_args.trailing_metadata);
+        recv_trailing_metadata_ = std::move(trailing_metadata);
+        FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
+      });
 }
 #endif
 
@@ -3006,9 +3040,13 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void CancelWithError(grpc_error_handle) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
-  bool failed_before_recv_message() const override { return false; }
   bool is_trailers_only() const override { abort(); }
-  absl::string_view GetServerAuthority() const override { return ""; }
+  absl::string_view GetServerAuthority() const override {
+    const Slice* authority_metadata =
+        client_initial_metadata_->get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata == nullptr) return "";
+    return authority_metadata->as_string_view();
+  }
 
   // Polling order for the server promise stack:
   //
@@ -3172,7 +3210,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   Spawn("server_promise",
         channel()->channel_stack()->MakeServerCallPromise(
             CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(),
-                     nullptr, nullptr, nullptr}),
+                     nullptr, nullptr, nullptr, nullptr}),
         [this](ServerMetadataHandle result) { Finish(std::move(result)); });
 }
 
@@ -3190,14 +3228,26 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   if (server_initial_metadata_ != nullptr) {
     server_initial_metadata_->Close();
   }
+  const auto status =
+      result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   channelz::ServerNode* channelz_node = server_->channelz_node();
   if (channelz_node != nullptr) {
-    if (result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-        GRPC_STATUS_OK) {
+    if (status == GRPC_STATUS_OK) {
       channelz_node->RecordCallSucceeded();
     } else {
       channelz_node->RecordCallFailed();
     }
+  }
+  absl::string_view message_string;
+  if (Slice* message = result->get_pointer(GrpcMessageMetadata())) {
+    message_string = message->as_string_view();
+  }
+  AcceptTransportStatsFromContext();
+  if (message_string.empty()) {
+    RunFinalization(status, nullptr);
+  } else {
+    std::string error_string(message_string);
+    RunFinalization(status, error_string.c_str());
   }
   set_completed();
   ResetDeadline();
@@ -3242,7 +3292,7 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                                          const Completion& completion) {
-  ScopedBatchCoalescer coalescer(this);
+  Party::BulkSpawner spawner(this);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
@@ -3256,7 +3306,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
                   DebugTag().c_str());
         }
         QueueSend();
-        Spawn(
+        spawner.Spawn(
             "call_send_initial_metadata",
             [this, metadata = std::move(metadata)]() mutable {
               EnactSend();
@@ -3271,7 +3321,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             });
       } break;
       case GRPC_OP_SEND_MESSAGE:
-        StartSendMessage(op, completion, server_to_client_messages_);
+        StartSendMessage(op, completion, server_to_client_messages_, spawner);
         break;
       case GRPC_OP_RECV_MESSAGE:
         if (cancelled_.load(std::memory_order_relaxed)) {
@@ -3279,8 +3329,8 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           break;
         }
         StartRecvMessage(
-            op, completion, []() { return Empty{}; },
-            client_to_server_messages_);
+            op, completion, []() { return []() { return Empty{}; }; },
+            client_to_server_messages_, true, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
         auto metadata = arena()->MakePooled<ServerMetadata>(arena());
@@ -3290,9 +3340,14 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         metadata->Set(GrpcStatusMetadata(),
                       op.data.send_status_from_server.status);
         if (auto* details = op.data.send_status_from_server.status_details) {
-          metadata->Set(GrpcMessageMetadata(), Slice(CSliceRef(*details)));
+          // TODO(ctiller): this should not be a copy, but we have callers that
+          // allocate and pass in a slice created with
+          // grpc_slice_from_static_string and then delete the string after
+          // passing it in, which shouldn't be a supported API.
+          metadata->Set(GrpcMessageMetadata(),
+                        Slice(grpc_slice_copy(*details)));
         }
-        Spawn(
+        spawner.Spawn(
             "call_send_status_from_server",
             [this, metadata = std::move(metadata)]() mutable {
               bool r = true;
@@ -3386,11 +3441,14 @@ ServerCallContext::MakeTopOfServerCallPromise(
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
   call_->SetCompletionQueue(cq);
+  call_args.polling_entity->Set(
+      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)));
   call_->server_to_client_messages_ = call_args.server_to_client_messages;
   call_->client_to_server_messages_ = call_args.client_to_server_messages;
   call_->server_initial_metadata_ = call_args.server_initial_metadata;
   call_->client_initial_metadata_ =
       std::move(call_args.client_initial_metadata);
+  call_->set_send_deadline(call_->deadline());
   call_->ProcessIncomingInitialMetadata(*call_->client_initial_metadata_);
   PublishMetadataArray(call_->client_initial_metadata_.get(),
                        publish_initial_metadata);
@@ -3465,6 +3523,9 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(reserved == nullptr);
+  if (call == nullptr) {
+    return GRPC_CALL_ERROR;
+  }
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
@@ -3480,6 +3541,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
       "c=%p, status=%d, description=%s, reserved=%p)",
       4, (c, (int)status, description, reserved));
   GPR_ASSERT(reserved == nullptr);
+  if (c == nullptr) {
+    return GRPC_CALL_ERROR;
+  }
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(c)->CancelWithStatus(status, description);
@@ -3520,7 +3584,7 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
       "reserved=%p)",
       5, (call, ops, (unsigned long)nops, tag, reserved));
 
-  if (reserved != nullptr) {
+  if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;
   } else {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;

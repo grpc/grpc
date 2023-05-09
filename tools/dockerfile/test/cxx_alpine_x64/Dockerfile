@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.11
+FROM alpine:3.15
 
 # Install Git and basic packages.
 RUN apk update && apk add \
@@ -66,6 +66,12 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 RUN mkdir /var/local/jenkins
 
-  
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
+
 # Define the default command.
 CMD ["bash"]

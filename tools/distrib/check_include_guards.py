@@ -189,7 +189,7 @@ argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
-grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp)/.*\.h$'"
+grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp|fuzztest/)/.*\.h$'"
 if args.precommit:
     git_command = 'git diff --name-only HEAD'
 else:
