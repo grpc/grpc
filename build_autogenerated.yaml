@@ -5822,6 +5822,7 @@ targets:
   - test/core/client_channel/client_channel_service_config_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: client_channel_stress_test
   gtest: true
   build: test
@@ -5853,6 +5854,7 @@ targets:
   - test/core/client_channel/client_channel_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -10583,6 +10585,7 @@ targets:
   - test/core/client_channel/retry_service_config_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test

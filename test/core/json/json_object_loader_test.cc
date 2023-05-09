@@ -945,6 +945,11 @@ TEST(JsonObjectLoader, BareRefCountedPtr) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   ASSERT_NE(*parsed, nullptr);
   EXPECT_EQ((*parsed)->value(), 3);
+  parsed = Parse<RefCountedPtr<RefCountedObject>>("5");
+  EXPECT_EQ(parsed.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed.status().message(),
+            "errors validating JSON: [field: error:is not an object]")
+            << parsed.status();
 }
 
 TEST(JsonObjectLoader, BareVector) {
