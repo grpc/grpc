@@ -86,6 +86,23 @@ UPB_INLINE const xds_type_matcher_v3_IPMatcher_IPRangeMatcher* const* xds_type_m
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _xds_type_matcher_v3_IPMatcher_range_matchers_upb_array(const xds_type_matcher_v3_IPMatcher* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _xds_type_matcher_v3_IPMatcher_range_matchers_mutable_upb_array(const xds_type_matcher_v3_IPMatcher* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool xds_type_matcher_v3_IPMatcher_has_range_matchers(const xds_type_matcher_v3_IPMatcher* msg) {
   size_t size;
   xds_type_matcher_v3_IPMatcher_range_matchers(msg, &size);
@@ -168,6 +185,23 @@ UPB_INLINE const struct xds_core_v3_CidrRange* const* xds_type_matcher_v3_IPMatc
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _xds_type_matcher_v3_IPMatcher_IPRangeMatcher_ranges_upb_array(const xds_type_matcher_v3_IPMatcher_IPRangeMatcher* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _xds_type_matcher_v3_IPMatcher_IPRangeMatcher_ranges_mutable_upb_array(const xds_type_matcher_v3_IPMatcher_IPRangeMatcher* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool xds_type_matcher_v3_IPMatcher_IPRangeMatcher_has_ranges(const xds_type_matcher_v3_IPMatcher_IPRangeMatcher* msg) {
   size_t size;

@@ -77,17 +77,9 @@ class Arena {
 
   upb_Arena* ptr() const { return ptr_.get(); }
 
-  // Add a cleanup function to run when the arena is destroyed.
-  // Returns false on out-of-memory.
-  template <class T>
-  bool Own(T* obj) {
-    return upb_Arena_AddCleanup(ptr_.get(), obj,
-                                [](void* obj) { delete static_cast<T*>(obj); });
-  }
-
   void Fuse(Arena& other) { upb_Arena_Fuse(ptr(), other.ptr()); }
 
- private:
+ protected:
   std::unique_ptr<upb_Arena, decltype(&upb_Arena_Free)> ptr_;
 };
 
@@ -97,6 +89,11 @@ template <int N>
 class InlinedArena : public Arena {
  public:
   InlinedArena() : Arena(initial_block_, N) {}
+  ~InlinedArena() {
+    // Explicitly destroy the arena now so that it does not outlive
+    // initial_block_.
+    ptr_.reset();
+  }
 
  private:
   InlinedArena(const InlinedArena*) = delete;
