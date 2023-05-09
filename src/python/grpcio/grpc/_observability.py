@@ -93,6 +93,7 @@ def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
         with _lock:
             _grpc_observability_stub = observability_plugin
         _cygrpc.set_server_call_tracer_factory(observability_plugin)
+    # TODO(xuanwn): Change to specific exception
     except Exception as e:  # pylint:disable=broad-except
         _LOGGER.exception("grpc.observability initialization failed with %s", e)
 

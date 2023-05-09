@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "src/python/grpcio_observability/grpc_observability/observability_main.h"
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
-#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
+// #include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+// #include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
 
 #include "absl/strings/string_view.h"
 

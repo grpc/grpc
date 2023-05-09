@@ -35,7 +35,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+// #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
 
 #ifndef OBSERVABILITY_MAIN_H
