@@ -56,7 +56,6 @@ void RecordSpan(SpanCensusData span_census_data) {
 
 
 void NativeObservabilityInit() {
-    setbuf(stdout, nullptr);
     kCensusDataBuffer= new std::queue<CensusData>;
 }
 

@@ -89,7 +89,7 @@ def set_gcp_observability_config(object py_config) -> bool:
   return True
 
 
-def create_client_call_tracer_capsule(bytes method_name, bytes trace_id,
+def create_client_call_tracer(bytes method_name, bytes trace_id,
                                       bytes parent_span_id=b'') -> cpython.PyObject:
   cdef char* c_method = cpython.PyBytes_AsString(method_name)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
@@ -106,9 +106,9 @@ def create_server_call_tracer_factory_capsule() -> cpython.PyObject:
   return capsule
 
 
-def delete_client_call_tracer(object client_call_tracer_capsule) -> None:
-  if cpython.PyCapsule_IsValid(client_call_tracer_capsule, CLIENT_CALL_TRACER):
-    capsule_ptr = cpython.PyCapsule_GetPointer(client_call_tracer_capsule, CLIENT_CALL_TRACER)
+def delete_client_call_tracer(object client_call_tracer) -> None:
+  if cpython.PyCapsule_IsValid(client_call_tracer, CLIENT_CALL_TRACER):
+    capsule_ptr = cpython.PyCapsule_GetPointer(client_call_tracer, CLIENT_CALL_TRACER)
     call_tracer_ptr = <ClientCallTracer*>capsule_ptr
     del call_tracer_ptr
 
