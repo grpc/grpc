@@ -514,22 +514,8 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def _record_pod_restart_time(self) -> None:
         logger.info('Checking pods restart times')
-        self.client_pod_restart_time = self._get_pod_restarts(
-            self.client_runner.k8s_namespace, self.client_runner.deployment)
-        self.server_pod_restart_time = self._get_pod_restarts(
-            self.server_runner.k8s_namespace, self.server_runner.deployment)
-
-    def _get_pod_restarts(self, k8s_namespace: k8s.KubernetesNamespace,
-                          deployment: k8s.V1Deployment) -> int:
-        total_restart: int = 0
-        pods: List[k8s.V1Pod]
-        if not k8s_namespace or not deployment:
-            return total_restart
-        pods = k8s_namespace.list_deployment_pods(deployment)
-        for pod in pods:
-            total_restart = sum(status.restart_count
-                                for status in pod.status.container_statuses)
-        return total_restart
+        self.client_pod_restart_time = self.client_runner.get_pod_restarts()
+        self.server_pod_restart_time = self.server_runner.get_pod_restarts()
 
 
 class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):

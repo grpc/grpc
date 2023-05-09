@@ -228,6 +228,17 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                              secure_mode=secure_mode,
                              rpc_host=rpc_host)
 
+    def get_pod_restarts(self) -> int:
+        total_restart: int = 0
+        pods: List[k8s.V1Pod]
+        if not self.k8s_namespace or not self.deployment:
+            return total_restart
+        pods = self.k8s_namespace.list_deployment_pods(self.deployment)
+        for pod in pods:
+            total_restart = sum(status.restart_count
+                                for status in pod.status.container_statuses)
+        return total_restart
+
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
