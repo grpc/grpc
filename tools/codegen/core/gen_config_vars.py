@@ -218,6 +218,7 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
     ])
 
     print("#include \"test/core/util/fuzz_config_vars.h\"", file=C)
+    print("#include \"test/core/util/fuzz_config_vars_helpers.h\"", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
@@ -226,11 +227,18 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
         file=C)
     print("  ConfigVars::Overrides overrides;", file=C)
     for attr in attrs_in_packing_order:
-        if attr.get("fuzz", False) == False:
+        fuzz = attr.get("fuzz", False)
+        if not fuzz:
             continue
         print("  if (vars.has_%s()) {" % attr['name'], file=C)
-        print("    overrides.%s = vars.%s();" % (attr['name'], attr['name']),
-              file=C)
+        if isinstance(fuzz, str):
+            print("    overrides.%s = %s(vars.%s());" %
+                  (attr['name'], fuzz, attr['name']),
+                  file=C)
+        else:
+            print("    overrides.%s = vars.%s();" %
+                  (attr['name'], attr['name']),
+                  file=C)
         print("  }", file=C)
     print("  return overrides;", file=C)
     print("}", file=C)

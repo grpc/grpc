@@ -18,9 +18,7 @@
 
 #include "test/core/util/fuzz_config_vars.h"
 
-#include <string>
-
-#include "absl/types/optional.h"
+#include "test/core/util/fuzz_config_vars_helpers.h"
 
 namespace grpc_core {
 
@@ -31,7 +29,8 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
     overrides.enable_fork_support = vars.enable_fork_support();
   }
   if (vars.has_experiments()) {
-    overrides.experiments = vars.experiments();
+    overrides.experiments =
+        ValidateExperimentsStringForFuzzing(vars.experiments());
   }
   if (vars.has_dns_resolver()) {
     overrides.dns_resolver = vars.dns_resolver();
