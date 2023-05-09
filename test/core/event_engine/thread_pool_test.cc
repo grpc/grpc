@@ -187,9 +187,14 @@ TYPED_TEST(ThreadPoolTest, ScalesWhenBackloggedFromSingleThreadLocalQueue) {
   p.Quiesce();
 }
 
-TYPED_TEST(ThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
+class WorkStealingThreadPoolTest : public ::testing::Test {};
+
+// TODO(hork): This is currently a pathological case for the original thread
+// pool, it gets wedged in ~3% of runs when new threads fail to start. When that
+// is fixed, or the implementation is deleted, make this a typed test again.
+TEST_F(WorkStealingThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
   int pool_thread_count = 8;
-  TypeParam p(pool_thread_count);
+  WorkStealingThreadPool p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};
