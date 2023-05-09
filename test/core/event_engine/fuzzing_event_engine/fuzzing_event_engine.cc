@@ -114,7 +114,10 @@ FuzzingEventEngine::FuzzingEventEngine(
                                +[](int) {}});
 }
 
-void FuzzingEventEngine::FuzzingDone() {}
+void FuzzingEventEngine::FuzzingDone() {
+  grpc_core::MutexLock lock(&*mu_);
+  while (!task_delays_.empty()) task_delays_.pop();
+}
 
 gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   // TODO(ctiller): add a facility to track realtime and monotonic clocks
