@@ -949,7 +949,7 @@ TEST(JsonObjectLoader, BareRefCountedPtr) {
   EXPECT_EQ(parsed.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(parsed.status().message(),
             "errors validating JSON: [field: error:is not an object]")
-            << parsed.status();
+      << parsed.status();
 }
 
 TEST(JsonObjectLoader, BareVector) {
