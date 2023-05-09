@@ -19,19 +19,19 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "observability",
     srcs = [
-        # "client_call_tracer.cc",
+        "client_call_tracer.cc",
         "observability_main.cc",
-        # "python_census_context.cc",
-        # "sampler.cc",
-        # "server_call_tracer.cc",
+        "python_census_context.cc",
+        "sampler.cc",
+        "server_call_tracer.cc",
     ],
     hdrs = [
-        # "client_call_tracer.h",
+        "client_call_tracer.h",
         "constants.h",
         "observability_main.h",
-        # "python_census_context.h",
-        # "sampler.h",
-        # "server_call_tracer.h",
+        "python_census_context.h",
+        "sampler.h",
+        "server_call_tracer.h",
     ],
     includes = ["."],
     deps = [

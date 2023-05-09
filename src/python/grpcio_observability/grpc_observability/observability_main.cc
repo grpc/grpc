@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "src/python/grpcio_observability/grpc_observability/observability_main.h"
-// #include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
-// #include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
 
 #include "absl/strings/string_view.h"
 
@@ -61,18 +61,14 @@ void NativeObservabilityInit() {
 
 
 void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id) {
-    // void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
-    // return client_call_tracer;
-    std::string str = "mock";
-    return (void*)str.c_str();
+    void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
+    return client_call_tracer;
 }
 
 
 void* CreateServerCallTracerFactory() {
-    // void* server_call_tracer_factory = new PythonOpenCensusServerCallTracerFactory();
-    // return server_call_tracer_factory;
-    std::string str = "mock";
-    return (void*)str.c_str();
+    void* server_call_tracer_factory = new PythonOpenCensusServerCallTracerFactory();
+    return server_call_tracer_factory;
 }
 
 

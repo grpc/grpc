@@ -144,8 +144,6 @@ class ObservabilityTest(unittest.TestCase):
     def tearDown(self):
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = ''
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordUnaryUnary(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
@@ -173,8 +171,6 @@ class ObservabilityTest(unittest.TestCase):
             with grpc_observability.GCPOpenCensusObservability() as o11y:
                 o11y.init(exporter=self.test_exporter)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordUnaryUnaryStatsOnly(self):
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_STATS_ONLY
         with grpc_observability.GCPOpenCensusObservability() as o11y:
@@ -189,8 +185,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordUnaryUnaryTracingOnly(self):
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_ONLY
         with grpc_observability.GCPOpenCensusObservability() as o11y:
@@ -205,8 +199,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordUnaryStream(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
@@ -223,8 +215,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordStreamUnary(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
@@ -240,8 +230,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testRecordStreamStream(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
@@ -258,8 +246,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testNoRecordBeforeInit(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
@@ -284,8 +270,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self._server.stop(0)
 
-    @unittest.skipUnless(_tracer_implemented,
-                         "Enable only when tracer was implemented.")
     def testNoRecordAfterExit(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
