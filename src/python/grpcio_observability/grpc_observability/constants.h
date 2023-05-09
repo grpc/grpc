@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
+#define GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
 
 #include <string>
 
@@ -57,4 +57,4 @@ typedef enum {
 
 }
 
-#endif // CONSTANTS_H
+#endif // GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H

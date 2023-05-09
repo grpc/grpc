@@ -29,7 +29,7 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc import _observability
+from grpc import _observability  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
