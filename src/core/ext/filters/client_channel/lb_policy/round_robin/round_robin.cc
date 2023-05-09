@@ -308,21 +308,6 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
             (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A"),
             ConnectivityStateName(new_state), status.ToString().c_str());
   }
-// FIXME: is this still right now that the child is pick_first?
-  // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve.
-  // Note that we don't want to do this on the initial state notification,
-  // because that would result in an endless loop of re-resolution.
-  if (old_state.has_value() &&
-      (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       new_state == GRPC_CHANNEL_IDLE)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO,
-              "[RR %p] child %p reported %s; requesting re-resolution",
-              round_robin, this, ConnectivityStateName(new_state));
-    }
-    round_robin->channel_control_helper()->RequestReresolution();
-  }
   if (new_state == GRPC_CHANNEL_IDLE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO, "[RR %p] child %p reported IDLE; requesting connection",

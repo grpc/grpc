@@ -76,13 +76,13 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config), policy_.get()),
               absl::OkStatus());
-    ExpectConnectingUpdate();
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
       EXPECT_NE(subchannel, nullptr);
       if (subchannel == nullptr) return nullptr;
       EXPECT_TRUE(subchannel->ConnectionRequested());
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      if (i == 0) ExpectConnectingUpdate();
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
         picker = WaitForConnected();
@@ -232,18 +232,31 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
+  // Subchannel for address 1 becomes disconnected.
+  gpr_log(GPR_INFO, "### subchannel 1 reporting IDLE");
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  gpr_log(GPR_INFO, "### expecting re-resolution request");
   ExpectReresolutionRequest();
+  gpr_log(GPR_INFO,
+          "### expecting RR picks to exclude the disconnected subchannel");
   ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
                         {kAddresses[0], kAddresses[2]});
+  // It starts trying to reconnect...
+  gpr_log(GPR_INFO, "### subchannel 1 reporting CONNECTING");
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  gpr_log(GPR_INFO, "### expecting RR picks again");
   ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
                         {kAddresses[0], kAddresses[2]});
+  // ...but the connection attempt fails.
+  gpr_log(GPR_INFO, "### subchannel 1 reporting TRANSIENT_FAILURE");
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::ResourceExhaustedError("Hmmmm"));
+  gpr_log(GPR_INFO, "### expecting re-resolution request");
   ExpectReresolutionRequest();
+  // The host override is not used.
+  gpr_log(GPR_INFO, "### checking that host override is not used");
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]},
                         MakeOverrideHostAttribute(kAddresses[1]));

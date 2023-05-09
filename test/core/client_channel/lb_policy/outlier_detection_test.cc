@@ -145,8 +145,6 @@ TEST_F(OutlierDetectionTest, Basic) {
   absl::Status status = ApplyUpdate(
       BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
   ASSERT_NE(subchannel, nullptr);
@@ -155,6 +153,8 @@ TEST_F(OutlierDetectionTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't

@@ -139,20 +139,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       void WatchConnectivityState(
           std::unique_ptr<
               SubchannelInterface::ConnectivityStateWatcherInterface>
-              watcher) override {
+              watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
             work_serializer_, std::move(watcher));
         watcher_map_[watcher.get()] = watcher_wrapper.get();
-        MutexLock lock(&state_->mu_);
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
       }
 
       void CancelConnectivityStateWatch(
-          ConnectivityStateWatcherInterface* watcher) override {
+          ConnectivityStateWatcherInterface* watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         auto it = watcher_map_.find(watcher);
         if (it == watcher_map_.end()) return;
-        MutexLock lock(&state_->mu_);
         state_->state_tracker_.RemoveWatcher(it->second);
         watcher_map_.erase(it);
       }
@@ -181,8 +181,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 
-    explicit SubchannelState(absl::string_view address)
-        : address_(address), state_tracker_("LoadBalancingPolicyTest") {}
+    SubchannelState(absl::string_view address,
+                    std::shared_ptr<WorkSerializer> work_serializer)
+        : address_(address),
+          work_serializer_(std::move(work_serializer)),
+          state_tracker_("LoadBalancingPolicyTest") {}
 
     const std::string& address() const { return address_; }
 
@@ -237,10 +240,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << "bug in test: " << ConnectivityStateName(state)
             << " must have OK status: " << status;
       }
-      MutexLock lock(&mu_);
-      AssertValidConnectivityStateTransition(state_tracker_.state(), state,
-                                             location);
-      state_tracker_.SetState(state, status, "set from test");
+      work_serializer_->Run(
+          [this, state, status, location]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+            AssertValidConnectivityStateTransition(
+                state_tracker_.state(), state, location);
+            state_tracker_.SetState(state, status, "set from test");
+          },
+          DEBUG_LOCATION);
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -277,9 +284,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
    private:
     const std::string address_;
-
-    Mutex mu_;
-    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+    std::shared_ptr<WorkSerializer> work_serializer_;
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
 
     Mutex requested_connection_mu_;
     bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
@@ -398,7 +404,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         GPR_ASSERT(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                          std::forward_as_tuple(std::move(*address_uri)))
+                          std::forward_as_tuple(std::move(*address_uri),
+                                                work_serializer_))
                  .first;
       }
       return it->second.CreateSubchannel(work_serializer_);
@@ -952,7 +959,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     SubchannelKey key(MakeAddress(address), args);
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                           std::forward_as_tuple(address))
+                           std::forward_as_tuple(address, work_serializer_))
                   .first;
     return &it->second;
   }
