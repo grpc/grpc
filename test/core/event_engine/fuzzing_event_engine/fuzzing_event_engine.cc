@@ -66,7 +66,6 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 FuzzingEventEngine::FuzzingEventEngine(
     Options options, const fuzzing_event_engine::Actions& actions)
     : max_delay_run_after_(options.max_delay_run_after) {
-  task_delays_.clear();
   tasks_by_id_.clear();
   tasks_by_time_.clear();
   next_task_id_ = 1;
@@ -101,24 +100,10 @@ FuzzingEventEngine::FuzzingEventEngine(
   g_fuzzing_event_engine = this;
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
-  auto update_delay = [](std::map<intptr_t, Duration>* map,
-                         const fuzzing_event_engine::Delay& delay,
-                         Duration max) {
-    auto& value = (*map)[delay.id()];
-    if (delay.delay_us() > static_cast<uint64_t>(max.count() / GPR_NS_PER_US)) {
-      value = max;
-      return;
-    }
-    Duration add = std::chrono::microseconds(delay.delay_us());
-    if (add >= max - value) {
-      value = max;
-    } else {
-      value += add;
-    }
-  };
-
-  for (const auto& delay : actions.run_delay()) {
-    update_delay(&task_delays_, delay, max_delay_run_after_);
+  for (const auto& delay_ns : actions.run_delay()) {
+    Duration delay = std::chrono::nanoseconds(delay_ns);
+    task_delays_.push(
+        grpc_core::Clamp(delay, Duration(0), max_delay_run_after_));
   }
 
   previous_pick_port_functions_ = grpc_set_pick_port_functions(
@@ -484,11 +469,9 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
     Duration when, absl::AnyInvocable<void()> closure) {
   const intptr_t id = next_task_id_;
   ++next_task_id_;
-  const auto delay_it = task_delays_.find(id);
-  // Under fuzzer configuration control, maybe make the task run later.
-  if (delay_it != task_delays_.end()) {
-    when += delay_it->second;
-    task_delays_.erase(delay_it);
+  if (!task_delays_.empty()) {
+    when += task_delays_.front();
+    task_delays_.pop();
   }
   auto task = std::make_shared<Task>(id, std::move(closure));
   tasks_by_id_.emplace(id, task);

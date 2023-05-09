@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -69,6 +70,9 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
+    auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
+    auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
+    auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
     std::map<absl::string_view,
              std::map<absl::string_view,
                       std::map<absl::string_view,
@@ -77,6 +81,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
         tests;
     for (const auto& test : all_tests) {
       if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
+      if (only_suite.has_value() && test.suite != only_suite.value()) continue;
+      if (only_test.has_value() && test.name != only_test.value()) continue;
+      if (only_config.has_value() && test.config->name != only_config.value()) {
+        continue;
+      }
       tests[test.suite][test.name].emplace(test.config->name, [&test]() {
         return std::unique_ptr<grpc_core::CoreEnd2endTest>(
             test.make_test(test.config));
@@ -84,6 +93,8 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     }
     return tests;
   }();
+  static const auto only_experiment =
+      grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
@@ -95,6 +106,10 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   if (test_it == suite_it->second.end()) return;
   auto config_it = test_it->second.find(msg.config());
   if (config_it == test_it->second.end()) return;
+  if (only_experiment.has_value() &&
+      msg.config_vars().experiments() != only_experiment.value()) {
+    return;
+  }
 
   // TODO(ctiller): make this per fixture?
   grpc_core::ConfigVars::Overrides overrides =

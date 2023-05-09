@@ -256,7 +256,7 @@ class FuzzingEventEngine : public EventEngine {
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
   intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
   Time now_ ABSL_GUARDED_BY(now_mu_);
-  std::map<intptr_t, Duration> task_delays_ ABSL_GUARDED_BY(mu_);
+  std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);
