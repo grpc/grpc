@@ -249,7 +249,7 @@ class PythonCensusContext {
   }
 
  private:
-  ::grpc_observability::Span span_;
+  grpc_observability::Span span_;
   std::vector<Label> labels_;
 };
 
