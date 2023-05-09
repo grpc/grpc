@@ -24,6 +24,7 @@
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
 
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "test/core/util/evaluate_args_test_util.h"
 
