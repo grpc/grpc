@@ -357,7 +357,7 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<LoadBalancingPolicy::Config> pending_config_;
 
     grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-        GRPC_CHANNEL_IDLE;
+        GRPC_CHANNEL_CONNECTING;
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
         ABSL_GUARDED_BY(&RlsLb::mu_);
   };
@@ -732,9 +732,9 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
     : DualRefCounted<ChildPolicyWrapper>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "ChildPolicyWrapper"
                                                      : nullptr),
-      lb_policy_(lb_policy),
+      lb_policy_(std::move(lb_policy)),
       target_(std::move(target)),
-      picker_(MakeRefCounted<QueuePicker>(std::move(lb_policy))) {
+      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -895,6 +895,8 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   {
     MutexLock lock(&wrapper_->lb_policy_->mu_);
     if (wrapper_->is_shutdown_) return;
+    // TODO(roth): It looks like this ignores subsequent TF updates that
+    // might change the status used to fail picks, which seems wrong.
     if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
         state != GRPC_CHANNEL_READY) {
       return;

@@ -1347,11 +1347,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   // Otherwise, we go into TRANSIENT_FAILURE.
   if (lb_policy_ == nullptr) {
     // Update connectivity state.
-    // TODO(roth): We should be updating the connectivity state here but
-    // not the picker.
-    UpdateStateAndPickerLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
+    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                      "resolver failure");
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
@@ -1395,6 +1392,14 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
 // Creates a new LB policy.
 OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
     const ChannelArgs& args) {
+  // The LB policy will start in state CONNECTING but will not
+  // necessarily send us an update synchronously, so set state to
+  // CONNECTING (in case the resolver had previously failed and put the
+  // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
+  UpdateStateAndPickerLocked(
+      GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+  // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
@@ -1495,13 +1500,8 @@ void ClientChannel::CreateResolverLocked() {
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
-  // TODO(roth): We should be updating the connectivity state here but
-  // not the picker.  But we need to make sure that we are initializing
-  // the picker to a queueing picker somewhere, in case the LB policy
-  // does not immediately return a new picker.
-  UpdateStateAndPickerLocked(
-      GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+  UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
+                    "started resolving");
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: created resolver=%p", this, resolver_.get());
@@ -1515,24 +1515,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
               resolver_.get());
     }
     resolver_.reset();
-    if (lb_policy_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-        gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                       interested_parties_);
-      lb_policy_.reset();
-    }
-  }
-}
-
-void ClientChannel::UpdateStateAndPickerLocked(
-    grpc_connectivity_state state, const absl::Status& status,
-    const char* reason,
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-  // Special case for IDLE and SHUTDOWN states.
-  if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
+    // Clear resolution state.
     saved_service_config_.reset();
     saved_config_selector_.reset();
     // Acquire resolution lock to update config selector and associated state.
@@ -1548,8 +1531,22 @@ void ClientChannel::UpdateStateAndPickerLocked(
       config_selector_to_unref = std::move(config_selector_);
       dynamic_filters_to_unref = std::move(dynamic_filters_);
     }
+    // Clear LB policy if set.
+    if (lb_policy_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
+        gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", this,
+                lb_policy_.get());
+      }
+      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
+                                       interested_parties_);
+      lb_policy_.reset();
+    }
   }
-  // Update connectivity state.
+}
+
+void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
+                                      const absl::Status& status,
+                                      const char* reason) {
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
@@ -1559,19 +1556,24 @@ void ClientChannel::UpdateStateAndPickerLocked(
             channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                 state)));
   }
+}
+
+void ClientChannel::UpdateStateAndPickerLocked(
+    grpc_connectivity_state state, const absl::Status& status,
+    const char* reason,
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+  UpdateStateLocked(state, status, reason);
   // Grab the LB lock to update the picker and trigger reprocessing of the
   // queued picks.
   // Old picker will be unreffed after releasing the lock.
-  {
-    MutexLock lock(&lb_mu_);
-    picker_.swap(picker);
-    // Reprocess queued picks.
-    for (LoadBalancedCall* call : lb_queued_calls_) {
-      call->RemoveCallFromLbQueuedCallsLocked();
-      call->RetryPickLocked();
-    }
-    lb_queued_calls_.clear();
+  MutexLock lock(&lb_mu_);
+  picker_.swap(picker);
+  // Reprocess queued picks.
+  for (LoadBalancedCall* call : lb_queued_calls_) {
+    call->RemoveCallFromLbQueuedCallsLocked();
+    call->RetryPickLocked();
   }
+  lb_queued_calls_.clear();
 }
 
 namespace {
@@ -1685,10 +1687,13 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
                            StatusIntProperty::ChannelConnectivityState,
                            &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
-      if (disconnect_error_.ok()) {
+      if (disconnect_error_.ok()) {  // Ignore if we're shutting down.
         // Enter IDLE state.
         UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
                                    "channel entering IDLE", nullptr);
+        // TODO(roth): Do we need to check for any queued picks here, in
+        // case there's a race condition in the client_idle filter?
+        // And maybe also check for calls in the resolver queue?
       }
     } else {
       // Disconnect.
