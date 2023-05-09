@@ -82,6 +82,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
+    client_pod_restart_time: int = 0
     ensure_firewall: bool
     force_cleanup: bool
     gcp_api_manager: gcp.api.GcpApiManager
@@ -98,6 +99,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     server_maintenance_port: Optional[int]
     server_namespace: str
     server_runner: KubernetesServerRunner
+    server_pod_restart_time: int = 0
     server_xds_host: str
     server_xds_port: int
     td: TrafficDirectorManager
@@ -480,7 +482,8 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
-        self._check_pod_restart_time()
+        # Todo(xuanwn): Add same check to XdsUrlMapTestCase.
+        self._record_pod_restart_time()
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -488,6 +491,20 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
             retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
+        finally:
+            # We should fail test if pod restarted during test (b/269192257).
+            self.assertEqual(
+                self.client_pod_restart_time,
+                0,
+                msg=
+                ('Client pods unexpectedly restarted {client_restarts} times during test.'
+                ))
+            self.assertEqual(
+                self.server_pod_restart_time,
+                0,
+                msg=
+                ('Server pods unexpectedly restarted {sever_restarts} times during test.'
+                ))
 
     def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
@@ -495,25 +512,24 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         self.server_runner.cleanup(force=self.force_cleanup,
                                    force_namespace=self.force_cleanup)
 
-    def _check_pod_restart_time(self) -> None:
-        # We should fail test if pod restarted during test (b/269192257).
-        logger.info('Checking Pods restart times')
-        client_restarts = k8s.get_pod_restarts(self.client_runner.k8s_namespace,
-                                               self.client_runner.deployment)
-        self.assertEqual(
-            client_restarts,
-            0,
-            msg=
-            ('Client pods unexpectedly restarted {client_restarts} times during test.'
-            ))
-        sever_restarts = k8s.get_pod_restarts(self.server_runner.k8s_namespace,
-                                              self.server_runner.deployment)
-        self.assertEqual(
-            sever_restarts,
-            0,
-            msg=
-            ('Server pods unexpectedly restarted {sever_restarts} times during test.'
-            ))
+    def _record_pod_restart_time(self) -> None:
+        logger.info('Checking pods restart times')
+        self.client_pod_restart_time = self._get_pod_restarts(
+            self.client_runner.k8s_namespace, self.client_runner.deployment)
+        self.server_pod_restart_time = self._get_pod_restarts(
+            self.server_runner.k8s_namespace, self.server_runner.deployment)
+
+    def _get_pod_restarts(self, k8s_namespace: k8s.KubernetesNamespace,
+                          deployment: k8s.V1Deployment) -> int:
+        total_restart: int = 0
+        pods: List[k8s.V1Pod]
+        if not k8s_namespace or not deployment:
+            return total_restart
+        pods = k8s_namespace.list_deployment_pods(deployment)
+        for pod in pods:
+            total_restart = sum(status.restart_count
+                                for status in pod.status.container_statuses)
+        return total_restart
 
 
 class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
