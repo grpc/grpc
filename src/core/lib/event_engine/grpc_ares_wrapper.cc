@@ -14,9 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc_ares_wrapper.h"
-
 #include "src/core/lib/event_engine/grpc_ares_wrapper.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
