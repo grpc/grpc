@@ -160,7 +160,7 @@ const upb_MiniTable envoy_config_core_v3_Node_DynamicParametersEntry_msg_init = 
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x0018000001000012, &upb_psm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -197,7 +197,7 @@ const upb_MiniTable envoy_config_core_v3_Metadata_FilterMetadataEntry_msg_init =
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x0018000001000012, &upb_psm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -218,7 +218,7 @@ const upb_MiniTable envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_msg_i
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x0018000001000012, &upb_psm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
