@@ -36,6 +36,7 @@
 #include "upb/reflection/message.h"
 #include "upb/text/encode.h"
 #include "upb/util/required_fields.h"
+#include "upb/wire/common.h"
 
 static const upb_MessageDef* PyUpb_MessageMeta_GetMsgdef(PyObject* cls);
 static PyObject* PyUpb_MessageMeta_GetAttr(PyObject* self, PyObject* name);
@@ -447,6 +448,8 @@ err:
   return ok;
 }
 
+static PyObject* PyUpb_Message_MergePartialFrom(PyObject*, PyObject*);
+
 static bool PyUpb_Message_InitMessageAttribute(PyObject* _self, PyObject* name,
                                                PyObject* value) {
   PyObject* submsg = PyUpb_Message_GetAttr(_self, name);
@@ -454,9 +457,9 @@ static bool PyUpb_Message_InitMessageAttribute(PyObject* _self, PyObject* name,
   assert(!PyErr_Occurred());
   bool ok;
   if (PyUpb_Message_TryCheck(value)) {
-    PyObject* tmp = PyUpb_Message_MergeFrom(submsg, value);
+    PyObject* tmp = PyUpb_Message_MergePartialFrom(submsg, value);
     ok = tmp != NULL;
-    Py_DECREF(tmp);
+    Py_XDECREF(tmp);
   } else if (PyDict_Check(value)) {
     assert(!PyErr_Occurred());
     ok = PyUpb_Message_InitAttributes(submsg, NULL, value) >= 0;
@@ -1184,7 +1187,8 @@ err:
   return NULL;
 }
 
-PyObject* PyUpb_Message_MergeFrom(PyObject* self, PyObject* arg) {
+static PyObject* PyUpb_Message_MergeInternal(PyObject* self, PyObject* arg,
+                                             bool check_required) {
   if (self->ob_type != arg->ob_type) {
     PyErr_Format(PyExc_TypeError,
                  "Parameter to MergeFrom() must be instance of same class: "
@@ -1194,13 +1198,24 @@ PyObject* PyUpb_Message_MergeFrom(PyObject* self, PyObject* arg) {
   }
   // OPT: exit if src is empty.
   PyObject* subargs = PyTuple_New(0);
-  PyObject* serialized = PyUpb_Message_SerializeToString(arg, subargs, NULL);
+  PyObject* serialized =
+      check_required
+          ? PyUpb_Message_SerializeToString(arg, subargs, NULL)
+          : PyUpb_Message_SerializePartialToString(arg, subargs, NULL);
   Py_DECREF(subargs);
   if (!serialized) return NULL;
   PyObject* ret = PyUpb_Message_MergeFromString(self, serialized);
   Py_DECREF(serialized);
   Py_DECREF(ret);
   Py_RETURN_NONE;
+}
+
+PyObject* PyUpb_Message_MergeFrom(PyObject* self, PyObject* arg) {
+  return PyUpb_Message_MergeInternal(self, arg, true);
+}
+
+static PyObject* PyUpb_Message_MergePartialFrom(PyObject* self, PyObject* arg) {
+  return PyUpb_Message_MergeInternal(self, arg, false);
 }
 
 static PyObject* PyUpb_Message_SetInParent(PyObject* _self, PyObject* arg) {
@@ -1240,8 +1255,9 @@ PyObject* PyUpb_Message_MergeFromString(PyObject* _self, PyObject* arg) {
   const upb_MiniTable* layout = upb_MessageDef_MiniTable(msgdef);
   upb_Arena* arena = PyUpb_Arena_Get(self->arena);
   PyUpb_ModuleState* state = PyUpb_ModuleState_Get();
-  int options =
-      UPB_DECODE_MAXDEPTH(state->allow_oversize_protos ? UINT32_MAX : 100);
+  int options = upb_DecodeOptions_MaxDepth(
+      state->allow_oversize_protos ? UINT16_MAX
+                                   : kUpb_WireFormat_DefaultDepthLimit);
   upb_DecodeStatus status =
       upb_Decode(buf, size, self->ptr.msg, layout, extreg, options, arena);
   Py_XDECREF(bytes);
@@ -1512,7 +1528,7 @@ PyObject* PyUpb_Message_SerializeInternal(PyObject* _self, PyObject* args,
   const upb_MiniTable* layout = upb_MessageDef_MiniTable(msgdef);
   size_t size = 0;
   // Python does not currently have any effective limit on serialization depth.
-  int options = UPB_ENCODE_MAXDEPTH(UINT32_MAX);
+  int options = upb_EncodeOptions_MaxDepth(UINT16_MAX);
   if (check_required) options |= kUpb_EncodeOption_CheckRequired;
   if (deterministic) options |= kUpb_EncodeOption_Deterministic;
   char* pb;

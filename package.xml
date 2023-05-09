@@ -2701,6 +2701,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/mem/arena_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/accessors.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/accessors.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/accessors_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/extension_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
@@ -2724,6 +2725,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/sub_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/types.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port/atomic.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/def.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/vsnprintf_compat.h" role="src" />
@@ -2777,7 +2779,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/reflection/stage0/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/status.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/string_view.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.c" role="src" />
@@ -2785,6 +2786,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/text_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/common.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/common_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />

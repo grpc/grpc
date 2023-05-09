@@ -133,11 +133,14 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/arena_config.cc',
     'third_party/protobuf/src/google/protobuf/arenastring.cc',
     'third_party/protobuf/src/google/protobuf/arenaz_sampler.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/allowlists/empty_package.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/allowlists/weak_imports.cc',
     'third_party/protobuf/src/google/protobuf/compiler/code_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/command_line_interface.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/enum.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/extension.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/field.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/cpp/field_generators/cord_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/field_generators/enum_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/field_generators/map_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/cpp/field_generators/message_field.cc',
@@ -227,6 +230,13 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/python/pyi_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/retention.cc',
     'third_party/protobuf/src/google/protobuf/compiler/ruby/ruby_generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessors.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_bytes.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/context.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/generator.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/message.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
     'third_party/protobuf/src/google/protobuf/descriptor.cc',
@@ -259,6 +269,8 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/message.cc',
     'third_party/protobuf/src/google/protobuf/message_lite.cc',
     'third_party/protobuf/src/google/protobuf/parse_context.cc',
+    'third_party/protobuf/src/google/protobuf/port.cc',
+    'third_party/protobuf/src/google/protobuf/reflection_mode.cc',
     'third_party/protobuf/src/google/protobuf/reflection_ops.cc',
     'third_party/protobuf/src/google/protobuf/repeated_field.cc',
     'third_party/protobuf/src/google/protobuf/repeated_ptr_field.cc',
@@ -291,4 +303,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="5ddb1fc609d2416e8575c9e7435c608222c2edb2"
+PROTOBUF_SUBMODULE_VERSION="21b02b235393666be2f0f00928849fd986407e1c"

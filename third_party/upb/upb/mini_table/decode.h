@@ -79,18 +79,53 @@ UPB_API bool upb_MiniTable_SetSubEnum(upb_MiniTable* table,
                                       upb_MiniTableField* field,
                                       const upb_MiniTableEnum* sub);
 
-const char* _upb_MiniTableExtension_Build(const char* data, size_t len,
-                                          upb_MiniTableExtension* ext,
-                                          const upb_MiniTable* extendee,
-                                          upb_MiniTableSub sub,
-                                          upb_MiniTablePlatform platform,
-                                          upb_Status* status);
+// Initializes a MiniTableExtension buffer that has already been allocated.
+// This is needed by upb_FileDef and upb_MessageDef, which allocate all of the
+// extensions together in a single contiguous array.
+const char* _upb_MiniTableExtension_Init(const char* data, size_t len,
+                                         upb_MiniTableExtension* ext,
+                                         const upb_MiniTable* extendee,
+                                         upb_MiniTableSub sub,
+                                         upb_MiniTablePlatform platform,
+                                         upb_Status* status);
 
-UPB_API_INLINE const char* upb_MiniTableExtension_Build(
+UPB_API_INLINE const char* upb_MiniTableExtension_Init(
     const char* data, size_t len, upb_MiniTableExtension* ext,
     const upb_MiniTable* extendee, upb_MiniTableSub sub, upb_Status* status) {
-  return _upb_MiniTableExtension_Build(data, len, ext, extendee, sub,
-                                       kUpb_MiniTablePlatform_Native, status);
+  return _upb_MiniTableExtension_Init(data, len, ext, extendee, sub,
+                                      kUpb_MiniTablePlatform_Native, status);
+}
+
+UPB_API upb_MiniTableExtension* _upb_MiniTableExtension_Build(
+    const char* data, size_t len, const upb_MiniTable* extendee,
+    upb_MiniTableSub sub, upb_MiniTablePlatform platform, upb_Arena* arena,
+    upb_Status* status);
+
+UPB_API_INLINE upb_MiniTableExtension* upb_MiniTableExtension_Build(
+    const char* data, size_t len, const upb_MiniTable* extendee,
+    upb_Arena* arena, upb_Status* status) {
+  upb_MiniTableSub sub;
+  sub.submsg = NULL;
+  return _upb_MiniTableExtension_Build(
+      data, len, extendee, sub, kUpb_MiniTablePlatform_Native, arena, status);
+}
+
+UPB_API_INLINE upb_MiniTableExtension* upb_MiniTableExtension_BuildMessage(
+    const char* data, size_t len, const upb_MiniTable* extendee,
+    upb_MiniTable* submsg, upb_Arena* arena, upb_Status* status) {
+  upb_MiniTableSub sub;
+  sub.submsg = submsg;
+  return _upb_MiniTableExtension_Build(
+      data, len, extendee, sub, kUpb_MiniTablePlatform_Native, arena, status);
+}
+
+UPB_API_INLINE upb_MiniTableExtension* upb_MiniTableExtension_BuildEnum(
+    const char* data, size_t len, const upb_MiniTable* extendee,
+    upb_MiniTableEnum* subenum, upb_Arena* arena, upb_Status* status) {
+  upb_MiniTableSub sub;
+  sub.subenum = subenum;
+  return _upb_MiniTableExtension_Build(
+      data, len, extendee, sub, kUpb_MiniTablePlatform_Native, arena, status);
 }
 
 UPB_API upb_MiniTableEnum* upb_MiniTableEnum_Build(const char* data, size_t len,
@@ -107,6 +142,33 @@ upb_MiniTable* upb_MiniTable_BuildWithBuf(const char* data, size_t len,
                                           upb_MiniTablePlatform platform,
                                           upb_Arena* arena, void** buf,
                                           size_t* buf_size, upb_Status* status);
+
+// Returns a list of fields that require linking at runtime, to connect the
+// MiniTable to its sub-messages and sub-enums.  The list of fields will be
+// written to the `subs` array, which must have been allocated by the caller
+// and must be large enough to hold a list of all fields in the message.
+//
+// The order of the fields returned by this function is significant: it matches
+// the order expected by upb_MiniTable_Link() below.
+//
+// The return value packs the sub-message count and sub-enum count into a single
+// integer like so:
+//  return (msg_count << 16) | enum_count;
+UPB_API uint32_t upb_MiniTable_GetSubList(const upb_MiniTable* mt,
+                                          const upb_MiniTableField** subs);
+
+// Links a message to its sub-messages and sub-enums.  The caller must pass
+// arrays of sub-tables and sub-enums, in the same length and order as is
+// returned by upb_MiniTable_GetSubList() above.  However, individual elements
+// of the sub_tables may be NULL if those sub-messages were tree shaken.
+//
+// Returns false if either array is too short, or if any of the tables fails
+// to link.
+UPB_API bool upb_MiniTable_Link(upb_MiniTable* mt,
+                                const upb_MiniTable** sub_tables,
+                                size_t sub_table_count,
+                                const upb_MiniTableEnum** sub_enums,
+                                size_t sub_enum_count);
 
 #ifdef __cplusplus
 } /* extern "C" */

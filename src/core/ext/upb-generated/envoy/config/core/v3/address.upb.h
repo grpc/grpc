@@ -636,6 +636,23 @@ UPB_INLINE const struct envoy_config_core_v3_SocketOption* const* envoy_config_c
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_BindConfig_socket_options_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_BindConfig_socket_options_mutable_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_BindConfig_has_socket_options(const envoy_config_core_v3_BindConfig* msg) {
   size_t size;
   envoy_config_core_v3_BindConfig_socket_options(msg, &size);
@@ -656,6 +673,23 @@ UPB_INLINE const envoy_config_core_v3_SocketAddress* const* envoy_config_core_v3
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_BindConfig_additional_source_addresses_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_BindConfig_additional_source_addresses_mutable_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_BindConfig_has_additional_source_addresses(const envoy_config_core_v3_BindConfig* msg) {
   size_t size;
   envoy_config_core_v3_BindConfig_additional_source_addresses(msg, &size);
@@ -675,6 +709,23 @@ UPB_INLINE const envoy_config_core_v3_ExtraSourceAddress* const* envoy_config_co
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_BindConfig_extra_source_addresses_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_BindConfig_extra_source_addresses_mutable_upb_array(const envoy_config_core_v3_BindConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_BindConfig_has_extra_source_addresses(const envoy_config_core_v3_BindConfig* msg) {
   size_t size;

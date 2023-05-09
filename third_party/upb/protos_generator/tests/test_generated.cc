@@ -24,6 +24,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <limits>
+#include <memory>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "protos/protos.h"
@@ -36,6 +38,7 @@ using ::protos_generator::test::protos::other_ext;
 using ::protos_generator::test::protos::RED;
 using ::protos_generator::test::protos::TestEnum;
 using ::protos_generator::test::protos::TestModel;
+using ::protos_generator::test::protos::TestModel_Category;
 using ::protos_generator::test::protos::TestModel_Category_IMAGES;
 using ::protos_generator::test::protos::TestModel_Category_NEWS;
 using ::protos_generator::test::protos::TestModel_Category_VIDEO;
@@ -51,6 +54,16 @@ TEST(CppGeneratedCode, ImportedEnum) { EXPECT_EQ(3, TestEnum::DEVICE_MONITOR); }
 TEST(CppGeneratedCode, Enum) { EXPECT_EQ(1, RED); }
 
 TEST(CppGeneratedCode, EnumNoPackage) { EXPECT_EQ(1, ::protos_CELSIUS); }
+
+TEST(CppGeneratedCode, MessageEnumType) {
+  TestModel_Category category1 = TestModel_Category_IMAGES;
+  TestModel::Category category2 = TestModel::IMAGES;
+  EXPECT_EQ(category1, category2);
+}
+
+TEST(CppGeneratedCode, MessageEnumValue) {
+  EXPECT_EQ(TestModel_Category_IMAGES, TestModel::IMAGES);
+}
 
 TEST(CppGeneratedCode, ArenaConstructor) {
   ::protos::Arena arena;
@@ -260,22 +273,26 @@ TEST(CppGeneratedCode, OneOfFields) {
 
   EXPECT_FALSE(test_model.has_oneof_member1());
   EXPECT_FALSE(test_model.has_oneof_member2());
+  EXPECT_EQ(TestModel::CHILD_ONEOF1_NOT_SET, test_model.child_oneof1_case());
 
   test_model.set_oneof_member1("one of string");
   EXPECT_TRUE(test_model.has_oneof_member1());
   EXPECT_FALSE(test_model.has_oneof_member2());
   EXPECT_EQ(test_model.oneof_member1(), "one of string");
+  EXPECT_EQ(TestModel::kOneofMember1, test_model.child_oneof1_case());
 
   test_model.set_oneof_member2(true);
   EXPECT_FALSE(test_model.has_oneof_member1());
   EXPECT_TRUE(test_model.has_oneof_member2());
   EXPECT_EQ(test_model.oneof_member2(), true);
+  EXPECT_EQ(TestModel::kOneofMember2, test_model.child_oneof1_case());
 
   test_model.clear_oneof_member2();
   EXPECT_FALSE(test_model.has_oneof_member1());
   EXPECT_FALSE(test_model.has_oneof_member2());
   EXPECT_EQ(test_model.oneof_member1(), "");
   EXPECT_EQ(test_model.oneof_member2(), false);
+  EXPECT_EQ(TestModel::CHILD_ONEOF1_NOT_SET, test_model.child_oneof1_case());
 }
 
 TEST(CppGeneratedCode, Messages) {
@@ -387,15 +404,20 @@ TEST(CppGeneratedCode, RepeatedStrings) {
 TEST(CppGeneratedCode, MessageMapInt32KeyMessageValue) {
   const int key_test_value = 3;
   ::protos::Arena arena;
+  ::protos::Arena child_arena;
   auto test_model = ::protos::CreateMessage<TestModel>(arena);
   EXPECT_EQ(0, test_model.child_map_size());
   test_model.clear_child_map();
   EXPECT_EQ(0, test_model.child_map_size());
-  auto child_model1 = ::protos::CreateMessage<ChildModel1>(arena);
+  auto child_model1 = ::protos::CreateMessage<ChildModel1>(child_arena);
   child_model1.set_child_str1("abc");
   test_model.set_child_map(key_test_value, child_model1);
   auto map_result = test_model.get_child_map(key_test_value);
   EXPECT_EQ(true, map_result.ok());
+  EXPECT_EQ("abc", map_result.value()->child_str1());
+  // Now mutate original child model to verify that value semantics are
+  // preserved.
+  child_model1.set_child_str1("abc V2");
   EXPECT_EQ("abc", map_result.value()->child_str1());
   test_model.delete_child_map(key_test_value);
   auto map_result_after_delete = test_model.get_child_map(key_test_value);
@@ -582,14 +604,25 @@ TEST(CppGeneratedCode, ParseWithExtensionRegistry) {
   ThemeExtension extension1;
   extension1.set_ext_name("Hello World");
   EXPECT_EQ(true, ::protos::SetExtension(model, theme, extension1).ok());
+  EXPECT_EQ(true, ::protos::SetExtension(model, ThemeExtension::theme_extension,
+                                         extension1)
+                      .ok());
   ::upb::Arena arena;
   auto bytes = ::protos::Serialize(model, arena);
   EXPECT_EQ(true, bytes.ok());
-  ::protos::ExtensionRegistry extensions({&theme, &other_ext}, arena);
+  ::protos::ExtensionRegistry extensions(
+      {&theme, &other_ext, &ThemeExtension::theme_extension}, arena);
   TestModel parsed_model =
       ::protos::Parse<TestModel>(bytes.value(), extensions).value();
   EXPECT_EQ("Test123", parsed_model.str1());
   EXPECT_EQ(true, ::protos::GetExtension(parsed_model, theme).ok());
+  EXPECT_EQ(true, ::protos::GetExtension(parsed_model,
+                                         ThemeExtension::theme_extension)
+                      .ok());
+  EXPECT_EQ("Hello World", ::protos::GetExtension(
+                               parsed_model, ThemeExtension::theme_extension)
+                               .value()
+                               ->ext_name());
 }
 
 TEST(CppGeneratedCode, NameCollisions) {
@@ -608,8 +641,65 @@ TEST(CppGeneratedCode, SharedPointer) {
 }
 
 TEST(CppGeneratedCode, UniquePointer) {
-  std::unique_ptr<TestModel> model = std::make_unique<TestModel>();
+  auto model = std::make_unique<TestModel>();
   ::upb::Arena arena;
   auto bytes = protos::Serialize(model, arena);
   EXPECT_TRUE(protos::Parse(model, bytes.value()));
+}
+
+TEST(CppGeneratedCode, Assignment) {
+  TestModel model;
+  model.set_category(5);
+  model.mutable_child_model_1()->set_child_str1("text in child");
+  TestModel model2 = model;
+  EXPECT_EQ(5, model2.category());
+  EXPECT_EQ(model2.child_model_1()->child_str1(), "text in child");
+}
+
+TEST(CppGeneratedCode, PtrAssignment) {
+  TestModel model;
+  model.mutable_child_model_1()->set_child_str1("text in child");
+  ChildModel1 child_from_const_ptr = *model.child_model_1();
+  EXPECT_EQ(child_from_const_ptr.child_str1(), "text in child");
+  ChildModel1 child_from_ptr = *model.mutable_child_model_1();
+  EXPECT_EQ(child_from_ptr.child_str1(), "text in child");
+}
+
+TEST(CppGeneratedCode, CopyConstructor) {
+  TestModel model;
+  model.set_category(6);
+  TestModel model2(model);
+  EXPECT_EQ(6, model2.category());
+}
+
+TEST(CppGeneratedCode, PtrConstructor) {
+  TestModel model;
+  model.mutable_child_model_1()->set_child_str1("text in child");
+  ChildModel1 child_from_ptr(*model.mutable_child_model_1());
+  EXPECT_EQ(child_from_ptr.child_str1(), "text in child");
+  ChildModel1 child_from_const_ptr(*model.child_model_1());
+  EXPECT_EQ(child_from_const_ptr.child_str1(), "text in child");
+}
+
+TEST(CppGeneratedCode, MutableToProxy) {
+  TestModel model;
+  ::protos::Ptr<ChildModel1> child = model.mutable_child_model_1();
+  (void)child;
+}
+
+TEST(CppGeneratedCode, ProxyToCProxy) {
+  TestModel model;
+  ::protos::Ptr<ChildModel1> child = model.mutable_child_model_1();
+  ::protos::Ptr<const ChildModel1> child2 = child;
+  (void)child2;
+}
+
+bool ProxyToCProxyMethod(::protos::Ptr<const ChildModel1> child) {
+  return child->child_str1() == "text in child";
+}
+
+TEST(CppGeneratedCode, PassProxyToCProxy) {
+  TestModel model;
+  model.mutable_child_model_1()->set_child_str1("text in child");
+  EXPECT_TRUE(ProxyToCProxyMethod(model.mutable_child_model_1()));
 }

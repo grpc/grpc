@@ -28,6 +28,9 @@
 #ifndef UPB_BASE_DESCRIPTOR_CONSTANTS_H_
 #define UPB_BASE_DESCRIPTOR_CONSTANTS_H_
 
+// Must be last.
+#include "upb/port/def.inc"
+
 // The types a field can have. Note that this list is not identical to the
 // types defined in descriptor.proto, which gives INT32 and SINT32 separate
 // types (we distinguish the two with the "integer encoding" enum below).
@@ -37,7 +40,7 @@ typedef enum {
   kUpb_CType_Float = 2,
   kUpb_CType_Int32 = 3,
   kUpb_CType_UInt32 = 4,
-  kUpb_CType_Enum = 5,  // Enum values are int32.
+  kUpb_CType_Enum = 5,  // Enum values are int32. TODO(b/279178239): rename
   kUpb_CType_Message = 6,
   kUpb_CType_Double = 7,
   kUpb_CType_Int64 = 8,
@@ -76,5 +79,26 @@ typedef enum {
 } upb_FieldType;
 
 #define kUpb_FieldType_SizeOf 19
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+UPB_INLINE bool upb_FieldType_IsPackable(upb_FieldType type) {
+  // clang-format off
+  const unsigned kUnpackableTypes =
+      (1 << kUpb_FieldType_String) |
+      (1 << kUpb_FieldType_Bytes) |
+      (1 << kUpb_FieldType_Message) |
+      (1 << kUpb_FieldType_Group);
+  // clang-format on
+  return (1 << type) & ~kUnpackableTypes;
+}
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#include "upb/port/undef.inc"
 
 #endif /* UPB_BASE_DESCRIPTOR_CONSTANTS_H_ */
