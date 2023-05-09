@@ -497,13 +497,13 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                 self.client_pod_restart_time,
                 0,
                 msg=
-                ('Client pods unexpectedly restarted {client_restarts} times during test.'
+                ('Client pods unexpectedly restarted {self.client_pod_restart_time} times during test.'
                 ))
             self.assertEqual(
                 self.server_pod_restart_time,
                 0,
                 msg=
-                ('Server pods unexpectedly restarted {sever_restarts} times during test.'
+                ('Server pods unexpectedly restarted {self.server_pod_restart_time} times during test.'
                 ))
 
     def cleanup(self):
