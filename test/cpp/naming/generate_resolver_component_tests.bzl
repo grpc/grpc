@@ -21,6 +21,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test")
 
 # buildifier: disable=unnamed-macro
 def generate_resolver_component_tests():
+    """Generate address_sorting_test and resolver_component_test suite with different configurations.
+
+    Note that the resolver_component_test suite's configuration is 2 dimensional: security and whether to enable the event_engine_dns experiment.
+    """
     for unsecure_build_config_suffix in ["_unsecure", ""]:
         grpc_cc_test(
             name = "address_sorting_test%s" % unsecure_build_config_suffix,
