@@ -2758,7 +2758,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "json",
         "//:gpr",
         "//:grpc_base",
     ],
@@ -3333,10 +3332,6 @@ grpc_cc_library(
     name = "json",
     hdrs = [
         "lib/json/json.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:variant",
     ],
     deps = ["//:gpr"],
 )

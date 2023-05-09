@@ -22,6 +22,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
@@ -35,7 +36,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   auto json = grpc_core::JsonParse(
       absl::string_view(reinterpret_cast<const char*>(data), size));
   if (json.ok()) {
-    auto text2 = JsonDump(*json);
+    auto text2 = grpc_core::JsonDump(*json);
     auto json2 = grpc_core::JsonParse(text2);
     GPR_ASSERT(json2.ok());
     GPR_ASSERT(*json == *json2);

@@ -45,6 +45,8 @@
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"

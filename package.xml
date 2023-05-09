@@ -85,6 +85,7 @@
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/json.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />

@@ -33,6 +33,8 @@
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
