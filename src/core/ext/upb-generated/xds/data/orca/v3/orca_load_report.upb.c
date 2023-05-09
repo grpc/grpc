@@ -60,7 +60,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msg_init = 
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -77,7 +77,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msg_init = 
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -94,7 +94,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msg_init =
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
