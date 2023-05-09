@@ -61,14 +61,18 @@ void NativeObservabilityInit() {
 
 
 void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id) {
-    void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
-    return client_call_tracer;
+    // void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
+    // return client_call_tracer;
+    std::string str = "mock";
+    return (void*)str.c_str();
 }
 
 
 void* CreateServerCallTracerFactory() {
-    void* server_call_tracer_factory = new PythonOpenCensusServerCallTracerFactory();
-    return server_call_tracer_factory;
+    // void* server_call_tracer_factory = new PythonOpenCensusServerCallTracerFactory();
+    // return server_call_tracer_factory;
+    std::string str = "mock";
+    return (void*)str.c_str();
 }
 
 
