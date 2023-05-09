@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
+
+#include <set>
+#include <string>
+
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {
