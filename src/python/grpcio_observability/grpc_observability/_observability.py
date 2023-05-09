@@ -107,7 +107,7 @@ class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
         else:
             # 2. Creating measures and register views.
             # 3. Create and Saves Tracer and Sampler to ContextVar.
-            pass # Actual implementation of OC exporter
+            pass  # Actual implementation of OC exporter
             # open_census = importlib.import_module(
             #     "grpc_observability._open_census")
             # self.exporter = open_census.OpenCensusExporter(

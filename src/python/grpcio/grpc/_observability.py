@@ -31,6 +31,7 @@ ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 _lock: threading.RLock = threading.RLock()
 _grpc_observability_stub: Optional[ObservabilityPlugin] = None
 
+
 class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
                                   ServerCallTracerFactoryCapsule],
                           metaclass=abc.ABCMeta):
