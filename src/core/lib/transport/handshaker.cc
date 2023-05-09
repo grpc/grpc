@@ -84,6 +84,8 @@ HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
 void HandshakeManager::Shutdown(grpc_error_handle why) {
   {
     MutexLock lock(&mu_);
+    fprintf(stderr, "shutdown: is_shutdown=%d index=%d\n", is_shutdown_,
+            (int)index_);
     // Shutdown the handshaker that's currently in progress, if any.
     if (!is_shutdown_ && index_ > 0) {
       is_shutdown_ = true;
