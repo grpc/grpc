@@ -409,7 +409,6 @@ kokoro_get_testing_version() {
       readonly TESTING_VERSION="dev"
     fi
   else
-
     readonly TESTING_VERSION="${version_from_job_name}"
   fi
 }
