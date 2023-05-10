@@ -119,7 +119,7 @@ class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
             _cyobservability.cyobservability_init(self.exporter)
         #TODO(xuanwn): Use specific exceptons
         except Exception as e:  # pylint: disable=broad-except
-            _LOGGER.exception("grpc_observability init failed with: %s" % (e))
+            _LOGGER.exception("grpc_observability init failed with: %s", e)
 
         # 5. Init grpc.
         # 5.1 Refister grpc_observability
