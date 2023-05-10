@@ -2959,7 +2959,6 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
-        "channel_stack_builder",
         "config",
         "config_vars",
         "debug_location",
