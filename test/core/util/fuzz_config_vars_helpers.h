@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_HELPERS_HELPERS_H
-#define GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_HELPERS_HELPERS_H
+#ifndef GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
+#define GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
 
 #include <grpc/support/port_platform.h>
 
