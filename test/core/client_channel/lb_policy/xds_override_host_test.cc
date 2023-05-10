@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <map>
@@ -71,30 +69,11 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses,
-                              RefCountedPtr<LoadBalancingPolicy::Config>
-                                  config = MakeXdsOverrideHostConfig()) {
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config), policy_.get()),
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
+                          policy_.get()),
               absl::OkStatus());
-    ExpectConnectingUpdate();
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      auto* subchannel = FindSubchannel(addresses[i]);
-      EXPECT_NE(subchannel, nullptr);
-      if (subchannel == nullptr) return nullptr;
-      EXPECT_TRUE(subchannel->ConnectionRequested());
-      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-      if (i == 0) {
-        picker = WaitForConnected();
-        ExpectRoundRobinPicks(picker.get(), {addresses[0]});
-      } else {
-        picker = WaitForRoundRobinListChange(
-            absl::MakeSpan(addresses).subspan(0, i),
-            absl::MakeSpan(addresses).subspan(0, i + 1));
-      }
-    }
-    return picker;
+    return ExpectRoundRobinStartup(addresses);
   }
 
   ServerAddress MakeAddressWithHealthStatus(
