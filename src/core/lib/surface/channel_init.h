@@ -68,7 +68,11 @@ class ChannelInit {
   // Post processing slots - up to one PostProcessor per slot can be registered
   // They run after filters registered are added to the channel stack builder,
   // but before Build is called - allowing ad-hoc mutation to the channel stack.
-  enum class PostProcessorSlot { kXdsChannelStackModifier, kCount };
+  enum class PostProcessorSlot {
+    kAuthSubstitution,
+    kXdsChannelStackModifier,
+    kCount
+  };
 
   class FilterRegistration {
    public:
