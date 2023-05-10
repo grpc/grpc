@@ -84,8 +84,8 @@ void CoreEnd2endTest::SetUp() {
 
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
-  ShutdownAndDestroyServer();
   ShutdownAndDestroyClient();
+  ShutdownAndDestroyServer();
   cq_verifier_.reset();
   if (cq_ != nullptr) {
     grpc_completion_queue_shutdown(cq_);
