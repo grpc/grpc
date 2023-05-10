@@ -41,7 +41,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _shutdown_worker():
-    _LOGGER.info('Shutting worker process down.')
+    _LOGGER.info("Shutting worker process down.")
     if _worker_channel_singleton is not None:
         _worker_channel_singleton.close()
 
