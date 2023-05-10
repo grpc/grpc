@@ -21,7 +21,6 @@
 #include "src/core/lib/transport/handshaker.h"
 
 #include <inttypes.h>
-#include <stdio.h>
 
 #include <initializer_list>
 #include <string>
