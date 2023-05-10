@@ -76,7 +76,7 @@ METRICS_NAME_TO_MEASURE = {
 
 
 class OpenCensusExporter(grpc_observability.Exporter):
-    default_labels: Mapping[str, str]
+    default_labels: Optional[Mapping[str, str]]
 
     def __init__(self, labels: Optional[Mapping[str, str]] = None):
         self.default_labels = labels

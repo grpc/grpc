@@ -134,7 +134,6 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 class ObservabilityTest(unittest.TestCase):
-    _tracer_implemented = False
 
     def setUp(self):
         self.all_metric = []
