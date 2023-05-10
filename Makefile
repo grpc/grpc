@@ -638,7 +638,7 @@ systemtap_dep_error:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "Under the '$(CONFIG)' configutation, the target you are trying "
+	@echo "Under the '$(CONFIG)' configuration, the target you are trying "
 	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
 	@echo "platforms such as Solaris and *BSD). "
 	@echo
