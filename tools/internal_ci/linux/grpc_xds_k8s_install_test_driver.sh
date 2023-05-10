@@ -385,6 +385,15 @@ kokoro_setup_python_virtual_environment() {
 #   Sets TESTING_VERSION global variable.
 #######################################
 kokoro_get_testing_version() {
+  # All grpc kokoro jobs names structured to have the version identifier in the third position:
+  # - grpc/core/master/linux/...
+  # - grpc/core/v1.42.x/branch/linux/...
+  # - grpc/java/v1.47.x/branch/...
+  # - grpc/go/v1.47.x/branch/...
+  # - grpc/node/v1.6.x/...
+  local version_from_job_name
+  version_from_job_name=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+
   if [[ -n "${FORCE_TESTING_VERSION}" ]]; then
     # Allows to override the testing version, and force tagging the built
     # images, if necessary.
@@ -394,15 +403,14 @@ kokoro_get_testing_version() {
     # This allows to know later down the line that the built image doesn't need
     # to be tagged, and avoid overriding an actual versioned image used in tests
     # (e.g. v1.42.x, master) with a dev build.
-    readonly TESTING_VERSION="dev"
+    if [[ -n "${version_from_job_name}" ]]; then
+      readonly TESTING_VERSION="dev-${version_from_job_name}"
+    else
+      readonly TESTING_VERSION="dev"
+    fi
   else
-    # All grpc kokoro jobs names structured to have the version identifier in the third position:
-    # - grpc/core/master/linux/...
-    # - grpc/core/v1.42.x/branch/linux/...
-    # - grpc/java/v1.47.x/branch/...
-    # - grpc/go/v1.47.x/branch/...
-    # - grpc/node/v1.6.x/...
-    readonly TESTING_VERSION=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+
+    readonly TESTING_VERSION="${version_from_job_name}"
   fi
 }
 
