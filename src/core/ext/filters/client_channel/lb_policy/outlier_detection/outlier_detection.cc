@@ -257,7 +257,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
       ++multiplier_;
-      for (auto& subchannel : subchannels_) {
+      // Ejecting the subchannel may cause the child policy to unref the
+      // subchannel, so we need to be prepared for the set to be modified
+      // while we are iterating.
+      for (auto it = subchannels_.begin(); it != subchannels_.end(); ) {
+        SubchannelWrapper* subchannel = *it;
+        ++it;
         subchannel->Eject();
       }
     }
@@ -394,8 +399,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
 void OutlierDetectionLb::SubchannelWrapper::Eject() {
   ejected_ = true;
-  for (auto& watcher : watchers_) {
-    watcher.second->Eject();
+  // Ejecting the subchannel may cause the child policy to cancel the watch,
+  // so we need to be prepared for the map to be modified while we are
+  // iterating.
+  for (auto it = watchers_.begin(); it != watchers_.end(); ) {
+    WatcherWrapper* watcher = it->second;
+    ++it;
+    watcher->Eject();
   }
 }
 

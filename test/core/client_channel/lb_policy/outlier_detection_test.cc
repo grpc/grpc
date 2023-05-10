@@ -211,13 +211,15 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
   ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "failed RPC on %s", address->c_str());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();
+  gpr_log(GPR_INFO, "### ejection complete");
   // Expect a re-resolution request.
   ExpectReresolutionRequest();
   // Expect a picker update.
@@ -226,6 +228,59 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
     if (addr != *address) remaining_addresses.push_back(addr);
   }
   picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+}
+
+TEST_F(OutlierDetectionTest, FailurePercentageWithPickFirst) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses,
+                  ConfigBuilder()
+                      .SetFailurePercentageThreshold(1)
+                      .SetFailurePercentageMinimumHosts(1)
+                      .SetFailurePercentageRequestVolume(1)
+                      .SetChildPolicy({{"pick_first", Json::FromObject({})}})
+                      .Build()),
+                  lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for the first address with
+  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
+  auto* subchannel = FindSubchannel(
+      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // When the subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  }
+  gpr_log(GPR_INFO, "### PF startup complete");
+  // Now have an RPC to that subchannel fail.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  // Advance time and run the timer callback to trigger ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a re-resolution request.
+  ExpectReresolutionRequest();
+  // The pick_first policy should report IDLE with a queuing picker.
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
+  // The queued pick should have triggered a reconnection attempt.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
 }
 
 }  // namespace
