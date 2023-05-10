@@ -34,12 +34,13 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::SetOverrides(overrides);
   const auto all_tests = grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   for (const auto& test : all_tests) {
-    ::testing::RegisterTest(absl::StrCat(test.suite).c_str(),
-                            absl::StrCat(test.name).c_str(), nullptr,
-                            test.config->name, __FILE__, __LINE__,
-                            [test = &test]() -> grpc_core::CoreEnd2endTest* {
-                              return test->make_test(test->config);
-                            });
+    ::testing::RegisterTest(
+        absl::StrCat(test.suite).c_str(),
+        absl::StrCat(test.name, "/", test.config->name).c_str(), nullptr,
+        nullptr, __FILE__, __LINE__,
+        [test = &test]() -> grpc_core::CoreEnd2endTest* {
+          return test->make_test(test->config);
+        });
   }
   return RUN_ALL_TESTS();
 }
