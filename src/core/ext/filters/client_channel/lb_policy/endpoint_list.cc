@@ -62,7 +62,7 @@ class EndpointList::Endpoint::Helper
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
       ServerAddress address, const ChannelArgs& args) override {
-    return parent_helper()->CreateSubchannel(std::move(address), args);
+    return endpoint_->CreateSubchannel(std::move(address), args);
   }
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,

@@ -16,6 +16,7 @@
 
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
+
 #include <grpc/support/port_platform.h>
 
 #include <stdlib.h>
@@ -41,6 +42,54 @@
 
 namespace grpc_core {
 
+// A list of endpoints for use in a petiole LB policy.  Each endpoint may
+// have one or more addresses, which will be passed down to a pick_first
+// child policy.
+//
+// To use this, a petiole policy must define its own subclass of both
+// EndpointList and EndpointList::Endpoint, like so:
+/*
+class MyEndpointList : public EndpointList {
+ public:
+  MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
+                 const ServerAddressList& addresses, const ChannelArgs& args)
+      : EndpointList(std::move(lb_policy),
+                     GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
+                         ? "MyEndpointList"
+                         : nullptr) {
+    Init(addresses, args,
+         [&](RefCountedPtr<MyEndpointList> endpoint_list,
+             const ServerAddress& address, const ChannelArgs& args) {
+           return MakeOrphanable<MyEndpoint>(
+               std::move(endpoint_list), address, args,
+               policy<MyLbPolicy>()->work_serializer());
+         });
+  }
+
+ private:
+  class MyEndpoint : public Endpoint {
+   public:
+    MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
+               const ServerAddress& address, const ChannelArgs& args,
+               std::shared_ptr<WorkSerializer> work_serializer)
+        : Endpoint(std::move(endpoint_list), address, args,
+                   std::move(work_serializer)) {}
+
+   private:
+    void OnStateUpdate(
+        absl::optional<grpc_connectivity_state> old_state,
+        grpc_connectivity_state new_state,
+        const absl::Status& status) override {
+      // ...handle connectivity state change...
+    }
+  };
+
+  LoadBalancingPolicy::ChannelControlHelper* channel_control_helper()
+      const override {
+    return policy<MyLbPolicy>()->channel_control_helper();
+  }
+};
+*/
 class EndpointList : public InternallyRefCounted<EndpointList> {
  public:
   ~EndpointList() override { policy_.reset(DEBUG_LOCATION, "EndpointList"); }
@@ -55,6 +104,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   void ResetBackoffLocked();
 
  protected:
+  // An individual endpoint.
   class Endpoint : public InternallyRefCounted<Endpoint> {
    public:
     ~Endpoint() override { endpoint_list_.reset(DEBUG_LOCATION, "Endpoint"); }
@@ -76,6 +126,8 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
              const ServerAddress& address, const ChannelArgs& args,
              std::shared_ptr<WorkSerializer> work_serializer);
 
+    // Templated for convenience, to provide a short-hand for
+    // down-casting in the caller.
     template <typename T>
     T* endpoint_list() const {
       return static_cast<T*>(endpoint_list_.get());
@@ -103,6 +155,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 
+  // We use two-phase initialization here to ensure that the vtable is
+  // initialized before we need to use it.  Subclass must invoke Init()
+  // from inside its ctor.
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
@@ -112,6 +167,8 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
                 const ChannelArgs&)>
                 create_endpoint);
 
+  // Templated for convenience, to provide a short-hand for down-casting
+  // in the caller.
   template <typename T>
   T* policy() const {
     return static_cast<T*>(policy_.get());
@@ -126,6 +183,8 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   bool AllEndpointsSeenInitialState() const;
 
  private:
+  // Returns the parent policy's helper.  Needed because the accessor
+  // method is protected on LoadBalancingPolicy.
   virtual LoadBalancingPolicy::ChannelControlHelper* channel_control_helper()
       const = 0;
 
