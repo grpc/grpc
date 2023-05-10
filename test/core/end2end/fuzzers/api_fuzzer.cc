@@ -35,7 +35,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -47,29 +46,23 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
