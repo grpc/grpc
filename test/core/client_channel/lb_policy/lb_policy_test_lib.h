@@ -20,13 +20,16 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <functional>
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <ratio>
 #include <set>
 #include <string>
 #include <tuple>
@@ -34,6 +37,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -898,8 +902,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Expect startup with RR with a set of addresses.
-  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectRoundRobinStartup(absl::Span<const absl::string_view> addresses) {
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
+      absl::Span<const absl::string_view> addresses) {
     ExpectConnectingUpdate();
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     for (size_t i = 0; i < addresses.size(); ++i) {
@@ -1013,24 +1017,25 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
 
   TimeAwareLoadBalancingPolicyTest() {
     auto mock_ee =
-        std::make_shared<::grpc_event_engine::experimental::MockEventEngine>();
+        std::make_shared<grpc_event_engine::experimental::MockEventEngine>();
     auto capture = [this](std::chrono::duration<int64_t, std::nano> duration,
                           absl::AnyInvocable<void()> callback) {
       CheckExpectedTimerDuration(duration);
       intptr_t key = next_key_++;
       timer_callbacks_[key] = std::move(callback);
-      return ::grpc_event_engine::experimental::EventEngine::TaskHandle{key, 0};
+      return grpc_event_engine::experimental::EventEngine::TaskHandle{key, 0};
     };
     ON_CALL(*mock_ee,
             RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
         .WillByDefault(capture);
-    auto cancel = [this](
-        ::grpc_event_engine::experimental::EventEngine::TaskHandle handle) {
-      auto it = timer_callbacks_.find(handle.keys[0]);
-      if (it == timer_callbacks_.end()) return false;
-      timer_callbacks_.erase(it);
-      return true;
-    };
+    auto cancel =
+        [this](
+            grpc_event_engine::experimental::EventEngine::TaskHandle handle) {
+          auto it = timer_callbacks_.find(handle.keys[0]);
+          if (it == timer_callbacks_.end()) return false;
+          timer_callbacks_.erase(it);
+          return true;
+        };
     ON_CALL(*mock_ee, Cancel(::testing::_)).WillByDefault(cancel);
     // Store in base class, to make it visible to the LB policy.
     event_engine_ = std::move(mock_ee);
@@ -1052,7 +1057,7 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
   // Called when the LB policy starts a timer.
   // May be overridden by subclasses.
   virtual void CheckExpectedTimerDuration(
-      ::grpc_event_engine::experimental::EventEngine::Duration) {}
+      grpc_event_engine::experimental::EventEngine::Duration) {}
 
   std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
   intptr_t next_key_ = 1;

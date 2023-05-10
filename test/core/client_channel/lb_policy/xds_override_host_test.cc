@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <map>

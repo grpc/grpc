@@ -260,7 +260,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       // Ejecting the subchannel may cause the child policy to unref the
       // subchannel, so we need to be prepared for the set to be modified
       // while we are iterating.
-      for (auto it = subchannels_.begin(); it != subchannels_.end(); ) {
+      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
         SubchannelWrapper* subchannel = *it;
         ++it;
         subchannel->Eject();
@@ -402,7 +402,7 @@ void OutlierDetectionLb::SubchannelWrapper::Eject() {
   // Ejecting the subchannel may cause the child policy to cancel the watch,
   // so we need to be prepared for the map to be modified while we are
   // iterating.
-  for (auto it = watchers_.begin(); it != watchers_.end(); ) {
+  for (auto it = watchers_.begin(); it != watchers_.end();) {
     WatcherWrapper* watcher = it->second;
     ++it;
     watcher->Eject();

@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -35,7 +34,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -314,15 +312,15 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
   }
 
   void CheckExpectedTimerDuration(
-      ::grpc_event_engine::experimental::EventEngine::Duration duration)
+      grpc_event_engine::experimental::EventEngine::Duration duration)
       override {
     EXPECT_EQ(duration, expected_weight_update_interval_)
-	<< "Expected: " << expected_weight_update_interval_.count() << "ns"
-	<< "\n  Actual: " << duration.count() << "ns";
+        << "Expected: " << expected_weight_update_interval_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
   }
 
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  ::grpc_event_engine::experimental::EventEngine::Duration
+  grpc_event_engine::experimental::EventEngine::Duration
       expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 

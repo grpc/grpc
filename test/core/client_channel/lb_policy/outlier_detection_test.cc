@@ -17,16 +17,27 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <memory>
+#include <ratio>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
+#include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -155,7 +166,7 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   }
 
   void CheckExpectedTimerDuration(
-      ::grpc_event_engine::experimental::EventEngine::Duration duration)
+      grpc_event_engine::experimental::EventEngine::Duration duration)
       override {
     EXPECT_EQ(duration, expected_internal_)
         << "Expected: " << expected_internal_.count() << "ns"
@@ -163,7 +174,7 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   }
 
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  ::grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
+  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
       std::chrono::seconds(10);
 };
 
@@ -200,13 +211,12 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
   // Send initial update.
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses,
-                  ConfigBuilder()
-                      .SetFailurePercentageThreshold(1)
-                      .SetFailurePercentageMinimumHosts(1)
-                      .SetFailurePercentageRequestVolume(1)
-                      .Build()),
-                  lb_policy_.get());
+      BuildUpdate(kAddresses, ConfigBuilder()
+                                  .SetFailurePercentageThreshold(1)
+                                  .SetFailurePercentageMinimumHosts(1)
+                                  .SetFailurePercentageRequestVolume(1)
+                                  .Build()),
+      lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
@@ -242,7 +252,7 @@ TEST_F(OutlierDetectionTest, FailurePercentageWithPickFirst) {
                       .SetFailurePercentageRequestVolume(1)
                       .SetChildPolicy({{"pick_first", Json::FromObject({})}})
                       .Build()),
-                  lb_policy_.get());
+      lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the first address with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
