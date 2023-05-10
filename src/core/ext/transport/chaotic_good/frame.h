@@ -75,12 +75,10 @@ struct ClientFragmentFrame final : public FrameInterface {
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
-  MessageHandle message;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           EqHdl(message, other.message) &&
            end_of_stream == other.end_of_stream;
   }
 };
@@ -92,12 +90,11 @@ struct ServerFragmentFrame final : public FrameInterface {
 
   uint32_t stream_id;
   ServerMetadataHandle headers;
-  MessageHandle message;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           EqHdl(message, other.message) && EqHdl(trailers, other.trailers);
+           EqHdl(trailers, other.trailers);
   }
 };
 

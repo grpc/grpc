@@ -34,7 +34,7 @@ enum class FrameType : uint8_t {
 
 struct FrameHeader {
   FrameType type;
-  BitSet<3> flags;
+  BitSet<2> flags;
   uint32_t stream_id;
   uint32_t header_length;
   uint32_t message_length;
