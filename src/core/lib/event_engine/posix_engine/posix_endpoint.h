@@ -493,6 +493,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 
   int GetWrappedFd() { return fd_; }
 
+  bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
+
   void MaybeShutdown(
       absl::Status why,
       absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
@@ -635,6 +637,8 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 
   int GetWrappedFd() override { return impl_->GetWrappedFd(); }
 
+  bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
+
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
     if (!shutdown_.exchange(true, std::memory_order_acq_rel)) {
@@ -689,6 +693,11 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   int GetWrappedFd() override {
     grpc_core::Crash(
         "PosixEndpoint::GetWrappedFd not supported on this platform");
+  }
+
+  bool CanTrackErrors() override {
+    grpc_core::Crash(
+        "PosixEndpoint::CanTrackErrors not supported on this platform");
   }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
