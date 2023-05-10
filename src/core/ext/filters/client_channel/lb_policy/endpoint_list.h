@@ -14,35 +14,30 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <algorithm>
-#include <atomic>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
-
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ENDPOINT_LIST_H
 
 namespace grpc_core {
 
@@ -76,13 +71,15 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
       return picker_;
     }
 
-  protected:
+   protected:
     Endpoint(RefCountedPtr<EndpointList> endpoint_list,
              const ServerAddress& address, const ChannelArgs& args,
              std::shared_ptr<WorkSerializer> work_serializer);
 
-    template<typename T>
-    T* endpoint_list() const { return static_cast<T*>(endpoint_list_.get()); }
+    template <typename T>
+    T* endpoint_list() const {
+      return static_cast<T*>(endpoint_list_.get());
+    }
 
     // Returns the index of this endpoint within the EndpointList.
     // Intended for trace logging.
@@ -112,10 +109,13 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   void Init(const ServerAddressList& addresses, const ChannelArgs& args,
             absl::AnyInvocable<OrphanablePtr<Endpoint>(
                 RefCountedPtr<EndpointList>, const ServerAddress&,
-                const ChannelArgs&)> create_endpoint);
+                const ChannelArgs&)>
+                create_endpoint);
 
-  template<typename T>
-  T* policy() const { return static_cast<T*>(policy_.get()); }
+  template <typename T>
+  T* policy() const {
+    return static_cast<T*>(policy_.get());
+  }
 
   const std::vector<OrphanablePtr<Endpoint>>& endpoints() const {
     return endpoints_;

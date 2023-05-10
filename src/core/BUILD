@@ -4539,23 +4539,29 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/endpoint_list.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
+        "absl/utility",
     ],
     language = "c++",
     deps = [
         "channel_args",
         "grpc_lb_policy_pick_first",
         "lb_policy",
+        "lb_policy_registry",
         "pollset_set",
+        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4591,7 +4597,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:work_serializer",
     ],
 )
 
@@ -4658,12 +4663,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_policy_pick_first",
         "json",
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
-        "pollset_set",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4672,6 +4675,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 

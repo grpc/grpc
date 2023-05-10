@@ -18,20 +18,20 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/endpoint_list.h"
 
-#include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
-#include <atomic>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/utility/utility.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -43,8 +43,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
@@ -65,8 +65,7 @@ class EndpointList::Endpoint::Helper
     return parent_helper()->CreateSubchannel(std::move(address), args);
   }
   void UpdateState(
-      grpc_connectivity_state state,
-      const absl::Status& status,
+      grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     auto old_state = absl::exchange(endpoint_->connectivity_state_, state);
     endpoint_->picker_ = std::move(picker);
@@ -171,10 +170,10 @@ void EndpointList::Init(
     const ServerAddressList& addresses, const ChannelArgs& args,
     absl::AnyInvocable<OrphanablePtr<Endpoint>(
         RefCountedPtr<EndpointList>, const ServerAddress&, const ChannelArgs&)>
-            create_endpoint) {
+        create_endpoint) {
   for (const ServerAddress& address : addresses) {
-    endpoints_.push_back(create_endpoint(
-        Ref(DEBUG_LOCATION, "Endpoint"), address, args));
+    endpoints_.push_back(
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), address, args));
   }
 }
 

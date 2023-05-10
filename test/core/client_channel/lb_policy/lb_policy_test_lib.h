@@ -243,10 +243,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       work_serializer_->Run(
           [this, state, status, location]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-            AssertValidConnectivityStateTransition(
-                state_tracker_.state(), state, location);
-            state_tracker_.SetState(state, status, "set from test");
-          },
+                AssertValidConnectivityStateTransition(state_tracker_.state(),
+                                                       state, location);
+                state_tracker_.SetState(state, status, "set from test");
+              },
           DEBUG_LOCATION);
     }
 

@@ -38,14 +38,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/endpoint_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -76,17 +75,16 @@ class RoundRobin : public LoadBalancingPolicy {
  private:
   class RoundRobinEndpointList : public EndpointList {
    public:
-    RoundRobinEndpointList(
-        RefCountedPtr<RoundRobin> round_robin,
-        const ServerAddressList& addresses, const ChannelArgs& args)
+    RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
+                           const ServerAddressList& addresses,
+                           const ChannelArgs& args)
         : EndpointList(std::move(round_robin),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                            ? "RoundRobinEndpointList"
                            : nullptr) {
       Init(addresses, args,
            [&](RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-               const ServerAddress& address,
-               const ChannelArgs& args) {
+               const ServerAddress& address, const ChannelArgs& args) {
              return MakeOrphanable<RoundRobinEndpoint>(
                  std::move(endpoint_list), address, args,
                  policy<RoundRobin>()->work_serializer());
@@ -127,8 +125,7 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
     std::string CountersString() const {
-      return absl::StrCat("num_children=", size(),
-                          " num_ready=", num_ready_,
+      return absl::StrCat("num_children=", size(), " num_ready=", num_ready_,
                           " num_connecting=", num_connecting_,
                           " num_transient_failure=", num_transient_failure_);
     }
@@ -189,7 +186,8 @@ RoundRobin::Picker::Picker(
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from endpoint_list=%p "
             "with %" PRIuPTR " READY children; last_picked_index_=%" PRIuPTR,
-            parent_, this, parent_->endpoint_list_.get(), pickers_.size(), index);
+            parent_, this, parent_->endpoint_list_.get(), pickers_.size(),
+            index);
   }
 }
 
@@ -201,7 +199,7 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
             "[RR %p picker %p] using picker index %" PRIuPTR ", picker=%p",
             parent_, this, index, pickers_[index].get());
   }
-  return pickers_[index]->Pick(std::move(args));
+  return pickers_[index]->Pick(args);
 }
 
 //
@@ -262,7 +260,8 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
             latest_pending_endpoint_list_.get());
   }
   latest_pending_endpoint_list_ = MakeOrphanable<RoundRobinEndpointList>(
-      Ref(DEBUG_LOCATION, "RoundRobinEndpointList"), std::move(addresses), args.args);
+      Ref(DEBUG_LOCATION, "RoundRobinEndpointList"), std::move(addresses),
+      args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -301,7 +300,8 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p] connectivity changed for child %p, endpoint_list %p "
-            "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s "
+            "(index %" PRIuPTR " of %" PRIuPTR
+            "): prev_state=%s new_state=%s "
             "(%s)",
             round_robin, this, rr_endpoint_list, Index(),
             rr_endpoint_list->size(),
@@ -358,8 +358,7 @@ void RoundRobin::RoundRobinEndpointList::UpdateStateCountersLocked(
 }
 
 void RoundRobin::RoundRobinEndpointList::
-    MaybeUpdateRoundRobinConnectivityStateLocked(
-        absl::Status status_for_tf) {
+    MaybeUpdateRoundRobinConnectivityStateLocked(absl::Status status_for_tf) {
   auto* round_robin = policy<RoundRobin>();
   // If this is latest_pending_endpoint_list_, then swap it into
   // endpoint_list_ in the following cases:
@@ -388,7 +387,7 @@ void RoundRobin::RoundRobinEndpointList::
   }
   // Only set connectivity state if this is the current child list.
   if (round_robin->endpoint_list_.get() != this) return;
-// FIXME: scan children each time instead of keeping counters?
+  // FIXME: scan children each time instead of keeping counters?
   // First matching rule wins:
   // 1) ANY child is READY => policy is READY.
   // 2) ANY child is CONNECTING => policy is CONNECTING.

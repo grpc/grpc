@@ -32,6 +32,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"

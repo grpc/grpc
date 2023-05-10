@@ -42,10 +42,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -732,7 +732,8 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
           .Remove(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
-            "[PF %p] Creating subchannel list %p for %" PRIuPTR " subchannels"
+            "[PF %p] Creating subchannel list %p for %" PRIuPTR
+            " subchannels"
             " - channel args: %s",
             policy_.get(), this, addresses.size(), use_args.ToString().c_str());
   }
