@@ -34,14 +34,14 @@ namespace {
 
 constexpr uint16_t kMaxWeight = std::numeric_limits<uint16_t>::max();
 
-// Assumsing the mean of all known weights is M, StaticStrideScheduler will cap
+// Assuming the mean of all known weights is M, StaticStrideScheduler will cap
 // from above all known weights that are bigger than M*kMaxRatio (to
 // M*kMaxRatio).
 //
 // This is done to limit the number of rounds for picks.
 constexpr double kMaxRatio = 10;
 
-// Assumsing the mean of all known weights is M, StaticStrideScheduler will cap
+// Assuming the mean of all known weights is M, StaticStrideScheduler will cap
 // from below all known weights to M*kMinRatio.
 //
 // This is done as a performance optimization for edge cases when channels with
