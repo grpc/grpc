@@ -17,18 +17,18 @@ from dataclasses import field
 import logging
 import threading
 import time
-from typing import Any, Mapping, Optional, TypeVar
+from typing import Any, Mapping, Optional
 
 import grpc
-from grpc_observability import _cyobservability
+from grpc_observability import _cyobservability  # pytype: disable=pyi-error
 from opencensus.trace import execution_context
 from opencensus.trace import span_context as span_context_module
 from opencensus.trace import trace_options as trace_options_module
 
 _LOGGER = logging.getLogger(__name__)
 
-ClientCallTracerCapsule = Any # it appears only once in the function signature
-ServerCallTracerFactoryCapsule = Any # it appears only once in the function signature
+ClientCallTracerCapsule = Any  # it appears only once in the function signature
+ServerCallTracerFactoryCapsule = Any  # it appears only once in the function signature
 grpc_observability = Any  # grpc_observability.py imports this module.
 
 GRPC_STATUS_CODE_TO_STRING = {
@@ -83,6 +83,7 @@ class GcpObservabilityPythonConfig:
         self.sampling_rate = sampling_rate
 
 
+# pylint: disable=no-self-use
 class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
@@ -116,9 +117,9 @@ class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
         # 4. Start exporting thread.
         try:
             _cyobservability.cyobservability_init(self.exporter)
-        except Exception as e:
-            _LOGGER.exception(
-                "grpc_observability init failed with: {}".format(e))
+        #TODO(xuanwn): Use specific exceptons
+        except Exception as e:  # pylint: disable=broad-except
+            _LOGGER.exception("grpc_observability init failed with: %s", e)
 
         # 5. Init grpc.
         # 5.1 Refister grpc_observability

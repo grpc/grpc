@@ -55,7 +55,7 @@ _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {}
 
 def cyobservability_init(object exporter) -> None:
   global _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING
-  _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {x.value[0]: x for x in grpc_observability.MetricsName}
+  _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {x.value: x for x in grpc_observability.MetricsName}
   NativeObservabilityInit()
   _start_exporting_thread(exporter)
 

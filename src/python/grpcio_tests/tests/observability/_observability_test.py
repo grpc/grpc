@@ -219,7 +219,6 @@ class ObservabilityTest(unittest.TestCase):
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
         with grpc_observability.GCPOpenCensusObservability() as o11y:
             o11y.init(exporter=self.test_exporter)
-
             port = self._start_server()
             self.stream_unary_call(port)
 
