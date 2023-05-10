@@ -27,8 +27,8 @@ from opencensus.trace import trace_options as trace_options_module
 
 _LOGGER = logging.getLogger(__name__)
 
-ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
-ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
+ClientCallTracerCapsule = Any # it appears only once in the function signature
+ServerCallTracerFactoryCapsule = Any # it appears only once in the function signature
 grpc_observability = Any  # grpc_observability.py imports this module.
 
 GRPC_STATUS_CODE_TO_STRING = {
@@ -59,8 +59,8 @@ class GcpObservabilityPythonConfig:
     project_id: str = ""
     stats_enabled: bool = False
     tracing_enabled: bool = False
-    labels: Mapping[str, str] = field(default_factory=dict)
-    sampling_rate: float = 0.0
+    labels: Optional[Mapping[str, str]] = field(default_factory=dict)
+    sampling_rate: Optional[float] = 0.0
 
     @staticmethod
     def get():
@@ -132,7 +132,7 @@ class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
         self.enable_stats(False)
         _cyobservability.at_observability_exit()
 
-    def __enter__(self) -> None:
+    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:

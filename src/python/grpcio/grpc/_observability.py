@@ -98,7 +98,7 @@ def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
 
 
 def delete_call_tracer(
-        client_call_tracer_capsule: "ClientCallTracerCapsule") -> None:
+        client_call_tracer_capsule: Any) -> None:
     global _grpc_observability_stub  # pylint: disable=global-statement
     if not (_grpc_observability_stub and
             _grpc_observability_stub.observability_enabled):
