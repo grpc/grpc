@@ -16,7 +16,6 @@
 //
 //
 
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -39,8 +38,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -101,10 +98,11 @@ static void run_test(const char* target, size_t nops) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status != GRPC_STATUS_OK);

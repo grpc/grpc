@@ -100,7 +100,7 @@ class MyTestServiceImpl : public BackendService {
                     ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
-    auto range = client_metadata.equal_range("X-Google-RLS-Data");
+    auto range = client_metadata.equal_range("x-google-rls-data");
     {
       grpc::internal::MutexLock lock(&mu_);
       for (auto it = range.first; it != range.second; ++it) {

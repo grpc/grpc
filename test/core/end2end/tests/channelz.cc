@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include <grpc/grpc.h>
@@ -37,68 +39,22 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
+static std::unique_ptr<CoreTestFixture> begin_test(
+    const CoreTestConfiguration& config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
+  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
+                                 grpc_core::ChannelArgs::FromC(server_args));
+  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
+  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-}
-
-static void run_one_request(grpc_end2end_test_config /*config*/,
-                            grpc_end2end_test_fixture f,
-                            bool request_is_success) {
+static void run_one_request(const CoreTestConfiguration& /*config*/,
+                            CoreTestFixture* f, bool request_is_success) {
   grpc_call* c;
   grpc_call* s;
-  grpc_core::CqVerifier cqv(f.cq);
+  grpc_core::CqVerifier cqv(f->cq());
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -110,10 +66,10 @@ static void run_one_request(grpc_end2end_test_config /*config*/,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                               f->cq(), grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -145,15 +101,15 @@ static void run_one_request(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f->server(), &s, &call_details,
+                                   &request_metadata_recv, f->cq(), f->cq(),
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -177,12 +133,12 @@ static void run_one_request(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                grpc_core::CqVerifier::tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -198,9 +154,7 @@ static void run_one_request(grpc_end2end_test_config /*config*/,
   grpc_call_unref(s);
 }
 
-static void test_channelz(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
-
+static void test_channelz(const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -209,13 +163,13 @@ static void test_channelz(grpc_end2end_test_config config) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz", &args, &args);
+  auto f = begin_test(config, "test_channelz", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(f.server)->channelz_node();
+      grpc_core::Server::FromC(f->server())->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   std::string json = channelz_channel->RenderJsonString();
@@ -225,14 +179,14 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(json.find("\"callsSucceeded\"") == json.npos);
 
   // one successful request
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
 
   json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"callsStarted\":\"1\"") != json.npos);
   GPR_ASSERT(json.find("\"callsSucceeded\":\"1\"") != json.npos);
 
   // one failed request
-  run_one_request(config, f, false);
+  run_one_request(config, f.get(), false);
 
   json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"callsStarted\":\"2\"") != json.npos);
@@ -254,14 +208,10 @@ static void test_channelz(grpc_end2end_test_config config) {
 
   json = channelz_server->RenderServerSockets(0, 100);
   GPR_ASSERT(json.find("\"end\":true") != json.npos);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
-static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
-
+static void test_channelz_with_channel_trace(
+    const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -270,16 +220,16 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
+  auto f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_core::Server::FromC(f.server)->channelz_node();
+      grpc_core::Server::FromC(f->server())->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
 
   std::string json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json.find("\"trace\"") != json.npos);
@@ -290,14 +240,9 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   GPR_ASSERT(json.find("\"trace\"") != json.npos);
   GPR_ASSERT(json.find("\"description\":\"Server created\"") != json.npos);
   GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != json.npos);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
-static void test_channelz_disabled(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
-
+static void test_channelz_disabled(const CoreTestConfiguration& config) {
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -306,18 +251,16 @@ static void test_channelz_disabled(grpc_end2end_test_config config) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
-  f = begin_test(config, "test_channelz_disabled", &args, &args);
+  auto f = begin_test(config, "test_channelz_disabled", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(f.client);
+      grpc_channel_get_channelz_node(f->client());
   GPR_ASSERT(channelz_channel == nullptr);
   // one successful request
-  run_one_request(config, f, true);
+  run_one_request(config, f.get(), true);
   GPR_ASSERT(channelz_channel == nullptr);
-  end_test(&f);
-  config.tear_down_data(&f);
 }
 
-void channelz(grpc_end2end_test_config config) {
+void channelz(const CoreTestConfiguration& config) {
   test_channelz(config);
   test_channelz_with_channel_trace(config);
   test_channelz_disabled(config);

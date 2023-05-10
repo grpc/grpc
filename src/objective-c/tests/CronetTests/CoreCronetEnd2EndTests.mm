@@ -44,6 +44,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -52,100 +53,44 @@
 
 #import "../ConfigureCronet.h"
 
-struct fullstack_secure_fixture_data {
-  std::string localaddr;
-};
-
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    const grpc_channel_args *client_args, const grpc_channel_args *server_args) {
-  grpc_end2end_test_fixture f;
-  int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
-  memset(&f, 0, sizeof(f));
-
-  ffd->localaddr = grpc_core::JoinHostPort("127.0.0.1", port);
-
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-
-  return f;
-}
-
 static void process_auth_failure(void *state, grpc_auth_context *ctx, const grpc_metadata *md,
                                  size_t md_count, grpc_process_auth_metadata_done_cb cb,
                                  void *user_data) {
-  GPR_ASSERT(state == NULL);
-  cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
+  GPR_ASSERT(state == nullptr);
+  cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                const grpc_channel_args *client_args,
-                                                stream_engine *cronetEngine) {
-  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
-  f->client =
-      grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr.c_str(), client_args, NULL);
-  GPR_ASSERT(f->client != NULL);
-}
-
-static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                const grpc_channel_args *server_args,
-                                                grpc_server_credentials *server_creds) {
-  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
-  if (f->server) {
-    grpc_server_destroy(f->server);
+class CronetFixture final : public SecureFixture {
+ private:
+  grpc_channel_credentials *MakeClientCreds(const grpc_core::ChannelArgs &args) override {
+    grpc_core::Crash("unreachable");
   }
-  f->server = grpc_server_create(server_args, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(), server_creds));
-  grpc_server_credentials_release(server_creds);
-  grpc_server_start(f->server);
-}
-
-static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
-  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
-  delete ffd;
-}
-
-static void cronet_init_client_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                           const grpc_channel_args *client_args) {
-  grpc_core::ExecCtx exec_ctx;
-  stream_engine *cronetEngine = [Cronet getGlobalEngine];
-
-  const grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);
-  cronet_init_client_secure_fullstack(f, new_client_args, cronetEngine);
-  grpc_channel_args_destroy(new_client_args);
-}
-
-static int fail_server_auth_check(const grpc_channel_args *server_args) {
-  size_t i;
-  if (server_args == NULL) return 0;
-  for (i = 0; i < server_args->num_args; i++) {
-    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) == 0) {
-      return 1;
+  grpc_server_credentials *MakeServerCreds(const grpc_core::ChannelArgs &args) override {
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key, test_server1_cert};
+    grpc_server_credentials *ssl_creds =
+        grpc_ssl_server_credentials_create(nullptr, &pem_cert_key_pair, 1, 0, nullptr);
+    if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
+      grpc_auth_metadata_processor processor = {process_auth_failure, nullptr, nullptr};
+      grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
     }
+    return ssl_creds;
   }
-  return 0;
-}
-
-static void chttp2_init_server_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                           const grpc_channel_args *server_args) {
-  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key, test_server1_cert};
-  grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
-  if (fail_server_auth_check(server_args)) {
-    grpc_auth_metadata_processor processor = {process_auth_failure, NULL, NULL};
-    grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
+  grpc_channel *MakeClient(const grpc_core::ChannelArgs &args) override {
+    stream_engine *cronetEngine = [Cronet getGlobalEngine];
+    return grpc_cronet_secure_channel_create(cronetEngine, localaddr().c_str(), args.ToC().get(),
+                                             nullptr);
   }
-  chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
-}
+};
 
 /* All test configurations */
 
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, nullptr,
-     chttp2_create_fixture_secure_fullstack, cronet_init_client_simple_ssl_secure_fullstack,
-     chttp2_init_server_simple_ssl_secure_fullstack, chttp2_tear_down_secure_fullstack},
+     [](const grpc_core::ChannelArgs & /*client_args*/,
+        const grpc_core::ChannelArgs & /*server_args*/) {
+       return std::make_unique<CronetFixture>();
+     }},
 };
 
 static char *roots_filename;
@@ -170,8 +115,8 @@ static char *roots_filename;
 
   /* Set the SSL roots env var. */
   roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);
-  GPR_ASSERT(roots_filename != NULL);
-  GPR_ASSERT(roots_file != NULL);
+  GPR_ASSERT(roots_filename != nullptr);
+  GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);

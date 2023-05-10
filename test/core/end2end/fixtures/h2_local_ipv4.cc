@@ -18,48 +18,33 @@
 
 #include <unistd.h>
 
-#include <string>
+#include <functional>
+#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_ipv4(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f =
-      grpc_end2end_local_chttp2_create_fixture_fullstack();
-  int port = grpc_pick_unused_port_or_die();
-  static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
-      ->localaddr = grpc_core::JoinHostPort("127.0.0.1", port);
-  return f;
-}
-
-static void chttp2_init_client_fullstack_ipv4(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_client_fullstack(f, client_args, LOCAL_TCP);
-}
-
-static void chttp2_init_server_fullstack_ipv4(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, LOCAL_TCP);
-}
-
 // All test configurations
-static grpc_end2end_test_config configs[] = {
+static CoreTestConfiguration configs[] = {
     {"chttp2/fullstack_local_ipv4",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
-     nullptr, chttp2_create_fixture_fullstack_ipv4,
-     chttp2_init_client_fullstack_ipv4, chttp2_init_server_fullstack_ipv4,
-     grpc_end2end_local_chttp2_tear_down_fullstack}};
+     nullptr,
+     [](const grpc_core::ChannelArgs& /*client_args*/,
+        const grpc_core::ChannelArgs& /*server_args*/) {
+       int port = grpc_pick_unused_port_or_die();
+       return std::make_unique<LocalTestFixture>(
+           grpc_core::JoinHostPort("127.0.0.1", port), LOCAL_TCP);
+     }}};
 
 int main(int argc, char** argv) {
   size_t i;
