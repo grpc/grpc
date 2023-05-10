@@ -369,6 +369,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "osa_distance",
+    srcs = ["osa_distance.cc"],
+    hdrs = ["osa_distance.h"],
+    external_deps = ["absl/strings"],
+)
+
+grpc_cc_test(
+    name = "osa_distance_test",
+    srcs = ["osa_distance_test.cc"],
+    external_deps = ["gtest"],
+    deps = ["osa_distance"],
+)
+
+grpc_cc_library(
     name = "scoped_env_var",
     testonly = True,
     hdrs = ["scoped_env_var.h"],
