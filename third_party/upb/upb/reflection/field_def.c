@@ -593,7 +593,7 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
     }
   } else if (has_type_name) {
     f->type_ =
-        UPB_FIELD_TYPE_UNSPECIFIED;  // We'll fill this in in resolve_fielddef()
+        UPB_FIELD_TYPE_UNSPECIFIED;  // We'll assign this in resolve_fielddef()
   }
 
   if (f->type_ < kUpb_FieldType_Double || f->type_ > kUpb_FieldType_SInt64) {
@@ -638,8 +638,7 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
     upb_OneofDef* oneof = (upb_OneofDef*)upb_MessageDef_Oneof(m, oneof_index);
     f->scope.oneof = oneof;
 
-    bool ok = _upb_OneofDef_Insert(oneof, f, name.data, name.size, ctx->arena);
-    if (!ok) _upb_DefBuilder_OomErr(ctx);
+    _upb_OneofDef_Insert(ctx, oneof, f, name.data, name.size);
   }
 
   UPB_DEF_SET_OPTIONS(f->opts, FieldDescriptorProto, FieldOptions, field_proto);
@@ -878,9 +877,9 @@ void _upb_FieldDef_BuildMiniTableExtension(upb_DefBuilder* ctx,
     } else if (_upb_FieldDef_IsClosedEnum(f)) {
       sub.subenum = _upb_EnumDef_MiniTable(f->sub.enumdef);
     }
-    bool ok2 = upb_MiniTableExtension_Build(desc.data, desc.size, mut_ext,
-                                            upb_MessageDef_MiniTable(f->msgdef),
-                                            sub, ctx->status);
+    bool ok2 = upb_MiniTableExtension_Init(desc.data, desc.size, mut_ext,
+                                           upb_MessageDef_MiniTable(f->msgdef),
+                                           sub, ctx->status);
     if (!ok2) _upb_DefBuilder_Errf(ctx, "Could not build extension mini table");
   }
 

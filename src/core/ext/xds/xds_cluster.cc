@@ -46,6 +46,7 @@
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"

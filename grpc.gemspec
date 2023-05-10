@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.22'
+  s.add_dependency 'google-protobuf', '~> 3.23'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -103,6 +103,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/atm_gcc_sync.h )
   s.files += %w( include/grpc/support/atm_windows.h )
   s.files += %w( include/grpc/support/cpu.h )
+  s.files += %w( include/grpc/support/json.h )
   s.files += %w( include/grpc/support/log.h )
   s.files += %w( include/grpc/support/log_windows.h )
   s.files += %w( include/grpc/support/port_platform.h )
@@ -2782,6 +2783,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/mem/arena_internal.h )
   s.files += %w( third_party/upb/upb/message/accessors.c )
   s.files += %w( third_party/upb/upb/message/accessors.h )
+  s.files += %w( third_party/upb/upb/message/accessors_internal.h )
   s.files += %w( third_party/upb/upb/message/extension_internal.h )
   s.files += %w( third_party/upb/upb/message/internal.h )
   s.files += %w( third_party/upb/upb/message/message.c )
@@ -2805,6 +2807,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/mini_table/sub_internal.h )
   s.files += %w( third_party/upb/upb/mini_table/types.h )
   s.files += %w( third_party/upb/upb/msg.h )
+  s.files += %w( third_party/upb/upb/port/atomic.h )
   s.files += %w( third_party/upb/upb/port/def.inc )
   s.files += %w( third_party/upb/upb/port/undef.inc )
   s.files += %w( third_party/upb/upb/port/vsnprintf_compat.h )
@@ -2858,7 +2861,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/reflection/service_def.c )
   s.files += %w( third_party/upb/upb/reflection/service_def.h )
   s.files += %w( third_party/upb/upb/reflection/service_def_internal.h )
-  s.files += %w( third_party/upb/upb/reflection/stage0/google/protobuf/descriptor.upb.h )
   s.files += %w( third_party/upb/upb/status.h )
   s.files += %w( third_party/upb/upb/string_view.h )
   s.files += %w( third_party/upb/upb/text/encode.c )
@@ -2866,6 +2868,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/text_encode.h )
   s.files += %w( third_party/upb/upb/upb.h )
   s.files += %w( third_party/upb/upb/upb.hpp )
+  s.files += %w( third_party/upb/upb/wire/common.h )
   s.files += %w( third_party/upb/upb/wire/common_internal.h )
   s.files += %w( third_party/upb/upb/wire/decode.c )
   s.files += %w( third_party/upb/upb/wire/decode.h )

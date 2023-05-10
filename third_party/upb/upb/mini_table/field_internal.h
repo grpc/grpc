@@ -34,12 +34,18 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+// LINT.IfChange(mini_table_field_layout)
+
 struct upb_MiniTableField {
   uint32_t number;
   uint16_t offset;
   int16_t presence;       // If >0, hasbit_index.  If <0, ~oneof_index
-  uint16_t submsg_index;  // kUpb_NoSub if descriptortype != MESSAGE/GROUP/ENUM
-  uint8_t descriptortype;
+
+  // Indexes into `upb_MiniTable.subs`
+  // Will be set to `kUpb_NoSub` if `descriptortype` != MESSAGE/GROUP/ENUM
+  uint16_t UPB_PRIVATE(submsg_index);
+
+  uint8_t UPB_PRIVATE(descriptortype);
 
   // upb_FieldMode | upb_LabelFlags | (upb_FieldRep << kUpb_FieldRep_Shift)
   uint8_t mode;
@@ -82,6 +88,8 @@ typedef enum {
 
 #define kUpb_FieldRep_Shift 6
 
+// LINT.ThenChange(//depot/google3/third_party/upb/js/impl/upb_bits/mini_table_field.ts:mini_table_field_layout)
+
 UPB_INLINE upb_FieldRep
 _upb_MiniTableField_GetRep(const upb_MiniTableField* field) {
   return (upb_FieldRep)(field->mode >> kUpb_FieldRep_Shift);
@@ -115,8 +123,8 @@ UPB_INLINE bool upb_IsRepeatedOrMap(const upb_MiniTableField* field) {
 }
 
 UPB_INLINE bool upb_IsSubMessage(const upb_MiniTableField* field) {
-  return field->descriptortype == kUpb_FieldType_Message ||
-         field->descriptortype == kUpb_FieldType_Group;
+  return field->UPB_PRIVATE(descriptortype) == kUpb_FieldType_Message ||
+         field->UPB_PRIVATE(descriptortype) == kUpb_FieldType_Group;
 }
 
 // LINT.IfChange(presence_logic)
@@ -173,6 +181,7 @@ UPB_INLINE uint32_t _upb_getoneofcase_field(const upb_Message* msg,
 }
 
 // LINT.ThenChange(GoogleInternalName2)
+// LINT.ThenChange(//depot/google3/third_party/upb/js/impl/upb_bits/presence.ts:presence_logic)
 
 #ifdef __cplusplus
 } /* extern "C" */

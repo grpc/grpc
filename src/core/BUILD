@@ -2758,7 +2758,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "json",
         "//:gpr",
         "//:grpc_base",
     ],
@@ -3333,10 +3332,6 @@ grpc_cc_library(
     name = "json",
     hdrs = [
         "lib/json/json.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/types:variant",
     ],
     deps = ["//:gpr"],
 )
@@ -5207,8 +5202,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "arena_promise",
         "channel_args",
         "channel_fwd",
+        "context",
         "dual_ref_counted",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_header",
@@ -5217,6 +5214,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "pollset_set",
+        "ref_counted",
         "slice",
         "time",
         "unique_type_name",
@@ -5229,6 +5227,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
+        "//:legacy_context",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
