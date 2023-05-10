@@ -73,6 +73,7 @@ class TestLoggingSink : public grpc_core::LoggingSink {
     gpr_log(GPR_INFO, "is_sampled: %d", entry.is_sampled);
     grpc_core::MutexLock lock(&mu_);
     entries_.push_back(std::move(entry));
+    cv_.SignalAll();
   }
 
   void SetConfig(Config config) {
