@@ -22,6 +22,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
@@ -34,6 +35,7 @@ absl::optional<std::string> LoadEnv(absl::string_view environment_variable) {
 
 std::string LoadConfigFromEnv(absl::string_view environment_variable,
                               const char* default_value) {
+  GPR_ASSERT_INTERNAL(!environment_variable.empty());
   return LoadEnv(environment_variable).value_or(default_value);
 }
 

@@ -2381,6 +2381,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:env",
+        "//src/core:gpr_log_internal",
     ],
 )
 
