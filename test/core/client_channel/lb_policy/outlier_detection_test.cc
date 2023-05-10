@@ -39,7 +39,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class OutlierDetectionTest : public LoadBalancingPolicyTest {
+class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -137,7 +137,34 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   OutlierDetectionTest()
       : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
 
+  absl::optional<std::string> DoPickWithFailedCall(
+      LoadBalancingPolicy::SubchannelPicker* picker) {
+    std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+        subchannel_call_tracker;
+    auto address = ExpectPickComplete(picker, {}, &subchannel_call_tracker);
+    if (address.has_value()) {
+      subchannel_call_tracker->Start();
+      FakeMetadata metadata({});
+      FakeBackendMetricAccessor backend_metric_accessor({});
+      LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+          *address, absl::UnavailableError("uh oh"), &metadata,
+          &backend_metric_accessor};
+      subchannel_call_tracker->Finish(args);
+    }
+    return address;
+  }
+
+  void CheckExpectedTimerDuration(
+      ::grpc_event_engine::experimental::EventEngine::Duration duration)
+      override {
+    EXPECT_EQ(duration, expected_internal_)
+        << "Expected: " << expected_internal_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  ::grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
+      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
@@ -166,6 +193,39 @@ TEST_F(OutlierDetectionTest, Basic) {
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddressUri);
   }
+}
+
+TEST_F(OutlierDetectionTest, FailurePercentage) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses,
+                  ConfigBuilder()
+                      .SetFailurePercentageThreshold(1)
+                      .SetFailurePercentageMinimumHosts(1)
+                      .SetFailurePercentageRequestVolume(1)
+                      .Build()),
+                  lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Do a pick and report a failed call.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "failed RPC on %s", address->c_str());
+  // Advance time and run the timer callback to trigger ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  // Expect a re-resolution request.
+  ExpectReresolutionRequest();
+  // Expect a picker update.
+  std::vector<absl::string_view> remaining_addresses;
+  for (const auto& addr : kAddresses) {
+    if (addr != *address) remaining_addresses.push_back(addr);
+  }
+  picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
 }
 
 }  // namespace
