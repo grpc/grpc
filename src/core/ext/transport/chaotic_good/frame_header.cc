@@ -58,8 +58,8 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   const uint32_t type_and_flags = ReadLittleEndianUint32(data);
   header.type = static_cast<FrameType>(type_and_flags & 0xff);
   const uint32_t flags = type_and_flags >> 8;
-  if (flags > 7) return absl::InvalidArgumentError("Invalid flags");
-  header.flags = BitSet<3>::FromInt(flags);
+  if (flags > 3) return absl::InvalidArgumentError("Invalid flags");
+  header.flags = BitSet<2>::FromInt(flags);
   header.stream_id = ReadLittleEndianUint32(data + 4);
   header.header_length = ReadLittleEndianUint32(data + 8);
   header.message_length = ReadLittleEndianUint32(data + 12);
