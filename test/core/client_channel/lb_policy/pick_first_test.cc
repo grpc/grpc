@@ -46,8 +46,6 @@ TEST_F(PickFirstTest, Basic) {
   absl::Status status =
       ApplyUpdate(BuildUpdate({kAddressUri}), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address with the
   // GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
   auto* subchannel = FindSubchannel(
@@ -58,6 +56,8 @@ TEST_F(PickFirstTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't

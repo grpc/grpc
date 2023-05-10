@@ -66,7 +66,7 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
   auto parsed_json = grpc_core::JsonParse(proto_json_str.c_str());
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), grpc_core::Json::Type::kObject);
-  proto_json_str = JsonDump(*parsed_json);
+  proto_json_str = grpc_core::JsonDump(*parsed_json);
   EXPECT_EQ(json_str, proto_json_str);
 }
 

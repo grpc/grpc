@@ -229,7 +229,8 @@ void OriginalThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
     // fork.
     cv_.WaitWithTimeout(&thread_count_mu_, absl::Seconds(3));
     if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
-      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s", why);
+      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s (%d to %d)",
+              why, threads_, threads);
       last_log = absl::Now();
     }
   }
