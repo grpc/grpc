@@ -24,6 +24,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -50,11 +51,11 @@ void DumpSliceBuffer(SliceBuffer* buffer, absl::string_view context_string) {
 WindowsEndpoint::WindowsEndpoint(
     const EventEngine::ResolvedAddress& peer_address,
     std::unique_ptr<WinSocket> socket, MemoryAllocator&& allocator,
-    const EndpointConfig& /* config */, Executor* executor,
+    const EndpointConfig& /* config */, ThreadPool* thread_pool,
     std::shared_ptr<EventEngine> engine)
     : peer_address_(peer_address),
       allocator_(std::move(allocator)),
-      executor_(executor),
+      thread_pool_(thread_pool),
       io_state_(std::make_shared<AsyncIOState>(this, std::move(socket),
                                                std::move(engine))) {
   char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
@@ -100,7 +101,7 @@ absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
     // Data or some error was returned immediately.
     io_state_->socket->read_info()->SetResult(
         {/*wsa_error=*/wsa_error, /*bytes_read=*/bytes_read});
-    executor_->Run(&io_state_->handle_read_event);
+    thread_pool_->Run(&io_state_->handle_read_event);
     return absl::OkStatus();
   }
   // If the endpoint has already received some data, and the next call would
@@ -126,7 +127,7 @@ absl::Status WindowsEndpoint::DoTcpRead(SliceBuffer* buffer) {
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
   if (io_state_->socket->IsShutdown()) {
-    executor_->Run([on_read = std::move(on_read)]() mutable {
+    thread_pool_->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::UnavailableError("Socket is shutting down."));
     });
     return false;
@@ -143,7 +144,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   auto status = DoTcpRead(buffer);
   if (!status.ok()) {
     // The read could not be completed.
-    io_state_->endpoint->executor_->Run([this, status]() {
+    io_state_->endpoint->thread_pool_->Run([this, status]() {
       io_state_->handle_read_event.ExecuteCallbackAndReset(status);
     });
   }
@@ -154,7 +155,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
   if (io_state_->socket->IsShutdown()) {
-    executor_->Run([on_writable = std::move(on_writable)]() mutable {
+    thread_pool_->Run([on_writable = std::move(on_writable)]() mutable {
       on_writable(absl::UnavailableError("Socket is shutting down."));
     });
     return false;
@@ -182,7 +183,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (status == 0) {
     if (bytes_sent == data->Length()) {
       // Write completed, exiting early
-      executor_->Run(
+      thread_pool_->Run(
           [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
       return false;
     }
@@ -203,7 +204,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     // then we can avoid doing an async write operation at all.
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSAEWOULDBLOCK) {
-      executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
+      thread_pool_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
       return false;
@@ -217,7 +218,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (status != 0) {
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
-      executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
+      thread_pool_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
       return false;
@@ -319,7 +320,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
 bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
   if (last_read_buffer_.Length() > 0) {
     buffer_->Swap(last_read_buffer_);
-    io_state_->endpoint->executor_->Run(
+    io_state_->endpoint->thread_pool_->Run(
         [this]() { ExecuteCallbackAndReset(absl::OkStatus()); });
     return true;
   }

@@ -319,7 +319,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   // Latest state and picker reported by the child policy.
-  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   Mutex subchannel_map_mu_;

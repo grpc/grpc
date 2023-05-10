@@ -15,12 +15,12 @@
 // limitations under the License.
 //
 //
-
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_ORIGINAL_THREAD_POOL_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_ORIGINAL_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -31,23 +31,20 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
-#include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class ThreadPool final : public Forkable, public Executor {
+class OriginalThreadPool final : public ThreadPool {
  public:
-  ThreadPool();
+  explicit OriginalThreadPool(size_t reserve_threads);
   // Asserts Quiesce was called.
-  ~ThreadPool() override;
+  ~OriginalThreadPool() override;
 
-  void Quiesce();
+  void Quiesce() override;
 
   // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
@@ -129,13 +126,12 @@ class ThreadPool final : public Forkable, public Executor {
   static void StartThread(StatePtr state, StartThreadReason reason);
   void Postfork();
 
-  const unsigned reserve_threads_ =
-      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
-  const StatePtr state_ = std::make_shared<State>(reserve_threads_);
+  const size_t reserve_threads_;
+  const StatePtr state_;
   std::atomic<bool> quiesced_{false};
 };
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_ORIGINAL_THREAD_POOL_H
