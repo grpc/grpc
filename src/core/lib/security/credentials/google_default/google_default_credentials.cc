@@ -34,6 +34,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 

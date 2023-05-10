@@ -24,7 +24,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,11 +41,11 @@ using ::grpc_event_engine::experimental::WinSocket;
 class WinSocketTest : public testing::Test {};
 
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
-  ThreadPool executor;
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  WinSocket wrapped_client_socket(sockpair[0], &executor);
-  WinSocket wrapped_server_socket(sockpair[1], &executor);
+  WinSocket wrapped_client_socket(sockpair[0], thread_pool.get());
+  WinSocket wrapped_server_socket(sockpair[1], thread_pool.get());
   bool read_called = false;
   AnyInvocableClosure on_read([&read_called]() { read_called = true; });
   wrapped_client_socket.NotifyOnRead(&on_read);
@@ -63,14 +63,14 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   ASSERT_TRUE(read_called);
   wrapped_client_socket.Shutdown();
   wrapped_server_socket.Shutdown();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
-  ThreadPool executor;
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  WinSocket wrapped_client_socket(sockpair[0], &executor);
+  WinSocket wrapped_client_socket(sockpair[0], thread_pool.get());
   wrapped_client_socket.Shutdown();
   bool read_called = false;
   AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
@@ -90,7 +90,7 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   }
   ASSERT_TRUE(read_called);
   closesocket(sockpair[1]);
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 int main(int argc, char** argv) {

@@ -120,7 +120,7 @@ CLIENT_PORT = flags.DEFINE_integer(
 TESTING_VERSION = flags.DEFINE_string(
     "testing_version",
     default=None,
-    help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+    help="The testing gRPC version branch name. Like master, dev, v1.55.x")
 
 FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
