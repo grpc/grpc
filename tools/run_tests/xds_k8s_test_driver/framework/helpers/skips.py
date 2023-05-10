@@ -61,12 +61,12 @@ class TestConfig:
 
         A version is greater than or equal to another version means its version
         number is greater than or equal to another version's number. Version
-        "master" is always considered latest.
+        "master" or "dev" are always considered the latest.
         E.g., master >= v1.41.x >= v1.40.x >= v1.9.x.
 
         Unspecified version is treated as 'master', but isn't explicitly set.
         """
-        if self.version == 'master' or self.version is None:
+        if self.version in ('master', 'dev', None):
             return True
         if another == 'master':
             return False
