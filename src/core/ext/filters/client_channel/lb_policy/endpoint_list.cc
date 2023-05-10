@@ -67,7 +67,7 @@ class EndpointList::Endpoint::Helper
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
-    auto old_state = absl::exchange(endpoint_->connectivity_state_, state);
+    auto old_state = std::exchange(endpoint_->connectivity_state_, state);
     endpoint_->picker_ = std::move(picker);
     endpoint_->OnStateUpdate(old_state, state, status);
   }
