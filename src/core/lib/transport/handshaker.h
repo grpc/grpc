@@ -86,7 +86,6 @@ struct HandshakerArgs {
 
 class Handshaker : public RefCounted<Handshaker> {
  public:
-  Handshaker() : RefCounted<Handshaker>("handshaker") {}
   ~Handshaker() override = default;
   virtual void Shutdown(grpc_error_handle why) = 0;
   virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,

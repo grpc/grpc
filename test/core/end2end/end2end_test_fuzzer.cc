@@ -64,8 +64,72 @@ int force_experiments = []() {
   return 1;
 }();
 
+namespace {
+// copy-paste from absl
+uint8_t CappedDamerauLevenshteinDistance(absl::string_view s1,
+                                         absl::string_view s2, uint8_t cutoff) {
+  const uint8_t MAX_SIZE = 100;
+  const uint8_t _cutoff = std::min(MAX_SIZE, cutoff);
+  const uint8_t cutoff_plus_1 = static_cast<uint8_t>(_cutoff + 1);
+
+  if (s1.size() > s2.size()) std::swap(s1, s2);
+  if (s1.size() + _cutoff < s2.size() || s2.size() > MAX_SIZE)
+    return cutoff_plus_1;
+
+  if (s1.empty()) return static_cast<uint8_t>(s2.size());
+
+  // Lower diagonal bound: y = x - lower_diag
+  const uint8_t lower_diag =
+      _cutoff - static_cast<uint8_t>(s2.size() - s1.size());
+  // Upper diagonal bound: y = x + upper_diag
+  const uint8_t upper_diag = _cutoff;
+
+  // d[i][j] is the number of edits required to convert s1[0, i] to s2[0, j]
+  std::array<std::array<uint8_t, MAX_SIZE + 2>, MAX_SIZE + 2> d;
+  std::iota(d[0].begin(), d[0].begin() + upper_diag + 1, 0);
+  d[0][cutoff_plus_1] = cutoff_plus_1;
+  for (size_t i = 1; i <= s1.size(); ++i) {
+    // Deduce begin of relevant window.
+    size_t j_begin = 1;
+    if (i > lower_diag) {
+      j_begin = i - lower_diag;
+      d[i][j_begin - 1] = cutoff_plus_1;
+    } else {
+      d[i][0] = static_cast<uint8_t>(i);
+    }
+
+    // Deduce end of relevant window.
+    size_t j_end = i + upper_diag;
+    if (j_end > s2.size()) {
+      j_end = s2.size();
+    } else {
+      d[i][j_end + 1] = cutoff_plus_1;
+    }
+
+    for (size_t j = j_begin; j <= j_end; ++j) {
+      const uint8_t deletion_distance = d[i - 1][j] + 1;
+      const uint8_t insertion_distance = d[i][j - 1] + 1;
+      const uint8_t mismatched_tail_cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
+      const uint8_t mismatch_distance = d[i - 1][j - 1] + mismatched_tail_cost;
+      uint8_t transposition_distance = _cutoff + 1;
+      if (i > 1 && j > 1 && s1[i - 1] == s2[j - 2] && s1[i - 2] == s2[j - 1])
+        transposition_distance = d[i - 2][j - 2] + 1;
+      d[i][j] = std::min({cutoff_plus_1, deletion_distance, insertion_distance,
+                          mismatch_distance, transposition_distance});
+    }
+  }
+  return d[s1.size()][s2.size()];
+}
+}  // namespace
+
 DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   grpc_core::g_is_fuzzing_core_e2e_tests = true;
+
+  struct Test {
+    std::string name;
+    absl::AnyInvocable<std::unique_ptr<grpc_core::CoreEnd2endTest>() const>
+        factory;
+  };
 
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
@@ -73,12 +137,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
     auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
     auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
-    std::map<absl::string_view,
-             std::map<absl::string_view,
-                      std::map<absl::string_view,
-                               absl::AnyInvocable<std::unique_ptr<
-                                   grpc_core::CoreEnd2endTest>() const>>>>
-        tests;
+    std::vector<Test> tests;
     for (const auto& test : all_tests) {
       if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
       if (only_suite.has_value() && test.suite != only_suite.value()) continue;
@@ -86,11 +145,14 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       if (only_config.has_value() && test.config->name != only_config.value()) {
         continue;
       }
-      tests[test.suite][test.name].emplace(test.config->name, [&test]() {
-        return std::unique_ptr<grpc_core::CoreEnd2endTest>(
-            test.make_test(test.config));
-      });
+      tests.emplace_back(
+          Test{absl::StrCat(test.suite, ".", test.name, "/", test.config->name),
+               [&test]() {
+                 return std::unique_ptr<grpc_core::CoreEnd2endTest>(
+                     test.make_test(test.config));
+               }});
     }
+    GPR_ASSERT(tests.size() > 0);
     return tests;
   }();
   static const auto only_experiment =
@@ -100,12 +162,17 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     gpr_set_log_function(dont_log);
   }
 
-  auto suite_it = tests.find(msg.suite());
-  if (suite_it == tests.end()) return;
-  auto test_it = suite_it->second.find(msg.test());
-  if (test_it == suite_it->second.end()) return;
-  auto config_it = test_it->second.find(msg.config());
-  if (config_it == test_it->second.end()) return;
+  auto test_name =
+      absl::StrCat(msg.suite(), ".", msg.test(), "/", msg.config());
+  size_t best_test = 0;
+  for (size_t i = 0; i < tests.size(); i++) {
+    if (CappedDamerauLevenshteinDistance(test_name, tests[i].name, 100) <
+        CappedDamerauLevenshteinDistance(test_name, tests[best_test].name,
+                                         100)) {
+      best_test = i;
+    }
+  }
+
   if (only_experiment.has_value() &&
       msg.config_vars().experiments() != only_experiment.value()) {
     return;
@@ -125,7 +192,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  auto test = config_it->second();
+  auto test = tests[best_test].factory();
   test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
