@@ -29,6 +29,7 @@ def _not_found_error():
             error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
         ))
 
+
 def _collect_transitive_dependencies(descriptor, seen_files):
     seen_files.update({descriptor.name: descriptor})
     for dependency in descriptor.dependencies:
