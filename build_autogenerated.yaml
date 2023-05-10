@@ -9836,6 +9836,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
   deps:
@@ -10000,6 +10001,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
@@ -10680,6 +10682,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/round_robin_test.cc
   deps:
@@ -13726,6 +13729,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
   deps:

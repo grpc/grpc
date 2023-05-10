@@ -3220,14 +3220,6 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
             DebugTag().c_str(), recv_close_op_cancel_state_.ToString().c_str(),
             result->DebugString().c_str());
   }
-  if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
-          result->get(GrpcCallWasCancelled()).value_or(true))) {
-    FinishOpOnCompletion(&recv_close_completion_,
-                         PendingOp::kReceiveCloseOnServer);
-  }
-  if (server_initial_metadata_ != nullptr) {
-    server_initial_metadata_->Close();
-  }
   const auto status =
       result->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   channelz::ServerNode* channelz_node = server_->channelz_node();
@@ -3237,6 +3229,14 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
     } else {
       channelz_node->RecordCallFailed();
     }
+  }
+  if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
+          result->get(GrpcCallWasCancelled()).value_or(true))) {
+    FinishOpOnCompletion(&recv_close_completion_,
+                         PendingOp::kReceiveCloseOnServer);
+  }
+  if (server_initial_metadata_ != nullptr) {
+    server_initial_metadata_->Close();
   }
   absl::string_view message_string;
   if (Slice* message = result->get_pointer(GrpcMessageMetadata())) {
