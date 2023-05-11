@@ -743,7 +743,7 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsOverrideHostLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
   }
