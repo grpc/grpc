@@ -50,6 +50,8 @@ grpc_py_binary(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+    # TODO(yijiem): enable the event_engine_dns_experiment version for Windows once it is implemented
+    tags = ["no_windows" if len(enable_event_engine_dns_experiment) > 0 else ""],
 ) for enable_event_engine_dns_experiment in [
     "",
     "_enable_event_engine_dns_experiment",
