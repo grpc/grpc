@@ -31,7 +31,6 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -89,13 +88,9 @@ class FrameDeserializer {
   }
 
   // Return message length to get payload size in data plane.
-  uint32_t GetMessageLength() const {
-    return header_.message_length;
-  }
+  uint32_t GetMessageLength() const { return header_.message_length; }
   // Return message padding to get padding size in data plane.
-  uint32_t GetMessagePadding() const {
-    return header_.message_padding;
-  }
+  uint32_t GetMessagePadding() const { return header_.message_padding; }
 
   absl::Status Finish() { return absl::OkStatus(); }
 

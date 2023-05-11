@@ -5532,7 +5532,6 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
-        "context",
         "no_destruct",
         "slice",
         "slice_buffer",

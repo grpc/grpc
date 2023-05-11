@@ -44,7 +44,8 @@ template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
-  GPR_ASSERT(serialized.Length() >= 24);  // Initial output buffer size is 64 byte.
+  GPR_ASSERT(serialized.Length() >=
+             24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
   serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);

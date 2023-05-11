@@ -16,8 +16,6 @@
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
-#include <string.h>
-
 #include <cstdint>
 
 #include "absl/status/status.h"
@@ -53,7 +51,7 @@ void FrameHeader::Serialize(uint8_t* data) const {
 }
 
 // Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
-absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) { 
+absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   FrameHeader header;
   const uint32_t type_and_flags = ReadLittleEndianUint32(data);
   header.type = static_cast<FrameType>(type_and_flags & 0xff);
@@ -69,8 +67,8 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
 }
 
 uint32_t FrameHeader::GetFrameLength() const {
-  // In chaotic-good transport design, message and message padding are sent through different channel.
-  // So not included in the frame length calculation.
+  // In chaotic-good transport design, message and message padding are sent
+  // through different channel. So not included in the frame length calculation.
   uint32_t frame_length = header_length + trailer_length;
   return frame_length;
 }
