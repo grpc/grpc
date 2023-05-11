@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
+static bool g_is_shutdown = true;
 
 //******************************************************************************
 // Singleton epoll set related fields
@@ -1278,10 +1279,15 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
 
     is_any_background_poller_thread,
     /* name = */ "epoll1",
-    /* check_engine_available = */ [](bool) { return init_epoll1_linux(); },
-    /* init_engine = */ []() {},
+    /* check_engine_available = */
+    [](bool) { return init_epoll1_linux(); },
+    /* init_engine = */
+    []() {
+      if (g_is_shutdown) GPR_ASSERT(init_epoll1_linux());
+    },
     shutdown_background_closure,
-    /* shutdown_engine = */ []() {},
+    /* shutdown_engine = */
+    []() { g_is_shutdown = true; },
     add_closure_to_background_poller,
 
     fd_set_pre_allocated,
@@ -1328,6 +1334,7 @@ static bool init_epoll1_linux() {
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);
   }
+  g_is_shutdown = false;
   return true;
 }
 
