@@ -96,10 +96,9 @@ class EndpointList::Endpoint::Helper
 // EndpointList::Endpoint
 //
 
-EndpointList::Endpoint::Endpoint(
-    RefCountedPtr<EndpointList> endpoint_list, const ServerAddress& address,
-    const ChannelArgs& args, std::shared_ptr<WorkSerializer> work_serializer)
-    : endpoint_list_(std::move(endpoint_list)) {
+void EndpointList::Endpoint::Init(
+    const ServerAddress& address, const ChannelArgs& args,
+    std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
       args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
           .Set(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX, true);
@@ -112,8 +111,9 @@ EndpointList::Endpoint::Endpoint(
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "pick_first", std::move(lb_policy_args));
   if (GPR_UNLIKELY(endpoint_list_->tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "[RR %p] endpoint %p: created child policy %p",
-            endpoint_list_->policy_.get(), this, child_policy_.get());
+    gpr_log(GPR_INFO, "[%s %p] endpoint %p: created child policy %p",
+            endpoint_list_->tracer_, endpoint_list_->policy_.get(), this,
+            child_policy_.get());
   }
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on

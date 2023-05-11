@@ -97,8 +97,9 @@ class RoundRobin : public LoadBalancingPolicy {
       RoundRobinEndpoint(RefCountedPtr<RoundRobinEndpointList> endpoint_list,
                          const ServerAddress& address, const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer)
-          : Endpoint(std::move(endpoint_list), address, args,
-                     std::move(work_serializer)) {}
+          : Endpoint(std::move(endpoint_list)) {
+        Init(address, args, std::move(work_serializer));
+      }
 
      private:
       // Called when the child policy reports a connectivity state update.
@@ -296,7 +297,7 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
     absl::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* rr_endpoint_list = endpoint_list<RoundRobinEndpointList>();
-  auto* round_robin = rr_endpoint_list->policy<RoundRobin>();
+  auto* round_robin = policy<RoundRobin>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p] connectivity changed for child %p, endpoint_list %p "

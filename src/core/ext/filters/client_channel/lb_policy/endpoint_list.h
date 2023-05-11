@@ -92,18 +92,6 @@ class MyEndpointList : public EndpointList {
 */
 class EndpointList : public InternallyRefCounted<EndpointList> {
  public:
-  ~EndpointList() override { policy_.reset(DEBUG_LOCATION, "EndpointList"); }
-
-  void Orphan() override {
-    endpoints_.clear();
-    Unref();
-  }
-
-  size_t size() const { return endpoints_.size(); }
-
-  void ResetBackoffLocked();
-
- protected:
   // An individual endpoint.
   class Endpoint : public InternallyRefCounted<Endpoint> {
    public:
@@ -122,15 +110,27 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     }
 
    protected:
-    Endpoint(RefCountedPtr<EndpointList> endpoint_list,
-             const ServerAddress& address, const ChannelArgs& args,
-             std::shared_ptr<WorkSerializer> work_serializer);
+    // We use two-phase initialization here to ensure that the vtable is
+    // initialized before we need to use it.  Subclass must invoke Init()
+    // from inside its ctor.
+    explicit Endpoint(RefCountedPtr<EndpointList> endpoint_list)
+        : endpoint_list_(std::move(endpoint_list)) {}
+
+    void Init(const ServerAddress& address, const ChannelArgs& args,
+              std::shared_ptr<WorkSerializer> work_serializer);
 
     // Templated for convenience, to provide a short-hand for
     // down-casting in the caller.
     template <typename T>
     T* endpoint_list() const {
       return static_cast<T*>(endpoint_list_.get());
+    }
+
+    // Templated for convenience, to provide a short-hand for down-casting
+    // in the caller.
+    template <typename T>
+    T* policy() const {
+      return endpoint_list_->policy<T>();
     }
 
     // Returns the index of this endpoint within the EndpointList.
@@ -150,11 +150,28 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
         ServerAddress address, const ChannelArgs& args);
 
     RefCountedPtr<EndpointList> endpoint_list_;
+
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
     absl::optional<grpc_connectivity_state> connectivity_state_;
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 
+  ~EndpointList() override { policy_.reset(DEBUG_LOCATION, "EndpointList"); }
+
+  void Orphan() override {
+    endpoints_.clear();
+    Unref();
+  }
+
+  size_t size() const { return endpoints_.size(); }
+
+  const std::vector<OrphanablePtr<Endpoint>>& endpoints() const {
+    return endpoints_;
+  }
+
+  void ResetBackoffLocked();
+
+ protected:
   // We use two-phase initialization here to ensure that the vtable is
   // initialized before we need to use it.  Subclass must invoke Init()
   // from inside its ctor.
@@ -172,10 +189,6 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   template <typename T>
   T* policy() const {
     return static_cast<T*>(policy_.get());
-  }
-
-  const std::vector<OrphanablePtr<Endpoint>>& endpoints() const {
-    return endpoints_;
   }
 
   // Returns true if all endpoints have seen their initial connectivity
