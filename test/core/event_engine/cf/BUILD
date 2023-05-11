@@ -27,6 +27,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:gpr_platform",
         "//src/core:cf_event_engine",
         "//test/core/util:grpc_test_util",
     ],
