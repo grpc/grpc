@@ -431,7 +431,7 @@ void GrpcAresRequest::StartTimers() {
   // Initialize overall DNS resolution timeout alarm
   EventEngine::Duration timeout =
       timeout_.count() == 0 ? EventEngine::Duration::max() : timeout_;
-  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p StartTimers timeout in %" PRId64
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p StartTimers timeout in %" PRIu64
                               " ms",
                               this, Milliseconds(timeout));
 
@@ -446,7 +446,7 @@ void GrpcAresRequest::StartTimers() {
   EventEngine::Duration next_ares_backup_poll_alarm_duration =
       calculate_next_ares_backup_poll_alarm_duration();
   GRPC_ARES_WRAPPER_TRACE_LOG(
-      "request:%p StartTimers next ares process poll time in %" PRId64 " ms",
+      "request:%p StartTimers next ares process poll time in %" PRIu64 " ms",
       this, Milliseconds(next_ares_backup_poll_alarm_duration));
 
   ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(

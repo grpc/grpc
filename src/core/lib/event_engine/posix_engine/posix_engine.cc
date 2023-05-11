@@ -70,9 +70,9 @@ using namespace std::chrono_literals;
 namespace grpc_event_engine {
 namespace experimental {
 
-using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
-
 #ifdef GRPC_POSIX_SOCKET_TCP
+
+using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
@@ -480,6 +480,8 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     const ResolverOptions& options, PosixEnginePollerManager* poller_manager,
     PosixEventEngine* event_engine)
@@ -626,10 +628,16 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
   return false;
 }
 
+#endif  // GRPC_POSIX_SOCKET_TCP
+
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
+#ifdef GRPC_POSIX_SOCKET_TCP
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       options, poller_manager_.get(), this);
+#else   // GRPC_POSIX_SOCKET_TCP
+  grpc_core::Crash("unimplemented");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
