@@ -41,9 +41,9 @@ from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
+from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
-from ._typing import RequestIterableType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
