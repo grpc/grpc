@@ -42,22 +42,8 @@ _VALID_CONFIG_TRACING_STATS = """
 }
 """
 
-_VALID_CONFIG_TRACING_ONLY = """
-{
-    "project_id":"test-project",
-    "cloud_trace":{
-       "sampling_rate":1.00
-    }
-}
-"""
-_VALID_CONFIG_STATS_ONLY = """
-{
-    "project_id":"test-project",
-    "cloud_monitoring":{}
-}
-"""
-_INVALID_CONFIG = 'INVALID'
-# The following metrcis might not exist
+# Depends on grpc_core::IsTransportSuppliesClientLatencyEnabled,
+# the following metrcis might not exist.
 _SKIP_VEFIRY = [grpc_observability.MetricsName.CLIENT_TRANSPORT_LATENCY]
 _SPAN_PREFIXS = ['Recv', 'Sent', 'Attempt']
 
@@ -165,12 +151,19 @@ class ObservabilityTest(unittest.TestCase):
                 o11y.init(exporter=self.test_exporter)
 
     def testThrowErrorWithInvalidConfig(self):
+        _INVALID_CONFIG = 'INVALID'
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _INVALID_CONFIG
         with self.assertRaises(ValueError):
             with grpc_observability.GCPOpenCensusObservability() as o11y:
                 o11y.init(exporter=self.test_exporter)
 
     def testRecordUnaryUnaryStatsOnly(self):
+        _VALID_CONFIG_STATS_ONLY = """
+            {
+                "project_id":"test-project",
+                "cloud_monitoring":{}
+            }
+            """
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_STATS_ONLY
         with grpc_observability.GCPOpenCensusObservability() as o11y:
             o11y.init(exporter=self.test_exporter)
@@ -185,6 +178,14 @@ class ObservabilityTest(unittest.TestCase):
         self._server.stop(0)
 
     def testRecordUnaryUnaryTracingOnly(self):
+        _VALID_CONFIG_TRACING_ONLY = """
+            {
+                "project_id":"test-project",
+                "cloud_trace":{
+                "sampling_rate":1.00
+                }
+            }
+            """
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_ONLY
         with grpc_observability.GCPOpenCensusObservability() as o11y:
             o11y.init(exporter=self.test_exporter)

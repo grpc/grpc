@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(xuanwn): clean up includes
 #include <string>
 #include <initializer_list>
 #include <sstream>
@@ -88,9 +89,7 @@ static constexpr size_t kSizeTraceID = 16;
 static constexpr size_t kSizeSpanID = 8;
 static constexpr size_t kSizeTraceOptions = 1;
 
-static_assert(kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 +
-                      kTraceOptionsLen ==
-                  kGrpcTraceBinHeaderLen,
+static_assert(kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 + kTraceOptionsLen == kGrpcTraceBinHeaderLen,
               "header length is wrong");
 
 struct Tag {
