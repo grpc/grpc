@@ -109,5 +109,4 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H

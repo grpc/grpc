@@ -480,7 +480,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     const ResolverOptions& options, PosixEnginePollerManager* poller_manager,
@@ -628,16 +628,16 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
   return false;
 }
 
-#endif  // GRPC_ARES == 1
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       options, poller_manager_.get(), this);
-#else   // GRPC_ARES == 1
+#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   grpc_core::Crash("unimplemented");
-#endif  // GRPC_ARES == 1
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 }
 
 bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
