@@ -44,6 +44,8 @@ sudo apt-get install python3-venv
    gcloud services enable \
      compute.googleapis.com \
      container.googleapis.com \
+     logging.googleapis.com \
+     monitoring.googleapis.com \
      networksecurity.googleapis.com \
      networkservices.googleapis.com \
      secretmanager.googleapis.com \

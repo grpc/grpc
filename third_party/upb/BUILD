@@ -104,6 +104,7 @@ package_group(
 cc_library(
     name = "port",
     hdrs = [
+        "upb/port/atomic.h",
         "upb/port/vsnprintf_compat.h",
     ],
     copts = UPB_DEFAULT_COPTS,
@@ -138,6 +139,7 @@ cc_library(
         "upb/string_view.h",
         "upb/upb.h",
         "upb/upb.hpp",
+        "upb/wire/common.h",
         "upb/wire/decode.h",
         "upb/wire/encode.h",
     ],
@@ -263,6 +265,7 @@ cc_library(
     name = "message_accessors",
     srcs = [
         "upb/message/accessors.c",
+        "upb/message/accessors_internal.h",
     ],
     hdrs = [
         "upb/message/accessors.h",
@@ -279,6 +282,50 @@ cc_library(
         ":upb",
         ":wire",
         ":wire_reader",
+    ],
+)
+
+cc_library(
+    name = "message_promote",
+    srcs = [
+        "upb/message/promote.c",
+    ],
+    hdrs = [
+        "upb/message/promote.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":collections_internal",
+        ":eps_copy_input_stream",
+        ":hash",
+        ":message_accessors",
+        ":message_internal",
+        ":mini_table_internal",
+        ":port",
+        ":upb",
+        ":wire",
+        ":wire_reader",
+    ],
+)
+
+cc_library(
+    name = "message_copy",
+    srcs = [
+        "upb/message/copy.c",
+    ],
+    hdrs = [
+        "upb/message/copy.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":collections_internal",
+        ":message_accessors",
+        ":message_internal",
+        ":mini_table_internal",
+        ":port",
+        ":upb",
     ],
 )
 
@@ -306,6 +353,44 @@ cc_test(
     deps = [
         ":collections",
         ":message_accessors",
+        ":mini_table_internal",
+        ":port",
+        ":upb",
+        "//upb/test:test_messages_proto2_upb_proto",
+        "//upb/test:test_messages_proto3_upb_proto",
+        "//upb/test:test_upb_proto",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "message_promote_test",
+    srcs = ["upb/message/promote_test.cc"],
+    deps = [
+        ":collections",
+        ":message_accessors",
+        ":message_promote",
+        ":mini_table_internal",
+        ":port",
+        ":upb",
+        "//upb/test:test_messages_proto2_upb_proto",
+        "//upb/test:test_messages_proto3_upb_proto",
+        "//upb/test:test_upb_proto",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "message_copy_test",
+    srcs = ["upb/message/copy_test.cc"],
+    deps = [
+        ":collections",
+        ":message_accessors",
+        ":message_copy",
         ":mini_table_internal",
         ":upb",
         "//upb/test:test_messages_proto2_upb_proto",
@@ -347,6 +432,7 @@ cc_library(
         "upb/collections/message_value.h",
         "upb/extension_registry.h",
         "upb/message/accessors.h",
+        "upb/message/accessors_internal.h",
         "upb/message/extension_internal.h",
         "upb/message/internal.h",
         "upb/message/message.h",
@@ -378,9 +464,11 @@ cc_library(
 cc_library(
     name = "generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     hdrs = [
+        "upb/message/copy.h",
         "upb/message/extension_internal.h",
         "upb/message/internal.h",
         "upb/message/message.h",
+        "upb/mini_table/common.h",
         "upb/mini_table/enum_internal.h",
         "upb/mini_table/extension_internal.h",
         "upb/mini_table/field_internal.h",
@@ -401,6 +489,7 @@ cc_library(
         ":base",
         ":collections_internal",
         ":hash",
+        ":message_copy",
         ":mini_table",
         ":upb",
     ],
@@ -636,11 +725,6 @@ cc_test(
         "upb/reflection/def_builder_test.cc",
         "upb/reflection/def_type.h",
     ],
-    # TODO(b/259158612): fix this test on Windows.
-    target_compatible_with = select({
-        "@platforms//os:windows": ["//third_party/bazel_platforms:incompatible"],
-        "//conditions:default": [],
-    }),
     deps = [
         ":descriptor_upb_proto",
         ":hash",
@@ -648,6 +732,7 @@ cc_test(
         ":reflection",
         ":reflection_internal",
         ":upb",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -787,6 +872,19 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "arena_test",
+    srcs = ["upb/mem/arena_test.cc"],
+    deps = [
+        ":port",
+        ":upb",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/random:distributions",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "mem_internal",
     srcs = [
@@ -828,6 +926,7 @@ cc_library(
         "upb/wire/encode.c",
     ],
     hdrs = [
+        "upb/wire/common.h",
         "upb/wire/common_internal.h",
         "upb/wire/decode.h",
         "upb/wire/decode_fast.h",

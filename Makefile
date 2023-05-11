@@ -908,6 +908,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -1461,7 +1462,9 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -1470,6 +1473,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -1776,6 +1780,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -2011,7 +2016,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -2020,6 +2027,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -2268,6 +2276,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -2664,8 +2673,8 @@ LIBUPB_SRC = \
     third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/collections/array.c \
-    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/collections/map_sorter.c \
+    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
@@ -2691,15 +2700,15 @@ LIBUPB_SRC = \
     third_party/upb/upb/reflection/extension_range.c \
     third_party/upb/upb/reflection/field_def.c \
     third_party/upb/upb/reflection/file_def.c \
-    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/message_def.c \
     third_party/upb/upb/reflection/message_reserved_range.c \
+    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/method_def.c \
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
-    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/decode_fast.c \
+    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
     third_party/upb/upb/wire/reader.c \

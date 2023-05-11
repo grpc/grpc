@@ -74,7 +74,7 @@ class CFEventEngine : public EventEngine,
   grpc_core::Mutex conn_mu_;
   ConnectionHandleSet conn_handles_ ABSL_GUARDED_BY(conn_mu_);
 
-  std::shared_ptr<ThreadPool> executor_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   TimerManager timer_manager_;
 };
 
