@@ -467,6 +467,8 @@ typedef struct {
 /** If set, uses a local subchannel pool within the channel. Otherwise, uses the
  * global subchannel pool. */
 #define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL "grpc.use_local_subchannel_pool"
+/** If set, privacy. */
+#define GRPC_ARG_PRIVACY "grpc.privacy"
 /** gRPC Objective-C channel pooling domain string. */
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
