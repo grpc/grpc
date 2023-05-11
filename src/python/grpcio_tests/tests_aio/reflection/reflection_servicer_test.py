@@ -25,6 +25,7 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
+from src.proto.grpc.testing.proto2 import empty2_pb2
 from tests_aio.unit._test_base import AioTestBase
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
@@ -132,9 +133,11 @@ class ReflectionServicerTest(AioTestBase):
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
                 valid_host='',
-                file_descriptor_response=reflection_pb2.FileDescriptorResponse(
-                    file_descriptor_proto=(_file_descriptor_to_proto(
-                        empty2_extensions_pb2.DESCRIPTOR),))),
+                file_descriptor_response=reflection_pb2.
+                FileDescriptorResponse(file_descriptor_proto=(
+                    _file_descriptor_to_proto(empty2_extensions_pb2.DESCRIPTOR),
+                    _file_descriptor_to_proto(empty2_pb2.DESCRIPTOR),
+                ))),
             reflection_pb2.ServerReflectionResponse(
                 valid_host='',
                 error_response=reflection_pb2.ErrorResponse(
