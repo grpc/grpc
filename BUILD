@@ -2272,7 +2272,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
-    visibility = ["@grpc:public"],
+    visibility = ["@grpc:grpc_python_observability"],
     deps = ["gpr_platform"],
 )
 
