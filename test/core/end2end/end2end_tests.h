@@ -771,7 +771,7 @@ class CoreEnd2endTestRegistry {
   };
 
   void RegisterTest(absl::string_view suite, absl::string_view name,
-                    MakeTestFn run_test, SourceLocation where = {});
+                    MakeTestFn make_test, SourceLocation where = {});
 
   void RegisterSuite(absl::string_view suite,
                      std::vector<const CoreTestConfiguration*> configs,
