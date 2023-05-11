@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "StreamingErrorResponseRequestStatusEarly"
+config: "Chttp2FakeSecurityFullstack"

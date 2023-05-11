@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -28,6 +31,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 class CFEventEngine : public EventEngine,
+                      public Scheduler,
                       public grpc_core::KeepsGrpcInitialized {
  public:
   CFEventEngine();
@@ -60,9 +64,16 @@ class CFEventEngine : public EventEngine,
   struct Closure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
-  grpc_core::Mutex mu_;
-  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+
+  bool CancelConnectInternal(ConnectionHandle handle, absl::Status status);
+
+  grpc_core::Mutex task_mu_;
+  TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
   std::atomic<intptr_t> aba_token_{0};
+
+  grpc_core::Mutex conn_mu_;
+  ConnectionHandleSet conn_handles_ ABSL_GUARDED_BY(conn_mu_);
+
   std::shared_ptr<ThreadPool> thread_pool_;
   TimerManager timer_manager_;
 };
