@@ -92,7 +92,7 @@ class TestLoggingSink : public grpc_core::LoggingSink {
   }
 
   // Waits for \a duration till we have \a num_entries in the log.
-  void WaitForNumEntries(int num_entries, absl::Duration duration) {
+  void WaitForNumEntries(size_t num_entries, absl::Duration duration) {
     absl::Time deadline = absl::Now() + duration * grpc_test_slowdown_factor();
     grpc_core::MutexLock lock(&mu_);
     while (entries_.size() != num_entries) {
