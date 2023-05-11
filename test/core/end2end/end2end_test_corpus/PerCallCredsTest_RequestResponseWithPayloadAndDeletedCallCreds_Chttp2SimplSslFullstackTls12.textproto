@@ -1,0 +1,3 @@
+suite: "PerCallCredsTest"
+test: "RequestResponseWithPayloadAndDeletedCallCreds"
+config: "Chttp2SimplSslFullstackTls12"

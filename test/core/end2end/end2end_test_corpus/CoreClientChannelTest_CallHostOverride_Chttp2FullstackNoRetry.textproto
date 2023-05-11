@@ -1,0 +1,6 @@
+suite: "CoreClientChannelTest"
+test: "CallHostOverride"
+config: "Chttp2FullstackNoRetry"
+config_vars {
+  experiments: "flow_control_fixes"
+}

@@ -1,0 +1,3 @@
+suite: "RetryHttp2Test"
+test: "ConnectivityWatch"
+config: "Chttp2FakeSecurityFullstack"

@@ -21,10 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "test/core/util/fuzz_config_vars.pb.h"
 
 namespace grpc_core {
 
+ConfigVars::Overrides OverridesFromFuzzConfigVars(
+    const grpc::testing::FuzzConfigVars& vars);
 void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);
 
 }  // namespace grpc_core
