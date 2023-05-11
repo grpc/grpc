@@ -4523,6 +4523,10 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_CARES_LIBRARIES}
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::cleanup
@@ -11673,6 +11677,10 @@ target_link_libraries(frame_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_CARES_LIBRARIES}
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
