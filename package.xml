@@ -1137,6 +1137,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/linux/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/log_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/msys/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/posix/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/posix/log.cc" role="src" />
