@@ -33,7 +33,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
-TEST_P(RetryTest, RetryRecvMessage) {
+CORE_END2END_TEST(RetryTest, RetryRecvMessage) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

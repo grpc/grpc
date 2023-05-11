@@ -38,7 +38,7 @@ std::atomic<int> g_num_lb_picks;
 // - 1 retry allowed for ABORTED status
 // - on first attempt, LB policy fails with ABORTED before application
 //   starts recv_trailing_metadata op
-TEST_P(RetryTest, RetryLbFail) {
+CORE_END2END_TEST(RetryTest, RetryLbFail) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     RegisterFailLoadBalancingPolicy(
         builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);

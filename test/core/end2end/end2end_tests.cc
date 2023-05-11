@@ -33,9 +33,10 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_core {
+
+bool g_is_fuzzing_core_e2e_tests = false;
 
 Slice RandomSlice(size_t length) {
   size_t i;
@@ -83,14 +84,26 @@ void CoreEnd2endTest::SetUp() {
 
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
+  ShutdownAndDestroyClient();
+  ShutdownAndDestroyServer();
   cq_verifier_.reset();
+  if (cq_ != nullptr) {
+    grpc_completion_queue_shutdown(cq_);
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
+                                      nullptr);
+    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+    grpc_completion_queue_destroy(cq_);
+    cq_ = nullptr;
+  }
   fixture_.reset();
 // TODO(hork): locate the windows leak so we can enable end2end experiments.
 #ifndef GPR_WINDOWS
   // Creating an EventEngine requires gRPC initialization, which the NoOp test
   // does not do. Skip the EventEngine check if unnecessary.
   if (grpc_is_initialized()) {
-    grpc_event_engine::experimental::WaitForSingleOwner(
+    quiesce_event_engine_(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 #endif
@@ -102,6 +115,8 @@ void CoreEnd2endTest::TearDown() {
       gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
     }
   }
+  GPR_ASSERT(client_ == nullptr);
+  GPR_ASSERT(server_ == nullptr);
   initialized_ = false;
 }
 
@@ -259,24 +274,22 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
     return Call(grpc_channel_create_call(
-        test_.fixture().client(), parent_call_, propagation_mask_,
-        test_.fixture().cq(), Slice::FromCopiedString(u->method).c_slice(),
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        Slice::FromCopiedString(u->method).c_slice(),
         host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
   } else {
     return Call(grpc_channel_create_registered_call(
-        test_.fixture().client(), parent_call_, propagation_mask_,
-        test_.fixture().cq(), absl::get<void*>(call_selector_), deadline_,
-        nullptr));
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        absl::get<void*>(call_selector_), deadline_, nullptr));
   }
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
     : impl_(std::make_unique<Impl>()) {
   test.ForceInitialized();
-  grpc_server_request_call(test.fixture().server(), impl_->call.call_ptr(),
+  grpc_server_request_call(test.server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,
-                           test.fixture().cq(), test.fixture().cq(),
-                           CqVerifier::tag(tag));
+                           test.cq(), test.cq(), CqVerifier::tag(tag));
 }
 
 absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
@@ -287,9 +300,64 @@ absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    fixture().InitServer(ChannelArgs());
-    fixture().InitClient(ChannelArgs());
+    InitServer(ChannelArgs());
+    InitClient(ChannelArgs());
   }
+}
+
+void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
+                                           absl::string_view name,
+                                           MakeTestFn make_test,
+                                           SourceLocation) {
+  if (absl::StartsWith(name, "DISABLED_")) return;
+  auto& tests = tests_by_suite_[suite];
+  GPR_ASSERT(tests.count(name) == 0);
+  tests[name] = std::move(make_test);
+}
+
+void CoreEnd2endTestRegistry::RegisterSuite(
+    absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
+    SourceLocation) {
+  GPR_ASSERT(suites_.count(suite) == 0);
+  suites_[suite] = std::move(configs);
+}
+
+namespace {
+template <typename Map>
+std::vector<absl::string_view> KeysFrom(const Map& map) {
+  std::vector<absl::string_view> out;
+  out.reserve(map.size());
+  for (const auto& elem : map) {
+    out.push_back(elem.first);
+  }
+  return out;
+}
+}  // namespace
+
+std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
+  if (tests_by_suite_.size() != suites_.size()) {
+    CrashWithStdio(absl::StrCat(
+        "ERROR: Some suites are not registered:\n",
+        "TESTS use suites: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\nSUITES have: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\n"));
+  }
+  GPR_ASSERT(tests_by_suite_.size() == suites_.size());
+  std::vector<Test> tests;
+  for (const auto& suite_configs : suites_) {
+    if (suite_configs.second.empty()) {
+      CrashWithStdio(
+          absl::StrCat("Suite ", suite_configs.first, " has no tests"));
+    }
+    GPR_ASSERT(tests_by_suite_.count(suite_configs.first) == 1);
+    for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
+      for (const auto* config : suite_configs.second) {
+        tests.push_back(Test{suite_configs.first, test_factory.first, config,
+                             test_factory.second});
+      }
+    }
+  }
+  return tests;
 }
 
 }  // namespace grpc_core
