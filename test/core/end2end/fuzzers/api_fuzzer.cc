@@ -70,16 +70,8 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/passthru_endpoint.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
-
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxWaitMs = grpc_core::Duration::Hours(1).millis();
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxAddNReadableBytes = (2 * 1024 * 1024);  // 2GB
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxAddNWritableBytes = (2 * 1024 * 1024);  // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -252,9 +244,6 @@ class ApiFuzzer : public BasicFuzzer {
   void TryShutdown();
   void Tick();
   grpc_server* Server() { return server_; }
-  const std::vector<grpc_passthru_endpoint_channel_action>& ChannelActions() {
-    return channel_actions_;
-  }
 
  private:
   Result PollCq() override;
@@ -284,7 +273,6 @@ class ApiFuzzer : public BasicFuzzer {
   grpc_server* server_ = nullptr;
   grpc_channel* channel_ = nullptr;
   grpc_resource_quota* resource_quota_;
-  std::vector<grpc_passthru_endpoint_channel_action> channel_actions_;
   std::atomic<bool> channel_force_delete_{false};
   std::vector<std::shared_ptr<Call>> calls_;
   size_t active_call_ = 0;
@@ -874,7 +862,6 @@ void ApiFuzzer::Tick() {
   if (channel_force_delete_.exchange(false) && channel_) {
     grpc_channel_destroy(channel_);
     channel_ = nullptr;
-    channel_actions_.clear();
   }
 }
 
@@ -895,36 +882,19 @@ ApiFuzzer::Result ApiFuzzer::PollCq() {
 }
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
-  if (!create_channel.channel_actions_size() || channel_ != nullptr) {
-    return Result::kFailed;
-  } else {
-    grpc_channel_args* args =
-        ReadArgs(resource_quota_, create_channel.channel_args());
-    grpc_channel_credentials* creds =
-        create_channel.has_channel_creds()
-            ? ReadChannelCreds(create_channel.channel_creds())
-            : grpc_insecure_credentials_create();
-    channel_ =
-        grpc_channel_create(create_channel.target().c_str(), creds, args);
-    grpc_channel_credentials_release(creds);
-    channel_actions_.clear();
-    for (int i = 0; i < create_channel.channel_actions_size(); i++) {
-      const api_fuzzer::ChannelAction& channel_action =
-          create_channel.channel_actions(i);
-      channel_actions_.push_back({
-          std::min(channel_action.wait_ms(), kMaxWaitMs),
-          std::min(channel_action.add_n_bytes_writable(),
-                   kMaxAddNWritableBytes),
-          std::min(channel_action.add_n_bytes_readable(),
-                   kMaxAddNReadableBytes),
-      });
-    }
-    GPR_ASSERT(channel_ != nullptr);
-    channel_force_delete_ = false;
-    {
-      grpc_core::ExecCtx exec_ctx;
-      grpc_channel_args_destroy(args);
-    }
+  grpc_channel_args* args =
+      ReadArgs(resource_quota_, create_channel.channel_args());
+  grpc_channel_credentials* creds =
+      create_channel.has_channel_creds()
+          ? ReadChannelCreds(create_channel.channel_creds())
+          : grpc_insecure_credentials_create();
+  channel_ = grpc_channel_create(create_channel.target().c_str(), creds, args);
+  grpc_channel_credentials_release(creds);
+  GPR_ASSERT(channel_ != nullptr);
+  channel_force_delete_ = false;
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(args);
   }
   return Result::kComplete;
 }
