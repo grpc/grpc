@@ -21,6 +21,7 @@ for general contribution guidelines.
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
 - [jtattermusch](https://github.com/jtattermusch), Google LLC
+- [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
 - [murgatroid99](https://github.com/murgatroid99), Google LLC
@@ -57,7 +58,6 @@ for general contribution guidelines.
 - [kumaralokgithub](https://github.com/kumaralokgithub), Google LLC
 - [lidizheng](https://github.com/lidizheng), Google LLC
 - [lyuxuan](https://github.com/lyuxuan), Google LLC
-- [LittleCVR](https://github.com/littlecvr), Google LLC
 - [matt-kwong](https://github.com/matt-kwong), Google LLC
 - [medinandres](https://github.com/medinandres), Google LLC
 - [mehrdada](https://github.com/mehrdada), Dropbox, Inc.
