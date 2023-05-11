@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
-
+// TODO(xuanwn): clean up includes
 #include <stdint.h>
 #include <string.h>
 #include <thread>
@@ -25,6 +22,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -44,6 +43,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 #include "src/python/grpcio_observability/grpc_observability/observability_main.h"
 
@@ -80,7 +80,9 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 }  // namespace
 
-// PythonOpenCensusServerCallTracer implementation
+//
+// PythonOpenCensusServerCallTracer
+//
 
 class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
  public:
@@ -155,7 +157,6 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   // server method
   grpc_core::Slice path_;
   absl::string_view method_;
-  // recv message
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   uint64_t recv_message_count_;

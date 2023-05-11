@@ -76,19 +76,22 @@ void GenerateServerContext(absl::string_view header, absl::string_view method,
 void ToGrpcTraceBinHeader(PythonCensusContext& ctx, uint8_t* out) {
   out[kVersionOfs] = kVersionId;
   out[kTraceIdOfs] = kTraceIdField;
+  uint8_t trace_options_rep_[kSizeTraceOptions];
+
+  std::string trace_id = absl::HexStringToBytes(absl::string_view(ctx.Span().Context().TraceId()));
+  std::string span_id = absl::HexStringToBytes(absl::string_view(ctx.Span().Context().SpanId()));
+  trace_options_rep_[0] = ctx.Span().Context().IsSampled() ? 1 : 0;
 
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceIdOfs + 1]),
-         absl::HexStringToBytes(absl::string_view(ctx.Span().Context().TraceId())).c_str(),
+         trace_id.c_str(),
          kSizeTraceID);
 
   out[kSpanIdOfs] = kSpanIdField;
   memcpy(reinterpret_cast<uint8_t*>(&out[kSpanIdOfs + 1]),
-         absl::HexStringToBytes(absl::string_view(ctx.Span().Context().SpanId())).c_str(),
+         span_id.c_str(),
          kSizeSpanID);
 
   out[kTraceOptionsOfs] = kTraceOptionsField;
-  uint8_t trace_options_rep_[kSizeTraceOptions];
-  trace_options_rep_[0] = ctx.Span().Context().IsSampled() ? 1 : 0;
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceOptionsOfs + 1]), trace_options_rep_, kSizeTraceOptions);
 }
 

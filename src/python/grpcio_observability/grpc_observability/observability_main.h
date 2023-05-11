@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(xuanwn): clean up includes
 #include <stdint.h>
 #include <queue>
 #include <condition_variable>
 #include <mutex>
-#include <grpc/grpc.h>
 #include <chrono>
 #include <mutex>
 #include <map>
 
-// TODO(xuanwn): clean up includes
+#include <grpc/grpc.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
