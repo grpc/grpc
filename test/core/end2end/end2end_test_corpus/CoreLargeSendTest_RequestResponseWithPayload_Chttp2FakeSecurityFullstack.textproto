@@ -1,0 +1,3 @@
+suite: "CoreLargeSendTest"
+test: "RequestResponseWithPayload"
+config: "Chttp2FakeSecurityFullstack"

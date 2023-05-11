@@ -27,6 +27,9 @@
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
 #              that that test should be run with this experiment enabled in CI
+# allow_in_fuzzing_config: optional boolean (true if not specified)
+#              if false, this experiment will not be included in fuzzers that
+#              explore the config space
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
@@ -145,6 +148,7 @@
   expiry: 2023/06/01
   owner: yijiem@google.com
   test_tags: []
+  allow_in_fuzzing_config: false
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
@@ -152,3 +156,4 @@
   expiry: 2023/06/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: false

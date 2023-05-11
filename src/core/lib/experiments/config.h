@@ -46,6 +46,7 @@ struct ExperimentMetadata {
   const char* name;
   const char* description;
   bool default_value;
+  bool allow_in_fuzzing_config;
 };
 
 }  // namespace grpc_core

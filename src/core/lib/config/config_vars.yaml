@@ -25,7 +25,9 @@
 # behavior for some environment variables.
 #
 # Optionally, fuzz: true can be added to enable fuzzers to explore variations
-# in this config var with their regular fuzzing work.
+# in this config var with their regular fuzzing work - or fuzz: FunctionName 
+# can be used to specify that the config space be explored, but FunctionName should be called to pre-format/validate the value for fuzzing.
+# Such functions should be listed in fuzz_config_vars_helpers.h.
 
 - name: experiments
   type: string
@@ -33,7 +35,7 @@
     A comma separated list of currently active experiments. Experiments may be
     prefixed with a '-' to disable them.
   default:
-  fuzz: true
+  fuzz: ValidateExperimentsStringForFuzzing
 - name: client_channel_backup_poll_interval_ms
   type: int
   default: 5000

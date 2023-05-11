@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "TrailingMetadata"
+config: "Chttp2FakeSecurityFullstack"

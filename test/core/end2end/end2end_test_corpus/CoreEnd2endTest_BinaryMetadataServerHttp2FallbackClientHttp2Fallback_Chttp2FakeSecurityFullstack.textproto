@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "BinaryMetadataServerHttp2FallbackClientHttp2Fallback"
+config: "Chttp2FakeSecurityFullstack"

@@ -31,7 +31,7 @@ namespace {
 
 // Tests that we can continue to send/recv messages on a streaming call
 // after retries are committed.
-TEST_P(RetryTest, RetryStreamingAfterCommit) {
+CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -34,7 +34,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
-TEST_P(RetryTest, RetryRecvInitialMetadata) {
+CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

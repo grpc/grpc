@@ -1,0 +1,3 @@
+suite: "CoreClientChannelTest"
+test: "SubchannelFilterCallInitFails"
+config: "Chttp2FakeSecurityFullstack"

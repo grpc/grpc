@@ -61,7 +61,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(RetryHttp2Test, MaxConnectionIdle) {
+CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(

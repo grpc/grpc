@@ -100,19 +100,23 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
             key6_payload.as_string_view());
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
   BinaryMetadata(*this, true, false);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerHttp2FallbackClientTrueBinary) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerHttp2FallbackClientTrueBinary) {
   BinaryMetadata(*this, false, true);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerTrueBinaryClientTrueBinary) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerTrueBinaryClientTrueBinary) {
   BinaryMetadata(*this, true, true);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
   BinaryMetadata(*this, false, false);
 }
 

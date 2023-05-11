@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "CancelWithStatus4"
+config: "Chttp2FakeSecurityFullstack"

@@ -6236,6 +6236,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
   - test/core/end2end/fixtures/local_util.cc
@@ -9835,6 +9836,17 @@ targets:
   - test/core/gprpp/orphanable_test.cc
   deps:
   - grpc_test_util
+- name: osa_distance_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/osa_distance.h
+  src:
+  - test/core/util/osa_distance.cc
+  - test/core/util/osa_distance_test.cc
+  deps:
+  - absl/strings:strings
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
