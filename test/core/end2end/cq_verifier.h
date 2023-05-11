@@ -28,8 +28,10 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -77,7 +79,10 @@ class CqVerifier {
   // will produce nicer failure messages.
   explicit CqVerifier(
       grpc_completion_queue* cq,
-      absl::AnyInvocable<void(Failure)> fail = FailUsingGprCrash);
+      absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -117,10 +122,14 @@ class CqVerifier {
   void FailUnexpectedEvent(grpc_event* ev,
                            const SourceLocation& location) const;
   bool AllMaybes() const;
+  grpc_event Step(gpr_timespec deadline);
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
-  mutable absl::AnyInvocable<void(Failure)> fail_;
+  absl::AnyInvocable<void(Failure) const> fail_;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_;
 };
 
 }  // namespace grpc_core

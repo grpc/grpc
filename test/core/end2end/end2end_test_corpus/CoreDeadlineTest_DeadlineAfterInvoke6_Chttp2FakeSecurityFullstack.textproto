@@ -1,0 +1,3 @@
+suite: "CoreDeadlineTest"
+test: "DeadlineAfterInvoke6"
+config: "Chttp2FakeSecurityFullstack"

@@ -37,7 +37,7 @@ namespace {
 // - buffer size set to 100 KiB (larger than initial metadata)
 // - client sends a 100 KiB message
 // - first attempt gets ABORTED but is not retried
-TEST_P(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
+CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

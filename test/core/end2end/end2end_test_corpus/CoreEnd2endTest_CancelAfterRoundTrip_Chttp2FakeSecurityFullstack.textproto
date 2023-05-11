@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "CancelAfterRoundTrip"
+config: "Chttp2FakeSecurityFullstack"
