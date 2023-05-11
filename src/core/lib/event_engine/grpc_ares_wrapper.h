@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#if GRPC_ARES == 1
+
 #include <stddef.h>
 
 #include <algorithm>
@@ -330,4 +332,5 @@ class GrpcAresTXTRequest final : public GrpcAresRequest {
 extern void (*event_engine_grpc_ares_test_only_inject_config)(
     ares_channel channel);
 
+#endif  // GRPC_ARES == 1
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_GRPC_ARES_WRAPPER_H
