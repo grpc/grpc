@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
@@ -40,6 +41,7 @@
 #include "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -149,9 +151,14 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
 
 static int64_t CFStreamClientConnect(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
+    grpc_pollset_set* /*interested_parties*/,
+    const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        closure, ep, config, resolved_addr, deadline);
+  }
+
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
     grpc_error_handle error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
@@ -198,7 +205,11 @@ static int64_t CFStreamClientConnect(
   return 0;
 }
 
-static bool CFStreamClientCancelConnect(int64_t /*connection_handle*/) {
+static bool CFStreamClientCancelConnect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
   return false;
 }
 
