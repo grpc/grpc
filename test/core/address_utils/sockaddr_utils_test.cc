@@ -265,7 +265,6 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
 #ifdef GRPC_HAVE_VSOCK
   grpc_resolved_address inputvm;
-  struct sockaddr_vm* sock_vm = reinterpret_cast<struct sockaddr_vm*>(&inputvm);
   ASSERT_EQ(grpc_core::VSockaddrPopulate("-1:12345", &inputvm),
             absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputvm, true).value(),

@@ -208,7 +208,7 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
 #endif
 #ifdef GRPC_HAVE_VSOCK
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<VSockResolverFactory>());
+      std::make_unique<VSockResolverFactory>());
 #endif
 }
 
