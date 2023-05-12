@@ -60,6 +60,7 @@ TEST_F(LoggingTest, SimpleRpc) {
   context.AddMetadata("client-key", "client-value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -230,6 +231,7 @@ TEST_F(LoggingTest, MetadataTruncated) {
   context.AddMetadata("client-key-2", "client-value-2");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -387,6 +389,7 @@ TEST_F(LoggingTest, PayloadTruncated) {
   context.AddMetadata("client-key", "client-value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -593,6 +596,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
   EXPECT_EQ(status.error_code(), 25);
   EXPECT_EQ(status.error_message(), "error message");
   EXPECT_EQ(status.error_details(), "binary error details");
+  g_test_logging_sink->WaitForNumEntries(10, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
