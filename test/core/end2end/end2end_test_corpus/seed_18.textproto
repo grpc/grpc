@@ -1,3 +1,6 @@
 suite: "CoreClientChannelTest"
 test: "SubchannelFilterCallInitFails"
 config: "Chttp2FakeSecurityFullstack"
+config_vars {
+  experiments: "canary_client_privacy"
+}
