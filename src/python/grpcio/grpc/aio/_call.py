@@ -255,8 +255,7 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
     _call_response: asyncio.Task
 
-    def _init_unary_response_mixin(self,
-                                   response_task: asyncio.Task):
+    def _init_unary_response_mixin(self, response_task: asyncio.Task):
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -572,6 +571,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         await self._send_unary_request_task
         if self.done():
             await self._raise_for_status()
+
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
