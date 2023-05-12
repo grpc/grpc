@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /// Populate \a resolved_addr from \a uri, whose path is expected to contain a
