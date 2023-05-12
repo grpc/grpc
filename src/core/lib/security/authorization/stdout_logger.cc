@@ -61,7 +61,7 @@ std::string StdoutAuditLoggerFactory::Config::ToString() const { return "{}"; }
 absl::string_view StdoutAuditLoggerFactory::name() const { return kName; }
 
 absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json& json) {
+StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
   return std::make_unique<StdoutAuditLoggerFactory::Config>();
 }
 
