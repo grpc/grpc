@@ -29,7 +29,7 @@ ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
 ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 
 _plugin_lock: threading.RLock = threading.RLock()
-_OBSERVABILITY_PLUGIN: Optional[_ObservabilityPlugin] = None
+_OBSERVABILITY_PLUGIN: Optional[_ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
 
 
 class _ObservabilityPlugin(Generic[ClientCallTracerCapsule,
