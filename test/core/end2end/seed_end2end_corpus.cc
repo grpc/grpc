@@ -58,8 +58,9 @@ int main(int argc, char** argv) {
                       experiments.front(), "\"\n}\n");
       experiments.pop();
     }
-    auto file =
-        absl::StrCat("test/core/end2end/end2end_test_corpus/seed_", file_num, ".textproto");
+    // We use an index for the filename to keep the path short for Windows
+    auto file = absl::StrCat("test/core/end2end/end2end_test_corpus/seed_",
+                             file_num, ".textproto");
     ++file_num;
     fprintf(stderr, "WRITE: %s\n", file.c_str());
     FILE* f = fopen(file.c_str(), "w");
