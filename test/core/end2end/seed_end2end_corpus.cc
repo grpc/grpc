@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
   for (size_t i = 0; i < grpc_core::kNumExperiments; i++) {
     experiments.push(grpc_core::g_experiment_metadata[i].name);
   }
+  int file_num = 0;
   for (const auto& test : all_tests) {
     if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
     const bool added_suite =
@@ -57,9 +58,10 @@ int main(int argc, char** argv) {
                       experiments.front(), "\"\n}\n");
       experiments.pop();
     }
-    auto file =
-        absl::StrCat("test/core/end2end/end2end_test_corpus/", test.suite, "_",
-                     test.name, "_", test.config->name, ".textproto");
+    // We use an index for the filename to keep the path short for Windows
+    auto file = absl::StrCat("test/core/end2end/end2end_test_corpus/seed_",
+                             file_num, ".textproto");
+    ++file_num;
     fprintf(stderr, "WRITE: %s\n", file.c_str());
     FILE* f = fopen(file.c_str(), "w");
     if (!f) return 1;
