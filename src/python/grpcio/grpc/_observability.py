@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import logging
 import threading
 from typing import Any, Generic, Optional, TypeVar
@@ -27,13 +28,13 @@ _channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
 ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 
-_lock: threading.RLock = threading.RLock()
-_grpc_observability_stub: Optional[ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
+_plugin_lock: threading.RLock = threading.RLock()
+_OBSERVABILITY_PLUGIN: Optional[_ObservabilityPlugin] = None
 
 
-class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
-                                  ServerCallTracerFactoryCapsule],
-                          metaclass=abc.ABCMeta):
+class _ObservabilityPlugin(Generic[ClientCallTracerCapsule,
+                                   ServerCallTracerFactoryCapsule],
+                           metaclass=abc.ABCMeta):
     """
     Note: Any future methods added to this interface cannot have the @abc.abstractmethod annotation.
     """
@@ -67,10 +68,10 @@ class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
                            status_code: Any) -> None:
         raise NotImplementedError()
 
-    def enable_tracing(self, enable: bool) -> None:
+    def set_tracing(self, enable: bool) -> None:
         self._tracing_enabled = enable
 
-    def enable_stats(self, enable: bool) -> None:
+    def set_stats(self, enable: bool) -> None:
         self._stats_enabled = enable
 
     @property
@@ -86,32 +87,39 @@ class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
         return self.tracing_enabled or self.stats_enabled
 
 
-def _observability_init(observability_plugin: ObservabilityPlugin) -> None:
-    global _grpc_observability_stub  # pylint: disable=global-statement
+@contextlib.contextmanager
+def get_plugin() -> Optional[_ObservabilityPlugin]:
+    with _plugin_lock:
+        yield _OBSERVABILITY_PLUGIN
+
+
+def set_plugin(observability_plugin: Optional[_ObservabilityPlugin]) -> None:
+    global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
+    with _plugin_lock:
+        if observability_plugin and _OBSERVABILITY_PLUGIN:
+            raise ValueError("observability_plugin was already set!")
+        _OBSERVABILITY_PLUGIN = observability_plugin
+
+
+def _observability_init(observability_plugin: _ObservabilityPlugin) -> None:
+    set_plugin(observability_plugin)
     try:
-        with _lock:
-            _grpc_observability_stub = observability_plugin
         _cygrpc.set_server_call_tracer_factory(observability_plugin)
-    # TODO(xuanwn): Change to specific exception
-    except Exception as e:  # pylint:disable=broad-except
-        _LOGGER.exception("grpc.observability initialization failed with %s", e)
+    except Exception:  # pylint:disable=broad-except
+        _LOGGER.exception("Failed to set server call tracer factory!")
 
 
 def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
-    global _grpc_observability_stub  # pylint: disable=global-statement
-    if not (_grpc_observability_stub and
-            _grpc_observability_stub.observability_enabled):
-        return
-    _grpc_observability_stub.delete_client_call_tracer(
-        client_call_tracer_capsule)
+    with get_plugin() as plugin:
+        if not (plugin and plugin.observability_enabled):
+            return
+        plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
-    global _grpc_observability_stub  # pylint: disable=global-statement
-    if not (_grpc_observability_stub and
-            _grpc_observability_stub.stats_enabled):
-        return
-    rpc_latency = state.rpc_end_time - state.rpc_start_time
-    rpc_latency_ms = rpc_latency.total_seconds() * 1000
-    _grpc_observability_stub.record_rpc_latency(state.method, rpc_latency_ms,
-                                                state.code)
+    with get_plugin() as plugin:
+        if not (plugin and plugin.stats_enabled):
+            return
+        rpc_latency = state.rpc_end_time - state.rpc_start_time
+        rpc_latency_ms = rpc_latency.total_seconds() * 1000
+        plugin.record_rpc_latency(state.method, rpc_latency_ms, state.code)

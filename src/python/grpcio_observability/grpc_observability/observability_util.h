@@ -106,7 +106,7 @@ void RecordDoubleMetric(MetricsName name, double value, std::vector<Label> label
 
 void RecordSpan(SpanCensusData span_census_data);
 
-GcpObservabilityConfig ReadObservabilityConfig();
+GcpObservabilityConfig ReadAndActivateObservabilityConfig();
 
 }  // namespace grpc_observability
 

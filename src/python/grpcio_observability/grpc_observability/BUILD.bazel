@@ -16,11 +16,13 @@ load("//bazel:cython_library.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:public"])
 
+# TODO(xuanwn): We also need support Python-native build
+
 cc_library(
     name = "observability",
     srcs = [
         "client_call_tracer.cc",
-        "observability_main.cc",
+        "observability_util.cc",
         "python_census_context.cc",
         "sampler.cc",
         "server_call_tracer.cc",
@@ -28,13 +30,14 @@ cc_library(
     hdrs = [
         "client_call_tracer.h",
         "constants.h",
-        "observability_main.h",
+        "observability_util.h",
         "python_census_context.h",
         "sampler.h",
         "server_call_tracer.h",
     ],
     includes = ["."],
     deps = [
+        #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
         "//:grpc",
         "//:grpc_rpc_encoding",
         "//src/cpp/ext/gcp:observability_config",
@@ -56,8 +59,10 @@ py_library(
     name = "pyobservability",
     srcs = [
         "__init__.py",
-        # "_measures.py",
         "_observability.py",
+        # The fllowing files are used only for OC stackdriver extension.
+        # TODO(xuanwn): Uncomment after those files are implemented.
+        # "_measures.py",
         # "_open_census.py",
         # "_views.py",
     ],
