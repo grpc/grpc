@@ -2792,6 +2792,7 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "json",
         "//:gpr",
         "//:grpc_base",
     ],
