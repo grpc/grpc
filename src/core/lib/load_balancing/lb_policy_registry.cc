@@ -84,7 +84,7 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
   if (factory == nullptr) return false;
   // If requested, check if the load balancing policy allows an empty config.
   if (requires_config != nullptr) {
-    auto config = factory->ParseLoadBalancingConfig(Json());
+    auto config = factory->ParseLoadBalancingConfig(Json::FromObject({}));
     *requires_config = !config.ok();
   }
   return true;

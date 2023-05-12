@@ -71,7 +71,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
   EXPECT_EQ(server_initial_metadata.Get(filtered_md_key), absl::nullopt);
 }
 
-TEST_P(CoreEnd2endTest, ContentLengthIsFiltered) {
+CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

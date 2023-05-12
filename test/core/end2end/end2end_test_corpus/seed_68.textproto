@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "FilterCausesClose"
+config: "Chttp2FakeSecurityFullstack"

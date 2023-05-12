@@ -30,7 +30,7 @@ namespace {
 // a recv op, where the send op completes but the recv op does not, and
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
-TEST_P(RetryTest, RetrySendRecvBatch) {
+CORE_END2END_TEST(RetryTest, RetrySendRecvBatch) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
