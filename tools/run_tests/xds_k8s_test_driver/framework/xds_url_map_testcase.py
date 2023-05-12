@@ -363,7 +363,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def cleanupAfterTests(cls):
-        logging.info('----- Doing cleanup after %s -----', cls.__name__)
+        logging.info('----- TestCase %s teardown -----', cls.__name__)
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
