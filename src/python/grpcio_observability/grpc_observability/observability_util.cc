@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/observability_main.h"
+#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
 #include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
 #include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
 
@@ -87,7 +87,7 @@ void AddCensusDataToBuffer(CensusData data) {
 }
 
 
-GcpObservabilityConfig ReadObservabilityConfig() {
+GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
 
   if (!config.ok()) {

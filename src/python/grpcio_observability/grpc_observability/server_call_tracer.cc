@@ -45,7 +45,7 @@
 
 #include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_main.h"
+#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
 
 namespace grpc_observability {
 

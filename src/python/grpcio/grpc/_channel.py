@@ -141,6 +141,8 @@ class _RPCState(object):
         self.code = code
         self.details = details
         self.debug_error_string = None
+        # The following three fileds are used for observability.
+        # Updates to those fields do not trigger self.condition.
         self.rpc_start_time = None
         self.rpc_end_time = None
         self.method = None

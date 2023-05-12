@@ -78,8 +78,8 @@ cdef extern from "python_census_context.h" namespace "grpc_observability":
     int64_t child_span_count
     bint should_sample
 
-cdef extern from "observability_main.h" namespace "grpc_observability":
-  cdef cGcpObservabilityConfig ReadObservabilityConfig() nogil
+cdef extern from "observability_util.h" namespace "grpc_observability":
+  cdef cGcpObservabilityConfig ReadAndActivateObservabilityConfig() nogil
   cdef void NativeObservabilityInit() except +
   cdef void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id) except +
   cdef void* CreateServerCallTracerFactory() except +

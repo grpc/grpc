@@ -22,8 +22,8 @@ from typing import List, Mapping, Tuple
 import grpc_observability
 
 
-cdef const char* CLIENT_CALL_TRACER = "gcp_opencensus_client_call_tracer"
-cdef const char* SERVER_CALL_TRACER_FACTORY = "gcp_opencensus_server_call_tracer_factory"
+cdef const char* CLIENT_CALL_TRACER = "client_call_tracer"
+cdef const char* SERVER_CALL_TRACER_FACTORY = "server_call_tracer_factory"
 cdef bint GLOBAL_SHUTDOWN_EXPORT_THREAD = False
 cdef object global_export_thread
 
@@ -72,7 +72,7 @@ def set_gcp_observability_config(object py_config) -> bool:
   py_labels = {}
   sampling_rate = 0.0
 
-  cdef cGcpObservabilityConfig c_config = ReadObservabilityConfig()
+  cdef cGcpObservabilityConfig c_config = ReadAndActivateObservabilityConfig()
   if not c_config.is_valid:
     return False
 
