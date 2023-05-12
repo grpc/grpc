@@ -34,6 +34,7 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -117,15 +118,6 @@ TEST(StdoutLoggerTest, LoggerFactoryExistenceChecks) {
   EXPECT_TRUE(AuditLoggerRegistry::FactoryExists("stdout_logger"));
 }
 
-TEST(StdoutLoggerTest, BadLoggerConfig) {
-  auto invalid_value = Json::FromBool(false);
-  auto result =
-      AuditLoggerRegistry::ParseConfig("stdout_logger", invalid_value);
-  ASSERT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  ASSERT_EQ(result.status().message(), "config is not a json object")
-      << result.status();
-}
-
 TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
   auto result =
       AuditLoggerRegistry::ParseConfig("stdout_logger", Json::FromObject({}));
@@ -134,36 +126,36 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
       AuditLoggerRegistry::CreateAuditLogger(std::move(result.value()));
   AuditContext context("method", "spiffe", "policy", "rule", true);
   ::testing::internal::CaptureStdout();
+  absl::Time time_before_log = absl::Now();
   logger->Log(context);
+  absl::Time time_after_log = absl::Now();
   auto log_or = JsonParse(::testing::internal::GetCapturedStdout());
   ASSERT_TRUE(log_or.ok());
-  ASSERT_EQ(log_or.value().type(), Json::Type::kObject);
-  auto it = log_or.value().object().find("grpc_audit_log");
-  ASSERT_NE(it, log_or.value().object().end());
+  ASSERT_EQ(log_or->type(), Json::Type::kObject);
+  auto it = log_or->object().find("grpc_audit_log");
+  ASSERT_NE(it, log_or->object().end());
   ASSERT_EQ(it->second.type(), Json::Type::kObject);
-  auto object = it->second.object();
-  // Check if the recorded timestamp is close to now.
-  absl::Time t1 = absl::Now();
+  auto& object = it->second.object();
+  // Check if the recorded timestamp is in between the recorded interval.
   ASSERT_NE(object.find("timestamp"), object.end());
-  EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kNumber);
-  uint64_t ts;
-  ASSERT_TRUE(absl::SimpleAtoi(object.find("timestamp")->second.string(), &ts));
-  absl::Time t2 = absl::FromUnixSeconds(ts);
-  EXPECT_TRUE(t1 - t2 < absl::Seconds(10));
+  EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kString);
+  absl::Time log_time;
+  ASSERT_TRUE(absl::ParseTime(absl::RFC3339_full,
+                              object.find("timestamp")->second.string(),
+                              &log_time, nullptr));
+  EXPECT_TRUE(log_time >= time_before_log && log_time <= time_after_log);
   // Check exact values of everything else.
-  std::map<std::string, std::string> fields = {{"rpc_method", "method"},
-                                               {"principal", "spiffe"},
-                                               {"policy_name", "policy"},
-                                               {"matched_rule", "rule"}};
-  for (const auto& p : fields) {
-    auto it = object.find(p.first);
+  std::vector<std::string> fields = {"rpc_method", "principal", "policy_name",
+                                     "matched_rule", "authorized"};
+  Json::Object json_object;
+  for (const auto& field : fields) {
+    auto it = object.find(field);
     ASSERT_NE(it, object.end());
-    ASSERT_EQ(it->second.type(), Json::Type::kString);
-    EXPECT_EQ(it->second.string(), p.second);
+    json_object.emplace(field, it->second);
   }
-  ASSERT_NE(object.find("authorized"), object.end());
-  ASSERT_EQ(object.find("authorized")->second.type(), Json::Type::kBoolean);
-  EXPECT_EQ(object.find("authorized")->second.boolean(), true);
+  EXPECT_EQ(JsonDump(Json::FromObject(json_object)),
+            "{\"authorized\":true,\"matched_rule\":\"rule\",\"policy_name\":"
+            "\"policy\",\"principal\":\"spiffe\",\"rpc_method\":\"method\"}");
 }
 
 }  // namespace testing

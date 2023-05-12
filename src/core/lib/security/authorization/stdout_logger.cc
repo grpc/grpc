@@ -35,14 +35,18 @@
 namespace grpc_core {
 namespace experimental {
 
+namespace {
+
 constexpr absl::string_view kName = "stdout_logger";
 constexpr char kLogFormat[] =
-    "{\"grpc_audit_log\":{\"timestamp\":%d,\"rpc_method\":\"%s\",\"principal\":"
-    "\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\",\"authorized\":%s}}"
-    "\n";
+    "{\"grpc_audit_log\":{\"timestamp\":\"%s\",\"rpc_method\":\"%s\","
+    "\"principal\":\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\","
+    "\"authorized\":%s}}\n";
+
+}  // namespace
 
 void StdoutAuditLogger::Log(const AuditContext& context) {
-  absl::FPrintF(stdout, kLogFormat, absl::ToUnixSeconds(absl::Now()),
+  absl::FPrintF(stdout, kLogFormat, absl::FormatTime(absl::Now()),
                 context.rpc_method(), context.principal(),
                 context.policy_name(), context.matched_rule(),
                 context.authorized() ? "true" : "false");
@@ -58,9 +62,6 @@ absl::string_view StdoutAuditLoggerFactory::name() const { return kName; }
 
 absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
 StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json& json) {
-  if (json.type() != Json::Type::kObject) {
-    return absl::InvalidArgumentError("config is not a json object");
-  }
   return std::make_unique<StdoutAuditLoggerFactory::Config>();
 }
 
