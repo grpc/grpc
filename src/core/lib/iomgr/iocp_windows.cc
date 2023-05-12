@@ -163,18 +163,15 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
   GPR_ASSERT(ret == g_iocp);
 }
 
-void grpc_iocp_register_socket_shutdown(grpc_winsocket* socket) {
+void grpc_iocp_register_socket_shutdown_socket_locked(grpc_winsocket* socket) {
   if (!socket->shutdown_registered) {
     socket->shutdown_registered = true;
-    // Register beginning of this socket shutdown. This implies that gRPC
-    // will not complete its shutdown until this socket's shutdown is finished.
     gpr_atm_full_fetch_add(&g_pending_socket_shutdowns, 1);
   }
 }
 
 void grpc_iocp_finish_socket_shutdown(grpc_winsocket* socket) {
   if (socket->shutdown_registered) {
-    // Mark the completion of this socket shutdown.
     gpr_atm_full_fetch_add(&g_pending_socket_shutdowns, -1);
   }
 }

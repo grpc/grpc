@@ -61,7 +61,9 @@ typedef struct grpc_winsocket_callback_info {
   // The results of the overlapped operation.
   DWORD bytes_transferred;
   int wsa_error;
-  bool skip;
+  // Tracks whether the final closure has already been run when the socket is
+  // shut down. This allows closures to be run immediately upon socket shutdown.
+  bool closure_already_executed_at_shutdown = false;
 } grpc_winsocket_callback_info;
 
 // This is a wrapper to a Windows socket. A socket can have one outstanding
