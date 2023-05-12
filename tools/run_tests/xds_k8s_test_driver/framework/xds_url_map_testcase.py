@@ -213,6 +213,7 @@ class _MetaXdsUrlMapTestCase(type):
     # and tear down GCP resources.
     _started_test_cases = set()
     _finished_test_cases = set()
+    _pod_restart_time: int = 0
 
     def __new__(cls, name: str, bases: Iterable[Any],
                 attrs: Mapping[str, Any]) -> Any:
@@ -364,6 +365,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     @classmethod
     def cleanupAfterTests(cls):
         logging.info('----- TestCase %s teardown -----', cls.__name__)
+        logging.debug('Getting pods restart times')
+        client_restarts: int = cls.test_client_runner.get_pod_restarts(
+            cls.test_client_runner.deployment)
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -378,6 +382,12 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             retryer(cls._cleanup, cleanup_all)
         except retryers.RetryError:
             logging.exception('Got error during teardown')
+        finally:
+            # We should fail test if pod restarted during test (b/269192257).
+            cls.assertEqual(client_restarts,
+                             0,
+                             msg=('Client pods unexpectedly restarted'
+                                  f'{client_restarts} times during test.'))
 
     @classmethod
     def _cleanup(cls, cleanup_all: bool = False):
