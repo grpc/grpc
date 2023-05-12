@@ -16,7 +16,7 @@ Run xDS Test Client on Kubernetes.
 """
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
