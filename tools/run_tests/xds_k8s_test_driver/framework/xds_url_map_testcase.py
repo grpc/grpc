@@ -385,9 +385,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         finally:
             # We should fail test if pod restarted during test (b/269192257).
             cls.assertEqual(client_restarts,
-                             0,
-                             msg=('Client pods unexpectedly restarted'
-                                  f'{client_restarts} times during test.'))
+                            0,
+                            msg=('Client pods unexpectedly restarted'
+                                 f'{client_restarts} times during test.'))
 
     @classmethod
     def _cleanup(cls, cleanup_all: bool = False):
