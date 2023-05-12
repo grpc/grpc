@@ -636,6 +636,7 @@ std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       options, poller_manager_.get(), this);
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+  (void)options;
   grpc_core::Crash("unimplemented");
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 }

@@ -2222,11 +2222,11 @@ grpc_cc_library(
     name = "grpc_ares_wrapper",
     srcs = [
         "lib/event_engine/grpc_ares_wrapper.cc",
-        "lib/event_engine/nameser.h",
     ],
     hdrs = [
         "lib/event_engine/grpc_ares_wrapper.h",
         "lib/event_engine/grpc_polled_fd.h",
+        "lib/event_engine/nameser.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [
