@@ -1152,7 +1152,8 @@ Procedures:
       }
     }
     ```
-2. After getting a response, client waits up to 5 seconds to receive a OOB load 
+2. After getting a response, client waits up to 10 seconds (or a total of 30s for the
+entire test case) to receive an OOB load
 report that matches the requested load report in step 1. To wait for load 
 report, client may inject a callback to the custom LB policy, or poll the result
 by doing empty unary call that carries a reference, e.g. using 
@@ -1173,7 +1174,8 @@ CallOptions, that will be filled in by the custom LB policy as part of the
       }
     }
     ```
-4. After getting a response, client waits up to 5 seconds to receive a OOB load
+4. After getting a response, client waits up to 10 seconds (or a total of 30s for the entire
+test case) to receive an OOB load
 report that matches the requested load report in step 3. Similar to step 2.
 5. Client half closes the stream, and asserts the streaming call is successful. 
 
