@@ -62,6 +62,10 @@ const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const description_work_stealing =
     "If set, use a work stealing thread pool implementation in EventEngine";
+const char* const description_client_privacy = "If set, client privacy";
+const char* const description_canary_client_privacy =
+    "If set, canary client privacy";
+const char* const description_server_privacy = "If set, server privacy";
 }  // namespace
 
 namespace grpc_core {
@@ -91,6 +95,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"trace_record_callops", description_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns, false, false},
     {"work_stealing", description_work_stealing, false, false},
+    {"client_privacy", description_client_privacy, false, false},
+    {"canary_client_privacy", description_canary_client_privacy, false, false},
+    {"server_privacy", description_server_privacy, false, false},
 };
 
 }  // namespace grpc_core
