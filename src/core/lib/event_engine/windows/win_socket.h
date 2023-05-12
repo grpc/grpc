@@ -23,7 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -43,7 +43,7 @@ class WinSocket {
     explicit OpState(WinSocket* win_socket) noexcept;
     // Signal a result has returned
     // If a callback is already primed for notification, it will be executed via
-    // the WinSocket's Executor. Otherwise, a "pending iocp" flag will
+    // the WinSocket's ThreadPool. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
     // Set error results for a completed op
@@ -72,7 +72,7 @@ class WinSocket {
     OverlappedResult result_;
   };
 
-  WinSocket(SOCKET socket, Executor* executor) noexcept;
+  WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept;
   ~WinSocket();
   // Calling NotifyOnRead means either of two things:
   //  - The IOCP already completed in the background, and we need to call
@@ -104,7 +104,7 @@ class WinSocket {
 
   SOCKET socket_;
   std::atomic<bool> is_shutdown_{false};
-  Executor* executor_;
+  ThreadPool* thread_pool_;
   // These OpStates are effectively synchronized using their respective
   // OVERLAPPED structures and the Overlapped I/O APIs. For example, OpState
   // users should not attempt to read their bytes_transeferred until

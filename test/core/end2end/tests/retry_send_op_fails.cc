@@ -130,7 +130,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 //   all without ever going out on the wire
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
-TEST_P(RetryTest, RetrySendOpFails) {
+CORE_END2END_TEST(RetryTest, RetrySendOpFails) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         GRPC_CLIENT_SUBCHANNEL, 0, [](ChannelStackBuilder* builder) {

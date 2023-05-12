@@ -34,7 +34,7 @@ namespace {
 // configuration in the service config.
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
-TEST_P(RetryTest, RetryDisabled) {
+CORE_END2END_TEST(RetryTest, RetryDisabled) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

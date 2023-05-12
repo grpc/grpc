@@ -53,11 +53,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thread_pool_test",
     srcs = ["thread_pool_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
     deps = [
-        "//:gpr",
+        "//:grpc",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 

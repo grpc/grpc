@@ -193,6 +193,23 @@ UPB_INLINE const envoy_config_metrics_v3_TagSpecifier* const* envoy_config_metri
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_metrics_v3_StatsConfig_stats_tags_upb_array(const envoy_config_metrics_v3_StatsConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_metrics_v3_StatsConfig_stats_tags_mutable_upb_array(const envoy_config_metrics_v3_StatsConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_metrics_v3_StatsConfig_has_stats_tags(const envoy_config_metrics_v3_StatsConfig* msg) {
   size_t size;
   envoy_config_metrics_v3_StatsConfig_stats_tags(msg, &size);
@@ -242,6 +259,23 @@ UPB_INLINE const envoy_config_metrics_v3_HistogramBucketSettings* const* envoy_c
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_metrics_v3_StatsConfig_histogram_bucket_settings_upb_array(const envoy_config_metrics_v3_StatsConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_metrics_v3_StatsConfig_histogram_bucket_settings_mutable_upb_array(const envoy_config_metrics_v3_StatsConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_metrics_v3_StatsConfig_has_histogram_bucket_settings(const envoy_config_metrics_v3_StatsConfig* msg) {
   size_t size;
@@ -609,6 +643,23 @@ UPB_INLINE double const* envoy_config_metrics_v3_HistogramBucketSettings_buckets
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_metrics_v3_HistogramBucketSettings_buckets_upb_array(const envoy_config_metrics_v3_HistogramBucketSettings* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_metrics_v3_HistogramBucketSettings_buckets_mutable_upb_array(const envoy_config_metrics_v3_HistogramBucketSettings* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_metrics_v3_HistogramBucketSettings_has_buckets(const envoy_config_metrics_v3_HistogramBucketSettings* msg) {
   size_t size;

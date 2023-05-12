@@ -31,10 +31,10 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/stdout_logger.h"
 
 namespace grpc_core {

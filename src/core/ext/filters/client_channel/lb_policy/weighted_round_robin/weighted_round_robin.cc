@@ -729,12 +729,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
-  // subchannel_list_ and report CONNECTING.
+  // subchannel_list_.
   if (subchannel_list_.get() == nullptr) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
   return absl::OkStatus();
 }
@@ -992,7 +989,7 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
+    return LoadFromJson<RefCountedPtr<WeightedRoundRobinConfig>>(
         json, JsonArgs(),
         "errors validating weighted_round_robin LB policy config");
   }

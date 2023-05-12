@@ -36,6 +36,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -170,7 +171,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
       {"typ", Json::FromString(GRPC_JWT_TYPE)},
       {"kid", Json::FromString(key_id)},
   });
-  std::string json_str = JsonDump(json);
+  std::string json_str = grpc_core::JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -197,7 +198,8 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
     object["sub"] = Json::FromString(json_key->client_email);
   }
 
-  std::string json_str = JsonDump(Json::FromObject(std::move(object)));
+  std::string json_str =
+      grpc_core::JsonDump(Json::FromObject(std::move(object)));
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 

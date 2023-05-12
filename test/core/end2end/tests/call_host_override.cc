@@ -29,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreClientChannelTest, CallHostOverride) {
+CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
   InitClient(ChannelArgs().Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                "foo.test.google.fr:1234"));
   InitServer(ChannelArgs());
