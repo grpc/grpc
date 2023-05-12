@@ -34,6 +34,7 @@ from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
 from framework.helpers import retryers
 from framework.helpers import skips
+from framework.infrastructure import k8s
 from framework.test_app import client_app
 
 # Load existing flags
@@ -213,7 +214,6 @@ class _MetaXdsUrlMapTestCase(type):
     # and tear down GCP resources.
     _started_test_cases = set()
     _finished_test_cases = set()
-    _pod_restart_time: int = 0
 
     def __new__(cls, name: str, bases: Iterable[Any],
                 attrs: Mapping[str, Any]) -> Any:
@@ -366,8 +366,13 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     def cleanupAfterTests(cls):
         logging.info('----- TestCase %s teardown -----', cls.__name__)
         logging.debug('Getting pods restart times')
-        client_restarts: int = cls.test_client_runner.get_pod_restarts(
-            cls.test_client_runner.deployment)
+        client_restarts: int = 0
+        try:
+            client_restarts = cls.test_client_runner.get_pod_restarts(
+                cls.test_client_runner.deployment)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logging.exception(e)
+
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -383,11 +388,15 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         except retryers.RetryError:
             logging.exception('Got error during teardown')
         finally:
-            # We should fail test if pod restarted during test (b/269192257).
-            cls.assertEqual(client_restarts,
-                            0,
-                            msg=('Client pods unexpectedly restarted'
-                                 f'{client_restarts} times during test.'))
+            # Fail if any of the pods restarted.
+            cls.assertEqual(
+                client_restarts,
+                0,
+                msg=(
+                    'Client pods unexpectedly restarted'
+                    f' {client_restarts} times during test. '
+                    'In most cases, this is caused by the test client app crash.'
+                ))
 
     @classmethod
     def _cleanup(cls, cleanup_all: bool = False):

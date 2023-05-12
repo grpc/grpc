@@ -480,12 +480,17 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
-        # Todo(xuanwn): Add same check to XdsUrlMapTestCase.
         logger.debug('Getting pods restart times')
-        client_restarts: int = self.client_runner.get_pod_restarts(
-            self.client_runner.deployment)
-        server_restarts: int = self.server_runner.get_pod_restarts(
-            self.server_runner.deployment)
+        client_restarts: int = 0
+        server_restarts: int = 0
+        try:
+            client_restarts = self.client_runner.get_pod_restarts(
+                self.client_runner.deployment)
+            server_restarts = self.server_runner.get_pod_restarts(
+                self.server_runner.deployment)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.exception(e)
+
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -494,15 +499,23 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         except retryers.RetryError:
             logger.exception('Got error during teardown')
         finally:
-            # We should fail test if pod restarted during test (b/269192257).
-            self.assertEqual(client_restarts,
-                             0,
-                             msg=('Client pods unexpectedly restarted'
-                                  f'{client_restarts} times during test.'))
-            self.assertEqual(server_restarts,
-                             0,
-                             msg=('Server pods unexpectedly restarted'
-                                  f'{server_restarts} times during test.'))
+            # Fail if any of the pods restarted.
+            self.assertEqual(
+                client_restarts,
+                0,
+                msg=(
+                    'Client pods unexpectedly restarted'
+                    f' {client_restarts} times during test. '
+                    'In most cases, this is caused by the test client app crash.'
+                ))
+            self.assertEqual(
+                server_restarts,
+                0,
+                msg=(
+                    'Server pods unexpectedly restarted'
+                    f' {server_restarts} times during test. '
+                    'In most cases, this is caused by the test client app crash.'
+                ))
 
     def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
