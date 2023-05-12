@@ -26,7 +26,7 @@
 
 namespace grpc_core {
 // Client sends a request with payload, server reads then returns status.
-TEST_P(WriteBufferingTest, WriteBufferingWorks) {
+CORE_END2END_TEST(WriteBufferingTest, WriteBufferingWorks) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;

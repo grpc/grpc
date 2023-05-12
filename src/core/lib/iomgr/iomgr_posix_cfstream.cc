@@ -73,7 +73,7 @@ static bool apple_iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 static bool apple_iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+    grpc_closure* /*closure*/, grpc_error_handle /*error*/) {
   return false;
 }
 

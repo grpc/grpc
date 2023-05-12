@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -29,25 +30,56 @@ namespace grpc_core {
 // Rbac
 //
 
-Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies)
-    : action(action), policies(std::move(policies)) {}
+Rbac::Rbac(std::string name, Rbac::Action action,
+           std::map<std::string, Policy> policies)
+    : name(std::move(name)),
+      action(action),
+      policies(std::move(policies)),
+      audit_condition(Rbac::AuditCondition::kNone) {}
 
 Rbac::Rbac(Rbac&& other) noexcept
-    : action(other.action), policies(std::move(other.policies)) {}
+    : name(std::move(other.name)),
+      action(other.action),
+      policies(std::move(other.policies)),
+      audit_condition(other.audit_condition),
+      logger_configs(std::move(other.logger_configs)) {}
 
 Rbac& Rbac::operator=(Rbac&& other) noexcept {
+  name = std::move(other.name);
   action = other.action;
   policies = std::move(other.policies);
+  audit_condition = other.audit_condition;
+  logger_configs = std::move(other.logger_configs);
   return *this;
 }
 
 std::string Rbac::ToString() const {
   std::vector<std::string> contents;
+  absl::string_view condition_str;
+  switch (audit_condition) {
+    case Rbac::AuditCondition::kNone:
+      condition_str = "None";
+      break;
+    case AuditCondition::kOnDeny:
+      condition_str = "OnDeny";
+      break;
+    case AuditCondition::kOnAllow:
+      condition_str = "OnAllow";
+      break;
+    case AuditCondition::kOnDenyAndAllow:
+      condition_str = "OnDenyAndAllow";
+      break;
+  }
   contents.push_back(absl::StrFormat(
-      "Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
+      "Rbac name=%s action=%s audit_condition=%s{", name,
+      action == Rbac::Action::kAllow ? "Allow" : "Deny", condition_str));
   for (const auto& p : policies) {
     contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
                                        p.second.ToString()));
+  }
+  for (const auto& config : logger_configs) {
+    contents.push_back(absl::StrFormat("{\n  audit_logger=%s\n%s\n}",
+                                       config->name(), config->ToString()));
   }
   contents.push_back("}");
   return absl::StrJoin(contents, "\n");

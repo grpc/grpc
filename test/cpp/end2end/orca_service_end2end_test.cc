@@ -153,10 +153,10 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
   // Update CPU utilization and set memory utilization.
-  server_metric_recorder_->SetCpuUtilization(0.8);
+  server_metric_recorder_->SetCpuUtilization(1.8);
   server_metric_recorder_->SetMemoryUtilization(0.4);
   ReadResponses([](const OrcaLoadReport& response) {
-    EXPECT_EQ(response.cpu_utilization(), 0.8);
+    EXPECT_EQ(response.cpu_utilization(), 1.8);
     EXPECT_EQ(response.mem_utilization(), 0.4);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });

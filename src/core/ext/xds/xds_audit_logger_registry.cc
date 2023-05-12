@@ -26,6 +26,8 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
@@ -40,7 +42,7 @@ class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
       const XdsResourceType::DecodeContext& /*context*/,
       absl::string_view /*configuration*/,
       ValidationErrors* /*errors*/) override {
-    return Json::Object{{"stdout_logger", Json::Object()}};
+    return Json::Object{{"stdout_logger", Json::FromObject({})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -85,8 +87,9 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
         // TODO(lwge): Parse the config with the gRPC audit logger registry.
-        return config_factory_it->second->ConvertXdsAuditLoggerConfig(
-            context, *serialized_value, errors);
+        return Json::FromObject(
+            config_factory_it->second->ConvertXdsAuditLoggerConfig(
+                context, *serialized_value, errors));
       }
     }
     // TODO(lwge): Check for third-party audit logger type. For now, we disallow

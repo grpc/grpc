@@ -590,8 +590,9 @@ class ParseHelper {
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
       absl::string_view key) {
-    return ParsedMetadata<Container>(Slice::FromCopiedString(key),
-                                     std::move(value_));
+    return ParsedMetadata<Container>(
+        typename ParsedMetadata<Container>::FromSlicePair{},
+        Slice::FromCopiedString(key), std::move(value_), transport_size_);
   }
 
  private:

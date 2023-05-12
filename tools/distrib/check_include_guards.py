@@ -55,8 +55,10 @@ class GuardValidator(object):
         self.failed = False
 
     def _is_c_core_header(self, fpath):
-        return 'include' in fpath and not ('grpc++' in fpath or 'grpcpp'
-                                           in fpath or 'event_engine' in fpath)
+        return 'include' in fpath and not (
+            'grpc++' in fpath or 'grpcpp' in fpath or 'event_engine' in fpath or
+            fpath.endswith('/grpc_audit_logging.h') or
+            fpath.endswith('/json.h'))
 
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
         c_core_header = self._is_c_core_header(fpath)

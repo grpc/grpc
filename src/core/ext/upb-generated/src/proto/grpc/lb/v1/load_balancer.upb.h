@@ -378,6 +378,23 @@ UPB_INLINE const grpc_lb_v1_ClientStatsPerToken* const* grpc_lb_v1_ClientStats_c
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_lb_v1_ClientStats_calls_finished_with_drop_upb_array(const grpc_lb_v1_ClientStats* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(8, 48), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_lb_v1_ClientStats_calls_finished_with_drop_mutable_upb_array(const grpc_lb_v1_ClientStats* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(8, 48), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_lb_v1_ClientStats_has_calls_finished_with_drop(const grpc_lb_v1_ClientStats* msg) {
   size_t size;
   grpc_lb_v1_ClientStats_calls_finished_with_drop(msg, &size);
@@ -717,6 +734,23 @@ UPB_INLINE const grpc_lb_v1_Server* const* grpc_lb_v1_ServerList_servers(const g
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _grpc_lb_v1_ServerList_servers_upb_array(const grpc_lb_v1_ServerList* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_lb_v1_ServerList_servers_mutable_upb_array(const grpc_lb_v1_ServerList* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool grpc_lb_v1_ServerList_has_servers(const grpc_lb_v1_ServerList* msg) {
   size_t size;

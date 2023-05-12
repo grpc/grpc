@@ -30,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -145,9 +146,10 @@ static char* redact_private_key(const char* json_key) {
     return gpr_strdup("<Json failed to parse.>");
   }
   Json::Object object = json->object();
-  object["private_key"] = "<redacted>";
+  object["private_key"] = Json::FromString("<redacted>");
   return gpr_strdup(
-      grpc_core::JsonDump(Json(std::move(object)), /*indent=*/2).c_str());
+      grpc_core::JsonDump(Json::FromObject(std::move(object)), /*indent=*/2)
+          .c_str());
 }
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(

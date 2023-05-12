@@ -36,6 +36,7 @@ libs:
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
   - include/grpc/support/cpu.h
+  - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
@@ -53,6 +54,7 @@ libs:
   - src/core/lib/config/load_config.h
   - src/core/lib/event_engine/thread_local.h
   - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
@@ -195,6 +197,7 @@ libs:
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
   - include/grpc/support/cpu.h
+  - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
@@ -673,11 +676,13 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -706,7 +711,9 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -715,6 +722,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -845,6 +854,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -863,6 +873,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
@@ -1468,6 +1479,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -1496,7 +1509,9 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -1505,6 +1520,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -1616,6 +1632,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -1888,6 +1905,7 @@ libs:
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
   - include/grpc/support/cpu.h
+  - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
@@ -2033,11 +2051,13 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -2066,7 +2086,9 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -2075,6 +2097,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -2202,6 +2226,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -2441,6 +2466,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -2469,7 +2496,9 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -2478,6 +2507,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -2960,7 +2990,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -2992,7 +3021,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3470,6 +3498,7 @@ libs:
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
   - include/grpc/support/cpu.h
+  - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
@@ -3493,6 +3522,7 @@ libs:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -3516,11 +3546,13 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -3549,7 +3581,9 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -3558,6 +3592,8 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -3696,6 +3732,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
@@ -3780,6 +3817,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -3802,6 +3840,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -3830,7 +3870,9 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -3839,6 +3881,7 @@ libs:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -3943,6 +3986,7 @@ libs:
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -4894,6 +4938,15 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: basic_work_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/work_queue/basic_work_queue_test.cc
+  deps:
+  - grpc_test_util_unsecure
 - name: bdp_estimator_test
   gtest: true
   build: test
@@ -4979,7 +5032,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -5012,7 +5064,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -5404,20 +5455,35 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+- name: cf_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/cf/cf_engine_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: cf_event_engine_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/cf_engine/cf_engine.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
   src:
-  - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/cf_event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - grpc_unsecure
@@ -5426,7 +5492,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: cfstream_test
   gtest: true
   build: test
@@ -5820,6 +5885,7 @@ targets:
   - test/core/client_channel/client_channel_service_config_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: client_channel_stress_test
   gtest: true
   build: test
@@ -5851,6 +5917,7 @@ targets:
   - test/core/client_channel/client_channel_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -6166,10 +6233,12 @@ targets:
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
   - test/core/end2end/fixtures/local_util.cc
@@ -6263,6 +6332,7 @@ targets:
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - grpc_authorization_provider
@@ -6459,7 +6529,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6492,7 +6561,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6883,7 +6951,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -6916,7 +6983,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -7391,6 +7457,7 @@ targets:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
@@ -7415,11 +7482,13 @@ targets:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -7448,7 +7517,9 @@ targets:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -7457,6 +7528,8 @@ targets:
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -7661,6 +7734,7 @@ targets:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
@@ -7684,6 +7758,8 @@ targets:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -7712,7 +7788,9 @@ targets:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -7721,6 +7799,7 @@ targets:
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -8008,10 +8087,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/audit_logging.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/audit_logging.cc
   - test/core/security/grpc_audit_logging_test.cc
   deps:
   - grpc_test_util
@@ -8486,6 +8563,7 @@ targets:
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -8495,7 +8573,9 @@ targets:
   - test/core/end2end/end2end_tests.cc
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/h2_ssl_cert_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -9758,6 +9838,17 @@ targets:
   - test/core/gprpp/orphanable_test.cc
   deps:
   - grpc_test_util
+- name: osa_distance_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/osa_distance.h
+  src:
+  - test/core/util/osa_distance.cc
+  - test/core/util/osa_distance_test.cc
+  deps:
+  - absl/strings:strings
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -9788,6 +9879,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
   deps:
@@ -9952,6 +10044,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
@@ -10083,7 +10176,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: posix_event_engine_test
   gtest: true
   build: test
@@ -10109,7 +10201,18 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
+- name: prioritized_race_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  src:
+  - test/core/promise/prioritized_race_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
@@ -10570,6 +10673,7 @@ targets:
   - test/core/client_channel/retry_service_config_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -10620,6 +10724,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/round_robin_test.cc
   deps:
@@ -11988,21 +12093,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/forkable.h
-  - src/core/lib/event_engine/thread_pool.h
-  - src/core/lib/gprpp/notification.h
-  - src/core/lib/gprpp/time.h
+  headers: []
   src:
-  - src/core/lib/event_engine/forkable.cc
-  - src/core/lib/event_engine/thread_pool.cc
-  - src/core/lib/gprpp/time.cc
   - test/core/event_engine/thread_pool_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/status:statusor
-  - gpr
+  - grpc
+  - grpc_test_util_unsecure
 - name: thread_quota_test
   gtest: true
   build: test
@@ -12274,7 +12370,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12306,7 +12401,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12589,7 +12683,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12622,7 +12715,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12698,7 +12790,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/authorization/audit_logging.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -12731,7 +12822,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/authorization/audit_logging.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -12782,17 +12872,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: work_queue_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/work_queue.h
-  src:
-  - src/core/lib/event_engine/work_queue.cc
-  - test/core/event_engine/work_queue/work_queue_test.cc
-  deps:
-  - grpc_test_util_unsecure
 - name: work_serializer_test
   gtest: true
   build: test
@@ -13392,6 +13471,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -13691,6 +13771,7 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/mock_event_engine.h
   src:
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
   deps:
@@ -13987,10 +14068,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: fcd0b50c013452fda9c5e28c131c287b655ebb361271a76ad3bffc08b3ecd82e
+  hash: aef36c29bd0ef95509f7f52693dbdafe4a2c2c5d1eb406bf68e6364a0d12e11b
   proto_prefix: third_party/xds/
-  strip_prefix: xds-32f1caf87195bf3390061c29f18987e51ca56a88
+  strip_prefix: xds-4003588d1b747e37e911baa5a9c1c07fde4ca518
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz
-  - https://github.com/cncf/xds/archive/32f1caf87195bf3390061c29f18987e51ca56a88.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
+  - https://github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
 tests: []

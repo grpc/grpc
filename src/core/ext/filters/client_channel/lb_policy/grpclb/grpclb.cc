@@ -54,6 +54,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/json.h>
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -190,9 +191,9 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     const Json* child_policy_config_json;
     auto it = json.object().find("childPolicy");
     if (it == json.object().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
+      child_policy_config_json_tmp = Json::FromArray({Json::FromObject({
+          {"round_robin", Json::FromObject({})},
+      })});
       child_policy_config_json = &child_policy_config_json_tmp;
     } else {
       child_policy_config_json = &it->second;
@@ -1891,7 +1892,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<GrpcLbConfig>(
+    return LoadFromJson<RefCountedPtr<GrpcLbConfig>>(
         json, JsonArgs(), "errors validating grpclb LB policy config");
   }
 };

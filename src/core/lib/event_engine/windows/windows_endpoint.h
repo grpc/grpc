@@ -19,6 +19,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 
 namespace grpc_event_engine {
@@ -29,7 +30,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
-                  Executor* Executor, std::shared_ptr<EventEngine> engine);
+                  ThreadPool* thread_pool, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
@@ -107,7 +108,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress local_address_;
   std::string local_address_string_;
   MemoryAllocator allocator_;
-  Executor* executor_;
+  ThreadPool* thread_pool_;
   std::shared_ptr<AsyncIOState> io_state_;
 };
 
