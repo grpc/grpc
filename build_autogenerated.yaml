@@ -5187,6 +5187,10 @@ targets:
   - grpc++_test_util
   args:
   - --grpc_experiments=event_engine_dns
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: cancel_callback_test
   gtest: true
   build: test

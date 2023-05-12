@@ -858,7 +858,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx c_slice_buffer_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
-  add_dependencies(buildtests_cxx cancel_ares_query_test_enable_event_engine_dns_experiment)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx cancel_ares_query_test_enable_event_engine_dns_experiment)
+  endif()
   add_dependencies(buildtests_cxx cancel_callback_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
@@ -7177,44 +7179,46 @@ target_link_libraries(cancel_ares_query_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(cancel_ares_query_test_enable_event_engine_dns_experiment
-  test/core/end2end/cq_verifier.cc
-  test/core/util/fake_udp_and_tcp_server.cc
-  test/cpp/naming/cancel_ares_query_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-target_compile_features(cancel_ares_query_test_enable_event_engine_dns_experiment PUBLIC cxx_std_14)
-target_include_directories(cancel_ares_query_test_enable_event_engine_dns_experiment
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
+  add_executable(cancel_ares_query_test_enable_event_engine_dns_experiment
+    test/core/end2end/cq_verifier.cc
+    test/core/util/fake_udp_and_tcp_server.cc
+    test/cpp/naming/cancel_ares_query_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(cancel_ares_query_test_enable_event_engine_dns_experiment PUBLIC cxx_std_14)
+  target_include_directories(cancel_ares_query_test_enable_event_engine_dns_experiment
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
 
-target_link_libraries(cancel_ares_query_test_enable_event_engine_dns_experiment
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_config
-  grpc++_test_util
-)
+  target_link_libraries(cancel_ares_query_test_enable_event_engine_dns_experiment
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc++_test_config
+    grpc++_test_util
+  )
 
 
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
