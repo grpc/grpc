@@ -84,36 +84,46 @@ class GcpObservabilityPythonConfig:
 
 
 # pylint: disable=no-self-use
-class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
+class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
 
-    def __init__(self):
+    def __init__(self, exporter: "grpc_observability.Exporter" = None):
         # 1. Read config.
         self.exporter = None
         self.config = GcpObservabilityPythonConfig.get()
+        if exporter:
+            self.exporter = exporter
+        else:
+            # 2. Creating measures and register views.
+            # 3. Create and Saves Tracer and Sampler to ContextVar.
+            pass
+            # Actual implementation of OC exporter
+            # open_census = importlib.import_module(
+            #     "grpc_observability._open_census")
+            # self.exporter = open_census.OpenCensusExporter(
+            #     self.config.get().labels)
         config_valid = _cyobservability.set_gcp_observability_config(
             self.config)
         if not config_valid:
             raise ValueError("Invalid configuration")
 
         if self.config.tracing_enabled:
-            self.enable_tracing(True)
+            self.set_tracing(True)
         if self.config.stats_enabled:
-            self.enable_stats(True)
+            self.set_stats(True)
 
-    def init(self, exporter: "grpc_observability.Exporter" = None) -> None:
-        if exporter:
-            self.exporter = exporter
-        else:
-            # 2. Creating measures and register views.
-            # 3. Create and Saves Tracer and Sampler to ContextVar.
-            pass  # Actual implementation of OC exporter
-            # open_census = importlib.import_module(
-            #     "grpc_observability._open_census")
-            # self.exporter = open_census.OpenCensusExporter(
-            #     self.config.get().labels)
+    def exit(self) -> None:
+        # Sleep for 0.5s so all data can be flushed.
+        # The time equals to the time in AwaitNextBatchLocked.
+        time.sleep(0.5)
+        self.set_tracing(False)
+        self.set_stats(False)
+        _cyobservability.at_observability_exit()
+        # Clear the plugin so it can be re-initizialized again.
+        grpc._observability.set_plugin(None)
 
+    def __enter__(self):
         # 4. Start exporting thread.
         try:
             _cyobservability.cyobservability_init(self.exporter)
@@ -125,15 +135,6 @@ class GCPOpenCensusObservability(grpc.ObservabilityPlugin):
         # 5.1 Refister grpc_observability
         # 5.2 set_server_call_tracer_factory
         grpc._observability_init(self)
-
-    def exit(self) -> None:
-        # Sleep for 0.5s so all data can be flushed.
-        time.sleep(0.5)
-        self.enable_tracing(False)
-        self.enable_stats(False)
-        _cyobservability.at_observability_exit()
-
-    def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:

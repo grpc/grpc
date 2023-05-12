@@ -22,7 +22,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_main.h"
+#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
 
 namespace grpc_observability {
 

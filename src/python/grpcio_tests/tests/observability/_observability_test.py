@@ -125,37 +125,48 @@ class ObservabilityTest(unittest.TestCase):
         self.all_metric = []
         self.all_span = []
         self.test_exporter = TestExporter(self.all_metric, self.all_span)
+        self._server = None
+        self._port = None
 
     def tearDown(self):
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = ''
+        if self._server:
+            self._server.stop(0)
 
     def testRecordUnaryUnary(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
 
-            port = self._start_server()
-            self.unary_unary_call(port)
-
-        self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
 
-        self._server.stop(0)
-
     def testThrowErrorWithoutConfig(self):
         with self.assertRaises(ValueError):
-            with grpc_observability.GCPOpenCensusObservability() as o11y:
-                o11y.init(exporter=self.test_exporter)
+            with grpc_observability.GCPOpenCensusObservability(
+                    exporter=self.test_exporter):
+                pass
 
     def testThrowErrorWithInvalidConfig(self):
         _INVALID_CONFIG = 'INVALID'
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _INVALID_CONFIG
         with self.assertRaises(ValueError):
-            with grpc_observability.GCPOpenCensusObservability() as o11y:
-                o11y.init(exporter=self.test_exporter)
+            with grpc_observability.GCPOpenCensusObservability(
+                    exporter=self.test_exporter):
+                pass
+
+    def testThrowErrorWhenCallingMultipleInit(self):
+        os.environ[
+            'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
+        with self.assertRaises(ValueError):
+            with grpc_observability.GCPOpenCensusObservability(
+                    exporter=self.test_exporter) as o11y:
+                grpc._observability_init(o11y)
 
     def testRecordUnaryUnaryStatsOnly(self):
         _VALID_CONFIG_STATS_ONLY = """
@@ -165,17 +176,14 @@ class ObservabilityTest(unittest.TestCase):
             }
             """
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_STATS_ONLY
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
-
-            port = self._start_server()
-            self.unary_unary_call(port)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
 
         self.assertEqual(len(self.all_span), 0)
-        self.assertTrue(len(self.all_metric) > 0)
+        self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
-
-        self._server.stop(0)
 
     def testRecordUnaryUnaryTracingOnly(self):
         _VALID_CONFIG_TRACING_ONLY = """
@@ -187,143 +195,123 @@ class ObservabilityTest(unittest.TestCase):
             }
             """
         os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_ONLY
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
-
-            port = self._start_server()
-            self.unary_unary_call(port)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
 
         self.assertEqual(len(self.all_metric), 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_span), 0)
         self._validate_spans(self.all_span)
-
-        self._server.stop(0)
 
     def testRecordUnaryStream(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_stream_call()
 
-            port = self._start_server()
-            self.unary_stream_call(port)
-
-        self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
-
-        self._server.stop(0)
 
     def testRecordStreamUnary(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
-            port = self._start_server()
-            self.stream_unary_call(port)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.stream_unary_call()
 
         self.assertTrue(len(self.all_metric) > 0)
         self.assertTrue(len(self.all_span) > 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
-
-        self._server.stop(0)
 
     def testRecordStreamStream(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.stream_stream_call()
 
-            port = self._start_server()
-            self.stream_stream_call(port)
-
-        self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
-
-        self._server.stop(0)
 
     def testNoRecordBeforeInit(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        port = self._start_server()
-        self.unary_unary_call(port)
-
+        self._start_server()
+        self.unary_unary_call()
         self.assertEqual(len(self.all_metric), 0)
         self.assertEqual(len(self.all_span), 0)
-
         self._server.stop(0)
 
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
 
-            port = self._start_server()
-            self.unary_unary_call(port)
-
-        self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
-
-        self._server.stop(0)
 
     def testNoRecordAfterExit(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
-        with grpc_observability.GCPOpenCensusObservability() as o11y:
-            o11y.init(exporter=self.test_exporter)
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
 
-            port = self._start_server()
-            self.unary_unary_call(port)
-
-        self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_span), 0)
         current_metric_len = len(self.all_metric)
         current_spans_len = len(self.all_span)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
 
-        self.unary_unary_call(port)
+        self.unary_unary_call()
         self.assertEqual(len(self.all_metric), current_metric_len)
         self.assertEqual(len(self.all_span), current_spans_len)
 
-        self._server.stop(0)
-
-    def unary_unary_call(self, port):
-        with grpc.insecure_channel('localhost:{}'.format(port)) as channel:
+    def unary_unary_call(self):
+        with grpc.insecure_channel(f'localhost:{self._port}') as channel:
             multi_callable = channel.unary_unary(_UNARY_UNARY)
             unused_response, call = multi_callable.with_call(_REQUEST)
 
-    def unary_stream_call(self, port):
-        with grpc.insecure_channel('localhost:{}'.format(port)) as channel:
+    def unary_stream_call(self):
+        with grpc.insecure_channel(f'localhost:{self._port}') as channel:
             multi_callable = channel.unary_stream(_UNARY_STREAM)
             call = multi_callable(_REQUEST)
             for _ in call:
                 pass
 
-    def stream_unary_call(self, port):
-        with grpc.insecure_channel('localhost:{}'.format(port)) as channel:
+    def stream_unary_call(self):
+        with grpc.insecure_channel(f'localhost:{self._port}') as channel:
             multi_callable = channel.stream_unary(_STREAM_UNARY)
             unused_response, call = multi_callable.with_call(
                 iter([_REQUEST] * STREAM_LENGTH))
 
-    def stream_stream_call(self, port):
-        with grpc.insecure_channel('localhost:{}'.format(port)) as channel:
+    def stream_stream_call(self):
+        with grpc.insecure_channel(f'localhost:{self._port}') as channel:
             multi_callable = channel.stream_stream(_STREAM_STREAM)
             call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
             for _ in call:
                 pass
 
-    def _start_server(self) -> int:
+    def _start_server(self) -> None:
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        port = self._server.add_insecure_port('[::]:55555')
+        self._port = self._server.add_insecure_port('[::]:0')
 
         self._server.start()
-        return port
 
     def _validate_metrics(self,
                           metrics: List[grpc_observability.StatsData]) -> None:

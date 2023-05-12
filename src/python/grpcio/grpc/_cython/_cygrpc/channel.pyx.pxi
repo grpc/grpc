@@ -72,10 +72,19 @@ cdef class _CallState:
   def __cinit__(self):
     self.due = set()
 
-  def maybe_delete_call_tracer(self) -> None:
+  cdef void maybe_delete_call_tracer(self) except *:
     if not self.call_tracer_capsule:
       return
     _observability.delete_call_tracer(self.call_tracer_capsule)
+
+  cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name) except *:
+    with _observability.get_plugin() as plugin:
+      if not (plugin and plugin.observability_enabled):
+        return
+      capsule = plugin.create_client_call_tracer(method_name)
+      capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+      _set_call_tracer(self.c_call, capsule_ptr)
+      self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 
@@ -235,7 +244,7 @@ cdef void _call(
       grpc_slice_unref(method_slice)
       if host_slice_ptr:
         grpc_slice_unref(host_slice)
-      maybe_set_client_call_tracer_on_call(call_state, method)
+      call_state.maybe_set_client_call_tracer_on_call(method)
       if context is not None:
         set_census_context_on_call(call_state, context)
       if credentials is not None:
