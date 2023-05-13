@@ -1,0 +1,3 @@
+suite: "Http2SingleHopTest"
+test: "Encode0Decode0"
+config: "Chttp2FakeSecurityFullstack"

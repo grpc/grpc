@@ -32,7 +32,7 @@ namespace {
 // Tests that we don't retry when throttled.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED but is over limit, so no retry is done
-TEST_P(RetryTest, RetryThrottled) {
+CORE_END2END_TEST(RetryTest, RetryThrottled) {
   InitServer(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

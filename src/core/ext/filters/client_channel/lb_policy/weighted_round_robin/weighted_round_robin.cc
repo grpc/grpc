@@ -318,11 +318,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&timer_mu_);
 
     RefCountedPtr<WeightedRoundRobin> wrr_;
-    const bool use_per_rpc_utilization_;
-    const Duration weight_update_period_;
-    const Duration weight_expiration_period_;
-    const Duration blackout_period_;
-    const float error_utilization_penalty_;
+    RefCountedPtr<WeightedRoundRobinConfig> config_;
     std::vector<EndpointInfo> endpoints_;
 
     Mutex scheduler_mu_;
@@ -486,11 +482,7 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
 WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
                                    WrrEndpointList* endpoint_list)
     : wrr_(std::move(wrr)),
-      use_per_rpc_utilization_(!wrr_->config_->enable_oob_load_report()),
-      weight_update_period_(wrr_->config_->weight_update_period()),
-      weight_expiration_period_(wrr_->config_->weight_expiration_period()),
-      blackout_period_(wrr_->config_->blackout_period()),
-      error_utilization_penalty_(wrr_->config_->error_utilization_penalty()),
+      config_(wrr_->config_),
       last_picked_index_(absl::Uniform<size_t>(wrr_->bit_gen_)) {
   for (auto& endpoint : endpoint_list->endpoints()) {
     auto* ep = static_cast<WrrEndpointList::WrrEndpoint*>(endpoint.get());
@@ -534,12 +526,12 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   }
   auto result = endpoint_info.picker->Pick(args);
   // Collect per-call utilization data if needed.
-  if (use_per_rpc_utilization_) {
+  if (!config_->enable_oob_load_report()) {
     auto* complete = absl::get_if<PickResult::Complete>(&result.result);
     if (complete != nullptr) {
       complete->subchannel_call_tracker =
           std::make_unique<SubchannelCallTracker>(
-              endpoint_info.weight, error_utilization_penalty_,
+              endpoint_info.weight, config_->error_utilization_penalty(),
               std::move(complete->subchannel_call_tracker));
     }
   }
@@ -566,8 +558,8 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   std::vector<float> weights;
   weights.reserve(endpoints_.size());
   for (const auto& endpoint : endpoints_) {
-    weights.push_back(endpoint.weight->GetWeight(now, weight_expiration_period_,
-                                                 blackout_period_));
+    weights.push_back(endpoint.weight->GetWeight(
+        now, config_->weight_expiration_period(), config_->blackout_period()));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
@@ -594,7 +586,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
-      weight_update_period_, [self = std::move(self)]() mutable {
+      config_->weight_update_period(), [self = std::move(self)]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
@@ -918,7 +910,7 @@ class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<WeightedRoundRobinConfig>(
+    return LoadFromJson<RefCountedPtr<WeightedRoundRobinConfig>>(
         json, JsonArgs(),
         "errors validating weighted_round_robin LB policy config");
   }

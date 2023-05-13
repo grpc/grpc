@@ -194,9 +194,13 @@ with open('test/core/util/fuzz_config_vars.h', 'w') as H:
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
     print("#include \"test/core/util/fuzz_config_vars.pb.h\"", file=H)
+    print("#include \"src/core/lib/config/config_vars.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
+    print(
+        "ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
+        file=H)
     print(
         "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
         file=H)
@@ -214,23 +218,35 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
     ])
 
     print("#include \"test/core/util/fuzz_config_vars.h\"", file=C)
-    print(file=C)
-    print("#include \"src/core/lib/config/config_vars.h\"", file=C)
+    print("#include \"test/core/util/fuzz_config_vars_helpers.h\"", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
     print(
-        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
+        "ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
         file=C)
     print("  ConfigVars::Overrides overrides;", file=C)
     for attr in attrs_in_packing_order:
-        if attr.get("fuzz", False) == False:
+        fuzz = attr.get("fuzz", False)
+        if not fuzz:
             continue
         print("  if (vars.has_%s()) {" % attr['name'], file=C)
-        print("    overrides.%s = vars.%s();" % (attr['name'], attr['name']),
-              file=C)
+        if isinstance(fuzz, str):
+            print("    overrides.%s = %s(vars.%s());" %
+                  (attr['name'], fuzz, attr['name']),
+                  file=C)
+        else:
+            print("    overrides.%s = vars.%s();" %
+                  (attr['name'], attr['name']),
+                  file=C)
         print("  }", file=C)
-    print("  ConfigVars::SetOverrides(overrides);", file=C)
+    print("  return overrides;", file=C)
+    print("}", file=C)
+    print(
+        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
+        file=C)
+    print("  ConfigVars::SetOverrides(OverridesFromFuzzConfigVars(vars));",
+          file=C)
     print("}", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)

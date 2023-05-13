@@ -28,7 +28,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreClientChannelTest, SimpleDelayedRequestShort) {
+CORE_END2END_TEST(CoreClientChannelTest, SimpleDelayedRequestShort) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
