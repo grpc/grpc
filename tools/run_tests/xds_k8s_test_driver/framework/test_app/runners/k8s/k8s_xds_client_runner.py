@@ -42,9 +42,6 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
     service_account_template: Optional[str] = None
     gcp_iam: Optional[gcp.iam.IamV1] = None
 
-    # Mutable state.
-    service: Optional[k8s.V1Service] = None
-
     def __init__(  # pylint: disable=too-many-locals
             self,
             k8s_namespace: k8s.KubernetesNamespace,
