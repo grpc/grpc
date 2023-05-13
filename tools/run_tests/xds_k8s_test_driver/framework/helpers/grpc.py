@@ -18,7 +18,7 @@ from typing import Optional
 import grpc
 
 
-@functools.cache
+@functools.cache  # pylint: disable=no-member
 def status_from_int(grpc_status_int: int) -> Optional[grpc.StatusCode]:
     """Converts the integer gRPC status code to the grpc.StatusCode enum."""
     for grpc_status in grpc.StatusCode:
