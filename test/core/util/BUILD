@@ -369,6 +369,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "osa_distance",
+    srcs = ["osa_distance.cc"],
+    hdrs = ["osa_distance.h"],
+    external_deps = ["absl/strings"],
+)
+
+grpc_cc_test(
+    name = "osa_distance_test",
+    srcs = ["osa_distance_test.cc"],
+    external_deps = ["gtest"],
+    deps = ["osa_distance"],
+)
+
+grpc_cc_library(
     name = "scoped_env_var",
     testonly = True,
     hdrs = ["scoped_env_var.h"],
@@ -390,8 +404,20 @@ grpc_cc_library(
     hdrs = ["fuzz_config_vars.h"],
     external_deps = ["absl/types:optional"],
     deps = [
+        "fuzz_config_vars_helpers",
         "fuzz_config_vars_proto",
         "//:config_vars",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "fuzz_config_vars_helpers",
+    srcs = ["fuzz_config_vars_helpers.cc"],
+    hdrs = ["fuzz_config_vars_helpers.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "//:gpr_platform",
+        "//src/core:experiments",
     ],
 )

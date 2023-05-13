@@ -1,0 +1,3 @@
+suite: "RetryTest"
+test: "RetrySendRecvBatch"
+config: "Chttp2FakeSecurityFullstack"

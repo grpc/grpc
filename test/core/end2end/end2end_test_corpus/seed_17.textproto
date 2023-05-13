@@ -1,0 +1,6 @@
+suite: "CoreClientChannelTest"
+test: "SimpleDelayedRequestShort"
+config: "Chttp2FakeSecurityFullstack"
+config_vars {
+  experiments: "client_privacy"
+}
