@@ -24,9 +24,12 @@ message ResolverArgs {
 // Some error. The details are unimportant.
 message Error {}
 
-// The contents don't matter much, they aren't parsed by the resolver.
+
+message ResolvedAddress {
+    uint32 port = 1;
+}
 message ResolvedAddresses {
-    repeated string address = 1;
+    repeated ResolvedAddress addresses = 1;
 }
 
 message SRVRecord {
@@ -35,38 +38,31 @@ message SRVRecord {
     uint32 priority = 3;
     uint32 weight = 4;
 }
-
 message SRVRecords {
     repeated SRVRecord srv_records = 1;
 }
 
-message LookupHostnameResponse {
-    oneof response {
-        ResolvedAddresses addresses = 1;
-        Error error = 2;
-    }
+enum TXTRecordType {
+    TXT_VALID = 0;
+    TXT_INVALID = 1;
 }
-
-message LookupSRVResponse {
-    oneof response {
-        SRVRecords srv_records = 1;
-        Error error = 2;
-    }
-}
-
-message LookupTXTResponse {
-    oneof response {
-        string valid_response = 1;
-        string empty_response = 2;
-        string invalid_response = 3;
-        Error error = 4;
-    }
+message TXTRecords {
+    repeated TXTRecordType txt_records = 1;
 }
 
 message Msg {
     ResolverArgs resolver_args = 1;
-    repeated LookupHostnameResponse hostname_response = 2;
-    repeated LookupSRVResponse srv_response = 3;
-    repeated LookupTXTResponse txt_response = 4;
+    oneof hostname {
+        ResolvedAddresses hostname_response = 2;
+        Error hostname_error = 3;
+    }
+    oneof srv {
+        SRVRecords srv_response = 4;
+        Error srv_error = 5;
+    }
+    oneof txt {
+        TXTRecords txt_response = 6;
+        Error txt_error = 7;
+    }
     // TODO(hork): consider if cancellation responses can be fuzzed
 }

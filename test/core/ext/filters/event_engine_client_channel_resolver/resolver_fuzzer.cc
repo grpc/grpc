@@ -34,6 +34,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -55,9 +56,11 @@ bool squelch = true;
 
 namespace {
 
+using event_engine_client_channel_resolver::TXTRecordType;
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
+using grpc_event_engine::experimental::URIToResolvedAddress;
 
 class FuzzingResolverEventEngine
     : public grpc_event_engine::experimental::AbortingEventEngine {
@@ -67,47 +70,40 @@ class FuzzingResolverEventEngine
       : runner_(FuzzingEventEngine::Options(),
                 fuzzing_event_engine::Actions()) {
     // Set hostname responses
-    for (const auto& hostname_response : msg.hostname_response()) {
-      if (hostname_response.has_error()) {
-        hostname_responses_.emplace(absl::nullopt);
-      } else if (hostname_response.has_addresses() &&
-                 hostname_response.addresses().address_size() > 0) {
-        // add a set of basic addresses
-        std::vector<EventEngine::ResolvedAddress> resolved_addresses;
-        resolved_addresses.resize(hostname_response.addresses().address_size(),
-                                  EventEngine::ResolvedAddress());
-        hostname_responses_.emplace(std::move(resolved_addresses));
+    if (msg.has_hostname_error()) {
+      hostname_responses_ = absl::nullopt;
+    } else {
+      hostname_responses_.emplace();
+      for (const auto& address : msg.hostname_response().addresses()) {
+        hostname_responses_->emplace_back(*URIToResolvedAddress(
+            absl::StrCat("ipv4:127.0.0.1:", address.port() % 65535)));
       }
     }
     // Set SRV Responses
-    for (const auto& srv_response : msg.srv_response()) {
-      if (srv_response.has_error()) {
-        srv_responses_.emplace(absl::nullopt);
-      } else if (srv_response.has_srv_records() &&
-                 srv_response.srv_records().srv_records_size() > 0) {
-        std::vector<EventEngine::DNSResolver::SRVRecord> records;
-        records.reserve(srv_response.srv_records().srv_records_size());
-        for (const auto& r : srv_response.srv_records().srv_records()) {
-          EventEngine::DNSResolver::SRVRecord final_r;
-          final_r.host = r.host();
-          final_r.port = r.port();
-          final_r.priority = r.priority();
-          final_r.weight = r.weight();
-          records.push_back(final_r);
-        }
-        srv_responses_.emplace(std::move(records));
+    if (msg.has_srv_error()) {
+      srv_responses_ = absl::nullopt;
+    } else {
+      srv_responses_.emplace();
+      for (const auto& srv_record : msg.srv_response().srv_records()) {
+        EventEngine::DNSResolver::SRVRecord final_r;
+        final_r.host = srv_record.host();
+        final_r.port = srv_record.port();
+        final_r.priority = srv_record.priority();
+        final_r.weight = srv_record.weight();
+        srv_responses_->emplace_back(final_r);
       }
     }
     // Set TXT Responses
-    for (const auto& txt_response : msg.txt_response()) {
-      if (txt_response.has_error()) {
-        txt_responses_.emplace(absl::nullopt);
-      } else if (txt_response.has_valid_response()) {
-        txt_responses_.emplace(txt_valid_config_);
-      } else if (txt_response.has_empty_response()) {
-        txt_responses_.emplace("");
-      } else if (txt_response.has_invalid_response()) {
-        txt_responses_.emplace(txt_invalid_config_);
+    if (msg.has_txt_error()) {
+      txt_responses_ = absl::nullopt;
+    } else {
+      txt_responses_.emplace();
+      for (const auto& txt_record : msg.txt_response().txt_records()) {
+        if (txt_record == TXTRecordType::TXT_VALID) {
+          txt_responses_->emplace_back(txt_valid_config_);
+        } else {
+          txt_responses_->emplace_back(txt_invalid_config_);
+        }
       }
     }
   }
@@ -135,15 +131,10 @@ class FuzzingResolverEventEngine
                 });
             return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
           };
-      if (engine_->hostname_responses_.empty()) {
+      if (!engine_->hostname_responses_.has_value()) {
         return finish(engine_->lookup_hostname_response_base_case_);
       }
-      auto canned_response = engine_->hostname_responses_.front();
-      engine_->hostname_responses_.pop();
-      if (!canned_response.has_value()) {
-        return finish(engine_->lookup_hostname_response_base_case_);
-      }
-      return finish(*canned_response);
+      return finish(*engine_->hostname_responses_);
     }
     virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                        absl::string_view /* name */,
@@ -157,36 +148,27 @@ class FuzzingResolverEventEngine
                 });
             return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
           };
-      if (engine_->srv_responses_.empty()) {
+      if (!engine_->srv_responses_.has_value()) {
         return finish(engine_->lookup_srv_response_base_case_);
       }
-      auto response = engine_->srv_responses_.front();
-      engine_->srv_responses_.pop();
-      if (!response.has_value()) {
-        return finish(engine_->lookup_srv_response_base_case_);
-      }
-      return finish(*response);
+      return finish(*engine_->srv_responses_);
     }
     virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                        absl::string_view /* name */,
                                        Duration /* timeout */) override {
-      auto finish = [cb = std::move(on_resolve), runner = &engine_->runner_](
-                        absl::StatusOr<std::string> response) mutable {
-        runner->Run(
-            [cb = std::move(cb), response = std::move(response)]() mutable {
-              cb(response);
-            });
-        return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
-      };
-      if (engine_->txt_responses_.empty()) {
+      auto finish =
+          [cb = std::move(on_resolve), runner = &engine_->runner_](
+              absl::StatusOr<std::vector<std::string>> response) mutable {
+            runner->Run(
+                [cb = std::move(cb), response = std::move(response)]() mutable {
+                  cb(response);
+                });
+            return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
+          };
+      if (!engine_->txt_responses_.has_value()) {
         return finish(engine_->lookup_txt_response_base_case_);
       }
-      auto response = engine_->txt_responses_.front();
-      engine_->txt_responses_.pop();
-      if (!response.has_value()) {
-        return finish(engine_->lookup_txt_response_base_case_);
-      }
-      return finish(*response);
+      return finish(*engine_->txt_responses_);
     }
     virtual bool CancelLookup(LookupTaskHandle handle) override {
       return false;
@@ -200,11 +182,10 @@ class FuzzingResolverEventEngine
   FuzzingEventEngine runner_;
 
   // responses
-  std::queue<absl::optional<std::vector<EventEngine::ResolvedAddress>>>
-      hostname_responses_;
-  std::queue<absl::optional<std::vector<EventEngine::DNSResolver::SRVRecord>>>
+  absl::optional<std::vector<EventEngine::ResolvedAddress>> hostname_responses_;
+  absl::optional<std::vector<EventEngine::DNSResolver::SRVRecord>>
       srv_responses_;
-  std::queue<absl::optional<std::string>> txt_responses_;
+  absl::optional<std::vector<std::string>> txt_responses_;
 
   // base cases
   const std::string txt_valid_config_ =
@@ -254,7 +235,6 @@ grpc_core::ResolverArgs ConstructResolverArgs(
   GPR_ASSERT(uri.ok());
   resolver_args.uri = *uri;
   resolver_args.args = channel_args;
-  // DO NOT SUBMIT(hork): do we need an actual pollset_set here?
   resolver_args.pollset_set = nullptr;
   resolver_args.work_serializer = std::move(work_serializer);
   auto result_handler =
