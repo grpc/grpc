@@ -45,7 +45,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
-#include "src/core/ext/filters/client_channel/lb_policy/endpoint_list.h"
+#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -59,6 +59,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -139,135 +140,85 @@ class RingHash : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class RingHashEndpointList : public EndpointList {
+  // A ring computed based on a config and address list.
+  class Ring : public RefCounted<Ring> {
    public:
-    class Ring : public RefCounted<Ring> {
-     public:
-      struct RingEntry {
-        uint64_t hash;
-        size_t endpoint_index;
-      };
-
-      Ring(RingHashLbConfig* config, const ServerAddressList& addresses,
-           const ChannelArgs& args);
-
-      const std::vector<RingEntry>& ring() const { return ring_; }
-
-     private:
-      std::vector<RingEntry> ring_;
+    struct RingEntry {
+      uint64_t hash;
+      size_t endpoint_index;  // Index into RingHash::addresses_.
     };
 
-    class RingHashEndpoint : public Endpoint {
-     public:
-      // Info about an endpoint to be stored in the picker.
-      struct EndpointInfo {
-        RefCountedPtr<RingHashEndpoint> endpoint;
-        RefCountedPtr<SubchannelPicker> picker;
-        grpc_connectivity_state state;
-        absl::Status status;
-      };
+    Ring(RingHash* ring_hash, RingHashLbConfig* config);
 
-      RingHashEndpoint(RefCountedPtr<RingHashEndpointList> endpoint_list,
-                         const ServerAddress& address, const ChannelArgs& args,
-                         std::shared_ptr<WorkSerializer> work_serializer)
-          : Endpoint(std::move(endpoint_list)) {
-        // FIXME: need to lazily create PF child!
-        Init(address, args, std::move(work_serializer));
-      }
-
-      EndpointInfo GetInfoForPicker() {
-        return {Ref(), picker(),
-                connectivity_state().value_or(GRPC_CHANNEL_IDLE), status_};
-      }
-
-     private:
-      // Called when the child policy reports a connectivity state update.
-      void OnStateUpdate(absl::optional<grpc_connectivity_state> old_state,
-                         grpc_connectivity_state new_state,
-                         const absl::Status& status) override;
-
-      // Status from last connectivity state update.
-      absl::Status status_;
-    };
-
-    RingHashEndpointList(RefCountedPtr<RingHash> ring_hash,
-                         const ServerAddressList& addresses,
-                         const ChannelArgs& args)
-        : EndpointList(std::move(ring_hash),
-                       GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
-                           ? "RingHashEndpointList"
-                           : nullptr),
-          num_idle_(addresses.size()),
-          ring_(MakeRefCounted<Ring>(policy<RingHash>()->config_.get(),
-                                     addresses, args)) {
-      Init(addresses, args,
-           [&](RefCountedPtr<RingHashEndpointList> endpoint_list,
-               const ServerAddress& address, const ChannelArgs& args) {
-             return MakeOrphanable<RingHashEndpoint>(
-                 std::move(endpoint_list), address, args,
-                 policy<RingHash>()->work_serializer());
-           });
-    }
-
-    RefCountedPtr<Ring> ring() { return ring_; }
-
-    // Updates the aggregate policy's connectivity state based on the
-    // endpoint list's state counters, creating a new picker.
-    // The index parameter indicates the index into the list of the endpoint
-    // whose status report triggered the call to
-    // MaybeUpdateAggregatedConnectivityStateLocked().
-    // connection_attempt_complete is true if the endpoint just
-    // finished a connection attempt.
-    void MaybeUpdateAggregatedConnectivityStateLocked(
-        size_t index, bool connection_attempt_complete, absl::Status status);
+    const std::vector<RingEntry>& ring() const { return ring_; }
 
    private:
-    LoadBalancingPolicy::ChannelControlHelper* channel_control_helper()
-        const override {
-      return policy<RingHash>()->channel_control_helper();
+    std::vector<RingEntry> ring_;
+  };
+
+  // State for a particular endpoint.  Delegates to a pick_first child policy.
+  class RingHashEndpoint : public InternallyRefCounted<RingHashEndpoint> {
+   public:
+    // index is the index into RingHash::addresses_ of this endpoint.
+    RingHashEndpoint(RefCountedPtr<RingHash> ring_hash, size_t index)
+        : ring_hash_(std::move(ring_hash)), index_(index) {}
+
+    void Orphan() override;
+
+    size_t index() const { return index_; }
+    void set_index(size_t index) { index_ = index; }
+
+    grpc_connectivity_state connectivity_state() const {
+      return connectivity_state_;
     }
 
-    // Updates the counters of children in each state when a
-    // child transitions from old_state to new_state.
-    void UpdateStateCountersLocked(grpc_connectivity_state old_state,
-                                   grpc_connectivity_state new_state);
-
-    std::string CountersString() const {
-      return absl::StrCat("num_children=", size(), " num_idle=", num_idle_,
-                          " num_ready=", num_ready_,
-                          " num_connecting=", num_connecting_,
-                          " num_transient_failure=", num_transient_failure_);
+    // Returns info about the endpoint to be stored in the picker.
+    struct EndpointInfo {
+      RefCountedPtr<RingHashEndpoint> endpoint;
+      RefCountedPtr<SubchannelPicker> picker;
+      grpc_connectivity_state state;
+      absl::Status status;
+    };
+    EndpointInfo GetInfoForPicker() {
+      return {Ref(), picker_, connectivity_state_, status_};
     }
 
-    size_t num_idle_;
-    size_t num_ready_ = 0;
-    size_t num_connecting_ = 0;
-    size_t num_transient_failure_ = 0;
+    void ResetBackoffLocked();
 
-    // TODO(roth): If we ever change the helper UpdateState() API to not
-    // need the status reported for TRANSIENT_FAILURE state (because
-    // it's not currently actually used for anything outside of the picker),
-    // then we will no longer need this data member.
-    absl::Status last_failure_;
+    // If the child policy does not yet exist, creates it; otherwise,
+    // asks the child to exit IDLE.
+    void RequestConnectionLocked();
 
-    RefCountedPtr<Ring> ring_;
+   private:
+    class Helper;
 
-    // The index of the endpoint currently doing an internally
-    // triggered connection attempt, if any.
-    absl::optional<size_t> internally_triggered_connection_index_;
+    void CreateChildPolicy();
+
+    // Called when the child policy reports a connectivity state update.
+    void OnStateUpdate(grpc_connectivity_state new_state,
+                       const absl::Status& status,
+                       RefCountedPtr<SubchannelPicker> picker);
+
+    // Ref to our parent.
+    RefCountedPtr<RingHash> ring_hash_;
+    size_t index_;  // Index into RingHash::addresses_ of this endpoint.
+
+    // The pick_first child policy.
+    OrphanablePtr<LoadBalancingPolicy> child_policy_;
+
+    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
+    absl::Status status_;
+    RefCountedPtr<SubchannelPicker> picker_;
   };
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RefCountedPtr<RingHash> ring_hash_lb,
-           RingHashEndpointList* endpoint_list)
-        : ring_hash_lb_(std::move(ring_hash_lb)),
-          ring_(endpoint_list->ring()) {
-      endpoints_.reserve(endpoint_list->size());
-      for (const auto& endpoint : endpoint_list->endpoints()) {
-        auto* ep = static_cast<RingHashEndpointList::RingHashEndpoint*>(
-            endpoint.get());
-        endpoints_.emplace_back(ep->GetInfoForPicker());
+    Picker(RefCountedPtr<RingHash> ring_hash)
+        : ring_hash_(std::move(ring_hash)),
+          ring_(ring_hash_->ring_),
+          endpoints_(ring_hash_->addresses_.size()) {
+      for (const auto& p : ring_hash_->endpoint_map_) {
+        endpoints_[p.second->index()] = p.second->GetInfoForPicker();
       }
     }
 
@@ -279,8 +230,8 @@ class RingHash : public LoadBalancingPolicy {
     class EndpointConnectionAttempter : public Orphanable {
      public:
       explicit EndpointConnectionAttempter(
-          RefCountedPtr<RingHash> ring_hash_lb)
-          : ring_hash_lb_(std::move(ring_hash_lb)) {
+          RefCountedPtr<RingHash> ring_hash)
+          : ring_hash_(std::move(ring_hash)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
       }
 
@@ -290,19 +241,18 @@ class RingHash : public LoadBalancingPolicy {
         ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
       }
 
-      void AddEndpoint(
-          RefCountedPtr<RingHashEndpointList::RingHashEndpoint> endpoint) {
+      void AddEndpoint(RefCountedPtr<RingHashEndpoint> endpoint) {
         endpoints_.push_back(std::move(endpoint));
       }
 
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_lb_->work_serializer()->Run(
+        self->ring_hash_->work_serializer()->Run(
             [self]() {
-              if (!self->ring_hash_lb_->shutdown_) {
+              if (!self->ring_hash_->shutdown_) {
                 for (auto& endpoint : self->endpoints_) {
-                  endpoint->ExitIdleLocked();
+                  endpoint->RequestConnectionLocked();
                 }
               }
               delete self;
@@ -310,28 +260,47 @@ class RingHash : public LoadBalancingPolicy {
             DEBUG_LOCATION);
       }
 
-      RefCountedPtr<RingHash> ring_hash_lb_;
+      RefCountedPtr<RingHash> ring_hash_;
       grpc_closure closure_;
-      std::vector<RefCountedPtr<RingHashEndpointList::RingHashEndpoint>>
-          endpoints_;
+      std::vector<RefCountedPtr<RingHashEndpoint>> endpoints_;
     };
 
-    RefCountedPtr<RingHash> ring_hash_lb_;
-    RefCountedPtr<RingHashEndpointList::Ring> ring_;
-    std::vector<RingHashEndpointList::RingHashEndpoint::EndpointInfo>
-        endpoints_;
+    RefCountedPtr<RingHash> ring_hash_;
+    RefCountedPtr<Ring> ring_;
+    std::vector<RingHashEndpoint::EndpointInfo> endpoints_;
   };
 
   ~RingHash() override;
 
   void ShutdownLocked() override;
 
-  // Current config from resolver.
-  RefCountedPtr<RingHashLbConfig> config_;
+  // Updates the aggregate policy's connectivity state based on the
+  // endpoint list's state counters, creating a new picker.
+  // The index parameter indicates the index into the list of the endpoint
+  // whose status report triggered the call to
+  // UpdateAggregatedConnectivityStateLocked().
+  // connection_attempt_complete is true if the endpoint has just
+  // finished a connection attempt.
+  void UpdateAggregatedConnectivityStateLocked(
+      size_t index, bool connection_attempt_complete, absl::Status status);
 
-  // List of endpoints.
-  OrphanablePtr<RingHashEndpointList> endpoint_list_;
-  OrphanablePtr<RingHashEndpointList> latest_pending_endpoint_list_;
+  // Current address list, channel args, and ring.
+  ServerAddressList addresses_;
+  ChannelArgs args_;
+  RefCountedPtr<Ring> ring_;
+
+  std::map<ServerAddress, OrphanablePtr<RingHashEndpoint>> endpoint_map_;
+
+  // TODO(roth): If we ever change the helper UpdateState() API to not
+  // need the status reported for TRANSIENT_FAILURE state (because
+  // it's not currently actually used for anything outside of the picker),
+  // then we will no longer need this data member.
+  absl::Status last_failure_;
+
+  // The index of the endpoint currently doing an internally
+  // triggered connection attempt, if any.
+  absl::optional<size_t> internally_triggered_connection_index_;
+
   // indicating if we are shutting down.
   bool shutdown_ = false;
 };
@@ -382,11 +351,11 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
   }
   OrphanablePtr<EndpointConnectionAttempter> endpoint_connection_attempter;
-  auto ScheduleEndpointConnectionAttempt =
-      [&](RefCountedPtr<RingHashEndpointList::RingHashEndpoint> endpoint) {
+  auto schedule_endpoint_connection_attempt =
+      [&](RefCountedPtr<RingHashEndpoint> endpoint) {
         if (endpoint_connection_attempter == nullptr) {
           endpoint_connection_attempter =
-              MakeOrphanable<EndpointConnectionAttempter>(ring_hash_lb_->Ref(
+              MakeOrphanable<EndpointConnectionAttempter>(ring_hash_->Ref(
                   DEBUG_LOCATION, "EndpointConnectionAttempter"));
         }
         endpoint_connection_attempter->AddEndpoint(std::move(endpoint));
@@ -396,14 +365,14 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     case GRPC_CHANNEL_READY:
       return first_endpoint.picker->Pick(args);
     case GRPC_CHANNEL_IDLE:
-      ScheduleEndpointConnectionAttempt(first_endpoint.endpoint);
+      schedule_endpoint_connection_attempt(first_endpoint.endpoint);
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHANNEL_CONNECTING:
       return PickResult::Queue();
     default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
       break;
   }
-  ScheduleEndpointConnectionAttempt(first_endpoint.endpoint);
+  schedule_endpoint_connection_attempt(first_endpoint.endpoint);
   // Loop through remaining endpoints to find one in READY.
   // On the way, we make sure the right set of connection attempts
   // will happen.
@@ -421,7 +390,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     if (!found_second_endpoint) {
       switch (endpoint_info.state) {
         case GRPC_CHANNEL_IDLE:
-          ScheduleEndpointConnectionAttempt(endpoint_info.endpoint);
+          schedule_endpoint_connection_attempt(endpoint_info.endpoint);
           ABSL_FALLTHROUGH_INTENDED;
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
@@ -432,10 +401,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     if (!found_first_non_failed) {
       if (endpoint_info.state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        ScheduleEndpointConnectionAttempt(endpoint_info.endpoint);
+        schedule_endpoint_connection_attempt(endpoint_info.endpoint);
       } else {
         if (endpoint_info.state == GRPC_CHANNEL_IDLE) {
-          ScheduleEndpointConnectionAttempt(endpoint_info.endpoint);
+          schedule_endpoint_connection_attempt(endpoint_info.endpoint);
         }
         found_first_non_failed = true;
       }
@@ -447,12 +416,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 }
 
 //
-// RingHash::RingHashEndpointList::Ring
+// RingHash::Ring
 //
 
-RingHash::RingHashEndpointList::Ring::Ring(
-    RingHashLbConfig* config, const ServerAddressList& addresses,
-    const ChannelArgs& args) {
+RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   // Store the weights while finding the sum.
   struct AddressWeight {
     std::string address;
@@ -463,6 +430,7 @@ RingHash::RingHashEndpointList::Ring::Ring(
   };
   std::vector<AddressWeight> address_weights;
   size_t sum = 0;
+  const ServerAddressList& addresses = ring_hash->addresses_;
   address_weights.reserve(addresses.size());
   for (const auto& address : addresses) {
     const auto* weight_attribute = static_cast<
@@ -496,8 +464,9 @@ RingHash::RingHashEndpointList::Ring::Ring(
   // weights aren't provided, all hosts should get an equal number of hashes. In
   // the case where this number exceeds the max_ring_size, it's scaled back down
   // to fit.
-  const size_t ring_size_cap = args.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
-                                   .value_or(kRingSizeCapDefault);
+  const size_t ring_size_cap =
+      ring_hash->args_.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
+                       .value_or(kRingSizeCapDefault);
   const size_t min_ring_size = std::min(config->min_ring_size(), ring_size_cap);
   const size_t max_ring_size = std::min(config->max_ring_size(), ring_size_cap);
   const double scale = std::min(
@@ -546,54 +515,246 @@ RingHash::RingHashEndpointList::Ring::Ring(
 }
 
 //
-// RingHash::RingHashEndpointList
+// RingHash::RingHashEndpoint::Helper
 //
 
-void RingHash::RingHashEndpointList::UpdateStateCountersLocked(
-    grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
-  if (old_state == GRPC_CHANNEL_IDLE) {
-    GPR_ASSERT(num_idle_ > 0);
-    --num_idle_;
-  } else if (old_state == GRPC_CHANNEL_READY) {
-    GPR_ASSERT(num_ready_ > 0);
-    --num_ready_;
-  } else if (old_state == GRPC_CHANNEL_CONNECTING) {
-    GPR_ASSERT(num_connecting_ > 0);
-    --num_connecting_;
-  } else if (old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    GPR_ASSERT(num_transient_failure_ > 0);
-    --num_transient_failure_;
+class RingHash::RingHashEndpoint::Helper
+    : public LoadBalancingPolicy::ChannelControlHelper {
+ public:
+  explicit Helper(RefCountedPtr<RingHashEndpoint> endpoint)
+      : endpoint_(std::move(endpoint)) {}
+
+  ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
+
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      ServerAddress address, const ChannelArgs& args) override {
+    return parent_helper()->CreateSubchannel(std::move(address), args);
   }
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
-  if (new_state == GRPC_CHANNEL_IDLE) {
-    ++num_idle_;
-  } else if (new_state == GRPC_CHANNEL_READY) {
-    ++num_ready_;
-  } else if (new_state == GRPC_CHANNEL_CONNECTING) {
-    ++num_connecting_;
-  } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    ++num_transient_failure_;
+  void UpdateState(
+      grpc_connectivity_state state, const absl::Status& status,
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
+    endpoint_->OnStateUpdate(state, status, std::move(picker));
+  }
+  void RequestReresolution() override {
+    parent_helper()->RequestReresolution();
+  }
+  absl::string_view GetAuthority() override {
+    return parent_helper()->GetAuthority();
+  }
+  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    return parent_helper()->GetEventEngine();
+  }
+  void AddTraceEvent(TraceSeverity severity,
+                     absl::string_view message) override {
+    parent_helper()->AddTraceEvent(severity, message);
+  }
+
+ private:
+  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const {
+    return endpoint_->ring_hash_->channel_control_helper();
+  }
+
+  RefCountedPtr<RingHashEndpoint> endpoint_;
+};
+
+//
+// RingHash::RingHashEndpoint
+//
+
+void RingHash::RingHashEndpoint::Orphan() {
+  if (child_policy_ != nullptr) {
+    // Remove pollset_set linkage.
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     ring_hash_->interested_parties());
+    child_policy_.reset();
+    picker_.reset();
+  }
+  Unref();
+}
+
+void RingHash::RingHashEndpoint::ResetBackoffLocked() {
+  if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
+}
+
+void RingHash::RingHashEndpoint::RequestConnectionLocked() {
+  if (child_policy_ == nullptr) {
+    CreateChildPolicy();
+  } else {
+    child_policy_->ExitIdleLocked();
   }
 }
 
-void
-RingHash::RingHashEndpointList::MaybeUpdateAggregatedConnectivityStateLocked(
-    size_t index, bool connection_attempt_complete, absl::Status status) {
-  auto* ring_hash = policy<RingHash>();
-  // If this is latest_pending_endpoint_list_, then swap it into
-  // endpoint_list_ as soon as we get the initial connectivity state
-  // report for every endpoint in the list.
-  if (ring_hash->latest_pending_endpoint_list_.get() == this &&
-      AllEndpointsSeenInitialState()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO, "[RH %p] replacing endpoint list %p with %p", ring_hash,
-              ring_hash->endpoint_list_.get(), this);
-    }
-    ring_hash->endpoint_list_ =
-        std::move(ring_hash->latest_pending_endpoint_list_);
+void RingHash::RingHashEndpoint::CreateChildPolicy() {
+  GPR_ASSERT(child_policy_ == nullptr);
+  const ServerAddress& address = ring_hash_->addresses_[index_];
+  LoadBalancingPolicy::Args lb_policy_args;
+  auto child_args =
+      ring_hash_->args_
+          .Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
+          .Set(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX, true);
+  lb_policy_args.work_serializer = ring_hash_->work_serializer();
+  lb_policy_args.args = child_args;
+  lb_policy_args.channel_control_helper =
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  child_policy_ =
+      CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
+          "pick_first", std::move(lb_policy_args));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO,
+            "[RH %p] endpoint %p (index %" PRIuPTR " of %" PRIuPTR
+            ", %s): created child policy %p",
+            ring_hash_.get(), this, index_, ring_hash_->addresses_.size(),
+            address.ToString().c_str(), child_policy_.get());
   }
-  // Only set connectivity state if this is the current endpoint list.
-  if (ring_hash->endpoint_list_.get() != this) return;
+  // Add our interested_parties pollset_set to that of the newly created
+  // child policy. This will make the child policy progress upon activity on
+  // this policy, which in turn is tied to the application's call.
+  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
+                                   ring_hash_->interested_parties());
+  // Update child policy.
+  LoadBalancingPolicy::UpdateArgs update_args;
+  update_args.addresses.emplace().emplace_back(address);
+  update_args.args = std::move(child_args);
+  // TODO(roth): If the child reports a non-OK status with the update,
+  // we need to propagate that back to the resolver somehow.
+  (void)child_policy_->UpdateLocked(std::move(update_args));
+}
+
+void RingHash::RingHashEndpoint::OnStateUpdate(
+    grpc_connectivity_state new_state, const absl::Status& status,
+    RefCountedPtr<SubchannelPicker> picker) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[RH %p] connectivity changed for endpoint %p (%s, child_policy=%p): "
+        "prev_state=%s new_state=%s (%s)",
+        ring_hash_.get(), this,
+        ring_hash_->addresses_[index_].ToString().c_str(),
+        child_policy_.get(), ConnectivityStateName(connectivity_state_),
+        ConnectivityStateName(new_state), status.ToString().c_str());
+  }
+  if (child_policy_ == nullptr) return;  // Already orphaned.
+  // Update state.
+  connectivity_state_ = new_state;
+  status_ = status;
+  picker_ = std::move(picker);
+  // Update the aggregated connectivity state.
+  const bool connection_attempt_complete = new_state != GRPC_CHANNEL_CONNECTING;
+  ring_hash_->UpdateAggregatedConnectivityStateLocked(
+      index_, connection_attempt_complete, status);
+}
+
+//
+// RingHash
+//
+
+RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Created", this);
+  }
+}
+
+RingHash::~RingHash() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
+  }
+}
+
+void RingHash::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
+  }
+  shutdown_ = true;
+  endpoint_map_.clear();
+}
+
+void RingHash::ResetBackoffLocked() {
+  for (const auto& p : endpoint_map_) {
+    p.second->ResetBackoffLocked();
+  }
+}
+
+absl::Status RingHash::UpdateLocked(UpdateArgs args) {
+  // Check address list.
+  if (args.addresses.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+      gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
+              this, args.addresses->size());
+    }
+    addresses_ = *std::move(args.addresses);
+  } else {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+      gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
+              this, args.addresses.status().ToString().c_str());
+    }
+    // If we already have an endpoint list, then keep using the existing
+    // list, but still report back that the update was not accepted.
+    if (!addresses_.empty()) return args.addresses.status();
+  }
+  // Save channel args.
+  args_ = std::move(args.args);
+  // Build new ring.
+  ring_ = MakeRefCounted<Ring>(
+      this, static_cast<RingHashLbConfig*>(args.config.get()));
+  // Update endpoint map.
+  std::map<ServerAddress, OrphanablePtr<RingHashEndpoint>> endpoint_map;
+  for (size_t i = 0; i < addresses_.size(); ++i) {
+    const ServerAddress& address = addresses_[i];
+    auto addr_key = address.WithoutAttributes();
+    // If present in old map, retain it; otherwise, create a new one.
+    auto it = endpoint_map_.find(addr_key);
+    if (it != endpoint_map_.end()) {
+      it->second->set_index(i);
+      endpoint_map.emplace(addr_key, std::move(it->second));
+    } else {
+      endpoint_map.emplace(
+          addr_key, MakeOrphanable<RingHashEndpoint>(Ref(), i));
+    }
+  }
+  endpoint_map_ = std::move(endpoint_map);
+  // If the address list is empty, report TRANSIENT_FAILURE.
+  if (addresses_.empty()) {
+    absl::Status status =
+        args.addresses.ok()
+            ? absl::UnavailableError(
+                  absl::StrCat("empty address list: ", args.resolution_note))
+            : args.addresses.status();
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        MakeRefCounted<TransientFailurePicker>(status));
+    return status;
+  }
+  // Return a new picker.
+  UpdateAggregatedConnectivityStateLocked(
+      /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
+  return absl::OkStatus();
+}
+
+void RingHash::UpdateAggregatedConnectivityStateLocked(
+    size_t index, bool connection_attempt_complete, absl::Status status) {
+  // Count the number of endpoints in each state.
+  size_t num_idle = 0;
+  size_t num_connecting = 0;
+  size_t num_ready = 0;
+  size_t num_transient_failure = 0;
+  for (const auto& p : endpoint_map_) {
+    switch (p.second->connectivity_state()) {
+      case GRPC_CHANNEL_READY:
+        ++num_ready;
+        break;
+      case GRPC_CHANNEL_IDLE:
+        ++num_idle;
+        break;
+      case GRPC_CHANNEL_CONNECTING:
+        ++num_connecting;
+        break;
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        ++num_transient_failure;
+        break;
+      default:
+        Crash("child policy should never report SHUTDOWN");
+    }
+  }
   // The overall aggregation rules here are:
   // 1. If there is at least one endpoint in READY state, report READY.
   // 2. If there are 2 or more endpoints in TRANSIENT_FAILURE state, report
@@ -605,29 +766,34 @@ RingHash::RingHashEndpointList::MaybeUpdateAggregatedConnectivityStateLocked(
   // 5. If there is at least one endpoint in IDLE state, report IDLE.
   // 6. Otherwise, report TRANSIENT_FAILURE.
   //
-  // We set start_connection_attempt to true if we match rules 2, 3, or 6.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO,
-            "[RH %p] setting connectivity state based on endpoint list %p: %s",
-            ring_hash, this, CountersString().c_str());
-  }
+  // We set start_connection_attempt to true if we match rules 2, 4, or 6.
   grpc_connectivity_state state;
   bool start_connection_attempt = false;
-  if (num_ready_ > 0) {
+  if (num_ready > 0) {
     state = GRPC_CHANNEL_READY;
-  } else if (num_transient_failure_ >= 2) {
+  } else if (num_transient_failure >= 2) {
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
-  } else if (num_connecting_ > 0) {
+  } else if (num_connecting > 0) {
     state = GRPC_CHANNEL_CONNECTING;
-  } else if (num_transient_failure_ == 1 && size() > 1) {
+  } else if (num_transient_failure == 1 && addresses_.size() > 1) {
     state = GRPC_CHANNEL_CONNECTING;
     start_connection_attempt = true;
-  } else if (num_idle_ > 0) {
+  } else if (num_idle > 0) {
     state = GRPC_CHANNEL_IDLE;
   } else {
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO,
+            "[RH %p] setting connectivity state to %s (num_idle=%"
+            PRIuPTR ", num_connecting=%" PRIuPTR ", num_ready=%" PRIuPTR
+            ", num_transient_failure=%" PRIuPTR ", size=%" PRIuPTR
+            ") -- start_connection_attempt=%d",
+            this, ConnectivityStateName(state), num_idle,
+            num_connecting, num_ready, num_transient_failure,
+            addresses_.size(), start_connection_attempt);
   }
   // In TRANSIENT_FAILURE, report the last reported failure.
   // Otherwise, report OK.
@@ -642,10 +808,9 @@ RingHash::RingHashEndpointList::MaybeUpdateAggregatedConnectivityStateLocked(
   }
   // Generate new picker and return it to the channel.
   // Note that we use our own picker regardless of connectivity state.
-  ring_hash->channel_control_helper()->UpdateState(
+  channel_control_helper()->UpdateState(
       state, status,
-      MakeRefCounted<Picker>(
-          ring_hash->Ref(DEBUG_LOCATION, "RingHashPicker"), this));
+      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -664,6 +829,7 @@ RingHash::RingHashEndpointList::MaybeUpdateAggregatedConnectivityStateLocked(
   // Note that we do the same thing when the policy is in state
   // CONNECTING, just to ensure that we don't remain in CONNECTING state
   // indefinitely if there are no new picks coming in.
+// FIXME: is this all still right now that we're seeing sticky-TF from PF?
   if (internally_triggered_connection_index_.has_value() &&
       *internally_triggered_connection_index_ == index &&
       connection_attempt_complete) {
@@ -671,139 +837,20 @@ RingHash::RingHashEndpointList::MaybeUpdateAggregatedConnectivityStateLocked(
   }
   if (start_connection_attempt &&
       !internally_triggered_connection_index_.has_value()) {
-    size_t next_index = (index + 1) % size();
+    size_t next_index = (index + 1) % addresses_.size();
+    auto it = endpoint_map_.find(addresses_[next_index].WithoutAttributes());
+    GPR_ASSERT(it != endpoint_map_.end());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO,
               "[RH %p] triggering internal connection attempt for endpoint "
-              "%p, endpoint_list %p (index %" PRIuPTR " of %" PRIuPTR ")",
-              ring_hash, endpoints()[next_index].get(), this, next_index,
-              size());
+              "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",
+              this, it->second.get(),
+              addresses_[next_index].ToString().c_str(), next_index,
+              addresses_.size());
     }
+    it->second->RequestConnectionLocked();
     internally_triggered_connection_index_ = next_index;
-    endpoints()[next_index]->ExitIdleLocked();
   }
-}
-
-//
-// RingHash::RingHashEndpointList::RingHashEndpoint
-//
-
-void RingHash::RingHashEndpointList::RingHashEndpoint::OnStateUpdate(
-    absl::optional<grpc_connectivity_state> old_state,
-    grpc_connectivity_state new_state, const absl::Status& status) {
-  auto* rh_endpoint_list = endpoint_list<RingHashEndpointList>();
-  auto* ring_hash = policy<RingHash>();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[RH %p] connectivity changed for endpoint %p, endpoint_list %p "
-        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s (%s)",
-        ring_hash, this, rh_endpoint_list, Index(), rh_endpoint_list->size(),
-        old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A",
-        ConnectivityStateName(new_state), status.ToString().c_str());
-  }
-  const bool connection_attempt_complete = new_state != GRPC_CHANNEL_CONNECTING;
-  // Update status.
-  status_ = status;
-  // If state changed, update state counters.
-  grpc_connectivity_state use_old_state = old_state.value_or(GRPC_CHANNEL_IDLE);
-  if (use_old_state != new_state) {
-    rh_endpoint_list->UpdateStateCountersLocked(use_old_state, new_state);
-  }
-  // Update the aggregated connectivity state.
-  rh_endpoint_list->MaybeUpdateAggregatedConnectivityStateLocked(
-      Index(), connection_attempt_complete, status);
-}
-
-//
-// RingHash
-//
-
-RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Created", this);
-  }
-}
-
-RingHash::~RingHash() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
-  }
-  GPR_ASSERT(endpoint_list_ == nullptr);
-  GPR_ASSERT(latest_pending_endpoint_list_ == nullptr);
-}
-
-void RingHash::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
-  }
-  shutdown_ = true;
-  endpoint_list_.reset();
-  latest_pending_endpoint_list_.reset();
-}
-
-void RingHash::ResetBackoffLocked() {
-  endpoint_list_->ResetBackoffLocked();
-  if (latest_pending_endpoint_list_ != nullptr) {
-    latest_pending_endpoint_list_->ResetBackoffLocked();
-  }
-}
-
-absl::Status RingHash::UpdateLocked(UpdateArgs args) {
-  config_ = std::move(args.config);
-  ServerAddressList addresses;
-  if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
-              this, args.addresses->size());
-    }
-    addresses = *std::move(args.addresses);
-  } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
-              this, args.addresses.status().ToString().c_str());
-    }
-    // If we already have an endpoint list, then keep using the existing
-    // list, but still report back that the update was not accepted.
-    if (endpoint_list_ != nullptr) return args.addresses.status();
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace) &&
-      latest_pending_endpoint_list_ != nullptr) {
-    gpr_log(GPR_INFO, "[RH %p] replacing latest pending endpoint list %p",
-            this, latest_pending_endpoint_list_.get());
-  }
-  latest_pending_endpoint_list_ = MakeOrphanable<RingHashEndpointList>(
-      Ref(), std::move(addresses), args.args);
-  // If we have no existing list or the new list is empty, immediately
-  // promote the new list.
-  // Otherwise, do nothing; the new list will be promoted when the
-  // initial connectivity states are reported.
-  if (endpoint_list_ == nullptr ||
-      latest_pending_endpoint_list_->size() == 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace) &&
-        endpoint_list_ != nullptr) {
-      gpr_log(GPR_INFO,
-              "[RH %p] empty address list, replacing endpoint list %p", this,
-              endpoint_list_.get());
-    }
-    endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    // If the new list is empty, report TRANSIENT_FAILURE.
-    if (endpoint_list_->size() == 0) {
-      absl::Status status =
-          args.addresses.ok()
-              ? absl::UnavailableError(
-                    absl::StrCat("empty address list: ", args.resolution_note))
-              : args.addresses.status();
-      channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          MakeRefCounted<TransientFailurePicker>(status));
-      return status;
-    }
-    // Otherwise, report IDLE.
-    endpoint_list_->MaybeUpdateAggregatedConnectivityStateLocked(
-        /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
-  }
-  return absl::OkStatus();
 }
 
 //
