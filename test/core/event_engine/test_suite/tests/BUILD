@@ -65,6 +65,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "address_sorting",
     ],
     deps = [
         "//src/core:env",
