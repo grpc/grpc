@@ -61,21 +61,20 @@ extern bool g_event_engine_supports_fd;
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-int force_experiments = []() {
-  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
-  grpc_core::ForceEnableExperiment("event_engine_listener", true);
-  return 1;
-}();
-
 DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
-  grpc_core::g_is_fuzzing_core_e2e_tests = true;
-
   struct Test {
     std::string name;
     absl::AnyInvocable<std::unique_ptr<grpc_core::CoreEnd2endTest>() const>
         factory;
   };
+
+  static const int force_experiments = []() {
+    grpc_core::g_is_fuzzing_core_e2e_tests = true;
+    grpc_event_engine::experimental::g_event_engine_supports_fd = false;
+    grpc_core::ForceEnableExperiment("event_engine_client", true);
+    grpc_core::ForceEnableExperiment("event_engine_listener", true);
+    return 1;
+  }();
 
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
