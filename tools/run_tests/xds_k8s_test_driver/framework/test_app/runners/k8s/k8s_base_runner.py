@@ -43,6 +43,9 @@ _timedelta = datetime.timedelta
 
 
 class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
+    # Pylint wants abstract classes to override abstract methods.
+    # pylint: disable=abstract-method
+
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
     TEMPLATE_DIR_RELATIVE_PATH = f'../../../../{TEMPLATE_DIR_NAME}'
     ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'

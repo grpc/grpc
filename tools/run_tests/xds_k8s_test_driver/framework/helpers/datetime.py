@@ -14,7 +14,7 @@
 """This contains common helpers for working with dates and time."""
 import datetime
 import re
-from typing import Optional, Pattern
+from typing import Pattern
 
 RE_ZERO_OFFSET: Pattern[str] = re.compile(r'[+\-]00:?00$')
 

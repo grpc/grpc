@@ -16,11 +16,10 @@ Run xDS Test Client on Kubernetes.
 """
 import datetime
 import logging
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
-from framework.infrastructure.gcp.iam import IamV1
 from framework.test_app.runners.k8s import k8s_base_runner
 from framework.test_app.server_app import XdsTestServer
 
@@ -238,6 +237,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                              secure_mode=secure_mode,
                              rpc_host=rpc_host)
 
+    # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
         try:
             if self.deployment or force:
@@ -257,6 +257,8 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             self._cleanup_namespace(force=(force_namespace and force))
         finally:
             self.time_stopped = datetime.datetime.now()
+
+    # pylint: enable=arguments-differ
 
     @classmethod
     def make_namespace_name(cls,

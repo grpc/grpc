@@ -172,6 +172,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
                              hostname=pod.metadata.name,
                              rpc_host=rpc_host)
 
+    # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
         try:
             if self.deployment or force:
@@ -188,6 +189,8 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             self._cleanup_namespace(force=force_namespace and force)
         finally:
             self.time_stopped = datetime.datetime.now()
+
+    # pylint: enable=arguments-differ
 
     @classmethod
     def make_namespace_name(cls,
