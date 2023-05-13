@@ -22,7 +22,6 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
-#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <string>
