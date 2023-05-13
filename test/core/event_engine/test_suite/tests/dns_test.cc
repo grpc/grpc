@@ -251,13 +251,13 @@ class EventEngineDNSTest : public EventEngineTest {
 
   std::unique_ptr<EventEngine::DNSResolver>
   CreateDNSResolverWithNonResponsiveServer() {
+    using FakeUdpAndTcpServer = grpc_core::testing::FakeUdpAndTcpServer;
     // Start up fake non responsive DNS server
-    grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-            kWaitForClientToSendFirstBytes,
-        grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    fake_dns_server_ = std::make_unique<FakeUdpAndTcpServer>(
+        FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+        FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
     const std::string dns_server =
-        absl::StrFormat("[::1]:%d", fake_dns_server.port());
+        absl::StrFormat("[::1]:%d", fake_dns_server_->port());
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
     options.dns_server = dns_server;
@@ -285,6 +285,7 @@ class EventEngineDNSTest : public EventEngineTest {
 
  private:
   static DNSServer _dns_server;
+  std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer> fake_dns_server_;
   grpc_closure notify_closure_;
 };
 
@@ -531,17 +532,15 @@ TEST_F(EventEngineDNSTest, TestQueryTimeout) {
 }
 
 TEST_F(EventEngineDNSTest, MultithreadedCancel) {
-  const std::string name = "dont-care-since-wont-be-resolved.test.com.";
+  const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   constexpr int kNumOfThreads = 10;
   constexpr int kNumOfIterationsPerThread = 100;
   std::vector<std::thread> yarn;
   yarn.reserve(kNumOfThreads);
   for (int i = 0; i < kNumOfThreads; i++) {
-    yarn.emplace_back([dns_resolver = dns_resolver.get()] {
+    yarn.emplace_back([&name, dns_resolver = dns_resolver.get()] {
       for (int i = 0; i < kNumOfIterationsPerThread; i++) {
-        const std::string name =
-            "dont-care-since-wont-be-resolved.test.com:1234";
         grpc_core::Notification dns_resolver_signal;
         grpc_closure notify_closure;
         GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
