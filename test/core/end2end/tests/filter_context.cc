@@ -101,7 +101,7 @@ const grpc_channel_filter test_filter = {
 
 // Simple request to test that filters see a consistent view of the
 // call context.
-TEST_P(CoreEnd2endTest, FilterContext) {
+CORE_END2END_TEST(CoreEnd2endTest, FilterContext) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
                       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {

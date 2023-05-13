@@ -31,7 +31,7 @@ namespace {
 
 // Tests that we correctly clean up if the second attempt finishes
 // before we have finished replaying all of the send ops.
-TEST_P(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
+CORE_END2END_TEST(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
