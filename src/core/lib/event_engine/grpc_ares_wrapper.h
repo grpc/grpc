@@ -54,19 +54,22 @@ extern grpc_core::TraceFlag grpc_trace_ares_wrapper;
     }                                                                         \
   } while (0)
 
-// Base class of the c-ares based DNS lookup functionality. The actual concrete
-// leaf class represents each type of request i.e. A/AAAA, SRV, TXT.
-// GrpcAresRequest handles the logics to initialize and destroy the c-ares
-// channel (one channel for one request). Sets the name servers configuration
-// for the channel. And interacts with c-ares sockets/fds and gRPC poller. It
-// also handles logics to start and cancel timers.
+// Base class for the c-ares based DNS lookup functionality. This class is
+// inherited by the concrete leaf classes below which each represents a
+// different type of lookup (i.e. A/AAAA, SRV, TXT). One request object
+// represents one lookup request for a specific name. GrpcAresRequest
+// encapsulates the common logics to initialize and destroy the c-ares channel
+// (one channel for one request). Sets the name servers configuration for the
+// channel. And interacts with c-ares sockets/fds and the EventEngine poller. It
+// also encapsulates logics to start and cancel timers.
 class GrpcAresRequest
     : public grpc_core::InternallyRefCounted<GrpcAresRequest> {
  public:
   ~GrpcAresRequest() override;
 
-  // Cancels an inflight request, returns true if cancel succeeds and will start
-  // the shutdown process.
+  // Cancels an inflight request. Returns true if cancel succeeds and will start
+  // the shutdown process. Returns false if the request is already finishing,
+  // cancelled or shutdown.
   bool Cancel() ABSL_LOCKS_EXCLUDED(mu_);
   void Orphan() override {}
 
@@ -209,8 +212,7 @@ class GrpcAresRequest
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_ ABSL_GUARDED_BY(mu_);
 };
 
-// A GrpcAresHostnameRequest represents both "A" and "AAAA" (if available)
-// lookups.
+// Lookup the "A" and/or "AAAA" records for a name.
 class GrpcAresHostnameRequest final : public GrpcAresRequest {
  public:
   using Result = std::vector<EventEngine::ResolvedAddress>;
@@ -259,6 +261,7 @@ class GrpcAresHostnameRequest final : public GrpcAresRequest {
       ABSL_GUARDED_BY(mu_);
 };
 
+// Lookup the "SRV" records for a name.
 class GrpcAresSRVRequest final : public GrpcAresRequest {
  public:
   using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
@@ -292,6 +295,7 @@ class GrpcAresSRVRequest final : public GrpcAresRequest {
   absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve_;
 };
 
+// Lookup the "TXT" records for a name.
 class GrpcAresTXTRequest final : public GrpcAresRequest {
  public:
   using Result = std::vector<std::string>;

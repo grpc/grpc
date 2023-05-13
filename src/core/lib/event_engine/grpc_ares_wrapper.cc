@@ -633,7 +633,9 @@ GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
 void GrpcAresHostnameRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   // Holds a ref across this function since OnResolve might be called inline
-  // inside ares_gethostbyname.
+  // inside ares_gethostbyname and we might be done in that case. This ref needs
+  // to be taken outside of the lock to prevent UAF during unlock if the
+  // destruction of the ref triggers the destruction of the request itself.
   auto self = Ref(DEBUG_LOCATION, "Start");
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
@@ -836,7 +838,9 @@ GrpcAresSRVRequest::~GrpcAresSRVRequest() {
 void GrpcAresSRVRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   // Holds a ref across this function since OnResolve might be called inline
-  // inside ares_query.
+  // inside ares_query and we might be done in that case. This ref needs to be
+  // taken outside of the lock to prevent UAF during unlock if the destruction
+  // of the ref triggers the destruction of the request itself.
   auto self = Ref(DEBUG_LOCATION, "Start");
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);
@@ -891,7 +895,9 @@ GrpcAresTXTRequest::~GrpcAresTXTRequest() {
 void GrpcAresTXTRequest::Start(
     absl::AnyInvocable<void(absl::StatusOr<Result>)> on_resolve) {
   // Holds a ref across this function since OnResolve might be called inline
-  // inside ares_search.
+  // inside ares_search and we might be done in that case. This ref needs to be
+  // taken outside of the lock to prevent UAF during unlock if the destruction
+  // of the ref triggers the destruction of the request itself.
   auto self = Ref(DEBUG_LOCATION, "Start");
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(initialized_);

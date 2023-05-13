@@ -484,13 +484,22 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     const ResolverOptions& options, PosixEnginePollerManager* poller_manager,
-    PosixEventEngine* event_engine)
+    std::shared_ptr<EventEngine> event_engine)
     : options_(options),
-      poller_manager_(poller_manager),
-      event_engine_(event_engine) {}
+      event_engine_(std::move(event_engine)),
+      poller_manager_(poller_manager) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   grpc_core::MutexLock lock(&mu_);
+  // The DNSResolver is held alive by its caller (e.g.
+  // event_engine_client_channel_resolver). The caller should be alive until
+  // its passed-in on_resolve closure gets called and/or destroyed (usually
+  // through a RefCountedPtr embedded in the closure). Until that happened, the
+  // DNSResolver is alive as well as the EventEngine (since DNSResolver holds a
+  // shared_ptr to the engine). Therefore, when the DNSResolver is destroyed,
+  // all on_resolves should have been called and/or destroyed and all inflight
+  // handles should have been cleared regardless of the actual sequence of
+  // events.
   GPR_ASSERT(GPR_LIKELY(inflight_requests_.empty()));
 }
 
@@ -502,7 +511,8 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   absl::StatusOr<GrpcAresHostnameRequest*> request =
       GrpcAresHostnameRequest::Create(
           name, default_port, options_.dns_server, timeout,
-          std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
+          std::make_unique<GrpcPolledFdFactoryPosix>(poller),
+          event_engine_.get());
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
@@ -542,7 +552,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresSRVRequest*> request = GrpcAresSRVRequest::Create(
       name, timeout, options_.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_.get());
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
@@ -582,7 +592,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
   GPR_ASSERT(poller != nullptr);
   absl::StatusOr<GrpcAresTXTRequest*> request = GrpcAresTXTRequest::Create(
       name, timeout, options_.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_);
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_.get());
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
@@ -631,10 +641,10 @@ bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
-    EventEngine::DNSResolver::ResolverOptions const& options) {
+    const EventEngine::DNSResolver::ResolverOptions& options) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      options, poller_manager_.get(), this);
+      options, poller_manager_.get(), shared_from_this());
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   (void)options;
   grpc_core::Crash("unimplemented");

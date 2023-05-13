@@ -141,7 +141,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     PosixDNSResolver(const ResolverOptions& options,
                      PosixEnginePollerManager* poller_manager,
-                     PosixEventEngine* event_engine);
+                     std::shared_ptr<EventEngine> event_engine);
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
@@ -162,8 +162,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     LookupTaskHandleSet inflight_requests_ ABSL_GUARDED_BY(mu_);
     std::atomic<intptr_t> aba_token_{0};
     const ResolverOptions options_;
+    std::shared_ptr<EventEngine> event_engine_;
     PosixEnginePollerManager* poller_manager_;
-    PosixEventEngine* event_engine_;
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   };
 

@@ -32,6 +32,8 @@
 #include <utility>
 #include <vector>
 
+#include <address_sorting/address_sorting.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -76,11 +78,70 @@ TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
 
 namespace {
 
+using grpc_event_engine::experimental::EventEngine;
+using SRVRecord = EventEngine::DNSResolver::SRVRecord;
+using testing::ElementsAre;
+using testing::Pointwise;
+using testing::UnorderedPointwise;
+
 // TODO(yijiem): make this portable for Windows
 constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
 constexpr char kHealthCheckRecordName[] =
     "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp";
+
+MATCHER(ResolvedAddressEq, "") {
+  const auto& addr0 = std::get<0>(arg);
+  const auto& addr1 = std::get<1>(arg);
+  return addr0.size() == addr1.size() &&
+         memcmp(addr0.address(), addr1.address(), addr0.size()) == 0;
+}
+
+MATCHER(SRVRecordEq, "") {
+  const auto& arg0 = std::get<0>(arg);
+  const auto& arg1 = std::get<1>(arg);
+  return arg0.host == arg1.host && arg0.port == arg1.port &&
+         arg0.priority == arg1.priority && arg0.weight == arg1.weight;
+}
+
+MATCHER(StatusCodeEq, "") {
+  return std::get<0>(arg).code() == std::get<1>(arg);
+}
+
+// Copied from tcp_socket_utils_test.cc
+// TODO(yijiem): maybe move those into common test util
+EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len,
+                                       int port) {
+  EventEngine::ResolvedAddress resolved_addr4;
+  sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(
+      const_cast<sockaddr*>(resolved_addr4.address()));
+  memset(&resolved_addr4, 0, sizeof(resolved_addr4));
+  addr4->sin_family = AF_INET;
+  GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
+  memcpy(&addr4->sin_addr.s_addr, data, data_len);
+  addr4->sin_port = htons(port);
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(addr4),
+      static_cast<socklen_t>(sizeof(sockaddr_in)));
+}
+
+EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
+                                       int port) {
+  EventEngine::ResolvedAddress resolved_addr6;
+  sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(
+      const_cast<sockaddr*>(resolved_addr6.address()));
+  memset(&resolved_addr6, 0, sizeof(resolved_addr6));
+  addr6->sin6_family = AF_INET6;
+  GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
+  memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
+  addr6->sin6_port = htons(port);
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(addr6),
+      static_cast<socklen_t>(sizeof(sockaddr_in6)));
+}
+
+#define EXPECT_UNKNOWN_ERROR(result) \
+  EXPECT_EQ((result).status().code(), absl::StatusCode::kUnknown)
 
 }  // namespace
 
@@ -159,141 +220,81 @@ class EventEngineDNSTest : public EventEngineTest {
   }
 
  protected:
+  // Verifies that an ExecCtx exists on the thread from which the destructor is
+  // invoked.
+  class ExecCtxVerifier {
+   public:
+    explicit ExecCtxVerifier(grpc_closure* destroy_closure)
+        : destroy_closure_(destroy_closure) {}
+
+    ~ExecCtxVerifier() {
+      grpc_core::ExecCtx* ctx = grpc_core::ExecCtx::Get();
+      ctx->Run(DEBUG_LOCATION, destroy_closure_, absl::OkStatus());
+    }
+
+   private:
+    grpc_closure* destroy_closure_;
+  };
+
+  std::unique_ptr<ExecCtxVerifier> CreateExecCtxVerifier() {
+    GRPC_CLOSURE_INIT(&notify_closure_, Notify, &dns_resolver_signal_,
+                      grpc_schedule_on_exec_ctx);
+    return std::make_unique<ExecCtxVerifier>(&notify_closure_);
+  }
+
+  std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {
+    std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+    EventEngine::DNSResolver::ResolverOptions options;
+    options.dns_server = _dns_server.address();
+    return test_ee->GetDNSResolver(options);
+  }
+
+  std::unique_ptr<EventEngine::DNSResolver>
+  CreateDNSResolverWithNonResponsiveServer() {
+    // Start up fake non responsive DNS server
+    grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+            kWaitForClientToSendFirstBytes,
+        grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    const std::string dns_server =
+        absl::StrFormat("[::1]:%d", fake_dns_server.port());
+    std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+    EventEngine::DNSResolver::ResolverOptions options;
+    options.dns_server = dns_server;
+    return test_ee->GetDNSResolver(options);
+  }
+
+  std::unique_ptr<EventEngine::DNSResolver>
+  CreateDNSResolverWithoutSpecifyingServer() {
+    std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+    EventEngine::DNSResolver::ResolverOptions options;
+    return test_ee->GetDNSResolver(options);
+  }
+
   struct DNSServer {
     std::string address() { return "127.0.0.1:" + std::to_string(port); }
     int port;
     grpc::SubProcess* server_process;
   };
+  grpc_core::Notification dns_resolver_signal_;
+
+  static void Notify(void* arg, grpc_error_handle error) {
+    EXPECT_TRUE(error.ok());
+    static_cast<grpc_core::Notification*>(arg)->Notify();
+  }
+
+ private:
   static DNSServer _dns_server;
+  grpc_closure notify_closure_;
 };
 
 EventEngineDNSTest::DNSServer EventEngineDNSTest::_dns_server;
 
-namespace {
-
-using grpc_event_engine::experimental::EventEngine;
-using SRVRecord = EventEngine::DNSResolver::SRVRecord;
-using testing::ElementsAre;
-using testing::Pointwise;
-using testing::UnorderedPointwise;
-
-MATCHER(ResolvedAddressEq, "") {
-  const auto& addr0 = std::get<0>(arg);
-  const auto& addr1 = std::get<1>(arg);
-  return addr0.size() == addr1.size() &&
-         memcmp(addr0.address(), addr1.address(), addr0.size()) == 0;
-}
-
-MATCHER(SRVRecordEq, "") {
-  const auto& arg0 = std::get<0>(arg);
-  const auto& arg1 = std::get<1>(arg);
-  return arg0.host == arg1.host && arg0.port == arg1.port &&
-         arg0.priority == arg1.priority && arg0.weight == arg1.weight;
-}
-
-MATCHER(StatusCodeEq, "") {
-  return std::get<0>(arg).code() == std::get<1>(arg);
-}
-
-// Copied from tcp_socket_utils_test.cc
-// TODO(yijiem): maybe move those into common test util
-EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len,
-                                       int port) {
-  EventEngine::ResolvedAddress resolved_addr4;
-  sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(
-      const_cast<sockaddr*>(resolved_addr4.address()));
-  memset(&resolved_addr4, 0, sizeof(resolved_addr4));
-  addr4->sin_family = AF_INET;
-  GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
-  memcpy(&addr4->sin_addr.s_addr, data, data_len);
-  addr4->sin_port = htons(port);
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<sockaddr*>(addr4),
-      static_cast<socklen_t>(sizeof(sockaddr_in)));
-}
-
-EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
-                                       int port) {
-  EventEngine::ResolvedAddress resolved_addr6;
-  sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(
-      const_cast<sockaddr*>(resolved_addr6.address()));
-  memset(&resolved_addr6, 0, sizeof(resolved_addr6));
-  addr6->sin6_family = AF_INET6;
-  GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
-  memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
-  addr6->sin6_port = htons(port);
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<sockaddr*>(addr6),
-      static_cast<socklen_t>(sizeof(sockaddr_in6)));
-}
-
-#define EXPECT_UNKNOWN_ERROR(result) \
-  EXPECT_EQ((result).status().code(), absl::StatusCode::kUnknown)
-
-// Verifies that an ExecCtx exists on the thread from which the destructor is
-// invoked.
-class ExecCtxVerifier {
- public:
-  explicit ExecCtxVerifier(grpc_closure* destroy_closure)
-      : destroy_closure_(destroy_closure) {}
-
-  ~ExecCtxVerifier() {
-    grpc_core::ExecCtx* ctx = grpc_core::ExecCtx::Get();
-    ctx->Run(DEBUG_LOCATION, destroy_closure_, absl::OkStatus());
-  }
-
- private:
-  grpc_closure* destroy_closure_;
-};
-
-void Notify(void* arg, grpc_error_handle error) {
-  EXPECT_TRUE(error.ok());
-  static_cast<grpc_core::Notification*>(arg)->Notify();
-}
-
-}  // namespace
-
-TEST_F(EventEngineDNSTest, MissingDefaultPort) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
-  bool verified = false;
-  dns_resolver->LookupHostname(
-      [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
-        ASSERT_FALSE(result.ok());
-        EXPECT_UNKNOWN_ERROR(result);
-        verified = true;
-      },
-      "localhost", "", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
-  EXPECT_TRUE(verified);
-}
-
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupHostname(
-      [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         EXPECT_THAT(grpc_core::StatusGetChildren(result.status()),
@@ -303,27 +304,18 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
       },
       "nonexisting-target.dns-test.event-engine.", /*default_port=*/"443",
       std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
   constexpr uint8_t kExpectedAddresses[] = {4, 3, 2, 1};
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupHostname(
-      [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
+      [&verified, &kExpectedAddresses,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     Pointwise(ResolvedAddressEq(),
@@ -333,7 +325,7 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
       },
       "4.3.2.1:1234",
       /*default_port=*/"", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
@@ -341,20 +333,11 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
   constexpr uint8_t kExpectedAddresses[][4] = {
       {1, 2, 3, 4}, {1, 2, 3, 5}, {1, 2, 3, 6}};
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupHostname(
-      [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
+      [&verified, &kExpectedAddresses,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     UnorderedPointwise(
@@ -369,7 +352,7 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
       },
       "ipv4-only-multi-target.dns-test.event-engine.",
       /*default_port=*/"443", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
@@ -382,20 +365,11 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
       {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
        0x04}};
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupHostname(
-      [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
+      [&verified, &kExpectedAddresses,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     UnorderedPointwise(
@@ -410,7 +384,7 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
       },
       "ipv6-only-multi-target.dns-test.event-engine.:443",
       /*default_port=*/"", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
@@ -419,20 +393,11 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
       {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
       {0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11, 0x11}};
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupHostname(
-      [&verified, &kExpectedAddresses, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress> > result) {
+      [&verified, &kExpectedAddresses,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(
             *result,
@@ -445,7 +410,7 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
       },
       "ipv6-loopback-preferred-target.dns-test.event-engine.:1234",
       /*default_port=*/"", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
@@ -461,51 +426,32 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
   kExpectedRecords[1].priority = 0;
   kExpectedRecords[1].weight = 0;
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupSRV(
-      [&verified, &kExpectedRecords, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<SRVRecord> > result) {
+      [&verified, &kExpectedRecords,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result, Pointwise(SRVRecordEq(), kExpectedRecords));
         verified = true;
       },
       "_grpclb._tcp.srv-multi-target.dns-test.event-engine.",
       std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupSRV(
-      [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<SRVRecord> > result) {
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
       },
       "localhost:1000", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
@@ -526,130 +472,67 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
       "}]";
   // clang-format on
 
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupTXT(
-      [&verified, &kExpectedRecord, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<std::string> > result) {
+      [&verified, &kExpectedRecord,
+       ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result, ElementsAre(kExpectedRecord));
         verified = true;
       },
       "_grpc_config.simple-service.dns-test.event-engine.",
       std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = _dns_server.address();
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDefaultDNSResolver();
   bool verified = false;
   dns_resolver->LookupTXT(
-      [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<std::string> > result) {
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
         ASSERT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
       },
       "localhost:1000", std::chrono::seconds(5));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
 TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
-  // Start up fake non responsive DNS server
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-          kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
-  const std::string dns_server =
-      absl::StrFormat("[::1]:%d", fake_dns_server.port());
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = dns_server;
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   EventEngine::DNSResolver::LookupTaskHandle task_handle =
       dns_resolver->LookupHostname(
-          [ctx_verifier = std::move(ctx_verifier)](auto) {
+          [ctx_verifier = CreateExecCtxVerifier()](auto) {
             // Cancel should not execute on_resolve
             FAIL() << "This should not be reached";
           },
           name, "1234", std::chrono::minutes(1));
   EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
 }
 
 TEST_F(EventEngineDNSTest, TestQueryTimeout) {
-  // Start up fake non responsive DNS server
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-          kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   const std::string name = "dont-care-since-wont-be-resolved.test.com.";
-  const std::string dns_server =
-      absl::StrFormat("[::1]:%d", fake_dns_server.port());
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = dns_server;
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
-  grpc_core::Notification dns_resolver_signal;
-  grpc_closure notify_closure;
-  GRPC_CLOSURE_INIT(&notify_closure, Notify, &dns_resolver_signal,
-                    grpc_schedule_on_exec_ctx);
-  auto ctx_verifier = std::make_unique<ExecCtxVerifier>(&notify_closure);
+  auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   bool verified = false;
   dns_resolver->LookupTXT(
-      [&verified, ctx_verifier = std::move(ctx_verifier)](
-          absl::StatusOr<std::vector<std::string> > result) {
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
         EXPECT_FALSE(result.ok());
         EXPECT_UNKNOWN_ERROR(result);
         verified = true;
       },
       name, std::chrono::seconds(3));  // timeout in 3 seconds
-  dns_resolver_signal.WaitForNotification();
+  dns_resolver_signal_.WaitForNotification();
   EXPECT_TRUE(verified);
 }
 
 TEST_F(EventEngineDNSTest, MultithreadedCancel) {
-  // Start up fake non responsive DNS server
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-          kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   const std::string name = "dont-care-since-wont-be-resolved.test.com.";
-  const std::string dns_server =
-      absl::StrFormat("[::1]:%d", fake_dns_server.port());
-  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  EventEngine::DNSResolver::ResolverOptions options;
-  options.dns_server = dns_server;
-  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      test_ee->GetDNSResolver(options);
+  auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   constexpr int kNumOfThreads = 10;
   constexpr int kNumOfIterationsPerThread = 100;
   std::vector<std::thread> yarn;
@@ -680,5 +563,254 @@ TEST_F(EventEngineDNSTest, MultithreadedCancel) {
     yarn[i].join();
   }
 }
+
+constexpr EventEngine::Duration kDefaultDNSRequestTimeout =
+    std::chrono::minutes(2);
+
+#define EXPECT_SUCCESS()           \
+  do {                             \
+    EXPECT_TRUE(result.ok());      \
+    EXPECT_FALSE(result->empty()); \
+    verified = true;               \
+  } while (0)
+
+// The following tests are almost 1-to-1 ported from
+// test/core/iomgr/resolve_address_test.cc (except tests for the native DNS
+// resolver and test that would race under the EventEngine semantics).
+
+// START
+TEST_F(EventEngineDNSTest, LocalHost) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_SUCCESS();
+      },
+      "localhost:1", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, DefaultPort) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_SUCCESS();
+      },
+      "localhost", "1", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+// This test assumes the environment has an ipv6 loopback
+TEST_F(EventEngineDNSTest, LocalhostResultHasIPv6First) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_TRUE(result.ok());
+        EXPECT_TRUE(!result->empty() &&
+                    (*result)[0].address()->sa_family == AF_INET6);
+        verified = true;
+      },
+      "localhost:1", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+namespace {
+
+bool IPv6DisabledGetSourceAddr(address_sorting_source_addr_factory* /*factory*/,
+                               const address_sorting_address* dest_addr,
+                               address_sorting_address* source_addr) {
+  // Mock lack of IPv6. For IPv4, set the source addr to be the same
+  // as the destination; tests won't actually connect on the result anyways.
+  if (address_sorting_abstract_get_family(dest_addr) ==
+      ADDRESS_SORTING_AF_INET6) {
+    return false;
+  }
+  memcpy(source_addr->addr, &dest_addr->addr, dest_addr->len);
+  source_addr->len = dest_addr->len;
+  return true;
+}
+
+void DeleteSourceAddrFactory(address_sorting_source_addr_factory* factory) {
+  delete factory;
+}
+
+const address_sorting_source_addr_factory_vtable
+    kMockIpv6DisabledSourceAddrFactoryVtable = {
+        IPv6DisabledGetSourceAddr,
+        DeleteSourceAddrFactory,
+};
+
+}  // namespace
+
+TEST_F(EventEngineDNSTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
+  // Mock the kernel source address selection. Note that source addr factory
+  // is reset to its default value during grpc initialization for each test.
+  address_sorting_source_addr_factory* mock =
+      new address_sorting_source_addr_factory();
+  mock->vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
+  address_sorting_override_source_addr_factory_for_testing(mock);
+  // run the test
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_TRUE(result.ok());
+        EXPECT_TRUE(!result->empty() &&
+                    (*result)[0].address()->sa_family == AF_INET);
+        verified = true;
+      },
+      "localhost:1", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, NonNumericDefaultPort) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_SUCCESS();
+      },
+      "localhost", "http", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, MissingDefaultPort) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_FALSE(result.ok());
+        verified = true;
+      },
+      "localhost", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+TEST_F(EventEngineDNSTest, IPv6WithPort) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_SUCCESS();
+      },
+      "[2001:db8::1]:1", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+}
+
+void TestIPv6WithoutPort(std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
+                         grpc_core::Notification* barrier,
+                         absl::string_view target) {
+  dns_resolver->LookupHostname(
+      [barrier](auto result) {
+        EXPECT_TRUE(result.ok());
+        EXPECT_FALSE(result->empty());
+        barrier->Notify();
+      },
+      target, "80", kDefaultDNSRequestTimeout);
+  barrier->WaitForNotification();
+}
+
+TEST_F(EventEngineDNSTest, IPv6WithoutPortNoBrackets) {
+  TestIPv6WithoutPort(CreateDNSResolverWithoutSpecifyingServer(),
+                      &dns_resolver_signal_, "2001:db8::1");
+}
+
+TEST_F(EventEngineDNSTest, IPv6WithoutPortWithBrackets) {
+  TestIPv6WithoutPort(CreateDNSResolverWithoutSpecifyingServer(),
+                      &dns_resolver_signal_, "[2001:db8::1]");
+}
+
+TEST_F(EventEngineDNSTest, IPv6WithoutPortV4MappedV6) {
+  TestIPv6WithoutPort(CreateDNSResolverWithoutSpecifyingServer(),
+                      &dns_resolver_signal_, "2001:db8::1.2.3.4");
+}
+
+void TestInvalidIPAddress(
+    std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
+    grpc_core::Notification* barrier, absl::string_view target) {
+  dns_resolver->LookupHostname(
+      [barrier](auto result) {
+        EXPECT_FALSE(result.ok());
+        barrier->Notify();
+      },
+      target, "", kDefaultDNSRequestTimeout);
+  barrier->WaitForNotification();
+}
+
+TEST_F(EventEngineDNSTest, InvalidIPv4Addresses) {
+  TestInvalidIPAddress(CreateDNSResolverWithoutSpecifyingServer(),
+                       &dns_resolver_signal_, "293.283.1238.3:1");
+}
+
+TEST_F(EventEngineDNSTest, InvalidIPv6Addresses) {
+  TestInvalidIPAddress(CreateDNSResolverWithoutSpecifyingServer(),
+                       &dns_resolver_signal_, "[2001:db8::11111]:1");
+}
+
+void TestUnparseableHostPort(
+    std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
+    grpc_core::Notification* barrier, absl::string_view target) {
+  dns_resolver->LookupHostname(
+      [barrier](auto result) {
+        EXPECT_FALSE(result.ok());
+        barrier->Notify();
+      },
+      target, "1", kDefaultDNSRequestTimeout);
+  barrier->WaitForNotification();
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsOnlyBracket) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsMissingRightBracket) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[::1");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsBadPort) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[::1]bad");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsBadIPv6) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[1.2.3.4]");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhost) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[localhost]");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, "[localhost]:1");
+}
+
+// Attempt to cancel a request after it has completed.
+TEST_F(EventEngineDNSTest, CancelDoesNotSucceed) {
+  bool verified = false;
+  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
+  auto handle = dns_resolver->LookupHostname(
+      [&verified, ctx_verifier = CreateExecCtxVerifier()](auto result) {
+        EXPECT_SUCCESS();
+      },
+      "localhost:1", "", kDefaultDNSRequestTimeout);
+  dns_resolver_signal_.WaitForNotification();
+  EXPECT_TRUE(verified);
+  ASSERT_FALSE(dns_resolver->CancelLookup(handle));
+}
+// END
 
 #endif  // GPR_WINDOWS
