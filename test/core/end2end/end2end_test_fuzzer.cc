@@ -68,17 +68,14 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
         factory;
   };
 
-  static const int force_experiments = []() {
+  static const auto all_tests =
+      grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
+  static const auto tests = []() {
     grpc_core::g_is_fuzzing_core_e2e_tests = true;
     grpc_event_engine::experimental::g_event_engine_supports_fd = false;
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
-    return 1;
-  }();
 
-  static const auto all_tests =
-      grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
-  static const auto tests = []() {
     auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
     auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
     auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
