@@ -19,6 +19,7 @@ import unittest
 import grpc
 
 from tests.unit import resources
+from tests.unit import test_common
 
 
 class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
@@ -29,6 +30,8 @@ class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
 
 class ServerTest(unittest.TestCase):
 
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupported types")
     def test_not_a_generic_rpc_handler_at_construction(self):
         with self.assertRaises(AttributeError) as exception_context:
             grpc.server(futures.ThreadPoolExecutor(max_workers=5),
@@ -49,6 +52,8 @@ class ServerTest(unittest.TestCase):
         self.assertIn('grpc.GenericRpcHandler',
                       str(exception_context.exception))
 
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupported types")
     def test_failed_port_binding_exception(self):
         server = grpc.server(None, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('localhost:0')

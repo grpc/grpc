@@ -13,6 +13,8 @@
 # limitations under the License.
 """Reference implementation for status mapping in gRPC Python."""
 
+from typing import Any
+
 import grpc
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
@@ -20,7 +22,7 @@ _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
 GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
 
 
-def code_to_grpc_status_code(code):
+def code_to_grpc_status_code(code: Any) -> grpc.StatusCode:
     try:
         return _CODE_TO_GRPC_CODE_MAPPING[code]
     except KeyError:

@@ -76,6 +76,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers.get(service)
+            assert condition is not None
             async with condition:
                 self._server_status[service] = status
                 condition.notify_all()

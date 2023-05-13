@@ -14,19 +14,26 @@
 
 import collections
 import threading
+from typing import List, Mapping, Optional
 
+from google.protobuf import descriptor  # pytype: disable=pyi-error
+from grpc._typing import MetadataType
 from grpc_testing import _common
 from grpc_testing._channel import _rpc_state
 
 
 class State(_common.ChannelHandler):
+    _condition: threading.Condition
+    _rpc_states: Mapping[str, List[_rpc_state.State]]
 
     def __init__(self):
         self._condition = threading.Condition()
         self._rpc_states = collections.defaultdict(list)
 
-    def invoke_rpc(self, method_full_rpc_name, invocation_metadata, requests,
-                   requests_closed, timeout):
+    def invoke_rpc(self, method_full_rpc_name: str,
+                   invocation_metadata: Optional[MetadataType], requests: List,
+                   requests_closed: bool,
+                   timeout: Optional[float]) -> _rpc_state.State:
         rpc_state = _rpc_state.State(invocation_metadata, requests,
                                      requests_closed)
         with self._condition:
@@ -34,7 +41,9 @@ class State(_common.ChannelHandler):
             self._condition.notify_all()
         return rpc_state
 
-    def take_rpc_state(self, method_descriptor):
+    def take_rpc_state(
+            self,
+            method_descriptor: descriptor.MethodDescriptor) -> _rpc_state.State:
         method_full_rpc_name = '/{}/{}'.format(
             method_descriptor.containing_service.full_name,
             method_descriptor.name)
