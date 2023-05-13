@@ -511,6 +511,10 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         except retryers.RetryError:
             logger.exception('Got error during teardown')
         finally:
+            logger.info('----- Test client/server logs -----')
+            self.client_runner.logs_explorer_link()
+            self.server_runner.logs_explorer_link()
+
             # Fail if any of the pods restarted.
             self.assertEqual(
                 client_restarts,

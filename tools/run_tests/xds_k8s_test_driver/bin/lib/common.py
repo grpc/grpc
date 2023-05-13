@@ -86,6 +86,7 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
         deployment_name=xds_flags.SERVER_NAME.value,
         image_name=xds_k8s_flags.SERVER_IMAGE.value,
         td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
+        xds_server_uri=xds_flags.XDS_SERVER_URI.value,
         gcp_project=xds_flags.PROJECT.value,
         gcp_api_manager=gcp_api_manager,
         gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
@@ -95,9 +96,7 @@ def make_server_runner(namespace: k8s.KubernetesNamespace,
         debug_use_port_forwarding=port_forwarding)
 
     if secure:
-        runner_kwargs.update(
-            xds_server_uri=xds_flags.XDS_SERVER_URI.value,
-            deployment_template='server-secure.deployment.yaml')
+        runner_kwargs['deployment_template'] = 'server-secure.deployment.yaml'
 
     return KubernetesServerRunner(namespace, **runner_kwargs)
 
