@@ -128,7 +128,7 @@
   default: false
   expiry: 2023/06/13
   owner: vigneshbabu@google.com
-  test_tags: ["event_engine_listener_test"]
+  test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   default: false
