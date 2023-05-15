@@ -505,16 +505,16 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                 0,
                 msg=(
                     'Client pods unexpectedly restarted'
-                    f' {client_restarts} times during test. '
-                    'In most cases, this is caused by the test client app crash.'
+                    f' {client_restarts} times during test.'
+                    ' In most cases, this is caused by the test client app crash.'
                 ))
             self.assertEqual(
                 server_restarts,
                 0,
                 msg=(
                     'Server pods unexpectedly restarted'
-                    f' {server_restarts} times during test. '
-                    'In most cases, this is caused by the test client app crash.'
+                    f' {server_restarts} times during test.'
+                    ' In most cases, this is caused by the test client app crash.'
                 ))
 
     def cleanup(self):

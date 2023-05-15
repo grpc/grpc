@@ -394,8 +394,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                 0,
                 msg=(
                     'Client pods unexpectedly restarted'
-                    f' {client_restarts} times during test. '
-                    'In most cases, this is caused by the test client app crash.'
+                    f' {client_restarts} times during test.'
+                    ' In most cases, this is caused by the test client app crash.'
                 ))
 
     @classmethod
