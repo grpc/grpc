@@ -71,6 +71,10 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
 
 BatchBuilder::Batch::~Batch() {
   auto* arena = party->arena();
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
+            Activity::current()->DebugTag().c_str(), this);
+  }
   if (pending_receive_message != nullptr) {
     arena->DeletePooled(pending_receive_message);
   }
