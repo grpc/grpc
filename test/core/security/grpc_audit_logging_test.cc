@@ -145,16 +145,11 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
   int64_t time_at_log = absl::ToUnixSeconds(log_time);
   // Check if the recorded timestamp is in between the recorded interval with
   // the precision of one second.
-  EXPECT_TRUE(time_at_log >= time_before_log && time_at_log <= time_after_log);
+  EXPECT_GE(time_at_log, time_before_log);
+  EXPECT_LE(time_at_log, time_after_log);
   // Check exact values of everything else.
-  std::vector<std::string> fields = {"rpc_method", "principal", "policy_name",
-                                     "matched_rule", "authorized"};
-  Json::Object json_object;
-  for (const auto& field : fields) {
-    auto it = object.find(field);
-    ASSERT_NE(it, object.end());
-    json_object.emplace(field, it->second);
-  }
+  Json::Object json_object = object;
+  json_object.erase("timestamp");
   EXPECT_EQ(JsonDump(Json::FromObject(json_object)),
             "{\"authorized\":true,\"matched_rule\":\"rule\",\"policy_name\":"
             "\"policy\",\"principal\":\"spiffe\",\"rpc_method\":\"method\"}");
