@@ -392,10 +392,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             cls.assertEqual(
                 client_restarts,
                 0,
-                msg=(
-                    'Client pods unexpectedly restarted'
-                    f' {client_restarts} times during test.'
-                    ' In most cases, this is caused by the test client app crash.'
+                msg=
+                ('Client pods unexpectedly restarted'
+                 f' {client_restarts} times during test.'
+                 ' In most cases, this is caused by the test client app crash.'
                 ))
 
     @classmethod
