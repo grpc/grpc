@@ -1,0 +1,13 @@
+actions {
+  create_channel {
+    target: "1"
+    channel_actions {
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "1"
+}

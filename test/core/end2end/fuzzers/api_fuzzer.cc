@@ -847,6 +847,8 @@ ApiFuzzer::~ApiFuzzer() {
   GPR_ASSERT(ActiveCall() == nullptr);
   GPR_ASSERT(calls_.empty());
 
+  engine_->TickUntilIdle();
+
   grpc_completion_queue_shutdown(cq_);
   GPR_ASSERT(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
