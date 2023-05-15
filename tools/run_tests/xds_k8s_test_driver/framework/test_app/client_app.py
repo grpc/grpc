@@ -164,9 +164,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         channel = retryer(self.find_server_channel_with_state,
                           state,
                           rpc_deadline=rpc_deadline)
-        logger.info('[%s] Channel to %s transitioned to state %s:\n%s',
+        logger.info('[%s] Channel to %s transitioned to state %s: %s',
                     self.hostname, self.server_target,
-                    _ChannelzChannelState.Name(state), channel)
+                    _ChannelzChannelState.Name(state),
+                    _ChannelzServiceClient.channel_repr(channel))
         return channel
 
     def find_server_channel_with_state(
@@ -181,9 +182,8 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
         for channel in self.get_server_channels(**rpc_params):
             channel_state: _ChannelzChannelState = channel.data.state.state
-            logger.info('[%s] Server channel: %s, state: %s', self.hostname,
-                        channel.ref.name,
-                        _ChannelzChannelState.Name(channel_state))
+            logger.info('[%s] Server channel: %s', self.hostname,
+                        _ChannelzServiceClient.channel_repr(channel))
             if channel_state is state:
                 if check_subchannel:
                     # When requested, check if the channel has at least
@@ -191,10 +191,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     try:
                         subchannel = self.find_subchannel_with_state(
                             channel, state, **rpc_params)
-                        logger.info('[%s] Found subchannel in state %s: %s',
-                                    self.hostname,
-                                    _ChannelzChannelState.Name(state),
-                                    subchannel)
+                        logger.info(
+                            '[%s] Found subchannel in state %s: %s',
+                            self.hostname, _ChannelzChannelState.Name(state),
+                            _ChannelzServiceClient.subchannel_repr(subchannel))
                     except self.NotFound as e:
                         # Otherwise, keep searching.
                         logger.info(e.message)
