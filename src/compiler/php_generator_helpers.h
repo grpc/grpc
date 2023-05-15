@@ -60,8 +60,11 @@ inline std::string GetPHPServiceFilename(
           << grpc_generator::CapitalizeFirstLetter(tokens[i]);
     }
   }
-  return oss.str() + "/" +
-         GetPHPServiceClassname(service, class_suffix, is_server) + ".php";
+  if (!oss.str().empty()) {
+    oss << "/";
+  }
+  return oss.str() + GetPHPServiceClassname(service, class_suffix, is_server) +
+         ".php";
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
