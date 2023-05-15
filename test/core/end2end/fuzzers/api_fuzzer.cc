@@ -882,6 +882,7 @@ ApiFuzzer::Result ApiFuzzer::PollCq() {
 }
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
+  if (channel_ == nullptr) return Result::kComplete;
   grpc_channel_args* args =
       ReadArgs(resource_quota_, create_channel.channel_args());
   grpc_channel_credentials* creds =
