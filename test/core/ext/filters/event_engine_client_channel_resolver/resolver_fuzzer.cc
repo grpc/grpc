@@ -172,7 +172,7 @@ class FuzzingResolverEventEngine
       }
       return finish(*engine_->txt_responses_);
     }
-    bool CancelLookup(LookupTaskHandle handle) override { return false; }
+    bool CancelLookup(LookupTaskHandle /* handle */) override { return false; }
 
    private:
     FuzzingResolverEventEngine* engine_;
@@ -217,7 +217,7 @@ class FuzzingResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   explicit FuzzingResultHandler(grpc_core::Notification* signal)
       : signal_(signal) {}
-  void ReportResult(grpc_core::Resolver::Result result) override {
+  void ReportResult(grpc_core::Resolver::Result /* result */) override {
     signal_->Notify();
   }
 
@@ -226,7 +226,6 @@ class FuzzingResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 grpc_core::ResolverArgs ConstructResolverArgs(
-    const event_engine_client_channel_resolver::Msg& msg,
     const grpc_core::ChannelArgs& channel_args,
     grpc_core::Notification* result_handler_notification,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
@@ -251,7 +250,7 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
   grpc_core::Notification result_handler_notification;
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   auto resolver_args = ConstructResolverArgs(
-      msg, channel_args, &result_handler_notification, work_serializer);
+      channel_args, &result_handler_notification, work_serializer);
   EventEngineClientChannelDNSResolverFactory resolver_factory;
   auto resolver = resolver_factory.CreateResolver(std::move(resolver_args));
   work_serializer->Run([resolver = resolver.get()]()
