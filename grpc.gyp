@@ -1985,6 +1985,21 @@
       ],
     },
     {
+      'target_name': 'grpcpp_admin',
+      'type': 'static_library',
+      'dependencies': [
+        'grpcpp_channelz',
+      ],
+      'sources': [
+        'src/proto/grpc/testing/xds/v3/base.proto',
+        'src/proto/grpc/testing/xds/v3/config_dump.proto',
+        'src/proto/grpc/testing/xds/v3/csds.proto',
+        'src/proto/grpc/testing/xds/v3/percent.proto',
+        'src/cpp/server/admin/admin_services.cc',
+        'src/cpp/server/csds/csds.cc',
+      ],
+    },
+    {
       'target_name': 'grpcpp_channelz',
       'type': 'static_library',
       'dependencies': [

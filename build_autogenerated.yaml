@@ -4115,6 +4115,22 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps: []
+- name: grpcpp_admin
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/admin_services.h
+  headers:
+  - src/cpp/server/csds/csds.h
+  src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  deps:
+  - grpcpp_channelz
 - name: grpcpp_channelz
   build: all
   language: c++
@@ -4377,19 +4393,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
+  headers: []
   src:
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/admin_services_end2end_test.cc
   deps:
   - grpc++_reflection
-  - grpcpp_channelz
+  - grpcpp_admin
   - grpc++_test_util
 - name: alarm_test
   gtest: true
@@ -13515,23 +13524,16 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
   - test/cpp/interop/rpc_behavior_lb_policy.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - grpc++_reflection
-  - grpcpp_channelz
+  - grpcpp_admin
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
@@ -13539,24 +13541,17 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - grpc++_reflection
-  - grpcpp_channelz
+  - grpcpp_admin
   - grpc_test_util
   - grpc++_test_config
 - name: xds_lb_policy_registry_test
