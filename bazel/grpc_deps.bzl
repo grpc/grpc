@@ -414,10 +414,10 @@ def grpc_deps():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
+            sha256 = "6b65cb7917b4d1709f9410ffe00ecf3e160edf674b78c54a894471320862184f",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
-                "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.0/rules_go-v0.39.0.zip",
+                "https://github.com/bazelbuild/rules_go/releases/download/v0.39.0/rules_go-v0.39.0.zip",
             ],
         )
 
@@ -467,10 +467,10 @@ def grpc_deps():
     if "bazel_gazelle" not in native.existing_rules():
         http_archive(
             name = "bazel_gazelle",
-            sha256 = "de69a09dc70417580aabf20a28619bb3ef60d038470c7cf8442fafcf627c21cb",
+            sha256 = "727f3e4edd96ea20c29e8c2ca9e8d2af724d8c7778e7923a854b2c80952bc405",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
-                "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.30.0/bazel-gazelle-v0.30.0.tar.gz",
+                "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.30.0/bazel-gazelle-v0.30.0.tar.gz",
             ],
         )
 
@@ -485,16 +485,14 @@ def grpc_deps():
             ],
         )
 
-    if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
+    if "com_bufbuild_protoc_gen_validate" not in native.existing_rules():
         http_archive(
-            name = "com_envoyproxy_protoc_gen_validate",
-            strip_prefix = "protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69",
-            sha256 = "1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47",
+            name = "com_bufbuild_protoc_gen_validate",
+            strip_prefix = "protoc-gen-validate-2120d8e4ff1a4c036c91952e383c037022338fbd",
+            sha256 = "6f20c7b1e5627c713c5316e4c54076fb14adde883367da6d5772ad25f67399b5",
             urls = [
-                "https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz",
+                "https://github.com/bufbuild/protoc-gen-validate/archive/2120d8e4ff1a4c036c91952e383c037022338fbd.tar.gz",
             ],
-            patches = ["@com_github_grpc_grpc//third_party:protoc-gen-validate.patch"],
-            patch_args = ["-p1"],
         )
 
     if "com_github_cncf_udpa" not in native.existing_rules():
