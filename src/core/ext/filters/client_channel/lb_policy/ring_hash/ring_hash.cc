@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -40,6 +41,7 @@
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
@@ -50,6 +52,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -63,6 +66,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -213,7 +218,7 @@ class RingHash : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RefCountedPtr<RingHash> ring_hash)
+    explicit Picker(RefCountedPtr<RingHash> ring_hash)
         : ring_hash_(std::move(ring_hash)),
           ring_(ring_hash_->ring_),
           endpoints_(ring_hash_->addresses_.size()) {
@@ -229,8 +234,7 @@ class RingHash : public LoadBalancingPolicy {
     // on the control plane WorkSerializer.
     class EndpointConnectionAttempter : public Orphanable {
      public:
-      explicit EndpointConnectionAttempter(
-          RefCountedPtr<RingHash> ring_hash)
+      explicit EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash)
           : ring_hash_(std::move(ring_hash)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
       }
@@ -281,8 +285,9 @@ class RingHash : public LoadBalancingPolicy {
   // UpdateAggregatedConnectivityStateLocked().
   // connection_attempt_complete is true if the endpoint has just
   // finished a connection attempt.
-  void UpdateAggregatedConnectivityStateLocked(
-      size_t index, bool connection_attempt_complete, absl::Status status);
+  void UpdateAggregatedConnectivityStateLocked(size_t index,
+                                               bool connection_attempt_complete,
+                                               absl::Status status);
 
   // Current address list, channel args, and ring.
   ServerAddressList addresses_;
@@ -433,9 +438,9 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   const ServerAddressList& addresses = ring_hash->addresses_;
   address_weights.reserve(addresses.size());
   for (const auto& address : addresses) {
-    const auto* weight_attribute = static_cast<
-        const ServerAddressWeightAttribute*>(address.GetAttribute(
-        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    const auto* weight_attribute =
+        static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
+            ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&address.address(), false).value();
@@ -466,7 +471,7 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   // to fit.
   const size_t ring_size_cap =
       ring_hash->args_.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
-                       .value_or(kRingSizeCapDefault);
+          .value_or(kRingSizeCapDefault);
   const size_t min_ring_size = std::min(config->min_ring_size(), ring_size_cap);
   const size_t max_ring_size = std::min(config->max_ring_size(), ring_size_cap);
   const double scale = std::min(
@@ -629,8 +634,8 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
         "[RH %p] connectivity changed for endpoint %p (%s, child_policy=%p): "
         "prev_state=%s new_state=%s (%s)",
         ring_hash_.get(), this,
-        ring_hash_->addresses_[index_].ToString().c_str(),
-        child_policy_.get(), ConnectivityStateName(connectivity_state_),
+        ring_hash_->addresses_[index_].ToString().c_str(), child_policy_.get(),
+        ConnectivityStateName(connectivity_state_),
         ConnectivityStateName(new_state), status.ToString().c_str());
   }
   if (child_policy_ == nullptr) return;  // Already orphaned.
@@ -707,18 +712,17 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       it->second->set_index(i);
       endpoint_map.emplace(addr_key, std::move(it->second));
     } else {
-      endpoint_map.emplace(
-          addr_key, MakeOrphanable<RingHashEndpoint>(Ref(), i));
+      endpoint_map.emplace(addr_key,
+                           MakeOrphanable<RingHashEndpoint>(Ref(), i));
     }
   }
   endpoint_map_ = std::move(endpoint_map);
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (addresses_.empty()) {
     absl::Status status =
-        args.addresses.ok()
-            ? absl::UnavailableError(
-                  absl::StrCat("empty address list: ", args.resolution_note))
-            : args.addresses.status();
+        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
+                                  "empty address list: ", args.resolution_note))
+                            : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
@@ -787,13 +791,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p] setting connectivity state to %s (num_idle=%"
-            PRIuPTR ", num_connecting=%" PRIuPTR ", num_ready=%" PRIuPTR
+            "[RH %p] setting connectivity state to %s (num_idle=%" PRIuPTR
+            ", num_connecting=%" PRIuPTR ", num_ready=%" PRIuPTR
             ", num_transient_failure=%" PRIuPTR ", size=%" PRIuPTR
             ") -- start_connection_attempt=%d",
-            this, ConnectivityStateName(state), num_idle,
-            num_connecting, num_ready, num_transient_failure,
-            addresses_.size(), start_connection_attempt);
+            this, ConnectivityStateName(state), num_idle, num_connecting,
+            num_ready, num_transient_failure, addresses_.size(),
+            start_connection_attempt);
   }
   // In TRANSIENT_FAILURE, report the last reported failure.
   // Otherwise, report OK.
@@ -844,9 +848,8 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       gpr_log(GPR_INFO,
               "[RH %p] triggering internal connection attempt for endpoint "
               "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",
-              this, it->second.get(),
-              addresses_[next_index].ToString().c_str(), next_index,
-              addresses_.size());
+              this, it->second.get(), addresses_[next_index].ToString().c_str(),
+              next_index, addresses_.size());
     }
     it->second->RequestConnectionLocked();
     internally_triggered_connection_index_ = next_index;
