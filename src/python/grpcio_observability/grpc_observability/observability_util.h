@@ -86,9 +86,9 @@ struct GcpObservabilityConfig {
 };
 
 // extern is requeired for Cython
-extern std::queue<CensusData>* kCensusDataBuffer;
-extern std::mutex kCensusDataBufferMutex;
-extern std::condition_variable CensusDataBufferCV;
+extern std::queue<CensusData>* g_census_data_buffer;
+extern std::mutex g_census_data_buffer_mutex;
+extern std::condition_variable g_census_data_buffer_cv;
 
 void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id);
 
