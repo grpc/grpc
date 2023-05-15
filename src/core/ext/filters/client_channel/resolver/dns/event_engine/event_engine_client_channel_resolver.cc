@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -409,7 +410,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                  });
       if (result != service_config->end()) {
         service_config_json_ =
-            result->substr(sizeof(kServiceConfigAttributePrefix));
+            result->substr(std::strlen(kServiceConfigAttributePrefix));
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
