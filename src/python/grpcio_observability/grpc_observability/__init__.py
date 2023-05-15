@@ -17,10 +17,9 @@ from __future__ import annotations
 import abc
 from dataclasses import dataclass
 from dataclasses import field
-import enum
 from typing import List, Mapping, Tuple
 
-from ._cyobservability import MetricsName as CYMetricsName
+from ._cyobservability import MetricsName
 from ._observability import GCPOpenCensusObservability
 
 
@@ -33,28 +32,6 @@ class Exporter(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def export_tracing_data(self, tracing_data: List[StatsData]) -> None:
         raise NotImplementedError()
-
-
-@enum.unique
-class MetricsName(enum.Enum):
-    CLIENT_STARTED_RPCS = CYMetricsName.CLIENT_STARTED_RPCS
-    CLIENT_API_LATENCY = CYMetricsName.CLIENT_API_LATENCY
-    CLIENT_SNET_MESSSAGES_PER_RPC = CYMetricsName.CLIENT_SNET_MESSSAGES_PER_RPC
-    CLIENT_SEND_BYTES_PER_RPC = CYMetricsName.CLIENT_SEND_BYTES_PER_RPC
-    CLIENT_RECEIVED_MESSAGES_PER_RPC = CYMetricsName.CLIENT_RECEIVED_MESSAGES_PER_RPC
-    CLIENT_RECEIVED_BYTES_PER_RPC = CYMetricsName.CLIENT_RECEIVED_BYTES_PER_RPC
-    CLIENT_ROUNDTRIP_LATENCY = CYMetricsName.CLIENT_ROUNDTRIP_LATENCY
-    CLIENT_SERVER_LATENCY = CYMetricsName.CLIENT_SERVER_LATENCY
-    CLIENT_RETRIES_PER_CALL = CYMetricsName.CLIENT_RETRIES_PER_CALL
-    CLIENT_TRANSPARENT_RETRIES_PER_CALL = CYMetricsName.CLIENT_TRANSPARENT_RETRIES_PER_CALL
-    CLIENT_RETRY_DELAY_PER_CALL = CYMetricsName.CLIENT_RETRY_DELAY_PER_CALL
-    CLIENT_TRANSPORT_LATENCY = CYMetricsName.CLIENT_TRANSPORT_LATENCY
-    SERVER_SENT_MESSAGES_PER_RPC = CYMetricsName.SERVER_SENT_MESSAGES_PER_RPC
-    SERVER_SENT_BYTES_PER_RPC = CYMetricsName.SERVER_SENT_BYTES_PER_RPC
-    SERVER_RECEIVED_MESSAGES_PER_RPC = CYMetricsName.SERVER_RECEIVED_MESSAGES_PER_RPC
-    SERVER_RECEIVED_BYTES_PER_RPC = CYMetricsName.SERVER_RECEIVED_BYTES_PER_RPC
-    SERVER_SERVER_LATENCY = CYMetricsName.SERVER_SERVER_LATENCY
-    SERVER_STARTED_RPCS = CYMetricsName.SERVER_STARTED_RPCS
 
 
 @dataclass(frozen=True)

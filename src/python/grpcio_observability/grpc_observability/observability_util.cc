@@ -20,9 +20,9 @@
 
 namespace grpc_observability {
 
-std::queue<CensusData>* kCensusDataBuffer;
-std::mutex kCensusDataBufferMutex;
-std::condition_variable CensusDataBufferCV;
+std::queue<CensusData>* g_census_data_buffer;
+std::mutex g_census_data_buffer_mutex;
+std::condition_variable g_census_data_buffer_cv;
 // TODO(xuanwn): Change it to a more appropriate number
 constexpr int kExportThreshold = 2;
 
@@ -56,7 +56,7 @@ void RecordSpan(SpanCensusData span_census_data) {
 
 
 void NativeObservabilityInit() {
-    kCensusDataBuffer= new std::queue<CensusData>;
+    g_census_data_buffer= new std::queue<CensusData>;
 }
 
 
@@ -74,15 +74,15 @@ void* CreateServerCallTracerFactory() {
 
 void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
   auto now = std::chrono::system_clock::now();
-  CensusDataBufferCV.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
+  g_census_data_buffer_cv.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
 }
 
 
 void AddCensusDataToBuffer(CensusData data) {
-  std::unique_lock<std::mutex> lk(kCensusDataBufferMutex);
-  kCensusDataBuffer->push(data);
-  if (kCensusDataBuffer->size() >= kExportThreshold) {
-      CensusDataBufferCV.notify_all();
+  std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
+  g_census_data_buffer->push(data);
+  if (g_census_data_buffer->size() >= kExportThreshold) {
+      g_census_data_buffer_cv.notify_all();
   }
 }
 

@@ -15,60 +15,84 @@
 cimport cpython
 from cython.operator cimport dereference
 
+import enum
 import logging
 from threading import Thread
 from typing import List, Mapping, Tuple
 
 import grpc_observability
 
-
+# Time we wait for batch exporting census data
+EXPORT_BATCH_INTERVAL = 0.5
 cdef const char* CLIENT_CALL_TRACER = "client_call_tracer"
 cdef const char* SERVER_CALL_TRACER_FACTORY = "server_call_tracer_factory"
 cdef bint GLOBAL_SHUTDOWN_EXPORT_THREAD = False
-cdef object global_export_thread
+cdef object GLOBAL_EXPORT_THREAD
 
 _LOGGER = logging.getLogger(__name__)
 
+class _CyMetricsName:
+  CY_CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
+  CY_CLIENT_SNET_MESSSAGES_PER_RPC = kRpcClientSentMessagesPerRpcMeasureName
+  CY_CLIENT_SEND_BYTES_PER_RPC = kRpcClientSentBytesPerRpcMeasureName
+  CY_CLIENT_RECEIVED_MESSAGES_PER_RPC = kRpcClientReceivedMessagesPerRpcMeasureName
+  CY_CLIENT_RECEIVED_BYTES_PER_RPC = kRpcClientReceivedBytesPerRpcMeasureName
+  CY_CLIENT_ROUNDTRIP_LATENCY = kRpcClientRoundtripLatencyMeasureName
+  CY_CLIENT_SERVER_LATENCY = kRpcClientServerLatencyMeasureName
+  CY_CLIENT_STARTED_RPCS = kRpcClientStartedRpcsMeasureName
+  CY_CLIENT_RETRIES_PER_CALL = kRpcClientRetriesPerCallMeasureName
+  CY_CLIENT_TRANSPARENT_RETRIES_PER_CALL = kRpcClientTransparentRetriesPerCallMeasureName
+  CY_CLIENT_RETRY_DELAY_PER_CALL = kRpcClientRetryDelayPerCallMeasureName
+  CY_CLIENT_TRANSPORT_LATENCY = kRpcClientTransportLatencyMeasureName
+  CY_SERVER_SENT_MESSAGES_PER_RPC = kRpcServerSentMessagesPerRpcMeasureName
+  CY_SERVER_SENT_BYTES_PER_RPC = kRpcServerSentBytesPerRpcMeasureName
+  CY_SERVER_RECEIVED_MESSAGES_PER_RPC = kRpcServerReceivedMessagesPerRpcMeasureName
+  CY_SERVER_RECEIVED_BYTES_PER_RPC = kRpcServerReceivedBytesPerRpcMeasureName
+  CY_SERVER_SERVER_LATENCY = kRpcServerServerLatencyMeasureName
+  CY_SERVER_STARTED_RPCS = kRpcServerStartedRpcsMeasureName
 
-class MetricsName:
-  CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
-  CLIENT_SNET_MESSSAGES_PER_RPC = kRpcClientSentMessagesPerRpcMeasureName
-  CLIENT_SEND_BYTES_PER_RPC = kRpcClientSentBytesPerRpcMeasureName
-  CLIENT_RECEIVED_MESSAGES_PER_RPC = kRpcClientReceivedMessagesPerRpcMeasureName
-  CLIENT_RECEIVED_BYTES_PER_RPC = kRpcClientReceivedBytesPerRpcMeasureName
-  CLIENT_ROUNDTRIP_LATENCY = kRpcClientRoundtripLatencyMeasureName
-  CLIENT_SERVER_LATENCY = kRpcClientServerLatencyMeasureName
-  CLIENT_STARTED_RPCS = kRpcClientStartedRpcsMeasureName
-  CLIENT_RETRIES_PER_CALL = kRpcClientRetriesPerCallMeasureName
-  CLIENT_TRANSPARENT_RETRIES_PER_CALL = kRpcClientTransparentRetriesPerCallMeasureName
-  CLIENT_RETRY_DELAY_PER_CALL = kRpcClientRetryDelayPerCallMeasureName
-  CLIENT_TRANSPORT_LATENCY = kRpcClientTransportLatencyMeasureName
-  SERVER_SENT_MESSAGES_PER_RPC = kRpcServerSentMessagesPerRpcMeasureName
-  SERVER_SENT_BYTES_PER_RPC = kRpcServerSentBytesPerRpcMeasureName
-  SERVER_RECEIVED_MESSAGES_PER_RPC = kRpcServerReceivedMessagesPerRpcMeasureName
-  SERVER_RECEIVED_BYTES_PER_RPC = kRpcServerReceivedBytesPerRpcMeasureName
-  SERVER_SERVER_LATENCY = kRpcServerServerLatencyMeasureName
-  SERVER_STARTED_RPCS = kRpcServerStartedRpcsMeasureName
+@enum.unique
+class MetricsName(enum.Enum):
+  CLIENT_STARTED_RPCS = _CyMetricsName.CY_CLIENT_STARTED_RPCS
+  CLIENT_API_LATENCY = _CyMetricsName.CY_CLIENT_API_LATENCY
+  CLIENT_SNET_MESSSAGES_PER_RPC = _CyMetricsName.CY_CLIENT_SNET_MESSSAGES_PER_RPC
+  CLIENT_SEND_BYTES_PER_RPC = _CyMetricsName.CY_CLIENT_SEND_BYTES_PER_RPC
+  CLIENT_RECEIVED_MESSAGES_PER_RPC = _CyMetricsName.CY_CLIENT_RECEIVED_MESSAGES_PER_RPC
+  CLIENT_RECEIVED_BYTES_PER_RPC = _CyMetricsName.CY_CLIENT_RECEIVED_BYTES_PER_RPC
+  CLIENT_ROUNDTRIP_LATENCY = _CyMetricsName.CY_CLIENT_ROUNDTRIP_LATENCY
+  CLIENT_SERVER_LATENCY = _CyMetricsName.CY_CLIENT_SERVER_LATENCY
+  CLIENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_RETRIES_PER_CALL
+  CLIENT_TRANSPARENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_TRANSPARENT_RETRIES_PER_CALL
+  CLIENT_RETRY_DELAY_PER_CALL = _CyMetricsName.CY_CLIENT_RETRY_DELAY_PER_CALL
+  CLIENT_TRANSPORT_LATENCY = _CyMetricsName.CY_CLIENT_TRANSPORT_LATENCY
+  SERVER_SENT_MESSAGES_PER_RPC = _CyMetricsName.CY_SERVER_SENT_MESSAGES_PER_RPC
+  SERVER_SENT_BYTES_PER_RPC = _CyMetricsName.CY_SERVER_SENT_BYTES_PER_RPC
+  SERVER_RECEIVED_MESSAGES_PER_RPC = _CyMetricsName.CY_SERVER_RECEIVED_MESSAGES_PER_RPC
+  SERVER_RECEIVED_BYTES_PER_RPC = _CyMetricsName.CY_SERVER_RECEIVED_BYTES_PER_RPC
+  SERVER_SERVER_LATENCY = _CyMetricsName.CY_SERVER_SERVER_LATENCY
+  SERVER_STARTED_RPCS = _CyMetricsName.CY_SERVER_STARTED_RPCS
 
 # Delay map creation due to circular dependencies
-_CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {}
+_CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {x.value: x for x in MetricsName}
 
 def cyobservability_init(object exporter) -> None:
-  global _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING
-  _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {x.value: x for x in grpc_observability.MetricsName}
   NativeObservabilityInit()
   _start_exporting_thread(exporter)
 
 
 def _start_exporting_thread(object exporter) -> None:
-  global global_export_thread
+  global GLOBAL_EXPORT_THREAD
   global GLOBAL_SHUTDOWN_EXPORT_THREAD
   GLOBAL_SHUTDOWN_EXPORT_THREAD = False
-  global_export_thread = Thread(target=_export_census_data, args=(exporter,))
-  global_export_thread.start()
+  GLOBAL_EXPORT_THREAD = Thread(target=_export_census_data, args=(exporter,))
+  GLOBAL_EXPORT_THREAD.start()
 
 
 def set_gcp_observability_config(object py_config) -> bool:
+  """
+    Returns:
+      bool: True if configuration is valid, False otherwise.
+  """
   py_labels = {}
   sampling_rate = 0.0
 
@@ -133,7 +157,6 @@ def at_observability_exit() -> None:
 
 
 def _cy_metric_name_to_py_metric_name(object metric_name) -> grpc_observability.MetricsName:
-  global _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING
   try:
       return _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING[metric_name]
   except KeyError:
@@ -183,17 +206,18 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 
 
 cdef void _export_census_data(object exporter):
+  cdef int export_interval_ms = EXPORT_BATCH_INTERVAL * 1000
   while True:
     with nogil:
       while not GLOBAL_SHUTDOWN_EXPORT_THREAD:
-        lk = new unique_lock[mutex](kCensusDataBufferMutex)
+        lk = new unique_lock[mutex](g_census_data_buffer_mutex)
         # Wait for next batch of census data OR timeout at fixed interval.
         # Batch export census data to minimize the time we acquiring the GIL.
         # TODO(xuanwn): change interval to a more appropriate number
-        AwaitNextBatchLocked(dereference(lk), 500)
+        AwaitNextBatchLocked(dereference(lk), export_interval_ms)
 
         # Break only when buffer have data
-        if not kCensusDataBuffer.empty():
+        if not g_census_data_buffer.empty():
           del lk
           break
         else:
@@ -206,15 +230,15 @@ cdef void _export_census_data(object exporter):
 
 
 cdef void _flush_census_data(object exporter):
-  lk = new unique_lock[mutex](kCensusDataBufferMutex)
+  lk = new unique_lock[mutex](g_census_data_buffer_mutex)
   with nogil:
-    if kCensusDataBuffer.empty():
+    if g_census_data_buffer.empty():
       del lk
       return
   py_metrics_batch = []
   py_spans_batch = []
-  while not kCensusDataBuffer.empty():
-    cCensusData = kCensusDataBuffer.front()
+  while not g_census_data_buffer.empty():
+    cCensusData = g_census_data_buffer.front()
     if cCensusData.type == kMetricData:
       py_labels = _c_label_to_labels(cCensusData.labels)
       py_metric = _get_stats_data(cCensusData.measurement_data, py_labels)
@@ -223,7 +247,7 @@ cdef void _flush_census_data(object exporter):
       py_span = _get_tracing_data(cCensusData.span_data, cCensusData.span_data.span_labels,
                                   cCensusData.span_data.span_annotations)
       py_spans_batch.append(py_span)
-    kCensusDataBuffer.pop()
+    g_census_data_buffer.pop()
 
   del lk
   exporter.export_stats_data(py_metrics_batch)
@@ -234,8 +258,8 @@ cdef void _shutdown_exporting_thread():
   with nogil:
     global GLOBAL_SHUTDOWN_EXPORT_THREAD
     GLOBAL_SHUTDOWN_EXPORT_THREAD = True
-    CensusDataBufferCV.notify_all()
-  global_export_thread.join()
+    g_census_data_buffer_cv.notify_all()
+  GLOBAL_EXPORT_THREAD.join()
 
 
 cdef str _decode(bytes bytestring):

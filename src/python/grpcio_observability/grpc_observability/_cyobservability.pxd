@@ -83,12 +83,12 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
   cdef void NativeObservabilityInit() except +
   cdef void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id) except +
   cdef void* CreateServerCallTracerFactory() except +
-  cdef queue[cCensusData]* kCensusDataBuffer
+  cdef queue[cCensusData]* g_census_data_buffer
   cdef void AwaitNextBatchLocked(unique_lock[mutex]&, int) nogil
   cdef bint PythonOpenCensusStatsEnabled() nogil
   cdef bint PythonOpenCensusTracingEnabled() nogil
-  cdef mutex kCensusDataBufferMutex
-  cdef condition_variable CensusDataBufferCV
+  cdef mutex g_census_data_buffer_mutex
+  cdef condition_variable g_census_data_buffer_cv
 
   cppclass cCensusData "::grpc_observability::CensusData":
     DataType type
