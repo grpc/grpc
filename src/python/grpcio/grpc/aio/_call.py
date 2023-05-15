@@ -19,7 +19,7 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import AsyncIterator, Optional, Tuple
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Tuple
 
 import grpc
 from grpc import _common
@@ -252,7 +252,7 @@ class _APIStyle(enum.IntEnum):
     READER_WRITER = 2
 
 
-class _UnaryResponseMixin(Call):
+class _UnaryResponseMixin(Call, Generic[ResponseType]):
     _call_response: asyncio.Task
 
     def _init_unary_response_mixin(self, response_task: asyncio.Task):
@@ -265,7 +265,7 @@ class _UnaryResponseMixin(Call):
         else:
             return False
 
-    def __await__(self) -> ResponseType:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
@@ -573,6 +573,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
             await self._raise_for_status()
 
 
+# pylint: disable=too-many-ancestors
 class StreamUnaryCall(_StreamRequestMixin, _UnaryResponseMixin, Call,
                       _base_call.StreamUnaryCall):
     """Object for managing stream-unary RPC calls.
