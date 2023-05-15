@@ -126,9 +126,9 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
       AuditLoggerRegistry::CreateAuditLogger(std::move(result.value()));
   AuditContext context("method", "spiffe", "policy", "rule", true);
   ::testing::internal::CaptureStdout();
-  int64_t time_before_log = absl::ToUnixSeconds(absl::Now());
+  absl::Time time_before_log = absl::Now();
   logger->Log(context);
-  int64_t time_after_log = absl::ToUnixSeconds(absl::Now());
+  absl::Time time_after_log = absl::Now();
   auto log_or = JsonParse(::testing::internal::GetCapturedStdout());
   ASSERT_TRUE(log_or.ok());
   ASSERT_EQ(log_or->type(), Json::Type::kObject);
@@ -138,15 +138,13 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
   auto& object = it->second.object();
   ASSERT_NE(object.find("timestamp"), object.end());
   EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kString);
-  absl::Time log_time;
-  ASSERT_TRUE(absl::ParseTime(absl::RFC3339_sec,
+  absl::Time time_at_log;
+  ASSERT_TRUE(absl::ParseTime(absl::RFC3339_full,
                               object.find("timestamp")->second.string(),
-                              &log_time, nullptr));
-  int64_t time_at_log = absl::ToUnixSeconds(log_time);
-  // Check if the recorded timestamp is in between the recorded interval with
-  // the precision of one second.
-  EXPECT_GE(time_at_log, time_before_log);
-  EXPECT_LE(time_at_log, time_after_log);
+                              &time_at_log, nullptr));
+  // Check if the recorded timestamp is in between the recorded interval.
+  EXPECT_GT(time_at_log, time_before_log);
+  EXPECT_LT(time_at_log, time_after_log);
   // Check exact values of everything else.
   Json::Object json_object = object;
   json_object.erase("timestamp");

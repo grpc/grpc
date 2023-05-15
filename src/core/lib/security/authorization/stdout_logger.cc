@@ -45,11 +45,10 @@ constexpr char kLogFormat[] =
 }  // namespace
 
 void StdoutAuditLogger::Log(const AuditContext& context) {
-  absl::FPrintF(
-      stdout, kLogFormat,
-      absl::FormatTime(absl::RFC3339_sec, absl::Now(), absl::LocalTimeZone()),
-      context.rpc_method(), context.principal(), context.policy_name(),
-      context.matched_rule(), context.authorized() ? "true" : "false");
+  absl::FPrintF(stdout, kLogFormat, absl::FormatTime(absl::Now()),
+                context.rpc_method(), context.principal(),
+                context.policy_name(), context.matched_rule(),
+                context.authorized() ? "true" : "false");
 }
 
 absl::string_view StdoutAuditLoggerFactory::Config::name() const {
