@@ -389,14 +389,11 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             logging.exception('Got error during teardown')
         finally:
             # Fail if any of the pods restarted.
-            cls.assertEqual(
-                client_restarts,
-                0,
-                msg=
-                ('Client pods unexpectedly restarted'
-                 f' {client_restarts} times during test.'
-                 ' In most cases, this is caused by the test client app crash.'
-                ))
+            error_msg = (
+                'Client pods unexpectedly restarted'
+                f' {client_restarts} times during test.'
+                ' In most cases, this is caused by the test client app crash.')
+            assert client_restarts == 0, error_msg
 
     @classmethod
     def _cleanup(cls, cleanup_all: bool = False):
