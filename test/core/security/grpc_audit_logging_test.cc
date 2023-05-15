@@ -126,9 +126,9 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
       AuditLoggerRegistry::CreateAuditLogger(std::move(result.value()));
   AuditContext context("method", "spiffe", "policy", "rule", true);
   ::testing::internal::CaptureStdout();
-  absl::Time time_before_log = absl::Now();
+  int64_t time_before_log = absl::ToUnixSeconds(absl::Now());
   logger->Log(context);
-  absl::Time time_after_log = absl::Now();
+  int64_t time_after_log = absl::ToUnixSeconds(absl::Now());
   auto log_or = JsonParse(::testing::internal::GetCapturedStdout());
   ASSERT_TRUE(log_or.ok());
   ASSERT_EQ(log_or->type(), Json::Type::kObject);
@@ -136,14 +136,16 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
   ASSERT_NE(it, log_or->object().end());
   ASSERT_EQ(it->second.type(), Json::Type::kObject);
   auto& object = it->second.object();
-  // Check if the recorded timestamp is in between the recorded interval.
   ASSERT_NE(object.find("timestamp"), object.end());
   EXPECT_EQ(object.find("timestamp")->second.type(), Json::Type::kString);
   absl::Time log_time;
-  ASSERT_TRUE(absl::ParseTime(absl::RFC3339_full,
+  ASSERT_TRUE(absl::ParseTime(absl::RFC3339_sec,
                               object.find("timestamp")->second.string(),
                               &log_time, nullptr));
-  EXPECT_TRUE(log_time >= time_before_log && log_time <= time_after_log);
+  int64_t time_at_log = absl::ToUnixSeconds(log_time);
+  // Check if the recorded timestamp is in between the recorded interval with
+  // the precision of one second.
+  EXPECT_TRUE(time_at_log >= time_before_log && time_at_log <= time_after_log);
   // Check exact values of everything else.
   std::vector<std::string> fields = {"rpc_method", "principal", "policy_name",
                                      "matched_rule", "authorized"};
