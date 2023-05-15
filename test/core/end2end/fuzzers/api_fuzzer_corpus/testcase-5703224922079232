@@ -1,0 +1,8 @@
+actions {
+  create_channel {
+    target: "unix:test"
+  }
+}
+actions {
+  check_connectivity: true
+}

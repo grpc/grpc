@@ -40,10 +40,14 @@
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
+using namespace std::chrono_literals;
+
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
+
+constexpr EventEngine::Duration kOneYear = 8760h;
 
 // Inside the fuzzing event engine we consider everything is bound to a single
 // loopback device. It cannot reach any other devices, and shares all ports
@@ -466,7 +470,8 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&*mu_);
-  return RunAfterLocked(when, std::move(closure));
+  // (b/258949216): Cap it to one year to avoid integer overflow errors.
+  return RunAfterLocked(std::min(when, kOneYear), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
