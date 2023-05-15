@@ -160,7 +160,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
   RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure;
   {
     MutexLock lock(&mu_);
-    on_connectivity_failure = on_connectivity_failure_->Ref();
+    on_connectivity_failure = on_connectivity_failure_;
   }
   ExecCtx exec_ctx;
   if (on_connectivity_failure != nullptr) {
