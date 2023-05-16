@@ -1,8 +1,0 @@
-resolver_args {
-  request_service_config: true
-}
-txt_response {
-  txt_records {
-    enumerated_value: TXT_RANDOM_PREFIXED_CONFIG
-  }
-}
