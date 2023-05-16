@@ -80,7 +80,7 @@ def loadtest_template(
         inject_server_pool: bool,
         inject_big_query_table: bool,
         inject_timeout_seconds: bool,
-        inject_ttl_seconds: bool) -> Dict[str, Any]:  # yapf: disable
+        inject_ttl_seconds: bool) -> Dict[str, Any]:  # fmt: skip
     """Generates the load test template."""
     spec = dict()  # type: Dict[str, Any]
     clientmap = dict()  # Dict[str, List[Dict[str, Any]]]
