@@ -60,8 +60,8 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             return
 
         # gRPC CPP implemented server "error-code-" rpc-behavior in v1.55.x.
-        if (cls.lang_spec == _Lang.CPP
-                and cls.lang_spec.version_gte('v1.55.x')):
+        if (cls.lang_spec == _Lang.CPP and
+                cls.lang_spec.version_gte('v1.55.x')):
             return
 
         # gRPC go, python and node fallback to the gRPC Java.
