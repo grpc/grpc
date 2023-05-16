@@ -206,16 +206,26 @@ namespace Grpc.Core.Internal
         /// </summary>
         static string TryGetFrameworkDescription()
         {
+            try
+            {
 #if NETSTANDARD
-            return RuntimeInformation.FrameworkDescription;
+                return RuntimeInformation.FrameworkDescription;
 #else
-            // on full .NET framework we are targeting net45, and the property is only available starting from .NET Framework 4.7.1+
-            // try obtaining the value by reflection since we might be running on a newer framework even though we're targeting
-            // an older one.
-            var runtimeInformationClass = Type.GetType("System.Runtime.InteropServices.RuntimeInformation");
-            var frameworkDescriptionProperty = runtimeInformationClass?.GetTypeInfo().GetProperty("FrameworkDescription", BindingFlags.Static | BindingFlags.Public);
-            return frameworkDescriptionProperty?.GetValue(null)?.ToString();
+                // on full .NET framework we are targeting net45, and the property is only available starting from .NET Framework 4.7.1+
+                // try obtaining the value by reflection since we might be running on a newer framework even though we're targeting
+                // an older one.
+                var runtimeInformationClass = Type.GetType("System.Runtime.InteropServices.RuntimeInformation");
+                var frameworkDescriptionProperty = runtimeInformationClass?.GetTypeInfo().GetProperty("FrameworkDescription", BindingFlags.Static | BindingFlags.Public);
+                return frameworkDescriptionProperty?.GetValue(null)?.ToString();
 #endif
+            }
+            catch
+            {
+                // In some rare circumstances calling RuntimeInformation.FrameworkDescription
+                // fails. See https://github.com/grpc/grpc/issues/33080
+                // If this happens then we can only return null.
+                return null;
+            }
         }
 
         /// <summary>
