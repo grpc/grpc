@@ -319,7 +319,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   // Latest state and picker reported by the child policy.
-  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   Mutex subchannel_map_mu_;
@@ -370,8 +370,11 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
-  auto overridden_host_pick = PickOverridenHost(override_host);
+  auto* override_host = static_cast<XdsOverrideHostAttribute*>(
+      call_state->GetCallAttribute(XdsOverrideHostAttribute::TypeName()));
+  auto overridden_host_pick =
+      PickOverridenHost(override_host != nullptr ? override_host->host_name()
+                                                 : absl::string_view());
   if (overridden_host_pick.has_value()) {
     return std::move(*overridden_host_pick);
   }
@@ -740,7 +743,7 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsOverrideHostLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
   }

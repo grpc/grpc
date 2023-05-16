@@ -251,6 +251,23 @@ UPB_INLINE const xds_type_matcher_v3_StringMatcher* const* xds_type_matcher_v3_L
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_upb_array(const xds_type_matcher_v3_ListStringMatcher* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_mutable_upb_array(const xds_type_matcher_v3_ListStringMatcher* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool xds_type_matcher_v3_ListStringMatcher_has_patterns(const xds_type_matcher_v3_ListStringMatcher* msg) {
   size_t size;
   xds_type_matcher_v3_ListStringMatcher_patterns(msg, &size);

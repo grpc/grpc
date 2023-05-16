@@ -472,7 +472,7 @@ class ChannelzSampler final {
     std::string type = "Channel";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(channel.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -483,7 +483,7 @@ class ChannelzSampler final {
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(subchannel.data(),
                                                   &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -493,7 +493,7 @@ class ChannelzSampler final {
     std::string type = "Server";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(server.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -503,7 +503,7 @@ class ChannelzSampler final {
     std::string type = "Socket";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(socket.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -523,18 +523,21 @@ class ChannelzSampler final {
     const time_t time_ago = ago.tv_sec;
     ss << std::put_time(std::localtime(&time_ago), "%F %T");
     start = ss.str();
-    grpc_core::Json obj =
-        grpc_core::Json::Object{{"Task", absl::StrFormat("%s_ID%s", type, id)},
-                                {"Start", start},
-                                {"Finish", finish},
-                                {"ID", id},
-                                {"Type", type},
-                                {"Description", description}};
+    grpc_core::Json obj = grpc_core::Json::FromObject(
+        {{"Task",
+          grpc_core::Json::FromString(absl::StrFormat("%s_ID%s", type, id))},
+         {"Start", grpc_core::Json::FromString(start)},
+         {"Finish", grpc_core::Json::FromString(finish)},
+         {"ID", grpc_core::Json::FromString(id)},
+         {"Type", grpc_core::Json::FromString(type)},
+         {"Description", description}});
     json_.push_back(obj);
   }
 
   // Dump data in json
-  std::string DumpJson() { return JsonDump(grpc_core::Json(json_)); }
+  std::string DumpJson() {
+    return grpc_core::JsonDump(grpc_core::Json::FromArray(json_));
+  }
 
   // Check if one entity has been recorded
   bool CheckID(int64_t id) {

@@ -1,0 +1,6 @@
+suite: "CoreClientChannelTest"
+test: "CallHostOverride"
+config: "Chttp2SslCredReloadTls13"
+config_vars {
+  experiments: "event_engine_listener"
+}

@@ -20,7 +20,7 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import AsyncIterator, Awaitable, Generic, Optional, Union
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
@@ -141,7 +141,7 @@ class UnaryUnaryCall(Generic[RequestType, ResponseType],
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -197,7 +197,7 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
         """
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:

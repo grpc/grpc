@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "BadFlagsOnSendInitialMetadata"
+config: "Chttp2FakeSecurityFullstack"

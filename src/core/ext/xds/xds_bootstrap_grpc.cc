@@ -35,6 +35,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -139,7 +141,7 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
           CoreConfiguration::Get().channel_creds_registry().IsSupported(
               creds.type)) {
         if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
-                creds.type, creds.config)) {
+                creds.type, Json::FromObject(creds.config))) {
           errors->AddError(absl::StrCat(
               "invalid config for channel creds type \"", creds.type, "\""));
           continue;
@@ -173,22 +175,25 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
 }
 
 Json GrpcXdsBootstrap::GrpcXdsServer::ToJson() const {
-  Json::Object channel_creds_json{{"type", channel_creds_.type}};
+  Json::Object channel_creds_json{
+      {"type", Json::FromString(channel_creds_.type)},
+  };
   if (!channel_creds_.config.empty()) {
-    channel_creds_json["config"] = channel_creds_.config;
+    channel_creds_json["config"] = Json::FromObject(channel_creds_.config);
   }
   Json::Object json{
-      {"server_uri", server_uri_},
-      {"channel_creds", Json::Array{std::move(channel_creds_json)}},
+      {"server_uri", Json::FromString(server_uri_)},
+      {"channel_creds",
+       Json::FromArray({Json::FromObject(std::move(channel_creds_json))})},
   };
   if (!server_features_.empty()) {
     Json::Array server_features_json;
     for (auto& feature : server_features_) {
-      server_features_json.emplace_back(feature);
+      server_features_json.emplace_back(Json::FromString(feature));
     }
-    json["server_features"] = std::move(server_features_json);
+    json["server_features"] = Json::FromArray(std::move(server_features_json));
   }
-  return json;
+  return Json::FromObject(std::move(json));
 }
 
 //
@@ -254,6 +259,13 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
 void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
                                     const JsonArgs& /*args*/,
                                     ValidationErrors* errors) {
+  // Verify that there is at least one server present.
+  {
+    ValidationErrors::ScopedField field(errors, ".xds_servers");
+    if (servers_.empty() && !errors->FieldHasErrors()) {
+      errors->AddError("must be non-empty");
+    }
+  }
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {
@@ -292,7 +304,7 @@ std::string GrpcXdsBootstrap::ToString() const {
                         "},\n",
                         node_->id(), node_->cluster(), node_->locality_region(),
                         node_->locality_zone(), node_->locality_sub_zone(),
-                        JsonDump(Json{node_->metadata()})));
+                        JsonDump(Json::FromObject(node_->metadata()))));
   }
   parts.push_back(
       absl::StrFormat("servers=[\n%s\n],\n", JsonDump(servers_[0].ToJson())));

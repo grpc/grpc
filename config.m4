@@ -514,6 +514,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -543,7 +545,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_local.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -552,6 +556,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/alloc.cc \
@@ -1455,8 +1460,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/cf_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/posix_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/thread_pool)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/work_queue)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)

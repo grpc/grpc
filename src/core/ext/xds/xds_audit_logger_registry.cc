@@ -29,9 +29,10 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 
 namespace grpc_core {
@@ -48,7 +49,7 @@ class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
       ValidationErrors* /*errors*/) override {
     // Stdout logger has no configuration right now. So we don't need to invoke
     // the gRPC audit logger registry to validate the config.
-    return Json::Object{{"stdout_logger", Json::Object()}};
+    return Json::Object{{"stdout_logger", Json::FromObject({})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -92,8 +93,10 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto config_factory_it =
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
-        return config_factory_it->second->ConvertXdsAuditLoggerConfig(
-            context, *serialized_value, errors);
+        // TODO(lwge): Parse the config with the gRPC audit logger registry.
+        return Json::FromObject(
+            config_factory_it->second->ConvertXdsAuditLoggerConfig(
+                context, *serialized_value, errors));
       }
     }
     // Check for custom audit logger type.

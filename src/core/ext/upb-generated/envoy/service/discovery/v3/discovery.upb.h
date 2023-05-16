@@ -135,9 +135,6 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEnt
   if (!map) return NULL;
   return (const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_service_discovery_v3_ResourceLocator_has_dynamic_parameters(const envoy_service_discovery_v3_ResourceLocator* msg) {
-  return envoy_service_discovery_v3_ResourceLocator_dynamic_parameters_size(msg) != 0;
-}
 
 UPB_INLINE void envoy_service_discovery_v3_ResourceLocator_set_name(envoy_service_discovery_v3_ResourceLocator *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 0), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -340,6 +337,23 @@ UPB_INLINE upb_StringView const* envoy_service_discovery_v3_DiscoveryRequest_res
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DiscoveryRequest_resource_names_upb_array(const envoy_service_discovery_v3_DiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DiscoveryRequest_resource_names_mutable_upb_array(const envoy_service_discovery_v3_DiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DiscoveryRequest_has_resource_names(const envoy_service_discovery_v3_DiscoveryRequest* msg) {
   size_t size;
   envoy_service_discovery_v3_DiscoveryRequest_resource_names(msg, &size);
@@ -396,6 +410,23 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceLocator* const* envoy_servic
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DiscoveryRequest_resource_locators_upb_array(const envoy_service_discovery_v3_DiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(16, 80), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DiscoveryRequest_resource_locators_mutable_upb_array(const envoy_service_discovery_v3_DiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(16, 80), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DiscoveryRequest_has_resource_locators(const envoy_service_discovery_v3_DiscoveryRequest* msg) {
   size_t size;
@@ -550,6 +581,23 @@ UPB_INLINE const struct google_protobuf_Any* const* envoy_service_discovery_v3_D
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DiscoveryResponse_resources_upb_array(const envoy_service_discovery_v3_DiscoveryResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DiscoveryResponse_resources_mutable_upb_array(const envoy_service_discovery_v3_DiscoveryResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DiscoveryResponse_has_resources(const envoy_service_discovery_v3_DiscoveryResponse* msg) {
   size_t size;
@@ -736,6 +784,23 @@ UPB_INLINE upb_StringView const* envoy_service_discovery_v3_DeltaDiscoveryReques
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_names_subscribe_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_names_subscribe_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_resource_names_subscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   size_t size;
   envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_names_subscribe(msg, &size);
@@ -755,6 +820,23 @@ UPB_INLINE upb_StringView const* envoy_service_discovery_v3_DeltaDiscoveryReques
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_names_unsubscribe_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_names_unsubscribe_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_resource_names_unsubscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   size_t size;
@@ -781,9 +863,6 @@ UPB_INLINE const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourc
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_initial_resource_versions(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
-  return envoy_service_discovery_v3_DeltaDiscoveryRequest_initial_resource_versions_size(msg) != 0;
 }
 UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryRequest_clear_response_nonce(envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   const upb_MiniTableField field = {6, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -826,6 +905,23 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceLocator* const* envoy_servic
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_locators_subscribe_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(24, 80), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_locators_subscribe_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(24, 80), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_resource_locators_subscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   size_t size;
   envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_locators_subscribe(msg, &size);
@@ -845,6 +941,23 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceLocator* const* envoy_servic
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_locators_unsubscribe_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 88), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryRequest_resource_locators_unsubscribe_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 88), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_resource_locators_unsubscribe(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   size_t size;
@@ -1087,6 +1200,23 @@ UPB_INLINE const envoy_service_discovery_v3_Resource* const* envoy_service_disco
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_resources_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_resources_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryResponse_has_resources(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg) {
   size_t size;
   envoy_service_discovery_v3_DeltaDiscoveryResponse_resources(msg, &size);
@@ -1129,6 +1259,23 @@ UPB_INLINE upb_StringView const* envoy_service_discovery_v3_DeltaDiscoveryRespon
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resources_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 64), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resources_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 64), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryResponse_has_removed_resources(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg) {
   size_t size;
   envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resources(msg, &size);
@@ -1163,6 +1310,23 @@ UPB_INLINE const envoy_service_discovery_v3_ResourceName* const* envoy_service_d
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resource_names_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 80), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DeltaDiscoveryResponse_removed_resource_names_mutable_upb_array(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 80), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryResponse_has_removed_resource_names(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg) {
   size_t size;
@@ -1621,6 +1785,23 @@ UPB_INLINE const envoy_service_discovery_v3_DynamicParameterConstraints* const* 
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList_constraints_upb_array(const envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList_constraints_mutable_upb_array(const envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList_has_constraints(const envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList* msg) {
   size_t size;
   envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList_constraints(msg, &size);
@@ -1740,6 +1921,23 @@ UPB_INLINE upb_StringView const* envoy_service_discovery_v3_Resource_aliases(con
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_discovery_v3_Resource_aliases_upb_array(const envoy_service_discovery_v3_Resource* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_discovery_v3_Resource_aliases_mutable_upb_array(const envoy_service_discovery_v3_Resource* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_Resource_has_aliases(const envoy_service_discovery_v3_Resource* msg) {
   size_t size;

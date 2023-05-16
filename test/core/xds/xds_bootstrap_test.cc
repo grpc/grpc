@@ -37,6 +37,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -145,7 +146,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///lb");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -159,7 +160,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///xds_server");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
@@ -172,7 +173,7 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(server->server_uri(), "fake:///xds_server2");
   EXPECT_EQ(server->channel_creds_type(), "fake");
   EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+      << JsonDump(Json::FromObject(server->channel_creds_config()));
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id(), "foo");
   EXPECT_EQ(bootstrap->node()->cluster(), "bar");
@@ -310,6 +311,19 @@ TEST(XdsBootstrapTest, MissingXdsServers) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: [field:xds_servers error:field not present]")
+      << bootstrap.status();
+}
+
+TEST(XdsBootstrapTest, EmptyXdsServers) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "  ]"
+      "}";
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
+  EXPECT_EQ(
+      bootstrap.status().message(),
+      "errors validating JSON: [field:xds_servers error:must be non-empty]")
       << bootstrap.status();
 }
 

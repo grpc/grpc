@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "WriteInternalCompressAcceptedOnSendMessage"
+config: "Chttp2FakeSecurityFullstack"

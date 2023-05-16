@@ -50,6 +50,7 @@ class End2EndBinderTransportTest
   ~End2EndBinderTransportTest() override {
     server_->Shutdown();
     service_.reset();
+    exec_ctx.Flush();
     delete end2end_testing::g_transaction_processor;
   }
 
