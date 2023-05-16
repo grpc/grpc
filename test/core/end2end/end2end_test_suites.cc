@@ -542,8 +542,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
         CoreTestConfiguration{
             "Chttp2Fullstack",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_LISTENER,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -646,8 +645,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
                               }},
         CoreTestConfiguration{
             "Chttp2FullstackWithCensus",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT,
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<CensusFixture>();
@@ -656,8 +654,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackWithProxy",
             FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_DO_NOT_FUZZ |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT,
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
               return std::make_unique<ProxyFixture>(client_args, server_args);
@@ -665,8 +662,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{
             "Chttp2HttpProxy",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_DO_NOT_FUZZ |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_LISTENER,
+                FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& client_args, const ChannelArgs&) {
               return std::make_unique<HttpProxyFilter>(client_args);
@@ -686,8 +682,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2InsecureCredentials",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-                FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT,
+                FEATURE_MASK_IS_HTTP2,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<InsecureCredsFixture>();
@@ -726,8 +721,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                 FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST |
-                FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_LISTENER,
+                FEATURE_MASK_IS_HTTP2,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_3);
@@ -771,8 +765,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2SslCredReloadTls12",
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslCredReloadFixture>(TLS1_2);
@@ -834,8 +827,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: static data provider + async external verifier
             // extra: TLS 1.3
             "Chttp2StaticProviderAsyncVerifierTls13",
-            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
-                FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
