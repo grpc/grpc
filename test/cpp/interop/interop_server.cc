@@ -36,6 +36,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
