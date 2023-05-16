@@ -2211,6 +2211,7 @@ add_library(grpc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -4438,6 +4439,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
+  src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc

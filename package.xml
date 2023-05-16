@@ -1469,6 +1469,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/stdout_logger.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/stdout_logger.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/certificate_provider/certificate_provider_registry.h" role="src" />
