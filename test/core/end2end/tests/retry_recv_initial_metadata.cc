@@ -35,6 +35,7 @@ namespace {
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
 CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
