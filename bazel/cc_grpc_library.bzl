@@ -74,8 +74,7 @@ def cc_grpc_library(
         cc_proto_target = name if proto_only else "_" + name + "_cc_proto"
 
         proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
-        proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1 and dep.find("com_google_googleapis") == -1]
-        proto_deps += [dep for dep in deps if dep.find("com_google_googleapis") != -1]
+        proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
         if well_known_protos:
             proto_deps += well_known_proto_libs()
         proto_library(
