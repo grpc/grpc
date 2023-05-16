@@ -18,6 +18,9 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+if [ -e tools/run_tests/performance/grpc_e2e_performance_gke_experiment.sh ]; then
+    source tools/run_tests/performance/grpc_e2e_performance_gke_experiment.sh
+fi
 
 # This is to ensure we can push and pull images from gcr.io. We do not
 # necessarily need it to run load tests, but will need it when we employ
@@ -50,9 +53,17 @@ if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" 
 else
     GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
-GRPC_DOTNET_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
-GRPC_GO_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-go.git master | cut -f1)"
-GRPC_JAVA_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-java.git master | cut -f1)"
+
+GRPC_DOTNET_REPO="${GRPC_DOTNET_REPO:-grpc/grpc-dotnet}"
+GRPC_GO_REPO="${GRPC_GO_REPO:-grpc/grpc-go}"
+GRPC_JAVA_REPO="${GRPC_JAVA_REPO:-grpc/grpc-java}"
+GRPC_DOTNET_BRANCH="${GRPC_DOTNET_BRANCH:-master}"
+GRPC_GO_REPO_BRANCH="${GRPC_GO_REPO_BRANCH:-master}"
+GRPC_JAVA_REPO_BRANCH="${GRPC_JAVA_REPO_BRANCH:-master}"
+
+GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/"${GRPC_DOTNET_REPO}".git "${GRPC_DOTNET_BRANCH}" | cut -f1)"
+GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_GO_REPO}".git "${GRPC_GO_REPO_BRANCH}" | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_JAVA_REPO}".git "${GRPC_JAVA_REPO_BRANCH}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -61,12 +72,15 @@ WORKER_POOL_32CORE=workers-c2-30core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
+# The grpc test-infra repo to clone the test-infra repo from
+GRPC_TEST_INFRA_REPO="${GRPC_TEST_INFRA_REPO:-grpc/test-infra}"
+GRPC_TEST_INFRA_BRANCH="${GRPC_TEST_INFRA_BRANCH:-master}"
 # Clone test-infra repository and build all tools.
 pushd ..
-git clone https://github.com/grpc/test-infra.git
-cd test-infra
+mkdir test-infra && cd test-infra
+git clone https://github.com/"${GRPC_TEST_INFRA_REPO}".git .
 # Tools are built from HEAD.
-git checkout --detach
+git checkout "${GRPC_TEST_INFRA_BRANCH}"--detach
 make all-tools
 popd
 
