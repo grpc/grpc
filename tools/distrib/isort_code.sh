@@ -39,4 +39,4 @@ python3 -m virtualenv $VIRTUALENV
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install isort==5.9.2
 
-$PYTHON -m isort $ACTION --dont-follow-links "${DIRS[@]}"
+$PYTHON -m isort $ACTION --settings-path=black.toml --dont-follow-links "${DIRS[@]}"
