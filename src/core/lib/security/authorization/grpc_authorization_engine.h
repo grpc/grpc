@@ -53,10 +53,11 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
   Rbac::Action action() const { return action_; }
 
-  Rbac::AuditCondition audit_condition() const { return audit_condition_; }
-
   // Required only for testing purpose.
   size_t num_policies() const { return policies_.size(); }
+
+  // Required only for testing purpose.
+  Rbac::AuditCondition audit_condition() const { return audit_condition_; }
 
   // Required only for testing purpose.
   size_t num_audit_loggers() const { return audit_loggers_.size(); }

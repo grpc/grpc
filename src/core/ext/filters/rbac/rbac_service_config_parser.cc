@@ -27,6 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -751,6 +752,7 @@ void RbacConfig::RbacPolicy::Rules::AuditLogger::JsonPostLoad(
   // Should have exactly one field as the logger name.
   if (json.object().size() != 1) {
     errors->AddError("audit logger should have exactly one field");
+    return;
   }
   name = json.object().begin()->first;
   auto config_or =
