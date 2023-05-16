@@ -54,8 +54,9 @@ message TXTRecord {
     oneof record {
         TXTRecordType enumerated_value = 1;
         grpc.service_config.ServiceConfig fuzzed_service_config = 2;
-        string arbitrary_value = 3;
     }
+    // Random TXT record content, used for some TXTRecordTypes.
+    string arbitrary_value = 3;
 }
 message TXTRecords {
     repeated TXTRecord txt_records = 1;
