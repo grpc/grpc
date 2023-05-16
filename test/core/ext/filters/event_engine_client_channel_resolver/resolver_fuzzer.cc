@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "google/protobuf/json/json.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -46,6 +45,7 @@
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "src/proto/grpc/service_config/service_config.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
