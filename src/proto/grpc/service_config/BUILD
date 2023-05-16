@@ -26,6 +26,7 @@ grpc_proto_library(
     name = "service_config_proto",
     srcs = ["service_config.proto"],
     has_services = False,
+    well_known_protos = True,
     deps = [
         "//src/proto/grpc/lookup/v1:rls_config_proto",
         "@com_google_googleapis//google/rpc:code_proto",
