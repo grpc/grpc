@@ -334,6 +334,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
+  if (srv_records->empty()) {
+    result = OnResolvedLocked();
+    return;
+  }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -496,6 +500,11 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     absl::Status status = errors_.status(
         absl::StatusCode::kUnavailable,
         absl::StrCat("errors resolving ", resolver_->name_to_resolve()));
+    if (status.ok()) {
+      // If no errors were returned, but the results are empty, we still need to
+      // return an error. Validation errors may be empty.
+      status = absl::UnavailableError("No results from DNS queries");
+    }
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
     result.addresses = status;
     result.service_config = status;
