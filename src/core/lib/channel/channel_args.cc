@@ -241,7 +241,8 @@ std::string ChannelArgs::ToString() const {
     std::string value_str;
     if (auto* i = absl::get_if<int>(&value)) {
       value_str = std::to_string(*i);
-    } else if (auto* s = absl::get_if<std::shared_ptr<const std::string>>(&value)) {
+    } else if (auto* s =
+                   absl::get_if<std::shared_ptr<const std::string>>(&value)) {
       value_str = **s;
     } else if (auto* p = absl::get_if<Pointer>(&value)) {
       value_str = absl::StrFormat("%p", p->c_pointer());

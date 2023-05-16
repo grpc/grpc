@@ -307,8 +307,10 @@ class ChannelArgs {
   // If a key is present in both, the value from this is used.
   GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
 
-  // Only used in union_with_test.cc, reference version of UnionWith for differential fuzzing.
-  GRPC_MUST_USE_RESULT ChannelArgs FuzzingReferenceUnionWith(ChannelArgs other) const;
+  // Only used in union_with_test.cc, reference version of UnionWith for
+  // differential fuzzing.
+  GRPC_MUST_USE_RESULT ChannelArgs
+  FuzzingReferenceUnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
