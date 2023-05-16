@@ -30,7 +30,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -340,7 +339,7 @@ class BasicMemoryQuota final
     struct Shard {
       absl::flat_hash_set<GrpcMemoryAllocatorImpl*> allocators
           ABSL_GUARDED_BY(shard_mu);
-      absl::Mutex shard_mu;
+      Mutex shard_mu;
     };
 
     Shard& SelectShard(void* key) {
