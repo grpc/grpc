@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
