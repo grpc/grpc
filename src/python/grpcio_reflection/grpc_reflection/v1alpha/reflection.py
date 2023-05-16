@@ -63,7 +63,9 @@ Args:
 
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncReflectionServicer as public API.
-    from grpc.experimental import aio as grpc_aio  # pylint: disable=ungrouped-imports
+    # pylint: disable=ungrouped-imports
+    from grpc.experimental import aio as grpc_aio
+    # pylint: enable=ungrouped-imports
 
     from . import _async as aio
 
