@@ -29,6 +29,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -37,6 +38,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
@@ -482,6 +484,10 @@ class Party : public Activity, private Wakeable {
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
+            party_->DebugTag().c_str(), this, std::string(name).c_str());
+  }
   participants_[num_participants_++] =
       party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
           name, std::move(promise_factory), std::move(on_complete));

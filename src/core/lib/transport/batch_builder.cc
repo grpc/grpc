@@ -36,8 +36,8 @@ void BatchBuilder::PendingCompletion::CompletionCallback(
   auto* party = pc->batch->party.get();
   if (grpc_call_trace.enabled()) {
     gpr_log(
-        GPR_DEBUG, "%s[connected] Finish batch-component %s for %s: status=%s",
-        party->DebugTag().c_str(), std::string(pc->name()).c_str(),
+        GPR_DEBUG, "%sFinish batch-component %s for %s: status=%s",
+        pc->batch->DebugPrefix(party).c_str(), std::string(pc->name()).c_str(),
         grpc_transport_stream_op_batch_string(&pc->batch->batch, false).c_str(),
         error.ToString().c_str());
   }
@@ -118,8 +118,8 @@ void BatchBuilder::FlushBatch() {
   GPR_ASSERT(target_.has_value());
   if (grpc_call_trace.enabled()) {
     gpr_log(
-        GPR_DEBUG, "%s[connected] Perform transport stream op batch: %p %s",
-        batch_->party->DebugTag().c_str(), &batch_->batch,
+        GPR_DEBUG, "%sPerform transport stream op batch: %p %s",
+        batch_->DebugPrefix().c_str(), &batch_->batch,
         grpc_transport_stream_op_batch_string(&batch_->batch, false).c_str());
   }
   std::exchange(batch_, nullptr)->PerformWith(*target_);
@@ -131,15 +131,14 @@ void BatchBuilder::Batch::PerformWith(Target target) {
 }
 
 ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
-    ServerMetadataHandle sent_metadata, absl::Status send_result,
+    Batch* batch, ServerMetadataHandle sent_metadata, absl::Status send_result,
     bool actually_sent) {
   if (!send_result.ok()) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "%s[connected] Send metadata failed with error: %s, "
-              "fabricating trailing metadata",
-              Activity::current()->DebugTag().c_str(),
-              send_result.ToString().c_str());
+              "%sSend metadata failed with error: %s, fabricating trailing "
+              "metadata",
+              batch->DebugPrefix().c_str(), send_result.ToString().c_str());
     }
     sent_metadata->Clear();
     sent_metadata->Set(GrpcStatusMetadata(),
@@ -152,9 +151,9 @@ ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
     if (grpc_call_trace.enabled()) {
       gpr_log(
           GPR_DEBUG,
-          "%s[connected] Tagging trailing metadata with "
-          "cancellation status from transport: %s",
-          Activity::current()->DebugTag().c_str(),
+          "%sTagging trailing metadata with cancellation status from "
+          "transport: %s",
+          batch->DebugPrefix().c_str(),
           actually_sent ? "sent => not-cancelled" : "not-sent => cancelled");
     }
     sent_metadata->Set(GrpcCallWasCancelled(), !actually_sent);
