@@ -93,7 +93,6 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto config_factory_it =
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
-        // TODO(lwge): Parse the config with the gRPC audit logger registry.
         return Json::FromObject(
             config_factory_it->second->ConvertXdsAuditLoggerConfig(
                 context, *serialized_value, errors));
@@ -108,7 +107,8 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
         errors->AddError(result.status().message());
         return Json();
       }
-      return Json::Object{{std::string(extension->type), std::move(*json)}};
+      return Json::FromObject(
+          {{std::string(extension->type), std::move(*json)}});
     }
   }
   // Add validation error only if the config is not marked optional.
