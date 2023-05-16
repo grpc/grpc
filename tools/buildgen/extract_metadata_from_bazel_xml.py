@@ -673,7 +673,6 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test for test in tests
         if not test.startswith('test/cpp/ext/filters/census:') and
         not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
-        not test.startswith('test/cpp/end2end/xds:') and
         not test.startswith('test/cpp/ext/gcp:') and
         not test.startswith('test/cpp/ext/filters/logging:') and
         not test.startswith('test/cpp/interop:observability_interop')
@@ -728,6 +727,11 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
 
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith('_fuzzer')]
+
+    # grpcpp_admin depends on envoy protos which we haven't figured cmake support for.
+    tests = [test for test in tests if not test.startswith('test/cpp/end2end/xds:') and
+             not test.startswith('test/cpp/end2end:admin_services_end2end_test')]
+
 
     return tests
 
@@ -1032,20 +1036,21 @@ _BUILD_EXTRA_METADATA = {
         '_TYPE': 'target',
         '_RENAME': 'interop_server'
     },
-    'test/cpp/interop:xds_interop_client': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'xds_interop_client'
-    },
-    'test/cpp/interop:xds_interop_server': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'xds_interop_server'
-    },
+    # TODO(b/283004912): grpcpp_admin dependencies don't work with CMake
+    #'test/cpp/interop:xds_interop_client': {
+    #    'language': 'c++',
+    #    'build': 'test',
+    #    'run': False,
+    #    '_TYPE': 'target',
+    #    '_RENAME': 'xds_interop_client'
+    #},
+    #'test/cpp/interop:xds_interop_server': {
+    #    'language': 'c++',
+    #    'build': 'test',
+    #    'run': False,
+    #    '_TYPE': 'target',
+    #    '_RENAME': 'xds_interop_server'
+    #},
     'test/cpp/interop:http2_client': {
         'language': 'c++',
         'build': 'test',
