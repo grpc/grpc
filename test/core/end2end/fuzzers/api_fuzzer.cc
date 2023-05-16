@@ -847,6 +847,8 @@ ApiFuzzer::~ApiFuzzer() {
   GPR_ASSERT(ActiveCall() == nullptr);
   GPR_ASSERT(calls_.empty());
 
+  engine_->TickUntilIdle();
+
   grpc_completion_queue_shutdown(cq_);
   GPR_ASSERT(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
@@ -882,6 +884,7 @@ ApiFuzzer::Result ApiFuzzer::PollCq() {
 }
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
+  if (channel_ == nullptr) return Result::kComplete;
   grpc_channel_args* args =
       ReadArgs(resource_quota_, create_channel.channel_args());
   grpc_channel_credentials* creds =
@@ -1139,9 +1142,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  if (msg.has_config_vars()) {
-    grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  }
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return std::make_unique<FuzzingEventEngine>(

@@ -710,13 +710,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.
-  auto send_trailing_metadata =
-      [call_data, stream = stream->InternalRef()](
-          ServerMetadataHandle server_trailing_metadata) {
-        return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
-            stream->batch_target(), std::move(server_trailing_metadata),
+  auto send_trailing_metadata = [call_data, stream = stream->InternalRef()](
+                                    ServerMetadataHandle
+                                        server_trailing_metadata) {
+    bool is_cancellation =
+        server_trailing_metadata->get(GrpcCallWasCancelled()).value_or(false);
+    return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
+        stream->batch_target(), std::move(server_trailing_metadata),
+        is_cancellation ||
             !std::exchange(call_data->sent_initial_metadata, true));
-      };
+  };
 
   // Runs the receive message loop, either until all the messages
   // are received or the server call is complete.
@@ -821,11 +824,19 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   auto cleanup_polling_entity_latch =
       std::unique_ptr<Latch<grpc_polling_entity>, CleanupPollingEntityLatch>(
           &call_data->polling_entity_latch);
+  struct CleanupSendInitialMetadata {
+    void operator()(CallData* call_data) {
+      call_data->server_initial_metadata.receiver.CloseWithError();
+    }
+  };
+  auto cleanup_send_initial_metadata =
+      std::unique_ptr<CallData, CleanupSendInitialMetadata>(call_data);
 
   return Map(
       Seq(std::move(recv_initial_metadata_then_run_promise),
           std::move(send_trailing_metadata)),
       [cleanup_polling_entity_latch = std::move(cleanup_polling_entity_latch),
+       cleanup_send_initial_metadata = std::move(cleanup_send_initial_metadata),
        stream = std::move(stream)](ServerMetadataHandle md) {
         stream->set_finished();
         return md;

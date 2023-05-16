@@ -401,7 +401,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
-      constexpr char kServiceConfigAttributePrefix[] = "grpc_config=";
+      static constexpr absl::string_view kServiceConfigAttributePrefix =
+          "grpc_config=";
       auto result = std::find_if(service_config->begin(), service_config->end(),
                                  [&](absl::string_view s) {
                                    return absl::StartsWith(
@@ -409,7 +410,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                  });
       if (result != service_config->end()) {
         service_config_json_ =
-            result->substr(sizeof(kServiceConfigAttributePrefix));
+            result->substr(kServiceConfigAttributePrefix.size());
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,

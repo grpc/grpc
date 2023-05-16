@@ -1066,7 +1066,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -1921,7 +1920,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -2777,9 +2775,11 @@ grpc_cc_library(
     name = "grpc_audit_logging",
     srcs = [
         "lib/security/authorization/audit_logging.cc",
+        "lib/security/authorization/stdout_logger.cc",
     ],
     hdrs = [
         "lib/security/authorization/audit_logging.h",
+        "lib/security/authorization/stdout_logger.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2787,6 +2787,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "//:gpr",
