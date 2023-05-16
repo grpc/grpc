@@ -28,7 +28,6 @@ cc_binary(
     ],
 )
 
-
 cc_binary(
     name = "greeter_error_server",
     srcs = ["greeter_error_server.cc"],

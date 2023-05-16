@@ -32,12 +32,13 @@
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
-#include "src/proto/grpc/status/status.pb.h"
 #include "google/rpc/error_details.pb.h"
+
+#include "src/proto/grpc/status/status.pb.h"
 #else
+#include "error_details.pb.h"
 #include "helloworld.grpc.pb.h"
 #include "status.pb.h"
-#include "error_details.pb.h"
 #endif
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
@@ -60,22 +61,26 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
     ServerUnaryReactor* reactor = context->DefaultReactor();
     // Checks the length of name
     if (request->name().empty() || request->name().length() > 10) {
+      // Returns an error status with error code and message.
       reactor->Finish(Status(StatusCode::INVALID_ARGUMENT,
                              "Length of `Name` should be between 1 and 10"));
       return reactor;
     }
     // Checks whether it is a duplicate request
     if (CheckRequestDuplicate(request->name())) {
-      google::rpc::Status s;
-      s.set_code(static_cast<int>(StatusCode::RESOURCE_EXHAUSTED));
-      s.set_message("Internal error");
+      // Returns an error status with more detailed information.
+      // In this example, the status has additional google::rpc::QuotaFailure
+      // conveying additional information about the error.
       google::rpc::QuotaFailure quota_failure;
       auto violation = quota_failure.add_violations();
       violation->set_subject("name: " + request->name());
       violation->set_description("Limit one greeting per person");
+      google::rpc::Status s;
+      s.set_code(static_cast<int>(StatusCode::RESOURCE_EXHAUSTED));
+      s.set_message("Request limit exceeded");
       s.add_details()->PackFrom(quota_failure);
       reactor->Finish(Status(StatusCode::RESOURCE_EXHAUSTED,
-                             "Duplicate", s.SerializeAsString()));
+                             "Request limit exceeded", s.SerializeAsString()));
       return reactor;
     }
     // Handles it
@@ -84,14 +89,14 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
     return reactor;
   }
 
-  private:
-   bool CheckRequestDuplicate(const std::string& name) {
+ private:
+  bool CheckRequestDuplicate(const std::string& name) {
     absl::MutexLock lock(&mu_);
     return !request_name_set_.insert(name).second;
-   }
+  }
 
-   absl::Mutex mu_;
-   std::unordered_set<std::string> request_name_set_;
+  absl::Mutex mu_;
+  std::unordered_set<std::string> request_name_set_;
 };
 
 void RunServer(uint16_t port) {

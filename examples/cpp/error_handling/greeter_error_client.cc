@@ -30,12 +30,13 @@
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
-#include "src/proto/grpc/status/status.pb.h"
 #include "google/rpc/error_details.pb.h"
+
+#include "src/proto/grpc/status/status.pb.h"
 #else
+#include "error_details.pb.h"
 #include "helloworld.grpc.pb.h"
 #include "status.pb.h"
-#include "error_details.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -98,12 +99,14 @@ class GreeterClient {
     if (error_details.empty()) {
       return;
     }
+    // If error_details are present in the status, this tries to deserialize
+    // those assuming they're proto messages.
     google::rpc::Status s;
     if (!s.ParseFromString(error_details)) {
       std::cout << "Failed to deserialize `error_details`" << std::endl;
       return;
     }
-    std::cout << absl::StrFormat("Details: ") << std::endl;
+    std::cout << absl::StrFormat("Details:") << std::endl;
     for (auto& detail : s.details()) {
       google::rpc::QuotaFailure quota_failure;
       if (detail.UnpackTo(&quota_failure)) {
