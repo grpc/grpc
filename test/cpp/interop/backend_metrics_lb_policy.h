@@ -49,7 +49,8 @@ class LoadReportTracker {
       ABSL_GUARDED_BY(load_reports_mu_);
   std::deque<TestOrcaReport> oob_load_reports_
       ABSL_GUARDED_BY(load_reports_mu_);
-  absl::Mutex load_reports_mu_;
+  grpc_core::Mutex load_reports_mu_;
+  grpc_core::CondVar load_reports_cv_ ABSL_GUARDED_BY(load_reports_mu_);
 };
 
 void RegisterBackendMetricsLbPolicy(

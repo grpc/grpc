@@ -72,6 +72,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 
