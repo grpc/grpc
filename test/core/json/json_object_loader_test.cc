@@ -20,6 +20,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_reader.h"
@@ -924,6 +926,34 @@ TEST(JsonObjectLoader, BareUniquePtr) {
   EXPECT_EQ(**parsed, 3);
 }
 
+TEST(JsonObjectLoader, BareRefCountedPtr) {
+  class RefCountedObject : public RefCounted<RefCountedObject> {
+   public:
+    RefCountedObject() = default;
+
+    int value() const { return value_; }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader = JsonObjectLoader<RefCountedObject>()
+                                      .Field("value", &RefCountedObject::value_)
+                                      .Finish();
+      return loader;
+    }
+
+   private:
+    int value_ = -1;
+  };
+  auto parsed = Parse<RefCountedPtr<RefCountedObject>>("{\"value\": 3}");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  ASSERT_NE(*parsed, nullptr);
+  EXPECT_EQ((*parsed)->value(), 3);
+  parsed = Parse<RefCountedPtr<RefCountedObject>>("5");
+  EXPECT_EQ(parsed.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed.status().message(),
+            "errors validating JSON: [field: error:is not an object]")
+      << parsed.status();
+}
+
 TEST(JsonObjectLoader, BareVector) {
   auto parsed = Parse<std::vector<int32_t>>("[1, 2, 3]");
   ASSERT_TRUE(parsed.ok()) << parsed.status();
@@ -1047,40 +1077,6 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: [field:a error:is not a number]")
       << test_struct.status();
-}
-
-TEST(JsonObjectLoader, LoadRefCountedFromJson) {
-  struct TestStruct : public RefCounted<TestStruct> {
-    int32_t a = 0;
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-      static const auto* loader =
-          JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
-      return loader;
-    }
-  };
-  // Valid.
-  {
-    absl::string_view json_str = "{\"a\":1}";
-    auto json = JsonParse(json_str);
-    ASSERT_TRUE(json.ok()) << json.status();
-    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
-        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
-    ASSERT_TRUE(test_struct.ok()) << test_struct.status();
-    EXPECT_EQ((*test_struct)->a, 1);
-  }
-  // Invalid.
-  {
-    absl::string_view json_str = "{\"a\":\"foo\"}";
-    auto json = JsonParse(json_str);
-    ASSERT_TRUE(json.ok()) << json.status();
-    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
-        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
-    EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
-    EXPECT_EQ(test_struct.status().message(),
-              "errors validating JSON: [field:a error:failed to parse number]")
-        << test_struct.status();
-  }
 }
 
 TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {

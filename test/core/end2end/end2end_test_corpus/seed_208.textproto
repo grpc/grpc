@@ -1,0 +1,3 @@
+suite: "RetryTest"
+test: "RetryExceedsBufferSizeInDelay"
+config: "Chttp2FakeSecurityFullstack"

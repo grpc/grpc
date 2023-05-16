@@ -27,6 +27,7 @@
 #include <vector>
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -205,7 +206,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"server", server_node->RenderJson()},
   });
-  return gpr_strdup(JsonDump(json).c_str());
+  return gpr_strdup(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
@@ -244,7 +245,7 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"channel", channel_node->RenderJson()},
   });
-  return gpr_strdup(JsonDump(json).c_str());
+  return gpr_strdup(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
@@ -260,7 +261,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"subchannel", subchannel_node->RenderJson()},
   });
-  return gpr_strdup(JsonDump(json).c_str());
+  return gpr_strdup(grpc_core::JsonDump(json).c_str());
 }
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
@@ -276,5 +277,5 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
   grpc_core::Json json = grpc_core::Json::FromObject({
       {"socket", socket_node->RenderJson()},
   });
-  return gpr_strdup(JsonDump(json).c_str());
+  return gpr_strdup(grpc_core::JsonDump(json).c_str());
 }

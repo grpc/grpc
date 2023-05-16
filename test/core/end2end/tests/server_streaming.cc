@@ -91,11 +91,15 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   EXPECT_EQ(server_status.message(), "xyz");
 }
 
-TEST_P(Http2Test, ServerStreaming) { ServerStreaming(*this, 1); }
+CORE_END2END_TEST(Http2Test, ServerStreaming) { ServerStreaming(*this, 1); }
 
-TEST_P(Http2Test, ServerStreamingEmptyStream) { ServerStreaming(*this, 0); }
+CORE_END2END_TEST(Http2Test, ServerStreamingEmptyStream) {
+  ServerStreaming(*this, 0);
+}
 
-TEST_P(Http2Test, ServerStreaming10Messages) { ServerStreaming(*this, 10); }
+CORE_END2END_TEST(Http2Test, ServerStreaming10Messages) {
+  ServerStreaming(*this, 10);
+}
 
 }  // namespace
 }  // namespace grpc_core

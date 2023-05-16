@@ -31,7 +31,7 @@ using testing::StartsWith;
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreClientChannelTest, DefaultHost) {
+CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingStatusOnClient server_status;

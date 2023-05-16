@@ -93,7 +93,7 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # Verify status codes from the servers have the configured one.
         with self.subTest('9_test_server_returned_configured_status_code'):
             self.assertRpcStatusCodes(test_client,
-                                      status_code=_EXPECTED_STATUS,
+                                      expected_status=_EXPECTED_STATUS,
                                       duration=datetime.timedelta(seconds=10),
                                       method='UNARY_CALL')
 

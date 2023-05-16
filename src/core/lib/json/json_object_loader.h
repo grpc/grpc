@@ -428,6 +428,26 @@ class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
   ~AutoLoader() = default;
 };
 
+// Specializations of AutoLoader for RefCountedPtr<>.
+template <typename T>
+class AutoLoader<RefCountedPtr<T>> final : public LoadOptional {
+ public:
+  void* Emplace(void* dst) const final {
+    auto& p = *static_cast<RefCountedPtr<T>*>(dst);
+    p = MakeRefCounted<T>();
+    return p.get();
+  }
+  void Reset(void* dst) const final {
+    static_cast<RefCountedPtr<T>*>(dst)->reset();
+  }
+  const LoaderInterface* ElementLoader() const final {
+    return LoaderForType<T>();
+  }
+
+ private:
+  ~AutoLoader() = default;
+};
+
 // Implementation of aforementioned LoaderForType.
 // Simply keeps a static AutoLoader<T> and returns a pointer to that.
 template <typename T>
@@ -590,19 +610,6 @@ absl::StatusOr<T> LoadFromJson(
   ValidationErrors errors;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &errors);
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
-  }
-  return std::move(result);
-}
-
-template <typename T>
-absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
-    const Json& json, const JsonArgs& args = JsonArgs(),
-    absl::string_view error_prefix = "errors validating JSON") {
-  ValidationErrors errors;
-  auto result = MakeRefCounted<T>();
-  json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(), &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument, error_prefix);
   }

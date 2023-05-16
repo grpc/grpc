@@ -21,7 +21,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -29,20 +28,24 @@
 #include "absl/time/time.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace experimental {
 
+namespace {
+
 constexpr absl::string_view kName = "stdout_logger";
-const char kLogFormat[] =
-    "{\"grpc_audit_log\":{\"timestamp\":%d,\"rpc_method\":\"%s\",\"principal\":"
-    "\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\",\"authorized\":%s}}";
+constexpr char kLogFormat[] =
+    "{\"grpc_audit_log\":{\"timestamp\":\"%s\",\"rpc_method\":\"%s\","
+    "\"principal\":\"%s\",\"policy_name\":\"%s\",\"matched_rule\":\"%s\","
+    "\"authorized\":%s}}\n";
+
+}  // namespace
 
 void StdoutAuditLogger::Log(const AuditContext& context) {
-  absl::FPrintF(stdout, kLogFormat, absl::ToUnixSeconds(absl::Now()),
+  absl::FPrintF(stdout, kLogFormat, absl::FormatTime(absl::Now()),
                 context.rpc_method(), context.principal(),
                 context.policy_name(), context.matched_rule(),
                 context.authorized() ? "true" : "false");
@@ -57,10 +60,7 @@ std::string StdoutAuditLoggerFactory::Config::ToString() const { return "{}"; }
 absl::string_view StdoutAuditLoggerFactory::name() const { return kName; }
 
 absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json& json) {
-  if (json.type() != Json::Type::kObject) {
-    return absl::InvalidArgumentError("config is not a json object");
-  }
+StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
   return std::make_unique<StdoutAuditLoggerFactory::Config>();
 }
 
