@@ -438,8 +438,8 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         raise self
 
     def exception(
-        self, timeout: Optional[float] = None
-    ) -> Optional[Exception]:  # pylint: disable=unused-argument
+        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
+    ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
@@ -453,8 +453,10 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
             return sys.exc_info()[2]
 
     def add_done_callback(
-        self, fn: Callable[[grpc.Future], None], timeout: Optional[float] = None
-    ) -> None:  # pylint: disable=unused-argument
+        self,
+        fn: Callable[[grpc.Future], None],
+        timeout: Optional[float] = None,  # pylint: disable=unused-argument
+    ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
 
@@ -1831,8 +1833,7 @@ def _poll_connectivity(
             ]
         )
         callbacks = tuple(
-            callback
-            for callback, unused_but_known_to_be_none_connectivity in state.callbacks_and_connectivities
+            callback for callback, _ in state.callbacks_and_connectivities
         )
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity

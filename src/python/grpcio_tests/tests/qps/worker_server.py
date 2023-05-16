@@ -86,9 +86,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         self._snapshotter = Snapshotter()
 
     def RunServer(self, request_iterator, context):
-        config = next(
-            request_iterator
-        ).setup  # pylint: disable=stop-iteration-return
+        # pylint: disable=stop-iteration-return
+        config = next(request_iterator).setup
+        # pylint: enable=stop-iteration-return
         server, port = self._create_server(config)
         cores = multiprocessing.cpu_count()
         server.start()
@@ -159,9 +159,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         return (server, port)
 
     def RunClient(self, request_iterator, context):
-        config = next(
-            request_iterator
-        ).setup  # pylint: disable=stop-iteration-return
+        # pylint: disable=stop-iteration-return
+        config = next(request_iterator).setup
+        # pylint: enable=stop-iteration-return
         client_runners = []
         qps_data = histogram.Histogram(
             config.histogram_params.resolution,

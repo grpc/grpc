@@ -54,9 +54,8 @@ def _replace_binding(
     new_bindings = set(policy.bindings)
     new_bindings.discard(binding)
     new_bindings.add(new_binding)
-    return dataclasses.replace(
-        policy, bindings=frozenset(new_bindings)
-    )  # pylint: disable=too-many-function-args
+    # pylint: disable=too-many-function-args # No idea why pylint is like that.
+    return dataclasses.replace(policy, bindings=frozenset(new_bindings))
 
 
 @dataclasses.dataclass(frozen=True)

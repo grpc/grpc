@@ -325,7 +325,7 @@ class ComputeV1(
             '(loadBalancingScheme eq "INTERNAL_SELF_MANAGED")'
         )
         return self._exists_resource(
-            self.api.globalForwardingRules(), filter=filter_str
+            self.api.globalForwardingRules(), resource_filter=filter_str
         )
 
     def delete_forwarding_rule(self, name):
@@ -460,10 +460,10 @@ class ComputeV1(
         return self.GcpResource(resp["name"], resp["selfLink"])
 
     def _exists_resource(
-        self, collection: discovery.Resource, filter: str
-    ) -> bool:  # pylint: disable=redefined-builtin
+        self, collection: discovery.Resource, resource_filter: str
+    ) -> bool:
         resp = collection.list(
-            project=self.project, filter=filter, maxResults=1
+            project=self.project, filter=resource_filter, maxResults=1
         ).execute(num_retries=self._GCP_API_RETRIES)
         if "kind" not in resp:
             # TODO(sergiitk): better error

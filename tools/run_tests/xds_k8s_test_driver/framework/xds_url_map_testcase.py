@@ -452,18 +452,16 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     def _fetch_and_check_xds_config(self):
         # TODO(lidiz) find another way to store last seen xDS config
         # Cleanup state for this attempt
-        self._xds_json_config = (
-            None  # pylint: disable=attribute-defined-outside-init
-        )
+        # pylint: disable=attribute-defined-outside-init
+        self._xds_json_config = None
         # Fetch client config
         config = self.test_client.csds.fetch_client_status(
             log_level=logging.INFO
         )
         self.assertIsNotNone(config)
         # Found client config, test it.
-        self._xds_json_config = json_format.MessageToDict(
-            config
-        )  # pylint: disable=attribute-defined-outside-init
+        self._xds_json_config = json_format.MessageToDict(config)
+        # pylint: enable=attribute-defined-outside-init
         # Execute the child class provided validation logic
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
