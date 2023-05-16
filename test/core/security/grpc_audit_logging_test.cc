@@ -143,8 +143,8 @@ TEST(StdoutLoggerTest, StdoutLoggerCreationAndLogInvocation) {
                               object.find("timestamp")->second.string(),
                               &time_at_log, nullptr));
   // Check if the recorded timestamp is in between the recorded interval.
-  EXPECT_GT(time_at_log, time_before_log);
-  EXPECT_LT(time_at_log, time_after_log);
+  EXPECT_GE(time_at_log, time_before_log);
+  EXPECT_LE(time_at_log, time_after_log);
   // Check exact values of everything else.
   Json::Object json_object = object;
   json_object.erase("timestamp");
