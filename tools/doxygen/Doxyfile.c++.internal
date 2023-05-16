@@ -2483,6 +2483,8 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/authorization/stdout_logger.cc \
+src/core/lib/security/authorization/stdout_logger.h \
 src/core/lib/security/certificate_provider/certificate_provider_factory.h \
 src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
 src/core/lib/security/certificate_provider/certificate_provider_registry.h \

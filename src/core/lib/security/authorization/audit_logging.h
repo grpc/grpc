@@ -56,8 +56,7 @@ class AuditLoggerRegistry {
   static void TestOnlyResetRegistry();
 
  private:
-  // TODO(lwge): Add built-in logger registrations once avaialble.
-  AuditLoggerRegistry() = default;
+  AuditLoggerRegistry();
 
   static Mutex* mu;
 
