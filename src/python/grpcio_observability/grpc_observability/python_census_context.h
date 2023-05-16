@@ -55,17 +55,6 @@ void EnablePythonOpenCensusTracing(bool enable);
 bool PythonOpenCensusStatsEnabled();
 bool PythonOpenCensusTracingEnabled();
 
-// The length of the grpc-trace-bin value:
-//      1 (version)
-//   +  1 (trace_id field)
-//   + 16 (length of trace_id)
-//   +  1 (span_id field)
-//   +  8 (span_id length)
-//   +  1 (trace_options field)
-//   +  1 (trace_options length)
-//   ----
-//     29
-constexpr int kGrpcTraceBinHeaderLen = 29;
 
 static constexpr size_t kTraceIdSize = 16;
 static constexpr size_t kSpanIdSize = 8;
@@ -89,8 +78,17 @@ static constexpr size_t kSizeTraceID = 16;
 static constexpr size_t kSizeSpanID = 8;
 static constexpr size_t kSizeTraceOptions = 1;
 
-static_assert(kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 + kTraceOptionsLen == kGrpcTraceBinHeaderLen,
-              "header length is wrong");
+// The length of the grpc-trace-bin value:
+//      1 (version)
+//   +  1 (trace_id field)
+//   + 16 (length of trace_id)
+//   +  1 (span_id field)
+//   +  8 (span_id length)
+//   +  1 (trace_options field)
+//   +  1 (trace_options length)
+//   ----
+//     29
+constexpr int kGrpcTraceBinHeaderLen = kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 + kTraceOptionsLen;
 
 struct Tag {
   std::string key;
@@ -204,15 +202,20 @@ class Span final {
   uint64_t child_span_count_ = 0;
 };
 
+// PythonCensusContext is associated with each clientCallTrcer, clientCallAttemptTracer
+// and ServerCallTracer to help manage the span, spanContext and labels for each tracer.
+// It's created during callTraceer initialization by calling GenerateClientContext,
+// CreateCensusContextForCallAttempt and GenerateServerContext and will be destroyed after
+// the destruction of each callTracer.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}
 
+  explicit PythonCensusContext(absl::string_view name)
+      : span_(Span::StartSpan(name, nullptr)), labels_({}) {}
+
   PythonCensusContext(absl::string_view name, absl::string_view trace_id)
       : span_(Span::StartSpan(name, trace_id)), labels_({}) {}
-
-  PythonCensusContext(absl::string_view name)
-      : span_(Span::StartSpan(name, nullptr)), labels_({}) {}
 
   PythonCensusContext(absl::string_view name, SpanContext parent_context)
       : span_(Span::StartSpan(name, parent_context)), labels_({}) {}
