@@ -445,6 +445,8 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
   }
   // Ignore any te metadata key value pairs specified.
   md.Remove(TeMetadata());
+  // Should never come from applications
+  md.Remove(GrpcLbClientStatsMetadata());
 }
 
 void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
