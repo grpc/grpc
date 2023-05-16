@@ -246,6 +246,7 @@ void LoadReportTracker::RecordOobLoadReport(
   grpc_core::MutexLock lock(&load_reports_mu_);
   oob_load_reports_.emplace_back(
       *BackendMetricDataToOrcaLoadReport(&oob_metric_data));
+  load_reports_cv_.Signal();
 }
 
 absl::optional<LoadReportTracker::LoadReportEntry>
@@ -264,14 +265,15 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     absl::Duration poll_timeout, size_t max_attempts) {
   grpc_core::MutexLock lock(&load_reports_mu_);
   // This condition will be called under lock
-  auto condition = [&]() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    return !oob_load_reports_.empty();
-  };
   for (size_t i = 0; i < max_attempts; i++) {
-    if (!load_reports_mu_.AwaitWithTimeout(absl::Condition(&condition),
-                                           poll_timeout)) {
-      return absl::nullopt;
-    }
+    auto deadline = absl::Now() + poll_timeout;
+    // loop to handle spurious wakeups.
+    do {
+      if (absl::Now() >= deadline) {
+        return absl::nullopt;
+      }
+      load_reports_cv_.WaitWithDeadline(&load_reports_mu_, deadline);
+    } while (oob_load_reports_.empty());
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
