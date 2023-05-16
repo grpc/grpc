@@ -65,12 +65,7 @@ class ServerAddress {
     virtual std::string ToString() const = 0;
   };
 
-  // Takes ownership of args.
   ServerAddress(const grpc_resolved_address& address, const ChannelArgs& args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
-  ServerAddress(const void* address, size_t address_len,
-                const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
 
