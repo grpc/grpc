@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "google/protobuf/json/json.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -36,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -63,6 +65,8 @@ using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 
+constexpr char g_grpc_config_prefix[] = "grpc_config=";
+
 class FuzzingResolverEventEngine
     : public grpc_event_engine::experimental::AbortingEventEngine {
  public:
@@ -73,7 +77,7 @@ class FuzzingResolverEventEngine
     // Set hostname responses
     if (msg.has_hostname_error()) {
       hostname_responses_ = absl::nullopt;
-    } else {
+    } else if (msg.has_hostname_response()) {
       hostname_responses_.emplace();
       for (const auto& address : msg.hostname_response().addresses()) {
         hostname_responses_->emplace_back(*URIToResolvedAddress(
@@ -83,7 +87,7 @@ class FuzzingResolverEventEngine
     // Set SRV Responses
     if (msg.has_srv_error()) {
       srv_responses_ = absl::nullopt;
-    } else {
+    } else if (msg.has_srv_response()) {
       srv_responses_.emplace();
       for (const auto& srv_record : msg.srv_response().srv_records()) {
         EventEngine::DNSResolver::SRVRecord final_r;
@@ -97,13 +101,35 @@ class FuzzingResolverEventEngine
     // Set TXT Responses
     if (msg.has_txt_error()) {
       txt_responses_ = absl::nullopt;
-    } else {
+    } else if (msg.has_txt_response()) {
       txt_responses_.emplace();
       for (const auto& txt_record : msg.txt_response().txt_records()) {
-        if (txt_record == TXTRecordType::TXT_VALID) {
-          txt_responses_->emplace_back(txt_valid_config_);
-        } else {
-          txt_responses_->emplace_back(txt_invalid_config_);
+        if (txt_record.has_enumerated_value()) {
+          switch (txt_record.enumerated_value()) {
+            case TXTRecordType::TXT_VALID:
+              txt_responses_->emplace_back(txt_valid_config_);
+              break;
+            case TXTRecordType::TXT_RANDOM_NON_CONFIG:
+              txt_responses_->emplace_back(txt_record.arbitrary_value());
+              break;
+            case TXTRecordType::TXT_RANDOM_PREFIXED_CONFIG:
+              txt_responses_->emplace_back(absl::StrCat(
+                  g_grpc_config_prefix, txt_record.arbitrary_value()));
+              break;
+            default:
+              grpc_core::Crash("Invalid txt record type");
+          }
+        } else if (txt_record.has_fuzzed_service_config()) {
+          std::string fuzzed_config_json_str;
+          ::google::protobuf::json::PrintOptions print_options;
+          auto status =
+              MessageToJsonString(txt_record.fuzzed_service_config(),
+                                  &fuzzed_config_json_str, print_options);
+          // Sometimes LLVM will generate protos that can't be dumped to JSON
+          // (Durations out of bounds, for example). These are ignored.
+          if (status.ok()) {
+            txt_responses_->emplace_back(fuzzed_config_json_str);
+          }
         }
       }
     }
@@ -192,7 +218,6 @@ class FuzzingResolverEventEngine
       "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_"
       "robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":"
       "\"SimpleService\"}],\"waitForReady\":true}]}}]";
-  const std::string txt_invalid_config_ = "grpc_config=[{\"foops\":{}}]";
   const absl::Status lookup_hostname_response_base_case_ =
       absl::InternalError("LookupHostnameResponseBaseCase");
   const absl::Status lookup_srv_response_base_case_ =

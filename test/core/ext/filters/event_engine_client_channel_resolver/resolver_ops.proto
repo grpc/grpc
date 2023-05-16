@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+import "src/proto/grpc/service_config/service_config.proto";
+
 package event_engine_client_channel_resolver;
 
 message ResolverArgs {
@@ -44,10 +46,18 @@ message SRVRecords {
 
 enum TXTRecordType {
     TXT_VALID = 0;
-    TXT_INVALID = 1;
+    TXT_RANDOM_NON_CONFIG = 1;
+    TXT_RANDOM_PREFIXED_CONFIG = 2;
+}
+message TXTRecord {
+    oneof record {
+        TXTRecordType enumerated_value = 1;
+        grpc.service_config.ServiceConfig fuzzed_service_config = 2;
+        string arbitrary_value = 3;
+    }
 }
 message TXTRecords {
-    repeated TXTRecordType txt_records = 1;
+    repeated TXTRecord txt_records = 1;
 }
 
 message Msg {
