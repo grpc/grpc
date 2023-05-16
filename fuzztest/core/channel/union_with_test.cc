@@ -18,9 +18,30 @@
 
 #include "gtest/gtest.h"
 
-TEST(MyTestSuite, OnePlustTwoIsTwoPlusOne) { EXPECT_EQ(1 + 2, 2 + 1); }
+#include "src/core/lib/channel/channel_args.h"
 
-void IntegerAdditionCommutes(unsigned a, unsigned b) {
-  EXPECT_EQ(a + b, b + a);
+namespace grpc_core {
+
+using IntOrString = absl::variant<int, std::string>;
+using VectorOfArgs = std::vector<std::pair<std::string, IntOrString>>;
+
+ChannelArgs ChannelArgsFromVector(VectorOfArgs va) {
+    ChannelArgs result;
+    for (auto& [key, value] : va) {
+        if (absl::holds_alternative<int>(value)) {
+            result = result.Set(key, absl::get<int>(value));
+        } else {
+            result = result.Set(key, absl::get<std::string>(value));
+        }
+    }
+    return result;
 }
-FUZZ_TEST(MyTestSuite, IntegerAdditionCommutes);
+
+void UnionWithIsCorrect(VectorOfArgs va, VectorOfArgs vb) {
+  auto a = ChannelArgsFromVector(std::move(va));
+  auto b = ChannelArgsFromVector(std::move(vb));
+  EXPECT_EQ(a.UnionWith(b), a.FuzzingReferenceUnionWith(b));
+}
+FUZZ_TEST(MyTestSuite, UnionWithIsCorrect);
+
+}

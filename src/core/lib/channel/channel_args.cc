@@ -251,6 +251,15 @@ std::string ChannelArgs::ToString() const {
 }
 
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
+  if (args_.Empty()) return other;
+  if (other.args_.Empty()) return *this;
+  args_.ForEach([&other](const std::string& key, const Value& value) {
+    other.args_ = other.args_.Add(key, value);
+  });
+  return other;
+}
+
+ChannelArgs ChannelArgs::FuzzingReferenceUnionWith(ChannelArgs other) const {
   args_.ForEach([&other](const std::string& key, const Value& value) {
     other.args_ = other.args_.Add(key, value);
   });
