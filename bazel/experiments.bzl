@@ -53,6 +53,9 @@ EXPERIMENTS = {
         "lame_client_test": [
             "promise_based_client_call",
         ],
+        "resolver_component_tests_runner_invoker": [
+            "event_engine_dns",
+        ],
         "resource_quota_test": [
             "free_large_allocator",
             "memory_pressure_controller",
