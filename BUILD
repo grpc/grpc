@@ -2210,6 +2210,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "envoy/service/status/v3:pkg_cc_grpc",
     ],
     language = "c++",
     tags = ["nofixdeps"],
@@ -2217,7 +2218,6 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )

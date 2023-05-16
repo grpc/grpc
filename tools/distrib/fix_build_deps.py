@@ -278,7 +278,7 @@ INTERNAL_DEPS = {
         'rls_config_upb',
     'src/proto/grpc/lookup/v1/rls_config.upbdefs.h':
         'rls_config_upbdefs',
-    'src/proto/grpc/testing/xds/v3/csds.grpc.pb.h':
+    'envoy/service/status/v3/csds.grpc.pb.h':
         '//src/proto/grpc/testing/xds/v3:csds_proto',
     'xds/data/orca/v3/orca_load_report.upb.h':
         'xds_orca_upb',

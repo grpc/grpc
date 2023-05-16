@@ -33,6 +33,7 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 
 #include <grpcpp/security/tls_certificate_provider.h>
 
@@ -44,7 +45,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/cpp/util/tls_test_utils.h"
 
