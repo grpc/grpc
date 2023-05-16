@@ -377,8 +377,8 @@ class Center : public InterceptorList<T> {
 
   std::string DebugTag() {
     if (auto* activity = Activity::current()) {
-      return absl::StrCat(activity->DebugTag(), " PIPE[0x",
-                          reinterpret_cast<uintptr_t>(this), "]: ");
+      return absl::StrCat(activity->DebugTag(), " PIPE[0x", absl::Hex(this),
+                          "]: ");
     } else {
       return absl::StrCat("PIPE[0x", reinterpret_cast<uintptr_t>(this), "]: ");
     }
