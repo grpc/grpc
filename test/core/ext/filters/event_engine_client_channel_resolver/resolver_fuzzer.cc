@@ -48,7 +48,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
-#include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_ops.pb.h"
+#include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 
 // TODO(hork): exercise Orphan on the client channel resolver, which will
 // exercise the resolution cancellation path. Currently, all requests will get
@@ -112,6 +112,8 @@ class FuzzingResolverEventEngine
       for (const auto& txt_record : msg.txt_response().txt_records()) {
         if (txt_record.has_enumerated_value()) {
           switch (txt_record.enumerated_value()) {
+            case TXTRecordType::TXT_UNDEFINED:
+              break;
             case TXTRecordType::TXT_VALID:
               txt_responses_->emplace_back(txt_valid_config_);
               break;

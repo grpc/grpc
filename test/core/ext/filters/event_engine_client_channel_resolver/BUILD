@@ -25,7 +25,7 @@ grpc_proto_fuzzer(
     srcs = ["resolver_fuzzer.cc"],
     corpus = "resolver_fuzzer_corpus",
     language = "C++",
-    proto = "resolver_ops.proto",
+    proto = "resolver_fuzzer.proto",
     tags = [
         "no_mac",
         "no_windows",

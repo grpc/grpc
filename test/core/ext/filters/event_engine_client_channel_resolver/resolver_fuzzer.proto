@@ -44,9 +44,10 @@ message SRVRecords {
 }
 
 enum TXTRecordType {
-    TXT_VALID = 0;
-    TXT_RANDOM_NON_CONFIG = 1;
-    TXT_RANDOM_PREFIXED_CONFIG = 2;
+    TXT_UNDEFINED = 0;
+    TXT_VALID = 1;
+    TXT_RANDOM_NON_CONFIG = 2;
+    TXT_RANDOM_PREFIXED_CONFIG = 3;
 }
 message TXTRecord {
     oneof record {
