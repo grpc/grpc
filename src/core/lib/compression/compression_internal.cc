@@ -233,8 +233,8 @@ DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   if (auto* p = absl::get_if<int>(value)) {
     return static_cast<grpc_compression_algorithm>(*p);
   }
-  if (auto* p = absl::get_if<std::string>(value)) {
-    return ParseCompressionAlgorithm(*p);
+  if (auto* p = absl::get_if<std::shared_ptr<const std::string>>(value)) {
+    return ParseCompressionAlgorithm(**p);
   }
   return absl::nullopt;
 }

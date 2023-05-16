@@ -281,7 +281,7 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
-  using Value = absl::variant<int, std::string, Pointer>;
+  using Value = absl::variant<int, std::shared_ptr<const std::string>, Pointer>;
 
   struct ChannelArgsDeleter {
     void operator()(const grpc_channel_args* p) const;
