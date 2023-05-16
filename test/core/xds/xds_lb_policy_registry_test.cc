@@ -29,7 +29,6 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "envoy/config/cluster/v3/cluster.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/reflection/def.hpp"
@@ -47,6 +46,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
