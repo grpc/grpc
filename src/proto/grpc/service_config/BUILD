@@ -38,9 +38,9 @@ proto_library(
     srcs = ["service_config.proto"],
     deps = [
         "//src/proto/grpc/lookup/v1:rls_config_proto_descriptor",
+        "@com_google_googleapis//google/rpc:code_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:struct_proto",
         "@com_google_protobuf//:wrappers_proto",
-        "@com_google_googleapis//google/rpc:code_proto",
     ],
 )
