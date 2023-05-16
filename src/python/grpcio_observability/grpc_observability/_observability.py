@@ -89,14 +89,11 @@ class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
     exporter: "grpc_observability.Exporter"
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
-        # 1. Read config.
         self.exporter = None
         self.config = GcpObservabilityPythonConfig.get()
         if exporter:
             self.exporter = exporter
         else:
-            # 2. Creating measures and register views.
-            # 3. Create and Saves Tracer and Sampler to ContextVar.
             pass
             # Actual implementation of OC exporter
             # open_census = importlib.import_module(
@@ -124,16 +121,12 @@ class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
         grpc._observability.set_plugin(None)
 
     def __enter__(self):
-        # 4. Start exporting thread.
         try:
             _cyobservability.cyobservability_init(self.exporter)
         #TODO(xuanwn): Use specific exceptons
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("grpc_observability init failed with: %s", e)
 
-        # 5. Init grpc.
-        # 5.1 Refister grpc_observability
-        # 5.2 set_server_call_tracer_factory
         grpc._observability_init(self)
         return self
 
