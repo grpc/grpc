@@ -124,6 +124,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       grpc_core::OverridesFromFuzzConfigVars(msg.config_vars());
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;

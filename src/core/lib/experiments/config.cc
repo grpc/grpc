@@ -48,10 +48,10 @@ struct ForcedExperiment {
 };
 ForcedExperiment g_forced_experiments[kNumExperiments];
 
-std::atomic<bool> g_loaded;
+std::atomic<bool> g_loaded(false);
 
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
-  GPR_ASSERT(g_loaded.exchange(true, std::memory_order_relaxed) == false);
+  g_loaded.store(true, std::memory_order_relaxed);
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -92,14 +92,23 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   }
   return experiments;
 }
+
+Experiments& ExperimentsSingleton() {
+  // One time initialization:
+  static NoDestruct<Experiments> experiments{
+      LoadExperimentsFromConfigVariable()};
+  return *experiments;
+}
 }  // namespace
 
+void TestOnlyReloadExperimentsFromConfigVariables() {
+  ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
+  PrintExperimentsList();
+}
+
 bool IsExperimentEnabled(size_t experiment_id) {
-  // One time initialization:
-  static const NoDestruct<Experiments> experiments{
-      LoadExperimentsFromConfigVariable()};
   // Normal path: just return the value;
-  return experiments->enabled[experiment_id];
+  return ExperimentsSingleton().enabled[experiment_id];
 }
 
 void PrintExperimentsList() {
