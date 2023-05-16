@@ -20,6 +20,9 @@ EXPERIMENTS = {
     "dbg": {
     },
     "off": {
+        "cancel_ares_query_test": [
+            "event_engine_dns",
+        ],
         "census_test": [
             "transport_supplies_client_latency",
         ],
