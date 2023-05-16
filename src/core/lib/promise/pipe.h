@@ -610,6 +610,13 @@ class PipeReceiver {
     return [center = center_]() { return center->PollEmpty(); };
   }
 
+  void CloseWithError() {
+    if (center_ != nullptr) {
+      center_->MarkCancelled();
+      center_.reset();
+    }
+  }
+
   // Interject PromiseFactory f into the pipeline.
   // f will be called with the current value traversing the pipe, and should
   // return a value to replace it with.
