@@ -81,6 +81,8 @@
 #define FEATURE_MASK_IS_MINSTACK (1 << 11)
 #define FEATURE_MASK_IS_SECURE (1 << 12)
 #define FEATURE_MASK_DO_NOT_FUZZ (1 << 13)
+#define FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT (1 << 14)
+#define FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_LISTENER (1 << 15)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -805,6 +807,19 @@ extern bool g_is_fuzzing_core_e2e_tests;
 #define SKIP_IF_MINSTACK()                                 \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
+
+#define SKIP_IF_USES_EVENT_ENGINE_CLIENT()                     \
+  if (grpc_core::IsEventEngineClientEnabled() &&               \
+      GetParam()->feature_mask &                               \
+          FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_CLIENT) \
+  GTEST_SKIP() << "Skipping test to prevent it from using event engine client"
+
+#define SKIP_IF_USES_EVENT_ENGINE_LISTENER()                             \
+  if (grpc_core::IsEventEngineListenerEnabled() &&                       \
+      GetParam()->feature_mask &                                         \
+          FEATURE_MASK_SUPPORTS_DISABLING_EVENT_ENGINE_LISTENER)         \
+  GTEST_SKIP() << "Skipping test to prevent it from using event engine " \
+                  "listener"
 
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
