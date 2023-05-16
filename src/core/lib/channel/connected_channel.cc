@@ -710,13 +710,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.
-  auto send_trailing_metadata =
-      [call_data, stream = stream->InternalRef()](
-          ServerMetadataHandle server_trailing_metadata) {
-        return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
-            stream->batch_target(), std::move(server_trailing_metadata),
+  auto send_trailing_metadata = [call_data, stream = stream->InternalRef()](
+                                    ServerMetadataHandle
+                                        server_trailing_metadata) {
+    bool is_cancellation =
+        server_trailing_metadata->get(GrpcCallWasCancelled()).value_or(false);
+    return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
+        stream->batch_target(), std::move(server_trailing_metadata),
+        is_cancellation ||
             !std::exchange(call_data->sent_initial_metadata, true));
-      };
+  };
 
   // Runs the receive message loop, either until all the messages
   // are received or the server call is complete.

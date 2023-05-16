@@ -30,6 +30,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
@@ -346,7 +347,7 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsWrrLocalityLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsWrrLocalityLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_wrr_locality LB policy config");
   }

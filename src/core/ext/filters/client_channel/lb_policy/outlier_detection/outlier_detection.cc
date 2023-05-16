@@ -257,7 +257,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
       ++multiplier_;
-      for (auto& subchannel : subchannels_) {
+      // Ejecting the subchannel may cause the child policy to unref the
+      // subchannel, so we need to be prepared for the set to be modified
+      // while we are iterating.
+      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
+        SubchannelWrapper* subchannel = *it;
+        ++it;
         subchannel->Eject();
       }
     }
@@ -394,8 +399,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
 void OutlierDetectionLb::SubchannelWrapper::Eject() {
   ejected_ = true;
-  for (auto& watcher : watchers_) {
-    watcher.second->Eject();
+  // Ejecting the subchannel may cause the child policy to cancel the watch,
+  // so we need to be prepared for the map to be modified while we are
+  // iterating.
+  for (auto it = watchers_.begin(); it != watchers_.end();) {
+    WatcherWrapper* watcher = it->second;
+    ++it;
+    watcher->Eject();
   }
 }
 
@@ -858,8 +868,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.success_rate_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] running success rate algorithm",
-              parent_.get());
+              "[outlier_detection_lb %p] running success rate algorithm: "
+              "stdev_factor=%d, enforcement_percentage=%d",
+              parent_.get(), config.success_rate_ejection->stdev_factor,
+              config.success_rate_ejection->enforcement_percentage);
     }
     // calculate ejection threshold: (mean - stdev *
     // (success_rate_ejection.stdev_factor / 1000))
@@ -917,8 +929,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.failure_percentage_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] running failure percentage algorithm",
-              parent_.get());
+              "[outlier_detection_lb %p] running failure percentage algorithm: "
+              "threshold=%d, enforcement_percentage=%d",
+              parent_.get(), config.failure_percentage_ejection->threshold,
+              config.failure_percentage_ejection->enforcement_percentage);
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {

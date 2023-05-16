@@ -135,7 +135,7 @@ bool AddFilter(ChannelStackBuilder* builder) {
 // - 1 retry allowed for ABORTED status
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
-TEST_P(RetryTest, RetryRecvTrailingMetadataError) {
+CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
                                            AddFilter);

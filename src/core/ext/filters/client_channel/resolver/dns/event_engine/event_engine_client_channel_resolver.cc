@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
@@ -405,8 +404,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
-      // Find service config in TXT record.
-      constexpr char kServiceConfigAttributePrefix[] = "grpc_config=";
+      static constexpr absl::string_view kServiceConfigAttributePrefix =
+          "grpc_config=";
       auto result = std::find_if(service_config->begin(), service_config->end(),
                                  [&](absl::string_view s) {
                                    return absl::StartsWith(
@@ -415,7 +414,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       if (result != service_config->end()) {
         // Found a service config record.
         service_config_json_ =
-            result->substr(std::strlen(kServiceConfigAttributePrefix));
+            result->substr(kServiceConfigAttributePrefix.size());
         GRPC_EVENT_ENGINE_RESOLVER_TRACE(
             "DNSResolver::%p found service config: %s",
             event_engine_resolver_.get(), service_config_json_->c_str());

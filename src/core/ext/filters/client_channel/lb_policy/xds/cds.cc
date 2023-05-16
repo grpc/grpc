@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
@@ -754,7 +755,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<CdsLbConfig>(
+    return LoadFromJson<RefCountedPtr<CdsLbConfig>>(
         json, JsonArgs(), "errors validating cds LB policy config");
   }
 };

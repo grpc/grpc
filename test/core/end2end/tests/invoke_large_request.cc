@@ -31,7 +31,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(Http2SingleHopTest, InvokeLargeRequest) {
+CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   InitServer(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));

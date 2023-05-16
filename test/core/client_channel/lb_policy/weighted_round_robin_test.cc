@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -35,11 +34,11 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
@@ -51,15 +50,11 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
-#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::MockEventEngine;
 
 BackendMetricData MakeBackendMetricData(double cpu_utilization, double qps,
                                         double eps) {
@@ -70,7 +65,7 @@ BackendMetricData MakeBackendMetricData(double cpu_utilization, double qps,
   return b;
 }
 
-class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
+class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -116,59 +111,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  // A custom time cache for which InvalidateCache() is a no-op.  This
-  // ensures that when the timer callback instantiates its own ExecCtx
-  // and therefore its own ScopedTimeCache, it continues to see the time
-  // that we are injecting in the test.
-  class TestTimeCache final : public Timestamp::ScopedSource {
-   public:
-    TestTimeCache() : cached_time_(previous()->Now()) {}
-
-    Timestamp Now() override { return cached_time_; }
-    void InvalidateCache() override {}
-
-    void IncrementBy(Duration duration) { cached_time_ += duration; }
-
-   private:
-    Timestamp cached_time_;
-  };
-
   WeightedRoundRobinTest() {
-    mock_ee_ = std::make_shared<MockEventEngine>();
-    event_engine_ = mock_ee_;
-    auto capture = [this](std::chrono::duration<int64_t, std::nano> duration,
-                          absl::AnyInvocable<void()> callback) {
-      EXPECT_EQ(duration, expected_weight_update_interval_)
-          << "Expected: " << expected_weight_update_interval_.count() << "ns"
-          << "\n  Actual: " << duration.count() << "ns";
-      intptr_t key = next_key_++;
-      timer_callbacks_[key] = std::move(callback);
-      return EventEngine::TaskHandle{key, 0};
-    };
-    ON_CALL(*mock_ee_,
-            RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
-        .WillByDefault(capture);
-    auto cancel = [this](EventEngine::TaskHandle handle) {
-      auto it = timer_callbacks_.find(handle.keys[0]);
-      if (it == timer_callbacks_.end()) return false;
-      timer_callbacks_.erase(it);
-      return true;
-    };
-    ON_CALL(*mock_ee_, Cancel(::testing::_)).WillByDefault(cancel);
     lb_policy_ = MakeLbPolicy("weighted_round_robin");
-  }
-
-  ~WeightedRoundRobinTest() override {
-    EXPECT_TRUE(timer_callbacks_.empty())
-        << "WARNING: Test did not run all timer callbacks";
-  }
-
-  void RunTimerCallback() {
-    ASSERT_EQ(timer_callbacks_.size(), 1UL);
-    auto it = timer_callbacks_.begin();
-    ASSERT_NE(it->second, nullptr);
-    std::move(it->second)();
-    timer_callbacks_.erase(it);
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -367,13 +311,17 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
   }
 
+  void CheckExpectedTimerDuration(
+      grpc_event_engine::experimental::EventEngine::Duration duration)
+      override {
+    EXPECT_EQ(duration, expected_weight_update_interval_)
+        << "Expected: " << expected_weight_update_interval_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  std::shared_ptr<MockEventEngine> mock_ee_;
-  std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
-  intptr_t next_key_ = 1;
-  EventEngine::Duration expected_weight_update_interval_ =
-      std::chrono::seconds(1);
-  TestTimeCache time_cache_;
+  grpc_event_engine::experimental::EventEngine::Duration
+      expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {

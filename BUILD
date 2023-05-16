@@ -87,8 +87,23 @@ config_setting(
 )
 
 config_setting(
+    name = "macos",
+    values = {"apple_platform_type": "macos"},
+)
+
+config_setting(
     name = "ios",
     values = {"apple_platform_type": "ios"},
+)
+
+config_setting(
+    name = "tvos",
+    values = {"apple_platform_type": "tvos"},
+)
+
+config_setting(
+    name = "watchos",
+    values = {"apple_platform_type": "watchos"},
 )
 
 config_setting(
@@ -174,8 +189,13 @@ config_setting(
 )
 
 config_setting(
-    name = "mac_x86_64",
+    name = "mac",
     values = {"cpu": "darwin"},
+)
+
+config_setting(
+    name = "mac_x86_64",
+    values = {"cpu": "darwin_x86_64"},
 )
 
 config_setting(
@@ -203,6 +223,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
     "include/grpc/support/cpu.h",
+    "include/grpc/support/json.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/port_platform.h",
@@ -745,6 +766,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_public_hdrs",
     hdrs = GPR_PUBLIC_HDRS,
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -1769,7 +1794,6 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
-        "//src/core:json",
         "//src/core:memory_quota",
         "//src/core:poll",
         "//src/core:ref_counted",
@@ -2377,6 +2401,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:env",
+        "//src/core:gpr_log_internal",
     ],
 )
 
@@ -3156,7 +3181,6 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",

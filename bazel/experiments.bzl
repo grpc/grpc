@@ -25,7 +25,11 @@ EXPERIMENTS = {
         ],
         "core_end2end_test": [
             "event_engine_client",
+            "event_engine_listener",
             "promise_based_client_call",
+            "promise_based_server_call",
+        ],
+        "cpp_end2end_test": [
             "promise_based_server_call",
         ],
         "endpoint_test": [
@@ -50,6 +54,9 @@ EXPERIMENTS = {
             "free_large_allocator",
             "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
+        ],
+        "xds_end2end_test": [
+            "promise_based_server_call",
         ],
     },
     "on": {

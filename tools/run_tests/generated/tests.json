@@ -945,6 +945,30 @@
     "ci_platforms": [
       "linux",
       "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "basic_work_queue_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -1361,13 +1385,35 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "cf_engine_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "cf_event_engine_test",
     "platforms": [
       "linux",
       "mac",
       "posix"
     ],
-    "uses_polling": false
+    "uses_polling": true
   },
   {
     "args": [],
@@ -1799,7 +1845,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
@@ -1823,7 +1869,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
@@ -5156,6 +5202,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "osa_distance_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "out_of_bounds_bad_client_test",
     "platforms": [
       "linux",
@@ -5548,7 +5618,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -5560,7 +5629,6 @@
     "name": "posix_event_engine_connect_test",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": true
@@ -5570,7 +5638,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -5582,7 +5649,6 @@
     "name": "posix_event_engine_test",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": true
@@ -6111,7 +6177,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
@@ -8666,30 +8732,6 @@
       "windows"
     ],
     "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "work_queue_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
   },
   {
     "args": [],

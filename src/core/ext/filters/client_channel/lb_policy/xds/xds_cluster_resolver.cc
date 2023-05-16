@@ -38,6 +38,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
@@ -1149,7 +1150,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsClusterResolverLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }

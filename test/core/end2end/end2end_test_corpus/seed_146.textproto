@@ -1,0 +1,3 @@
+suite: "Http2SingleHopTest"
+test: "RequestWithCompressedPayloadDecompressInApp"
+config: "Chttp2FakeSecurityFullstack"
