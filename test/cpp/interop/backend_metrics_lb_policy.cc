@@ -236,21 +236,21 @@ void RegisterBackendMetricsLbPolicy(CoreConfiguration::Builder* builder) {
 
 void LoadReportTracker::RecordPerRpcLoadReport(
     const grpc_core::BackendMetricData* backend_metric_data) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.emplace_back(
       BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
 void LoadReportTracker::RecordOobLoadReport(
     const grpc_core::BackendMetricData& oob_metric_data) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   oob_load_reports_.emplace_back(
       *BackendMetricDataToOrcaLoadReport(&oob_metric_data));
 }
 
 absl::optional<LoadReportTracker::LoadReportEntry>
 LoadReportTracker::GetNextLoadReport() {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   if (per_rpc_load_reports_.empty()) {
     return absl::nullopt;
   }
@@ -262,7 +262,7 @@ LoadReportTracker::GetNextLoadReport() {
 LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     const std::function<bool(const TestOrcaReport&)>& predicate,
     absl::Duration poll_timeout, size_t max_attempts) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   // This condition will be called under lock
   auto condition = [&]() ABSL_NO_THREAD_SAFETY_ANALYSIS {
     return !oob_load_reports_.empty();
@@ -283,7 +283,7 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
 }
 
 void LoadReportTracker::ResetCollectedLoadReports() {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.clear();
   oob_load_reports_.clear();
 }
