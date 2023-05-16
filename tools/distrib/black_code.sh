@@ -35,4 +35,4 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install black==23.3.0
 
-$PYTHON -m black $ACTION "${DIRS[@]}"
+$PYTHON -m black --experimental-string-processing $ACTION "${DIRS[@]}"
