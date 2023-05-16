@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "google/protobuf/json/json.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
