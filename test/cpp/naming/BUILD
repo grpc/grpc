@@ -34,13 +34,11 @@ grpc_py_binary(
     ],
 )
 
-[grpc_cc_test(
-    name = "cancel_ares_query_test%s" % enable_event_engine_dns_experiment,
+grpc_cc_test(
+    name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
-    args = ["--grpc_experiments=event_engine_dns" if len(enable_event_engine_dns_experiment) > 0 else ""],
     external_deps = ["gtest"],
-    # TODO(yijiem): enable the event_engine_dns_experiment version for Windows once it is implemented
-    tags = ["no_windows" if len(enable_event_engine_dns_experiment) > 0 else ""],
+    tags = ["cancel_ares_query_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -52,9 +50,6 @@ grpc_py_binary(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
-) for enable_event_engine_dns_experiment in [
-    "",
-    "_enable_event_engine_dns_experiment",
-]]
+)
 
 generate_resolver_component_tests()

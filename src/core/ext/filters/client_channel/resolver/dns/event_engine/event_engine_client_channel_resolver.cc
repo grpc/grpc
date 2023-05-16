@@ -16,6 +16,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
 #include <inttypes.h>
+#include <stddef.h>
 
 #include <algorithm>
 #include <chrono>

@@ -89,7 +89,7 @@ def generate_resolver_component_tests():
                     "//test/cpp/naming/utils:dns_server",
                     "//test/cpp/naming/utils:dns_resolver",
                     "//test/cpp/naming/utils:tcp_connect",
-                    "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns sever py binary can locate this
+                    "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns server py binary can locate this
                 ],
                 args = [
                     "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
