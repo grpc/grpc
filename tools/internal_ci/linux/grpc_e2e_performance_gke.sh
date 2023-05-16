@@ -64,8 +64,9 @@ WORKER_POOL_32CORE=workers-c2-30core-ci
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
 # Clone test-infra repository and build all tools.
+TEST_INFRA_OWNER="${TEST_INFRA_OWNER:-grpc}"
 pushd ..
-git clone https://github.com/grpc/test-infra.git
+git clone https://github.com/"${TEST_INFRA_OWNER}"/test-infra.git
 cd test-infra
 # Tools are built from HEAD.
 git checkout --detach
