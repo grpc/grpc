@@ -67,6 +67,13 @@ using grpc_event_engine::experimental::URIToResolvedAddress;
 
 constexpr char g_grpc_config_prefix[] = "grpc_config=";
 
+absl::Status ErrorToAbslStatus(
+    const event_engine_client_channel_resolver::Error& error) {
+  // clamp error.code() in (0, 16]
+  return absl::Status(static_cast<absl::StatusCode>(error.code() % 16 + 1),
+                      error.message());
+}
+
 class FuzzingResolverEventEngine
     : public grpc_event_engine::experimental::AbortingEventEngine {
  public:
@@ -76,7 +83,7 @@ class FuzzingResolverEventEngine
                 fuzzing_event_engine::Actions()) {
     // Set hostname responses
     if (msg.has_hostname_error()) {
-      hostname_responses_ = absl::nullopt;
+      hostname_responses_ = ErrorToAbslStatus(msg.hostname_error());
     } else if (msg.has_hostname_response()) {
       hostname_responses_.emplace();
       for (const auto& address : msg.hostname_response().addresses()) {
@@ -86,7 +93,7 @@ class FuzzingResolverEventEngine
     }
     // Set SRV Responses
     if (msg.has_srv_error()) {
-      srv_responses_ = absl::nullopt;
+      srv_responses_ = ErrorToAbslStatus(msg.srv_error());
     } else if (msg.has_srv_response()) {
       srv_responses_.emplace();
       for (const auto& srv_record : msg.srv_response().srv_records()) {
@@ -100,7 +107,7 @@ class FuzzingResolverEventEngine
     }
     // Set TXT Responses
     if (msg.has_txt_error()) {
-      txt_responses_ = absl::nullopt;
+      txt_responses_ = ErrorToAbslStatus(msg.txt_error());
     } else if (msg.has_txt_response()) {
       txt_responses_.emplace();
       for (const auto& txt_record : msg.txt_response().txt_records()) {
@@ -159,10 +166,7 @@ class FuzzingResolverEventEngine
                 });
             return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
           };
-      if (!engine_->hostname_responses_.has_value()) {
-        return finish(engine_->lookup_hostname_response_base_case_);
-      }
-      return finish(*engine_->hostname_responses_);
+      return finish(engine_->hostname_responses_);
     }
     LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                absl::string_view /* name */,
@@ -176,10 +180,7 @@ class FuzzingResolverEventEngine
                 });
             return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
           };
-      if (!engine_->srv_responses_.has_value()) {
-        return finish(engine_->lookup_srv_response_base_case_);
-      }
-      return finish(*engine_->srv_responses_);
+      return finish(engine_->srv_responses_);
     }
     LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                absl::string_view /* name */,
@@ -193,10 +194,7 @@ class FuzzingResolverEventEngine
                 });
             return EventEngine::DNSResolver::LookupTaskHandle::kInvalid;
           };
-      if (!engine_->txt_responses_.has_value()) {
-        return finish(engine_->lookup_txt_response_base_case_);
-      }
-      return finish(*engine_->txt_responses_);
+      return finish(engine_->txt_responses_);
     }
     bool CancelLookup(LookupTaskHandle /* handle */) override { return false; }
 
@@ -208,22 +206,16 @@ class FuzzingResolverEventEngine
   FuzzingEventEngine runner_;
 
   // responses
-  absl::optional<std::vector<EventEngine::ResolvedAddress>> hostname_responses_;
-  absl::optional<std::vector<EventEngine::DNSResolver::SRVRecord>>
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> hostname_responses_;
+  absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
       srv_responses_;
-  absl::optional<std::vector<std::string>> txt_responses_;
+  absl::StatusOr<std::vector<std::string>> txt_responses_;
 
-  // base cases
+  // base case for a valid gRPC config
   const std::string txt_valid_config_ =
       "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_"
       "robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":"
       "\"SimpleService\"}],\"waitForReady\":true}]}}]";
-  const absl::Status lookup_hostname_response_base_case_ =
-      absl::InternalError("LookupHostnameResponseBaseCase");
-  const absl::Status lookup_srv_response_base_case_ =
-      absl::InternalError("LookupSRVResponseBaseCase");
-  const absl::Status lookup_txt_response_base_case_ =
-      absl::InternalError("LookupTXTResponseBaseCase");
 };
 
 grpc_core::ChannelArgs ConstructChannelArgs(
