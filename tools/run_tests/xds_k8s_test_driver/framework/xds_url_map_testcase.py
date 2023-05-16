@@ -34,6 +34,7 @@ from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
 from framework.helpers import retryers
 from framework.helpers import skips
+from framework.infrastructure import k8s
 from framework.test_app import client_app
 
 # Load existing flags
@@ -364,6 +365,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     @classmethod
     def cleanupAfterTests(cls):
         logging.info('----- TestCase %s teardown -----', cls.__name__)
+        logging.debug('Getting pods restart times')
+        client_restarts: int = 0
+        try:
+            client_restarts = cls.test_client_runner.get_pod_restarts(
+                cls.test_client_runner.deployment)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logging.exception(e)
+
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -378,6 +387,13 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             retryer(cls._cleanup, cleanup_all)
         except retryers.RetryError:
             logging.exception('Got error during teardown')
+        finally:
+            # Fail if any of the pods restarted.
+            error_msg = (
+                'Client pods unexpectedly restarted'
+                f' {client_restarts} times during test.'
+                ' In most cases, this is caused by the test client app crash.')
+            assert client_restarts == 0, error_msg
 
     @classmethod
     def _cleanup(cls, cleanup_all: bool = False):
