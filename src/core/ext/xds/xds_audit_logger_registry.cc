@@ -47,12 +47,13 @@ class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
       const XdsResourceType::DecodeContext& /*context*/,
       absl::string_view /*configuration*/,
       ValidationErrors* /*errors*/) override {
-    // Stdout logger has no configuration right now. So we don't need to invoke
-    // the gRPC audit logger registry to validate the config.
-    return Json::Object{{"stdout_logger", Json::FromObject({})}};
+    // Stdout logger has no configuration right now. So we don't process the
+    // config protobuf.
+    return {};
   }
 
   absl::string_view type() override { return Type(); }
+  absl::string_view name() override { return "stdout_logger"; }
 
   static absl::string_view Type() {
     return "envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog";
@@ -93,9 +94,17 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
       auto config_factory_it =
           audit_logger_config_factories_.find(extension->type);
       if (config_factory_it != audit_logger_config_factories_.end()) {
-        return Json::FromObject(
+        auto json_config = Json::FromObject(
             config_factory_it->second->ConvertXdsAuditLoggerConfig(
                 context, *serialized_value, errors));
+        auto result = AuditLoggerRegistry::ParseConfig(
+            config_factory_it->second->name(), json_config);
+        if (!result.ok()) {
+          errors->AddError(result.status().message());
+          return Json();
+        }
+        return Json::FromObject(
+            {{std::string(config_factory_it->second->name()), json_config}});
       }
     }
     // Check for custom audit logger type.
