@@ -1,0 +1,16 @@
+resolver_args {
+  enable_srv_queries: true
+}
+hostname_response {
+  addresses {
+    port: 32
+  }
+  addresses {
+    port: 32
+  }
+  addresses {
+    port: 1996488736
+  }
+}
+srv_response {
+}
