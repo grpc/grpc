@@ -89,7 +89,6 @@ void proxy_ref(grpc_end2end_http_proxy* proxy) { gpr_ref(&proxy->users); }
 void proxy_unref(grpc_end2end_http_proxy* proxy) {
   if (gpr_unref(&proxy->users)) {
     GRPC_COMBINER_UNREF(proxy->combiner, "test");
-    gpr_log(GPR_ERROR, "Deleting proxy");
     delete proxy;
   }
 }
