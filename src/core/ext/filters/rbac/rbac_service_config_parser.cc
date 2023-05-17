@@ -28,7 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
+#include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_args.h"
@@ -199,7 +199,7 @@ struct RbacConfig {
 
       int action;
       std::map<std::string, Policy> policies;
-      // Defaults to 0 since its json field is optional.
+      // Defaults to kNone since its json field is optional.
       Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
       std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
 

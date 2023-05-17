@@ -14,6 +14,7 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -26,7 +27,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/slice.h>
-#include <grpc/support/json.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_writer.h"
@@ -58,7 +58,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   class Config : public AuditLoggerFactory::Config {
    public:
-    Config(const Json& json) : config_(JsonDump(json)) {}
+    explicit Config(const Json& json) : config_(JsonDump(json)) {}
     absl::string_view name() const override { return kLoggerName; }
     std::string ToString() const override { return config_; }
 
@@ -66,7 +66,8 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     std::string config_;
   };
 
-  TestAuditLoggerFactory(std::map<absl::string_view, std::string>* configs)
+  explicit TestAuditLoggerFactory(
+      std::map<absl::string_view, std::string>* configs)
       : configs_(configs) {}
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
@@ -90,11 +91,11 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
 
 class RbacServiceConfigParsingTest : public ::testing::Test {
  protected:
-  void SetUp() {
+  void SetUp() override {
     RegisterAuditLoggerFactory(
         std::make_unique<TestAuditLoggerFactory>(&logger_configs_));
   }
-  void TearDown() { AuditLoggerRegistry::TestOnlyResetRegistry(); }
+  void TearDown() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
   std::map<absl::string_view, std::string> logger_configs_;
 };
 
@@ -742,11 +743,11 @@ TEST_F(RbacServiceConfigParsingTest, AuditConditionOnDenyWithMultipleLoggers) {
   ASSERT_NE(parsed_rbac_config->authorization_engine(0), nullptr);
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->audit_condition(),
             Rbac::AuditCondition::kOnDeny);
-  const auto& loggers =
-      parsed_rbac_config->authorization_engine(0)->audit_loggers();
-  ASSERT_EQ(loggers.size(), 2);
-  EXPECT_EQ(loggers[0]->name(), "stdout_logger");
-  EXPECT_EQ(loggers[1]->name(), kLoggerName);
+  EXPECT_THAT(parsed_rbac_config->authorization_engine(0)->audit_loggers(),
+              ::testing::ElementsAre(::testing::Pointee(::testing::Property(
+                                         &AuditLogger::name, "stdout_logger")),
+                                     ::testing::Pointee(::testing::Property(
+                                         &AuditLogger::name, kLoggerName))));
   EXPECT_THAT(logger_configs_, ::testing::ElementsAre(::testing::Pair(
                                    "test_logger", "{\"foo\":\"bar\"}")));
 }
