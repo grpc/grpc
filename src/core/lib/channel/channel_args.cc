@@ -40,6 +40,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
@@ -126,21 +127,53 @@ ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
   return result;
 }
 
+grpc_arg ChannelArgs::Value::MakeCArg(const char* name) const {
+  char* c_name = const_cast<char*>(name);
+  return Match(
+        rep_,
+        [c_name](int i) { return grpc_channel_arg_integer_create(c_name, i); },
+        [c_name](const std::shared_ptr<const std::string>& s) {
+          return grpc_channel_arg_string_create(c_name,
+                                                const_cast<char*>(s->c_str()));
+        },
+        [c_name](const Pointer& p) {
+          return grpc_channel_arg_pointer_create(c_name, p.c_pointer(),
+                                                 p.c_vtable());
+        });
+}
+
+bool ChannelArgs::Value::operator<(const Value& rhs) const {
+  if (rhs.rep_.index() != rep_.index()) return rep_.index() < rhs.rep_.index();
+  switch (rep_.index()) {
+    case 0: return absl::get<int>(rep_) < absl::get<int>(rhs.rep_);
+    case 1:
+      return *absl::get<std::shared_ptr<const std::string>>(rep_) <
+             *absl::get<std::shared_ptr<const std::string>>(rhs.rep_);
+    case 2:
+      return absl::get<Pointer>(rep_) < absl::get<Pointer>(rhs.rep_);
+    default:
+      Crash("unreachable");
+  }
+}
+
+bool ChannelArgs::Value::operator==(const Value& rhs) const {
+  if (rhs.rep_.index() != rep_.index()) return false;
+  switch (rep_.index()) {
+    case 0: return absl::get<int>(rep_) == absl::get<int>(rhs.rep_);
+    case 1:
+      return *absl::get<std::shared_ptr<const std::string>>(rep_) ==
+             *absl::get<std::shared_ptr<const std::string>>(rhs.rep_);
+    case 2:
+      return absl::get<Pointer>(rep_) == absl::get<Pointer>(rhs.rep_);
+    default:
+      Crash("unreachable");
+  }
+}
+
 ChannelArgs::CPtr ChannelArgs::ToC() const {
   std::vector<grpc_arg> c_args;
   args_.ForEach([&c_args](const std::string& key, const Value& value) {
-    char* name = const_cast<char*>(key.c_str());
-    c_args.push_back(Match(
-        value,
-        [name](int i) { return grpc_channel_arg_integer_create(name, i); },
-        [name](const std::shared_ptr<const std::string>& s) {
-          return grpc_channel_arg_string_create(name,
-                                                const_cast<char*>(s->c_str()));
-        },
-        [name](const Pointer& p) {
-          return grpc_channel_arg_pointer_create(name, p.c_pointer(),
-                                                 p.c_vtable());
-        }));
+    c_args.push_back(value.MakeCArg(key.c_str()));
   });
   return CPtr(static_cast<const grpc_channel_args*>(
       grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
@@ -168,7 +201,7 @@ ChannelArgs ChannelArgs::Set(absl::string_view key, const char* value) const {
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view key, std::string value) const {
-  return Set(key, Value(std::make_shared<const std::string>(std::move(value))));
+  return Set(key, Value(std::move(value)));
 }
 
 ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
@@ -178,8 +211,9 @@ ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
 absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
-  if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
-  return absl::get<int>(*v);
+  const auto* i = v->GetIfInt();
+  if (i == nullptr) return absl::nullopt;
+  return *i;
 }
 
 absl::optional<Duration> ChannelArgs::GetDurationFromIntMillis(
@@ -195,9 +229,9 @@ absl::optional<absl::string_view> ChannelArgs::GetString(
     absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
-  auto* s = absl::get_if<std::shared_ptr<const std::string>>(v);
+ const  auto* s = v->GetIfString();
   if (s == nullptr) return absl::nullopt;
-  return **s;
+  return *s;
 }
 
 absl::optional<std::string> ChannelArgs::GetOwnedString(
@@ -210,14 +244,15 @@ absl::optional<std::string> ChannelArgs::GetOwnedString(
 void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return nullptr;
-  if (!absl::holds_alternative<Pointer>(*v)) return nullptr;
-  return absl::get<Pointer>(*v).c_pointer();
+ const  auto* pp = v->GetIfPointer();
+  if (pp == nullptr) return nullptr;
+  return pp->c_pointer();
 }
 
 absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
-  auto* i = absl::get_if<int>(v);
+  auto* i = v->GetIfInt();
   if (i == nullptr) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
             std::string(name).c_str());
@@ -239,12 +274,11 @@ std::string ChannelArgs::ToString() const {
   std::vector<std::string> arg_strings;
   args_.ForEach([&arg_strings](const std::string& key, const Value& value) {
     std::string value_str;
-    if (auto* i = absl::get_if<int>(&value)) {
+    if (auto* i = value.GetIfInt()) {
       value_str = std::to_string(*i);
-    } else if (auto* s =
-                   absl::get_if<std::shared_ptr<const std::string>>(&value)) {
-      value_str = **s;
-    } else if (auto* p = absl::get_if<Pointer>(&value)) {
+    } else if (auto* s = value.GetIfString()) {
+      value_str = *s;
+    } else if (auto* p = value.GetIfPointer()) {
       value_str = absl::StrFormat("%p", p->c_pointer());
     }
     arg_strings.push_back(absl::StrCat(key, "=", value_str));

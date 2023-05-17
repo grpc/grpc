@@ -281,7 +281,37 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
-  using Value = absl::variant<int, std::shared_ptr<const std::string>, Pointer>;
+  class Value {
+   public:
+    explicit Value(int n) : rep_(n) {}
+    explicit Value(std::string s)
+        : rep_(std::make_shared<const std::string>(std::move(s))) {}
+    explicit Value(Pointer p) : rep_(std::move(p)) {}
+
+    const int* GetIfInt() const { return absl::get_if<int>(&rep_); }
+    const std::string* GetIfString() const {
+      auto* p = absl::get_if<std::shared_ptr<const std::string>>(&rep_);
+      if (p == nullptr) return nullptr;
+      return p->get();
+    }
+    const Pointer* GetIfPointer() const {
+      return absl::get_if<Pointer>(&rep_);
+    }
+
+    grpc_arg MakeCArg(const char* name)const;
+
+    bool operator<(const Value& rhs) const;
+    bool operator==(const Value& rhs) const;
+    bool operator!=(const Value& rhs) const { return !this->operator==(rhs); }
+    bool operator==(absl::string_view rhs) const {
+      auto* p = absl::get_if<std::shared_ptr<const std::string>>(&rep_);
+      if (p == nullptr) return false;
+      return *p->get() == rhs;
+    }
+
+   private:
+    absl::variant<int, std::shared_ptr<const std::string>, Pointer> rep_;
+  };
 
   struct ChannelArgsDeleter {
     void operator()(const grpc_channel_args* p) const;
