@@ -14,8 +14,6 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/service_config/service_config.proto";
-
 package event_engine_client_channel_resolver;
 
 message ResolverArgs {
@@ -46,17 +44,20 @@ message SRVRecords {
 }
 
 enum TXTRecordType {
-    TXT_VALID = 0;
-    TXT_RANDOM_NON_CONFIG = 1;
-    TXT_RANDOM_PREFIXED_CONFIG = 2;
+    TXT_UNDEFINED = 0;
+    TXT_VALID = 1;
+    TXT_RANDOM_NON_CONFIG = 2;
+    TXT_RANDOM_PREFIXED_CONFIG = 3;
 }
 message TXTRecord {
     oneof record {
         TXTRecordType enumerated_value = 1;
-        grpc.service_config.ServiceConfig fuzzed_service_config = 2;
+        // TODO(hork): add a ServiceConfig fuzzer when the proto definitions
+        // are worked out. See https://github.com/grpc/grpc/pull/32956 for the
+        // implementation.
     }
     // Random TXT record content, used for some TXTRecordTypes.
-    string arbitrary_value = 3;
+    string arbitrary_value = 2;
 }
 message TXTRecords {
     repeated TXTRecord txt_records = 1;

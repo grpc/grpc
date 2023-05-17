@@ -97,7 +97,7 @@ class ExportedTracesRecorder
   ExportedTracesRecorder() : is_recording_(false) {}
   void Export(const std::vector<::opencensus::trace::exporter::SpanData>& spans)
       override {
-    absl::MutexLock lock(&mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     if (is_recording_) {
       for (auto const& span : spans) {
         recorded_spans_.push_back(span);
@@ -106,26 +106,26 @@ class ExportedTracesRecorder
   }
 
   void StartRecording() {
-    absl::MutexLock lock(&mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     ASSERT_FALSE(is_recording_);
     is_recording_ = true;
   }
 
   void StopRecording() {
-    absl::MutexLock lock(&mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     ASSERT_TRUE(is_recording_);
     is_recording_ = false;
   }
 
   std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans() {
-    absl::MutexLock lock(&mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     return std::move(recorded_spans_);
   }
 
  private:
   // This mutex is necessary as the SpanExporter runs a loop on a separate
   // thread which periodically exports spans.
-  absl::Mutex mutex_;
+  grpc_core::Mutex mutex_;
   bool is_recording_ ABSL_GUARDED_BY(mutex_);
   std::vector<::opencensus::trace::exporter::SpanData> recorded_spans_
       ABSL_GUARDED_BY(mutex_);

@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "google/protobuf/json/json.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -45,11 +44,10 @@
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
-#include "src/proto/grpc/service_config/service_config.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
-#include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_ops.pb.h"
+#include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 
 // TODO(hork): exercise Orphan on the client channel resolver, which will
 // exercise the resolution cancellation path. Currently, all requests will get
@@ -113,6 +111,8 @@ class FuzzingResolverEventEngine
       for (const auto& txt_record : msg.txt_response().txt_records()) {
         if (txt_record.has_enumerated_value()) {
           switch (txt_record.enumerated_value()) {
+            case TXTRecordType::TXT_UNDEFINED:
+              break;
             case TXTRecordType::TXT_VALID:
               txt_responses_->emplace_back(txt_valid_config_);
               break;
@@ -125,17 +125,6 @@ class FuzzingResolverEventEngine
               break;
             default:
               grpc_core::Crash("Invalid txt record type");
-          }
-        } else if (txt_record.has_fuzzed_service_config()) {
-          std::string fuzzed_config_json_str;
-          ::google::protobuf::json::PrintOptions print_options;
-          auto status =
-              MessageToJsonString(txt_record.fuzzed_service_config(),
-                                  &fuzzed_config_json_str, print_options);
-          // Sometimes LLVM will generate protos that can't be dumped to JSON
-          // (Durations out of bounds, for example). These are ignored.
-          if (status.ok()) {
-            txt_responses_->emplace_back(fuzzed_config_json_str);
           }
         }
       }

@@ -145,3 +145,5 @@ build:compdb --build_tag_filters=-nocompdb --features=-layering_check
 
 try-import %workspace%/tools/fuzztest.bazelrc
 build:fuzztest --cxxopt=-std=c++17
+
+build:fuzztest_test --cxxopt=-std=c++17
