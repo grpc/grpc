@@ -77,6 +77,9 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
       GeneratedClassName(output_type), output_type->file());
 
   out->Print("/**\n");
+  if (method->options().deprecated()) {
+    out->Print(" * @deprecated\n");
+  }
   out->Print(GetPHPComments(method, " *").c_str());
   if (method->client_streaming()) {
     if (method->server_streaming()) {
@@ -144,6 +147,9 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
       GeneratedClassName(output_type), output_type->file());
 
   out->Print("/**\n");
+  if (method->options().deprecated()) {
+    out->Print(" * @deprecated\n");
+  }
   out->Print(GetPHPComments(method, " *").c_str());
 
   const char* method_template;
@@ -222,8 +228,11 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
   map<std::string, std::string> vars;
   vars["service_name"] = service->full_name();
 
+  out->Print("/**\n");
+  if (service->options().deprecated()) {
+    out->Print(" * @deprecated\n");
+  }
   out->Print(
-      "/**\n"
       " * Get the method descriptors of the service for server registration\n"
       " *\n"
       " * @return array of \\Grpc\\MethodDescriptor for the service methods\n"
@@ -272,6 +281,9 @@ void PrintService(const ServiceDescriptor* service,
                   Printer* out) {
   map<std::string, std::string> vars;
   out->Print("/**\n");
+  if (service->options().deprecated()) {
+    out->Print(" * @deprecated\n");
+  }
   out->Print(GetPHPComments(service, " *").c_str());
   out->Print(" */\n");
   vars["name"] = GetPHPServiceClassname(service, class_suffix, is_server);
