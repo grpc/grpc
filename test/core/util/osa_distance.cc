@@ -23,21 +23,6 @@
 
 namespace grpc_core {
 
-namespace {
-class Matrix {
- public:
-  Matrix(size_t width, size_t height)
-      : width_(width),
-        data_(width * height, std::numeric_limits<size_t>::max()) {}
-
-  size_t& operator()(size_t x, size_t y) { return data_[y * width_ + x]; }
-
- private:
-  size_t width_;
-  std::vector<size_t> data_;
-};
-}  // namespace
-
 size_t OsaDistance(absl::string_view s1, absl::string_view s2) {
   if (s1.size() > s2.size()) std::swap(s1, s2);
   if (s1.empty()) return static_cast<uint8_t>(s2.size());
