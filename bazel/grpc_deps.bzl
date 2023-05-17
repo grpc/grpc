@@ -278,15 +278,13 @@ def grpc_deps():
         )
 
     if "com_google_fuzztest" not in native.existing_rules():
-        # when updating this remember to run:
-        # bazel run @com_google_fuzztest//bazel:setup_configs > tools/fuzztest.bazelrc
         http_archive(
             name = "com_google_fuzztest",
-            sha256 = "cdf8d8cd3cdc77280a7c59b310edf234e489a96b6e727cb271e7dfbeb9bcca8d",
-            strip_prefix = "fuzztest-4ecaeb5084a061a862af8f86789ee184cd3d3f18",
+            sha256 = "f7bb5b3bd162576f3fbbe9bb768b57931fdd98581c1818789aceee5be4eeee64",
+            strip_prefix = "fuzztest-62cf00c7341eb05d128d0a3cbce79ac31dbda032",
             urls = [
-                # 2023-05-16
-                "https://github.com/google/fuzztest/archive/4ecaeb5084a061a862af8f86789ee184cd3d3f18.tar.gz",
+                # 2023-03-03
+                "https://github.com/google/fuzztest/archive/62cf00c7341eb05d128d0a3cbce79ac31dbda032.tar.gz",
             ],
         )
 

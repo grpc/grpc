@@ -87,11 +87,6 @@ class AVL {
     return QsortCompare(*this, other) < 0;
   }
 
-  size_t Height() const {
-    if (root_ == nullptr) return 0;
-    return root_->height;
-  }
-
  private:
   struct Node;
 
