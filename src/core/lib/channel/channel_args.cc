@@ -39,8 +39,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
 
@@ -130,22 +130,23 @@ ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
 grpc_arg ChannelArgs::Value::MakeCArg(const char* name) const {
   char* c_name = const_cast<char*>(name);
   return Match(
-        rep_,
-        [c_name](int i) { return grpc_channel_arg_integer_create(c_name, i); },
-        [c_name](const std::shared_ptr<const std::string>& s) {
-          return grpc_channel_arg_string_create(c_name,
-                                                const_cast<char*>(s->c_str()));
-        },
-        [c_name](const Pointer& p) {
-          return grpc_channel_arg_pointer_create(c_name, p.c_pointer(),
-                                                 p.c_vtable());
-        });
+      rep_,
+      [c_name](int i) { return grpc_channel_arg_integer_create(c_name, i); },
+      [c_name](const std::shared_ptr<const std::string>& s) {
+        return grpc_channel_arg_string_create(c_name,
+                                              const_cast<char*>(s->c_str()));
+      },
+      [c_name](const Pointer& p) {
+        return grpc_channel_arg_pointer_create(c_name, p.c_pointer(),
+                                               p.c_vtable());
+      });
 }
 
 bool ChannelArgs::Value::operator<(const Value& rhs) const {
   if (rhs.rep_.index() != rep_.index()) return rep_.index() < rhs.rep_.index();
   switch (rep_.index()) {
-    case 0: return absl::get<int>(rep_) < absl::get<int>(rhs.rep_);
+    case 0:
+      return absl::get<int>(rep_) < absl::get<int>(rhs.rep_);
     case 1:
       return *absl::get<std::shared_ptr<const std::string>>(rep_) <
              *absl::get<std::shared_ptr<const std::string>>(rhs.rep_);
@@ -159,7 +160,8 @@ bool ChannelArgs::Value::operator<(const Value& rhs) const {
 bool ChannelArgs::Value::operator==(const Value& rhs) const {
   if (rhs.rep_.index() != rep_.index()) return false;
   switch (rep_.index()) {
-    case 0: return absl::get<int>(rep_) == absl::get<int>(rhs.rep_);
+    case 0:
+      return absl::get<int>(rep_) == absl::get<int>(rhs.rep_);
     case 1:
       return *absl::get<std::shared_ptr<const std::string>>(rep_) ==
              *absl::get<std::shared_ptr<const std::string>>(rhs.rep_);
@@ -229,7 +231,7 @@ absl::optional<absl::string_view> ChannelArgs::GetString(
     absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
- const  auto* s = v->GetIfString();
+  const auto* s = v->GetIfString();
   if (s == nullptr) return absl::nullopt;
   return *s;
 }
@@ -244,7 +246,7 @@ absl::optional<std::string> ChannelArgs::GetOwnedString(
 void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return nullptr;
- const  auto* pp = v->GetIfPointer();
+  const auto* pp = v->GetIfPointer();
   if (pp == nullptr) return nullptr;
   return pp->c_pointer();
 }

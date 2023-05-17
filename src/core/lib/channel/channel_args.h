@@ -294,11 +294,9 @@ class ChannelArgs {
       if (p == nullptr) return nullptr;
       return p->get();
     }
-    const Pointer* GetIfPointer() const {
-      return absl::get_if<Pointer>(&rep_);
-    }
+    const Pointer* GetIfPointer() const { return absl::get_if<Pointer>(&rep_); }
 
-    grpc_arg MakeCArg(const char* name)const;
+    grpc_arg MakeCArg(const char* name) const;
 
     bool operator<(const Value& rhs) const;
     bool operator==(const Value& rhs) const;
@@ -306,7 +304,7 @@ class ChannelArgs {
     bool operator==(absl::string_view rhs) const {
       auto* p = absl::get_if<std::shared_ptr<const std::string>>(&rep_);
       if (p == nullptr) return false;
-      return *p->get() == rhs;
+      return **p == rhs;
     }
 
    private:
