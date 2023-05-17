@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/json.h>
@@ -40,6 +41,7 @@ namespace grpc_core {
 
 namespace {
 
+using experimental::AuditLoggerFactory;
 using experimental::AuditLoggerRegistry;
 
 // RbacConfig: one or more RbacPolicy structs
@@ -199,8 +201,8 @@ struct RbacConfig {
       int action;
       std::map<std::string, Policy> policies;
       // Defaults to 0 since its json field is optional.
-      int audit_condition = 0;
-      std::vector<AuditLogger> audit_loggers;
+      Rbac::AuditCondition audit_condition;
+      std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
 
       Rules() = default;
       Rules(const Rules&) = delete;
@@ -758,7 +760,7 @@ void RbacConfig::RbacPolicy::Rules::AuditLogger::JsonPostLoad(
   auto config_or =
       LoadJsonObjectField<Json::Object>(json.object(), args, name, errors);
   if (config_or.has_value()) {
-    config = std::move(config_or.value());
+    config = std::move(*config_or);
   }
 }
 
@@ -770,35 +772,26 @@ Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac(std::string name) {
   Rbac rbac;
   rbac.name = std::move(name);
   rbac.action = static_cast<Rbac::Action>(action);
-  rbac.audit_condition = static_cast<Rbac::AuditCondition>(audit_condition);
+  rbac.audit_condition = audit_condition;
   for (auto& p : policies) {
     rbac.policies.emplace(p.first, p.second.TakeAsRbacPolicy());
   }
-  for (auto& logger : audit_loggers) {
-    auto config_or = AuditLoggerRegistry::ParseConfig(
-        logger.name, Json::FromObject(std::move(logger.config)));
-    // The config should have been validated when the service config is
-    // generated.
-    GPR_ASSERT(config_or.ok());
-    rbac.logger_configs.push_back(std::move(config_or.value()));
-  }
+  rbac.logger_configs = std::move(logger_configs);
   return rbac;
 }
 
 const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::JsonLoader(
     const JsonArgs&) {
   // Audit logger configs handled in post load.
-  static const auto* loader =
-      JsonObjectLoader<Rules>()
-          .Field("action", &Rules::action)
-          .OptionalField("policies", &Rules::policies)
-          .OptionalField("audit_condition", &Rules::audit_condition)
-          .OptionalField("audit_loggers", &Rules::audit_loggers)
-          .Finish();
+  static const auto* loader = JsonObjectLoader<Rules>()
+                                  .Field("action", &Rules::action)
+                                  .OptionalField("policies", &Rules::policies)
+                                  .Finish();
   return loader;
 }
 
-void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json&, const JsonArgs&,
+void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json& json,
+                                                 const JsonArgs& args,
                                                  ValidationErrors* errors) {
   // Validate action field.
   auto rbac_action = static_cast<Rbac::Action>(action);
@@ -807,14 +800,46 @@ void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json&, const JsonArgs&,
     ValidationErrors::ScopedField field(errors, ".action");
     errors->AddError("unknown action");
   }
-  auto rbac_audit_condition =
-      static_cast<Rbac::AuditCondition>(audit_condition);
-  if (rbac_audit_condition != Rbac::AuditCondition::kNone &&
-      rbac_audit_condition != Rbac::AuditCondition::kOnAllow &&
-      rbac_audit_condition != Rbac::AuditCondition::kOnDeny &&
-      rbac_audit_condition != Rbac::AuditCondition::kOnDenyAndAllow) {
-    ValidationErrors::ScopedField field(errors, ".audit_condition");
-    errors->AddError("unknown audit condition");
+  // Parse and validate audit_condition field.
+  auto it = json.object().find("audit_condition");
+  int condition = static_cast<int>(Rbac::AuditCondition::kNone);
+  if (it != json.object().end()) {
+    if (it->second.type() != Json::Type::kNumber) {
+      ValidationErrors::ScopedField field(errors, ".audit_condition");
+      errors->AddError("is not a number");
+    } else {
+      GPR_ASSERT(absl::SimpleAtoi(it->second.string(), &condition));
+    }
+  }
+  switch (condition) {
+    case static_cast<int>(Rbac::AuditCondition::kNone):
+    case static_cast<int>(Rbac::AuditCondition::kOnAllow):
+    case static_cast<int>(Rbac::AuditCondition::kOnDeny):
+    case static_cast<int>(Rbac::AuditCondition::kOnDenyAndAllow):
+      break;
+    default: {
+      ValidationErrors::ScopedField field(errors, ".audit_condition");
+      errors->AddError("unknown audit condition");
+    }
+  }
+  audit_condition = static_cast<Rbac::AuditCondition>(condition);
+  if (json.object().find("audit_loggers") == json.object().end()) return;
+  // Parse and validate audit logger configs.
+  auto configs = LoadJsonObjectField<std::vector<AuditLogger>>(
+      json.object(), args, "audit_loggers", errors);
+  if (configs.has_value()) {
+    for (size_t i = 0; i < configs->size(); ++i) {
+      auto& logger = (*configs)[i];
+      auto config = AuditLoggerRegistry::ParseConfig(
+          logger.name, Json::FromObject(std::move(logger.config)));
+      if (!config.ok()) {
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".audit_loggers[", i, "]"));
+        errors->AddError(config.status().message());
+        continue;
+      }
+      logger_configs.push_back(std::move(*config));
+    }
   }
 }
 
