@@ -274,7 +274,7 @@ class ApiFuzzer : public BasicFuzzer {
   grpc_completion_queue* cq_ = nullptr;
   grpc_server* server_ = nullptr;
   grpc_channel* channel_ = nullptr;
-  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota_ = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota_;
   std::atomic<bool> channel_force_delete_{false};
   std::vector<std::shared_ptr<Call>> calls_;
   size_t active_call_ = 0;
@@ -851,7 +851,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   // ExecCtx is needed for ChannelArgs destruction.
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
-      "api_fuzzer", create_channel.channel_args(), &resource_quota_);
+      create_channel.channel_args(), "api_fuzzer", &resource_quota_);
   grpc_channel_credentials* creds =
       create_channel.has_channel_creds()
           ? ReadChannelCreds(create_channel.channel_creds())
@@ -880,7 +880,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     // ExecCtx is needed for ChannelArgs destruction.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
-        "api_fuzzer", create_server.channel_args(), &resource_quota_);
+        create_server.channel_args(), "api_fuzzer", &resource_quota_);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);

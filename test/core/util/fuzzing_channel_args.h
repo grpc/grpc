@@ -29,9 +29,10 @@ namespace testing {
 // it will be set on the ChannelArgs object. If it is a nullptr, then it will be
 // set to a ResourceQuota object iff the fuzzer configuration has requested that
 // a ResourceQuota be created.
+// The prefix_identifier is a name given to the ResourceQuota if one is created.
 ChannelArgs CreateFuzzingChannelArgs(
-    absl::string_view prefix_identifier,
     const grpc::testing::FuzzingChannelArgs& fuzzing_channel_args,
+    absl::string_view prefix_identifier,
     RefCountedPtr<ResourceQuota>* resource_quota = nullptr);
 
 }  // namespace testing

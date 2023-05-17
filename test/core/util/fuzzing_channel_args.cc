@@ -28,8 +28,8 @@ using grpc::testing::FuzzingChannelArgs;
 }  // namespace
 
 ChannelArgs CreateFuzzingChannelArgs(
-    absl::string_view prefix_identifier,
     const grpc::testing::FuzzingChannelArgs& fuzzing_channel_args,
+    absl::string_view prefix_identifier,
     RefCountedPtr<ResourceQuota>* resource_quota) {
   ChannelArgs channel_args;
   for (const auto& fuzz_arg : fuzzing_channel_args.args()) {
