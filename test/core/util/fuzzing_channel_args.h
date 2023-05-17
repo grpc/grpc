@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_UTIL_FUZZ_CHANNEL_ARGS_H
-#define GRPC_TEST_CORE_UTIL_FUZZ_CHANNEL_ARGS_H
+#ifndef GRPC_TEST_CORE_UTIL_FUZZING_CHANNEL_ARGS_H
+#define GRPC_TEST_CORE_UTIL_FUZZING_CHANNEL_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/util/fuzzing_channel_args.pb.h"
 
@@ -38,4 +41,4 @@ ChannelArgs CreateFuzzingChannelArgs(
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_UTIL_FUZZ_CHANNEL_ARGS_H
+#endif  // GRPC_TEST_CORE_UTIL_FUZZING_CHANNEL_ARGS_H
