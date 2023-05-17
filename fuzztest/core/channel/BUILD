@@ -20,8 +20,7 @@ grpc_fuzz_test(
     external_deps = [
         "fuzztest",
         "fuzztest_main",
+        "gtest",
     ],
-    deps = [
-        "//src/core:channel_args",
-    ],
+    deps = ["//src/core:channel_args"],
 )
