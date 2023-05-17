@@ -44,7 +44,8 @@ size_t OsaDistance(absl::string_view s1, absl::string_view s2) {
 
   const auto width = s1.size() + 1;
   const auto height = s2.size() + 1;
-  std::vector<size_t> matrix(width * height, std::numeric_limits<size_t>::max());
+  std::vector<size_t> matrix(width * height,
+                             std::numeric_limits<size_t>::max());
 #define MATRIX_CELL(x, y) matrix[(y)*width + (x)]
 
   MATRIX_CELL(0, 0) = 0;
@@ -63,7 +64,8 @@ size_t OsaDistance(absl::string_view s1, absl::string_view s2) {
           MATRIX_CELL(i - 1, j - 1) + cost  // substitution
       });
       if (i > 1 && j > 1 && s1[i - 1] == s2[j - 2] && s1[i - 2] == s2[j - 1]) {
-        MATRIX_CELL(i, j) = std::min(MATRIX_CELL(i, j), MATRIX_CELL(i - 2, j - 2) + 1);  // transposition
+        MATRIX_CELL(i, j) = std::min(
+            MATRIX_CELL(i, j), MATRIX_CELL(i - 2, j - 2) + 1);  // transposition
       }
     }
   }

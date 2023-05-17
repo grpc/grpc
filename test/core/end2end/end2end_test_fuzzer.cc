@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -110,7 +111,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   size_t best_distance = std::numeric_limits<size_t>::max();
   for (size_t i = 0; i < tests.size(); i++) {
     auto distance = grpc_core::OsaDistance(test_name, tests[i].name);
-    if (distance < best_distance)  {
+    if (distance < best_distance) {
       best_test = i;
       best_distance = distance;
       if (distance == 0) break;
