@@ -1,0 +1,5 @@
+resolver_args {
+  enable_srv_queries: true
+}
+txt_response {
+}

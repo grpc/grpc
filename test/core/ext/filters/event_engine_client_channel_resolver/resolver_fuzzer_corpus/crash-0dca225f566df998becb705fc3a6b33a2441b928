@@ -1,0 +1,23 @@
+resolver_args {
+  request_service_config: true
+  enable_srv_queries: true
+}
+hostname_response {
+}
+txt_response {
+  txt_records {
+    fuzzed_service_config {
+      load_balancing_policy: ROUND_ROBIN
+      method_config {
+        timeout {
+          seconds: 8679573376966066176
+        }
+        max_response_message_bytes {
+          value: 10
+        }
+      }
+      retry_throttling {
+      }
+    }
+  }
+}
