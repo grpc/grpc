@@ -285,7 +285,6 @@ END2END_TEST_DATA = [
 
 grpc_cc_test(
     name = "core_end2end_tests",
-    timeout = "long",
     srcs = [
         "end2end_test_main.cc",
     ] + END2END_TEST_SRCS,
@@ -299,7 +298,7 @@ grpc_cc_test(
         "absl/types:optional",
         "gtest",
     ],
-    shard_count = 50,
+    shard_count = 1,
     tags = ["core_end2end_test"],
     deps = [
         "cq_verifier",
