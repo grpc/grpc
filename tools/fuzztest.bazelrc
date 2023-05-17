@@ -13,19 +13,14 @@
 #
 # Do not use directly.
 
-# Compile and link with Address Sanitizer (ASAN).
+# Link with Address Sanitizer (ASAN).
 build:fuzztest-common --linkopt=-fsanitize=address
-build:fuzztest-common --copt=-fsanitize=address
 
 # Standard define for "ifdef-ing" any fuzz test specific code.
 build:fuzztest-common --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 # In fuzz tests, we want to catch assertion violations even in optimized builds.
 build:fuzztest-common --copt=-UNDEBUG
-
-# Enable libc++ assertions.
-# See https://libcxx.llvm.org/UsingLibcxx.html#enabling-the-safe-libc-mode
-build:fuzztest-common --copt=-D_LIBCPP_ENABLE_ASSERTIONS=1
 
 
 ### FuzzTest build configuration.
@@ -42,7 +37,7 @@ build:fuzztest --dynamic_mode=off
 # the uninstrumented runtime.
 build:fuzztest --copt=-DADDRESS_SANITIZER
 
-# We apply coverage tracking instrumentation to everything but the
+# We apply coverage tracking and ASAN instrumentation to everything but the
 # FuzzTest framework itself (including GoogleTest and GoogleMock).
-build:fuzztest --per_file_copt=+//,-fuzztest/.*,-googletest/.*,-googlemock/.*@-fsanitize-coverage=inline-8bit-counters,-fsanitize-coverage=trace-cmp
+build:fuzztest --per_file_copt=+//,-fuzztest/.*,-googletest/.*,-googlemock/.*@-fsanitize=address,-fsanitize-coverage=inline-8bit-counters,-fsanitize-coverage=trace-cmp
 
