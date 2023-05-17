@@ -202,7 +202,7 @@ TEST(Json, Keywords) {
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
   auto json = JsonParse(input);
-  EXPECT_FALSE(json.ok());
+  EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
 }
 
 TEST(Json, InvalidInput) {
@@ -213,6 +213,10 @@ TEST(Json, InvalidInput) {
   RunParseFailureTest("fals");
   RunParseFailureTest("0,0 ");
   RunParseFailureTest("\"foo\",[]");
+  RunParseFailureTest("{\"field\": {},}");
+  RunParseFailureTest("[{},]");
+  RunParseFailureTest("{\"field\": [],}");
+  RunParseFailureTest("[[],]");
 }
 
 TEST(Json, UnterminatedString) { RunParseFailureTest("\"\\x"); }
