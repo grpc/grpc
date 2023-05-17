@@ -20,6 +20,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -44,9 +45,12 @@ using experimental::AuditLoggerFactory;
 using experimental::AuditLoggerRegistry;
 using experimental::RegisterAuditLoggerFactory;
 
+constexpr absl::string_view kLoggerName = "test_logger";
+
 class TestAuditLogger : public AuditLogger {
  public:
   TestAuditLogger() = default;
+  absl::string_view name() const override { return kLoggerName; }
   void Log(const AuditContext&) override {}
 };
 
@@ -55,7 +59,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
   class Config : public AuditLoggerFactory::Config {
    public:
     Config(const Json& json) : config_(JsonDump(json)) {}
-    absl::string_view name() const override { return "test_logger"; }
+    absl::string_view name() const override { return kLoggerName; }
     std::string ToString() const override { return config_; }
 
    private:
@@ -64,7 +68,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
 
   TestAuditLoggerFactory(std::map<absl::string_view, std::string>* configs)
       : configs_(configs) {}
-  absl::string_view name() const override { return "test_logger"; }
+  absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     // Invalidate configs with "bad" field in it.
@@ -738,10 +742,13 @@ TEST_F(RbacServiceConfigParsingTest, AuditConditionOnDenyWithMultipleLoggers) {
   ASSERT_NE(parsed_rbac_config->authorization_engine(0), nullptr);
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->audit_condition(),
             Rbac::AuditCondition::kOnDeny);
-  EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_audit_loggers(),
-            2);
-  ASSERT_NE(logger_configs_.find("test_logger"), logger_configs_.end());
-  EXPECT_EQ(logger_configs_.find("test_logger")->second, "{\"foo\":\"bar\"}");
+  const auto& loggers =
+      parsed_rbac_config->authorization_engine(0)->audit_loggers();
+  ASSERT_EQ(loggers.size(), 2);
+  EXPECT_EQ(loggers[0]->name(), "stdout_logger");
+  EXPECT_EQ(loggers[1]->name(), kLoggerName);
+  EXPECT_THAT(logger_configs_, ::testing::ElementsAre(::testing::Pair(
+                                   "test_logger", "{\"foo\":\"bar\"}")));
 }
 
 TEST_F(RbacServiceConfigParsingTest, BadAuditLoggerConfig) {
@@ -772,6 +779,37 @@ TEST_F(RbacServiceConfigParsingTest, BadAuditLoggerConfig) {
             "errors validating service config: ["
             "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[0] "
             "error:bad logger config]")
+      << service_config.status();
+}
+
+TEST_F(RbacServiceConfigParsingTest, UnknownAuditLoggerConfig) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      {}\n"
+      "    ],\n"
+      "    \"rbacPolicy\": [ {\n"
+      "      \"filter_name\": \"rbac\",\n"
+      "      \"rules\":{\n"
+      "        \"action\":1,\n"
+      "        \"audit_condition\":1,\n"
+      "        \"audit_loggers\":[ \n"
+      "          {\n"
+      "            \"unknown_logger\": {}\n"
+      "          }\n"
+      "        ]\n"
+      "      }\n"
+      "    } ]\n"
+      "  } ]\n"
+      "}";
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[0] "
+            "error:audit logger factory for unknown_logger does not exist]")
       << service_config.status();
 }
 

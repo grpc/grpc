@@ -65,6 +65,7 @@ class TestAuditLogger : public AuditLogger {
       std::vector<std::unique_ptr<TestAuditContext>>* contexts)
       : contexts_(contexts) {}
 
+  absl::string_view name() const override { return kLoggerName; }
   void Log(const AuditContext& context) override {
     contexts_->push_back(std::make_unique<TestAuditContext>(context));
   }

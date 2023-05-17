@@ -32,6 +32,7 @@ namespace experimental {
 class StdoutAuditLogger : public AuditLogger {
  public:
   StdoutAuditLogger() = default;
+  absl::string_view name() const override { return "stdout_logger"; }
   void Log(const AuditContext&) override;
 };
 
