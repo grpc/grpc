@@ -729,9 +729,11 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [test for test in tests if not test.endswith('_fuzzer')]
 
     # grpcpp_admin depends on envoy protos which we haven't figured cmake support for.
-    tests = [test for test in tests if not test.startswith('test/cpp/end2end/xds:') and
-             not test.startswith('test/cpp/end2end:admin_services_end2end_test')]
-
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/end2end/xds:') and
+        not test.startswith('test/cpp/end2end:admin_services_end2end_test')
+    ]
 
     return tests
 
