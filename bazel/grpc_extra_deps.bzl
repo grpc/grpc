@@ -16,7 +16,7 @@
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
-load("@com_bufbuild_protoc_gen_validate//:dependencies.bzl", "go_third_party")
+load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
 load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")

@@ -489,9 +489,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_bufbuild_protoc_gen_validate" not in native.existing_rules():
+    if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
         http_archive(
-            name = "com_bufbuild_protoc_gen_validate",
+            name = "com_envoyproxy_protoc_gen_validate",
             strip_prefix = "protoc-gen-validate-2120d8e4ff1a4c036c91952e383c037022338fbd",
             sha256 = "6f20c7b1e5627c713c5316e4c54076fb14adde883367da6d5772ad25f67399b5",
             urls = [
