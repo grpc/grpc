@@ -26,6 +26,7 @@ grpc_proto_library(
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/util:fuzzing_channel_args_proto",
     ],
 )
 
@@ -65,6 +66,7 @@ grpc_proto_fuzzer(
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:fuzz_config_vars",
+        "//test/core/util:fuzzing_channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

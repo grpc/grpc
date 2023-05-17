@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -70,6 +71,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
+#include "test/core/util/fuzzing_channel_args.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -272,7 +274,7 @@ class ApiFuzzer : public BasicFuzzer {
   grpc_completion_queue* cq_ = nullptr;
   grpc_server* server_ = nullptr;
   grpc_channel* channel_ = nullptr;
-  grpc_resource_quota* resource_quota_;
+  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota_ = nullptr;
   std::atomic<bool> channel_force_delete_{false};
   std::vector<std::shared_ptr<Call>> calls_;
   size_t active_call_ = 0;
@@ -605,43 +607,6 @@ Call::~Call() {
   grpc_metadata_array_destroy(&recv_trailing_metadata_);
 }
 
-template <typename ChannelArgContainer>
-grpc_channel_args* ReadArgs(grpc_resource_quota* resource_quota,
-                            const ChannelArgContainer& args) {
-  grpc_channel_args* res =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  res->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * args.size()));
-  int j = 0;
-  for (int i = 0; i < args.size(); i++) {
-    switch (args[i].value_case()) {
-      case api_fuzzer::ChannelArg::kStr:
-        res->args[j].type = GRPC_ARG_STRING;
-        res->args[j].value.string = gpr_strdup(args[i].str().c_str());
-        break;
-      case api_fuzzer::ChannelArg::kI:
-        res->args[j].type = GRPC_ARG_INTEGER;
-        res->args[j].value.integer = args[i].i();
-        break;
-      case api_fuzzer::ChannelArg::kResourceQuota:
-        if (args[i].key() != GRPC_ARG_RESOURCE_QUOTA) continue;
-        grpc_resource_quota_ref(resource_quota);
-        res->args[j].type = GRPC_ARG_POINTER;
-        res->args[j].value.pointer.p = resource_quota;
-        res->args[j].value.pointer.vtable = grpc_resource_quota_arg_vtable();
-        break;
-      case api_fuzzer::ChannelArg::VALUE_NOT_SET:
-        res->args[j].type = GRPC_ARG_INTEGER;
-        res->args[j].value.integer = 0;
-        break;
-    }
-    res->args[j].key = gpr_strdup(args[i].key().c_str());
-    ++j;
-  }
-  res->num_args = j;
-  return res;
-}
-
 static const char* ReadCredArtifact(
     const api_fuzzer::CredArtifact& artifact,
     std::initializer_list<const char*> builtins) {
@@ -791,7 +756,6 @@ ApiFuzzer::ApiFuzzer() {
   GPR_ASSERT(channel_ == nullptr);
   GPR_ASSERT(server_ == nullptr);
 
-  resource_quota_ = grpc_resource_quota_create("api_fuzzer");
   cq_ = grpc_completion_queue_create_for_next(nullptr);
 }
 
@@ -853,7 +817,6 @@ ApiFuzzer::~ApiFuzzer() {
   GPR_ASSERT(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
 
-  grpc_resource_quota_unref(resource_quota_);
   grpc_shutdown_blocking();
   engine_->UnsetGlobalHooks();
 }
@@ -885,20 +848,19 @@ ApiFuzzer::Result ApiFuzzer::PollCq() {
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
   if (channel_ == nullptr) return Result::kComplete;
-  grpc_channel_args* args =
-      ReadArgs(resource_quota_, create_channel.channel_args());
+  // ExecCtx is needed for ChannelArgs destruction.
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
+      "api_fuzzer", create_channel.channel_args(), &resource_quota_);
   grpc_channel_credentials* creds =
       create_channel.has_channel_creds()
           ? ReadChannelCreds(create_channel.channel_creds())
           : grpc_insecure_credentials_create();
-  channel_ = grpc_channel_create(create_channel.target().c_str(), creds, args);
+  channel_ = grpc_channel_create(create_channel.target().c_str(), creds,
+                                 args.ToC().get());
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel_ != nullptr);
   channel_force_delete_ = false;
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(args);
-  }
   return Result::kComplete;
 }
 
@@ -915,14 +877,12 @@ ApiFuzzer::Result ApiFuzzer::CloseChannel() {
 ApiFuzzer::Result ApiFuzzer::CreateServer(
     const api_fuzzer::CreateServer& create_server) {
   if (server_ == nullptr) {
-    grpc_channel_args* args =
-        ReadArgs(resource_quota_, create_server.channel_args());
-    server_ = grpc_server_create(args, nullptr);
+    // ExecCtx is needed for ChannelArgs destruction.
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
+        "api_fuzzer", create_server.channel_args(), &resource_quota_);
+    server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
-    {
-      grpc_core::ExecCtx exec_ctx;
-      grpc_channel_args_destroy(args);
-    }
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     server_shutdown_ = false;
@@ -1131,7 +1091,9 @@ ApiFuzzer::Result ApiFuzzer::ValidateChannelTarget() {
 
 ApiFuzzer::Result ApiFuzzer::ResizeResourceQuota(
     uint32_t resize_resource_quota) {
-  grpc_resource_quota_resize(resource_quota_, resize_resource_quota);
+  if (resource_quota_ != nullptr) {
+    resource_quota_->memory_quota()->SetSize(resize_resource_quota);
+  }
   return Result::kComplete;
 }
 
