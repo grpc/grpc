@@ -77,6 +77,7 @@ CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterAccept) {
 
 CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
   SKIP_IF_USES_EVENT_ENGINE_CLIENT();
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
