@@ -721,7 +721,7 @@ TEST_F(RbacServiceConfigParsingTest, AuditConditionOnDenyWithMultipleLoggers) {
       "        \"audit_condition\":1,\n"
       "        \"audit_loggers\":[ \n"
       "          {\n"
-      "            \"stdout_logger\": {},\n"
+      "            \"stdout_logger\": {}\n"
       "          },\n"
       "          {\n"
       "            \"test_logger\": {\"foo\": \"bar\"}\n"
