@@ -29,8 +29,6 @@
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 
-#include <grpc/support/json.h>
-
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
