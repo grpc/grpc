@@ -25,7 +25,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 
