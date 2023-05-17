@@ -188,7 +188,9 @@ TEST_F(XdsAuditLoggerRegistryTest, NoSupportedType) {
   auto result = ConvertAuditLoggerConfig(config);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(result.status().message(),
-            "validation errors: [field:audit_logger error:unsupported audit "
+            "validation errors: "
+            "[field:audit_logger.typed_config.value[envoy.config.rbac.v3.RBAC."
+            "AuditLoggingOptions.AuditLoggerConfig] error:unsupported audit "
             "logger type]")
       << result.status();
 }

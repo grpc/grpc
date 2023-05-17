@@ -32,6 +32,7 @@
 #include <grpc/support/json.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 
@@ -80,51 +81,45 @@ Json XdsAuditLoggerRegistry::ConvertXdsAuditLoggerConfig(
   if (typed_extension_config == nullptr) {
     errors->AddError("field not present");
     return Json();  // A null Json object.
-  } else {
-    ValidationErrors::ScopedField field(errors, ".typed_config");
-    const auto* typed_config =
-        envoy_config_core_v3_TypedExtensionConfig_typed_config(
-            typed_extension_config);
-    auto extension = ExtractXdsExtension(context, typed_config, errors);
-    if (!extension.has_value()) return Json();
-    // Check for registered audit logger type.
-    absl::string_view* serialized_value =
-        absl::get_if<absl::string_view>(&extension->value);
-    if (serialized_value != nullptr) {
-      auto config_factory_it =
-          audit_logger_config_factories_.find(extension->type);
-      if (config_factory_it != audit_logger_config_factories_.end()) {
-        auto json_config = Json::FromObject(
-            config_factory_it->second->ConvertXdsAuditLoggerConfig(
-                context, *serialized_value, errors));
-        auto result = AuditLoggerRegistry::ParseConfig(
-            config_factory_it->second->name(), json_config);
-        if (!result.ok()) {
-          errors->AddError(result.status().message());
-          return Json();
-        }
-        return Json::FromObject(
-            {{std::string(config_factory_it->second->name()), json_config}});
-      }
-    }
-    // Check for custom audit logger type.
-    Json* json = absl::get_if<Json>(&extension->value);
-    if (json != nullptr &&
-        AuditLoggerRegistry::FactoryExists(extension->type)) {
-      auto result = AuditLoggerRegistry::ParseConfig(extension->type, *json);
-      if (!result.ok()) {
-        errors->AddError(result.status().message());
-        return Json();
-      }
-      return Json::FromObject(
-          {{std::string(extension->type), std::move(*json)}});
-    }
   }
-  // Add validation error only if the config is not marked optional.
-  if (!envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(
-          logger_config)) {
-    errors->AddError("unsupported audit logger type");
+  ValidationErrors::ScopedField field2(errors, ".typed_config");
+  const auto* typed_config =
+      envoy_config_core_v3_TypedExtensionConfig_typed_config(
+          typed_extension_config);
+  auto extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!extension.has_value()) return Json();
+  absl::string_view name;
+  Json config;
+  Match(
+      extension->value,
+      // Built-in logger types.
+      [&](absl::string_view serialized_value) {
+        auto it = audit_logger_config_factories_.find(extension->type);
+        if (it == audit_logger_config_factories_.end()) return;
+        name = it->second->name();
+        config = Json::FromObject(it->second->ConvertXdsAuditLoggerConfig(
+            context, serialized_value, errors));
+      },
+      // Custom logger types.
+      [&](Json json) {
+        if (!AuditLoggerRegistry::FactoryExists(extension->type)) return;
+        name = extension->type;
+        config = json;
+      });
+  // Config not found in either case if name is empty.
+  if (name.empty()) {
+    if (!envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(
+            logger_config)) {
+      errors->AddError("unsupported audit logger type");
+    }
+    return Json();
   }
-  return Json();
+  // Validate the converted config.
+  auto result = AuditLoggerRegistry::ParseConfig(name, config);
+  if (!result.ok()) {
+    errors->AddError(result.status().message());
+    return Json();
+  }
+  return Json::FromObject({{std::string(name), std::move(config)}});
 }
 }  // namespace grpc_core
