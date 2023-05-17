@@ -285,6 +285,7 @@ END2END_TEST_DATA = [
 
 grpc_cc_test(
     name = "core_end2end_tests",
+    timeout = "long",
     srcs = [
         "end2end_test_main.cc",
     ] + END2END_TEST_SRCS,
