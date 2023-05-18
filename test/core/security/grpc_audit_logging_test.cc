@@ -54,7 +54,6 @@ namespace {
 
 class TestAuditLogger : public AuditLogger {
  public:
-  absl::string_view name() const override { return "test_logger"; }
   void Log(const AuditContext&) override {}
 };
 

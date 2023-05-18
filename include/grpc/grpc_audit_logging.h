@@ -62,7 +62,6 @@ class AuditContext {
 class AuditLogger {
  public:
   virtual ~AuditLogger() = default;
-  virtual absl::string_view name() const = 0;
   virtual void Log(const AuditContext& audit_context) = 0;
 };
 

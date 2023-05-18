@@ -14,23 +14,14 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
-#include <map>
-#include <memory>
-#include <string>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_audit_logging.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/test_config.h"
@@ -39,68 +30,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-using experimental::AuditContext;
-using experimental::AuditLogger;
-using experimental::AuditLoggerFactory;
-using experimental::AuditLoggerRegistry;
-using experimental::RegisterAuditLoggerFactory;
-
-constexpr absl::string_view kLoggerName = "test_logger";
-
-class TestAuditLogger : public AuditLogger {
- public:
-  TestAuditLogger() = default;
-  absl::string_view name() const override { return kLoggerName; }
-  void Log(const AuditContext&) override {}
-};
-
-class TestAuditLoggerFactory : public AuditLoggerFactory {
- public:
-  class Config : public AuditLoggerFactory::Config {
-   public:
-    explicit Config(const Json& json) : config_(JsonDump(json)) {}
-    absl::string_view name() const override { return kLoggerName; }
-    std::string ToString() const override { return config_; }
-
-   private:
-    std::string config_;
-  };
-
-  explicit TestAuditLoggerFactory(
-      std::map<absl::string_view, std::string>* configs)
-      : configs_(configs) {}
-  absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(const Json& json) override {
-    // Invalidate configs with "bad" field in it.
-    if (json.object().find("bad") != json.object().end()) {
-      return absl::InvalidArgumentError("bad logger config");
-    }
-    return std::make_unique<Config>(json);
-  }
-  std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config> config) override {
-    // Only insert entry to the map when logger is created.
-    configs_->emplace(name(), config->ToString());
-    return std::make_unique<TestAuditLogger>();
-  }
-
- private:
-  std::map<absl::string_view, std::string>* configs_;
-};
-
-class RbacServiceConfigParsingTest : public ::testing::Test {
- protected:
-  void SetUp() override {
-    RegisterAuditLoggerFactory(
-        std::make_unique<TestAuditLoggerFactory>(&logger_configs_));
-  }
-  void TearDown() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
-  std::map<absl::string_view, std::string> logger_configs_;
-};
-
 // Filter name is required in RBAC policy.
-TEST_F(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
+TEST(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -122,7 +53,7 @@ TEST_F(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
 }
 
 // Test basic parsing of RBAC policy
-TEST_F(RbacServiceConfigParsingTest, RbacPolicyWithoutRules) {
+TEST(RbacServiceConfigParsingTest, RbacPolicyWithoutRules) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -149,7 +80,7 @@ TEST_F(RbacServiceConfigParsingTest, RbacPolicyWithoutRules) {
 
 // Test that RBAC policies are not parsed if the channel arg
 // GRPC_ARG_PARSE_RBAC_METHOD_CONFIG is not present
-TEST_F(RbacServiceConfigParsingTest, MissingChannelArg) {
+TEST(RbacServiceConfigParsingTest, MissingChannelArg) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -171,7 +102,7 @@ TEST_F(RbacServiceConfigParsingTest, MissingChannelArg) {
 }
 
 // Test an empty rbacPolicy array
-TEST_F(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
+TEST(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -193,7 +124,7 @@ TEST_F(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
 }
 
 // Test presence of multiple RBAC policies in the array
-TEST_F(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
+TEST(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -224,7 +155,7 @@ TEST_F(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
   }
 }
 
-TEST_F(RbacServiceConfigParsingTest, BadRbacPolicyType) {
+TEST(RbacServiceConfigParsingTest, BadRbacPolicyType) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -243,7 +174,7 @@ TEST_F(RbacServiceConfigParsingTest, BadRbacPolicyType) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, BadRulesType) {
+TEST(RbacServiceConfigParsingTest, BadRulesType) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -262,7 +193,7 @@ TEST_F(RbacServiceConfigParsingTest, BadRulesType) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
+TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -290,7 +221,7 @@ TEST_F(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
+TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -321,7 +252,7 @@ TEST_F(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
+TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -354,7 +285,7 @@ TEST_F(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
+TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -412,7 +343,7 @@ TEST_F(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
 }
 
-TEST_F(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
+TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -507,7 +438,7 @@ TEST_F(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
+TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -552,7 +483,7 @@ TEST_F(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
 }
 
-TEST_F(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
+TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -609,7 +540,7 @@ TEST_F(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
       << service_config.status();
 }
 
-TEST_F(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
+TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -651,7 +582,7 @@ TEST_F(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
 }
 
-TEST_F(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
+TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -704,205 +635,6 @@ TEST_F(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
             "error:is not a string; "
             "field:methodConfig[0].rbacPolicy[0].rules.policies[\"policy\"]"
             ".permissions[5].requestedServerName error:no valid matcher found]")
-      << service_config.status();
-}
-
-TEST_F(RbacServiceConfigParsingTest, AuditConditionOnDenyWithMultipleLoggers) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":1,\n"
-      "        \"audit_loggers\":[ \n"
-      "          {\n"
-      "            \"stdout_logger\": {}\n"
-      "          },\n"
-      "          {\n"
-      "            \"test_logger\": {\"foo\": \"bar\"}\n"
-      "          }\n"
-      "        ]\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  ASSERT_TRUE(service_config.status().ok());
-  const auto* vector_ptr =
-      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
-  ASSERT_NE(vector_ptr, nullptr);
-  auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
-      ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
-  ASSERT_NE(parsed_rbac_config, nullptr);
-  ASSERT_NE(parsed_rbac_config->authorization_engine(0), nullptr);
-  EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->audit_condition(),
-            Rbac::AuditCondition::kOnDeny);
-  EXPECT_THAT(parsed_rbac_config->authorization_engine(0)->audit_loggers(),
-              ::testing::ElementsAre(::testing::Pointee(::testing::Property(
-                                         &AuditLogger::name, "stdout_logger")),
-                                     ::testing::Pointee(::testing::Property(
-                                         &AuditLogger::name, kLoggerName))));
-  EXPECT_THAT(logger_configs_, ::testing::ElementsAre(::testing::Pair(
-                                   "test_logger", "{\"foo\":\"bar\"}")));
-}
-
-TEST_F(RbacServiceConfigParsingTest, BadAuditLoggerConfig) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":1,\n"
-      "        \"audit_loggers\":[ \n"
-      "          {\n"
-      "            \"test_logger\": {\"bad\": \"bar\"}\n"
-      "          }\n"
-      "        ]\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(service_config.status().message(),
-            "errors validating service config: ["
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[0] "
-            "error:bad logger config]")
-      << service_config.status();
-}
-
-TEST_F(RbacServiceConfigParsingTest, UnknownAuditLoggerConfig) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":1,\n"
-      "        \"audit_loggers\":[ \n"
-      "          {\n"
-      "            \"unknown_logger\": {}\n"
-      "          }\n"
-      "        ]\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(service_config.status().message(),
-            "errors validating service config: ["
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[0] "
-            "error:audit logger factory for unknown_logger does not exist]")
-      << service_config.status();
-}
-
-TEST_F(RbacServiceConfigParsingTest, BadAuditConditionAndLoggersTypes) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":{},\n"
-      "        \"audit_loggers\":{}\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(service_config.status().message(),
-            "errors validating service config: ["
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_condition "
-            "error:is not a number; "
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers "
-            "error:is not an array]")
-      << service_config.status();
-}
-
-TEST_F(RbacServiceConfigParsingTest, BadAuditConditionEnum) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":100\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(service_config.status().message(),
-            "errors validating service config: ["
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_condition "
-            "error:unknown audit condition]")
-      << service_config.status();
-}
-
-TEST_F(RbacServiceConfigParsingTest, BadAuditLoggerObject) {
-  const char* test_json =
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      {}\n"
-      "    ],\n"
-      "    \"rbacPolicy\": [ {\n"
-      "      \"filter_name\": \"rbac\",\n"
-      "      \"rules\":{\n"
-      "        \"action\":1,\n"
-      "        \"audit_condition\":1,\n"
-      "        \"audit_loggers\":[ \n"
-      "          {\n"
-      "            \"stdout_logger\": {},\n"
-      "            \"foo\": {}\n"
-      "          },\n"
-      "          {\n"
-      "            \"stdout_logger\": 123\n"
-      "          }\n"
-      "        ]\n"
-      "      }\n"
-      "    } ]\n"
-      "  } ]\n"
-      "}";
-  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto service_config = ServiceConfigImpl::Create(args, test_json);
-  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(service_config.status().message(),
-            "errors validating service config: "
-            "[field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[0] "
-            "error:audit logger should have exactly one field; "
-            "field:methodConfig[0].rbacPolicy[0].rules.audit_loggers[1].stdout_"
-            "logger error:is not an object]")
       << service_config.status();
 }
 
