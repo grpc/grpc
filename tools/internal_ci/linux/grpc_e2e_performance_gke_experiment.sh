@@ -19,6 +19,20 @@ cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# ************** Modify these ENV if you wish to run from forked repos**********
+GRPC_TEST_INFRA_REPO=grpc/test-infra
+GRPC_TEST_INFRA_BRANCH=-master
+
+GRPC_DOTNET_REPO=-grpc/grpc-dotnet
+GRPC_DOTNET_BRANCH=master
+
+GRPC_GO_REPO=grpc/grpc-go
+GRPC_GO_REPO_BRANCH=master
+
+GRPC_JAVA_REPO=grpc/grpc-java
+GRPC_JAVA_REPO_BRANCH=master
+# ******************************************************************************
+
 # This is to ensure we can push and pull images from gcr.io. We do not
 # necessarily need it to run load tests, but will need it when we employ
 # pre-built images in the optimization.
@@ -50,9 +64,10 @@ if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" 
 else
     GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
-GRPC_DOTNET_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
-GRPC_GO_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-go.git master | cut -f1)"
-GRPC_JAVA_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-java.git master | cut -f1)"
+
+GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/"${GRPC_DOTNET_REPO}".git "${GRPC_DOTNET_BRANCH}" | cut -f1)"
+GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_GO_REPO}".git "${GRPC_GO_REPO_BRANCH}" | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_JAVA_REPO}".git "${GRPC_JAVA_REPO_BRANCH}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -63,10 +78,10 @@ LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifac
 
 # Clone test-infra repository and build all tools.
 pushd ..
-git clone https://github.com/grpc/test-infra.git
-cd test-infra
+mkdir test-infra && cd test-infra
+git clone https://github.com/"${GRPC_TEST_INFRA_REPO}".git .
 # Tools are built from HEAD.
-git checkout --detach
+git checkout "${GRPC_TEST_INFRA_BRANCH}"--detach
 make all-tools
 popd
 
@@ -109,12 +124,12 @@ trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_GITREF}" \
-    -l "dotnet:${GRPC_DOTNET_GITREF}" \
-    -l "go:${GRPC_GO_GITREF}" \
-    -l "java:${GRPC_JAVA_GITREF}" \
-    -l "python:${GRPC_CORE_GITREF}" \
-    -l "ruby:${GRPC_CORE_GITREF}" \
+    -l "cxx:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
+    -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_GITREF}" \
+    -l "go:${GRPC_GO_REPO}:${GRPC_GO_GITREF}" \
+    -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_GITREF}" \
+    -l "python:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
+    -l "ruby:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
