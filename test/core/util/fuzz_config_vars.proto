@@ -22,9 +22,9 @@ package grpc.testing;
 
 message FuzzConfigVars {
   optional bool enable_fork_support = 61008869;
-  optional string experiments = 510817011;
   optional string dns_resolver = 76817901;
-  optional string trace = 291231137;
   optional string verbosity = 68420950;
   optional string stacktrace_minloglevel = 273035715;
+  optional string experiments = 510817011;
+  optional string trace = 291231137;
 };

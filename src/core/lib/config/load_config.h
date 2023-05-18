@@ -44,6 +44,11 @@ T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
   return LoadConfigFromEnv(environment_variable, default_value);
 }
 
+std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
+                       absl::string_view environment_variable,
+                       const absl::optional<std::string>& override,
+                       const char* default_value);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_CONFIG_LOAD_CONFIG_H
