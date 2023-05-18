@@ -506,13 +506,13 @@ PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   grpc_core::MutexLock lock(&mu_);
   // The DNSResolver is held alive by its caller (e.g.
   // event_engine_client_channel_resolver). The caller should be alive until
-  // its passed-in on_resolve closure gets called and/or destroyed (usually
-  // through a RefCountedPtr embedded in the closure). Until that happened, the
+  // its passed-in on_resolve closure gets destroyed (usually through a
+  // RefCountedPtr embedded in the closure). Until that happened, the
   // DNSResolver is alive as well as the EventEngine (since DNSResolver holds a
   // shared_ptr to the engine). Therefore, when the DNSResolver is destroyed,
-  // all on_resolves should have been called and/or destroyed and all inflight
-  // handles should have been cleared regardless of the actual sequence of
-  // events.
+  // all on_resolves should have been destroyed (they may not be called when the
+  // request was cancelled) and all inflight handles should have been cleared
+  // regardless of the actual sequence of events.
   GPR_ASSERT(GPR_LIKELY(inflight_requests_.empty()));
 }
 
