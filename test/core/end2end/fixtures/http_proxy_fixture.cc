@@ -43,7 +43,6 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/status_helper.h"
