@@ -192,6 +192,12 @@ struct RbacConfig {
         std::string name;
         Json::Object config;
 
+        AuditLogger() = default;
+        AuditLogger(const AuditLogger&) = delete;
+        AuditLogger& operator=(const AuditLogger&) = delete;
+        AuditLogger(AuditLogger&&) = default;
+        AuditLogger& operator=(AuditLogger&&) = default;
+
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
         void JsonPostLoad(const Json&, const JsonArgs&,
                           ValidationErrors* errors);
@@ -199,11 +205,13 @@ struct RbacConfig {
 
       int action;
       std::map<std::string, Policy> policies;
-      // Defaults to kNone since its json field is optional.
-      Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
+      Rbac::AuditCondition audit_condition;
       std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
 
-      Rules() = default;
+      Rules() {
+        // Defaults to kNone since its json field is optional.
+        audit_condition = Rbac::AuditCondition::kNone;
+      }
       Rules(const Rules&) = delete;
       Rules& operator=(const Rules&) = delete;
       Rules(Rules&&) = default;
