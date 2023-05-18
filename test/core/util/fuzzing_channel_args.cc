@@ -26,7 +26,6 @@ namespace testing {
 
 namespace {
 using grpc::testing::FuzzingChannelArg;
-using grpc::testing::FuzzingChannelArgs;
 }  // namespace
 
 ChannelArgs CreateFuzzingChannelArgs(
