@@ -235,7 +235,7 @@ void Span::SetStatus(absl::string_view status) {
 
 
 void Span::AddAttribute(absl::string_view key, absl::string_view value) {
-  span_labels_.emplace_back(Label{std::string(key), std::string(value)});
+  span_labels_.emplace_back(std::string(key), std::string(value));
 }
 
 
