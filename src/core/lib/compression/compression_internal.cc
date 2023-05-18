@@ -22,13 +22,10 @@
 
 #include <stdlib.h>
 
-#include <string>
-
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -230,10 +227,10 @@ absl::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   auto* value = args.Get(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
   if (value == nullptr) return absl::nullopt;
-  if (auto* p = absl::get_if<int>(value)) {
+  if (auto* p = value->GetIfInt()) {
     return static_cast<grpc_compression_algorithm>(*p);
   }
-  if (auto* p = absl::get_if<std::string>(value)) {
+  if (auto* p = value->GetIfString()) {
     return ParseCompressionAlgorithm(*p);
   }
   return absl::nullopt;
