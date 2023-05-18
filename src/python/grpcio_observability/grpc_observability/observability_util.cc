@@ -12,19 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+#include <cstdlib>
+
+#include "absl/strings/string_view.h"
+
 #include "src/python/grpcio_observability/grpc_observability/observability_util.h"
 #include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
 #include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
-
-#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 
 std::queue<CensusData>* g_census_data_buffer;
 std::mutex g_census_data_buffer_mutex;
 std::condition_variable g_census_data_buffer_cv;
-// TODO(xuanwn): Change it to a more appropriate number
-constexpr int kExportThreshold = 2;
+// TODO(xuanwn): Change below to a more appropriate number.
+// Assume buffer will store 100 CensusData and start export when buffer is 50% full.
+// kMaxExportBufferSizeBytes = 100 * (2048(kMaxTagsLen) + 1024(Buffer))
+constexpr float kExportThreshold = 0.5;
+constexpr int kMaxExportBufferSizeBytes = 100 * 1024 * 3;
+
+namespace {
+
+float GetExportThreadHold() {
+  const char* value = std::getenv("GRPC_PYTHON_CENSUS_EXPORT_THRESHOLD");
+  if (value != nullptr) {
+    return std::stof(value);
+  }
+  return kExportThreshold;
+}
+
+int GetMaxExportBufferSize() {
+  const char* value = std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE_BYTES");
+  if (value != nullptr) {
+    return std::stoi(value);
+  }
+  return kMaxExportBufferSizeBytes;
+}
+
+}  // namespace
 
 
 void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label> labels) {
@@ -80,8 +106,12 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
 
 void AddCensusDataToBuffer(CensusData data) {
   std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
-  g_census_data_buffer->push(data);
-  if (g_census_data_buffer->size() >= kExportThreshold) {
+  if (g_census_data_buffer->size() >= GetMaxExportBufferSize()) {
+    gpr_log(GPR_DEBUG, "Reached maximum sensus data buffer size, discarding this CensusData entry");
+  } else {
+    g_census_data_buffer->push(data);
+  }
+  if (g_census_data_buffer->size() >= (GetExportThreadHold() * GetMaxExportBufferSize())) {
       g_census_data_buffer_cv.notify_all();
   }
 }
