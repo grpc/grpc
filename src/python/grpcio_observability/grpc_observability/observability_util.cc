@@ -151,7 +151,7 @@ GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
     labels.reserve(config->labels.size());
     // Insert in user defined labels from the GCP Observability config.
     for (const auto& label : config->labels) {
-      labels.emplace_back(Label{label.first, label.second});
+      labels.emplace_back(label.first, label.second);
     }
 
     if (config->cloud_trace.has_value()) {

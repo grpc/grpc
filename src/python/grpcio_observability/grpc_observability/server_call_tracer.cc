@@ -179,7 +179,7 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
       absl::StrCat("Recv.", method_), &context_);
   if (PythonOpenCensusStatsEnabled()) {
     std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kServerMethod, std::string(method_)});
+    labels.emplace_back(kServerMethod, std::string(method_));
     RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, labels);
   }
 }
@@ -209,8 +209,8 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     const uint64_t response_size = GetIncomingDataSize(final_info);
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
     std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kServerMethod, std::string(method_)});
-    labels.emplace_back(Label{kServerStatus, std::string(StatusCodeToString(final_info->final_status))});
+    labels.emplace_back(kServerMethod, std::string(method_));
+    labels.emplace_back(kServerStatus, std::string(StatusCodeToString(final_info->final_status)));
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName, static_cast<double>(response_size), labels);
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName, static_cast<double>(request_size), labels);
     RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms, labels);

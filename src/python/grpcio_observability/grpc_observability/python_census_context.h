@@ -96,6 +96,8 @@ struct Tag {
 };
 
 struct Label {
+  Label() {}
+  Label(std::string k, std::string v) : key(k), value(v) {}
   std::string key;
   std::string value;
 };
@@ -130,6 +132,10 @@ struct SpanCensusData {
   bool should_sample;
 };
 
+// SpanContext is associated with span to help manage the current context of a span.
+// Life circle:
+//   It's created when creating a new Span and will be destroyed together with assoicated
+// Span.
 class SpanContext final {
  public:
   SpanContext() : is_valid_(false) {}
@@ -154,6 +160,10 @@ class SpanContext final {
   bool is_valid_;
 };
 
+// Span is associated with PythonCensusContext to help manage tracing related data.
+// Life circle:
+//   It's created by calling StartSpan and will be destroyed together with assoicated
+// PythonCensusContext.
 class Span final {
  public:
   explicit Span(std::string name, std::string parent_span_id, absl::Time start_time, SpanContext context)
@@ -164,7 +174,7 @@ class Span final {
     end_time_ = absl::Now();
   }
 
-  void AddChildSpan() {
+  void IncreaseChildSpanCount() {
     ++child_span_count_;
   }
 
@@ -204,9 +214,11 @@ class Span final {
 
 // PythonCensusContext is associated with each clientCallTrcer, clientCallAttemptTracer
 // and ServerCallTracer to help manage the span, spanContext and labels for each tracer.
-// It's created during callTraceer initialization by calling GenerateClientContext,
-// CreateCensusContextForCallAttempt and GenerateServerContext and will be destroyed after
-// the destruction of each callTracer.
+// Craete a new PythonCensusContext will always reasult in creating a new span (and a
+// new SpanContext for that span).
+// Life circle:
+//   It's created during callTraceer initialization and will be destroyed after the destruction
+// of each callTracer.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}
@@ -242,8 +254,8 @@ class PythonCensusContext {
     span_.AddAnnotation(description);
   }
 
-  void AddChildSpan() {
-    span_.AddChildSpan();
+  void IncreaseChildSpanCount() {
+    span_.IncreaseChildSpanCount();
   }
 
   void EndSpan() {

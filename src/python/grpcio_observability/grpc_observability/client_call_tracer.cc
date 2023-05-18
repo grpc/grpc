@@ -52,7 +52,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonOpenCensusStatsEnabled()) {
     std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kClientMethod, std::string(method_)});
+    labels.emplace_back(kClientMethod, std::string(method_));
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1, labels); // exclude first attempt
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName, transparent_retries_, labels);
     RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName, ToDoubleMilliseconds(retry_delay_), labels);
@@ -91,7 +91,7 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     }
     ++num_active_rpcs_;
   }
-  context_.AddChildSpan();
+  context_.IncreaseChildSpanCount();
   return new PythonOpenCensusCallAttemptTracer(
       this, attempt_num, is_transparent_retry);
 }
@@ -109,11 +109,12 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::PythonOpenCensusC
     context_.AddSpanAttribute("previous-rpc-attempts", std::to_string(attempt_num));
     context_.AddSpanAttribute("transparent-retry", std::to_string(is_transparent_retry));
   }
-  if (PythonOpenCensusStatsEnabled()) {
-    std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kClientMethod, std::string(parent_->method_)});
-    RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, labels);
+  if (!PythonOpenCensusStatsEnabled()) {
+    return;
   }
+  std::vector<Label> labels = context_.Labels();
+  labels.emplace_back(kClientMethod, std::string(parent_->method_));
+  RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, labels);
 }
 
 
@@ -129,13 +130,14 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
           grpc_core::Slice::FromCopiedBuffer(tracing_buf, tracing_len));
     }
   }
-  if (PythonOpenCensusStatsEnabled()) {
-    grpc_slice tags = grpc_empty_slice();
-    size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
-    if (encoded_tags_len > 0) {
-      send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
-                                 grpc_core::Slice(tags));
-    }
+  if (!PythonOpenCensusStatsEnabled()) {
+    return;
+  }
+  grpc_slice tags = grpc_empty_slice();
+  size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
+  if (encoded_tags_len > 0) {
+    send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
+                                grpc_core::Slice(tags));
   }
 }
 
@@ -154,15 +156,18 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordReceiv
 
 namespace {
 
-void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  if (PythonOpenCensusStatsEnabled()) {
-    absl::optional<grpc_core::Slice> grpc_server_stats_bin =
-        b->Take(grpc_core::GrpcServerStatsBinMetadata());
-    if (grpc_server_stats_bin.has_value()) {
-      ServerStatsDeserialize(
-          reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
-          grpc_server_stats_bin->size(), elapsed_time);
-    }
+// This function removes GrpcServerStatsBinMetadata from grpc_metadata_batch and get elapsed_time
+// from GrpcServerStatsBinMetadata.
+void GetElapsedTimeFromTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
+  if (!PythonOpenCensusStatsEnabled()) {
+    return;
+  }
+  absl::optional<grpc_core::Slice> grpc_server_stats_bin =
+      b->Take(grpc_core::GrpcServerStatsBinMetadata());
+  if (grpc_server_stats_bin.has_value()) {
+    ServerStatsDeserialize(
+        reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
+        grpc_server_stats_bin->size(), elapsed_time);
   }
 }
 
@@ -173,28 +178,29 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  status_code_ = status.code();
-  if (PythonOpenCensusStatsEnabled()) {
-    uint64_t elapsed_time = 0;
-    if (recv_trailing_metadata != nullptr) {
-      FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
-    }
+  if (!PythonOpenCensusStatsEnabled()) {
+    return;
+  }
+  auto status_code_ = status.code();
+  uint64_t elapsed_time = 0;
+  if (recv_trailing_metadata != nullptr) {
+    GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata, &elapsed_time);
+  }
 
-    std::string final_status = absl::StatusCodeToString(status_code_);
-    std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kClientMethod, std::string(parent_->method_)});
-    labels.emplace_back(Label{kClientStatus, final_status});
-    RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->outgoing.data_bytes : 0), labels);
-    RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->incoming.data_bytes : 0), labels);
-    RecordDoubleMetric(kRpcClientServerLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)), labels);
-    RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Now() - start_time_), labels);
-    if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-      if (transport_stream_stats != nullptr && gpr_time_cmp(transport_stream_stats->latency,
-                        gpr_inf_future(GPR_TIMESPAN)) != 0) {
-        double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
-            gpr_timespec_to_micros(transport_stream_stats->latency)));
-        RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms, labels);
-      }
+  std::string final_status = absl::StatusCodeToString(status_code_);
+  std::vector<Label> labels = context_.Labels();
+  labels.emplace_back(kClientMethod, std::string(parent_->method_));
+  labels.emplace_back(kClientStatus, final_status);
+  RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->outgoing.data_bytes : 0), labels);
+  RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->incoming.data_bytes : 0), labels);
+  RecordDoubleMetric(kRpcClientServerLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)), labels);
+  RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Now() - start_time_), labels);
+  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
+    if (transport_stream_stats != nullptr && gpr_time_cmp(transport_stream_stats->latency,
+                      gpr_inf_future(GPR_TIMESPAN)) != 0) {
+      double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
+          gpr_timespec_to_micros(transport_stream_stats->latency)));
+      RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms, labels);
     }
   }
 }
@@ -208,8 +214,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (PythonOpenCensusStatsEnabled()) {
     std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(Label{kClientMethod, std::string(parent_->method_)});
-    labels.emplace_back(Label{kClientStatus, StatusCodeToString(status_code_)});
+    labels.emplace_back(kClientMethod, std::string(parent_->method_));
+    labels.emplace_back(kClientStatus, StatusCodeToString(status_code_));
     RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName, sent_message_count_, labels);
     RecordIntMetric(kRpcClientReceivedMessagesPerRpcMeasureName, recv_message_count_, labels);
 
