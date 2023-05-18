@@ -21,7 +21,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # ************** Modify these ENV if you wish to run from forked repos**********
 GRPC_TEST_INFRA_REPO=grpc/test-infra
-GRPC_TEST_INFRA_BRANCH=-master
+GRPC_TEST_INFRA_BRANCH=master
 
 GRPC_DOTNET_REPO=-grpc/grpc-dotnet
 GRPC_DOTNET_BRANCH=master
