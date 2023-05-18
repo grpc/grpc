@@ -113,7 +113,7 @@ class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
     def exit(self) -> None:
         # Sleep for 0.5s so all data can be flushed.
         # The time equals to the time in AwaitNextBatchLocked.
-        time.sleep(_cyobservability.EXPORT_BATCH_INTERVAL)
+        time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
         self.set_tracing(False)
         self.set_stats(False)
         _cyobservability.at_observability_exit()

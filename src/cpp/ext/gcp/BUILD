@@ -83,7 +83,7 @@ grpc_cc_library(
     language = "c++",
     visibility = [
         "//test:__subpackages__",
-        "@grpc:grpc_python_observability"
+        "@grpc:grpc_python_observability",
     ],
     deps = [
         "//:gpr",
