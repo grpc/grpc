@@ -18,19 +18,20 @@ import "src/proto/grpc/service_config/service_config.proto";
 
 package service_config_fuzzer;
 
-enum ServiceConfigType {
-    RANDOM = 0;
-    RANDOM_PREFIXED_CONFIG = 1;
+message ServiceConfigChoice {
+    repeated string client_languages = 1;
+    int32 percentage = 2;
+    repeated string client_hostnames = 3;
+    grpc.service_config.ServiceConfig service_config = 4;
 }
 
-message RandomData {
-    ServiceConfigType enumerated_value = 1;
-    string arbitrary_text = 2;
+message ServiceConfigTXTRecord {
+    repeated ServiceConfigChoice service_config_choices = 1;
 }
 
 message Msg {
     oneof payload {
-        grpc.service_config.ServiceConfig fuzzed_service_config = 1;
-        RandomData random_data = 2;
+        ServiceConfigTXTRecord service_config_txt_record = 1;
+        string arbitrary_txt_record = 2;
     }
 }

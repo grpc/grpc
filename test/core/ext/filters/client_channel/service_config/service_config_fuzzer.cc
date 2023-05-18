@@ -16,42 +16,71 @@
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "google/protobuf/json/json.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/service_config/service_config.pb.h"
 #include "test/core/ext/filters/client_channel/service_config/service_config_fuzzer.pb.h"
 
 constexpr char g_grpc_config_prefix[] = "grpc_config=";
 
-DEFINE_PROTO_FUZZER(const service_config_fuzzer::Msg& msg) {
-  std::string payload;
-  if (msg.has_fuzzed_service_config()) {
-    ::google::protobuf::json::PrintOptions print_options;
-    auto status = MessageToJsonString(msg.fuzzed_service_config(), &payload,
-                                      print_options);
+namespace {
+const google::protobuf::json::PrintOptions g_print_options;
+}  // namespace
+
+// TODO(yijiem): the redundant serialization & deserialization is unnecessary.
+// We should probably change ChooseServiceConfig() to return the chosen config
+// as a Json object, and then have the DNS resolvers use this override of
+// ServiceConfigImpl::Create() that accepts a Json object.)
+
+std::vector<std::string> ServiceConfigTXTRecordToJSON(
+    const service_config_fuzzer::ServiceConfigTXTRecord& txt_record) {
+  if (txt_record.service_config_choices_size() == 0) return {};
+  std::vector<std::string> config_choices;
+  for (const auto& choice : txt_record.service_config_choices()) {
+    std::string payload;
+    auto status = MessageToJsonString(choice, &payload, g_print_options);
     // Sometimes LLVM will generate protos that can't be dumped to JSON
     // (Durations out of bounds, for example). These are ignored.
     if (!status.ok()) {
-      return;
+      continue;
     }
-  } else if (msg.has_random_data()) {
-    switch (msg.random_data().enumerated_value()) {
-      case service_config_fuzzer::ServiceConfigType::RANDOM:
-        payload = msg.random_data().arbitrary_text();
-        break;
-      case service_config_fuzzer::ServiceConfigType::RANDOM_PREFIXED_CONFIG:
-        payload = g_grpc_config_prefix + msg.random_data().arbitrary_text();
-        break;
-      default:
-        // ignore sentinel values
-        return;
+    config_choices.push_back(payload);
+  }
+  return config_choices;
+}
+
+DEFINE_PROTO_FUZZER(const service_config_fuzzer::Msg& msg) {
+  // std::ignore = grpc_core::CoreConfiguration::Get();
+  std::string choose_serivce_config_payload;
+  if (msg.has_service_config_txt_record()) {
+    std::vector<std::string> config_choice_json_strings =
+        ServiceConfigTXTRecordToJSON(msg.service_config_txt_record());
+    choose_serivce_config_payload =
+        absl::StrCat(g_grpc_config_prefix, "[",
+                     absl::StrJoin(config_choice_json_strings, ","), "]");
+    // Test each ServiceConfig against ServiceConfigImpl::Create
+    // DO NOT SUBMIT(hork): fuzz channel args. See PR 33161
+    grpc_core::ChannelArgs channel_args;
+    for (const auto& config_choice :
+         msg.service_config_txt_record().service_config_choices()) {
+      std::string sub_config;
+      auto status = MessageToJsonString(config_choice.service_config(),
+                                        &sub_config, g_print_options);
+      if (!status.ok()) continue;
+      std::ignore =
+          grpc_core::ServiceConfigImpl::Create(channel_args, sub_config);
     }
+  } else if (msg.has_arbitrary_txt_record()) {
+    choose_serivce_config_payload = msg.arbitrary_txt_record();
   } else {
     // an empty example
   }
-  std::ignore = grpc_core::ChooseServiceConfig(payload);
+  std::ignore = grpc_core::ChooseServiceConfig(choose_serivce_config_payload);
 }
