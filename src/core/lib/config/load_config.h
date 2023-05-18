@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"

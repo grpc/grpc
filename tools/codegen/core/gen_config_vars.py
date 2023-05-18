@@ -126,7 +126,12 @@ PROTO_TYPE = {
     "bool": "bool",
 }
 
-SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2, "comma_separated_string": 3}
+SORT_ORDER_FOR_PACKING = {
+    "int": 0,
+    "bool": 1,
+    "string": 2,
+    "comma_separated_string": 3
+}
 
 
 def bool_default_value(x, name):
