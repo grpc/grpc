@@ -39,6 +39,9 @@ Clients should accept these arguments:
 * --service_config_json=SERVICE_CONFIG_JSON
     * Disables service config lookups and sets the provided string as the
       default service config.
+* --additional_metadata=ADDITIONAL_METADATA
+    * Additional metadata to send in each request, as a semicolon-separated list
+      of key:value pairs. All character but semicolons are permitted in values.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
