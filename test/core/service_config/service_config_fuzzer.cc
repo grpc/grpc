@@ -66,7 +66,6 @@ DEFINE_PROTO_FUZZER(const service_config_fuzzer::Msg& msg) {
         absl::StrCat(g_grpc_config_prefix, "[",
                      absl::StrJoin(config_choice_json_strings, ","), "]");
     // Test each ServiceConfig against ServiceConfigImpl::Create
-    // DO NOT SUBMIT(hork): fuzz channel args. See PR 33161
     grpc_core::ChannelArgs channel_args;
     for (const auto& config_choice :
          msg.service_config_txt_record().service_config_choices()) {
