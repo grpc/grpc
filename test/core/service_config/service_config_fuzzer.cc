@@ -26,7 +26,7 @@
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/service_config/service_config.pb.h"
-#include "test/core/ext/filters/client_channel/service_config/service_config_fuzzer.pb.h"
+#include "test/core/service_config/service_config_fuzzer.pb.h"
 
 constexpr char g_grpc_config_prefix[] = "grpc_config=";
 
