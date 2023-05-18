@@ -461,6 +461,7 @@ for dirname in [
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",
         "fuzztest",
+        "fuzztest/core/channel",
 ]:
     parsing_path = dirname
     exec(

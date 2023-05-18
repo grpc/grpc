@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
+licenses(["notice"])
 
-grpc_fuzz_test(
-    name = "union_with_test",
-    srcs = ["union_with_test.cc"],
-    external_deps = [
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
+cc_binary(
+    name = "reflection_server",
+    srcs = ["reflection_server.cc"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings:str_format",
     ],
-    deps = ["//src/core:channel_args"],
 )
