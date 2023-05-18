@@ -1,6 +1,6 @@
 # gRPC C++ Interceptors Example
 
-The C++ Interceptors example shows how interceptors might be used with a simple key-value store.
+The C++ Interceptors example shows how interceptors might be used with a simple key-value store. Note that the C++ Interception API is still experimental and subject to change.
 
 ## Key Value Store
 
