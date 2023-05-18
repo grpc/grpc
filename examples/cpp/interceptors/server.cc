@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"
@@ -29,14 +30,39 @@
 #include "keyvaluestore.grpc.pb.h"
 #endif
 
+using grpc::CallbackServerContext;
 using grpc::Server;
+using grpc::ServerBidiReactor;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ServerReaderWriter;
 using grpc::Status;
+using grpc::experimental::InterceptionHookPoints;
+using grpc::experimental::Interceptor;
+using grpc::experimental::InterceptorBatchMethods;
+using grpc::experimental::ServerInterceptorFactoryInterface;
+using grpc::experimental::ServerRpcInfo;
 using keyvaluestore::KeyValueStore;
 using keyvaluestore::Request;
 using keyvaluestore::Response;
+
+// This is a simple interceptor that logs whenever it gets a request, which on
+// the server side happens when initial metadata is received.
+class LoggingInterceptor : public Interceptor {
+ public:
+  void Intercept(InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+      std::cout << "Got a new streaming RPC" << std::endl;
+    }
+    methods->Proceed();
+  }
+};
+
+class LoggingInterceptorFactory : public ServerInterceptorFactoryInterface {
+ public:
+  Interceptor* CreateServerInterceptor(ServerRpcInfo* info) override {
+    return new LoggingInterceptor();
+  }
+};
 
 struct kv_pair {
   const char* key;
@@ -57,17 +83,37 @@ const char* get_value_from_map(const char* key) {
   return "";
 }
 
-// Logic and data behind the server's behavior.
-class KeyValueStoreServiceImpl final : public KeyValueStore::Service {
-  Status GetValues(ServerContext* context,
-                   ServerReaderWriter<Response, Request>* stream) override {
-    Request request;
-    while (stream->Read(&request)) {
-      Response response;
-      response.set_value(get_value_from_map(request.key().c_str()));
-      stream->Write(response);
-    }
-    return Status::OK;
+// Logic behind the server's behavior.
+class KeyValueStoreServiceImpl final : public KeyValueStore::CallbackService {
+  ServerBidiReactor<Request, Response>* GetValues(
+      CallbackServerContext* context) override {
+    class Reactor : public ServerBidiReactor<Request, Response> {
+     public:
+      explicit Reactor() { StartRead(&request_); }
+
+      void OnReadDone(bool ok) override {
+        if (!ok) {
+          return Finish(grpc::Status::CANCELLED);
+        }
+        response_.set_value(get_value_from_map(request_.key().c_str()));
+        StartWrite(&response_);
+      }
+
+      void OnWriteDone(bool ok) override {
+        if (!ok) {
+          return Finish(grpc::Status::CANCELLED);
+        }
+        StartRead(&request_);
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      Request request_;
+      Response response_;
+    };
+
+    return new Reactor();
   }
 };
 
@@ -81,6 +127,10 @@ void RunServer() {
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case, it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
+  std::vector<std::unique_ptr<ServerInterceptorFactoryInterface>> creators;
+  creators.push_back(std::unique_ptr<ServerInterceptorFactoryInterface>(
+      new LoggingInterceptorFactory()));
+  builder.experimental().SetInterceptorCreators(std::move(creators));
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
