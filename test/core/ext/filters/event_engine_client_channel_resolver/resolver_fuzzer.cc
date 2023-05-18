@@ -35,7 +35,6 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -124,7 +123,8 @@ class FuzzingResolverEventEngine
                   g_grpc_config_prefix, txt_record.arbitrary_value()));
               break;
             default:
-              grpc_core::Crash("Invalid txt record type");
+              //  ignored
+              break;
           }
         }
       }
