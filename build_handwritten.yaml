@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: grandslam
   protobuf_version: 3.23.1
-  version: 1.55.0-pre2
+  version: 1.55.1
 configs:
   asan:
     CC: clang
