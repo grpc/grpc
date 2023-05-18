@@ -116,7 +116,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
-        "absl/flags:parse",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -161,7 +160,6 @@ grpc_cc_library(
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
     external_deps = [
         "absl/debugging:failure_signal_handler",
-        "absl/flags:parse",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -404,6 +402,7 @@ grpc_cc_library(
     name = "fuzz_config_vars",
     srcs = ["fuzz_config_vars.cc"],
     hdrs = ["fuzz_config_vars.h"],
+    external_deps = ["absl/types:optional"],
     deps = [
         "fuzz_config_vars_helpers",
         "fuzz_config_vars_proto",
