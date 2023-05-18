@@ -125,6 +125,7 @@ class FuzzingResolverEventEngine
               break;
             default:
               //  ignored
+              break;
           }
         }
       }
