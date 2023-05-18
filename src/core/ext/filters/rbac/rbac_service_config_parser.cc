@@ -205,13 +205,11 @@ struct RbacConfig {
 
       int action;
       std::map<std::string, Policy> policies;
-      Rbac::AuditCondition audit_condition;
+      // Defaults to kNone since its json field is optional.
+      Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
       std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
 
-      Rules() {
-        // Defaults to kNone since its json field is optional.
-        audit_condition = Rbac::AuditCondition::kNone;
-      }
+      Rules() {}
       Rules(const Rules&) = delete;
       Rules& operator=(const Rules&) = delete;
       Rules(Rules&&) = default;
