@@ -29,6 +29,7 @@
 #include "test/core/service_config/service_config_fuzzer.pb.h"
 
 constexpr char g_grpc_config_prefix[] = "grpc_config=";
+bool squelch = true;
 
 namespace {
 const google::protobuf::json::PrintOptions g_print_options;
