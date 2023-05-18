@@ -124,7 +124,7 @@ class FuzzingResolverEventEngine
                   g_grpc_config_prefix, txt_record.arbitrary_value()));
               break;
             default:
-              grpc_core::Crash("Invalid txt record type");
+              //  ignored
           }
         }
       }
