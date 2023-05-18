@@ -13,16 +13,20 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <string>
+#include <tuple>
+#include <vector>
 
-#include "absl/status/statusor.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "google/protobuf/json/json.h"
 
-#include <grpc/grpc.h>
-
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/service_config/service_config.pb.h"
