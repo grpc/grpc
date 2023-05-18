@@ -36,6 +36,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -367,7 +368,7 @@ class TestServiceImpl : public TestService::Service {
       server_metric_recorder_->SetMemoryUtilization(
           request_metrics.memory_utilization());
     }
-    absl::MutexLock lock(&retained_utilization_names_mu_);
+    grpc_core::MutexLock lock(&retained_utilization_names_mu_);
     std::map<grpc::string_ref, double> named_utilizations;
     for (const auto& p : request_metrics.utilization()) {
       const auto& key = *retained_utilization_names_.insert(p.first).first;
@@ -379,7 +380,7 @@ class TestServiceImpl : public TestService::Service {
   grpc::experimental::ServerMetricRecorder* server_metric_recorder_;
   std::set<std::string> retained_utilization_names_
       ABSL_GUARDED_BY(retained_utilization_names_mu_);
-  absl::Mutex retained_utilization_names_mu_;
+  grpc_core::Mutex retained_utilization_names_mu_;
 };
 
 void grpc::testing::interop::RunServer(

@@ -987,12 +987,12 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: ["
-                "field:",
-                FieldPrefix(),
-                ".rules.audit_logging_options.logger_configs[0].audit_logger "
-                "error:unsupported audit logger type]"))
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.logger_configs[0].audit_"
+                         "logger.typed_config.value[foo_logger] "
+                         "error:unsupported audit logger type]"))
       << status;
 }
 

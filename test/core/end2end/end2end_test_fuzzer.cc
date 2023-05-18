@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -68,6 +69,10 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
         factory;
   };
 
+  static const auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
+  static const auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
+  static const auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
+
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
@@ -76,9 +81,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
 
-    auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
-    auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
-    auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
     std::vector<Test> tests;
     for (const auto& test : all_tests) {
       if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
@@ -87,14 +89,17 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       if (only_config.has_value() && test.config->name != only_config.value()) {
         continue;
       }
+      std::string test_name =
+          absl::StrCat(test.suite, ".", test.name, "/", test.config->name);
       tests.emplace_back(
-          Test{absl::StrCat(test.suite, ".", test.name, "/", test.config->name),
-               [&test]() {
+          Test{std::move(test_name), [&test]() {
                  return std::unique_ptr<grpc_core::CoreEnd2endTest>(
                      test.make_test(test.config));
                }});
     }
     GPR_ASSERT(!tests.empty());
+    std::sort(tests.begin(), tests.end(),
+              [](const Test& a, const Test& b) { return a.name < b.name; });
     return tests;
   }();
   static const auto only_experiment =
@@ -106,12 +111,29 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
 
   auto test_name =
       absl::StrCat(msg.suite(), ".", msg.test(), "/", msg.config());
-  size_t best_test = 0;
-  for (size_t i = 0; i < tests.size(); i++) {
-    if (grpc_core::OsaDistance(test_name, tests[i].name) <
-        grpc_core::OsaDistance(test_name, tests[best_test].name)) {
-      best_test = i;
+  auto it = std::lower_bound(
+      tests.begin(), tests.end(), test_name,
+      [](const Test& a, absl::string_view b) { return a.name < b; });
+  if (only_suite.has_value() || only_test.has_value() ||
+      only_config.has_value()) {
+    // We get faster convergence for selective tests if we do a fuzzy match
+    // instead of an exact one. The opposite is true for non-selective tests.
+    if (it == tests.end() || it->name != test_name) {
+      size_t best_test = 0;
+      size_t best_distance = std::numeric_limits<size_t>::max();
+      for (size_t i = 0; i < tests.size(); i++) {
+        auto distance = grpc_core::OsaDistance(test_name, tests[i].name);
+        if (distance < best_distance) {
+          best_test = i;
+          best_distance = distance;
+          if (distance == 0) break;
+        }
+      }
+      it = tests.begin() + best_test;
     }
+  }
+  if (it == tests.end()) {
+    return;
   }
 
   if (only_experiment.has_value() &&
@@ -124,6 +146,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       grpc_core::OverridesFromFuzzConfigVars(msg.config_vars());
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
@@ -133,7 +156,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  auto test = tests[best_test].factory();
+  auto test = it->factory();
   test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
