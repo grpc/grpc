@@ -72,10 +72,10 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
       // Check if the key is present in the map
       auto search = cached_map_.find(requested_key);
       if (search != cached_map_.end()) {
-        std::cout << "Key " << requested_key << "found in map";
+        std::cout << requested_key << " found in map" << std::endl;
         response_ = search->second;
       } else {
-        std::cout << "Key " << requested_key << "not found in cache";
+        std::cout << requested_key << " not found in cache" << std::endl;
         // Key was not found in the cache, so make a request
         keyvaluestore::Request req;
         req.set_key(requested_key);
