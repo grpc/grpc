@@ -1,0 +1,3 @@
+suite: "RetryTest"
+test: "RetryCancellation"
+config: "Chttp2FakeSecurityFullstack"

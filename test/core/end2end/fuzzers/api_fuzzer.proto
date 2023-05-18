@@ -93,17 +93,10 @@ message Metadatum {
     ByteSlice value = 2;
 }
 
-message ChannelAction {
-  uint64 add_n_bytes_writable = 1;
-  uint64 add_n_bytes_readable = 2;
-  uint64 wait_ms = 3;
-}
-
 message CreateChannel {
     string target = 1;
     repeated ChannelArg channel_args = 2;
     ChannelCreds channel_creds = 3;
-    repeated ChannelAction channel_actions = 4;
 }
 
 message CreateServer {

@@ -230,11 +230,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "c00b2be76d2ba0966b194aeee0c82feae60e01697e3c501479745126d0e54214",
-            strip_prefix = "boringssl-d473ae3587b9fa15f19f54da6243de3c53f67dfe",
+            sha256 = "f150aa2d73017fe8576a8a335f29030488d851c94368a79ac56142d107bf9e9a",
+            strip_prefix = "boringssl-e46383fc18d08def901b2ed5a194295693e905c7",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/d473ae3587b9fa15f19f54da6243de3c53f67dfe.tar.gz",
-                "https://github.com/google/boringssl/archive/d473ae3587b9fa15f19f54da6243de3c53f67dfe.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
+                "https://github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
             ],
         )
 
@@ -253,16 +253,15 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "81cf6e89aa03bfc5fcdf7fa99d0c2e3073ea342b9e7500cc75feecac8fc4c33d",
-            strip_prefix = "protobuf-5ddb1fc609d2416e8575c9e7435c608222c2edb2",
+            sha256 = "38a74632e35273f8b90bbfed3d7e8835fcffcc68869763c481220143655d7bde",
+            strip_prefix = "protobuf-21b02b235393666be2f0f00928849fd986407e1c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/5ddb1fc609d2416e8575c9e7435c608222c2edb2.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/23.x
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/21b02b235393666be2f0f00928849fd986407e1c.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/21b02b235393666be2f0f00928849fd986407e1c.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
-                # workaround for https://github.com/protocolbuffers/upb/issues/1239
-                "@com_github_grpc_grpc//third_party:protobuf2.patch",
             ],
             patch_args = ["-p1"],
         )
@@ -279,13 +278,15 @@ def grpc_deps():
         )
 
     if "com_google_fuzztest" not in native.existing_rules():
+        # when updating this remember to run:
+        # bazel run @com_google_fuzztest//bazel:setup_configs > tools/fuzztest.bazelrc
         http_archive(
             name = "com_google_fuzztest",
-            sha256 = "f7bb5b3bd162576f3fbbe9bb768b57931fdd98581c1818789aceee5be4eeee64",
-            strip_prefix = "fuzztest-62cf00c7341eb05d128d0a3cbce79ac31dbda032",
+            sha256 = "cdf8d8cd3cdc77280a7c59b310edf234e489a96b6e727cb271e7dfbeb9bcca8d",
+            strip_prefix = "fuzztest-4ecaeb5084a061a862af8f86789ee184cd3d3f18",
             urls = [
-                # 2023-03-03
-                "https://github.com/google/fuzztest/archive/62cf00c7341eb05d128d0a3cbce79ac31dbda032.tar.gz",
+                # 2023-05-16
+                "https://github.com/google/fuzztest/archive/4ecaeb5084a061a862af8f86789ee184cd3d3f18.tar.gz",
             ],
         )
 
@@ -392,11 +393,12 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "50625babfbfbbb85b2c2c1c5b7021c5a9d599113403143c6dc3cb6a8743f7768",
-            strip_prefix = "upb-aafc17fd6bde032b896bcecc66ad3c2ba9af434d",
+            sha256 = "4e43a960676dc4d75d4913582af9ecf5f19ac3d0a00f00c091c40ba84f1f2e15",
+            strip_prefix = "upb-af735076087f77099835f546572556a91c97b047",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/aafc17fd6bde032b896bcecc66ad3c2ba9af434d.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/aafc17fd6bde032b896bcecc66ad3c2ba9af434d.tar.gz",
+                # https://github.com/protocolbuffers/upb/commits/23.x
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/af735076087f77099835f546572556a91c97b047.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/af735076087f77099835f546572556a91c97b047.tar.gz",
             ],
         )
 

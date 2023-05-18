@@ -27,9 +27,13 @@
 
 #include "protos_generator/gen_messages.h"
 
+#include <string>
+#include <vector>
+
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/descriptor.h"
 #include "protos_generator/gen_accessors.h"
+#include "protos_generator/gen_enums.h"
 #include "protos_generator/gen_extensions.h"
 #include "protos_generator/gen_utils.h"
 #include "protos_generator/output.h"
@@ -45,6 +49,7 @@ void WriteModelAccessDeclaration(const protobuf::Descriptor* descriptor,
 void WriteModelPublicDeclaration(
     const protobuf::Descriptor* descriptor,
     const std::vector<const protobuf::FieldDescriptor*>& file_exts,
+    const std::vector<const protobuf::EnumDescriptor*>& file_enums,
     Output& output);
 void WriteExtensionIdentifiersInClassHeader(
     const protobuf::Descriptor* message,
@@ -62,6 +67,10 @@ void WriteExtensionIdentifiersImplementation(
     const protobuf::Descriptor* message,
     const std::vector<const protobuf::FieldDescriptor*>& file_exts,
     Output& output);
+void WriteUsingEnumsInHeader(
+    const protobuf::Descriptor* message,
+    const std::vector<const protobuf::EnumDescriptor*>& file_enums,
+    Output& output);
 
 // Writes message class declarations into .upb.proto.h.
 //
@@ -70,6 +79,7 @@ void WriteExtensionIdentifiersImplementation(
 void WriteMessageClassDeclarations(
     const protobuf::Descriptor* descriptor,
     const std::vector<const protobuf::FieldDescriptor*>& file_exts,
+    const std::vector<const protobuf::EnumDescriptor*>& file_enums,
     Output& output) {
   if (IsMapEntryMessage(descriptor)) {
     // Skip map entry generation. Low level accessors for maps are
@@ -85,10 +95,10 @@ void WriteMessageClassDeclarations(
   WriteInternalForwardDeclarationsInHeader(descriptor, output);
   output("\n");
   output("}  // namespace internal\n");
-  WriteModelPublicDeclaration(descriptor, file_exts, output);
+  WriteModelPublicDeclaration(descriptor, file_exts, file_enums, output);
   output("namespace internal {\n");
-  WriteModelProxyDeclaration(descriptor, output);
   WriteModelCProxyDeclaration(descriptor, output);
+  WriteModelProxyDeclaration(descriptor, output);
   output("}  // namespace internal\n");
 }
 
@@ -107,6 +117,7 @@ void WriteModelAccessDeclaration(const protobuf::Descriptor* descriptor,
       )cc",
       ClassName(descriptor), MessageName(descriptor));
   WriteFieldAccessorsInHeader(descriptor, output);
+  WriteOneofAccessorsInHeader(descriptor, output);
   output.Indent();
   output(
       R"cc(
@@ -131,6 +142,7 @@ void WriteModelAccessDeclaration(const protobuf::Descriptor* descriptor,
 void WriteModelPublicDeclaration(
     const protobuf::Descriptor* descriptor,
     const std::vector<const protobuf::FieldDescriptor*>& file_exts,
+    const std::vector<const protobuf::EnumDescriptor*>& file_enums,
     Output& output) {
   output(
       R"cc(
@@ -139,24 +151,41 @@ void WriteModelPublicDeclaration(
           using Access = internal::$0Access;
           using Proxy = internal::$0Proxy;
           using CProxy = internal::$0CProxy;
+
           $0();
-          $0(const $0& m) = delete;
-          $0& operator=(const $0& m) = delete;
+
+          $0(const $0& from);
+          inline $0& operator=(const $3& from) {
+            arena_ = owned_arena_.ptr();
+            msg_ = ($2*)upb_Message_DeepClone(from.msg_, &$1, arena_);
+            return *this;
+          }
+
+          $0(const CProxy& from);
+          $0(const Proxy& from);
+          inline $0& operator=(const CProxy& from) {
+            arena_ = owned_arena_.ptr();
+            msg_ = ($2*)upb_Message_DeepClone(
+                ::protos::internal::GetInternalMsg(from), &$1, arena_);
+            return *this;
+          }
           $0($0&& m)
-              : Access(m.msg_, m.arena_),
+              : Access(absl::exchange(m.msg_, nullptr),
+                       absl::exchange(m.arena_, nullptr)),
                 owned_arena_(std::move(m.owned_arena_)) {}
+
           $0& operator=($0&& m) {
-            msg_ = m.msg_;
-            arena_ = m.arena_;
-            m.msg_ = nullptr;
-            m.arena_ = nullptr;
+            msg_ = absl::exchange(m.msg_, nullptr);
+            arena_ = absl::exchange(m.arena_, nullptr);
             owned_arena_ = std::move(m.owned_arena_);
             return *this;
           }
       )cc",
-      ClassName(descriptor));
+      ClassName(descriptor), ::upbc::MessageInit(descriptor->full_name()),
+      MessageName(descriptor), QualifiedClassName(descriptor));
 
   WriteUsingAccessorsInHeader(descriptor, MessageClassType::kMessage, output);
+  WriteUsingEnumsInHeader(descriptor, file_enums, output);
   WriteDefaultInstanceHeader(descriptor, output);
   WriteExtensionIdentifiersInClassHeader(descriptor, file_exts, output);
   output.Indent();
@@ -261,6 +290,7 @@ void WriteModelCProxyDeclaration(const protobuf::Descriptor* descriptor,
          public:
           $0CProxy() = delete;
           $0CProxy(const $0* m) : internal::$0Access(m->msg_, nullptr) {}
+          $0CProxy($0Proxy m);
           using $0Access::GetInternalArena;
       )cc",
       ClassName(descriptor), MessageName(descriptor));
@@ -305,15 +335,32 @@ void WriteMessageImplementation(
             arena_ = owned_arena_.ptr();
             msg_ = $1_new(arena_);
           }
+          $0::$0(const $0& from) : $0Access() {
+            arena_ = owned_arena_.ptr();
+            msg_ = ($1*)upb_Message_DeepClone(from.msg_, &$2, arena_);
+          }
+          $0::$0(const CProxy& from) : $0Access() {
+            arena_ = owned_arena_.ptr();
+            msg_ = ($1*)upb_Message_DeepClone(
+                ::protos::internal::GetInternalMsg(from), &$2, arena_);
+          }
+          $0::$0(const Proxy& from) : $0(static_cast<const CProxy&>(from)) {}
+          internal::$0CProxy::$0CProxy($0Proxy m) : $0Access() {
+            arena_ = m.arena_;
+            msg_ = ($1*)::protos::internal::GetInternalMsg(m);
+          }
         )cc",
-        ClassName(descriptor), MessageName(descriptor));
+        ClassName(descriptor), MessageName(descriptor),
+        ::upbc::MessageInit(descriptor->full_name()),
+        QualifiedClassName(descriptor));
+    output("\n");
     // Minitable
-    OutputIndenter i(output);
     output(
         R"cc(
           const upb_MiniTable* $0::minitable() { return &$1; }
         )cc",
         ClassName(descriptor), ::upbc::MessageInit(descriptor->full_name()));
+    output("\n");
   }
 
   WriteAccessorsInSource(descriptor, output);
@@ -337,6 +384,8 @@ void WriteMessageImplementation(
           }
         )cc",
         ClassName(descriptor));
+
+    WriteExtensionIdentifiersImplementation(descriptor, file_exts, output);
   }
 }
 
@@ -372,6 +421,44 @@ void WriteExtensionIdentifiersImplementation(
     if (ext->extension_scope() &&
         ext->extension_scope()->full_name() == message->full_name()) {
       WriteExtensionIdentifier(ext, output);
+    }
+  }
+}
+
+void WriteUsingEnumsInHeader(
+    const protobuf::Descriptor* message,
+    const std::vector<const protobuf::EnumDescriptor*>& file_enums,
+    Output& output) {
+  for (auto* enum_descriptor : file_enums) {
+    std::string enum_type_name = EnumTypeName(enum_descriptor);
+    std::string enum_resolved_type_name =
+        enum_descriptor->file()->package().empty() &&
+                enum_descriptor->containing_type() == nullptr
+            ? absl::StrCat(kNoPackageNamePrefix,
+                           ToCIdent(enum_descriptor->name()))
+            : enum_type_name;
+    if (enum_descriptor->containing_type() == nullptr ||
+        enum_descriptor->containing_type()->full_name() !=
+            message->full_name()) {
+      continue;
+    }
+    output("using $0", enum_descriptor->name());
+    if (enum_descriptor->options().deprecated()) {
+      output(" ABSL_DEPRECATED(\"Proto enum $0\")", enum_descriptor->name());
+    }
+    output(" = $0;", enum_resolved_type_name);
+    output("\n");
+    int value_count = enum_descriptor->value_count();
+    for (int i = 0; i < value_count; i++) {
+      output("static constexpr $0 $1", enum_descriptor->name(),
+             enum_descriptor->value(i)->name());
+      if (enum_descriptor->options().deprecated() ||
+          enum_descriptor->value(i)->options().deprecated()) {
+        output(" ABSL_DEPRECATED(\"Proto enum value $0\") ",
+               enum_descriptor->value(i)->name());
+      }
+      output(" = $0;\n", EnumValueSymbolInNameSpace(enum_descriptor,
+                                                    enum_descriptor->value(i)));
     }
   }
 }

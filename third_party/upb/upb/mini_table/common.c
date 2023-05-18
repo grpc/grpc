@@ -68,7 +68,7 @@ const upb_MiniTableField* upb_MiniTable_FindFieldByNumber(
   int hi = t->field_count - 1;
   while (lo <= hi) {
     int mid = (lo + hi) / 2;
-    int num = t->fields[mid].number;
+    uint32_t num = t->fields[mid].number;
     if (num < number) {
       lo = mid + 1;
       continue;
@@ -84,15 +84,15 @@ const upb_MiniTableField* upb_MiniTable_FindFieldByNumber(
 
 upb_FieldType upb_MiniTableField_Type(const upb_MiniTableField* field) {
   if (field->mode & kUpb_LabelFlags_IsAlternate) {
-    if (field->descriptortype == kUpb_FieldType_Int32) {
+    if (field->UPB_PRIVATE(descriptortype) == kUpb_FieldType_Int32) {
       return kUpb_FieldType_Enum;
-    } else if (field->descriptortype == kUpb_FieldType_Bytes) {
+    } else if (field->UPB_PRIVATE(descriptortype) == kUpb_FieldType_Bytes) {
       return kUpb_FieldType_String;
     } else {
       UPB_ASSERT(false);
     }
   }
-  return field->descriptortype;
+  return field->UPB_PRIVATE(descriptortype);
 }
 
 static bool upb_MiniTable_Is_Oneof(const upb_MiniTableField* f) {

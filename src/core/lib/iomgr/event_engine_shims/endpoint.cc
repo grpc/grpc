@@ -256,6 +256,15 @@ class EventEngineEndpointWrapper {
     }
   }
 
+  bool CanTrackErrors() {
+    if (EventEngineSupportsFd()) {
+      return reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+          ->CanTrackErrors();
+    } else {
+      return false;
+    }
+  }
+
  private:
   void OnShutdownInternal() {
     {
@@ -378,7 +387,12 @@ int EndpointGetFd(grpc_endpoint* ep) {
   return eeep->wrapper->Fd();
 }
 
-bool EndpointCanTrackErr(grpc_endpoint* /* ep */) { return false; }
+bool EndpointCanTrackErr(grpc_endpoint* ep) {
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  return eeep->wrapper->CanTrackErrors();
+}
 
 grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     EndpointRead,

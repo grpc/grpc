@@ -31,6 +31,7 @@ import grpc
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import grpc as helpers_grpc
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
 from framework.helpers import skips
@@ -252,8 +253,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
-            before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
-            after: grpc_testing.LoadBalancerAccumulatedStatsResponse):
+        before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+        after: grpc_testing.LoadBalancerAccumulatedStatsResponse
+    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
         """Only diffs stats_per_method, as the other fields are deprecated."""
         diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
         for method, method_stats in after.stats_per_method.items():
@@ -268,7 +270,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     def assertRpcStatusCodes(self,
                              test_client: XdsTestClient,
                              *,
-                             status_code: grpc.StatusCode,
+                             expected_status: grpc.StatusCode,
                              duration: _timedelta,
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
@@ -286,12 +288,22 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
         stats = diff_stats.stats_per_method[method]
-        status = status_code.value[0]
-        for found_status, count in stats.result.items():
-            if found_status != status and count > stray_rpc_limit:
-                self.fail(f"Expected only status {status} but found status "
-                          f"{found_status} for method {method}:\n{diff_stats}")
-        self.assertGreater(stats.result[status_code.value[0]], 0)
+        for found_status_int, count in stats.result.items():
+            found_status = helpers_grpc.status_from_int(found_status_int)
+            if found_status != expected_status and count > stray_rpc_limit:
+                self.fail(f"Expected only status"
+                          f" {helpers_grpc.status_pretty(expected_status)},"
+                          " but found status"
+                          f" {helpers_grpc.status_pretty(found_status)}"
+                          f" for method {method}:\n{diff_stats}")
+
+        expected_status_int: int = expected_status.value[0]
+        self.assertGreater(
+            stats.result[expected_status_int],
+            0,
+            msg=("Expected non-zero RPCs with status"
+                 f" {helpers_grpc.status_pretty(expected_status)}"
+                 f" for method {method}, got:\n{diff_stats}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
@@ -480,6 +492,17 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
+        logger.debug('Getting pods restart times')
+        client_restarts: int = 0
+        server_restarts: int = 0
+        try:
+            client_restarts = self.client_runner.get_pod_restarts(
+                self.client_runner.deployment)
+            server_restarts = self.server_runner.get_pod_restarts(
+                self.server_runner.deployment)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.exception(e)
+
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -487,6 +510,24 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
             retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
+        finally:
+            # Fail if any of the pods restarted.
+            self.assertEqual(
+                client_restarts,
+                0,
+                msg=
+                ('Client pods unexpectedly restarted'
+                 f' {client_restarts} times during test.'
+                 ' In most cases, this is caused by the test client app crash.'
+                ))
+            self.assertEqual(
+                server_restarts,
+                0,
+                msg=
+                ('Server pods unexpectedly restarted'
+                 f' {server_restarts} times during test.'
+                 ' In most cases, this is caused by the test client app crash.'
+                ))
 
     def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)

@@ -125,6 +125,23 @@ UPB_INLINE int32_t const* envoy_config_core_v3_HealthStatusSet_statuses(const en
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthStatusSet_statuses_upb_array(const envoy_config_core_v3_HealthStatusSet* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthStatusSet_statuses_mutable_upb_array(const envoy_config_core_v3_HealthStatusSet* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_HealthStatusSet_has_statuses(const envoy_config_core_v3_HealthStatusSet* msg) {
   size_t size;
   envoy_config_core_v3_HealthStatusSet_statuses(msg, &size);
@@ -960,6 +977,23 @@ UPB_INLINE const envoy_config_core_v3_HealthCheck_Payload* const* envoy_config_c
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_receive_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 56), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_receive_mutable_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 56), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_HttpHealthCheck_has_receive(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   size_t size;
   envoy_config_core_v3_HealthCheck_HttpHealthCheck_receive(msg, &size);
@@ -979,6 +1013,23 @@ UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* const* envoy_con
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_request_headers_to_add_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 64), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_request_headers_to_add_mutable_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 64), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_HttpHealthCheck_has_request_headers_to_add(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   size_t size;
@@ -1000,6 +1051,23 @@ UPB_INLINE upb_StringView const* envoy_config_core_v3_HealthCheck_HttpHealthChec
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_request_headers_to_remove_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_request_headers_to_remove_mutable_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_HttpHealthCheck_has_request_headers_to_remove(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   size_t size;
   envoy_config_core_v3_HealthCheck_HttpHealthCheck_request_headers_to_remove(msg, &size);
@@ -1019,6 +1087,23 @@ UPB_INLINE const struct envoy_type_v3_Int64Range* const* envoy_config_core_v3_He
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_expected_statuses_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_expected_statuses_mutable_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_HttpHealthCheck_has_expected_statuses(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   size_t size;
@@ -1065,6 +1150,23 @@ UPB_INLINE const struct envoy_type_v3_Int64Range* const* envoy_config_core_v3_He
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_retriable_statuses_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 96), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_HttpHealthCheck_retriable_statuses_mutable_upb_array(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 96), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_HttpHealthCheck_has_retriable_statuses(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   size_t size;
@@ -1344,6 +1446,23 @@ UPB_INLINE const envoy_config_core_v3_HealthCheck_Payload* const* envoy_config_c
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_TcpHealthCheck_receive_upb_array(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_TcpHealthCheck_receive_mutable_upb_array(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_TcpHealthCheck_has_receive(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg) {
   size_t size;
   envoy_config_core_v3_HealthCheck_TcpHealthCheck_receive(msg, &size);
@@ -1512,6 +1631,23 @@ UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* const* envoy_con
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_GrpcHealthCheck_initial_metadata_upb_array(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 32), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_GrpcHealthCheck_initial_metadata_mutable_upb_array(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 32), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_GrpcHealthCheck_has_initial_metadata(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg) {
   size_t size;
@@ -1690,6 +1826,23 @@ UPB_INLINE upb_StringView const* envoy_config_core_v3_HealthCheck_TlsOptions_alp
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HealthCheck_TlsOptions_alpn_protocols_upb_array(const envoy_config_core_v3_HealthCheck_TlsOptions* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HealthCheck_TlsOptions_alpn_protocols_mutable_upb_array(const envoy_config_core_v3_HealthCheck_TlsOptions* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_TlsOptions_has_alpn_protocols(const envoy_config_core_v3_HealthCheck_TlsOptions* msg) {
   size_t size;

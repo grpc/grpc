@@ -638,7 +638,7 @@ systemtap_dep_error:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "Under the '$(CONFIG)' configutation, the target you are trying "
+	@echo "Under the '$(CONFIG)' configuration, the target you are trying "
 	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
 	@echo "platforms such as Solaris and *BSD). "
 	@echo
@@ -908,6 +908,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -1431,6 +1432,8 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -1459,7 +1462,9 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -1468,6 +1473,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -1579,12 +1585,14 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
+    src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_authorization_engine.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
+    src/core/lib/security/authorization/stdout_logger.cc \
     src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -1773,6 +1781,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -1978,6 +1987,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -2006,7 +2017,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -2015,6 +2028,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -2263,6 +2277,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -2382,10 +2397,12 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
@@ -2423,7 +2440,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ex_data.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
@@ -2457,8 +2473,10 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
     third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_lock.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_no_threads.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount_win.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
@@ -2659,8 +2677,8 @@ LIBUPB_SRC = \
     third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/collections/array.c \
-    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/collections/map_sorter.c \
+    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
@@ -2686,15 +2704,15 @@ LIBUPB_SRC = \
     third_party/upb/upb/reflection/extension_range.c \
     third_party/upb/upb/reflection/field_def.c \
     third_party/upb/upb/reflection/file_def.c \
-    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/message_def.c \
     third_party/upb/upb/reflection/message_reserved_range.c \
+    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/method_def.c \
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
-    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/decode_fast.c \
+    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
     third_party/upb/upb/wire/reader.c \
@@ -3354,9 +3372,11 @@ src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/json/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/audit_logging.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/stdout_logger.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/channel_creds_registry_init.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_external_account_credentials.cc: $(OPENSSL_DEP)

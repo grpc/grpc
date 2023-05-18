@@ -1,0 +1,3 @@
+suite: "RetryTest"
+test: "RetrySendInitialMetadataRefs"
+config: "Chttp2FakeSecurityFullstack"

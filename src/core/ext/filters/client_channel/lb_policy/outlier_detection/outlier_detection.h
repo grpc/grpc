@@ -38,7 +38,7 @@ struct OutlierDetectionConfig {
   uint32_t max_ejection_percent = 10;
   struct SuccessRateEjection {
     uint32_t stdev_factor = 1900;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
 
@@ -56,7 +56,7 @@ struct OutlierDetectionConfig {
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
 

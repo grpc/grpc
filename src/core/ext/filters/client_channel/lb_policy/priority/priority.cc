@@ -903,7 +903,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<PriorityLbConfig>(
+    return LoadFromJson<RefCountedPtr<PriorityLbConfig>>(
         json, JsonArgs(), "errors validating priority LB policy config");
   }
 };

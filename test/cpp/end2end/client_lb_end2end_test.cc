@@ -264,8 +264,8 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses->emplace_back(address.addr, address.len,
-                                     per_address_args, std::move(attributes));
+      result.addresses->emplace_back(address, per_address_args,
+                                     std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -3098,8 +3098,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    absl::StatusOr<CallConfig> GetCallConfig(
-        GetCallConfigArgs /*args*/) override {
+    absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
 

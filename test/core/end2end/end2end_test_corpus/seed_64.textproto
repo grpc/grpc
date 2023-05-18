@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "ClientStreaming30"
+config: "Chttp2FakeSecurityFullstack"

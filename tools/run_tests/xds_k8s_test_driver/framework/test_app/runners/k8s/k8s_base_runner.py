@@ -98,6 +98,17 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
 
         self.pod_log_collectors = []
 
+    def get_pod_restarts(self, deployment: k8s.V1Deployment) -> int:
+        if not self.k8s_namespace or not deployment:
+            return 0
+        total_restart: int = 0
+        pods: List[k8s.V1Pod] = self.k8s_namespace.list_deployment_pods(
+            deployment)
+        for pod in pods:
+            total_restart += sum(status.restart_count
+                                 for status in pod.status.container_statuses)
+        return total_restart
+
     @classmethod
     def _render_template(cls, template_file, **kwargs):
         template = mako.template.Template(filename=str(template_file))

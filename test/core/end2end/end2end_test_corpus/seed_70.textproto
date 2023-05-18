@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "Invoke10RegisteredCalls"
+config: "Chttp2FakeSecurityFullstack"

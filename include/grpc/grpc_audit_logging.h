@@ -27,8 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-// TODO(lwge): Switch to public header when it's ready.
-#include "src/core/lib/json/json.h"
+#include <grpc/support/json.h>
 
 namespace grpc_core {
 namespace experimental {
@@ -93,4 +92,4 @@ void RegisterAuditLoggerFactory(std::unique_ptr<AuditLoggerFactory> factory);
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif /* GRPC_GRPC_AUDIT_LOGGING_H */
+#endif  // GRPC_GRPC_AUDIT_LOGGING_H

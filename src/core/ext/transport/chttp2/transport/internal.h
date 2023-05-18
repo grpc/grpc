@@ -244,21 +244,7 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport
-// TODO(ctiller): #31319 fixed a crash on Linux & Mac whereby iomgr was
-// accessed after shutdown by chttp2. We've not seen similar behavior on
-// Windows afaik, but this fix has exposed another refcounting bug whereby
-// transports leak on Windows and prevent test shutdown.
-// This hack attempts to compromise between two things that are blocking our CI
-// from giving us a good quality signal, but are unlikely to be problems for
-// most customers. We should continue tracking down what's causing the failure,
-// but this gives us some runway to do so - and given that we're actively
-// working on removing the problematic code paths, it may be that effort brings
-// the result we need.
-#ifndef GPR_WINDOWS
-    : public grpc_core::KeepsGrpcInitialized
-#endif
-{
+struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();

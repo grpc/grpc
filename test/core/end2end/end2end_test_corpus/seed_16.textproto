@@ -1,0 +1,6 @@
+suite: "CoreClientChannelTest"
+test: "DisappearingServer"
+config: "Chttp2FakeSecurityFullstack"
+config_vars {
+  experiments: "work_stealing"
+}

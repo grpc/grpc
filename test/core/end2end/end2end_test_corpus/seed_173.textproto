@@ -1,0 +1,3 @@
+suite: "Http2Test"
+test: "MaxAgeGracefullyClose"
+config: "Chttp2FakeSecurityFullstack"

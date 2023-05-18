@@ -240,12 +240,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         MakeRefCounted<TransientFailurePicker>(status));
     channel_control_helper()->RequestReresolution();
   }
-  // Otherwise, if this is the initial update, report CONNECTING.
-  else if (subchannel_list_.get() == nullptr) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
-  }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
   if (latest_pending_subchannel_list_->num_subchannels() == 0 ||

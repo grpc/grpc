@@ -1,4 +1,4 @@
-config/local-dev.cfg
+config/local-*.cfg
 src/proto
 venv/
 out/

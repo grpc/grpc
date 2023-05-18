@@ -1,0 +1,3 @@
+suite: "RetryHttp2Test"
+test: "PingsWithoutData"
+config: "Chttp2FakeSecurityFullstack"

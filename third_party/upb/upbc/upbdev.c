@@ -25,7 +25,14 @@
 
 #include "upbc/upbdev.h"
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#else  // _WIN32
 #include <unistd.h>
+#endif  // !_WIN32
 
 #include "google/protobuf/compiler/plugin.upb.h"
 #include "google/protobuf/compiler/plugin.upbdefs.h"
@@ -59,13 +66,14 @@ static upb_StringView upbc_JsonEncode(const upbc_CodeGeneratorRequest* request,
 
   upb_DefPool* s = upb_DefPool_New();
   const upb_MessageDef* m = upbc_CodeGeneratorRequest_getmsgdef(s);
+  const int options = upb_JsonEncode_FormatEnumsAsIntegers;
 
-  out.size = upb_JsonEncode(request, m, s, 0, NULL, 0, status);
+  out.size = upb_JsonEncode(request, m, s, options, NULL, 0, status);
   if (!upb_Status_IsOk(status)) goto done;
 
   char* data = (char*)upb_Arena_Malloc(arena, out.size + 1);
 
-  (void)upb_JsonEncode(request, m, s, 0, data, out.size + 1, status);
+  (void)upb_JsonEncode(request, m, s, options, data, out.size + 1, status);
   if (!upb_Status_IsOk(status)) goto done;
 
   out.data = (const char*)data;

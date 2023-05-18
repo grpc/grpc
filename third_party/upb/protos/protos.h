@@ -29,6 +29,7 @@
 #define UPB_PROTOS_PROTOS_H_
 
 #include <type_traits>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -115,6 +116,12 @@ typename T::Proxy CreateMessage(::protos::Arena& arena) {
                            arena.ptr());
 }
 
+template <typename T>
+typename T::Proxy CloneMessage(Ptr<T> message, upb::Arena& arena) {
+  return typename T::Proxy(
+      upb_Message_DeepClone(message, T::minitable(), arena.ptr()), arena.ptr());
+}
+
 // begin:github_only
 // This type exists to work around an absl type that has not yet been
 // released.
@@ -159,7 +166,8 @@ typename T::CProxy CreateMessage(upb_Message* msg) {
 
 class ExtensionMiniTableProvider {
  public:
-  ExtensionMiniTableProvider(const upb_MiniTableExtension* mini_table_ext)
+  constexpr explicit ExtensionMiniTableProvider(
+      const upb_MiniTableExtension* mini_table_ext)
       : mini_table_ext_(mini_table_ext) {}
   const upb_MiniTableExtension* mini_table_ext() const {
     return mini_table_ext_;
@@ -183,7 +191,8 @@ class ExtensionIdentifier : public ExtensionMiniTableProvider {
   using Extension = ExtensionType;
   using Extendee = ExtendeeType;
 
-  ExtensionIdentifier(const upb_MiniTableExtension* mini_table_ext)
+  constexpr explicit ExtensionIdentifier(
+      const upb_MiniTableExtension* mini_table_ext)
       : ExtensionMiniTableProvider(mini_table_ext) {}
 };
 
@@ -219,7 +228,7 @@ absl::StatusOr<absl::string_view> Serialize(const upb_Message* message,
 class ExtensionRegistry {
  public:
   ExtensionRegistry(
-      const std::vector<const ::protos::internal::ExtensionMiniTableProvider*>
+      const std::vector<const ::protos::internal::ExtensionMiniTableProvider*>&
           extensions,
       const upb::Arena& arena)
       : registry_(upb_ExtensionRegistry_New(arena.ptr())) {

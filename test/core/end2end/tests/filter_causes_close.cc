@@ -105,7 +105,7 @@ const grpc_channel_filter test_filter = {
     grpc_channel_next_get_info,
     "filter_causes_close"};
 
-TEST_P(CoreEnd2endTest, FilterCausesClose) {
+CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         GRPC_SERVER_CHANNEL, 0, [](ChannelStackBuilder* builder) {

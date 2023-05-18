@@ -19,13 +19,12 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -44,24 +43,27 @@ struct FanoutParameters {
 };
 
 void BM_ThreadPool_RunSmallLambda(benchmark::State& state) {
-  ThreadPool pool;
+  auto pool = grpc_event_engine::experimental::MakeThreadPool(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   const int cb_count = state.range(0);
-  std::atomic_int count{0};
+  std::atomic_int runcount{0};
   for (auto _ : state) {
     state.PauseTiming();
+    runcount.store(0);
     grpc_core::Notification signal;
-    auto cb = [&signal, &count, cb_count]() {
-      if (++count == cb_count) signal.Notify();
+    auto cb = [&signal, &runcount, cb_count]() {
+      if (runcount.fetch_add(1, std::memory_order_relaxed) + 1 == cb_count) {
+        signal.Notify();
+      }
     };
     state.ResumeTiming();
     for (int i = 0; i < cb_count; i++) {
-      pool.Run(cb);
+      pool->Run(cb);
     }
     signal.WaitForNotification();
-    count.store(0);
   }
   state.SetItemsProcessed(cb_count * state.iterations());
-  pool.Quiesce();
+  pool->Quiesce();
 }
 BENCHMARK(BM_ThreadPool_RunSmallLambda)
     ->Range(100, 4096)
@@ -78,10 +80,11 @@ void BM_ThreadPool_RunClosure(benchmark::State& state) {
           (*signal_holder)->Notify();
         }
       });
-  ThreadPool pool;
+  auto pool = grpc_event_engine::experimental::MakeThreadPool(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
-      pool.Run(closure);
+      pool->Run(closure);
     }
     signal->WaitForNotification();
     state.PauseTiming();
@@ -92,7 +95,7 @@ void BM_ThreadPool_RunClosure(benchmark::State& state) {
   }
   delete signal;
   state.SetItemsProcessed(cb_count * state.iterations());
-  pool.Quiesce();
+  pool->Quiesce();
   delete closure;
 }
 BENCHMARK(BM_ThreadPool_RunClosure)
@@ -160,7 +163,8 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
 
 void BM_ThreadPool_Lambda_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto pool = std::make_shared<ThreadPool>();
+  auto pool = grpc_event_engine::experimental::MakeThreadPool(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   for (auto _ : state) {
     std::atomic_int count{0};
     grpc_core::Notification signal;
@@ -196,7 +200,8 @@ void ClosureFanOutCallback(EventEngine::Closure* child_closure,
 
 void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto pool = std::make_shared<ThreadPool>();
+  auto pool = grpc_event_engine::experimental::MakeThreadPool(
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   std::vector<EventEngine::Closure*> closures;
   closures.reserve(params.depth + 2);
   closures.push_back(nullptr);

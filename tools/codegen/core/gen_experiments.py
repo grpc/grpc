@@ -280,9 +280,11 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print(file=C)
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
-        print("  {%s, description_%s, %s}," %
-              (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']]),
-              file=C)
+        print(
+            "  {%s, description_%s, %s, %s}," %
+            (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']],
+             'true' if attr.get('allow_in_fuzzing_config', True) else 'false'),
+            file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)

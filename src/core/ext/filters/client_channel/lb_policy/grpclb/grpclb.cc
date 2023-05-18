@@ -54,6 +54,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/json.h>
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -1891,7 +1892,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<GrpcLbConfig>(
+    return LoadFromJson<RefCountedPtr<GrpcLbConfig>>(
         json, JsonArgs(), "errors validating grpclb LB policy config");
   }
 };

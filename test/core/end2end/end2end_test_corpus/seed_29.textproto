@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "BadFlagsOnRecvInitialMetadata"
+config: "Chttp2FakeSecurityFullstack"

@@ -177,7 +177,7 @@ class RpcBehaviorLbPolicyFactory
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return grpc_core::LoadRefCountedFromJson<RpcBehaviorLbPolicyConfig>(
+    return grpc_core::LoadFromJson<RefCountedPtr<RpcBehaviorLbPolicyConfig>>(
         json, JsonArgs(), "errors validating LB policy config");
   }
 };

@@ -29,9 +29,9 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace experimental {
@@ -56,8 +56,7 @@ class AuditLoggerRegistry {
   static void TestOnlyResetRegistry();
 
  private:
-  // TODO(lwge): Add built-in logger registrations once avaialble.
-  AuditLoggerRegistry() = default;
+  AuditLoggerRegistry();
 
   static Mutex* mu;
 

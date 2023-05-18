@@ -144,7 +144,7 @@ ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
                                                   Duration timeout) {
   return impl_->LookupTXT(
       [this, on_resolve = std::move(on_resolve)](
-          absl::StatusOr<std::string> record) mutable {
+          absl::StatusOr<std::vector<std::string>> record) mutable {
         return engine_->Asynchronously([on_resolve = std::move(on_resolve),
                                         record = std::move(record)]() mutable {
           on_resolve(std::move(record));

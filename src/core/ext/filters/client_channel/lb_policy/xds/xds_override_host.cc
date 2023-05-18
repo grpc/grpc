@@ -319,7 +319,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   // Latest state and picker reported by the child policy.
-  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   Mutex subchannel_map_mu_;
@@ -743,7 +743,7 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsOverrideHostLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
   }

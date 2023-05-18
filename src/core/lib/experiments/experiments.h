@@ -75,6 +75,10 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
+inline bool IsWorkStealingEnabled() { return false; }
+inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsServerPrivacyEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
@@ -118,8 +122,16 @@ inline bool IsScheduleCancellationOverWriteEnabled() {
 inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(14); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(15); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
+inline bool IsWorkStealingEnabled() { return IsExperimentEnabled(16); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
+inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(17); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
+inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(18); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
+inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(19); }
 
-constexpr const size_t kNumExperiments = 16;
+constexpr const size_t kNumExperiments = 20;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
@@ -72,6 +73,7 @@
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
@@ -895,7 +897,31 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(JsonDump(config->config), "{\"rules\":{\"action\":0}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
@@ -923,6 +949,7 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
@@ -945,6 +972,7 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(rules->ALLOW);
@@ -959,12 +987,12 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: ["
-                "field:",
-                FieldPrefix(),
-                ".rules.audit_logging_options.logger_configs[0].audit_logger "
-                "error:unsupported audit logger type]"))
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.logger_configs[0].audit_"
+                         "logger.typed_config.value[foo_logger] "
+                         "error:unsupported audit logger type]"))
       << status;
 }
 

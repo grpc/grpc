@@ -1,0 +1,3 @@
+suite: "CoreEnd2endTest"
+test: "CancelBeforeInvoke5"
+config: "Chttp2FakeSecurityFullstack"
