@@ -30,10 +30,10 @@
 #include "keyvaluestore.grpc.pb.h"
 #endif
 
+using grpc::CallbackServerContext;
 using grpc::Server;
+using grpc::ServerBidiReactor;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ServerReaderWriter;
 using grpc::Status;
 using grpc::experimental::InterceptionHookPoints;
 using grpc::experimental::Interceptor;
@@ -83,18 +83,37 @@ const char* get_value_from_map(const char* key) {
   return "";
 }
 
-// Logic and data behind the server's behavior.
-class KeyValueStoreServiceImpl final : public KeyValueStore::Service {
-  Status GetValues(ServerContext* context,
-                   ServerReaderWriter<Response, Request>* stream) override {
-    Request request;
-    while (stream->Read(&request)) {
-      std::cout << "Got a request for " << request.key() << std::endl;
-      Response response;
-      response.set_value(get_value_from_map(request.key().c_str()));
-      stream->Write(response);
-    }
-    return Status::OK;
+// Logic behind the server's behavior.
+class KeyValueStoreServiceImpl final : public KeyValueStore::CallbackService {
+  ServerBidiReactor<Request, Response>* GetValues(
+      CallbackServerContext* context) override {
+    class Reactor : public ServerBidiReactor<Request, Response> {
+     public:
+      explicit Reactor() { StartRead(&request_); }
+
+      void OnReadDone(bool ok) override {
+        if (!ok) {
+          return Finish(grpc::Status::CANCELLED);
+        }
+        response_.set_value(get_value_from_map(request_.key().c_str()));
+        StartWrite(&response_);
+      }
+
+      void OnWriteDone(bool ok) override {
+        if (!ok) {
+          return Finish(grpc::Status::CANCELLED);
+        }
+        StartRead(&request_);
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      Request request_;
+      Response response_;
+    };
+
+    return new Reactor();
   }
 };
 
