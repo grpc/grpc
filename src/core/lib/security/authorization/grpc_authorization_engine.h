@@ -56,14 +56,6 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   // Required only for testing purpose.
   size_t num_policies() const { return policies_.size(); }
 
-  // Required only for testing purpose.
-  Rbac::AuditCondition audit_condition() const { return audit_condition_; }
-
-  // Required only for testing purpose.
-  const std::vector<std::unique_ptr<AuditLogger>>& audit_loggers() const {
-    return audit_loggers_;
-  }
-
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;
