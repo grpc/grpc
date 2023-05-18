@@ -20,8 +20,8 @@ cd "$(dirname "$0")/../../.."
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # ************** Modify these ENV if you wish to run from forked repos**********
-GRPC_TEST_INFRA_REPO=grpc/test-infra
-GRPC_TEST_INFRA_BRANCH=master
+GRPC_TEST_INFRA_REPO=wanlin31/test-infra
+GRPC_TEST_INFRA_BRANCH=update-fork
 
 GRPC_DOTNET_REPO=-grpc/grpc-dotnet
 GRPC_DOTNET_BRANCH=master
@@ -50,7 +50,6 @@ if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
     LOAD_TEST_PREFIX=kokoro-test
 fi
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
@@ -65,9 +64,9 @@ else
     GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
 
-GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/"${GRPC_DOTNET_REPO}".git "${GRPC_DOTNET_BRANCH}" | cut -f1)"
+
 GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_GO_REPO}".git "${GRPC_GO_REPO_BRANCH}" | cut -f1)"
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/"${GRPC_JAVA_REPO}".git "${GRPC_JAVA_REPO_BRANCH}" | cut -f1)"
+
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -100,9 +99,7 @@ buildConfigs() {
         -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
-        -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_go="${GRPC_GO_GITREF}" \
-        -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
@@ -110,8 +107,7 @@ buildConfigs() {
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l dotnet -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l go
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -124,12 +120,7 @@ trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
-    -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_REPO}:${GRPC_GO_GITREF}" \
-    -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_GITREF}" \
-    -l "python:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
-    -l "ruby:${GRPC_CORE_GITREF}:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
