@@ -183,7 +183,7 @@ g_stands_for = "grandslam"  # @unused
 
 core_version = "32.0.0"  # @unused
 
-version = "1.55.0-pre2"  # @unused
+version = "1.55.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
