@@ -350,9 +350,13 @@ struct grpc_completion_queue {
   /// Once owning_refs drops to zero, we will destroy the cq
   grpc_core::RefCount owning_refs;
 
+  char padding_1[GPR_CACHELINE_SIZE];
   gpr_mu* mu;
 
+  char padding_2[GPR_CACHELINE_SIZE];
   const cq_vtable* vtable;
+
+  char padding_3[GPR_CACHELINE_SIZE];
   const cq_poller_vtable* poller_vtable;
 
 #ifndef NDEBUG
