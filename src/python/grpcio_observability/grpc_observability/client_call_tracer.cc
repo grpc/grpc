@@ -51,11 +51,10 @@ void PythonOpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) 
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonOpenCensusStatsEnabled()) {
-    std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(kClientMethod, std::string(method_));
-    RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1, labels); // exclude first attempt
-    RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName, transparent_retries_, labels);
-    RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName, ToDoubleMilliseconds(retry_delay_), labels);
+    context_.Labels().emplace_back(kClientMethod, std::string(method_));
+    RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1, context_.Labels()); // exclude first attempt
+    RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName, transparent_retries_, context_.Labels());
+    RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName, ToDoubleMilliseconds(retry_delay_), context_.Labels());
   }
 
   if (tracing_enabled_) {
@@ -106,15 +105,14 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::PythonOpenCensusC
       context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
   if (parent_->tracing_enabled_) {
-    context_.AddSpanAttribute("previous-rpc-attempts", std::to_string(attempt_num));
-    context_.AddSpanAttribute("transparent-retry", std::to_string(is_transparent_retry));
+    context_.AddSpanAttribute("previous-rpc-attempts", absl::StrCat(attempt_num));
+    context_.AddSpanAttribute("transparent-retry", absl::StrCat(is_transparent_retry));
   }
   if (!PythonOpenCensusStatsEnabled()) {
     return;
   }
-  std::vector<Label> labels = context_.Labels();
-  labels.emplace_back(kClientMethod, std::string(parent_->method_));
-  RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, labels);
+  context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
+  RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels());
 }
 
 
@@ -188,19 +186,22 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   std::string final_status = absl::StatusCodeToString(status_code_);
-  std::vector<Label> labels = context_.Labels();
-  labels.emplace_back(kClientMethod, std::string(parent_->method_));
-  labels.emplace_back(kClientStatus, final_status);
-  RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->outgoing.data_bytes : 0), labels);
-  RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName, static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->incoming.data_bytes : 0), labels);
-  RecordDoubleMetric(kRpcClientServerLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)), labels);
-  RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName, absl::ToDoubleMilliseconds(absl::Now() - start_time_), labels);
+  context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
+  context_.Labels().emplace_back(kClientStatus, final_status);
+  RecordDoubleMetric(kRpcClientSentBytesPerRpcMeasureName,
+    static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->outgoing.data_bytes : 0), context_.Labels());
+  RecordDoubleMetric(kRpcClientReceivedBytesPerRpcMeasureName,
+    static_cast<double>(transport_stream_stats != nullptr ? transport_stream_stats->incoming.data_bytes : 0), context_.Labels());
+  RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
+    absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)), context_.Labels());
+  RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
+    absl::ToDoubleMilliseconds(absl::Now() - start_time_), context_.Labels());
   if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
     if (transport_stream_stats != nullptr && gpr_time_cmp(transport_stream_stats->latency,
                       gpr_inf_future(GPR_TIMESPAN)) != 0) {
       double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
           gpr_timespec_to_micros(transport_stream_stats->latency)));
-      RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms, labels);
+      RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms, context_.Labels());
     }
   }
 }
@@ -213,11 +214,10 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordCancel
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (PythonOpenCensusStatsEnabled()) {
-    std::vector<Label> labels = context_.Labels();
-    labels.emplace_back(kClientMethod, std::string(parent_->method_));
-    labels.emplace_back(kClientStatus, StatusCodeToString(status_code_));
-    RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName, sent_message_count_, labels);
-    RecordIntMetric(kRpcClientReceivedMessagesPerRpcMeasureName, recv_message_count_, labels);
+    context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
+    context_.Labels().emplace_back(kClientStatus, StatusCodeToString(status_code_));
+    RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName, sent_message_count_, context_.Labels());
+    RecordIntMetric(kRpcClientReceivedMessagesPerRpcMeasureName, recv_message_count_, context_.Labels());
 
     grpc_core::MutexLock lock(&parent_->mu_);
     if (--parent_->num_active_rpcs_ == 0) {
