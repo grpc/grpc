@@ -164,7 +164,7 @@ class OpenCensusRegistry {
     constant_labels_.reserve(labels.size());
     for (const auto& label : labels) {
       auto tag_key = opencensus::tags::TagKey::Register(label.first);
-      constant_labels_.emplace_back(Label{label.first, tag_key, label.second});
+      constant_labels_.emplace_back(label.first, tag_key, label.second);
     }
   }
 
