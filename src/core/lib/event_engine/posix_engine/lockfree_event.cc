@@ -166,7 +166,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // doesn't need a barrier
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           return true;  // early out
         }
         break;  // retry
@@ -187,7 +187,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // loading the shutdown state.
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
           scheduler_->Run(closure);
@@ -216,11 +216,9 @@ void LockfreeEvent::SetReady() {
       }
 
       case kClosureNotReady: {
-        // No barrier required as we're transitioning to a state that does not
-        // involve a closure
         if (state_.compare_exchange_strong(curr, kClosureReady,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           return;  // early out
         }
         break;  // retry
@@ -233,7 +231,7 @@ void LockfreeEvent::SetReady() {
           return;
         } else if (state_.compare_exchange_strong(curr, kClosureNotReady,
                                                   std::memory_order_acq_rel,
-                                                  std::memory_order_relaxed)) {
+                                                  std::memory_order_acquire)) {
           // Full cas: acquire pairs with this cas' release in the event of a
           // spurious set_ready; release pairs with this or the acquire in
           // notify_on (or set_shutdown)
