@@ -1,9 +1,9 @@
-# Error Handling Example
+# Error Details Example
 
 ## Overview
 
-This example shows you how to return error from the server and
-how to handle it on the client.
+This example shows you how to return error with details from the server
+and how to handle it on the client.
 
 ### Try it!
 
@@ -24,10 +24,10 @@ $ ./greeter_client
 If things go smoothly, you will see the client output:
 
 ```
-### Send: SayHello(name=)
-Failed. Code=3 Message=Length of `Name` should be between 1 and 10
-### Send: SayHello(name=ItsTooLongName)
-Failed. Code=3 Message=Length of `Name` should be between 1 and 10
 ### Send: SayHello(name=World)
 Ok. ReplyMessage=Hello World
+### Send: SayHello(name=World)
+Failed. Code=8 Message=Request limit exceeded
+Details:
+- Quota: subject=name: World description=Limit one greeting per person
 ```

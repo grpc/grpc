@@ -19,13 +19,18 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(ErrorHandling C CXX)
+project(ErrorDetails C CXX)
 
 include(../cmake/common.cmake)
 
 # Proto files
 get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
+get_filename_component(status_proto "../../../third_party/googleapis/google/rpc/status.proto" ABSOLUTE)
+get_filename_component(status_proto_path "${status_proto}" PATH)
+get_filename_component(error_details_proto "../../../third_party/googleapis/google/rpc/error_details.proto" ABSOLUTE)
+get_filename_component(error_details_proto_path "${error_details_proto}" PATH)
+get_filename_component(protobuf_proto_path "../../../third_party/protobuf/src" ABSOLUTE)
 
 # Generated sources
 set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.pb.cc")
@@ -41,6 +46,28 @@ add_custom_command(
         --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
         "${hw_proto}"
       DEPENDS "${hw_proto}")
+set(status_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/status.pb.cc")
+set(status_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/status.pb.h")
+add_custom_command(
+      OUTPUT "${status_proto_srcs}" "${status_proto_hdrs}"
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS 
+        --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${status_proto_path}"
+        -I "${protobuf_proto_path}"
+        "${status_proto}"
+      DEPENDS "${status_proto}")      
+set(error_details_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/error_details.pb.cc")
+set(error_details_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/error_details.pb.h")
+add_custom_command(
+      OUTPUT "${error_details_proto_srcs}" "${error_details_proto_hdrs}"
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS 
+          --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+          -I "${error_details_proto_path}"
+          -I "${protobuf_proto_path}"
+          "${error_details_proto}"
+      DEPENDS "${error_details_proto}")
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
@@ -56,12 +83,28 @@ target_link_libraries(hw_grpc_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
+# status_proto
+add_library(status_proto
+  ${status_proto_srcs}
+  ${status_proto_hdrs})
+target_link_libraries(status_proto
+  ${_PROTOBUF_LIBPROTOBUF})
+
+# error_details_proto
+add_library(error_details_proto
+  ${error_details_proto_srcs}
+  ${error_details_proto_hdrs})
+target_link_libraries(error_details_proto
+  ${_PROTOBUF_LIBPROTOBUF})
+
 # Targets greeter_(client|server)
 foreach(_target
   greeter_client greeter_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
+    status_proto
+    error_details_proto
     absl::flags
     absl::flags_parse
     ${_REFLECTION}

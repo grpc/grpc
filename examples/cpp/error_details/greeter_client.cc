@@ -27,11 +27,10 @@
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "google/rpc/error_details.pb.h"
-
 #include "src/proto/grpc/status/status.pb.h"
 #else
-#include "error_details.pb.h"
 #include "helloworld.grpc.pb.h"
+#include "error_details.pb.h"
 #include "status.pb.h"
 #endif
 
@@ -68,7 +67,7 @@ class GreeterClient {
     std::cout << absl::StrFormat("### Send: SayHello(name=%s)", user)
               << std::endl;
     stub_->async()->SayHello(&context, &request, &reply,
-                             [&mu, &cv, &done, &status](Status s) {
+                             [&](Status s) {
                                status = std::move(s);
                                std::lock_guard<std::mutex> lock(mu);
                                done = true;
@@ -132,10 +131,6 @@ int main(int argc, char** argv) {
   // InsecureChannelCredentials()).
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  // Sends an empty name, expecting INVALID_ARGUMENT
-  greeter.SayHello("");
-  // Sends a too long name, expecting INVALID_ARGUMENT
-  greeter.SayHello("ItsTooLongName");
   // Sends a first new name, expecting OK
   greeter.SayHello("World");
   // Sends a duplicate name, expecting RESOURCE_EXHAUSTED with error_details
