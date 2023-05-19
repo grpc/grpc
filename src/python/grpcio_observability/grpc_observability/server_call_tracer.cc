@@ -52,28 +52,27 @@ namespace grpc_observability {
 namespace {
 
 // server metadata elements
-struct ServerMetadataElements {
+struct ServerO11yMetadata {
   grpc_core::Slice path;
   grpc_core::Slice tracing_slice;
   grpc_core::Slice census_proto;
 };
 
-void FilterInitialMetadata(grpc_metadata_batch* b,
-                           ServerMetadataElements* sml) {
+void GetO11yMetadata(const grpc_metadata_batch* b, ServerO11yMetadata* som) {
   const auto* path = b->get_pointer(grpc_core::HttpPathMetadata());
   if (path != nullptr) {
-    sml->path = path->Ref();
+    som->path = path->Ref();
   }
   if (PythonOpenCensusTracingEnabled()) {
-    auto grpc_trace_bin = b->Take(grpc_core::GrpcTraceBinMetadata());
-    if (grpc_trace_bin.has_value()) {
-      sml->tracing_slice = std::move(*grpc_trace_bin);
+    const auto* grpc_trace_bin = b->get_pointer(grpc_core::GrpcTraceBinMetadata());
+    if (grpc_trace_bin != nullptr) {
+      som->tracing_slice = grpc_trace_bin->Ref();
     }
   }
   if (PythonOpenCensusStatsEnabled()) {
-    auto grpc_tags_bin = b->Take(grpc_core::GrpcTagsBinMetadata());
-    if (grpc_tags_bin.has_value()) {
-      sml->census_proto = std::move(*grpc_tags_bin);
+    const auto* grpc_tags_bin = b->get_pointer(grpc_core::GrpcTagsBinMetadata());
+    if (grpc_tags_bin != nullptr) {
+      som->census_proto = grpc_tags_bin->Ref();
     }
   }
 }
@@ -169,13 +168,13 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
 void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
-  ServerMetadataElements sml;
-  FilterInitialMetadata(recv_initial_metadata, &sml);
-  path_ = std::move(sml.path);
+  ServerO11yMetadata som;
+  GetO11yMetadata(recv_initial_metadata, &som);
+  path_ = std::move(som.path);
   method_ = GetMethod(path_);
   auto tracing_enabled = PythonOpenCensusTracingEnabled();
   GenerateServerContext(
-      tracing_enabled ? sml.tracing_slice.as_string_view() : "",
+      tracing_enabled ? som.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
   if (PythonOpenCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
