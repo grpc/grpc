@@ -1,5 +1,8 @@
-resolver_args {
-  request_service_config: true
+channel_args {
+  args {
+    key: "grpc.service_config_disable_resolution"
+    i: 0
+  }
 }
 txt_response {
   txt_records {

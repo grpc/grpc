@@ -1,5 +1,8 @@
-resolver_args {
-  enable_srv_queries: true
+channel_args {
+  args {
+    key: "grpc.dns_enable_srv_queries"
+    i: 1
+  }
 }
 txt_response {
 }
