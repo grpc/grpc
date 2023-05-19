@@ -139,7 +139,7 @@ class SpanContext final {
  public:
   SpanContext() : is_valid_(false) {}
 
-  SpanContext(std::string trace_id, std::string span_id, bool should_sample)
+  SpanContext(const std::string& trace_id, const std::string& span_id, bool should_sample)
       : trace_id_(trace_id), span_id_(span_id), should_sample_(should_sample), is_valid_(true) {}
 
   // Returns the TraceId associated with this SpanContext.
@@ -193,10 +193,10 @@ class Span final {
 
   void AddAnnotation(absl::string_view description);
 
-  SpanCensusData ToCensusData();
+  SpanCensusData ToCensusData() const;
 
  private:
-  static bool ShouldSample(std::string trace_id) {
+  static bool ShouldSample(const std::string& trace_id) {
     return ProbabilitySampler::Get().ShouldSample(trace_id);
   }
 
@@ -242,7 +242,7 @@ class PythonCensusContext {
 
   Span& Span() { return span_; }
   std::vector<Label>& Labels() { return labels_; } // Only used for metrics
-  const SpanContext& SpanContext() { return Span().Context(); }
+  const SpanContext& SpanContext() const { return span_.Context(); }
 
   void AddSpanAttribute(absl::string_view key, absl::string_view attribute) {
     span_.AddAttribute(key, attribute);
@@ -270,7 +270,7 @@ class PythonCensusContext {
 // span automatically becomes a root span. This should only be called with a
 // blank CensusContext as it overwrites it.
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id, absl::string_view parent_span_id,
-                           PythonCensusContext* ctxt);
+                           PythonCensusContext* context);
 
 // Deserialize the incoming SpanContext and generate a new server context based
 // on that. This new span will never be a root span. This should only be called
@@ -288,7 +288,7 @@ inline absl::string_view GetMethod(const char* method) {
 
 // Fills a pre-allocated buffer with the value for the grpc-trace-bin header.
 // The buffer must be at least kGrpcTraceBinHeaderLen bytes long.
-void ToGrpcTraceBinHeader(PythonCensusContext& ctx, uint8_t* out);
+void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out);
 
 // Parses the value of the binary grpc-trace-bin header, returning a
 // SpanContext. If parsing fails, IsValid will be false.
@@ -308,7 +308,7 @@ SpanContext FromGrpcTraceBinHeader(absl::string_view header);
 
 // Serializes the outgoing trace context. tracing_buf must be
 // opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
-size_t TraceContextSerialize(PythonCensusContext& context,
+size_t TraceContextSerialize(const PythonCensusContext& context,
                              char* tracing_buf, size_t tracing_buf_size);
 
 // Serializes the outgoing stats context.  Field IDs are 1 byte followed by
@@ -329,8 +329,6 @@ uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);
 
 // Returns the outgoing data size from the grpc call final info.
 uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
-
-absl::string_view StatusCodeToString(grpc_status_code code);
 
 }  // namespace grpc_observability
 

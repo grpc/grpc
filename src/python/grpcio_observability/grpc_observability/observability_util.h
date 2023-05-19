@@ -21,7 +21,6 @@
 #include <mutex>
 #include <map>
 
-#include <grpc/grpc.h>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
@@ -31,6 +30,9 @@
 #include "absl/strings/strip.h"
 #include "absl/strings/escaping.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/context.h"
@@ -107,6 +109,8 @@ void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labe
 void RecordSpan(const SpanCensusData& span_census_data);
 
 GcpObservabilityConfig ReadAndActivateObservabilityConfig();
+
+absl::string_view StatusCodeToString(grpc_status_code code);
 
 }  // namespace grpc_observability
 
