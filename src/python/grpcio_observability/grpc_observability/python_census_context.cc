@@ -166,7 +166,7 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info) {
 
 namespace {
 // span_id is a 16-character hexadecimal encoded string.
-std::string generateSpanId() {
+std::string GenerateSpanId() {
   uint64_t span_id = absl::Uniform<uint64_t>(absl::BitGen());
   std::stringstream hex_string;
   hex_string << std::setfill('0') << std::setw(16) << std::hex << span_id;
@@ -174,7 +174,7 @@ std::string generateSpanId() {
 }
 
 // trace_id is a 32-character hexadecimal encoded string
-std::string generateTraceId() {
+std::string GenerateTraceId() {
   absl::uint128 trace_id = absl::Uniform<absl::uint128>(absl::BitGen());
   std::stringstream hex_string;
   hex_string << std::setfill('0') << std::setw(32) << std::hex << trace_id;
@@ -187,9 +187,9 @@ std::string generateTraceId() {
 // Span
 //
 
-Span Span::StartSpan(absl::string_view name, Span* parent) {
+Span Span::StartSpan(absl::string_view name, const Span* parent) {
   SpanContext context;
-  std::string span_id = generateSpanId();
+  std::string span_id = GenerateSpanId();
   std::string trace_id;
   std::string parent_span_id;
   bool should_sample;
@@ -200,7 +200,7 @@ Span Span::StartSpan(absl::string_view name, Span* parent) {
     trace_id = parent->Context().TraceId();
     should_sample = parent->Context().IsSampled();
   } else {
-    trace_id = generateTraceId();
+    trace_id = GenerateTraceId();
     should_sample = ShouldSample(trace_id);
   }
 
@@ -209,10 +209,10 @@ Span Span::StartSpan(absl::string_view name, Span* parent) {
 }
 
 
-Span Span::StartSpan(absl::string_view name, SpanContext parent_context) {
+Span Span::StartSpan(absl::string_view name, const SpanContext& parent_context) {
   std::string trace_id = parent_context.TraceId();
   std::string parent_span_id = parent_context.SpanId();
-  std::string span_id = generateSpanId();
+  std::string span_id = GenerateSpanId();
   bool should_sample = parent_context.IsSampled();
   auto start_time = absl::Now();
   SpanContext context(trace_id, span_id, should_sample);
@@ -221,7 +221,7 @@ Span Span::StartSpan(absl::string_view name, SpanContext parent_context) {
 
 
 Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
-  std::string span_id = generateSpanId();
+  std::string span_id = GenerateSpanId();
   auto start_time = absl::Now();
   bool should_sample = ShouldSample(std::string(trace_id));
   SpanContext context(std::string(trace_id), span_id, should_sample);

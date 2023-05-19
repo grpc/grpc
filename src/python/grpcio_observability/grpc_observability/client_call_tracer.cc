@@ -33,8 +33,8 @@ constexpr uint32_t
 // OpenCensusCallTracer
 //
 
-PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(char* method, char* trace_id,
-                                                       char* parent_span_id, bool tracing_enabled):
+PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(const char* method, const char* trace_id,
+                                                       const char* parent_span_id, bool tracing_enabled):
       method_(GetMethod(method)),
       tracing_enabled_(tracing_enabled) {
   GenerateClientContext(absl::StrCat("Sent.", method_), absl::string_view(trace_id),
