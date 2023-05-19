@@ -47,8 +47,10 @@ namespace {
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client3.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client3.key";
+constexpr char kClientCertPath[] =
+    "src/core/tsi/test_creds/client-with-spiffe.pem";
+constexpr char kClientKeyPath[] =
+    "src/core/tsi/test_creds/client-with-spiffe.key";
 
 constexpr char kMessage[] = "Hello";
 
@@ -74,7 +76,7 @@ class TestAuditLogger : public AuditLogger {
   explicit TestAuditLogger(int* log_count) : log_count_(log_count) {}
 
   absl::string_view name() const override { return kLoggerName; }
-  void Log(const AuditContext& context) override { *log_count_ += 1; }
+  void Log(const AuditContext&) override { *log_count_ += 1; }
 
  private:
   int* log_count_;
@@ -84,7 +86,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   class Config : public AuditLoggerFactory::Config {
     absl::string_view name() const override { return kLoggerName; }
-    std::string ToString() const override { return ""; }
+    std::string ToString() const override { return "{}"; }
   };
 
   explicit TestAuditLoggerFactory(int* log_count) : log_count_(log_count) {}
@@ -533,12 +535,14 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   grpc::Status status;
 
   ClientContext context1;
+  // Matches the allow rule.
   context1.AddMetadata("key-foo", "foo");
   status = SendRpc(channel, &context1, &resp);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(log_count_, 0);
 
   ClientContext context2;
+  // Does not match the allow rule or deny rule.
   context2.AddMetadata("key-foo", "bar");
   ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context2, &resp);
@@ -552,7 +556,7 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   EXPECT_EQ(log_count_, 1);
 
   ClientContext context3;
-  context3.AddMetadata("key-foo", "foo");
+  // Matches the deny rule.
   context3.AddMetadata("key-bar", "bar");
   ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context3, &resp);
