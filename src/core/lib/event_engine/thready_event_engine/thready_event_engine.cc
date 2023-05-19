@@ -18,7 +18,6 @@
 
 #include <memory>
 #include <string>
-#include <thread>
 #include <type_traits>
 #include <vector>
 
