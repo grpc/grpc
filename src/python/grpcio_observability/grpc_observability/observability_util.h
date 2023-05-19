@@ -51,7 +51,7 @@ struct CensusData {
   SpanCensusData span_data;
   Measurement measurement_data;
   CensusData() {}
-  CensusData(Measurement mm, std::vector<Label> labels)
+  CensusData(Measurement mm, std::vector<Label>& labels)
       : type(kMetricData), labels(std::move(labels)), measurement_data(mm)  {}
   CensusData(SpanCensusData sd)
       : type(kSpanData), span_data(sd) {}
@@ -100,9 +100,9 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 
 void AddCensusDataToBuffer(CensusData buffer);
 
-void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label> labels);
+void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels);
 
-void RecordDoubleMetric(MetricsName name, double value, std::vector<Label> labels);
+void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labels);
 
 void RecordSpan(SpanCensusData span_census_data);
 
