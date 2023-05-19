@@ -2378,10 +2378,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "per_cpu",
+    srcs = [
+        "lib/gprpp/per_cpu.cc",
+    ],
     hdrs = [
         "lib/gprpp/per_cpu.h",
     ],
     deps = [
+        "useful",
         "//:exec_ctx",
         "//:gpr",
     ],
