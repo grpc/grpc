@@ -70,7 +70,7 @@ grpc_cc_test(
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
-        "//test/core/event_engine/thready_event_engine",
+        "//src/core:thready_event_engine",
     ],
 )
 
