@@ -63,6 +63,16 @@ message TXTRecords {
     repeated TXTRecord txt_records = 1;
 }
 
+enum ExecutionStep {
+    NEVER = 0;
+    DURING_LOOKUP_HOSTNAME = 1;
+    AFTER_LOOKUP_HOSTNAME_CALLBACK = 2;
+    DURING_LOOKUP_SRV = 3;
+    AFTER_LOOKUP_SRV_CALLBACK = 4;
+    DURING_LOOKUP_TXT = 5;
+    AFTER_LOOKUP_TXT_CALLBACK = 6;
+}
+
 message Msg {
     ResolverArgs resolver_args = 1;
     oneof hostname {
@@ -77,5 +87,5 @@ message Msg {
         TXTRecords txt_response = 6;
         Error txt_error = 7;
     }
-    // TODO(hork): consider if cancellation responses can be fuzzed
+    ExecutionStep should_orphan_at_step = 8;
 }
