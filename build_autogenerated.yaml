@@ -9530,7 +9530,7 @@ targets:
   - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
-  - test/core/security/matchers_test.cc
+  - test/core/matchers/matchers_test.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc

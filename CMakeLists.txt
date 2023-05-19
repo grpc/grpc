@@ -15109,7 +15109,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
-  test/core/security/matchers_test.cc
+  test/core/matchers/matchers_test.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
