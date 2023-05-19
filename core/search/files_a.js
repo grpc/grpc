@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['memory_5fallocator_2eh_1264',['memory_allocator.h',['../memory__allocator_8h.html',1,'']]],
-  ['memory_5fallocator_5fimpl_2eh_1265',['memory_allocator_impl.h',['../memory__allocator__impl_8h.html',1,'']]],
-  ['memory_5frequest_2eh_1266',['memory_request.h',['../memory__request_8h.html',1,'']]],
-  ['moving_2dto_2dc_2b_2b_2emd_1267',['moving-to-c++.md',['../moving-to-c_09_09_8md.html',1,'']]]
+  ['load_2dbalancing_2emd_1264',['load-balancing.md',['../load-balancing_8md.html',1,'']]],
+  ['load_5freporting_2eh_1265',['load_reporting.h',['../load__reporting_8h.html',1,'']]],
+  ['log_2eh_1266',['log.h',['../impl_2codegen_2log_8h.html',1,'(Global Namespace)'],['../support_2log_8h.html',1,'(Global Namespace)']]],
+  ['log_5fwindows_2eh_1267',['log_windows.h',['../log__windows_8h.html',1,'']]]
 ];

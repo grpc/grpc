@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -77,7 +77,7 @@ $(function() {
 <div class="fragment"><div class="line"><span class="keyword">class </span>EchoTestService final {</div>
 <div class="line">  <span class="keyword">public</span>:</div>
 <div class="line">  <span class="keyword">class </span>StubInterface {</div>
-<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">virtual ::grpc::Status</a> Echo(::<a class="code" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a>* context, const ::grpc::testing::EchoRequest&amp; request, ::grpc::testing::EchoResponse* response) = 0;</div>
+<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">virtual ::grpc::Status</a> Echo(::<a class="code" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a>* context, const ::grpc::testing::EchoRequest&amp; request, ::grpc::testing::EchoResponse* response) = 0;</div>
 <div class="line">  …</div>
 <div class="line">    std::unique_ptr&lt; ::grpc::ClientReaderWriterInterface&lt; ::grpc::testing::EchoRequest, ::grpc::testing::EchoResponse&gt;&gt; BidiStream(::<a class="code" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a>* context) {</div>
 <div class="line">      <span class="keywordflow">return</span> std::unique_ptr&lt; ::grpc::ClientReaderWriterInterface&lt; ::grpc::testing::EchoRequest, ::grpc::testing::EchoResponse&gt;&gt;(BidiStreamRaw(context));</div>
@@ -125,7 +125,7 @@ $(function() {
 <div class="line">    EchoRequest request;</div>
 <div class="line">    EchoResponse response;</div>
 <div class="line">    request.set_message(<span class="stringliteral">&quot;hello world&quot;</span>);</div>
-<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a> s = stub_-&gt;Echo(&amp;context, request, &amp;response);</div>
+<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a> s = stub_-&gt;Echo(&amp;context, request, &amp;response);</div>
 <div class="line">    EXPECT_EQ(request.message(), response.message());</div>
 <div class="line">    EXPECT_TRUE(s.ok());</div>
 <div class="line">  }</div>
@@ -157,7 +157,7 @@ $(function() {
 <div class="line">    stream-&gt;WritesDone();</div>
 <div class="line">    EXPECT_FALSE(stream-&gt;Read(&amp;response));</div>
 <div class="line"> </div>
-<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a> s = stream-&gt;Finish();</div>
+<div class="line">    <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a> s = stream-&gt;Finish();</div>
 <div class="line">    EXPECT_TRUE(s.ok());</div>
 <div class="line">  }</div>
 <div class="line"> </div>
@@ -200,10 +200,10 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:35</div></div>
 <div class="ttc" id="anamespacegrpc_html_aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf6f3078af147d683afc70e09695c7a65">grpc::OK</a></div><div class="ttdeci">@ OK</div><div class="ttdoc">Not an error; returned on success.</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:28</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:193</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

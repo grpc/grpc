@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,14 +68,14 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>Originally written by ctiller, markdroth, and vjpai in October 2017</p>
 <p>Revised by veblush in October 2019</p>
-<h1><a class="anchor" id="autotoc_md120"></a>
+<h1><a class="anchor" id="autotoc_md125"></a>
 Background and Goal</h1>
 <p>gRPC core was originally written in C89 for several reasons (possibility of kernel integration, ease of wrapping, compiler support, etc). Over time, this was changed to C99 as all relevant compilers in active use came to support C99 effectively.</p>
 <p>gRPC started allowing to use C++ with a couple of exceptions not to have C++ library linked such as <code>libstdc++.so</code>. (For more detail, see the <a href="https://github.com/grpc/proposal/blob/master/L6-core-allow-cpp.md">proposal</a>)</p>
 <p>Finally gRPC became ready to use full C++11 with the standard library by the <a href="https://github.com[/grpc/proposal/blob/master/L59-core-allow-cppstdlib.md">proposal</a>.</p>
 <p>Throughout all of these transitions, the public header files are committed to remain in C89.</p>
 <p>The goal now is to make the gRPC core implementation true idiomatic C++ compatible with <a href="https://google.github.io/styleguide/cppguide.html">Google's C++ style guide</a>.</p>
-<h1><a class="anchor" id="autotoc_md121"></a>
+<h1><a class="anchor" id="autotoc_md126"></a>
 Constraints</h1>
 <ul>
 <li>Most of features available in C++11 are allowed to use but there are some exceptions because gRPC should support old systems.<ul>
@@ -96,7 +96,7 @@ Constraints</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md122"></a>
+<h1><a class="anchor" id="autotoc_md127"></a>
 Roadmap</h1>
 <ul>
 <li>What should be the phases of getting code converted to idiomatic C++<ul>
@@ -116,7 +116,7 @@ Roadmap</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md123"></a>
+<h1><a class="anchor" id="autotoc_md128"></a>
 Implications for C++ API and wrapped languages</h1>
 <ul>
 <li>For C++ structs, switch to <code>using</code> when possible (e.g., Slice, ByteBuffer, ...)</li>
@@ -126,7 +126,7 @@ Implications for C++ API and wrapped languages</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

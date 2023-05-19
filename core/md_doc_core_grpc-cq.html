@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -69,7 +69,7 @@ $(function() {
 <div class="textblock"><p><em>Author: Sree Kuchibhotla (@sreecha) - Sep 2018</em></p>
 <p>Code: <a href="https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/surface/completion_queue.cc">completion_queue.cc</a></p>
 <p>This document gives an overview of completion queue architecture and focuses mainly on the interaction between completion queue and the Polling engine layer.</p>
-<h1><a class="anchor" id="autotoc_md102"></a>
+<h1><a class="anchor" id="autotoc_md107"></a>
 Completion queue attributes</h1>
 <p>Completion queue has two attributes</p>
 <ul>
@@ -86,10 +86,10 @@ Completion queue attributes</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md103"></a>
+<h1><a class="anchor" id="autotoc_md108"></a>
 Details</h1>
 <p><img src="../images/grpc-cq.png" alt="image" class="inline"/></p>
-<h2><a class="anchor" id="autotoc_md104"></a>
+<h2><a class="anchor" id="autotoc_md109"></a>
 &lt;strong&gt;grpc_completion_queue_next()&lt;/strong&gt; &amp; &lt;strong&gt;grpc_completion_queue_pluck()&lt;/strong&gt; APIS</h2>
 <div class="fragment"><div class="line">grpc_completion_queue_next(cq, deadline)/pluck(cq, deadline, tag) {</div>
 <div class="line">  while(true) {</div>
@@ -106,7 +106,7 @@ Details</h1>
 <div class="line">    \\    on SOME completion queue - not necessarily this one)</div>
 <div class="line">  }</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md105"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md110"></a>
 Queuing a completion event (i.e., "tag")</h2>
 <div class="fragment"><div class="line">grpc_cq_end_op(cq, tag) {</div>
 <div class="line">  \\ 1. Queue the tag in the event queue</div>
@@ -122,7 +122,7 @@ Queuing a completion event (i.e., "tag")</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

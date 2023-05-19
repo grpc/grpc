@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -167,7 +167,7 @@ $(function() {
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    XdsServerServingStatusNotifierInterface* notifier =</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keyword">static_cast&lt;</span>XdsServerServingStatusNotifierInterface*<span class="keyword">&gt;</span>(user_data);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    notifier-&gt;OnServingStatusUpdate(</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        uri, {<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::Status</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">StatusCode</a><span class="keyword">&gt;</span>(update.<a class="code" href="structgrpc__serving__status__update.html#aed86b3804752c7a94c822711379d220f">code</a>),</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        uri, {<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::Status</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">StatusCode</a><span class="keyword">&gt;</span>(update.<a class="code" href="structgrpc__serving__status__update.html#aed86b3804752c7a94c822711379d220f">code</a>),</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                           update.<a class="code" href="structgrpc__serving__status__update.html#a307e86f282b6e2cd01d2767673978ccc">error_message</a>)});</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  }</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
@@ -201,18 +201,18 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_builder_1_1experimental__type_html"><div class="ttname"><a href="classgrpc_1_1_server_builder_1_1experimental__type.html">grpc::ServerBuilder::experimental_type</a></div><div class="ttdoc">NOTE: class experimental_type is not part of the public API of this class.</div><div class="ttdef"><b>Definition:</b> server_builder.h:256</div></div>
 <div class="ttc" id="aclassgrpc_1_1_xds_server_serving_status_notifier_interface_html_ae4fe05be7d9227f6b677c24307d529b0"><div class="ttname"><a href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html#ae4fe05be7d9227f6b677c24307d529b0">grpc::XdsServerServingStatusNotifierInterface::OnServingStatusUpdate</a></div><div class="ttdeci">virtual void OnServingStatusUpdate(std::string uri, ServingStatusUpdate update)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_xds_server_builder_1_1experimental__type_html"><div class="ttname"><a href="classgrpc_1_1_xds_server_builder_1_1experimental__type.html">grpc::XdsServerBuilder::experimental_type</a></div><div class="ttdef"><b>Definition:</b> xds_server_builder.h:52</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
 <div class="ttc" id="aclassgrpc_1_1_xds_server_builder_html_a990da9b1dab5e4edb974d9f6220eda9d"><div class="ttname"><a href="classgrpc_1_1_xds_server_builder.html#a990da9b1dab5e4edb974d9f6220eda9d">grpc::XdsServerBuilder::set_status_notifier</a></div><div class="ttdeci">void set_status_notifier(XdsServerServingStatusNotifierInterface *notifier)</div><div class="ttdef"><b>Definition:</b> xds_server_builder.h:71</div></div>
 <div class="ttc" id="astructgrpc__serving__status__update_html_aed86b3804752c7a94c822711379d220f"><div class="ttname"><a href="structgrpc__serving__status__update.html#aed86b3804752c7a94c822711379d220f">grpc_serving_status_update::code</a></div><div class="ttdeci">grpc_status_code code</div><div class="ttdef"><b>Definition:</b> grpc.h:436</div></div>
-<div class="ttc" id="agroup__grpc__arg__keys_html_gae677c8adf046eb6161ba562d2ccc50b3"><div class="ttname"><a href="group__grpc__arg__keys.html#gae677c8adf046eb6161ba562d2ccc50b3">GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS</a></div><div class="ttdeci">#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS</div><div class="ttdoc">EXPERIMENTAL.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:480</div></div>
+<div class="ttc" id="agroup__grpc__arg__keys_html_gae677c8adf046eb6161ba562d2ccc50b3"><div class="ttname"><a href="group__grpc__arg__keys.html#gae677c8adf046eb6161ba562d2ccc50b3">GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS</a></div><div class="ttdeci">#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS</div><div class="ttdoc">EXPERIMENTAL.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:482</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html"><div class="ttname"><a href="classgrpc_1_1_server_builder.html">grpc::ServerBuilder</a></div><div class="ttdoc">A builder class for the creation and startup of grpc::Server instances.</div><div class="ttdef"><b>Definition:</b> server_builder.h:85</div></div>
 <div class="ttc" id="aclassgrpc_1_1_xds_server_serving_status_notifier_interface_html_a218fd62bca02c870bdb1e7019eba12df"><div class="ttname"><a href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html#a218fd62bca02c870bdb1e7019eba12df">grpc::XdsServerServingStatusNotifierInterface::~XdsServerServingStatusNotifierInterface</a></div><div class="ttdeci">virtual ~XdsServerServingStatusNotifierInterface()=default</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <div class="ttc" id="agrpcpp_2server__builder_8h_html"><div class="ttname"><a href="grpcpp_2server__builder_8h.html">server_builder.h</a></div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_xds_server_serving_status_notifier_interface_html"><div class="ttname"><a href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html">grpc::XdsServerServingStatusNotifierInterface</a></div><div class="ttdef"><b>Definition:</b> xds_server_builder.h:28</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

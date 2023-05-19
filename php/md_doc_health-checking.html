@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -94,7 +94,7 @@ Service Definition</h1>
 <div class="line"> </div>
 <div class="line">  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>A client can query the server’s health status by calling the <code>Check</code> method, and a deadline should be set on the rpc. The client can optionally set the service name it wants to query for health status. The suggested format of service name is <code>package_names.ServiceName</code>, such as <code>grpc.health.v1.Health</code>.</p>
+</div><!-- fragment --><p>A client can query the server’s health status by calling the <code>Check</code> method, and a deadline should be set on the rpc. The client can optionally set the service name it wants to query for health status.</p>
 <p>The server should register all the services manually and set the individual status, including an empty service name and its status. For each request received, if the service name can be found in the registry, a response must be sent back with an <code>OK</code> status and the status field should be set to <code>SERVING</code> or <code>NOT_SERVING</code> accordingly. If the service name is not registered, the server returns a <code>NOT_FOUND</code> GRPC status.</p>
 <p>The server should use an empty string as the key for server's overall health status, so that a client not interested in a specific service can query the server's status with an empty request. The server can just do exact matching of the service name without support of any kind of wildcard matching. However, the service owner has the freedom to implement more complicated matching semantics that both the client and server agree upon.</p>
 <p>A client can declare the server as unhealthy if the rpc is not finished after some amount of time. The client should be able to handle the case where server does not have the Health service.</p>
@@ -103,7 +103,7 @@ Service Definition</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:51:15 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:27:28 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

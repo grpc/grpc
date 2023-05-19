@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,14 +68,14 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.</p>
 <p>NOTE2: <code>CallCredentials</code> class is only valid if the security level it requires is less than or equal to the security level of the connection used to transfer it. See the <a href="https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md">gRFC</a> for more information. </p>
-<h1><a class="anchor" id="autotoc_md258"></a>
+<h1><a class="anchor" id="autotoc_md263"></a>
 AuthContext</h1>
 <p>To perform server-side authentication, gRPC exposes the <em>authentication context</em> for each call. The context exposes important authentication-related information about the RPC such as the type of security/authentication type being used and the peer identity.</p>
 <p>The authentication context is structured as a multi-map of key-value pairs - the <em>auth properties</em>. In addition to that, for authenticated RPCs, the set of properties corresponding to a selected key will represent the verified identity of the caller - the <em>peer identity</em>.</p>
 <p>The contents of the <em>auth properties</em> are populated by an <em>auth interceptor</em>. The interceptor also chooses which property key will act as the peer identity (e.g. for client certificate authentication this property will be <code>"x509_common_name"</code> or <code>"x509_subject_alternative_name"</code>).</p>
 <p>Note that AuthContext is generally not modifiable, except when used via an AuthMetadataProcessor(<a href="https://github.com/grpc/grpc/blob/master/include/grpcpp/security/auth_context.h">reference</a>). However, because the AuthContext is a connection-level object, when it is modified via an AuthMetadataProcessor, the modifications will be visible on all subsequent calls on the same connection.</p>
 <p>WARNING: AuthContext is the only reliable source of truth when it comes to authenticating RPCs. Using any other call/context properties for authentication purposes is wrong and inherently unsafe.</p>
-<h3><a class="anchor" id="autotoc_md259"></a>
+<h3><a class="anchor" id="autotoc_md264"></a>
 Example AuthContext contents</h3>
 <p>For secure channel using mutual TLS authentication with both client and server certificates (test certificates from this repository are used).</p>
 <p>Populated auth properties: </p><div class="fragment"><div class="line">&quot;transport_security_type&quot;: &quot;ssl&quot;  # connection is secured using TLS/SSL</div>
@@ -86,21 +86,21 @@ Example AuthContext contents</h3>
 <div class="line">&quot;x509_subject_alternative_name&quot;: &quot;*.test.youtube.com&quot;</div>
 <div class="line">&quot;x509_subject_alternative_name&quot;: &quot;192.168.1.3&quot;</div>
 </div><!-- fragment --><p>The peer identity is set of all properties named <code>"x509_subject_alternative_name"</code>: </p><div class="fragment"><div class="line">peer_identity_property_name = &quot;x509_subject_alternative_name&quot;</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md260"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md265"></a>
 AuthProperty</h1>
 <p>Auth properties are elements of the AuthContext. They have a name (a key of type string) and a value which can be a string or binary data.</p>
-<h1><a class="anchor" id="autotoc_md261"></a>
+<h1><a class="anchor" id="autotoc_md266"></a>
 Auth Interceptors</h1>
 <p>Auth interceptors are gRPC components that populate contents of the auth context based on gRPC's internal state and/or call metadata. gRPC comes with some basic "interceptors" already built-in.</p>
 <p>WARNING: While there is a public API that allows anyone to write their own custom interceptor, please think twice before using it. There are legitimate uses for custom interceptors but you should keep in mind that as auth interceptors essentially decide which RPCs are authenticated and which are not, their code is very sensitive from the security perspective and getting things wrong might have serious consequences. If unsure, we strongly recommend to rely on official &amp; proven interceptors that come with gRPC.</p>
-<h3><a class="anchor" id="autotoc_md262"></a>
+<h3><a class="anchor" id="autotoc_md267"></a>
 Available auth interceptors</h3>
 <ul>
 <li>TLS/SSL certificate authentication (built into gRPC's security layer, automatically used whenever you use a secure connection)</li>
 <li>(coming soon) JWT auth token authentication</li>
 <li>more will be added over time</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md263"></a>
+<h1><a class="anchor" id="autotoc_md268"></a>
 Status (by language)</h1>
 <p>C-core exposes low level API to access auth context contents and to implement an auth interceptor. In C++, the auth interceptor API is exposed as <code>AuthMetadataProcessor</code>.</p>
 <p>A high level API to access AuthContext contents is available in these languages:</p><ul>
@@ -112,7 +112,7 @@ Status (by language)</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -305,7 +305,7 @@ $(function() {
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  std::function&lt;void(ClientContext*, internal::Call*,</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                     <span class="keywordtype">bool</span> initial_metadata_read,</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                     internal::CallOpSendInitialMetadata*,</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                     internal::CallOpSetInterface**, <span class="keywordtype">void</span>*, <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>*, <span class="keywordtype">void</span>*)&gt;</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                     internal::CallOpSetInterface**, <span class="keywordtype">void</span>*, <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>*, <span class="keywordtype">void</span>*)&gt;</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;      finish_;</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;};</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
@@ -437,7 +437,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_client_async_response_reader_helper_html_a2871b8d5a2182fd10a87efce07e0cd61"><div class="ttname"><a href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html#a2871b8d5a2182fd10a87efce07e0cd61">grpc::internal::ClientAsyncResponseReaderHelper::SetupRequest</a></div><div class="ttdeci">static void SetupRequest(grpc_call *call, grpc::internal::CallOpSendInitialMetadata **single_buf_ptr, std::function&lt; void(ClientContext *, internal::Call *, internal::CallOpSendInitialMetadata *, void *)&gt; *read_initial_metadata, std::function&lt; void(ClientContext *, internal::Call *, bool initial_metadata_read, internal::CallOpSendInitialMetadata *, internal::CallOpSetInterface **, void *, Status *, void *)&gt; *finish, const W &amp;request)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:111</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_async_response_reader_interface_html_aa97dc1ab6a7160a489d2e555102bf5a0"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader_interface.html#aa97dc1ab6a7160a489d2e555102bf5a0">grpc::ClientAsyncResponseReaderInterface::~ClientAsyncResponseReaderInterface</a></div><div class="ttdeci">virtual ~ClientAsyncResponseReaderInterface()</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:44</div></div>
 <div class="ttc" id="acall__op__set__interface_8h_html"><div class="ttname"><a href="call__op__set__interface_8h.html">call_op_set_interface.h</a></div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_async_response_reader_html_a473a5629202803f869a605fda81d0196"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#a473a5629202803f869a605fda81d0196">grpc::ClientAsyncResponseReader::Finish</a></div><div class="ttdeci">void Finish(R *msg, grpc::Status *status, void *tag) override</div><div class="ttdoc">See ClientAsyncResponseReaderInterface::Finish for semantics.</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:257</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_async_response_reader_html_ab45261c3dee4f7b34080593cc899b40d"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#ab45261c3dee4f7b34080593cc899b40d">grpc::ClientAsyncResponseReader::ReadInitialMetadata</a></div><div class="ttdeci">void ReadInitialMetadata(void *tag) override</div><div class="ttdoc">See ClientAsyncResponseReaderInterface::ReadInitialMetadata for semantics.</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:245</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a626c528eb250e4811aa9c98b87a994ce"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">grpc::internal::CallOpSet::set_output_tag</a></div><div class="ttdeci">void set_output_tag(void *return_tag)</div><div class="ttdef"><b>Definition:</b> call_op_set.h:935</div></div>
@@ -458,10 +457,11 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:424</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method.</div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_initial_metadata_html_ab841b37b8b464956886832b8a8b5dcb8"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#ab841b37b8b464956886832b8a8b5dcb8">grpc::internal::CallOpSendInitialMetadata::SendInitialMetadata</a></div><div class="ttdeci">void SendInitialMetadata(std::multimap&lt; std::string, std::string &gt; *metadata, uint32_t flags)</div><div class="ttdef"><b>Definition:</b> call_op_set.h:222</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a449a33a6877ac4710dc40fccaf786c35"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">grpc::internal::CallOpSet::set_core_cq_tag</a></div><div class="ttdeci">void set_core_cq_tag(void *core_cq_tag)</div><div class="ttdoc">set_core_cq_tag is used to provide a different core CQ tag than &quot;this&quot;.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:943</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

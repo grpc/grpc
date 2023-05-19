@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -76,10 +76,10 @@ $(function() {
 <li>Pull request: <a href="https://github.com/grpc/grpc/pull/6803">https://github.com/grpc/grpc/pull/6803</a> </li>
 </ul>
 </blockquote>
-<h1><a class="anchor" id="autotoc_md87"></a>
+<h1><a class="anchor" id="autotoc_md92"></a>
 1. Introduction</h1>
 <p>The document talks about the proposed changes to <code>epoll</code>-based implementation of pollsets in gRPC. Section-2 gives an overview of the current implementation, Section-3 talks about the problems in the current implementation and finally Section-4 talks about the proposed changes.</p>
-<h1><a class="anchor" id="autotoc_md88"></a>
+<h1><a class="anchor" id="autotoc_md93"></a>
 2. Current &lt;tt&gt;epoll&lt;/tt&gt;-based implementation in gRPC</h1>
 <p><img src="images/old_epoll_impl.png" alt="image" class="inline"/></p>
 <p><b>Figure 1: Current implementation</b></p>
@@ -88,9 +88,9 @@ $(function() {
 <p>A file descriptor can be in more than one completion queue. There are examples in the next section that show how this can happen.</p>
 <p>When an event of interest happens in a pollset, multiple threads are woken up and there are no guarantees on which thread actually ends up performing the work i.e executing the callbacks associated with that event. The thread that performs the work finally queues a completion event <code>grpc_cq_completion</code> on the appropriate completion queue and "kicks" (i.e wakes ups) the thread that is actually interested in that event (which can be itself - in which case there is no thread hop)</p>
 <p>For example, in <b>Figure 1</b>, if <code>fd1</code> becomes readable, any one of the threads i.e <em>Threads 1</em> to <em>Threads K</em> or <em>Thread P</em>, might be woken up. Let's say <em>Thread P</em> was calling a <code><a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a></code> and was actually interested in the event on <code>fd1</code> but <em>Thread 1</em> woke up. In this case, <em>Thread 1</em> executes the callbacks and finally kicks <em>Thread P</em> by signalling <code>event_fd_P</code>. <em>Thread P</em> wakes up, realizes that there is a new completion event for it and returns from <code><a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a></code> to its caller.</p>
-<h1><a class="anchor" id="autotoc_md89"></a>
+<h1><a class="anchor" id="autotoc_md94"></a>
 3. Issues in the current architecture</h1>
-<h2><a class="anchor" id="autotoc_md90"></a>
+<h2><a class="anchor" id="autotoc_md95"></a>
 &lt;em&gt;Thundering Herds&lt;/em&gt;</h2>
 <p>If multiple threads concurrently call <code>epoll_wait()</code>, we are guaranteed that only one thread is woken up if one of the <code>fds</code> in the set becomes readable/writable. However, in our current implementation, the threads do not directly call a blocking <code>epoll_wait()</code>[^3]. Instead, they call <code>poll()</code> on the set containing <code>[event_fd</code>[^4]<code>, epoll_fd]</code>. **(see Figure 1)**</p>
 <p>Considering the fact that an <code>fd</code> can be in multiple <code>pollsets</code> and that each <code>pollset</code> might have multiple poller threads, it means that whenever an <code>fd</code> becomes readable/writable, all the threads in all the <code>pollsets</code> (in which that <code>fd</code> is present) are woken up.</p>
@@ -109,7 +109,7 @@ $(function() {
 <li>Clearly, this would also cause all thundering herd problem for every read onthat fd</li>
 </ul>
 <p>There are other scenarios especially on the client side where an fd can end up being on multiple pollsets which would cause thundering herds on the clients.</p>
-<h1><a class="anchor" id="autotoc_md91"></a>
+<h1><a class="anchor" id="autotoc_md96"></a>
 4. Proposed changes to the current &lt;tt&gt;epoll&lt;/tt&gt;-based polling implementation:</h1>
 <p>The main idea in this proposal is to group 'related' <code>fds</code> into a single epoll-based set. This would ensure that only one thread wakes up in case of an event on one of the <code>fds</code> in the epoll set.</p>
 <p>To accomplish this, we introduce a new abstraction called <code>polling_island</code> which will have an epoll set underneath (See <b>Figure 2</b> below). A <code>polling_island</code> contains the following:</p>
@@ -122,14 +122,14 @@ $(function() {
 <p>In this new model, only one thread wakes up whenever an event of interest happens in an epoll set.</p>
 <p><img src="images/new_epoll_impl.png" alt="drawing" class="inline"/></p>
 <p><b>Figure 2: Proposed changes</b></p>
-<h2><a class="anchor" id="autotoc_md92"></a>
+<h2><a class="anchor" id="autotoc_md97"></a>
 4.1 Relation between &lt;tt&gt;fd&lt;/tt&gt;, &lt;tt&gt;pollset&lt;/tt&gt; and &lt;tt&gt;polling_island:&lt;/tt&gt;</h2>
 <ul>
 <li>An <code>fd</code> may belong to multiple <code>pollsets</code> but belongs to exactly one <code>polling_island</code></li>
 <li>A <code>pollset</code> belongs to exactly one <code>polling_island</code></li>
 <li>An <code>fd</code> and the <code>pollset(s</code>) it belongs to, have same <code>polling_island</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md93"></a>
+<h2><a class="anchor" id="autotoc_md98"></a>
 4.2 Algorithm to add an &lt;tt&gt;fd&lt;/tt&gt; to a &lt;tt&gt;pollset&lt;/tt&gt;</h2>
 <p>There are two cases to check here:</p>
 <ul>
@@ -144,7 +144,7 @@ $(function() {
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md94"></a>
+<h2><a class="anchor" id="autotoc_md99"></a>
 4.3 Directed wakeups:</h2>
 <p>The new implementation, just like the current implementation, does not provide us any guarantees that the thread that is woken up is the thread that is actually interested in the event. So the thread that woke up executes the callbacks and finally has to 'kick' the appropriate polling thread interested in the event.</p>
 <p>In the current implementation, every polling thread also had a <code>event_fd</code> on which it was listening to and hence waking it up was as simple as signaling that <code>event_fd</code>. However, using an <code>event_fd</code> also meant that every thread has to use a <code>poll()</code> (on <code>event_fd</code> and <code>epoll_fd</code>) instead of doing an <code>epoll_wait()</code> and this resulted in the thundering herd problems described above.</p>
@@ -153,7 +153,7 @@ $(function() {
 <div class="fragment"><div class="line">void grpc_use_signal(int signal_num)</div>
 </div><!-- fragment --><p>If the calling application does not provide a signal number, then the gRPC library will relegate to using a model similar to the current implementation (where every thread does a blocking <code>poll()</code> on its <code>wakeup_fd</code> and the <code>epoll_fd</code>). The function<code>psi_wait()</code>in figure 2 implements this logic.</p>
 <p>**&gt;&gt; **(<b>NOTE</b>: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling <code>epoll_wait()</code> on the epoll set at any time - which all other threads call poll on their <code>wakeup_fds</code>) in case of not getting a signal number from the applications.</p>
-<h1><a class="anchor" id="autotoc_md95"></a>
+<h1><a class="anchor" id="autotoc_md100"></a>
 Notes</h1>
 <p>[^1]: Only exception is in case of name-resolution</p>
 <p>[^2]: However, a <code><a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80" title="Blocks until an event is available, the completion queue is being shut down, or deadline is reached.">grpc_completion_queue_next()</a></code> and <code><a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a></code> must not be called in parallel on the same completion queue</p>
@@ -164,7 +164,7 @@ Notes</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

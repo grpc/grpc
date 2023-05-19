@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -82,6 +82,7 @@ $(function() {
 <code>#include &lt;google/protobuf/io/zero_copy_stream.h&gt;</code><br />
 <code>#include &lt;google/protobuf/util/json_util.h&gt;</code><br />
 <code>#include &lt;google/protobuf/util/type_resolver_util.h&gt;</code><br />
+<code>#include &quot;absl/status/status.h&quot;</code><br />
 </div>
 <p><a href="grpcpp_2impl_2codegen_2config__protobuf_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -101,6 +102,8 @@ Namespaces</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:a9782928f6f513f3bda1fe5f55b931d5d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a9782928f6f513f3bda1fe5f55b931d5d">GRPC_OPEN_SOURCE_PROTO</a></td></tr>
 <tr class="separator:a9782928f6f513f3bda1fe5f55b931d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0dc03d1c741aaf8446c07acf2904db3e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a0dc03d1c741aaf8446c07acf2904db3e">GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</a></td></tr>
+<tr class="separator:a0dc03d1c741aaf8446c07acf2904db3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9dada7a420bf3d91c428fa9699bd2ef3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a9dada7a420bf3d91c428fa9699bd2ef3">GRPC_CUSTOM_MESSAGE</a>&#160;&#160;&#160;::google::protobuf::Message</td></tr>
 <tr class="separator:a9dada7a420bf3d91c428fa9699bd2ef3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34a671f55cda98f5ab45ff5736d0a724"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a34a671f55cda98f5ab45ff5736d0a724">GRPC_CUSTOM_MESSAGELITE</a>&#160;&#160;&#160;::google::protobuf::MessageLite</td></tr>
@@ -133,7 +136,7 @@ Macros</h2></td></tr>
 <tr class="separator:adab2e3bf138e8ee14fc7dc7957618d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada778ba699b4ea60332c78a9db985a62"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#ada778ba699b4ea60332c78a9db985a62">GRPC_CUSTOM_JSONUTIL</a>&#160;&#160;&#160;::google::protobuf::util</td></tr>
 <tr class="separator:ada778ba699b4ea60332c78a9db985a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a787f3f7b9e6f6ec90c2d4958050757"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a9a787f3f7b9e6f6ec90c2d4958050757">GRPC_CUSTOM_UTIL_STATUS</a>&#160;&#160;&#160;::google::protobuf::util::Status</td></tr>
+<tr class="memitem:a9a787f3f7b9e6f6ec90c2d4958050757"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2config__protobuf_8h.html#a9a787f3f7b9e6f6ec90c2d4958050757">GRPC_CUSTOM_UTIL_STATUS</a>&#160;&#160;&#160;::absl::Status</td></tr>
 <tr class="separator:a9a787f3f7b9e6f6ec90c2d4958050757"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -162,8 +165,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a5e38dc6b5bc7df3637abc5ef37e2ea6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42a4dc5550fa626bc095fe70517bd514"><td class="memItemLeft" align="right" valign="top">typedef ::google::protobuf::SourceLocation&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1protobuf.html#a42a4dc5550fa626bc095fe70517bd514">grpc::protobuf::SourceLocation</a></td></tr>
 <tr class="separator:a42a4dc5550fa626bc095fe70517bd514"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a717f1a5db6c98d3f27340afd6f28bf7e"><td class="memItemLeft" align="right" valign="top">typedef ::google::protobuf::util::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></td></tr>
-<tr class="separator:a717f1a5db6c98d3f27340afd6f28bf7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad372120c6db3d26bf54ab69b6f595fe4"><td class="memItemLeft" align="right" valign="top">typedef ::absl::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></td></tr>
+<tr class="separator:ad372120c6db3d26bf54ab69b6f595fe4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafcf83341d287d00418952374bc82ce1"><td class="memItemLeft" align="right" valign="top">typedef ::google::protobuf::io::ZeroCopyOutputStream&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1">grpc::protobuf::io::ZeroCopyOutputStream</a></td></tr>
 <tr class="separator:aafcf83341d287d00418952374bc82ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae16bb38d6b730de308f0be4eb43931b4"><td class="memItemLeft" align="right" valign="top">typedef ::google::protobuf::io::ZeroCopyInputStream&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1protobuf_1_1io.html#ae16bb38d6b730de308f0be4eb43931b4">grpc::protobuf::io::ZeroCopyInputStream</a></td></tr>
@@ -375,7 +378,7 @@ Typedefs</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GRPC_CUSTOM_UTIL_STATUS&#160;&#160;&#160;::google::protobuf::util::Status</td>
+          <td class="memname">#define GRPC_CUSTOM_UTIL_STATUS&#160;&#160;&#160;::absl::Status</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -424,10 +427,24 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
+<a id="a0dc03d1c741aaf8446c07acf2904db3e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0dc03d1c741aaf8446c07acf2904db3e">&#9670;&nbsp;</a></span>GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
