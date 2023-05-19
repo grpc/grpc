@@ -29,7 +29,7 @@ std::condition_variable g_census_data_buffer_cv;
 // TODO(xuanwn): Change below to a more appropriate number.
 // Assume buffer will store 100 CensusData and start export when buffer is 50% full.
 // kMaxExportBufferSizeBytes = 100 * (2048(kMaxTagsLen) + 1024(Buffer))
-constexpr float kExportThreshold = 0.5;
+constexpr float kExportThreshold = 0.7;
 constexpr int kMaxExportBufferSizeBytes = 100 * 1024 * 3;
 
 namespace {
@@ -75,7 +75,7 @@ void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labe
 }
 
 
-void RecordSpan(SpanCensusData span_census_data) {
+void RecordSpan(const SpanCensusData& span_census_data) {
   CensusData data = CensusData(span_census_data);
   AddCensusDataToBuffer(data);
 }
@@ -86,7 +86,7 @@ void NativeObservabilityInit() {
 }
 
 
-void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id) {
+void* CreateClientCallTracer(const char* method, const char* trace_id, const char* parent_span_id) {
     void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
     return client_call_tracer;
 }

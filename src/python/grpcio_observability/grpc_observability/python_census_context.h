@@ -133,8 +133,7 @@ struct SpanCensusData {
 };
 
 // SpanContext is associated with span to help manage the current context of a span.
-// Life circle:
-//   It's created when creating a new Span and will be destroyed together with assoicated
+// It's created when creating a new Span and will be destroyed together with assoicated
 // Span.
 class SpanContext final {
  public:
@@ -161,8 +160,7 @@ class SpanContext final {
 };
 
 // Span is associated with PythonCensusContext to help manage tracing related data.
-// Life circle:
-//   It's created by calling StartSpan and will be destroyed together with assoicated
+// It's created by calling StartSpan and will be destroyed together with assoicated
 // PythonCensusContext.
 class Span final {
  public:
@@ -178,15 +176,15 @@ class Span final {
     ++child_span_count_;
   }
 
-  static Span StartSpan(absl::string_view name, Span* parent);
+  static Span StartSpan(absl::string_view name, const Span* parent);
 
-  static Span StartSpan(absl::string_view name, SpanContext parent_context);
+  static Span StartSpan(absl::string_view name, const SpanContext& parent_context);
 
   static Span StartSpan(absl::string_view name, absl::string_view trace_id);
 
   static Span BlankSpan() { return StartSpan("", ""); }
 
-  SpanContext& Context() { return context_; }
+  const SpanContext& Context() const { return context_; }
 
   void SetStatus(absl::string_view status);
 
@@ -216,8 +214,7 @@ class Span final {
 // and ServerCallTracer to help manage the span, spanContext and labels for each tracer.
 // Craete a new PythonCensusContext will always reasult in creating a new span (and a
 // new SpanContext for that span).
-// Life circle:
-//   It's created during callTraceer initialization and will be destroyed after the destruction
+// It's created during callTraceer initialization and will be destroyed after the destruction
 // of each callTracer.
 class PythonCensusContext {
  public:
@@ -244,7 +241,7 @@ class PythonCensusContext {
 
   Span& Span() { return span_; }
   std::vector<Label>& Labels() { return labels_; } // Only used for metrics
-  SpanContext SpanContext() { return Span().Context(); }
+  const SpanContext& SpanContext() { return Span().Context(); }
 
   void AddSpanAttribute(absl::string_view key, absl::string_view attribute) {
     span_.AddAttribute(key, attribute);
@@ -280,7 +277,7 @@ void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
 void GenerateServerContext(absl::string_view header, absl::string_view method,
                            PythonCensusContext* context);
 
-inline absl::string_view GetMethod(char* method) {
+inline absl::string_view GetMethod(const char* method) {
   if (std::string(method).empty()) {
     return "";
   }
