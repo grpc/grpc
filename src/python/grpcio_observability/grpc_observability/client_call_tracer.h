@@ -94,9 +94,8 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit PythonOpenCensusCallTracer(
-                                char* method, char* trace_id, char* parent_span_id,
-                                bool tracing_enabled);
+  explicit PythonOpenCensusCallTracer(const char* method, const char* trace_id,
+                                      const char* parent_span_id, bool tracing_enabled);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {

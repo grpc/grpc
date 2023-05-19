@@ -51,9 +51,9 @@ struct CensusData {
   SpanCensusData span_data;
   Measurement measurement_data;
   CensusData() {}
-  CensusData(Measurement mm, std::vector<Label>& labels)
+  CensusData(const Measurement& mm, std::vector<Label>& labels)
       : type(kMetricData), labels(std::move(labels)), measurement_data(mm)  {}
-  CensusData(SpanCensusData sd)
+  CensusData(const SpanCensusData& sd)
       : type(kSpanData), span_data(sd) {}
 };
 
@@ -90,7 +90,7 @@ extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
-void* CreateClientCallTracer(char* method, char* trace_id, char* parent_span_id);
+void* CreateClientCallTracer(const char* method, const char* trace_id, const char* parent_span_id);
 
 void* CreateServerCallTracerFactory();
 
@@ -104,7 +104,7 @@ void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels
 
 void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labels);
 
-void RecordSpan(SpanCensusData span_census_data);
+void RecordSpan(const SpanCensusData& span_census_data);
 
 GcpObservabilityConfig ReadAndActivateObservabilityConfig();
 
