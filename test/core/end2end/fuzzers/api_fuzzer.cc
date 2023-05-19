@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <functional>
 #include <initializer_list>
 #include <memory>
@@ -741,9 +742,10 @@ int force_experiments = []() {
 }();
 }
 
-ApiFuzzer::ApiFuzzer() {
-  engine_ =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+ApiFuzzer::ApiFuzzer()
+    : engine_(std::dynamic_pointer_cast<FuzzingEventEngine>(
+          GetDefaultEventEngine())),
+      resource_quota_(grpc_core::MakeResourceQuota("api_fuzzer")) {
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
@@ -852,8 +854,11 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   if (channel_ == nullptr) return Result::kComplete;
   // ExecCtx is needed for ChannelArgs destruction.
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
-      create_channel.channel_args(), "api_fuzzer", &resource_quota_);
+  grpc_core::testing::FuzzingEnvironment fuzzing_env;
+  fuzzing_env.resource_quota = resource_quota_;
+  grpc_core::ChannelArgs args =
+      grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
+          create_channel.channel_args(), fuzzing_env);
   grpc_channel_credentials* creds =
       create_channel.has_channel_creds()
           ? ReadChannelCreds(create_channel.channel_creds())
@@ -881,8 +886,11 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
   if (server_ == nullptr) {
     // ExecCtx is needed for ChannelArgs destruction.
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::ChannelArgs args = grpc_core::testing::CreateFuzzingChannelArgs(
-        create_server.channel_args(), "api_fuzzer", &resource_quota_);
+    grpc_core::testing::FuzzingEnvironment fuzzing_env;
+    fuzzing_env.resource_quota = resource_quota_;
+    grpc_core::ChannelArgs args =
+        grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
+            create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
@@ -1093,9 +1101,7 @@ ApiFuzzer::Result ApiFuzzer::ValidateChannelTarget() {
 
 ApiFuzzer::Result ApiFuzzer::ResizeResourceQuota(
     uint32_t resize_resource_quota) {
-  if (resource_quota_ != nullptr) {
-    resource_quota_->memory_quota()->SetSize(resize_resource_quota);
-  }
+  resource_quota_->memory_quota()->SetSize(resize_resource_quota);
   return Result::kComplete;
 }
 

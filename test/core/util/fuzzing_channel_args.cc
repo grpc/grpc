@@ -28,10 +28,9 @@ namespace {
 using grpc::testing::FuzzingChannelArg;
 }  // namespace
 
-ChannelArgs CreateFuzzingChannelArgs(
+ChannelArgs CreateChannelArgsFromFuzzingConfiguration(
     const grpc::testing::FuzzingChannelArgs& fuzzing_channel_args,
-    absl::string_view prefix_identifier,
-    RefCountedPtr<ResourceQuota>* resource_quota) {
+    const FuzzingEnvironment& fuzzing_environment) {
   ChannelArgs channel_args;
   for (const auto& fuzz_arg : fuzzing_channel_args.args()) {
     switch (fuzz_arg.value_case()) {
@@ -42,15 +41,8 @@ ChannelArgs CreateFuzzingChannelArgs(
         channel_args = channel_args.Set(fuzz_arg.key(), fuzz_arg.i());
         break;
       case FuzzingChannelArg::kResourceQuota:
-        if (resource_quota != nullptr && *resource_quota != nullptr) {
-          channel_args = channel_args.SetObject(*resource_quota);
-        } else {
-          auto quota = MakeResourceQuota(std::string(prefix_identifier));
-          channel_args = channel_args.SetObject(quota);
-          if (resource_quota != nullptr) {
-            *resource_quota = quota;
-          }
-        }
+        channel_args =
+            channel_args.SetObject(fuzzing_environment.resource_quota);
         break;
       default:
         // ignore
