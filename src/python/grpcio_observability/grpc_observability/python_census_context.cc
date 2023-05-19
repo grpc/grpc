@@ -37,22 +37,22 @@ bool PythonOpenCensusTracingEnabled() {
 
 
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id, absl::string_view parent_span_id,
-                           PythonCensusContext* ctxt) {
+                           PythonCensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
-  ctxt->~PythonCensusContext();
+  context->~PythonCensusContext();
   if (method.empty()) {
-    new (ctxt) PythonCensusContext();
+    new (context) PythonCensusContext();
     return;
   }
   if (!parent_span_id.empty()) {
     // Note that parent_span_id exist also means it was marked as sampled at Python OC, we'll respect that decision.
     SpanContext parent_context = SpanContext(std::string(trace_id), std::string(parent_span_id), true);
-    new (ctxt) PythonCensusContext(method, parent_context);
+    new (context) PythonCensusContext(method, parent_context);
     return;
   }
   // Create span without parent.
-  new (ctxt) PythonCensusContext(method, trace_id);
+  new (context) PythonCensusContext(method, trace_id);
 }
 
 void GenerateServerContext(absl::string_view header, absl::string_view method,
@@ -73,14 +73,14 @@ void GenerateServerContext(absl::string_view header, absl::string_view method,
 }
 
 
-void ToGrpcTraceBinHeader(PythonCensusContext& ctx, uint8_t* out) {
+void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out) {
   out[kVersionOfs] = kVersionId;
   out[kTraceIdOfs] = kTraceIdField;
   uint8_t trace_options_rep_[kSizeTraceOptions];
 
-  std::string trace_id = absl::HexStringToBytes(absl::string_view(ctx.Span().Context().TraceId()));
-  std::string span_id = absl::HexStringToBytes(absl::string_view(ctx.Span().Context().SpanId()));
-  trace_options_rep_[0] = ctx.Span().Context().IsSampled() ? 1 : 0;
+  std::string trace_id = absl::HexStringToBytes(absl::string_view(ctx.SpanContext().TraceId()));
+  std::string span_id = absl::HexStringToBytes(absl::string_view(ctx.SpanContext().SpanId()));
+  trace_options_rep_[0] = ctx.SpanContext().IsSampled() ? 1 : 0;
 
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceIdOfs + 1]),
          trace_id.c_str(),
@@ -124,7 +124,7 @@ SpanContext FromGrpcTraceBinHeader(absl::string_view header) {
 }
 
 
-size_t TraceContextSerialize(PythonCensusContext& context,
+size_t TraceContextSerialize(const PythonCensusContext& context,
                              char* tracing_buf, size_t tracing_buf_size) {
   if (tracing_buf_size < kGrpcTraceBinHeaderLen) {
     return 0;
@@ -245,9 +245,9 @@ void Span::AddAnnotation(absl::string_view description) {
 }
 
 
-SpanCensusData Span::ToCensusData() {
+SpanCensusData Span::ToCensusData() const {
   SpanCensusData census_data;
-  absl::TimeZone utc =  absl::UTCTimeZone();
+  absl::TimeZone utc = absl::UTCTimeZone();
   census_data.name = name_;
   // Need a string format which can be exported to StackDriver directly.
   // See format details: https://cloud.google.com/trace/docs/reference/v2/rest/v2/projects.traces/batchWrite

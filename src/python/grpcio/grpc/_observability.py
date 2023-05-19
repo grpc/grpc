@@ -114,6 +114,7 @@ def observability_exit() -> None:
     set_plugin(None)
     _cygrpc.clear_server_call_tracer_factory()
 
+
 def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
     with get_plugin() as plugin:
         if not (plugin and plugin.observability_enabled):
