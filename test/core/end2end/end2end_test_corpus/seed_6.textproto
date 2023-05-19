@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.CallHostOverride/Chttp2SimplSslFullstackTls12"
-config_vars {
-  experiments: "event_engine_client"
-}

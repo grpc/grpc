@@ -105,33 +105,10 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   static const auto only_experiment =
       grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
+  const int test_id = msg.test_id() % tests.size();
+
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
-  }
-
-  auto it = std::lower_bound(
-      tests.begin(), tests.end(), msg.test(),
-      [](const Test& a, absl::string_view b) { return a.name < b; });
-  if (only_suite.has_value() || only_test.has_value() ||
-      only_config.has_value()) {
-    // We get faster convergence for selective tests if we do a fuzzy match
-    // instead of an exact one. The opposite is true for non-selective tests.
-    if (it == tests.end() || it->name != msg.test()) {
-      size_t best_test = 0;
-      size_t best_distance = std::numeric_limits<size_t>::max();
-      for (size_t i = 0; i < tests.size(); i++) {
-        auto distance = grpc_core::OsaDistance(msg.test(), tests[i].name);
-        if (distance < best_distance) {
-          best_test = i;
-          best_distance = distance;
-          if (distance == 0) break;
-        }
-      }
-      it = tests.begin() + best_test;
-    }
-  }
-  if (it == tests.end()) {
-    return;
   }
 
   if (only_experiment.has_value() &&
@@ -154,7 +131,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  auto test = it->factory();
+  auto test = tests[test_id].factory();
   test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {

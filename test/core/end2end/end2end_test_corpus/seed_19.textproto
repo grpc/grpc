@@ -1,4 +1,0 @@
-test: "CoreDeadlineTest.DeadlineAfterAccept/Chttp2FakeSecurityFullstack"
-config_vars {
-  experiments: "server_privacy"
-}

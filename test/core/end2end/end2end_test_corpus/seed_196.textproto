@@ -1,1 +1,0 @@
-test: "RetryHttp2Test.Ping/Chttp2FakeSecurityFullstack"

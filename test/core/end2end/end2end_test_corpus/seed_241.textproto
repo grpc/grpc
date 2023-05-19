@@ -1,1 +1,0 @@
-test: "SecureEnd2endTest.StaticInitAllowAuthorizedRequest/Chttp2SimplSslFullstackTls12"

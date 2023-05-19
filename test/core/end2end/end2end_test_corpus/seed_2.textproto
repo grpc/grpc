@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.CallHostOverride/Chttp2FullstackCompression"
-config_vars {
-  experiments: "peer_state_based_framing"
-}

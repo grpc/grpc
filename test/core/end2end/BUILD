@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
@@ -567,67 +567,6 @@ grpc_cc_test(
         "//src/core:error",
         "//src/core:useful",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_binary(
-    name = "seed_end2end_corpus",
-    testonly = 1,
-    srcs = ["seed_end2end_corpus.cc"] + END2END_TEST_SRCS,
-    external_deps = [
-        "absl/cleanup",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "gtest",
-    ],
-    deps = [
-        "cq_verifier",
-        "end2end_test_lib",
-        "fixture_support",
-        "http_proxy",
-        "proxy",
-        "//:channel_stack_builder",
-        "//:config",
-        "//:config_vars",
-        "//:debug_location",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_authorization_provider",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_trace",
-        "//:grpc_unsecure",
-        "//:legacy_context",
-        "//:orphanable",
-        "//:promise",
-        "//:ref_counted_ptr",
-        "//:stats",
-        "//src/core:arena_promise",
-        "//src/core:bitset",
-        "//src/core:channel_args",
-        "//src/core:channel_fwd",
-        "//src/core:channel_init",
-        "//src/core:channel_stack_type",
-        "//src/core:closure",
-        "//src/core:error",
-        "//src/core:experiments",
-        "//src/core:grpc_authorization_base",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
-        "//src/core:json",
-        "//src/core:lb_policy",
-        "//src/core:lb_policy_factory",
-        "//src/core:no_destruct",
-        "//src/core:notification",
-        "//src/core:slice",
-        "//src/core:stats_data",
-        "//src/core:status_helper",
-        "//src/core:time",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:test_lb_policies",
     ],
 )
 

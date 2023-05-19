@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.DefaultHost/Chttp2FakeSecurityFullstack"
-config_vars {
-  experiments: "event_engine_dns"
-}

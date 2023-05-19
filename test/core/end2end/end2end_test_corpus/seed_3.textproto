@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.CallHostOverride/Chttp2FullstackNoRetry"
-config_vars {
-  experiments: "flow_control_fixes"
-}

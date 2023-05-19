@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.CallHostOverride/Chttp2SimpleSslWithOauth2FullstackTls12"
-config_vars {
-  experiments: "free_large_allocator"
-}

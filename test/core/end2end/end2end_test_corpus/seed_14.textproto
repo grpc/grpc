@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.DeadlineAfterRoundTripWithServiceConfig/Chttp2FakeSecurityFullstack"
-config_vars {
-  experiments: "trace_record_callops"
-}

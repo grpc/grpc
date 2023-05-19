@@ -1,1 +1,0 @@
-test: "CoreEnd2endTest.BinaryMetadataServerHttp2FallbackClientHttp2Fallback/Chttp2FakeSecurityFullstack"

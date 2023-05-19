@@ -1,4 +1,0 @@
-test: "CoreClientChannelTest.CallHostOverride/Chttp2SslCredReloadTls13"
-config_vars {
-  experiments: "event_engine_listener"
-}
