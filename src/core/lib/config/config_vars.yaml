@@ -30,7 +30,7 @@
 # Such functions should be listed in fuzz_config_vars_helpers.h.
 
 - name: experiments
-  type: string
+  type: comma_separated_string
   description:
     A comma separated list of currently active experiments. Experiments may be
     prefixed with a '-' to disable them.
@@ -55,7 +55,7 @@
     ignored.
   fuzz: true
 - name: trace
-  type: string
+  type: comma_separated_string
   default:
   description:
     A comma separated list of tracers that provide additional insight into

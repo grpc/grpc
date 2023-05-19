@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
@@ -43,6 +44,11 @@ T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
   if (from_flag.has_value()) return std::move(*from_flag);
   return LoadConfigFromEnv(environment_variable, default_value);
 }
+
+std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
+                       absl::string_view environment_variable,
+                       const absl::optional<std::string>& override,
+                       const char* default_value);
 
 }  // namespace grpc_core
 
