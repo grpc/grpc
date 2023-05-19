@@ -656,7 +656,6 @@ grpc_proto_fuzzer(
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:fuzz_config_vars_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:osa_distance",
         "//test/core/util:test_lb_policies",
     ],
 )

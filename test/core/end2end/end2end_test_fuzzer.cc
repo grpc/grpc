@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -48,7 +45,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/fuzz_config_vars.pb.h"
-#include "test/core/util/osa_distance.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
