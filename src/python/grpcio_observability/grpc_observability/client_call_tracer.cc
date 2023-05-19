@@ -154,19 +154,23 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordReceiv
 
 namespace {
 
-// This function removes GrpcServerStatsBinMetadata from grpc_metadata_batch and get elapsed_time
-// from GrpcServerStatsBinMetadata.
-void GetElapsedTimeFromTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
+// Returns 0 if no server stats are present in the metadata.
+uint64_t GetElapsedTimeFromTrailingMetadata(const grpc_metadata_batch* b) {
   if (!PythonOpenCensusStatsEnabled()) {
-    return;
+    return 0;
   }
-  absl::optional<grpc_core::Slice> grpc_server_stats_bin =
-      b->Take(grpc_core::GrpcServerStatsBinMetadata());
-  if (grpc_server_stats_bin.has_value()) {
-    ServerStatsDeserialize(
-        reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
-        grpc_server_stats_bin->size(), elapsed_time);
+
+  const grpc_core::Slice* grpc_server_stats_bin_ptr =
+      b->get_pointer(grpc_core::GrpcServerStatsBinMetadata());
+  if (grpc_server_stats_bin_ptr == nullptr) {
+    return 0;
   }
+
+  uint64_t elapsed_time = 0;
+  ServerStatsDeserialize(
+      reinterpret_cast<const char*>(grpc_server_stats_bin_ptr->data()),
+      grpc_server_stats_bin_ptr->size(), &elapsed_time);
+  return elapsed_time;
 }
 
 }  // namespace
@@ -182,7 +186,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   auto status_code_ = status.code();
   uint64_t elapsed_time = 0;
   if (recv_trailing_metadata != nullptr) {
-    GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata, &elapsed_time);
+    elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
   }
 
   std::string final_status = absl::StatusCodeToString(status_code_);

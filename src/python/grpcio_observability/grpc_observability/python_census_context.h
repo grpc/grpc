@@ -164,7 +164,8 @@ class SpanContext final {
 // PythonCensusContext.
 class Span final {
  public:
-  explicit Span(std::string name, std::string parent_span_id, absl::Time start_time, SpanContext context)
+  explicit Span(const std::string& name, const std::string& parent_span_id,
+                absl::Time start_time, const SpanContext& context)
     : name_(name), parent_span_id_(parent_span_id), start_time_(start_time),
       context_(context) {}
 
@@ -226,16 +227,16 @@ class PythonCensusContext {
   PythonCensusContext(absl::string_view name, absl::string_view trace_id)
       : span_(Span::StartSpan(name, trace_id)), labels_({}) {}
 
-  PythonCensusContext(absl::string_view name, SpanContext parent_context)
+  PythonCensusContext(absl::string_view name, const SpanContext& parent_context)
       : span_(Span::StartSpan(name, parent_context)), labels_({}) {}
 
-  PythonCensusContext(absl::string_view name, Span* parent,
-                std::vector<Label>& labels)
+  PythonCensusContext(absl::string_view name, const Span* parent,
+                const std::vector<Label>& labels)
       : span_(Span::StartSpan(name, parent)),
         labels_(labels) {}
 
   // For attempt Spans only
-  PythonCensusContext(absl::string_view name, Span* parent)
+  PythonCensusContext(absl::string_view name, const Span* parent)
       : span_(Span::StartSpan(name, parent)),
         labels_({}) {}
 

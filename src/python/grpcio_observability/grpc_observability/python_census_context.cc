@@ -188,7 +188,6 @@ std::string GenerateTraceId() {
 //
 
 Span Span::StartSpan(absl::string_view name, const Span* parent) {
-  SpanContext context;
   std::string span_id = GenerateSpanId();
   std::string trace_id;
   std::string parent_span_id;
@@ -204,7 +203,7 @@ Span Span::StartSpan(absl::string_view name, const Span* parent) {
     should_sample = ShouldSample(trace_id);
   }
 
-  context = SpanContext(trace_id, span_id, should_sample);
+  SpanContext context = SpanContext(trace_id, span_id, should_sample);
   return Span(std::string(name), parent_span_id, start_time, context);
 }
 
