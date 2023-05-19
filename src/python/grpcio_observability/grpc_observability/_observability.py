@@ -84,7 +84,7 @@ class GcpObservabilityPythonConfig:
 
 
 # pylint: disable=no-self-use
-class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
+class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
 
@@ -116,9 +116,8 @@ class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
         time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
         self.set_tracing(False)
         self.set_stats(False)
-        _cyobservability.at_observability_exit()
-        # Clear the plugin so it can be re-initizialized again.
-        grpc._observability.set_plugin(None)
+        _cyobservability.observability_exit()
+        grpc._observability.observability_exit()
 
     def __enter__(self):
         try:
@@ -127,7 +126,7 @@ class GCPOpenCensusObservability(grpc._ObservabilityPlugin):
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("grpc_observability init failed with: %s", e)
 
-        grpc._observability_init(self)
+        grpc._observability.observability_init(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:

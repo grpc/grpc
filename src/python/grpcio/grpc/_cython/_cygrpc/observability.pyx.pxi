@@ -31,6 +31,10 @@ def set_server_call_tracer_factory(object observability_plugin) -> None:
   _register_server_call_tracer_factory(capsule_ptr)
 
 
+def clear_server_call_tracer_factory() -> None:
+  _register_server_call_tracer_factory(NULL)
+
+
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
   cdef ServerCallTracer* server_call_tracer
   with _observability.get_plugin() as plugin:

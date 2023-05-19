@@ -53,7 +53,7 @@ int GetMaxExportBufferSize() {
 }  // namespace
 
 
-void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label> labels) {
+void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
@@ -64,7 +64,7 @@ void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label> labels)
 }
 
 
-void RecordDoubleMetric(MetricsName name, double value, std::vector<Label> labels) {
+void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;

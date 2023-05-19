@@ -29,10 +29,10 @@ ClientCallTracerCapsule = TypeVar('ClientCallTracerCapsule')
 ServerCallTracerFactoryCapsule = TypeVar('ServerCallTracerFactoryCapsule')
 
 _plugin_lock: threading.RLock = threading.RLock()
-_OBSERVABILITY_PLUGIN: Optional[_ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
+_OBSERVABILITY_PLUGIN: Optional[ObservabilityPlugin] = None  # pylint: disable=used-before-assignment
 
 
-class _ObservabilityPlugin(Generic[ClientCallTracerCapsule,
+class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
                                    ServerCallTracerFactoryCapsule],
                            metaclass=abc.ABCMeta):
     """
@@ -88,12 +88,12 @@ class _ObservabilityPlugin(Generic[ClientCallTracerCapsule,
 
 
 @contextlib.contextmanager
-def get_plugin() -> Optional[_ObservabilityPlugin]:
+def get_plugin() -> Optional[ObservabilityPlugin]:
     with _plugin_lock:
         yield _OBSERVABILITY_PLUGIN
 
 
-def set_plugin(observability_plugin: Optional[_ObservabilityPlugin]) -> None:
+def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
     global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
     with _plugin_lock:
         if observability_plugin and _OBSERVABILITY_PLUGIN:
@@ -101,13 +101,18 @@ def set_plugin(observability_plugin: Optional[_ObservabilityPlugin]) -> None:
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
-def _observability_init(observability_plugin: _ObservabilityPlugin) -> None:
+def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     set_plugin(observability_plugin)
     try:
         _cygrpc.set_server_call_tracer_factory(observability_plugin)
     except Exception:  # pylint:disable=broad-except
         _LOGGER.exception("Failed to set server call tracer factory!")
 
+
+def observability_exit() -> None:
+    # Clear the plugin so it can be re-initizialized again.
+    set_plugin(None)
+    _cygrpc.clear_server_call_tracer_factory()
 
 def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
     with get_plugin() as plugin:

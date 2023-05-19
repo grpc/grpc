@@ -166,7 +166,7 @@ class ObservabilityTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             with grpc_observability.GCPOpenCensusObservability(
                     exporter=self.test_exporter) as o11y:
-                grpc._observability_init(o11y)
+                grpc._observability.observability_init(o11y)
 
     def testRecordUnaryUnaryStatsOnly(self):
         _VALID_CONFIG_STATS_ONLY = """
