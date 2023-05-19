@@ -17,6 +17,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "gmock/gmock.h"
+
 #include <grpc/support/json.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -61,6 +63,7 @@ using experimental::AuditLogger;
 using experimental::AuditLoggerFactory;
 using experimental::RegisterAuditLoggerFactory;
 using grpc_core::experimental::AuditLoggerRegistry;
+using grpc_core::experimental::Json;
 
 std::string ReadFile(const char* file_path) {
   grpc_slice slice;
@@ -73,13 +76,22 @@ std::string ReadFile(const char* file_path) {
 
 class TestAuditLogger : public AuditLogger {
  public:
-  explicit TestAuditLogger(int* log_count) : log_count_(log_count) {}
+  explicit TestAuditLogger(std::vector<std::string>* audit_logs)
+      : audit_logs_(audit_logs) {}
 
   absl::string_view name() const override { return kLoggerName; }
-  void Log(const AuditContext&) override { *log_count_ += 1; }
+  void Log(const AuditContext& context) override {
+    audit_logs_->push_back(grpc_core::JsonDump(Json::FromObject({
+        {"rpc_method", Json::FromString(std::string(context.rpc_method()))},
+        {"principal", Json::FromString(std::string(context.principal()))},
+        {"policy_name", Json::FromString(std::string(context.policy_name()))},
+        {"matched_rule", Json::FromString(std::string(context.matched_rule()))},
+        {"authorized", Json::FromBool(context.authorized())},
+    })));
+  }
 
  private:
-  int* log_count_;
+  std::vector<std::string>* audit_logs_;
 };
 
 class TestAuditLoggerFactory : public AuditLoggerFactory {
@@ -89,20 +101,21 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     std::string ToString() const override { return "{}"; }
   };
 
-  explicit TestAuditLoggerFactory(int* log_count) : log_count_(log_count) {}
+  explicit TestAuditLoggerFactory(std::vector<std::string>* audit_logs)
+      : audit_logs_(audit_logs) {}
 
   absl::string_view name() const override { return kLoggerName; }
   absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(const grpc_core::experimental::Json&) override {
+  ParseAuditLoggerConfig(const Json&) override {
     return std::make_unique<Config>();
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
       std::unique_ptr<AuditLoggerFactory::Config>) override {
-    return std::make_unique<TestAuditLogger>(log_count_);
+    return std::make_unique<TestAuditLogger>(audit_logs_);
   }
 
  private:
-  int* log_count_;
+  std::vector<std::string>* audit_logs_;
 };
 
 class GrpcAuthzEnd2EndTest : public ::testing::Test {
@@ -135,7 +148,7 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
 
     RegisterAuditLoggerFactory(
-        std::make_unique<TestAuditLoggerFactory>(&log_count_));
+        std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
   }
 
   ~GrpcAuthzEnd2EndTest() override {
@@ -196,26 +209,12 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     return stub->Echo(context, request, response);
   }
 
-  void CompareAuditLogEntry(absl::string_view output,
-                            absl::string_view expected) {
-    auto json_or = grpc_core::JsonParse(output);
-    ASSERT_TRUE(json_or.ok());
-    ASSERT_NE(*json_or->object().find("grpc_audit_log"),
-              *json_or->object().end());
-    auto inner_json = *json_or->object().find("grpc_audit_log");
-    ASSERT_EQ(inner_json.second.type(), grpc_core::Json::Type::kObject);
-    auto object = inner_json.second.object();
-    object.erase("timestamp");
-    auto got = grpc_core::JsonDump(grpc_core::Json::FromObject(object));
-    EXPECT_EQ(got, expected);
-  }
-
   std::string server_address_;
   TestServiceImpl service_;
   std::unique_ptr<Server> server_;
   std::shared_ptr<ServerCredentials> server_creds_;
   std::shared_ptr<ChannelCredentials> channel_creds_;
-  int log_count_ = 0;
+  std::vector<std::string> audit_logs_;
 };
 
 TEST_F(GrpcAuthzEnd2EndTest,
@@ -522,9 +521,6 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
-      "      },"
-      "      {"
-      "        \"name\": \"stdout_logger\""
       "      }"
       "    ]"
       "  }"
@@ -539,36 +535,32 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   context1.AddMetadata("key-foo", "foo");
   status = SendRpc(channel, &context1, &resp);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(log_count_, 0);
+  EXPECT_EQ(audit_logs_.size(), 0);
 
   ClientContext context2;
   // Does not match the allow rule or deny rule.
   context2.AddMetadata("key-foo", "bar");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context2, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 1);
+  EXPECT_EQ(audit_logs_.size(), 1);
 
   ClientContext context3;
   // Matches the deny rule.
   context3.AddMetadata("key-bar", "bar");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context3, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
-      "\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 2);
+  EXPECT_EQ(audit_logs_.size(), 2);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":"
+          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
+          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
+          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
@@ -606,9 +598,6 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
-      "      },"
-      "      {"
-      "        \"name\": \"stdout_logger\""
       "      }"
       "    ]"
       "  }"
@@ -619,32 +608,33 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
   grpc::Status status;
 
   ClientContext context1;
+  // Matches the allow rule.
   context1.AddMetadata("key-foo", "foo");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context1, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_name\":"
-      "\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(log_count_, 1);
+  EXPECT_EQ(audit_logs_.size(), 1);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 
   ClientContext context2;
+  // Does not match the allow rule.
   context2.AddMetadata("key-foo", "bar");
   status = SendRpc(channel, &context2, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 1);
+  EXPECT_EQ(audit_logs_.size(), 1);
 
   ClientContext context3;
-  context3.AddMetadata("key-foo", "foo");
+  // Matches the deny rule.
   context3.AddMetadata("key-bar", "bar");
   status = SendRpc(channel, &context3, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 1);
+  EXPECT_EQ(audit_logs_.size(), 1);
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
@@ -682,9 +672,6 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
-      "      },"
-      "      {"
-      "        \"name\": \"stdout_logger\""
       "      }"
       "    ]"
       "  }"
@@ -695,45 +682,39 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
   grpc::Status status;
 
   ClientContext context1;
+  // Matches the allow rule.
   context1.AddMetadata("key-foo", "foo");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context1, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_name\":"
-      "\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(log_count_, 1);
+  EXPECT_EQ(audit_logs_.size(), 1);
 
   ClientContext context2;
+  // Does not match the allow rule.
   context2.AddMetadata("key-foo", "bar");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context2, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 2);
+  EXPECT_EQ(audit_logs_.size(), 2);
 
   ClientContext context3;
-  context3.AddMetadata("key-foo", "foo");
+  // Matches the deny rule.
   context3.AddMetadata("key-bar", "bar");
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context3, &resp);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
-      "\"authz\","
-      "\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(log_count_, 3);
+  EXPECT_EQ(audit_logs_.size(), 3);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
+          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
+          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 }
 
 TEST_F(GrpcAuthzEnd2EndTest,
@@ -1114,9 +1095,6 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
-      "      },"
-      "      {"
-      "        \"name\": \"stdout_logger\""
       "      }"
       "    ]"
       "  }"
@@ -1127,16 +1105,10 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
-  ::testing::internal::CaptureStdout();
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
-  EXPECT_EQ(log_count_, 1);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_name\":"
-      "\"authz\",\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
+  EXPECT_EQ(audit_logs_.size(), 1);
   gpr_event on_first_reload_done;
   gpr_event_init(&on_first_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback1 =
@@ -1159,16 +1131,10 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
             reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
-  EXPECT_EQ(log_count_, 2);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_name\":"
-      "\"authz\",\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
+  EXPECT_EQ(audit_logs_.size(), 2);
   gpr_event on_second_reload_done;
   gpr_event_init(&on_second_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback2 =
@@ -1210,9 +1176,6 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
       "    \"audit_loggers\": ["
       "      {"
       "        \"name\": \"test_logger\""
-      "      },"
-      "      {"
-      "        \"name\": \"stdout_logger\""
       "      }"
       "    ]"
       "  }"
@@ -1224,20 +1187,26 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
             reinterpret_cast<void*>(1));
   ClientContext context3;
   grpc::testing::EchoResponse resp3;
-  ::testing::internal::CaptureStdout();
   status = SendRpc(channel, &context3, &resp3);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp3.message().empty());
-  EXPECT_EQ(log_count_, 3);
-  CompareAuditLogEntry(
-      ::testing::internal::GetCapturedStdout(),
-      "{\"authorized\":false,\"matched_rule\":\"deny_echo\",\"policy_name\":"
-      "\"authz\",\"principal\":\"spiffe://foo.com/bar/baz\",\"rpc_method\":\"/"
-      "grpc.testing.EchoTestService/Echo\"}");
+  EXPECT_EQ(audit_logs_.size(), 3);
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
       ->SetCallbackForTesting(nullptr);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
+          "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
+          "{\"authorized\":false,\"matched_rule\":\"deny_echo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 }
 
 }  // namespace
