@@ -14,6 +14,8 @@
 
 #include "src/core/lib/gprpp/per_cpu.h"
 
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
