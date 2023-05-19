@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -26,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -148,7 +149,7 @@ class FuzzingResolverEventEngine
     explicit FuzzingDNSResolver(FuzzingResolverEventEngine* engine)
         : engine_(engine) {}
 
-    ~FuzzingDNSResolver() { GPR_ASSERT(known_handles == 0); }
+    ~FuzzingDNSResolver() override { GPR_ASSERT(known_handles == 0); }
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view /* name */,
                                     absl::string_view /* default_port */,
