@@ -597,7 +597,6 @@ grpc_proto_fuzzer(
     ],
     language = "C++",
     proto = None,
-    shard_count = 50,
     tags = [
         "no_mac",
         "no_windows",
