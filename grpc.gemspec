@@ -1129,6 +1129,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/thread_pool/thread_pool_factory.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h )
+  s.files += %w( src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc )
+  s.files += %w( src/core/lib/event_engine/thready_event_engine/thready_event_engine.h )
   s.files += %w( src/core/lib/event_engine/time_util.cc )
   s.files += %w( src/core/lib/event_engine/time_util.h )
   s.files += %w( src/core/lib/event_engine/trace.cc )
