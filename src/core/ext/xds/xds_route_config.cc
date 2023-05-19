@@ -45,15 +45,16 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
-#include "upb/def.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/collections/map.h"
+#include "upb/text/encode.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -73,6 +74,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -392,7 +394,8 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
           "ClusterSpecifierPlugin returned invalid LB policy config: ",
           config.status().message()));
     } else {
-      cluster_specifier_plugin_map[std::move(name)] = lb_policy_config.Dump();
+      cluster_specifier_plugin_map[std::move(name)] =
+          JsonDump(lb_policy_config);
     }
   }
   return cluster_specifier_plugin_map;
@@ -484,6 +487,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
     int64_t range_start = 0;
     int64_t range_end = 0;
     bool present_match = false;
+    bool case_sensitive = true;
     if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
       type = HeaderMatcher::Type::kExact;
       match_string = UpbStringToStdString(
@@ -512,11 +516,46 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
+      GPR_ASSERT(range_matcher != nullptr);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
       type = HeaderMatcher::Type::kPresent;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
+    } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+      ValidationErrors::ScopedField field(errors, ".string_match");
+      const auto* matcher =
+          envoy_config_route_v3_HeaderMatcher_string_match(header);
+      GPR_ASSERT(matcher != nullptr);
+      if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
+        type = HeaderMatcher::Type::kExact;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_exact(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
+        type = HeaderMatcher::Type::kPrefix;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_prefix(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
+        type = HeaderMatcher::Type::kSuffix;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_suffix(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
+        type = HeaderMatcher::Type::kContains;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_contains(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
+        type = HeaderMatcher::Type::kSafeRegex;
+        const auto* regex_matcher =
+            envoy_type_matcher_v3_StringMatcher_safe_regex(matcher);
+        GPR_ASSERT(regex_matcher != nullptr);
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+      } else {
+        errors->AddError("invalid string matcher");
+        continue;
+      }
+      case_sensitive =
+          !envoy_type_matcher_v3_StringMatcher_ignore_case(matcher);
     } else {
       errors->AddError("invalid header matcher");
       continue;
@@ -525,7 +564,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
         envoy_config_route_v3_HeaderMatcher_invert_match(header);
     absl::StatusOr<HeaderMatcher> header_matcher =
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
-                              present_match, invert_match);
+                              present_match, invert_match, case_sensitive);
     if (!header_matcher.ok()) {
       errors->AddError(absl::StrCat("cannot create header matcher: ",
                                     header_matcher.status().message()));
@@ -1123,7 +1162,8 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
   auto rds_update = XdsRouteConfigResource::Parse(context, resource, &errors);
   if (!errors.ok()) {
     absl::Status status =
-        errors.status("errors validating RouteConfiguration resource");
+        errors.status(absl::StatusCode::kInvalidArgument,
+                      "errors validating RouteConfiguration resource");
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
               context.client, result.name->c_str(), status.ToString().c_str());

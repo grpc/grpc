@@ -39,7 +39,7 @@
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text_encode.h"
+#include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
 
@@ -432,7 +432,10 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // Return result.
-  if (!errors.ok()) return errors.status("errors parsing EDS resource");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors parsing EDS resource");
+  }
   return eds_resource;
 }
 

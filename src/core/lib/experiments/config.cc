@@ -29,17 +29,12 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_experiments, "",
-    "List of grpc experiments to enable (or with a '-' prefix to disable).");
-
 namespace grpc_core {
 
 namespace {
@@ -53,10 +48,10 @@ struct ForcedExperiment {
 };
 ForcedExperiment g_forced_experiments[kNumExperiments];
 
-std::atomic<bool> g_loaded;
+std::atomic<bool> g_loaded(false);
 
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
-  GPR_ASSERT(g_loaded.exchange(true, std::memory_order_relaxed) == false);
+  g_loaded.store(true, std::memory_order_relaxed);
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -66,11 +61,9 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
       experiments.enabled[i] = g_forced_experiments[i].value;
     }
   }
-  // Get the global config.
-  auto experiments_str = GPR_GLOBAL_CONFIG_GET(grpc_experiments);
   // For each comma-separated experiment in the global config:
-  for (auto experiment :
-       absl::StrSplit(absl::string_view(experiments_str.get()), ',')) {
+  for (auto experiment : absl::StrSplit(
+           absl::string_view(ConfigVars::Get().Experiments()), ',')) {
     // Strip whitespace.
     experiment = absl::StripAsciiWhitespace(experiment);
     // Handle ",," without crashing.
@@ -99,14 +92,23 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   }
   return experiments;
 }
+
+Experiments& ExperimentsSingleton() {
+  // One time initialization:
+  static NoDestruct<Experiments> experiments{
+      LoadExperimentsFromConfigVariable()};
+  return *experiments;
+}
 }  // namespace
 
+void TestOnlyReloadExperimentsFromConfigVariables() {
+  ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
+  PrintExperimentsList();
+}
+
 bool IsExperimentEnabled(size_t experiment_id) {
-  // One time initialization:
-  static const NoDestruct<Experiments> experiments{
-      LoadExperimentsFromConfigVariable()};
   // Normal path: just return the value;
-  return experiments->enabled[experiment_id];
+  return ExperimentsSingleton().enabled[experiment_id];
 }
 
 void PrintExperimentsList() {

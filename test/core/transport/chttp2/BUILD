@@ -33,6 +33,18 @@ grpc_proto_fuzzer(
 )
 
 grpc_proto_fuzzer(
+    name = "hpack_sync_fuzzer",
+    srcs = ["hpack_sync_fuzzer.cc"],
+    corpus = "hpack_sync_corpus",
+    proto = "hpack_sync_fuzzer.proto",
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_proto_fuzzer(
     name = "flow_control_fuzzer",
     srcs = ["flow_control_fuzzer.cc"],
     corpus = "flow_control_fuzzer_corpus",
@@ -44,6 +56,23 @@ grpc_proto_fuzzer(
     deps = [
         "//:gpr",
         "//src/core:chttp2_flow_control",
+    ],
+)
+
+grpc_fuzzer(
+    name = "hpack_parser_input_size_fuzzer",
+    srcs = ["hpack_parser_input_size_fuzzer.cc"],
+    corpus = "hpack_parser_input_size_corpus",
+    external_deps = [
+        "absl/cleanup",
+        "absl/status:statusor",
+        "absl/status",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -119,23 +148,6 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:slice",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "context_list_test",
-    srcs = ["context_list_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
     ],
 )
 

@@ -17,8 +17,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -38,9 +38,9 @@ namespace experimental {
 
 // ---- WinSocket ----
 
-WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
+WinSocket::WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept
     : socket_(socket),
-      executor_(executor),
+      thread_pool_(thread_pool),
       read_info_(this),
       write_info_(this) {}
 
@@ -58,7 +58,6 @@ void WinSocket::Shutdown() {
                                      this);
     return;
   }
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p shutting down now.", this);
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
   GUID guid = WSAID_DISCONNECTEX;
@@ -91,11 +90,11 @@ void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   if (IsShutdown()) {
     info.SetError(WSAESHUTDOWN);
-    executor_->Run(closure);
+    thread_pool_->Run(closure);
     return;
   };
   if (std::exchange(info.has_pending_iocp_, false)) {
-    executor_->Run(closure);
+    thread_pool_->Run(closure);
   } else {
     EventEngine::Closure* prev = nullptr;
     GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
@@ -121,7 +120,7 @@ void WinSocket::OpState::SetReady() {
   GPR_ASSERT(!has_pending_iocp_);
   auto* closure = closure_.exchange(nullptr);
   if (closure) {
-    win_socket_->executor_->Run(closure);
+    win_socket_->thread_pool_->Run(closure);
   } else {
     has_pending_iocp_ = true;
   }

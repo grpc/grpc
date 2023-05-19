@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/construct_destruct.h"
@@ -276,18 +275,15 @@ class BasicSeq {
     // Poll the current promise in this state.
     auto r = s->current_promise();
     // If we are still pending, say so by returning.
-    if (absl::holds_alternative<Pending>(r)) {
-      return Pending();
-    }
+    if (r.pending()) return Pending();
     // Current promise is ready, as the traits to do the next thing.
     // That may be returning - eg if TrySeq sees an error.
     // Or it may be by calling the callable we hand down - RunNext - which
     // will advance the state and call the next promise.
     return Traits<
         typename absl::remove_reference_t<decltype(*s)>::Types::PromiseResult>::
-        template CheckResultAndRunNext<Result>(
-            std::move(absl::get<kPollReadyIdx>(std::move(r))),
-            RunNext<I>{this});
+        template CheckResultAndRunNext<Result>(std::move(r.value()),
+                                               RunNext<I>{this});
   }
 
   // Specialization of RunState to run the final state.
@@ -296,11 +292,9 @@ class BasicSeq {
     // Poll the final promise.
     auto r = final_promise_();
     // If we are still pending, say so by returning.
-    if (absl::holds_alternative<Pending>(r)) {
-      return Pending();
-    }
+    if (r.pending()) return Pending();
     // We are complete, return the (wrapped) result.
-    return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
+    return Result(std::move(r.value()));
   }
 
   // For state numbered I, destruct the current promise and the next promise
@@ -466,9 +460,9 @@ class BasicSeqIter {
  private:
   Poll<Wrapped> PollNonEmpty() {
     Poll<Wrapped> r = state_();
-    if (absl::holds_alternative<Pending>(r)) return r;
+    if (r.pending()) return r;
     return Traits::template CheckResultAndRunNext<Wrapped>(
-        std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
+        std::move(r.value()), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
           if (next == end_) {

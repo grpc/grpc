@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include "upb/arena.h"
+#include "upb/mem/arena.h"
 
 #include <grpc/slice.h>
 

@@ -123,6 +123,7 @@ def _rule_dict_from_xml_node(rule_xml_node):
         'generator_function': None,
         'size': None,
         'flaky': False,
+        'actual': None,  # the real target name for aliases
     }
     for child in rule_xml_node:
         # all the metadata we want is stored under "list" tags
@@ -138,6 +139,17 @@ def _rule_dict_from_xml_node(rule_xml_node):
             bool_name = child.attrib['name']
             if bool_name in ['flaky']:
                 result[bool_name] = child.attrib['value'] == 'true'
+        if child.tag == 'label':
+            # extract actual name for alias rules
+            label_name = child.attrib['name']
+            if label_name in ['actual']:
+                actual_name = child.attrib.get('value', None)
+                if actual_name:
+                    result['actual'] = actual_name
+                    # HACK: since we do a lot of transitive dependency scanning,
+                    # make it seem that the actual name is a dependency of the alias rule
+                    # (aliases don't have dependencies themselves)
+                    result['deps'].append(actual_name)
     return result
 
 
@@ -158,6 +170,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                     'proto_library',
                     'upb_proto_library',
                     'upb_proto_reflection_library',
+                    'alias',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -487,7 +500,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
     # upb.h and upb.c files.
     GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
     GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
-    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+    EXTERNAL_LINKS = [('@com_google_protobuf//', 'src/'),
                       ('@com_google_googleapis//', ''),
                       ('@com_github_cncf_udpa//', ''),
                       ('@com_envoyproxy_protoc_gen_validate//', ''),
@@ -520,8 +533,12 @@ def _expand_upb_proto_library_rules(bazel_rules):
             for proto_src in protos:
                 for external_link in EXTERNAL_LINKS:
                     if proto_src.startswith(external_link[0]):
-                        proto_src = proto_src[len(external_link[0]) +
-                                              len(external_link[1]):]
+                        prefix_to_strip = external_link[0] + external_link[1]
+                        if not proto_src.startswith(prefix_to_strip):
+                            raise Exception(
+                                'Source file "{0}" in upb rule {1} does not have the expected prefix "{2}"'
+                                .format(proto_src, name, prefix_to_strip))
+                        proto_src = proto_src[len(prefix_to_strip):]
                         break
                 if proto_src.startswith('@'):
                     raise Exception('"{0}" is unknown workspace.'.format(name))
@@ -657,7 +674,8 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith('test/cpp/ext/filters/census:') and
         not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
         not test.startswith('test/cpp/ext/gcp:') and
-        not test.startswith('test/cpp/ext/filters/logging:')
+        not test.startswith('test/cpp/ext/filters/logging:') and
+        not test.startswith('test/cpp/interop:observability_interop')
     ]
 
     # missing opencensus/stats/stats.h
@@ -992,13 +1010,6 @@ _BUILD_EXTRA_METADATA = {
         '_RENAME': 'grpc++_test_util'
     },
 
-    # end2end test support libraries
-    'test/core/end2end:end2end_tests': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'end2end_tests'
-    },
-
     # benchmark support libraries
     'test/cpp/microbenchmarks:helpers': {
         'language': 'c++',
@@ -1085,7 +1096,6 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
-    'deps("//src/proto/...")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
 ]

@@ -46,6 +46,10 @@ namespace grpc {
 ::opencensus::stats::MeasureInt64 RpcServerStartedRpcs();
 ::opencensus::stats::MeasureInt64 RpcServerCompletedRpcs();
 
+namespace internal {
+::opencensus::stats::MeasureDouble RpcClientApiLatency();
+}
+
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H

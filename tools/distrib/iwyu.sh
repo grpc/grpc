@@ -35,6 +35,7 @@ tools/distrib/gen_compilation_database.py \
   "//src/compiler/..." \
   "//test/core/..." \
   "//test/cpp/..." \
+  "//fuzztest/..." \
   $MANUAL_TARGETS
 
 # run iwyu against the checked out codebase

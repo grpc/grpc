@@ -47,7 +47,6 @@ target 'CronetTests' do
 
   pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
   pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
 end
 
 target 'PerfTests' do

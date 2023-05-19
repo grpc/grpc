@@ -22,20 +22,19 @@
 
 #include <string.h>
 
-#include <map>
 #include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>  // IWYU pragma: keep
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -44,7 +43,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -60,6 +58,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -254,57 +253,6 @@ static int is_metadata_server_reachable() {
   return detector.success;
 }
 
-namespace {
-
-bool ValidateUrlField(const Json& json, const std::string& field) {
-  auto it = json.object_value().find(field);
-  if (it == json.object_value().end()) {
-    return true;
-  }
-  if (it->second.type() != Json::Type::STRING ||
-      it->second.string_value().empty()) {
-    return false;
-  }
-  absl::StatusOr<grpc_core::URI> url =
-      grpc_core::URI::Parse(it->second.string_value());
-  if (!url.ok()) return false;
-  if (!absl::EqualsIgnoreCase(url->scheme(), "https")) {
-    return false;
-  }
-  absl::string_view host;
-  absl::string_view port;
-  grpc_core::SplitHostPort(url->authority(), &host, &port);
-  if (absl::ConsumeSuffix(&host, ".p.googleapis.com")) {
-    if (absl::StartsWith(host, "sts-") ||
-        absl::StartsWith(host, "iamcredentials-")) {
-      return true;
-    }
-  } else if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
-    if (host == "sts" || host == "iamcredentials") {
-      return true;
-    } else if (absl::StartsWith(host, "sts.") ||
-               absl::StartsWith(host, "iamcredentials.")) {
-      return true;
-    } else if (absl::EndsWith(host, ".sts") ||
-               absl::EndsWith(host, ".iamcredentials")) {
-      return true;
-    } else if (absl::EndsWith(host, "-sts") ||
-               absl::EndsWith(host, "-iamcredentials")) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool ValidateExteralAccountCredentials(const Json& json) {
-  return json.type() == Json::Type::OBJECT &&
-         ValidateUrlField(json, "token_url") &&
-         ValidateUrlField(json, "service_account_impersonation_url") &&
-         ValidateUrlField(json, "token_info_url");
-}
-
-}  // namespace
-
 // Takes ownership of creds_path if not NULL.
 static grpc_error_handle create_default_creds_from_path(
     const std::string& creds_path,
@@ -322,14 +270,15 @@ static grpc_error_handle create_default_creds_from_path(
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
   if (!error.ok()) goto end;
   {
-    auto json_or = Json::Parse(grpc_core::StringViewFromSlice(creds_data));
+    auto json_or =
+        grpc_core::JsonParse(grpc_core::StringViewFromSlice(creds_data));
     if (!json_or.ok()) {
       error = absl_status_to_grpc_error(json_or.status());
       goto end;
     }
     json = std::move(*json_or);
   }
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
                                grpc_core::StatusStrProperty::kRawBytes,
                                grpc_core::StringViewFromSlice(creds_data));
@@ -363,11 +312,6 @@ static grpc_error_handle create_default_creds_from_path(
     goto end;
   }
 
-  // Finally try an external account credentials.
-  if (!ValidateExteralAccountCredentials(json)) {
-    error = GRPC_ERROR_CREATE("Invalid external account credentials format.");
-    goto end;
-  }
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:

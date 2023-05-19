@@ -133,13 +133,13 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
         return std::move(md);
       });
 
-  return Race(Map(next_promise_factory(std::move(call_args)),
+  return Race(initial_metadata_err->Wait(),
+              Map(next_promise_factory(std::move(call_args)),
                   [](ServerMetadataHandle md) -> ServerMetadataHandle {
                     auto r = CheckServerMetadata(md.get());
                     if (!r.ok()) return ServerMetadataFromStatus(r);
                     return md;
-                  }),
-              initial_metadata_err->Wait());
+                  }));
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

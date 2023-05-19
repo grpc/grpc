@@ -23,6 +23,7 @@ from typing import List, Optional
 import mako.template
 import yaml
 
+from framework.helpers import retryers
 import framework.helpers.datetime
 import framework.helpers.highlighter
 import framework.helpers.rand
@@ -97,6 +98,17 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
 
         self.pod_log_collectors = []
 
+    def get_pod_restarts(self, deployment: k8s.V1Deployment) -> int:
+        if not self.k8s_namespace or not deployment:
+            return 0
+        total_restart: int = 0
+        pods: List[k8s.V1Pod] = self.k8s_namespace.list_deployment_pods(
+            deployment)
+        for pod in pods:
+            total_restart += sum(status.restart_count
+                                 for status in pod.status.container_statuses)
+        return total_restart
+
     @classmethod
     def _render_template(cls, template_file, **kwargs):
         template = mako.template.Template(filename=str(template_file))
@@ -136,25 +148,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
             raise _RunnerError('Exactly one document expected in manifest '
                                f'{template_file}')
 
-        # TODO(sergiitk, b/178378578): add a retryer.
-        try:
-            k8s_objects = self.k8s_namespace.apply_manifest(manifest)
-        except k8s.FailToCreateError as err_create:
-            # Since we verified this is not a multi-doc yaml, we should
-            # expect a single exception. Otherwise, something went horribly
-            # wrong, or API promises got broken.
-            if len(err_create.api_exceptions) != 1:
-                raise
-
-            api_exception: k8s.ApiException = err_create.api_exceptions[0]
-            if api_exception.status == 401:
-                # 401 Unauthorized: token might be expired, attempt auth refresh
-                self.k8s_namespace.refresh_auth()
-                k8s_objects = self.k8s_namespace.apply_manifest(manifest)
-            else:
-                # Reraise for anything else.
-                raise
-
+        k8s_objects = self.k8s_namespace.create_single_resource(manifest)
         if len(k8s_objects) != 1:
             raise _RunnerError('Expected exactly one object must created from '
                                f'manifest {template_file}')
@@ -295,9 +289,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
-        except k8s.ApiException as e:
-            logger.info('Deployment %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Deployment %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -308,9 +301,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service %s', name)
         try:
             self.k8s_namespace.delete_service(name)
-        except k8s.ApiException as e:
-            logger.info('Service %s deletion failed, error: %s %s', name,
-                        e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Service %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -321,9 +313,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting service account %s', name)
         try:
             self.k8s_namespace.delete_service_account(name)
-        except k8s.ApiException as e:
-            logger.info('Service account %s deletion failed, error: %s %s',
-                        name, e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Service account %s deletion failed: %s', name, e)
             return
 
         if wait_for_deletion:
@@ -334,9 +325,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
-        except k8s.ApiException as e:
-            logger.info('Namespace %s deletion failed, error: %s %s',
-                        self.k8s_namespace.name, e.status, e.reason)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info('Namespace %s deletion failed: %s',
+                        self.k8s_namespace.name, e)
             return
 
         if wait_for_deletion:

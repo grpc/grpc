@@ -33,16 +33,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -181,19 +177,8 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  static const char* const resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();
-  if (gpr_stricmp(resolver, "native") == 0) {
-    gpr_log(GPR_DEBUG, "Using native dns resolver");
-    builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<NativeClientChannelDNSResolverFactory>());
-  } else {
-    if (!builder->resolver_registry()->HasResolverFactory("dns")) {
-      gpr_log(GPR_DEBUG, "Using native dns resolver");
-      builder->resolver_registry()->RegisterResolverFactory(
-          std::make_unique<NativeClientChannelDNSResolverFactory>());
-    }
-  }
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<NativeClientChannelDNSResolverFactory>());
 }
 
 }  // namespace grpc_core

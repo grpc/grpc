@@ -7,30 +7,39 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/type/v3/semantic_version.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Field envoy_type_v3_SemanticVersion__fields[3] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_type_v3_SemanticVersion__fields[3] = {
+  {1, 0, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {3, 8, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_type_v3_SemanticVersion_msginit = {
+const upb_MiniTable envoy_type_v3_SemanticVersion_msg_init = {
   NULL,
   &envoy_type_v3_SemanticVersion__fields[0],
-  UPB_SIZE(16, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  16, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f000008, &upb_psv4_1bt},
+    {0x000400003f000010, &upb_psv4_1bt},
+    {0x000800003f000018, &upb_psv4_1bt},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &envoy_type_v3_SemanticVersion_msginit,
+  &envoy_type_v3_SemanticVersion_msg_init,
 };
 
-const upb_MiniTable_File envoy_type_v3_semantic_version_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_type_v3_semantic_version_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -39,5 +48,5 @@ const upb_MiniTable_File envoy_type_v3_semantic_version_proto_upb_file_layout = 
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

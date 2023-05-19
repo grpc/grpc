@@ -304,7 +304,7 @@ class EnvironmentAutoDetectHelper
               on_done(std::move(resource).value());
             }
           },
-          grpc_core::Duration::Seconds(1)));
+          grpc_core::Duration::Seconds(10)));
     }
   }
 

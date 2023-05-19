@@ -62,6 +62,7 @@ _BLACK_HOLE = "/test/BlackHole"
 @contextlib.contextmanager
 def _env(key: str, value: str):
     os.environ[key] = value
+    grpc._cython.cygrpc.reset_grpc_config_vars()
     yield
     del os.environ[key]
 

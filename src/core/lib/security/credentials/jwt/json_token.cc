@@ -36,10 +36,13 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -80,7 +83,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
@@ -129,7 +132,7 @@ end:
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
   Json json;
-  auto json_or = Json::Parse(json_string);
+  auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
     gpr_log(GPR_ERROR, "JSON key parsing error: %s",
             json_or.status().ToString().c_str());
@@ -163,12 +166,12 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
 // --- jwt encoding and signature. ---
 
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
-  Json json = Json::Object{
-      {"alg", algorithm},
-      {"typ", GRPC_JWT_TYPE},
-      {"kid", key_id},
-  };
-  std::string json_str = json.Dump();
+  Json json = Json::FromObject({
+      {"alg", Json::FromString(algorithm)},
+      {"typ", Json::FromString(GRPC_JWT_TYPE)},
+      {"kid", Json::FromString(key_id)},
+  });
+  std::string json_str = grpc_core::JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -183,20 +186,20 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   }
 
   Json::Object object = {
-      {"iss", json_key->client_email},
-      {"aud", audience},
-      {"iat", now.tv_sec},
-      {"exp", expiration.tv_sec},
+      {"iss", Json::FromString(json_key->client_email)},
+      {"aud", Json::FromString(audience)},
+      {"iat", Json::FromNumber(now.tv_sec)},
+      {"exp", Json::FromNumber(expiration.tv_sec)},
   };
   if (scope != nullptr) {
-    object["scope"] = scope;
+    object["scope"] = Json::FromString(scope);
   } else {
     // Unscoped JWTs need a sub field.
-    object["sub"] = json_key->client_email;
+    object["sub"] = Json::FromString(json_key->client_email);
   }
 
-  Json json(object);
-  std::string json_str = json.Dump();
+  std::string json_str =
+      grpc_core::JsonDump(Json::FromObject(std::move(object)));
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 

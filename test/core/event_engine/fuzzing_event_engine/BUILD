@@ -30,6 +30,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//src/core:default_event_engine",
         "//src/core:time",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

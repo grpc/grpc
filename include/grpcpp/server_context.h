@@ -206,7 +206,9 @@ class ServerContextBase {
   /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
   /// The only exception is that if the serverhandler is already returning an
   /// error status code, it is ok to not return Status::CANCELLED even if
-  /// TryCancel() was called.
+  /// TryCancel() was called. Additionally, it is illegal to invoke TryCancel()
+  /// before the call has actually begun, i.e., before metadata has been
+  /// received from the client.
   ///
   /// For reasons such as the above, it is generally preferred to explicitly
   /// finish an RPC by returning Status::CANCELLED rather than using TryCancel.

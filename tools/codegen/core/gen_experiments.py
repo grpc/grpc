@@ -76,6 +76,7 @@ BZL_LIST_FOR_DEFAULTS = {
 error = False
 today = datetime.date.today()
 two_quarters_from_now = today + datetime.timedelta(days=180)
+experiment_annotation = 'gRPC experiments:'
 for attr in attrs:
     if 'name' not in attr:
         print("experiment with no name: %r" % attr)
@@ -108,6 +109,11 @@ for attr in attrs:
                   (attr['name'], attr['expiry']))
             print("expiry should be no more than two quarters from now")
             error = True
+        experiment_annotation += attr['name'] + ':0,'
+
+if len(experiment_annotation) > 2000:
+    print("comma-delimited string of experiments is too long")
+    error = True
 
 if error:
     sys.exit(1)
@@ -274,9 +280,11 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print(file=C)
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
-        print("  {%s, description_%s, %s}," %
-              (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']]),
-              file=C)
+        print(
+            "  {%s, description_%s, %s, %s}," %
+            (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']],
+             'true' if attr.get('allow_in_fuzzing_config', True) else 'false'),
+            file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)

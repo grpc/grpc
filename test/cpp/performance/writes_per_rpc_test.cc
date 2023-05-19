@@ -142,7 +142,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  int writes_performed() const { return stats_->num_writes; }
+  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
 
  private:
   grpc_passthru_endpoint_stats* stats_;

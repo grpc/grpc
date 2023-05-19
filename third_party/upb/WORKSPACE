@@ -4,10 +4,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bazel:workspace_deps.bzl", "upb_deps")
 
 upb_deps()
-register_toolchains("@system_python//:python_toolchain")
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
+
+load("@utf8_range//:workspace_deps.bzl", "utf8_range_deps")
+utf8_range_deps()
 
 http_archive(
     name = "lua",
@@ -18,13 +20,6 @@ http_archive(
         "https://mirror.bazel.build/www.lua.org/ftp/lua-5.2.4.tar.gz",
         "https://www.lua.org/ftp/lua-5.2.4.tar.gz",
     ],
-)
-
-http_archive(
-     name = "com_google_googletest",
-     urls = ["https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip"],  # 2019-01-07
-     strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
-     sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
 )
 
 http_archive(
@@ -43,16 +38,49 @@ http_archive(
 )
 
 http_archive(
-    name = "rules_fuzzing",
-    sha256 = "23bb074064c6f488d12044934ab1b0631e8e6898d5cf2f6bde087adb01111573",
-    strip_prefix = "rules_fuzzing-0.3.1",
-    urls = ["https://github.com/bazelbuild/rules_fuzzing/archive/v0.3.1.zip"],
+    name = "com_google_absl",
+    sha256 = "e7fdfe0bed87702a22c5b73b6b5fe08bedd25f17d617e52df6061b0f47d480b0",
+    strip_prefix = "abseil-cpp-e6044634dd7caec2d79a13aecc9e765023768757",
+    urls = [
+        "https://github.com/abseil/abseil-cpp/archive/e6044634dd7caec2d79a13aecc9e765023768757.tar.gz"
+    ],
 )
 
-load("@rules_fuzzing//fuzzing:repositories.bzl", "rules_fuzzing_dependencies")
+http_archive(
+    name = "com_google_googletest",
+    sha256 = "730215d76eace9dd49bf74ce044e8daa065d175f1ac891cc1d6bb184ef94e565",
+    strip_prefix = "googletest-f53219cdcb7b084ef57414efea92ee5b71989558",
+    urls = [
+        "https://github.com/google/googletest/archive/f53219cdcb7b084ef57414efea92ee5b71989558.tar.gz" # 2023-03-16
+    ],
+)
 
-rules_fuzzing_dependencies()
+load("@com_google_googletest//:googletest_deps.bzl", "googletest_deps")
 
-load("@rules_fuzzing//fuzzing:init.bzl", "rules_fuzzing_init")
+googletest_deps()
 
-rules_fuzzing_init()
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("//bazel:system_python.bzl", "system_python")
+system_python(
+    name = "system_python",
+    minimum_python_version = "3.7",
+)
+
+load("@system_python//:register.bzl", "register_system_python")
+register_system_python()
+
+load("@system_python//:pip.bzl", "pip_parse")
+
+pip_parse(
+    name="pip_deps",
+    requirements = "//python:requirements.txt",
+    requirements_overrides = {
+        "3.11": "//python:requirements_311.txt",
+    },
+)
+
+load("@pip_deps//:requirements.bzl", "install_deps")
+install_deps()

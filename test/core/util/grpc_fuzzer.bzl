@@ -59,8 +59,11 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], 
     Args:
         name: The name of the test.
         corpus: The corpus for the test.
-        proto: The proto for the test.
-        proto_deps: Deps for proto.
+        proto: The proto for the test. If empty, it assumes the proto dependency
+                is already included in the target deps. Otherwise it creates a
+                new grpc_proto_library with name "_{name}_proto" and makes the
+                fuzz target depend on it.
+        proto_deps: Deps for proto. Only used if proto is not empty.
         external_deps: External deps.
         srcs: The source files for the test.
         deps: The dependencies of the test.
@@ -69,31 +72,32 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], 
         tags: The tags for the test.
         **kwargs: Other arguments to supply to the test.
     """
-    PROTO_LIBRARY = "_%s_proto" % name
     CORPUS_DIR = native.package_name() + "/" + corpus
+    deps = deps + ["@com_google_libprotobuf_mutator//:libprotobuf_mutator"]
 
-    grpc_proto_library(
-        name = PROTO_LIBRARY,
-        srcs = [proto],
-        deps = proto_deps,
-        has_services = False,
-    )
+    if "gtest" not in external_deps:
+        external_deps = external_deps + ["gtest"]
+
+    if proto != None:
+        PROTO_LIBRARY = "_%s_proto" % name
+        grpc_proto_library(
+            name = PROTO_LIBRARY,
+            srcs = [proto],
+            deps = proto_deps,
+            has_services = False,
+        )
+        deps = deps + [PROTO_LIBRARY]
 
     grpc_cc_test(
         name = name,
         srcs = srcs,
         tags = tags + ["grpc-fuzzer", "no-cache"],
-        deps = deps + [
-            "@com_google_libprotobuf_mutator//:libprotobuf_mutator",
-            PROTO_LIBRARY,
-        ] + select({
+        deps = deps + select({
             "//:grpc_build_fuzzers": [],
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
-        external_deps = external_deps + [
-            "gtest",
-        ],
+        external_deps = external_deps,
         size = size,
         args = select({
             "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=20000", "-max_total_time=300"],

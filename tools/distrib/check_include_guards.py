@@ -55,8 +55,10 @@ class GuardValidator(object):
         self.failed = False
 
     def _is_c_core_header(self, fpath):
-        return 'include' in fpath and not ('grpc++' in fpath or 'grpcpp'
-                                           in fpath or 'event_engine' in fpath)
+        return 'include' in fpath and not (
+            'grpc++' in fpath or 'grpcpp' in fpath or 'event_engine' in fpath or
+            fpath.endswith('/grpc_audit_logging.h') or
+            fpath.endswith('/json.h'))
 
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
         c_core_header = self._is_c_core_header(fpath)
@@ -189,7 +191,7 @@ argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
-grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp)/.*\.h$'"
+grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp|fuzztest/)/.*\.h$'"
 if args.precommit:
     git_command = 'git diff --name-only HEAD'
 else:

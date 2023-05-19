@@ -853,8 +853,8 @@ void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
                                                      const JsonArgs&,
                                                      ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".config");
-  auto it = json.object_value().find("config");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("config");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -903,15 +903,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // priority was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:priority policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<PriorityLbConfig>(
+    return LoadFromJson<RefCountedPtr<PriorityLbConfig>>(
         json, JsonArgs(), "errors validating priority LB policy config");
   }
 };

@@ -24,9 +24,10 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
+#include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
@@ -41,22 +42,25 @@ class WindowsEndpointTest : public testing::Test {};
 TEST_F(WindowsEndpointTest, BasicCommunication) {
   // TODO(hork): deduplicate against winsocket and iocp tests
   // Setup
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   auto wrapped_server_socket = iocp.Watch(sockpair[1]);
   sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();
+  auto engine = std::make_shared<WindowsEventEngine>();
   EventEngine::ResolvedAddress addr((sockaddr*)&loopback_addr,
                                     sizeof(loopback_addr));
   WindowsEndpoint client(addr, std::move(wrapped_client_socket),
                          quota.CreateMemoryAllocator("client"),
-                         ChannelArgsEndpointConfig(), &executor);
+                         ChannelArgsEndpointConfig(), thread_pool.get(),
+                         engine);
   WindowsEndpoint server(addr, std::move(wrapped_server_socket),
                          quota.CreateMemoryAllocator("server"),
-                         ChannelArgsEndpointConfig(), &executor);
+                         ChannelArgsEndpointConfig(), thread_pool.get(),
+                         engine);
   // Test
   std::string message = "0xDEADBEEF";
   grpc_core::Notification read_done;
@@ -79,13 +83,13 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   // Cleanup
   write_done.WaitForNotification();
   read_done.WaitForNotification();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(WindowsEndpointTest, Conversation) {
   // Setup
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
@@ -97,11 +101,11 @@ TEST_F(WindowsEndpointTest, Conversation) {
     AppState(const EventEngine::ResolvedAddress& addr,
              std::unique_ptr<WinSocket> client,
              std::unique_ptr<WinSocket> server, grpc_core::MemoryQuota& quota,
-             Executor& executor)
+             ThreadPool* thread_pool, std::shared_ptr<EventEngine> engine)
         : client(addr, std::move(client), quota.CreateMemoryAllocator("client"),
-                 ChannelArgsEndpointConfig(), &executor),
+                 ChannelArgsEndpointConfig(), thread_pool, engine),
           server(addr, std::move(server), quota.CreateMemoryAllocator("server"),
-                 ChannelArgsEndpointConfig(), &executor) {}
+                 ChannelArgsEndpointConfig(), thread_pool, engine) {}
     grpc_core::Notification done;
     WindowsEndpoint client;
     WindowsEndpoint server;
@@ -145,15 +149,17 @@ TEST_F(WindowsEndpointTest, Conversation) {
       }
     }
   };
+  auto engine = std::make_shared<WindowsEventEngine>();
   AppState state(addr, /*client=*/iocp.Watch(sockpair[0]),
-                 /*server=*/iocp.Watch(sockpair[1]), quota, executor);
+                 /*server=*/iocp.Watch(sockpair[1]), quota, thread_pool.get(),
+                 engine);
   state.WriteAndQueueReader(/*writer=*/&state.client, /*reader=*/&state.server);
   while (iocp.Work(100ms, []() {}) == Poller::WorkResult::kOk ||
          !state.done.HasBeenNotified()) {
   }
   // Cleanup
   state.done.WaitForNotification();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 }  // namespace experimental

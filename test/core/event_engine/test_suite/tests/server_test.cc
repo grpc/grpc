@@ -68,7 +68,6 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -84,9 +83,11 @@ TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
   // Bind an initial port to ensure normal listener startup
   auto resolved_addr = URIToResolvedAddress(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
-  ASSERT_TRUE(resolved_addr.ok());
-  ASSERT_TRUE((*listener)->Bind(*resolved_addr).ok());
-  ASSERT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE(resolved_addr.ok()) << resolved_addr.status();
+  auto bind_result = (*listener)->Bind(*resolved_addr);
+  ASSERT_TRUE(bind_result.ok()) << bind_result.status();
+  auto listen_result = (*listener)->Start();
+  ASSERT_TRUE(listen_result.ok()) << listen_result;
   // A subsequent bind, which should fail
   auto resolved_addr2 = URIToResolvedAddress(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
@@ -100,7 +101,7 @@ TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
 // equals data read at the other end of the stream.
 TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -137,7 +138,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   oracle_ee->Connect(
       [&client_endpoint,
        &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
-        ASSERT_TRUE(endpoint.ok());
+        ASSERT_TRUE(endpoint.ok()) << endpoint.status();
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
@@ -165,7 +166,6 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   client_endpoint.reset();
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
@@ -175,7 +175,7 @@ TEST_F(EventEngineServerTest,
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
@@ -294,7 +294,6 @@ TEST_F(EventEngineServerTest,
   }
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix

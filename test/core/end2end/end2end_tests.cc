@@ -17,783 +17,347 @@
 //
 //
 
-// This file is auto-generated
-
 #include "test/core/end2end/end2end_tests.h"
 
-#include <stdbool.h>
-#include <string.h>
+#include <regex>
 
-#include "absl/strings/str_format.h"
+#include "absl/memory/memory.h"
+#include "absl/random/random.h"
 
-#include <grpc/support/log.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/no_destruct.h"
+#include "test/core/end2end/cq_verifier.h"
 
-static bool g_pre_init_called = false;
+namespace grpc_core {
 
-extern void authority_not_supported(grpc_end2end_test_config config);
-extern void authority_not_supported_pre_init(void);
-extern void bad_hostname(grpc_end2end_test_config config);
-extern void bad_hostname_pre_init(void);
-extern void bad_ping(grpc_end2end_test_config config);
-extern void bad_ping_pre_init(void);
-extern void binary_metadata(grpc_end2end_test_config config);
-extern void binary_metadata_pre_init(void);
-extern void call_creds(grpc_end2end_test_config config);
-extern void call_creds_pre_init(void);
-extern void call_host_override(grpc_end2end_test_config config);
-extern void call_host_override_pre_init(void);
-extern void cancel_after_accept(grpc_end2end_test_config config);
-extern void cancel_after_accept_pre_init(void);
-extern void cancel_after_client_done(grpc_end2end_test_config config);
-extern void cancel_after_client_done_pre_init(void);
-extern void cancel_after_invoke(grpc_end2end_test_config config);
-extern void cancel_after_invoke_pre_init(void);
-extern void cancel_after_round_trip(grpc_end2end_test_config config);
-extern void cancel_after_round_trip_pre_init(void);
-extern void cancel_before_invoke(grpc_end2end_test_config config);
-extern void cancel_before_invoke_pre_init(void);
-extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
-extern void cancel_in_a_vacuum_pre_init(void);
-extern void cancel_with_status(grpc_end2end_test_config config);
-extern void cancel_with_status_pre_init(void);
-extern void channelz(grpc_end2end_test_config config);
-extern void channelz_pre_init(void);
-extern void client_streaming(grpc_end2end_test_config config);
-extern void client_streaming_pre_init(void);
-extern void compressed_payload(grpc_end2end_test_config config);
-extern void compressed_payload_pre_init(void);
-extern void connectivity(grpc_end2end_test_config config);
-extern void connectivity_pre_init(void);
-extern void default_host(grpc_end2end_test_config config);
-extern void default_host_pre_init(void);
-extern void disappearing_server(grpc_end2end_test_config config);
-extern void disappearing_server_pre_init(void);
-extern void empty_batch(grpc_end2end_test_config config);
-extern void empty_batch_pre_init(void);
-extern void filter_causes_close(grpc_end2end_test_config config);
-extern void filter_causes_close_pre_init(void);
-extern void filter_context(grpc_end2end_test_config config);
-extern void filter_context_pre_init(void);
-extern void filter_init_fails(grpc_end2end_test_config config);
-extern void filter_init_fails_pre_init(void);
-extern void filter_latency(grpc_end2end_test_config config);
-extern void filter_latency_pre_init(void);
-extern void filter_status_code(grpc_end2end_test_config config);
-extern void filter_status_code_pre_init(void);
-extern void filtered_metadata(grpc_end2end_test_config config);
-extern void filtered_metadata_pre_init(void);
-extern void graceful_server_shutdown(grpc_end2end_test_config config);
-extern void graceful_server_shutdown_pre_init(void);
-extern void grpc_authz(grpc_end2end_test_config config);
-extern void grpc_authz_pre_init(void);
-extern void high_initial_seqno(grpc_end2end_test_config config);
-extern void high_initial_seqno_pre_init(void);
-extern void hpack_size(grpc_end2end_test_config config);
-extern void hpack_size_pre_init(void);
-extern void invoke_large_request(grpc_end2end_test_config config);
-extern void invoke_large_request_pre_init(void);
-extern void keepalive_timeout(grpc_end2end_test_config config);
-extern void keepalive_timeout_pre_init(void);
-extern void large_metadata(grpc_end2end_test_config config);
-extern void large_metadata_pre_init(void);
-extern void max_concurrent_streams(grpc_end2end_test_config config);
-extern void max_concurrent_streams_pre_init(void);
-extern void max_connection_age(grpc_end2end_test_config config);
-extern void max_connection_age_pre_init(void);
-extern void max_connection_idle(grpc_end2end_test_config config);
-extern void max_connection_idle_pre_init(void);
-extern void max_message_length(grpc_end2end_test_config config);
-extern void max_message_length_pre_init(void);
-extern void negative_deadline(grpc_end2end_test_config config);
-extern void negative_deadline_pre_init(void);
-extern void no_logging(grpc_end2end_test_config config);
-extern void no_logging_pre_init(void);
-extern void no_op(grpc_end2end_test_config config);
-extern void no_op_pre_init(void);
-extern void payload(grpc_end2end_test_config config);
-extern void payload_pre_init(void);
-extern void ping(grpc_end2end_test_config config);
-extern void ping_pre_init(void);
-extern void ping_pong_streaming(grpc_end2end_test_config config);
-extern void ping_pong_streaming_pre_init(void);
-extern void proxy_auth(grpc_end2end_test_config config);
-extern void proxy_auth_pre_init(void);
-extern void registered_call(grpc_end2end_test_config config);
-extern void registered_call_pre_init(void);
-extern void request_with_flags(grpc_end2end_test_config config);
-extern void request_with_flags_pre_init(void);
-extern void request_with_payload(grpc_end2end_test_config config);
-extern void request_with_payload_pre_init(void);
-extern void resource_quota_server(grpc_end2end_test_config config);
-extern void resource_quota_server_pre_init(void);
-extern void retry(grpc_end2end_test_config config);
-extern void retry_pre_init(void);
-extern void retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config);
-extern void retry_cancel_after_first_attempt_starts_pre_init(void);
-extern void retry_cancel_during_delay(grpc_end2end_test_config config);
-extern void retry_cancel_during_delay_pre_init(void);
-extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
-extern void retry_cancel_with_multiple_send_batches_pre_init(void);
-extern void retry_cancellation(grpc_end2end_test_config config);
-extern void retry_cancellation_pre_init(void);
-extern void retry_disabled(grpc_end2end_test_config config);
-extern void retry_disabled_pre_init(void);
-extern void retry_exceeds_buffer_size_in_delay(grpc_end2end_test_config config);
-extern void retry_exceeds_buffer_size_in_delay_pre_init(void);
-extern void retry_exceeds_buffer_size_in_initial_batch(grpc_end2end_test_config config);
-extern void retry_exceeds_buffer_size_in_initial_batch_pre_init(void);
-extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_config config);
-extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
-extern void retry_lb_drop(grpc_end2end_test_config config);
-extern void retry_lb_drop_pre_init(void);
-extern void retry_lb_fail(grpc_end2end_test_config config);
-extern void retry_lb_fail_pre_init(void);
-extern void retry_non_retriable_status(grpc_end2end_test_config config);
-extern void retry_non_retriable_status_pre_init(void);
-extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
-extern void retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init(void);
-extern void retry_per_attempt_recv_timeout(grpc_end2end_test_config config);
-extern void retry_per_attempt_recv_timeout_pre_init(void);
-extern void retry_per_attempt_recv_timeout_on_last_attempt(grpc_end2end_test_config config);
-extern void retry_per_attempt_recv_timeout_on_last_attempt_pre_init(void);
-extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
-extern void retry_recv_initial_metadata_pre_init(void);
-extern void retry_recv_message(grpc_end2end_test_config config);
-extern void retry_recv_message_pre_init(void);
-extern void retry_recv_message_replay(grpc_end2end_test_config config);
-extern void retry_recv_message_replay_pre_init(void);
-extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
-extern void retry_recv_trailing_metadata_error_pre_init(void);
-extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
-extern void retry_send_initial_metadata_refs_pre_init(void);
-extern void retry_send_op_fails(grpc_end2end_test_config config);
-extern void retry_send_op_fails_pre_init(void);
-extern void retry_send_recv_batch(grpc_end2end_test_config config);
-extern void retry_send_recv_batch_pre_init(void);
-extern void retry_server_pushback_delay(grpc_end2end_test_config config);
-extern void retry_server_pushback_delay_pre_init(void);
-extern void retry_server_pushback_disabled(grpc_end2end_test_config config);
-extern void retry_server_pushback_disabled_pre_init(void);
-extern void retry_streaming(grpc_end2end_test_config config);
-extern void retry_streaming_pre_init(void);
-extern void retry_streaming_after_commit(grpc_end2end_test_config config);
-extern void retry_streaming_after_commit_pre_init(void);
-extern void retry_streaming_succeeds_before_replay_finished(grpc_end2end_test_config config);
-extern void retry_streaming_succeeds_before_replay_finished_pre_init(void);
-extern void retry_throttled(grpc_end2end_test_config config);
-extern void retry_throttled_pre_init(void);
-extern void retry_too_many_attempts(grpc_end2end_test_config config);
-extern void retry_too_many_attempts_pre_init(void);
-extern void retry_transparent_goaway(grpc_end2end_test_config config);
-extern void retry_transparent_goaway_pre_init(void);
-extern void retry_transparent_max_concurrent_streams(grpc_end2end_test_config config);
-extern void retry_transparent_max_concurrent_streams_pre_init(void);
-extern void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config);
-extern void retry_transparent_not_sent_on_wire_pre_init(void);
-extern void retry_unref_before_finish(grpc_end2end_test_config config);
-extern void retry_unref_before_finish_pre_init(void);
-extern void retry_unref_before_recv(grpc_end2end_test_config config);
-extern void retry_unref_before_recv_pre_init(void);
-extern void server_finishes_request(grpc_end2end_test_config config);
-extern void server_finishes_request_pre_init(void);
-extern void server_streaming(grpc_end2end_test_config config);
-extern void server_streaming_pre_init(void);
-extern void shutdown_finishes_calls(grpc_end2end_test_config config);
-extern void shutdown_finishes_calls_pre_init(void);
-extern void shutdown_finishes_tags(grpc_end2end_test_config config);
-extern void shutdown_finishes_tags_pre_init(void);
-extern void simple_delayed_request(grpc_end2end_test_config config);
-extern void simple_delayed_request_pre_init(void);
-extern void simple_metadata(grpc_end2end_test_config config);
-extern void simple_metadata_pre_init(void);
-extern void simple_request(grpc_end2end_test_config config);
-extern void simple_request_pre_init(void);
-extern void streaming_error_response(grpc_end2end_test_config config);
-extern void streaming_error_response_pre_init(void);
-extern void trailing_metadata(grpc_end2end_test_config config);
-extern void trailing_metadata_pre_init(void);
-extern void write_buffering(grpc_end2end_test_config config);
-extern void write_buffering_pre_init(void);
-extern void write_buffering_at_end(grpc_end2end_test_config config);
-extern void write_buffering_at_end_pre_init(void);
+bool g_is_fuzzing_core_e2e_tests = false;
 
-void grpc_end2end_tests_pre_init(void) {
-  GPR_ASSERT(!g_pre_init_called);
-  g_pre_init_called = true;
-  authority_not_supported_pre_init();
-  bad_hostname_pre_init();
-  bad_ping_pre_init();
-  binary_metadata_pre_init();
-  call_creds_pre_init();
-  call_host_override_pre_init();
-  cancel_after_accept_pre_init();
-  cancel_after_client_done_pre_init();
-  cancel_after_invoke_pre_init();
-  cancel_after_round_trip_pre_init();
-  cancel_before_invoke_pre_init();
-  cancel_in_a_vacuum_pre_init();
-  cancel_with_status_pre_init();
-  channelz_pre_init();
-  client_streaming_pre_init();
-  compressed_payload_pre_init();
-  connectivity_pre_init();
-  default_host_pre_init();
-  disappearing_server_pre_init();
-  empty_batch_pre_init();
-  filter_causes_close_pre_init();
-  filter_context_pre_init();
-  filter_init_fails_pre_init();
-  filter_latency_pre_init();
-  filter_status_code_pre_init();
-  filtered_metadata_pre_init();
-  graceful_server_shutdown_pre_init();
-  grpc_authz_pre_init();
-  high_initial_seqno_pre_init();
-  hpack_size_pre_init();
-  invoke_large_request_pre_init();
-  keepalive_timeout_pre_init();
-  large_metadata_pre_init();
-  max_concurrent_streams_pre_init();
-  max_connection_age_pre_init();
-  max_connection_idle_pre_init();
-  max_message_length_pre_init();
-  negative_deadline_pre_init();
-  no_logging_pre_init();
-  no_op_pre_init();
-  payload_pre_init();
-  ping_pre_init();
-  ping_pong_streaming_pre_init();
-  proxy_auth_pre_init();
-  registered_call_pre_init();
-  request_with_flags_pre_init();
-  request_with_payload_pre_init();
-  resource_quota_server_pre_init();
-  retry_pre_init();
-  retry_cancel_after_first_attempt_starts_pre_init();
-  retry_cancel_during_delay_pre_init();
-  retry_cancel_with_multiple_send_batches_pre_init();
-  retry_cancellation_pre_init();
-  retry_disabled_pre_init();
-  retry_exceeds_buffer_size_in_delay_pre_init();
-  retry_exceeds_buffer_size_in_initial_batch_pre_init();
-  retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
-  retry_lb_drop_pre_init();
-  retry_lb_fail_pre_init();
-  retry_non_retriable_status_pre_init();
-  retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
-  retry_per_attempt_recv_timeout_pre_init();
-  retry_per_attempt_recv_timeout_on_last_attempt_pre_init();
-  retry_recv_initial_metadata_pre_init();
-  retry_recv_message_pre_init();
-  retry_recv_message_replay_pre_init();
-  retry_recv_trailing_metadata_error_pre_init();
-  retry_send_initial_metadata_refs_pre_init();
-  retry_send_op_fails_pre_init();
-  retry_send_recv_batch_pre_init();
-  retry_server_pushback_delay_pre_init();
-  retry_server_pushback_disabled_pre_init();
-  retry_streaming_pre_init();
-  retry_streaming_after_commit_pre_init();
-  retry_streaming_succeeds_before_replay_finished_pre_init();
-  retry_throttled_pre_init();
-  retry_too_many_attempts_pre_init();
-  retry_transparent_goaway_pre_init();
-  retry_transparent_max_concurrent_streams_pre_init();
-  retry_transparent_not_sent_on_wire_pre_init();
-  retry_unref_before_finish_pre_init();
-  retry_unref_before_recv_pre_init();
-  server_finishes_request_pre_init();
-  server_streaming_pre_init();
-  shutdown_finishes_calls_pre_init();
-  shutdown_finishes_tags_pre_init();
-  simple_delayed_request_pre_init();
-  simple_metadata_pre_init();
-  simple_request_pre_init();
-  streaming_error_response_pre_init();
-  trailing_metadata_pre_init();
-  write_buffering_pre_init();
-  write_buffering_at_end_pre_init();
+Slice RandomSlice(size_t length) {
+  size_t i;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+  std::vector<char> output;
+  output.resize(length);
+  for (i = 0; i < length; ++i) {
+    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
+  }
+  return Slice::FromCopiedBuffer(output);
 }
 
-// NOLINTNEXTLINE(readability-function-size)
-void grpc_end2end_tests(int argc, char **argv,
-                        grpc_end2end_test_config config) {
-  int i;
-
-  GPR_ASSERT(g_pre_init_called);
-
-  if (argc <= 1) {
-    authority_not_supported(config);
-    bad_hostname(config);
-    bad_ping(config);
-    binary_metadata(config);
-    call_creds(config);
-    call_host_override(config);
-    cancel_after_accept(config);
-    cancel_after_client_done(config);
-    cancel_after_invoke(config);
-    cancel_after_round_trip(config);
-    cancel_before_invoke(config);
-    cancel_in_a_vacuum(config);
-    cancel_with_status(config);
-    channelz(config);
-    client_streaming(config);
-    compressed_payload(config);
-    connectivity(config);
-    default_host(config);
-    disappearing_server(config);
-    empty_batch(config);
-    filter_causes_close(config);
-    filter_context(config);
-    filter_init_fails(config);
-    filter_latency(config);
-    filter_status_code(config);
-    filtered_metadata(config);
-    graceful_server_shutdown(config);
-    grpc_authz(config);
-    high_initial_seqno(config);
-    hpack_size(config);
-    invoke_large_request(config);
-    keepalive_timeout(config);
-    large_metadata(config);
-    max_concurrent_streams(config);
-    max_connection_age(config);
-    max_connection_idle(config);
-    max_message_length(config);
-    negative_deadline(config);
-    no_logging(config);
-    no_op(config);
-    payload(config);
-    ping(config);
-    ping_pong_streaming(config);
-    proxy_auth(config);
-    registered_call(config);
-    request_with_flags(config);
-    request_with_payload(config);
-    resource_quota_server(config);
-    retry(config);
-    retry_cancel_after_first_attempt_starts(config);
-    retry_cancel_during_delay(config);
-    retry_cancel_with_multiple_send_batches(config);
-    retry_cancellation(config);
-    retry_disabled(config);
-    retry_exceeds_buffer_size_in_delay(config);
-    retry_exceeds_buffer_size_in_initial_batch(config);
-    retry_exceeds_buffer_size_in_subsequent_batch(config);
-    retry_lb_drop(config);
-    retry_lb_fail(config);
-    retry_non_retriable_status(config);
-    retry_non_retriable_status_before_recv_trailing_metadata_started(config);
-    retry_per_attempt_recv_timeout(config);
-    retry_per_attempt_recv_timeout_on_last_attempt(config);
-    retry_recv_initial_metadata(config);
-    retry_recv_message(config);
-    retry_recv_message_replay(config);
-    retry_recv_trailing_metadata_error(config);
-    retry_send_initial_metadata_refs(config);
-    retry_send_op_fails(config);
-    retry_send_recv_batch(config);
-    retry_server_pushback_delay(config);
-    retry_server_pushback_disabled(config);
-    retry_streaming(config);
-    retry_streaming_after_commit(config);
-    retry_streaming_succeeds_before_replay_finished(config);
-    retry_throttled(config);
-    retry_too_many_attempts(config);
-    retry_transparent_goaway(config);
-    retry_transparent_max_concurrent_streams(config);
-    retry_transparent_not_sent_on_wire(config);
-    retry_unref_before_finish(config);
-    retry_unref_before_recv(config);
-    server_finishes_request(config);
-    server_streaming(config);
-    shutdown_finishes_calls(config);
-    shutdown_finishes_tags(config);
-    simple_delayed_request(config);
-    simple_metadata(config);
-    simple_request(config);
-    streaming_error_response(config);
-    trailing_metadata(config);
-    write_buffering(config);
-    write_buffering_at_end(config);
-    return;
+Slice RandomBinarySlice(size_t length) {
+  size_t i;
+  std::vector<uint8_t> output;
+  output.resize(length);
+  for (i = 0; i < length; ++i) {
+    output[i] = rand();
   }
+  return Slice::FromCopiedBuffer(output);
+}
 
-  for (i = 1; i < argc; i++) {
-    if (0 == strcmp("authority_not_supported", argv[i])) {
-      authority_not_supported(config);
-      continue;
-    }
-    if (0 == strcmp("bad_hostname", argv[i])) {
-      bad_hostname(config);
-      continue;
-    }
-    if (0 == strcmp("bad_ping", argv[i])) {
-      bad_ping(config);
-      continue;
-    }
-    if (0 == strcmp("binary_metadata", argv[i])) {
-      binary_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("call_creds", argv[i])) {
-      call_creds(config);
-      continue;
-    }
-    if (0 == strcmp("call_host_override", argv[i])) {
-      call_host_override(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_after_accept", argv[i])) {
-      cancel_after_accept(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_after_client_done", argv[i])) {
-      cancel_after_client_done(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_after_invoke", argv[i])) {
-      cancel_after_invoke(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_after_round_trip", argv[i])) {
-      cancel_after_round_trip(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_before_invoke", argv[i])) {
-      cancel_before_invoke(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_in_a_vacuum", argv[i])) {
-      cancel_in_a_vacuum(config);
-      continue;
-    }
-    if (0 == strcmp("cancel_with_status", argv[i])) {
-      cancel_with_status(config);
-      continue;
-    }
-    if (0 == strcmp("channelz", argv[i])) {
-      channelz(config);
-      continue;
-    }
-    if (0 == strcmp("client_streaming", argv[i])) {
-      client_streaming(config);
-      continue;
-    }
-    if (0 == strcmp("compressed_payload", argv[i])) {
-      compressed_payload(config);
-      continue;
-    }
-    if (0 == strcmp("connectivity", argv[i])) {
-      connectivity(config);
-      continue;
-    }
-    if (0 == strcmp("default_host", argv[i])) {
-      default_host(config);
-      continue;
-    }
-    if (0 == strcmp("disappearing_server", argv[i])) {
-      disappearing_server(config);
-      continue;
-    }
-    if (0 == strcmp("empty_batch", argv[i])) {
-      empty_batch(config);
-      continue;
-    }
-    if (0 == strcmp("filter_causes_close", argv[i])) {
-      filter_causes_close(config);
-      continue;
-    }
-    if (0 == strcmp("filter_context", argv[i])) {
-      filter_context(config);
-      continue;
-    }
-    if (0 == strcmp("filter_init_fails", argv[i])) {
-      filter_init_fails(config);
-      continue;
-    }
-    if (0 == strcmp("filter_latency", argv[i])) {
-      filter_latency(config);
-      continue;
-    }
-    if (0 == strcmp("filter_status_code", argv[i])) {
-      filter_status_code(config);
-      continue;
-    }
-    if (0 == strcmp("filtered_metadata", argv[i])) {
-      filtered_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("graceful_server_shutdown", argv[i])) {
-      graceful_server_shutdown(config);
-      continue;
-    }
-    if (0 == strcmp("grpc_authz", argv[i])) {
-      grpc_authz(config);
-      continue;
-    }
-    if (0 == strcmp("high_initial_seqno", argv[i])) {
-      high_initial_seqno(config);
-      continue;
-    }
-    if (0 == strcmp("hpack_size", argv[i])) {
-      hpack_size(config);
-      continue;
-    }
-    if (0 == strcmp("invoke_large_request", argv[i])) {
-      invoke_large_request(config);
-      continue;
-    }
-    if (0 == strcmp("keepalive_timeout", argv[i])) {
-      keepalive_timeout(config);
-      continue;
-    }
-    if (0 == strcmp("large_metadata", argv[i])) {
-      large_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("max_concurrent_streams", argv[i])) {
-      max_concurrent_streams(config);
-      continue;
-    }
-    if (0 == strcmp("max_connection_age", argv[i])) {
-      max_connection_age(config);
-      continue;
-    }
-    if (0 == strcmp("max_connection_idle", argv[i])) {
-      max_connection_idle(config);
-      continue;
-    }
-    if (0 == strcmp("max_message_length", argv[i])) {
-      max_message_length(config);
-      continue;
-    }
-    if (0 == strcmp("negative_deadline", argv[i])) {
-      negative_deadline(config);
-      continue;
-    }
-    if (0 == strcmp("no_logging", argv[i])) {
-      no_logging(config);
-      continue;
-    }
-    if (0 == strcmp("no_op", argv[i])) {
-      no_op(config);
-      continue;
-    }
-    if (0 == strcmp("payload", argv[i])) {
-      payload(config);
-      continue;
-    }
-    if (0 == strcmp("ping", argv[i])) {
-      ping(config);
-      continue;
-    }
-    if (0 == strcmp("ping_pong_streaming", argv[i])) {
-      ping_pong_streaming(config);
-      continue;
-    }
-    if (0 == strcmp("proxy_auth", argv[i])) {
-      proxy_auth(config);
-      continue;
-    }
-    if (0 == strcmp("registered_call", argv[i])) {
-      registered_call(config);
-      continue;
-    }
-    if (0 == strcmp("request_with_flags", argv[i])) {
-      request_with_flags(config);
-      continue;
-    }
-    if (0 == strcmp("request_with_payload", argv[i])) {
-      request_with_payload(config);
-      continue;
-    }
-    if (0 == strcmp("resource_quota_server", argv[i])) {
-      resource_quota_server(config);
-      continue;
-    }
-    if (0 == strcmp("retry", argv[i])) {
-      retry(config);
-      continue;
-    }
-    if (0 == strcmp("retry_cancel_after_first_attempt_starts", argv[i])) {
-      retry_cancel_after_first_attempt_starts(config);
-      continue;
-    }
-    if (0 == strcmp("retry_cancel_during_delay", argv[i])) {
-      retry_cancel_during_delay(config);
-      continue;
-    }
-    if (0 == strcmp("retry_cancel_with_multiple_send_batches", argv[i])) {
-      retry_cancel_with_multiple_send_batches(config);
-      continue;
-    }
-    if (0 == strcmp("retry_cancellation", argv[i])) {
-      retry_cancellation(config);
-      continue;
-    }
-    if (0 == strcmp("retry_disabled", argv[i])) {
-      retry_disabled(config);
-      continue;
-    }
-    if (0 == strcmp("retry_exceeds_buffer_size_in_delay", argv[i])) {
-      retry_exceeds_buffer_size_in_delay(config);
-      continue;
-    }
-    if (0 == strcmp("retry_exceeds_buffer_size_in_initial_batch", argv[i])) {
-      retry_exceeds_buffer_size_in_initial_batch(config);
-      continue;
-    }
-    if (0 == strcmp("retry_exceeds_buffer_size_in_subsequent_batch", argv[i])) {
-      retry_exceeds_buffer_size_in_subsequent_batch(config);
-      continue;
-    }
-    if (0 == strcmp("retry_lb_drop", argv[i])) {
-      retry_lb_drop(config);
-      continue;
-    }
-    if (0 == strcmp("retry_lb_fail", argv[i])) {
-      retry_lb_fail(config);
-      continue;
-    }
-    if (0 == strcmp("retry_non_retriable_status", argv[i])) {
-      retry_non_retriable_status(config);
-      continue;
-    }
-    if (0 == strcmp("retry_non_retriable_status_before_recv_trailing_metadata_started", argv[i])) {
-      retry_non_retriable_status_before_recv_trailing_metadata_started(config);
-      continue;
-    }
-    if (0 == strcmp("retry_per_attempt_recv_timeout", argv[i])) {
-      retry_per_attempt_recv_timeout(config);
-      continue;
-    }
-    if (0 == strcmp("retry_per_attempt_recv_timeout_on_last_attempt", argv[i])) {
-      retry_per_attempt_recv_timeout_on_last_attempt(config);
-      continue;
-    }
-    if (0 == strcmp("retry_recv_initial_metadata", argv[i])) {
-      retry_recv_initial_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("retry_recv_message", argv[i])) {
-      retry_recv_message(config);
-      continue;
-    }
-    if (0 == strcmp("retry_recv_message_replay", argv[i])) {
-      retry_recv_message_replay(config);
-      continue;
-    }
-    if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {
-      retry_recv_trailing_metadata_error(config);
-      continue;
-    }
-    if (0 == strcmp("retry_send_initial_metadata_refs", argv[i])) {
-      retry_send_initial_metadata_refs(config);
-      continue;
-    }
-    if (0 == strcmp("retry_send_op_fails", argv[i])) {
-      retry_send_op_fails(config);
-      continue;
-    }
-    if (0 == strcmp("retry_send_recv_batch", argv[i])) {
-      retry_send_recv_batch(config);
-      continue;
-    }
-    if (0 == strcmp("retry_server_pushback_delay", argv[i])) {
-      retry_server_pushback_delay(config);
-      continue;
-    }
-    if (0 == strcmp("retry_server_pushback_disabled", argv[i])) {
-      retry_server_pushback_disabled(config);
-      continue;
-    }
-    if (0 == strcmp("retry_streaming", argv[i])) {
-      retry_streaming(config);
-      continue;
-    }
-    if (0 == strcmp("retry_streaming_after_commit", argv[i])) {
-      retry_streaming_after_commit(config);
-      continue;
-    }
-    if (0 == strcmp("retry_streaming_succeeds_before_replay_finished", argv[i])) {
-      retry_streaming_succeeds_before_replay_finished(config);
-      continue;
-    }
-    if (0 == strcmp("retry_throttled", argv[i])) {
-      retry_throttled(config);
-      continue;
-    }
-    if (0 == strcmp("retry_too_many_attempts", argv[i])) {
-      retry_too_many_attempts(config);
-      continue;
-    }
-    if (0 == strcmp("retry_transparent_goaway", argv[i])) {
-      retry_transparent_goaway(config);
-      continue;
-    }
-    if (0 == strcmp("retry_transparent_max_concurrent_streams", argv[i])) {
-      retry_transparent_max_concurrent_streams(config);
-      continue;
-    }
-    if (0 == strcmp("retry_transparent_not_sent_on_wire", argv[i])) {
-      retry_transparent_not_sent_on_wire(config);
-      continue;
-    }
-    if (0 == strcmp("retry_unref_before_finish", argv[i])) {
-      retry_unref_before_finish(config);
-      continue;
-    }
-    if (0 == strcmp("retry_unref_before_recv", argv[i])) {
-      retry_unref_before_recv(config);
-      continue;
-    }
-    if (0 == strcmp("server_finishes_request", argv[i])) {
-      server_finishes_request(config);
-      continue;
-    }
-    if (0 == strcmp("server_streaming", argv[i])) {
-      server_streaming(config);
-      continue;
-    }
-    if (0 == strcmp("shutdown_finishes_calls", argv[i])) {
-      shutdown_finishes_calls(config);
-      continue;
-    }
-    if (0 == strcmp("shutdown_finishes_tags", argv[i])) {
-      shutdown_finishes_tags(config);
-      continue;
-    }
-    if (0 == strcmp("simple_delayed_request", argv[i])) {
-      simple_delayed_request(config);
-      continue;
-    }
-    if (0 == strcmp("simple_metadata", argv[i])) {
-      simple_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("simple_request", argv[i])) {
-      simple_request(config);
-      continue;
-    }
-    if (0 == strcmp("streaming_error_response", argv[i])) {
-      streaming_error_response(config);
-      continue;
-    }
-    if (0 == strcmp("trailing_metadata", argv[i])) {
-      trailing_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("write_buffering", argv[i])) {
-      write_buffering(config);
-      continue;
-    }
-    if (0 == strcmp("write_buffering_at_end", argv[i])) {
-      write_buffering_at_end(config);
-      continue;
-    }
-    grpc_core::Crash(absl::StrFormat( "not a test: '%s'", argv[i]));
+ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
+  return ByteBufferUniquePtr(
+      grpc_raw_byte_buffer_create(const_cast<grpc_slice*>(&slice.c_slice()), 1),
+      grpc_byte_buffer_destroy);
+}
+
+namespace {
+absl::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
+                                                absl::string_view key) {
+  for (size_t i = 0; i < md.count; i++) {
+    if (key == StringViewFromSlice(md.metadata[i].key)) {
+      return std::string(StringViewFromSlice(md.metadata[i].value));
+    }
+  }
+  return absl::nullopt;
+}
+}  // namespace
+
+void CoreEnd2endTest::SetUp() {
+  CoreConfiguration::Reset();
+  initialized_ = false;
+}
+
+void CoreEnd2endTest::TearDown() {
+  const bool do_shutdown = fixture_ != nullptr;
+  ShutdownAndDestroyClient();
+  ShutdownAndDestroyServer();
+  cq_verifier_.reset();
+  if (cq_ != nullptr) {
+    grpc_completion_queue_shutdown(cq_);
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(cq_, grpc_timeout_seconds_to_deadline(5),
+                                      nullptr);
+    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+    grpc_completion_queue_destroy(cq_);
+    cq_ = nullptr;
+  }
+  fixture_.reset();
+// TODO(hork): locate the windows leak so we can enable end2end experiments.
+#ifndef GPR_WINDOWS
+  // Creating an EventEngine requires gRPC initialization, which the NoOp test
+  // does not do. Skip the EventEngine check if unnecessary.
+  if (grpc_is_initialized()) {
+    quiesce_event_engine_(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
+  }
+#endif
+  if (do_shutdown) {
+    grpc_shutdown_blocking();
+    // This will wait until gRPC shutdown has actually happened to make sure
+    // no gRPC resources (such as thread) are active. (timeout = 10s)
+    if (!grpc_wait_until_shutdown(10)) {
+      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    }
+  }
+  GPR_ASSERT(client_ == nullptr);
+  GPR_ASSERT(server_ == nullptr);
+  initialized_ = false;
+}
+
+absl::optional<std::string> CoreEnd2endTest::IncomingMetadata::Get(
+    absl::string_view key) const {
+  return FindInMetadataArray(*metadata_, key);
+}
+
+grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  op.data.recv_initial_metadata.recv_initial_metadata = metadata_.get();
+  return op;
+}
+
+std::string CoreEnd2endTest::IncomingMessage::payload() const {
+  Slice out;
+  if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
+    grpc_slice_buffer decompressed_buffer;
+    grpc_slice_buffer_init(&decompressed_buffer);
+    GPR_ASSERT(grpc_msg_decompress(payload_->data.raw.compression,
+                                   &payload_->data.raw.slice_buffer,
+                                   &decompressed_buffer));
+    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
+        decompressed_buffer.slices, decompressed_buffer.count);
+    grpc_byte_buffer_reader reader;
+    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, rbb));
+    out = Slice(grpc_byte_buffer_reader_readall(&reader));
+    grpc_byte_buffer_reader_destroy(&reader);
+    grpc_byte_buffer_destroy(rbb);
+    grpc_slice_buffer_destroy(&decompressed_buffer);
+  } else {
+    grpc_byte_buffer_reader reader;
+    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, payload_));
+    out = Slice(grpc_byte_buffer_reader_readall(&reader));
+    grpc_byte_buffer_reader_destroy(&reader);
+  }
+  return std::string(out.begin(), out.end());
+}
+
+grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_MESSAGE;
+  op.data.recv_message.recv_message = &payload_;
+  return op;
+}
+
+absl::optional<std::string>
+CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
+    absl::string_view key) const {
+  return FindInMetadataArray(data_->trailing_metadata, key);
+}
+
+grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op.data.recv_status_on_client.trailing_metadata = &data_->trailing_metadata;
+  op.data.recv_status_on_client.status = &data_->status;
+  op.data.recv_status_on_client.status_details =
+      const_cast<grpc_slice*>(&data_->status_details.c_slice());
+  op.data.recv_status_on_client.error_string = &data_->error_string;
+  return op;
+}
+
+grpc_op CoreEnd2endTest::IncomingCloseOnServer::MakeOp() {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op.data.recv_close_on_server.cancelled = &cancelled_;
+  return op;
+}
+
+CoreEnd2endTest::BatchBuilder&
+CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
+    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
+    uint32_t flags, absl::optional<grpc_compression_level> compression_level) {
+  auto& v = Make<std::vector<grpc_metadata>>();
+  for (const auto& p : md) {
+    grpc_metadata m;
+    m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();
+    m.value = Make<Slice>(Slice::FromCopiedString(p.second)).c_slice();
+    v.push_back(m);
+  }
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  op.flags = flags;
+  op.data.send_initial_metadata.count = v.size();
+  op.data.send_initial_metadata.metadata = v.data();
+  if (compression_level.has_value()) {
+    op.data.send_initial_metadata.maybe_compression_level.is_set = 1;
+    op.data.send_initial_metadata.maybe_compression_level.level =
+        compression_level.value();
+  }
+  ops_.push_back(op);
+  return *this;
+}
+
+CoreEnd2endTest::BatchBuilder& CoreEnd2endTest::BatchBuilder::SendMessage(
+    Slice payload, uint32_t flags) {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message.send_message =
+      Make<ByteBufferUniquePtr>(ByteBufferFromSlice(std::move(payload))).get();
+  op.flags = flags;
+  ops_.push_back(op);
+  return *this;
+}
+
+CoreEnd2endTest::BatchBuilder&
+CoreEnd2endTest::BatchBuilder::SendCloseFromClient() {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops_.push_back(op);
+  return *this;
+}
+
+CoreEnd2endTest::BatchBuilder&
+CoreEnd2endTest::BatchBuilder::SendStatusFromServer(
+    grpc_status_code status, absl::string_view message,
+    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md) {
+  auto& v = Make<std::vector<grpc_metadata>>();
+  for (const auto& p : md) {
+    grpc_metadata m;
+    m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();
+    m.value = Make<Slice>(Slice::FromCopiedString(p.second)).c_slice();
+    v.push_back(m);
+  }
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op.data.send_status_from_server.trailing_metadata_count = v.size();
+  op.data.send_status_from_server.trailing_metadata = v.data();
+  op.data.send_status_from_server.status = status;
+  op.data.send_status_from_server.status_details = &Make<grpc_slice>(
+      Make<Slice>(Slice::FromCopiedString(message)).c_slice());
+  ops_.push_back(op);
+  return *this;
+}
+
+CoreEnd2endTest::BatchBuilder::~BatchBuilder() {
+  grpc_call_error err = grpc_call_start_batch(call_, ops_.data(), ops_.size(),
+                                              CqVerifier::tag(tag_), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_OK) << grpc_call_error_to_string(err);
+}
+
+CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
+  if (auto* u = absl::get_if<UnregisteredCall>(&call_selector_)) {
+    absl::optional<Slice> host;
+    if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
+    test_.ForceInitialized();
+    return Call(grpc_channel_create_call(
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        Slice::FromCopiedString(u->method).c_slice(),
+        host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
+  } else {
+    return Call(grpc_channel_create_registered_call(
+        test_.client(), parent_call_, propagation_mask_, test_.cq(),
+        absl::get<void*>(call_selector_), deadline_, nullptr));
   }
 }
+
+CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
+    : impl_(std::make_unique<Impl>()) {
+  test.ForceInitialized();
+  grpc_server_request_call(test.server(), impl_->call.call_ptr(),
+                           &impl_->call_details, &impl_->request_metadata,
+                           test.cq(), test.cq(), CqVerifier::tag(tag));
+}
+
+absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
+    absl::string_view key) const {
+  return FindInMetadataArray(impl_->request_metadata, key);
+}
+
+void CoreEnd2endTest::ForceInitialized() {
+  if (!initialized_) {
+    initialized_ = true;
+    InitServer(ChannelArgs());
+    InitClient(ChannelArgs());
+  }
+}
+
+void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
+                                           absl::string_view name,
+                                           MakeTestFn make_test,
+                                           SourceLocation) {
+  if (absl::StartsWith(name, "DISABLED_")) return;
+  auto& tests = tests_by_suite_[suite];
+  GPR_ASSERT(tests.count(name) == 0);
+  tests[name] = std::move(make_test);
+}
+
+void CoreEnd2endTestRegistry::RegisterSuite(
+    absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
+    SourceLocation) {
+  GPR_ASSERT(suites_.count(suite) == 0);
+  suites_[suite] = std::move(configs);
+}
+
+namespace {
+template <typename Map>
+std::vector<absl::string_view> KeysFrom(const Map& map) {
+  std::vector<absl::string_view> out;
+  out.reserve(map.size());
+  for (const auto& elem : map) {
+    out.push_back(elem.first);
+  }
+  return out;
+}
+}  // namespace
+
+std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
+  if (tests_by_suite_.size() != suites_.size()) {
+    CrashWithStdio(absl::StrCat(
+        "ERROR: Some suites are not registered:\n",
+        "TESTS use suites: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\nSUITES have: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\n"));
+  }
+  GPR_ASSERT(tests_by_suite_.size() == suites_.size());
+  std::vector<Test> tests;
+  for (const auto& suite_configs : suites_) {
+    if (suite_configs.second.empty()) {
+      CrashWithStdio(
+          absl::StrCat("Suite ", suite_configs.first, " has no tests"));
+    }
+    GPR_ASSERT(tests_by_suite_.count(suite_configs.first) == 1);
+    for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
+      for (const auto* config : suite_configs.second) {
+        tests.push_back(Test{suite_configs.first, test_factory.first, config,
+                             test_factory.second});
+      }
+    }
+  }
+  return tests;
+}
+
+}  // namespace grpc_core

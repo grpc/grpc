@@ -43,7 +43,7 @@ class BaseStub
      */
     public function __construct($hostname, $opts, $channel = null)
     {
-        if (!method_exists('ChannelCredentials', 'isDefaultRootsPemSet') ||
+        if (!method_exists('Grpc\ChannelCredentials', 'isDefaultRootsPemSet') ||
             !ChannelCredentials::isDefaultRootsPemSet()) {
             $ssl_roots = file_get_contents(
                 dirname(__FILE__).'/../../../../etc/roots.pem'
@@ -120,7 +120,7 @@ class BaseStub
     public static function getDefaultChannel($hostname, array $opts)
     {
         $channel_opts = self::updateOpts($opts);
-        return new Channel($hostname, $opts);
+        return new Channel($hostname, $channel_opts);
     }
 
     /**
@@ -145,7 +145,7 @@ class BaseStub
      * @param int $timeout in microseconds
      *
      * @return bool true if channel is ready
-     * @throw Exception if channel is in FATAL_ERROR state
+     * @throws Exception if channel is in FATAL_ERROR state
      */
     public function waitForReady($timeout)
     {
@@ -183,7 +183,7 @@ class BaseStub
      * @param $new_state Connect state
      *
      * @return bool true if state is CHANNEL_READY
-     * @throw Exception if state is CHANNEL_FATAL_FAILURE
+     * @throws Exception if state is CHANNEL_FATAL_FAILURE
      */
     private function _checkConnectivityState($new_state)
     {
@@ -242,7 +242,7 @@ class BaseStub
      * @param array $metadata The metadata map
      *
      * @return array $metadata Validated and key-normalized metadata map
-     * @throw InvalidArgumentException if key contains invalid characters
+     * @throws InvalidArgumentException if key contains invalid characters
      */
     private function _validate_and_normalize_metadata($metadata)
     {

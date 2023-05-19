@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.11
+FROM alpine:3.15
 
 # Install Git and basic packages.
 RUN apk update && apk add   autoconf   automake   bzip2   build-base   cmake   ccache   curl   gcc   git   libtool   linux-headers   make   perl   strace   python3-dev   py3-pip   unzip   wget   zip
 
-RUN ln -s /usr/bin/pip3 /usr/bin/pip
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Python packages from PyPI
@@ -26,7 +25,6 @@ RUN python3 -m pip install --upgrade pip==19.3.1
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
-
 
 #=================
 # Install ccache
@@ -41,4 +39,13 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
+
+
+RUN mkdir /var/local/jenkins
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 

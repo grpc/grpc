@@ -53,11 +53,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thread_pool_test",
     srcs = ["thread_pool_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
     deps = [
-        "//:gpr",
+        "//:grpc",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -187,6 +191,19 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:iomgr_port",
+    ],
+)
+
+grpc_cc_test(
+    name = "handle_tests",
+    srcs = ["handle_tests.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//:grpc",
     ],
 )
 

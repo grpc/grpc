@@ -35,8 +35,6 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gprpp/time.h"
 
-static bool g_disable_ping_ack = false;
-
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
@@ -116,7 +114,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
 
         t->ping_recv_state.last_ping_recv_time = now;
       }
-      if (!g_disable_ping_ack) {
+      if (t->ack_pings) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity =
               std::max(t->ping_ack_capacity * 3 / 2, size_t{3});
@@ -131,8 +129,4 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   }
 
   return absl::OkStatus();
-}
-
-void grpc_set_disable_ping_ack(bool disable_ping_ack) {
-  g_disable_ping_ack = disable_ping_ack;
 }

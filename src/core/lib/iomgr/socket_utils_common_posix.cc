@@ -357,8 +357,10 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
           return absl::OkStatus();
         }
         if (newval != timeout) {
-          // Do not fail on failing to set TCP_USER_TIMEOUT for now.
-          gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+          gpr_log(GPR_INFO,
+                  "Setting TCP_USER_TIMEOUT to value %d ms. Actual "
+                  "TCP_USER_TIMEOUT value is %d ms",
+                  timeout, newval);
           return absl::OkStatus();
         }
       }
@@ -437,9 +439,22 @@ grpc_error_handle grpc_create_dualstack_socket(
 
 static int create_socket(grpc_socket_factory* factory, int domain, int type,
                          int protocol) {
-  return (factory != nullptr)
-             ? grpc_socket_factory_socket(factory, domain, type, protocol)
-             : socket(domain, type, protocol);
+  int res = (factory != nullptr)
+                ? grpc_socket_factory_socket(factory, domain, type, protocol)
+                : socket(domain, type, protocol);
+  if (res < 0 && errno == EMFILE) {
+    int saved_errno = errno;
+    GRPC_LOG_EVERY_N_SEC(
+        10, GPR_ERROR,
+        "socket(%d, %d, %d) returned %d with error: |%s|. This process "
+        "might not have a sufficient file descriptor limit for the number "
+        "of connections grpc wants to open (which is generally a function of "
+        "the number of grpc channels, the lb policy of each channel, and the "
+        "number of backends each channel is load balancing across).",
+        domain, type, protocol, res, grpc_core::StrError(errno).c_str());
+    errno = saved_errno;
+  }
+  return res;
 }
 
 grpc_error_handle grpc_create_dualstack_socket_using_factory(

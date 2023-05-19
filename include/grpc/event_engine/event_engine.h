@@ -122,15 +122,21 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
+    static const TaskHandle kInvalid;
+    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
+    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
-  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
+    static const ConnectionHandle kInvalid;
+    friend bool operator==(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
+    friend bool operator!=(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
   };
-  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -277,8 +283,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a on_shutdown will never be called.
   ///
   /// If this method returns a Listener, then \a on_shutdown will be invoked
-  /// exactly once, when the Listener is shut down. The status passed to it will
-  /// indicate if there was a problem during shutdown.
+  /// exactly once when the Listener is shut down, and only after all
+  /// \a on_accept callbacks have finished executing. The status passed to it
+  /// will indicate if there was a problem during shutdown.
   ///
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
@@ -319,6 +326,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
       intptr_t keys[2];
+      static const LookupTaskHandle kInvalid;
+      friend bool operator==(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
+      friend bool operator!=(const LookupTaskHandle& lhs,
+                             const LookupTaskHandle& rhs);
     };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
@@ -342,7 +354,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
         absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
     using LookupTXTCallback =
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<std::string>>)>;
 
     virtual ~DNSResolver() = default;
 

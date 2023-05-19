@@ -111,14 +111,16 @@ Updating the protobuf dependency is now part of the internal release process (se
 
 ### Updating third_party/envoy-api
 
-Apart from the above steps, please perform the following two steps to generate the Python `xds-protos` package:
+Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+
+In addition, please perform the following two steps to generate the Python `xds-protos` package:
 
 1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
 2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
 
 ### Updating third_party/upb
 
-Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below.
+Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
 
 1. Update third_party/upb directory by running
    - `export GRPC_ROOT=~/git/grpc`
@@ -128,11 +130,22 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
    - `mv $GRPC_ROOT/third_party/upb-main $GRPC_ROOT/third_party/upb`
 2. Update the dependency in `grpc_deps.bzl` to the same commit
 3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
-4. Update `src/upb/gen_build_yaml.py` for newly added or removed upb files
-   - Running `bazel query "deps(upb) union deps(json) union deps(textformat)"`
-     under third_party/upb would give some idea on what needs to be included.
+4. Inspect `src/upb/gen_build_yaml.py` and update it with added or removed upb files
+   - Running `cd third_party/upb; bazel query "deps(upb) union deps(json) union deps(textformat)"`
+     would give some idea on what needs to be included.
 5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
 6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+
+### Updating third_party/utf8_range
+
+```
+# set to wherever your grpc repo lives
+export GRPC_ROOT=~/git/grpc
+wget https://github.com/protocolbuffers/utf8_range/archive/refs/heads/main.zip
+rm -rf $GRPC_ROOT/third_party/utf8_range
+unzip main.zip -d $GRPC_ROOT/third_party
+mv $GRPC_ROOT/third_party/utf8_range-main $GRPC_ROOT/third_party/utf8_range
+```
 
 ### Updating third_party/xxhash
 

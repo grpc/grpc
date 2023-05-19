@@ -27,6 +27,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -61,6 +62,7 @@ template <typename T>
 void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
                           size_t size) {
   T parsed;
+  ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
   HPackParser hpack_parser;
   SliceBuffer serialized;
   serialized.Append(Slice::FromCopiedBuffer(data, size));

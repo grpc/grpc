@@ -16,13 +16,14 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.9}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
 readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
+readonly FORCE_TESTING_VERSION="${FORCE_TESTING_VERSION:-}"
 
 # GKE cluster identifiers.
 readonly GKE_CLUSTER_PSM_LB="psm-lb"
@@ -361,7 +362,7 @@ kokoro_setup_python_virtual_environment() {
   eval "$(pyenv virtualenv-init -)"
   py_latest_patch="$(pyenv versions --bare --skip-aliases | grep -E "^${PYTHON_VERSION}\.[0-9]{1,2}$" | sort --version-sort | tail -n 1)"
   echo "Activating python ${py_latest_patch} virtual environment"
-  pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
+  pyenv virtualenv --without-pip "${py_latest_patch}" k8s_xds_test_runner
   pyenv local k8s_xds_test_runner
   pyenv activate k8s_xds_test_runner
   python3 -m ensurepip
@@ -370,6 +371,46 @@ kokoro_setup_python_virtual_environment() {
   # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
   python3 -m pip install -U pip==21.0.1
   python3 -m pip --version
+}
+
+#######################################
+# Determines the version branch under test from Kokoro environment.
+# Globals:
+#   KOKORO_JOB_NAME
+#   KOKORO_BUILD_INITIATOR
+#   FORCE_TESTING_VERSION: Forces the testing version to be something else.
+#   TESTING_VERSION: Populated with the version branch under test,
+#                    f.e. master, dev, v1.42.x.
+# Outputs:
+#   Sets TESTING_VERSION global variable.
+#######################################
+kokoro_get_testing_version() {
+  # All grpc kokoro jobs names structured to have the version identifier in the third position:
+  # - grpc/core/master/linux/...
+  # - grpc/core/v1.42.x/branch/linux/...
+  # - grpc/java/v1.47.x/branch/...
+  # - grpc/go/v1.47.x/branch/...
+  # - grpc/node/v1.6.x/...
+  local version_from_job_name
+  version_from_job_name=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+
+  if [[ -n "${FORCE_TESTING_VERSION}" ]]; then
+    # Allows to override the testing version, and force tagging the built
+    # images, if necessary.
+    readonly TESTING_VERSION="${FORCE_TESTING_VERSION}"
+  elif [[ "${KOKORO_BUILD_INITIATOR:-anonymous}" != "kokoro" ]]; then
+    # If not initiated by Kokoro, it's a dev branch.
+    # This allows to know later down the line that the built image doesn't need
+    # to be tagged, and avoid overriding an actual versioned image used in tests
+    # (e.g. v1.42.x, master) with a dev build.
+    if [[ -n "${version_from_job_name}" ]]; then
+      readonly TESTING_VERSION="dev-${version_from_job_name}"
+    else
+      readonly TESTING_VERSION="dev"
+    fi
+  else
+    readonly TESTING_VERSION="${version_from_job_name}"
+  fi
 }
 
 #######################################
@@ -400,13 +441,8 @@ kokoro_setup_test_driver() {
   # Capture Kokoro VM version info in the log.
   kokoro_print_version
 
-  # All grpc kokoro jobs names structured to have the version identifier in the third position:
-  # - grpc/core/master/linux/...
-  # - grpc/core/v1.42.x/branch/linux/...
-  # - grpc/java/v1.47.x/branch/...
-  # - grpc/go/v1.47.x/branch/...
-  # - grpc/node/v1.6.x/...
-  readonly TESTING_VERSION=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+  # Get testing version from the job name.
+  kokoro_get_testing_version
 
   # Kokoro clones repo to ${KOKORO_ARTIFACTS_DIR}/github/${GITHUB_REPOSITORY}
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"
@@ -455,6 +491,13 @@ local_setup_test_driver() {
   parse_src_repo_git_info "${SRC_DIR}"
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
   readonly SECONDARY_KUBE_CONTEXT="${SECONDARY_KUBE_CONTEXT}"
+
+  # Never override docker image for local runs, unless explicitly forced.
+  if [[ -n "${FORCE_TESTING_VERSION}" ]]; then
+    readonly TESTING_VERSION="${FORCE_TESTING_VERSION}"
+  else
+    readonly TESTING_VERSION="dev"
+  fi
 
   local test_driver_repo_dir
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"

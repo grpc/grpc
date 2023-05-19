@@ -35,8 +35,7 @@ ABSL_FLAG(std::string, peer_identity, "peer_identity", "The peer identity.");
 static void RunFakeHandshakerServer(const std::string& server_address,
                                     const std::string& peer_identity) {
   std::unique_ptr<grpc::Service> service =
-      grpc::gcp::CreateFakeHandshakerService(
-          /*expected_max_concurrent_rpcs=*/0, peer_identity);
+      grpc::gcp::CreateFakeHandshakerService(peer_identity);
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());

@@ -224,6 +224,50 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
             self.assertEqual(await interceptor.calls[1].code(),
                              grpc.StatusCode.OK)
 
+    async def test_retry_with_multiple_interceptors(self):
+
+        class RetryInterceptor(aio.UnaryUnaryClientInterceptor):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+                # Simulate retry twice
+                for _ in range(2):
+                    call = await continuation(client_call_details, request)
+                    result = await call
+                return result
+
+        class AnotherInterceptor(aio.UnaryUnaryClientInterceptor):
+
+            def __init__(self):
+                self.called_times = 0
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
+                self.called_times += 1
+                call = await continuation(client_call_details, request)
+                result = await call
+                return result
+
+        # Create two interceptors, the retry interceptor will call another interceptor.
+        retry_interceptor = RetryInterceptor()
+        another_interceptor = AnotherInterceptor()
+        async with aio.insecure_channel(
+                self._server_target,
+                interceptors=[retry_interceptor,
+                              another_interceptor]) as channel:
+
+            multicallable = channel.unary_unary(
+                '/grpc.testing.TestService/UnaryCallWithSleep',
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+
+            call = multicallable(messages_pb2.SimpleRequest())
+
+            await call
+
+            self.assertEqual(grpc.StatusCode.OK, await call.code())
+            self.assertEqual(another_interceptor.called_times, 2)
+
     async def test_rpcresponse(self):
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):

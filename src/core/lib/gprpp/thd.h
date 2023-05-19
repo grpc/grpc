@@ -25,6 +25,11 @@
 
 #include <stddef.h>
 
+#include <memory>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {
@@ -85,6 +90,17 @@ class Thread {
   /// The optional \a options can be used to set the thread detachable.
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
          bool* success = nullptr, const Options& options = Options());
+
+  Thread(const char* thd_name, absl::AnyInvocable<void()> fn,
+         bool* success = nullptr, const Options& options = Options())
+      : Thread(
+            thd_name,
+            [](void* p) {
+              std::unique_ptr<absl::AnyInvocable<void()>> fn_from_p(
+                  static_cast<absl::AnyInvocable<void()>*>(p));
+              (*fn_from_p)();
+            },
+            new absl::AnyInvocable<void()>(std::move(fn)), success, options) {}
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object

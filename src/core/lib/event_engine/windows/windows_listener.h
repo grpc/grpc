@@ -27,6 +27,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -39,11 +40,14 @@ class WindowsEventEngineListener : public EventEngine::Listener {
       IOCP* iocp, AcceptCallback accept_cb,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory,
-      std::shared_ptr<EventEngine> engine, Executor* executor_,
+      std::shared_ptr<EventEngine> engine, ThreadPool* thread_pool_,
       const EndpointConfig& config);
   ~WindowsEventEngineListener() override;
   absl::StatusOr<int> Bind(const EventEngine::ResolvedAddress& addr) override;
   absl::Status Start() override;
+  // TODO(hork): this may only be needed for the iomgr shim, to accommodate
+  // calls to grpc_tcp_server_shutdown_listeners
+  void ShutdownListeners();
 
  private:
   /// Responsible for listening on a single port.
@@ -133,14 +137,15 @@ class WindowsEventEngineListener : public EventEngine::Listener {
   IOCP* const iocp_;
   const EndpointConfig& config_;
   std::shared_ptr<EventEngine> engine_;
-  Executor* executor_;
+  ThreadPool* thread_pool_;
   const std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
   AcceptCallback accept_cb_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
   std::atomic<bool> started_{false};
-  grpc_core::Mutex socket_listeners_mu_;
+  grpc_core::Mutex port_listeners_mu_;
   std::list<std::unique_ptr<SinglePortSocketListener>> port_listeners_
-      ABSL_GUARDED_BY(socket_listeners_mu_);
+      ABSL_GUARDED_BY(port_listeners_mu_);
+  bool listeners_shutdown_ ABSL_GUARDED_BY(port_listeners_mu_) = false;
 };
 
 }  // namespace experimental

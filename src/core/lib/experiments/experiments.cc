@@ -58,30 +58,46 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
+const char* const description_event_engine_dns =
+    "If set, use EventEngine DNSResolver for client channel resolution";
+const char* const description_work_stealing =
+    "If set, use a work stealing thread pool implementation in EventEngine";
+const char* const description_client_privacy = "If set, client privacy";
+const char* const description_canary_client_privacy =
+    "If set, canary client privacy";
+const char* const description_server_privacy = "If set, server privacy";
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
-    {"peer_state_based_framing", description_peer_state_based_framing, false},
-    {"flow_control_fixes", description_flow_control_fixes, true},
+    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false, true},
+    {"tcp_rcv_lowat", description_tcp_rcv_lowat, false, true},
+    {"peer_state_based_framing", description_peer_state_based_framing, false,
+     true},
+    {"flow_control_fixes", description_flow_control_fixes, true, true},
     {"memory_pressure_controller", description_memory_pressure_controller,
-     false},
+     false, true},
     {"unconstrained_max_quota_buffer_size",
-     description_unconstrained_max_quota_buffer_size, false},
-    {"event_engine_client", description_event_engine_client, false},
-    {"monitoring_experiment", description_monitoring_experiment, true},
-    {"promise_based_client_call", description_promise_based_client_call, false},
-    {"free_large_allocator", description_free_large_allocator, false},
-    {"promise_based_server_call", description_promise_based_server_call, false},
+     description_unconstrained_max_quota_buffer_size, false, true},
+    {"event_engine_client", description_event_engine_client, false, true},
+    {"monitoring_experiment", description_monitoring_experiment, true, true},
+    {"promise_based_client_call", description_promise_based_client_call, false,
+     true},
+    {"free_large_allocator", description_free_large_allocator, false, true},
+    {"promise_based_server_call", description_promise_based_server_call, false,
+     true},
     {"transport_supplies_client_latency",
-     description_transport_supplies_client_latency, false},
-    {"event_engine_listener", description_event_engine_listener, false},
+     description_transport_supplies_client_latency, false, true},
+    {"event_engine_listener", description_event_engine_listener, false, true},
     {"schedule_cancellation_over_write",
-     description_schedule_cancellation_over_write, false},
-    {"trace_record_callops", description_trace_record_callops, false},
+     description_schedule_cancellation_over_write, false, true},
+    {"trace_record_callops", description_trace_record_callops, false, true},
+    {"event_engine_dns", description_event_engine_dns, false, false},
+    {"work_stealing", description_work_stealing, false, false},
+    {"client_privacy", description_client_privacy, false, false},
+    {"canary_client_privacy", description_canary_client_privacy, false, false},
+    {"server_privacy", description_server_privacy, false, false},
 };
 
 }  // namespace grpc_core

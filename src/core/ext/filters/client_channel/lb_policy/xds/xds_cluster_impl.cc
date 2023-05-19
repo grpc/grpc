@@ -38,6 +38,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -332,7 +333,13 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     }
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(!args.status.ok());
+      auto* backend_metric_data =
+          args.backend_metric_accessor->GetBackendMetricData();
+      const std::map<absl::string_view, double>* named_metrics = nullptr;
+      if (backend_metric_data != nullptr) {
+        named_metrics = &backend_metric_data->named_metrics;
+      }
+      locality_stats_->AddCallFinished(named_metrics, !args.status.ok());
     }
     // Decrement number of calls in flight.
     call_counter_->Decrement();
@@ -721,8 +728,8 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "childPolicy" field.
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto lb_config = CoreConfiguration::Get()
@@ -738,7 +745,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "dropCategories" field.
   {
     auto value = LoadJsonObjectField<std::vector<DropCategory>>(
-        json.object_value(), args, "dropCategories", errors);
+        json.object(), args, "dropCategories", errors);
     if (value.has_value()) {
       drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
       for (size_t i = 0; i < value->size(); ++i) {
@@ -770,15 +777,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_impl policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<XdsClusterImplLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsClusterImplLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_cluster_impl LB policy config");
   }

@@ -27,6 +27,7 @@
 
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -53,6 +54,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -105,6 +107,8 @@ class Message {
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 
+  std::string DebugString() const;
+
  private:
   SliceBuffer payload_;
   uint32_t flags_ = 0;
@@ -143,11 +147,73 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+// Move only type that tracks call startup.
+// Allows observation of when client_initial_metadata has been processed by the
+// end of the local call stack.
+// Interested observers can call Wait() to obtain a promise that will resolve
+// when all local client_initial_metadata processing has completed.
+// The result of this token is either true on successful completion, or false
+// if the metadata was not sent.
+// To set a successful completion, call Complete(true). For failure, call
+// Complete(false).
+// If Complete is not called, the destructor of a still held token will complete
+// with failure.
+// Transports should hold this token until client_initial_metadata has passed
+// any flow control (eg MAX_CONCURRENT_STREAMS for http2).
+class ClientInitialMetadataOutstandingToken {
+ public:
+  static ClientInitialMetadataOutstandingToken Empty() {
+    return ClientInitialMetadataOutstandingToken();
+  }
+  static ClientInitialMetadataOutstandingToken New(
+      Arena* arena = GetContext<Arena>()) {
+    ClientInitialMetadataOutstandingToken token;
+    token.latch_ = arena->New<Latch<bool>>();
+    return token;
+  }
+
+  ClientInitialMetadataOutstandingToken(
+      const ClientInitialMetadataOutstandingToken&) = delete;
+  ClientInitialMetadataOutstandingToken& operator=(
+      const ClientInitialMetadataOutstandingToken&) = delete;
+  ClientInitialMetadataOutstandingToken(
+      ClientInitialMetadataOutstandingToken&& other) noexcept
+      : latch_(std::exchange(other.latch_, nullptr)) {}
+  ClientInitialMetadataOutstandingToken& operator=(
+      ClientInitialMetadataOutstandingToken&& other) noexcept {
+    latch_ = std::exchange(other.latch_, nullptr);
+    return *this;
+  }
+  ~ClientInitialMetadataOutstandingToken() {
+    if (latch_ != nullptr) latch_->Set(false);
+  }
+  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
+
+  // Returns a promise that will resolve when this object (or its moved-from
+  // ancestor) is dropped.
+  auto Wait() { return latch_->Wait(); }
+
+ private:
+  ClientInitialMetadataOutstandingToken() = default;
+
+  Latch<bool>* latch_ = nullptr;
+};
+
+using ClientInitialMetadataOutstandingTokenWaitType =
+    decltype(std::declval<ClientInitialMetadataOutstandingToken>().Wait());
+
 struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
   // passed on to the next filter).
   ClientMetadataHandle client_initial_metadata;
+  // Token indicating that client_initial_metadata is still being processed.
+  // This should be moved around and only destroyed when the transport is
+  // satisfied that the metadata has passed any flow control measures it has.
+  ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
+  // Latch that will ultimately contain the polling entity for the call.
+  // TODO(ctiller): remove once event engine lands
+  Latch<grpc_polling_entity>* polling_entity;
   // Initial metadata from the server to the client.
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this
@@ -329,6 +395,12 @@ struct grpc_transport_stream_op_batch {
 
   /// Is this stream traced
   bool is_traced : 1;
+
+  bool HasOp() const {
+    return send_initial_metadata || send_trailing_metadata || send_message ||
+           recv_initial_metadata || recv_message || recv_trailing_metadata ||
+           cancel_stream;
+  }
 
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the

@@ -296,7 +296,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             "JSON parsing failed: ["
-            "duplicate key \"healthCheckConfig\" at index 104]")
+            "duplicate key \"healthCheckConfig\" at index 82]")
       << service_config.status();
 }
 

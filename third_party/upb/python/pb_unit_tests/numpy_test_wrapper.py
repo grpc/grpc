@@ -25,15 +25,7 @@
 
 import unittest
 
-# begin:google_only
-# from google.protobuf.internal.numpy_test import *
-#
-# # TODO(b/227379846): upb does not match pure-python and fast cpp behavior for
-# # assignment of numpy arrays to proto float or multidimensional arrays to
-# # repeated fields yet.
-# NumpyFloatProtoTest.testNumpyFloatArrayToScalar_RaisesTypeError.__unittest_expecting_failure__ = True
-# NumpyFloatProtoTest.testNumpyDim2FloatArrayToRepeated_RaisesTypeError.__unittest_expecting_failure__ = True
-# end:google_only
+from google.protobuf.internal.numpy.numpy_test import *
 
 if __name__ == '__main__':
   unittest.main(verbosity=2)

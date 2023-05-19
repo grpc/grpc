@@ -24,24 +24,14 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/thread_local.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
 //       AROUND VERY SPECIFIC USE CASES.
 //
-
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
-#else
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
-                              GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
-                              "Enable fork support");
 
 namespace grpc_core {
 namespace {
@@ -67,7 +57,6 @@ class ExecCtxState {
     // EventEngine is expected to terminate all threads before fork, and so this
     // extra work is unnecessary
     if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
-      gpr_atm_no_barrier_fetch_add(&count_, 1);
       return;
     }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
@@ -89,7 +78,12 @@ class ExecCtxState {
     }
   }
 
-  void DecExecCtxCount() { gpr_atm_no_barrier_fetch_add(&count_, -1); }
+  void DecExecCtxCount() {
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
+    gpr_atm_no_barrier_fetch_add(&count_, -1);
+  }
 
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
@@ -172,7 +166,7 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
+    support_enabled_.store(ConfigVars::Get().EnableForkSupport(),
                            std::memory_order_relaxed);
   }
 }

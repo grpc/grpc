@@ -36,6 +36,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/ext/filters/logging/library.h"
 
 namespace grpc {
 namespace testing {
@@ -50,104 +51,6 @@ using ::testing::Field;
 using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
-class MyTestServiceImpl : public TestServiceImpl {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    context->AddInitialMetadata("server-header-key", "server-header-value");
-    context->AddTrailingMetadata("server-trailer-key", "server-trailer-value");
-    return TestServiceImpl::Echo(context, request, response);
-  }
-};
-
-class TestLoggingSink : public LoggingSink {
- public:
-  Config FindMatch(bool /* is_client */, absl::string_view /* service */,
-                   absl::string_view /* method */) override {
-    grpc_core::MutexLock lock(&mu_);
-    return config_;
-  }
-
-  void LogEntry(Entry entry) override {
-    ::google::protobuf::Struct json;
-    grpc::internal::EntryToJsonStructProto(entry, &json);
-    std::string output;
-    ::google::protobuf::TextFormat::PrintToString(json, &output);
-    gpr_log(GPR_ERROR, "%s", output.c_str());
-    grpc_core::MutexLock lock(&mu_);
-    entries_.push_back(std::move(entry));
-  }
-
-  void SetConfig(Config config) {
-    grpc_core::MutexLock lock(&mu_);
-    config_ = config;
-  }
-
-  std::vector<LoggingSink::Entry> entries() {
-    grpc_core::MutexLock lock(&mu_);
-    return entries_;
-  }
-
-  void Clear() {
-    grpc_core::MutexLock lock(&mu_);
-    entries_.clear();
-  }
-
- private:
-  grpc_core::Mutex mu_;
-  std::vector<LoggingSink::Entry> entries_ ABSL_GUARDED_BY(mu_);
-  Config config_ ABSL_GUARDED_BY(mu_);
-};
-
-TestLoggingSink* g_test_logging_sink = nullptr;
-
-class LoggingTest : public ::testing::Test {
- protected:
-  static void SetUpTestSuite() {
-    g_test_logging_sink = new TestLoggingSink;
-    grpc_core::RegisterLoggingFilter(g_test_logging_sink);
-  }
-
-  void SetUp() override {
-    // Clean up previous entries
-    g_test_logging_sink->Clear();
-    // Set up a synchronous server on a different thread to avoid the asynch
-    // interface.
-    grpc::ServerBuilder builder;
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ = absl::StrCat("localhost:", port);
-    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-    builder.AddListeningPort(server_address_, grpc::InsecureServerCredentials(),
-                             &port);
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-    ASSERT_NE(nullptr, server_);
-
-    server_thread_ = std::thread(&LoggingTest::RunServerLoop, this);
-
-    stub_ = EchoTestService::NewStub(grpc::CreateChannel(
-        server_address_, grpc::InsecureChannelCredentials()));
-  }
-
-  void ResetStub(std::shared_ptr<Channel> channel) {
-    stub_ = EchoTestService::NewStub(std::move(channel));
-  }
-
-  void TearDown() override {
-    server_->Shutdown();
-    server_thread_.join();
-  }
-
-  void RunServerLoop() { server_->Wait(); }
-
-  std::string server_address_;
-  MyTestServiceImpl service_;
-  std::unique_ptr<grpc::Server> server_;
-  std::thread server_thread_;
-
-  std::unique_ptr<EchoTestService::Stub> stub_;
-};
-
 TEST_F(LoggingTest, SimpleRpc) {
   g_test_logging_sink->SetConfig(LoggingSink::Config(4096, 4096));
   EchoRequest request;
@@ -157,6 +60,7 @@ TEST_F(LoggingTest, SimpleRpc) {
   context.AddMetadata("client-key", "client-value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -327,6 +231,7 @@ TEST_F(LoggingTest, MetadataTruncated) {
   context.AddMetadata("client-key-2", "client-value-2");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -484,6 +389,7 @@ TEST_F(LoggingTest, PayloadTruncated) {
   context.AddMetadata("client-key", "client-value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -690,6 +596,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
   EXPECT_EQ(status.error_code(), 25);
   EXPECT_EQ(status.error_message(), "error message");
   EXPECT_EQ(status.error_details(), "binary error details");
+  g_test_logging_sink->WaitForNumEntries(10, absl::Seconds(5));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(

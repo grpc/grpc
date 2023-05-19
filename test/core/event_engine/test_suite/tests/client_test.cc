@@ -69,7 +69,6 @@ using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -96,7 +95,6 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
       *URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
   signal.WaitForNotification();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create a connection using the test EventEngine to a listener created
@@ -171,7 +169,6 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   client_endpoint.reset();
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
@@ -298,7 +295,6 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     t.join();
   }
   server_endpoint.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix

@@ -42,8 +42,14 @@ bool ValidationErrors::FieldHasErrors() const {
   return field_errors_.find(absl::StrJoin(fields_, "")) != field_errors_.end();
 }
 
-absl::Status ValidationErrors::status(absl::string_view prefix) const {
+absl::Status ValidationErrors::status(absl::StatusCode code,
+                                      absl::string_view prefix) const {
   if (field_errors_.empty()) return absl::OkStatus();
+  return absl::Status(code, message(prefix));
+}
+
+std::string ValidationErrors::message(absl::string_view prefix) const {
+  if (field_errors_.empty()) return "";
   std::vector<std::string> errors;
   for (const auto& p : field_errors_) {
     if (p.second.size() > 1) {
@@ -54,8 +60,7 @@ absl::Status ValidationErrors::status(absl::string_view prefix) const {
           absl::StrCat("field:", p.first, " error:", p.second[0]));
     }
   }
-  return absl::InvalidArgumentError(
-      absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]"));
+  return absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]");
 }
 
 }  // namespace grpc_core

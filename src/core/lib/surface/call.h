@@ -44,7 +44,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -108,6 +107,7 @@ class CallContext {
 
   // Update the deadline (if deadline < the current deadline).
   void UpdateDeadline(Timestamp deadline);
+  Timestamp deadline() const;
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
@@ -120,24 +120,30 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based
   void Unref(const char* reason = "call_context");
 
+  RefCountedPtr<CallContext> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<CallContext>(this);
+  }
+
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
-  grpc_polling_entity* polling_entity() { return &pollent_; }
   gpr_cycle_counter call_start_time() { return start_time_; }
 
   ServerCallContext* server_call_context();
+
+  void set_traced(bool traced) { traced_ = traced; }
+  bool traced() const { return traced_; }
 
  private:
   friend class PromiseBasedCall;
   // Call final info.
   grpc_call_stats call_stats_;
-  // Pollset stuff, can't wait to remove.
-  // TODO(ctiller): bring forth EventEngine.
-  grpc_polling_entity pollent_;
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
   PromiseBasedCall* const call_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  // Is this call traced?
+  bool traced_ = false;
 };
 
 template <>

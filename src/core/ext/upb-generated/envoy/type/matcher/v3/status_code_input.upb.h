@@ -9,35 +9,38 @@
 #ifndef ENVOY_TYPE_MATCHER_V3_STATUS_CODE_INPUT_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_V3_STATUS_CODE_INPUT_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput;
-struct envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput;
 typedef struct envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput;
 typedef struct envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput;
-extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit;
-extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit;
+extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init;
+extern const upb_MiniTable envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init;
 
 
 
 /* envoy.type.matcher.v3.HttpResponseStatusCodeMatchInput */
 
 UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_new(upb_Arena* arena) {
-  return (envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput*)_upb_Message_New(&envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit, arena);
+  return (envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput*)_upb_Message_New(&envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init, arena);
 }
 UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* ret = envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -47,7 +50,7 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* envoy_type_ma
                            int options, upb_Arena* arena) {
   envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* ret = envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -55,13 +58,13 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* envoy_type_ma
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_serialize(const envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 
@@ -69,12 +72,12 @@ UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeMatchInput_serializ
 /* envoy.type.matcher.v3.HttpResponseStatusCodeClassMatchInput */
 
 UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_new(upb_Arena* arena) {
-  return (envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput*)_upb_Message_New(&envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit, arena);
+  return (envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput*)_upb_Message_New(&envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init, arena);
 }
 UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* ret = envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -84,7 +87,7 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* envoy_ty
                            int options, upb_Arena* arena) {
   envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* ret = envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -92,23 +95,23 @@ UPB_INLINE envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* envoy_ty
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_serialize(const envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_serialize_ex(const envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_HttpResponseStatusCodeClassMatchInput_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 
 
-extern const upb_MiniTable_File envoy_type_matcher_v3_status_code_input_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_type_matcher_v3_status_code_input_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_TYPE_MATCHER_V3_STATUS_CODE_INPUT_PROTO_UPB_H_ */

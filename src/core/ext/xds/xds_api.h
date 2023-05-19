@@ -30,8 +30,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
-#include "upb/arena.h"
-#include "upb/def.hpp"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.hpp"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"

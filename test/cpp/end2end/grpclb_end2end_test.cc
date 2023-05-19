@@ -46,6 +46,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -101,8 +102,8 @@ constexpr char kDefaultServiceConfig[] =
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
-const char g_kCallCredsMdValue[] = "... receive me";
+const char g_kCallCredsMdKey[] = "call-creds";
+const char g_kCallCredsMdValue[] = "should not be received by balancer";
 
 // A test user agent string sent by the client only to the grpclb loadbalancer.
 // The backend should not see this user-agent string.
@@ -375,7 +376,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
   static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
     grpc_core::SetEnv("grpc_cfstream", "0");
@@ -563,9 +566,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(
-          address.addr, address.len,
-          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
-                                       addr.balancer_name));
+          address, grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                                addr.balancer_name));
     }
     return addresses;
   }

@@ -83,6 +83,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":server_helper_lib",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -105,6 +106,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":backend_metrics_lb_policy",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -242,6 +244,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        ":rpc_behavior_lb_policy",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
@@ -354,5 +357,111 @@ grpc_cc_binary(
         ":client_helper_lib",
         "//:grpc++",
         "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_server",
+    srcs = [
+        "observability_interop_server_bootstrap.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":interop_server_lib",
+        "//:grpc++",
+        "//:grpcpp_gcp_observability",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "observability_interop_client_main",
+    srcs = [
+        "observability_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":client_helper_lib",
+        "//:grpcpp_gcp_observability",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_client",
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":observability_interop_client_main",
+        "//:grpc++",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_test",
+    srcs = ["interop_test.cc"],
+    data = [
+        ":observability_interop_client",
+        ":observability_interop_server",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    tags = [
+        "no_windows",
+        "nobuilder",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "backend_metrics_lb_policy",
+    srcs = [
+        "backend_metrics_lb_policy.cc",
+    ],
+    hdrs = [
+        "backend_metrics_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "rpc_behavior_lb_policy",
+    srcs = [
+        "rpc_behavior_lb_policy.cc",
+    ],
+    hdrs = [
+        "rpc_behavior_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
     ],
 )

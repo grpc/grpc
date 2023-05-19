@@ -19,10 +19,7 @@
 
 #include <utility>
 
-#include "absl/types/variant.h"
-
 #include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -68,7 +65,7 @@ auto OnCancel(MainFn main_fn, CancelFn cancel_fn) {
           main_fn = promise_detail::PromiseLike<MainFn>(
               std::move(main_fn))]() mutable {
     auto r = main_fn();
-    if (!absl::holds_alternative<Pending>(r)) {
+    if (r.ready()) {
       on_cancel.Done();
     }
     return r;

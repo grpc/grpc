@@ -30,7 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 
 #include <grpc/event_engine/event_engine.h>
 

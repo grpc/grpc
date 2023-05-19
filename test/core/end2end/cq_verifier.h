@@ -19,13 +19,19 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
+#include <stdint.h>
+
+#include <functional>
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -46,10 +52,37 @@ class CqVerifier {
   struct AnyStatus {
     bool* result = nullptr;
   };
+  // PerformAction - expect the tag, and run a function based on the result
+  struct PerformAction {
+    std::function<void(bool success)> action;
+  };
+  // MaybePerformAction - run a function if a tag is seen
+  struct MaybePerformAction {
+    std::function<void(bool success)> action;
+  };
 
-  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
+  using ExpectedResult =
+      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
-  explicit CqVerifier(grpc_completion_queue* cq);
+  struct Failure {
+    SourceLocation location;
+    std::string message;
+    std::vector<std::string> expected;
+  };
+
+  static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGtestFail(const Failure& failure);
+
+  // Allow customizing the failure handler
+  // For legacy tests we should use FailUsingGprCrash (the default)
+  // For gtest based tests we should start migrating to FailUsingGtestFail which
+  // will produce nicer failure messages.
+  explicit CqVerifier(
+      grpc_completion_queue* cq,
+      absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -72,6 +105,9 @@ class CqVerifier {
               SourceLocation location = SourceLocation());
 
   std::string ToString() const;
+  std::vector<std::string> ToStrings() const;
+
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
  private:
   struct Expectation {
@@ -86,9 +122,14 @@ class CqVerifier {
   void FailUnexpectedEvent(grpc_event* ev,
                            const SourceLocation& location) const;
   bool AllMaybes() const;
+  grpc_event Step(gpr_timespec deadline);
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
+  absl::AnyInvocable<void(Failure) const> fail_;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_;
 };
 
 }  // namespace grpc_core

@@ -40,17 +40,17 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_DECLARE_FLAG(bool, use_alts);
-ABSL_DECLARE_FLAG(bool, use_tls);
 ABSL_DECLARE_FLAG(std::string, custom_credentials_type);
-ABSL_DECLARE_FLAG(bool, use_test_ca);
-ABSL_DECLARE_FLAG(int32_t, server_port);
+ABSL_DECLARE_FLAG(std::string, default_service_account);
+ABSL_DECLARE_FLAG(std::string, oauth_scope);
+ABSL_DECLARE_FLAG(std::string, service_account_key_file);
 ABSL_DECLARE_FLAG(std::string, server_host);
 ABSL_DECLARE_FLAG(std::string, server_host_override);
+ABSL_DECLARE_FLAG(int32_t, server_port);
 ABSL_DECLARE_FLAG(std::string, test_case);
-ABSL_DECLARE_FLAG(std::string, default_service_account);
-ABSL_DECLARE_FLAG(std::string, service_account_key_file);
-ABSL_DECLARE_FLAG(std::string, oauth_scope);
+ABSL_DECLARE_FLAG(bool, use_alts);
+ABSL_DECLARE_FLAG(bool, use_test_ca);
+ABSL_DECLARE_FLAG(bool, use_tls);
 
 namespace grpc {
 namespace testing {
@@ -87,7 +87,8 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators) {
+        interceptor_creators,
+    ChannelArguments channel_args) {
   std::string server_uri = absl::GetFlag(FLAGS_server_host);
   int32_t port = absl::GetFlag(FLAGS_server_port);
   if (port != 0) {
@@ -113,7 +114,6 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                 ? nullptr
                 : AccessTokenCredentials(GetOauth2AccessToken());
   } else if (test_case == "pick_first_unary") {
-    ChannelArguments channel_args;
     // allow the LB policy to be configured with service config
     channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
     return CreateTestChannel(
@@ -126,18 +126,19 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
         absl::GetFlag(FLAGS_use_alts)
             ? ALTS
             : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
-    return CreateTestChannel(server_uri,
-                             absl::GetFlag(FLAGS_server_host_override),
-                             security_type, !absl::GetFlag(FLAGS_use_test_ca),
-                             creds, std::move(interceptor_creators));
+    return CreateTestChannel(
+        server_uri, absl::GetFlag(FLAGS_server_host_override), security_type,
+        !absl::GetFlag(FLAGS_use_test_ca), creds, channel_args,
+        std::move(interceptor_creators));
   } else {
     if (interceptor_creators.empty()) {
-      return CreateTestChannel(
-          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds);
-    } else {
       return CreateTestChannel(server_uri,
-                               absl::GetFlag(FLAGS_custom_credentials_type),
-                               creds, std::move(interceptor_creators));
+                               absl::GetFlag(FLAGS_custom_credentials_type), "",
+                               false, creds, channel_args);
+    } else {
+      return CreateTestChannel(
+          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds,
+          std::move(interceptor_creators), channel_args);
     }
   }
 }

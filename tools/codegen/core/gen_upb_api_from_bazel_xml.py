@@ -56,6 +56,16 @@ def parse_bazel_rule(elem):
             for tag in child:
                 if tag.tag == 'label':
                     deps.append(tag.attrib['value'])
+        if child.tag == 'label':
+            # extract actual name for alias rules
+            label_name = child.attrib['name']
+            if label_name in ['actual']:
+                actual_name = child.attrib.get('value', None)
+                if actual_name:
+                    # HACK: since we do a lot of transitive dependency scanning,
+                    # make it seem that the actual name is a dependency of the alias rule
+                    # (aliases don't have dependencies themselves)
+                    deps.append(actual_name)
     return Rule(elem.attrib['name'], elem.attrib['class'], srcs, deps, [])
 
 
@@ -128,15 +138,18 @@ def get_bazel_bin_root_path(elink):
     BAZEL_BIN_ROOT = 'bazel-bin/'
     if elink[0].startswith('@'):
         # external
-        return os.path.join(BAZEL_BIN_ROOT, 'external',
-                            elink[0].replace('@', '').replace('//', ''))
+        result = os.path.join(BAZEL_BIN_ROOT, 'external',
+                              elink[0].replace('@', '').replace('//', ''))
+        if elink[1]:
+            result = os.path.join(result, elink[1])
+        return result
     else:
         # internal
         return BAZEL_BIN_ROOT
 
 
 def get_external_link(file):
-    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+    EXTERNAL_LINKS = [('@com_google_protobuf//', 'src/'),
                       ('@com_google_googleapis//', ''),
                       ('@com_github_cncf_udpa//', ''),
                       ('@com_envoyproxy_protoc_gen_validate//', ''),
@@ -158,7 +171,12 @@ def copy_upb_generated_files(rules, args):
             output_dir = args.upbdefs_out
         for proto_file in rule.proto_files:
             elink = get_external_link(proto_file)
-            proto_file = proto_file[len(elink[0]) + len(elink[1]):]
+            prefix_to_strip = elink[0] + elink[1]
+            if not proto_file.startswith(prefix_to_strip):
+                raise Exception(
+                    'Source file "{0}" in does not have the expected prefix "{1}"'
+                    .format(proto_file, prefix_to_strip))
+            proto_file = proto_file[len(prefix_to_strip):]
             for ext in ('.h', '.c'):
                 file = get_upb_path(proto_file, frag + ext)
                 src = os.path.join(get_bazel_bin_root_path(elink), file)

@@ -217,6 +217,7 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   View client_server_latency_view(ClientServerLatencyCumulative());
   View server_server_latency_view(ServerServerLatencyCumulative());
   View client_transport_latency_view(experimental::ClientTransportLatency());
+  View client_api_latency_view(grpc::internal::ClientApiLatency());
 
   const absl::Time start_time = absl::Now();
   {
@@ -278,6 +279,18 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
                     &Distribution::mean,
                     ::testing::Lt(client_transport_latency))))));
   }
+
+  // client api latency should be less than max time but greater than client
+  // roundtrip (attempt) latency view.
+  EXPECT_THAT(
+      client_api_latency_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_, "OK"),
+          ::testing::AllOf(::testing::Property(&Distribution::count, 1),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Gt(client_latency)),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Lt(max_time))))));
 
   // client server elapsed time should be the same value propagated to the
   // client.
@@ -616,7 +629,7 @@ bool IsAnnotationPresent(
     std::vector<opencensus::trace::exporter::SpanData>::const_iterator span,
     absl::string_view annotation) {
   for (const auto& event : span->annotations().events()) {
-    if (event.event().description() == annotation) {
+    if (absl::StrContains(event.event().description(), annotation)) {
       return true;
     }
   }
@@ -674,6 +687,124 @@ TEST_F(StatsPluginEnd2EndTest,
   ASSERT_NE(attempt_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(attempt_span_data, "Delayed LB pick complete."));
+}
+
+// Tests that the message size trace annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of message size annotations in attempt span
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data, "Send message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Send compressed message: 5 bytes"));
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Received message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Received decompressed message: 5 bytes"));
+  // Check presence of message size annotations in server span
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Send message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Send compressed message: 5 bytes"));
+  EXPECT_TRUE(
+      IsAnnotationPresent(server_span_data, "Received message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(server_span_data,
+                                   "Received decompressed message: 5 bytes"));
+}
+
+std::string CreateLargeMessage() {
+  char str[1024];
+  for (int i = 0; i < 1023; ++i) {
+    str[i] = 'a';
+  }
+  str[1023] = '\0';
+  return std::string(str);
+}
+
+// Tests that the message size with compression trace annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message(CreateLargeMessage());
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of message size annotations in attempt span
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send message: 1026 bytes"));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data, "Received message:"));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
+                                  "Received decompressed message: 1026 bytes"));
+  // Check presence of message size annotations in server span
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Received message:"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "Received decompressed message: 1026 bytes"));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.

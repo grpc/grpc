@@ -9,7 +9,6 @@ GRPC_LOCAL_SRC = '../../../../..'
 # Install the dependencies in the main target plus all test targets.
 target 'CFStreamTests' do
   pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
   pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 end
 

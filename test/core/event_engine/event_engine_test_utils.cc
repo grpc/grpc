@@ -77,7 +77,8 @@ std::string GetNextSendMessage() {
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
-    GRPC_LOG_EVERY_N_SEC(2, "engine.use_count() = %ld", engine.use_count());
+    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
+                         engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
   }
 }
@@ -130,6 +131,7 @@ absl::Status SendValidatePayload(absl::string_view data,
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
     if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+      GPR_ASSERT(read_slice_buf.Length() != 0);
       read_cb(absl::OkStatus());
     }
   };

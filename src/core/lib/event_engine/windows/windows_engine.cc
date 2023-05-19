@@ -25,13 +25,14 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -48,21 +49,21 @@ namespace experimental {
 
 // ---- IOCPWorkClosure ----
 
-WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(Executor* executor,
+WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(ThreadPool* thread_pool,
                                                      IOCP* iocp)
-    : executor_(executor), iocp_(iocp) {
-  executor_->Run(this);
+    : thread_pool_(thread_pool), iocp_(iocp) {
+  thread_pool_->Run(this);
 }
 
 void WindowsEventEngine::IOCPWorkClosure::Run() {
   auto result = iocp_->Work(std::chrono::seconds(60), [this] {
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
     // iocp received no messages. restart the worker
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   }
   if (workers_.fetch_sub(1) == 1) done_signal_.Notify();
 }
@@ -97,33 +98,51 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : executor_(std::make_shared<ThreadPool>()),
-      iocp_(executor_.get()),
-      timer_manager_(executor_),
-      iocp_worker_(executor_.get(), &iocp_) {
+    : thread_pool_(
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      iocp_(thread_pool_.get()),
+      timer_manager_(thread_pool_),
+      iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
+  GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
   {
-    grpc_core::MutexLock lock(&task_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                this, HandleToString<EventEngine::TaskHandle>(handle).c_str());
+    task_mu_.Lock();
+    if (!known_handles_.empty()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+        for (auto handle : known_handles_) {
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
+        }
+      }
+      // Allow a small grace period for timers to be run before shutting down.
+      auto deadline =
+          timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
+      while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
+                               known_handles_.size());
+        }
+        task_mu_.Unlock();
+        absl::SleepFor(absl::Milliseconds(200));
+        task_mu_.Lock();
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
   GPR_ASSERT(WSACleanup() == 0);
   timer_manager_.Shutdown();
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -150,11 +169,11 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfter(
 }
 
 void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_->Run(std::move(closure));
+  thread_pool_->Run(std::move(closure));
 }
 
 void WindowsEventEngine::Run(EventEngine::Closure* closure) {
-  executor_->Run(closure);
+  thread_pool_->Run(closure);
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
@@ -202,12 +221,12 @@ void WindowsEventEngine::OnConnectCompleted(
       state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
     } else {
-      // This code should be running in an executor thread already, so the
+      // This code should be running in a thread pool thread already, so the
       // callback can be run directly.
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
-          cfg, executor_.get());
+          cfg, thread_pool_.get(), shared_from_this());
     }
   }
   cb(std::move(endpoint));
@@ -225,7 +244,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     Run([on_connect = std::move(on_connect), status = uri.status()]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
                           uri->c_str());
@@ -242,14 +261,14 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   status = PrepareSocket(sock);
   if (!status.ok()) {
     Run([on_connect = std::move(on_connect), status]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Grab the function pointer for ConnectEx for that specific socket It may
   // change depending on the interface.
@@ -266,7 +285,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
              "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // bind the local address
   auto local_address = ResolvedAddressMakeWild6(0);
@@ -276,7 +295,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "bind")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Connect
   auto watched_socket = iocp_.Watch(sock);
@@ -294,7 +313,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
         on_connect(status);
       });
       watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      return EventEngine::kInvalidConnectionHandle;
+      return EventEngine::ConnectionHandle::kInvalid;
     }
   }
   GPR_ASSERT(watched_socket != nullptr);
@@ -330,8 +349,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  if (TaskHandleComparator<ConnectionHandle>::Eq()(
-          handle, EventEngine::kInvalidConnectionHandle)) {
+  if (handle == EventEngine::ConnectionHandle::kInvalid) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;
@@ -384,8 +402,8 @@ WindowsEventEngine::CreateListener(
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
   return std::make_unique<WindowsEventEngineListener>(
       &iocp_, std::move(on_accept), std::move(on_shutdown),
-      std::move(memory_allocator_factory), shared_from_this(), executor_.get(),
-      config);
+      std::move(memory_allocator_factory), shared_from_this(),
+      thread_pool_.get(), config);
 }
 }  // namespace experimental
 }  // namespace grpc_event_engine

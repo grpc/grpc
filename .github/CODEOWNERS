@@ -5,7 +5,11 @@
 /bazel/** @jtattermusch @veblush @gnossen
 /cmake/** @jtattermusch @apolcyn
 /src/core/ext/filters/client_channel/** @markdroth
+/src/core/ext/transport/chttp2/transport/** @ctiller
 /src/core/ext/xds/** @markdroth
 /src/core/lib/resolver/** @markdroth
 /src/core/lib/service_config/** @markdroth
+/src/core/lib/surface/** @ctiller
+/src/core/lib/transport/** @ctiller
+/test/core/transport/** @ctiller
 /tools/dockerfile/** @jtattermusch @apolcyn

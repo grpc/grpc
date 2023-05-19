@@ -28,7 +28,13 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
-        restartPolicy: Never
+        startupProbe:
+          tcpSocket:
+            port: ${test_port}
+          periodSeconds: 3
+          ## Extend the number of probes well beyond the duration of the test
+          ## driver waiting for the container to start.
+          failureThreshold: 1000
         args:
           - "--port=${test_port}"
         ports:

@@ -702,7 +702,9 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         if rpc_state.client_closed:
             return
         else:
-            raise
+            _LOGGER.exception('ExecuteBatchError raised in core by servicer method [%s]' % (
+                _decode(rpc_state.method())))
+            return
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,

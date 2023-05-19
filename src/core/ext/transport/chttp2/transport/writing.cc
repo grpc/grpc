@@ -39,7 +39,7 @@
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -627,6 +627,7 @@ class StreamWriteContext {
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
+  int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
   ctx.FlushSettings();
   ctx.FlushPingAcks();
@@ -642,16 +643,26 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
+    int64_t num_stream_bytes = 0;
     stream_ctx.FlushInitialMetadata();
     stream_ctx.FlushWindowUpdates();
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
     if (t->outbuf.length > orig_len) {
       // Add this stream to the list of the contexts to be traced at TCP
-      s->byte_counter += t->outbuf.length - orig_len;
+      num_stream_bytes = t->outbuf.length - orig_len;
+      s->byte_counter += static_cast<size_t>(num_stream_bytes);
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
-        grpc_core::ContextList::Append(&t->cl, s);
+        grpc_core::CopyContextFn copy_context_fn =
+            grpc_core::GrpcHttp2GetCopyContextFn();
+        if (copy_context_fn != nullptr &&
+            grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
+          t->cl->emplace_back(copy_context_fn(s->context),
+                              outbuf_relative_start_pos, num_stream_bytes,
+                              s->byte_counter);
+        }
       }
+      outbuf_relative_start_pos += num_stream_bytes;
     }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {

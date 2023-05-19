@@ -31,6 +31,10 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
+# begin:github_only
+load("@rules_pkg//:mappings.bzl", "pkg_files")
+# end:github_only
+
 licenses(["notice"])
 
 package(
@@ -45,7 +49,7 @@ LIMITED_API_FLAG_SELECT = {
 
 bool_flag(
     name = "limited_api",
-    build_setting_default = False,
+    build_setting_default = True,
 )
 
 string_flag(
@@ -172,8 +176,29 @@ selects.config_setting_group(
     ],
 )
 
-py_extension(
-    name = "_message",
+# begin:github_only
+_message_target_compatible_with = {
+   "@platforms//os:windows": ["@platforms//:incompatible"],
+   "@system_python//:none": ["@platforms//:incompatible"],
+   "@system_python//:unsupported": ["@platforms//:incompatible"],
+   "//conditions:default": [],
+}
+
+pkg_files(
+   name = "message_extension",
+   srcs = [":message_srcs"],
+   prefix = "python/",
+)
+# end:github_only
+# begin:google_only
+# _message_target_compatible_with = {
+#     "@platforms//os:windows": ["@platforms//:incompatible"],
+#     "//conditions:default": [],
+# }
+# end:google_only
+
+filegroup(
+    name = "message_srcs",
     srcs = [
         "convert.c",
         "convert.h",
@@ -197,18 +222,32 @@ py_extension(
         "unknown_fields.c",
         "unknown_fields.h",
     ],
+    # begin:google_only
+#     compatible_with = ["//buildenv/target:non_prod"],
+    # end:google_only
+)
+
+py_extension(
+    name = "_message",
+    srcs = [":message_srcs"],
     copts = UPB_DEFAULT_COPTS + select(LIMITED_API_FLAG_SELECT) + [
         # The Python API requires patterns that are ISO C incompatible, like
         # casts between function pointers and object pointers.
         "-Wno-pedantic",
     ],
+    target_compatible_with = select(_message_target_compatible_with),
     deps = [
         "//:collections",
         "//:descriptor_upb_proto_reflection",
+        "//:eps_copy_input_stream",
+        "//:hash",
+        "//:port",
         "//:reflection",
-        "//:table",
         "//:textformat",
         "//:upb",
+        "//:wire",
+        "//:wire_reader",
+        "//:wire_types",
         "//upb/util:compare",
         "//upb/util:def_to_proto",
         "//upb/util:required_fields",

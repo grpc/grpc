@@ -18,8 +18,10 @@ import enum
 import hashlib
 import logging
 import re
+import signal
 import time
-from typing import List, Optional, Tuple
+from types import FrameType
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from absl import flags
 from absl.testing import absltest
@@ -29,6 +31,7 @@ import grpc
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import grpc as helpers_grpc
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
 from framework.helpers import skips
@@ -65,6 +68,9 @@ LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+# pylint complains about signal.Signals for some reason.
+_SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
+_SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
@@ -97,6 +103,8 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     server_xds_port: int
     td: TrafficDirectorManager
     td_bootstrap_image: str
+    _prev_sigint_handler: Optional[_SignalHandler] = None
+    _handling_sigint: bool = False
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
@@ -173,13 +181,32 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
+    def setUp(self):
+        self._prev_sigint_handler = signal.signal(signal.SIGINT,
+                                                  self.handle_sigint)
+
+    def handle_sigint(self, signalnum: _SignalNum,
+                      frame: Optional[FrameType]) -> None:
+        logger.info('Caught Ctrl+C, cleaning up...')
+        self._handling_sigint = True
+        # Force resource cleanup by their name. Addresses the case where ctrl-c
+        # is pressed while waiting for the resource creation.
+        self.force_cleanup = True
+        self.tearDown()
+        self.tearDownClass()
+        self._handling_sigint = False
+        if self._prev_sigint_handler is not None:
+            signal.signal(signal.SIGINT, self._prev_sigint_handler)
+        raise KeyboardInterrupt
+
     @contextlib.contextmanager
     def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs
         logger.info('--- Starting subTest %s.%s ---', self.id(), msg)
         try:
             yield super().subTest(msg, **params)
         finally:
-            logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
+            if not self._handling_sigint:
+                logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
@@ -226,8 +253,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
-            before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
-            after: grpc_testing.LoadBalancerAccumulatedStatsResponse):
+        before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+        after: grpc_testing.LoadBalancerAccumulatedStatsResponse
+    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
         """Only diffs stats_per_method, as the other fields are deprecated."""
         diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
         for method, method_stats in after.stats_per_method.items():
@@ -242,7 +270,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     def assertRpcStatusCodes(self,
                              test_client: XdsTestClient,
                              *,
-                             status_code: grpc.StatusCode,
+                             expected_status: grpc.StatusCode,
                              duration: _timedelta,
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
@@ -260,12 +288,22 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
         stats = diff_stats.stats_per_method[method]
-        status = status_code.value[0]
-        for found_status, count in stats.result.items():
-            if found_status != status and count > stray_rpc_limit:
-                self.fail(f"Expected only status {status} but found status "
-                          f"{found_status} for method {method}:\n{diff_stats}")
-        self.assertGreater(stats.result[status_code.value[0]], 0)
+        for found_status_int, count in stats.result.items():
+            found_status = helpers_grpc.status_from_int(found_status_int)
+            if found_status != expected_status and count > stray_rpc_limit:
+                self.fail(f"Expected only status"
+                          f" {helpers_grpc.status_pretty(expected_status)},"
+                          " but found status"
+                          f" {helpers_grpc.status_pretty(found_status)}"
+                          f" for method {method}:\n{diff_stats}")
+
+        expected_status_int: int = expected_status.value[0]
+        self.assertGreater(
+            stats.result[expected_status_int],
+            0,
+            msg=("Expected non-zero RPCs with status"
+                 f" {helpers_grpc.status_pretty(expected_status)}"
+                 f" for method {method}, got:\n{diff_stats}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
@@ -454,6 +492,17 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
+        logger.debug('Getting pods restart times')
+        client_restarts: int = 0
+        server_restarts: int = 0
+        try:
+            client_restarts = self.client_runner.get_pod_restarts(
+                self.client_runner.deployment)
+            server_restarts = self.server_runner.get_pod_restarts(
+                self.server_runner.deployment)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.exception(e)
+
         retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
                                             attempts=3,
                                             log_level=logging.INFO)
@@ -461,6 +510,24 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
             retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
+        finally:
+            # Fail if any of the pods restarted.
+            self.assertEqual(
+                client_restarts,
+                0,
+                msg=
+                ('Client pods unexpectedly restarted'
+                 f' {client_restarts} times during test.'
+                 ' In most cases, this is caused by the test client app crash.'
+                ))
+            self.assertEqual(
+                server_restarts,
+                0,
+                msg=
+                ('Server pods unexpectedly restarted'
+                 f' {server_restarts} times during test.'
+                 ' In most cases, this is caused by the test client app crash.'
+                ))
 
     def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)

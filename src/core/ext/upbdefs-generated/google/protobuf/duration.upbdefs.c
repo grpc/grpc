@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "google/protobuf/duration.upbdefs.h"
 #include "google/protobuf/duration.upb.h"
 

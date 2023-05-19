@@ -23,7 +23,7 @@
 #include <memory>
 #include <utility>
 
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
 #include <grpc/slice.h>

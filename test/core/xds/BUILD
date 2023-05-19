@@ -122,7 +122,25 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_audit_logger_registry_test",
+    srcs = ["xds_audit_logger_registry_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_audit_logging",
+        "//src/proto/grpc/testing/xds/v3:audit_logger_stream_proto",
+        "//src/proto/grpc/testing/xds/v3:rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -158,6 +176,7 @@ grpc_cc_test(
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -225,6 +244,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )

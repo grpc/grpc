@@ -185,7 +185,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['sanity', 'clang-tidy', 'iwyu'],
                                 configs=['dbg'],
                                 platforms=['linux'],
-                                labels=['basictests', 'sanity'],
+                                labels=['basictests'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -329,7 +329,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='default',
-                                compiler='cmake_vs2017',
+                                compiler='cmake_vs2019',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
@@ -346,13 +346,15 @@ def _create_portability_test_jobs(extra_args=[],
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # portability C and C++ on Windows using VS2017 (build only)
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+    # portability C and C++ on Windows using VS2019 (build only)
+    # TODO(jtattermusch): The C tests with exactly the same config are already running as part of the
+    # basictests_c suite (so we force --build_only to avoid running them twice).
+    # The C++ tests aren't all passing, so also force --build_only.
     test_jobs += _generate_jobs(languages=['c', 'c++'],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='x64',
-                                compiler='cmake_ninja_vs2017',
+                                compiler='cmake_ninja_vs2019',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
                                 inner_jobs=inner_jobs,

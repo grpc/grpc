@@ -22,7 +22,6 @@ load(
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
-load("//test/core/end2end:generate_tests.bzl", "grpc_end2end_tests")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
@@ -32,8 +31,6 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
-
-grpc_end2end_tests()
 
 proto_library_objc_wrapper(
     name = "messages_proto",
@@ -174,70 +171,72 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-grpc_objc_testing_library(
-    name = "CronetTests-lib",
-    srcs = [
-        "ConfigureCronet.m",
-    ] + glob([
-        "CronetTests/*.m",
-        "CronetTests/*.mm",
-    ]),
-    hdrs = [
-        "ConfigureCronet.h",
-    ],
-    deps = [
-        "InteropTests-lib",
-        "//src/objective-c:grpc_objc_client_core_cronet_testing",
-        "//test/core/end2end:end2end_tests",
-        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
-    ],
-)
-
-grpc_objc_testing_library(
-    name = "CppCronetTests-lib",
-    srcs = glob([
-        "CppCronetTests/*.m",
-        "CppCronetTests/*.mm",
-    ]),
-    hdrs = glob([
-        "CppCronetTests/*.h",
-    ]),
-    deps = [
-        "//:grpc++_cronet_credentials",
-        "//src/objective-c:grpc_objc_client_core_cronet_testing",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/end2end:end2end_tests",
-    ],
-)
-
-grpc_objc_testing_library(
-    name = "PerfTests-lib-Posix",
-    srcs = [
-        "ConfigureCronet.m",
-        "PerfTests/PerfTests.m",
-        "PerfTests/PerfTestsBlockCallbacks.m",
-        "PerfTests/PerfTestsNoCFStreamSSL.m",
-    ],
-    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
-    deps = [
-        "//src/objective-c:grpc_objc_client_core_cronet_testing",
-    ],
-)
-
-grpc_objc_testing_library(
-    name = "PerfTests-lib",
-    srcs = [
-        "ConfigureCronet.m",
-        "PerfTests/PerfTests.m",
-        "PerfTests/PerfTestsBlockCallbacks.m",
-        "PerfTests/PerfTestsCFStreamSSL.m",
-        "PerfTests/PerfTestsCronet.m",
-    ],
-    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
-    deps = [
-        "//src/objective-c:grpc_objc_client_core_cronet_testing",
-    ],
-)
+# TODO: Enable this again once @CronetFramework is working
+#grpc_objc_testing_library(
+#    name = "CronetTests-lib",
+#    srcs = [
+#        "ConfigureCronet.m",
+#    ] + glob([
+#        "CronetTests/*.m",
+#        "CronetTests/*.mm",
+#    ]),
+#    hdrs = [
+#        "ConfigureCronet.h",
+#    ],
+#    deps = [
+#        "InteropTests-lib",
+#        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+#        "//test/core/end2end:cq_verifier",
+#        "//test/core/end2end:ssl_test_data",
+#        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
+#    ],
+#)
+#
+#grpc_objc_testing_library(
+#    name = "CppCronetTests-lib",
+#    srcs = glob([
+#        "CppCronetTests/*.m",
+#        "CppCronetTests/*.mm",
+#    ]),
+#    hdrs = glob([
+#        "CppCronetTests/*.h",
+#    ]),
+#    deps = [
+#        "//:grpc++_cronet_credentials",
+#        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+#        "//src/proto/grpc/testing:echo_proto",
+#        "//test/core/end2end:ssl_test_data",
+#    ],
+#)
+#
+#grpc_objc_testing_library(
+#    name = "PerfTests-lib-Posix",
+#    srcs = [
+#        "ConfigureCronet.m",
+#        "PerfTests/PerfTests.m",
+#        "PerfTests/PerfTestsBlockCallbacks.m",
+#        "PerfTests/PerfTestsNoCFStreamSSL.m",
+#    ],
+#    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+#    deps = [
+#        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+#    ],
+#)
+#
+#grpc_objc_testing_library(
+#    name = "PerfTests-lib",
+#    srcs = [
+#        "ConfigureCronet.m",
+#        "PerfTests/PerfTests.m",
+#        "PerfTests/PerfTestsBlockCallbacks.m",
+#        "PerfTests/PerfTestsCFStreamSSL.m",
+#        "PerfTests/PerfTestsCronet.m",
+#    ],
+#    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+#    deps = [
+#        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+#    ],
+#)
 
 grpc_objc_testing_library(
     name = "UnitTests",
@@ -273,36 +272,37 @@ grpc_objc_ios_unit_test(
     ],
 )
 
-grpc_objc_ios_unit_test(
-    name = "CronetTests",
-    deps = [
-        "CronetTests-lib",
-    ],
-)
-
-grpc_objc_ios_unit_test(
-    name = "CppCronetTests",
-    deps = [
-        "CppCronetTests-lib",
-    ],
-)
-
-grpc_objc_ios_unit_test(
-    name = "PerfTestsPosix",
-    deps = [
-        "PerfTests-lib-Posix",
-    ],
-)
-
-grpc_objc_ios_unit_test(
-    name = "PerfTests",
-    env = {
-        "GRPC_CFSTREAM_RUN_LOOP": "1",
-    },
-    deps = [
-        "PerfTests-lib",
-    ],
-)
+# TODO: Enable this again once @CronetFramework is working
+# grpc_objc_ios_unit_test(
+#     name = "CronetTests",
+#     deps = [
+#         "CronetTests-lib",
+#     ],
+# )
+#
+# grpc_objc_ios_unit_test(
+#     name = "CppCronetTests",
+#     deps = [
+#         "CppCronetTests-lib",
+#     ],
+# )
+#
+# grpc_objc_ios_unit_test(
+#     name = "PerfTestsPosix",
+#     deps = [
+#         "PerfTests-lib-Posix",
+#     ],
+# )
+#
+# grpc_objc_ios_unit_test(
+#     name = "PerfTests",
+#     env = {
+#         "GRPC_CFSTREAM_RUN_LOOP": "1",
+#     },
+#     deps = [
+#         "PerfTests-lib",
+#     ],
+# )
 
 macos_unit_test(
     name = "MacTests",
