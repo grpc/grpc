@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+
 // TODO(xuanwn): clean up includes
+#include <grpc/support/port_platform.h>
+
+#include <constants.h>
 #include <stdint.h>
 #include <string.h>
-#include <thread>
 
 #include <algorithm>
 #include <initializer_list>
@@ -23,29 +27,22 @@
 #include <utility>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
-
-#include "absl/meta/type_traits.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 #include "src/python/grpcio_observability/grpc_observability/observability_util.h"
+#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 
 namespace grpc_observability {
 
@@ -64,13 +61,15 @@ void GetO11yMetadata(const grpc_metadata_batch* b, ServerO11yMetadata* som) {
     som->path = path->Ref();
   }
   if (PythonOpenCensusTracingEnabled()) {
-    const auto* grpc_trace_bin = b->get_pointer(grpc_core::GrpcTraceBinMetadata());
+    const auto* grpc_trace_bin =
+        b->get_pointer(grpc_core::GrpcTraceBinMetadata());
     if (grpc_trace_bin != nullptr) {
       som->tracing_slice = grpc_trace_bin->Ref();
     }
   }
   if (PythonOpenCensusStatsEnabled()) {
-    const auto* grpc_tags_bin = b->get_pointer(grpc_core::GrpcTagsBinMetadata());
+    const auto* grpc_tags_bin =
+        b->get_pointer(grpc_core::GrpcTagsBinMetadata());
     if (grpc_tags_bin != nullptr) {
       som->census_proto = grpc_tags_bin->Ref();
     }
@@ -94,11 +93,13 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
         sent_message_count_(0) {}
 
   std::string TraceId() override {
-    return absl::BytesToHexString(absl::string_view(context_.SpanContext().TraceId()));
+    return absl::BytesToHexString(
+        absl::string_view(context_.SpanContext().TraceId()));
   }
 
   std::string SpanId() override {
-    return absl::BytesToHexString(absl::string_view(context_.SpanContext().SpanId()));
+    return absl::BytesToHexString(
+        absl::string_view(context_.SpanContext().SpanId()));
   }
 
   bool IsSampled() override { return context_.SpanContext().IsSampled(); }
@@ -166,7 +167,6 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   char stats_buf_[kMaxServerStatsLen];
 };
 
-
 void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   ServerO11yMetadata som;
@@ -182,7 +182,6 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
     RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels());
   }
 }
-
 
 void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* send_trailing_metadata) {
@@ -200,7 +199,6 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
   }
 }
 
-
 void PythonOpenCensusServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   if (PythonOpenCensusStatsEnabled()) {
@@ -208,12 +206,19 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     const uint64_t response_size = GetIncomingDataSize(final_info);
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
-    context_.Labels().emplace_back(kServerStatus, std::string(StatusCodeToString(final_info->final_status)));
-    RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName, static_cast<double>(response_size), context_.Labels());
-    RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName, static_cast<double>(request_size), context_.Labels());
-    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms, context_.Labels());
-    RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName, sent_message_count_, context_.Labels());
-    RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName, recv_message_count_, context_.Labels());
+    context_.Labels().emplace_back(
+        kServerStatus,
+        std::string(StatusCodeToString(final_info->final_status)));
+    RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
+                       static_cast<double>(response_size), context_.Labels());
+    RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
+                       static_cast<double>(request_size), context_.Labels());
+    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms,
+                       context_.Labels());
+    RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
+                    sent_message_count_, context_.Labels());
+    RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
+                    recv_message_count_, context_.Labels());
   }
   if (PythonOpenCensusTracingEnabled()) {
     context_.EndSpan();

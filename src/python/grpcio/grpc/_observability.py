@@ -33,8 +33,8 @@ _OBSERVABILITY_PLUGIN: Optional[ObservabilityPlugin] = None  # pylint: disable=u
 
 
 class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
-                                   ServerCallTracerFactoryCapsule],
-                           metaclass=abc.ABCMeta):
+                                  ServerCallTracerFactoryCapsule],
+                          metaclass=abc.ABCMeta):
     """
     Note: Any future methods added to this interface cannot have the @abc.abstractmethod annotation.
     """

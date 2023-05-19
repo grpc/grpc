@@ -12,27 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(xuanwn): clean up includes
-#include <string>
-#include <initializer_list>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/synchronization/mutex.h"
-#include "absl/strings/strip.h"
-#include "absl/random/random.h"
-#include "absl/strings/escaping.h"
-#include "absl/numeric/int128.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #include <grpc/slice.h>
-#include <grpc/status.h>
+// TODO(xuanwn): clean up includes
+#include <algorithm>
+#include <atomic>
+#include <string>
+#include <vector>
 
-#include "src/cpp/ext/filters/census/rpc_encoding.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
 #include "src/python/grpcio_observability/grpc_observability/sampler.h"
@@ -47,14 +41,13 @@ std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);
 }  // namespace
 
-// Enables/Disables Python OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
+// Enables/Disables Python OpenCensus stats/tracing. It's only safe to do at the
+// start of a program, before any channels/servers are built.
 void EnablePythonOpenCensusStats(bool enable);
 void EnablePythonOpenCensusTracing(bool enable);
 // Gets the current status of Python OpenCensus stats/tracing
 bool PythonOpenCensusStatsEnabled();
 bool PythonOpenCensusTracingEnabled();
-
 
 static constexpr size_t kTraceIdSize = 16;
 static constexpr size_t kSpanIdSize = 8;
@@ -88,7 +81,8 @@ static constexpr size_t kSizeTraceOptions = 1;
 //   +  1 (trace_options length)
 //   ----
 //     29
-constexpr int kGrpcTraceBinHeaderLen = kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 + kTraceOptionsLen;
+constexpr int kGrpcTraceBinHeaderLen =
+    kVersionLen + 1 + kTraceIdLen + 1 + kSpanIdLen + 1 + kTraceOptionsLen;
 
 struct Tag {
   std::string key;
@@ -132,15 +126,19 @@ struct SpanCensusData {
   bool should_sample;
 };
 
-// SpanContext is associated with span to help manage the current context of a span.
-// It's created when creating a new Span and will be destroyed together with assoicated
-// Span.
+// SpanContext is associated with span to help manage the current context of a
+// span. It's created when creating a new Span and will be destroyed together
+// with assoicated Span.
 class SpanContext final {
  public:
   SpanContext() : is_valid_(false) {}
 
-  SpanContext(const std::string& trace_id, const std::string& span_id, bool should_sample)
-      : trace_id_(trace_id), span_id_(span_id), should_sample_(should_sample), is_valid_(true) {}
+  SpanContext(const std::string& trace_id, const std::string& span_id,
+              bool should_sample)
+      : trace_id_(trace_id),
+        span_id_(span_id),
+        should_sample_(should_sample),
+        is_valid_(true) {}
 
   // Returns the TraceId associated with this SpanContext.
   std::string TraceId() const { return trace_id_; }
@@ -159,27 +157,26 @@ class SpanContext final {
   bool is_valid_;
 };
 
-// Span is associated with PythonCensusContext to help manage tracing related data.
-// It's created by calling StartSpan and will be destroyed together with assoicated
-// PythonCensusContext.
+// Span is associated with PythonCensusContext to help manage tracing related
+// data. It's created by calling StartSpan and will be destroyed together with
+// assoicated PythonCensusContext.
 class Span final {
  public:
   explicit Span(const std::string& name, const std::string& parent_span_id,
                 absl::Time start_time, const SpanContext& context)
-    : name_(name), parent_span_id_(parent_span_id), start_time_(start_time),
-      context_(context) {}
+      : name_(name),
+        parent_span_id_(parent_span_id),
+        start_time_(start_time),
+        context_(context) {}
 
-  void End() {
-    end_time_ = absl::Now();
-  }
+  void End() { end_time_ = absl::Now(); }
 
-  void IncreaseChildSpanCount() {
-    ++child_span_count_;
-  }
+  void IncreaseChildSpanCount() { ++child_span_count_; }
 
   static Span StartSpan(absl::string_view name, const Span* parent);
 
-  static Span StartSpan(absl::string_view name, const SpanContext& parent_context);
+  static Span StartSpan(absl::string_view name,
+                        const SpanContext& parent_context);
 
   static Span StartSpan(absl::string_view name, absl::string_view trace_id);
 
@@ -211,12 +208,12 @@ class Span final {
   uint64_t child_span_count_ = 0;
 };
 
-// PythonCensusContext is associated with each clientCallTrcer, clientCallAttemptTracer
-// and ServerCallTracer to help manage the span, spanContext and labels for each tracer.
-// Craete a new PythonCensusContext will always reasult in creating a new span (and a
-// new SpanContext for that span).
-// It's created during callTraceer initialization and will be destroyed after the destruction
-// of each callTracer.
+// PythonCensusContext is associated with each clientCallTrcer,
+// clientCallAttemptTracer and ServerCallTracer to help manage the span,
+// spanContext and labels for each tracer. Craete a new PythonCensusContext will
+// always reasult in creating a new span (and a new SpanContext for that span).
+// It's created during callTraceer initialization and will be destroyed after
+// the destruction of each callTracer.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}
@@ -231,17 +228,15 @@ class PythonCensusContext {
       : span_(Span::StartSpan(name, parent_context)), labels_({}) {}
 
   PythonCensusContext(absl::string_view name, const Span* parent,
-                const std::vector<Label>& labels)
-      : span_(Span::StartSpan(name, parent)),
-        labels_(labels) {}
+                      const std::vector<Label>& labels)
+      : span_(Span::StartSpan(name, parent)), labels_(labels) {}
 
   // For attempt Spans only
   PythonCensusContext(absl::string_view name, const Span* parent)
-      : span_(Span::StartSpan(name, parent)),
-        labels_({}) {}
+      : span_(Span::StartSpan(name, parent)), labels_({}) {}
 
   Span& Span() { return span_; }
-  std::vector<Label>& Labels() { return labels_; } // Only used for metrics
+  std::vector<Label>& Labels() { return labels_; }  // Only used for metrics
   const SpanContext& SpanContext() const { return span_.Context(); }
 
   void AddSpanAttribute(absl::string_view key, absl::string_view attribute) {
@@ -252,13 +247,9 @@ class PythonCensusContext {
     span_.AddAnnotation(description);
   }
 
-  void IncreaseChildSpanCount() {
-    span_.IncreaseChildSpanCount();
-  }
+  void IncreaseChildSpanCount() { span_.IncreaseChildSpanCount(); }
 
-  void EndSpan() {
-    Span().End();
-  }
+  void EndSpan() { Span().End(); }
 
  private:
   grpc_observability::Span span_;
@@ -269,7 +260,8 @@ class PythonCensusContext {
 // If the current context is the default context then the newly created
 // span automatically becomes a root span. This should only be called with a
 // blank CensusContext as it overwrites it.
-void GenerateClientContext(absl::string_view method, absl::string_view trace_id, absl::string_view parent_span_id,
+void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
+                           absl::string_view parent_span_id,
                            PythonCensusContext* context);
 
 // Deserialize the incoming SpanContext and generate a new server context based

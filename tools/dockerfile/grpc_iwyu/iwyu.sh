@@ -74,6 +74,7 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
+  src/python/grpcio_observability
   test/core
   fuzztest
 '

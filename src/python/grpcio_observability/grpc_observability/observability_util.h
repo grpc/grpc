@@ -14,32 +14,21 @@
 
 // TODO(xuanwn): clean up includes
 #include <stdint.h>
-#include <queue>
+
+#include <algorithm>
 #include <condition_variable>
 #include <mutex>
-#include <chrono>
-#include <mutex>
-#include <map>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
 
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/synchronization/mutex.h"
-#include "absl/strings/strip.h"
-#include "absl/strings/escaping.h"
-#include "absl/status/statusor.h"
 
-#include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/context.h"
-#include "src/cpp/ext/gcp/observability_config.h"
-
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
+#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 
 #ifndef OBSERVABILITY_MAIN_H
 #define OBSERVABILITY_MAIN_H
@@ -54,9 +43,8 @@ struct CensusData {
   Measurement measurement_data;
   CensusData() {}
   CensusData(const Measurement& mm, std::vector<Label>& labels)
-      : type(kMetricData), labels(std::move(labels)), measurement_data(mm)  {}
-  CensusData(const SpanCensusData& sd)
-      : type(kSpanData), span_data(sd) {}
+      : type(kMetricData), labels(std::move(labels)), measurement_data(mm) {}
+  CensusData(const SpanCensusData& sd) : type(kSpanData), span_data(sd) {}
 };
 
 struct CloudMonitoring {
@@ -80,11 +68,16 @@ struct GcpObservabilityConfig {
   std::string project_id;
   std::vector<Label> labels;
   bool is_valid;
-  GcpObservabilityConfig(): is_valid(false) {}
-  GcpObservabilityConfig(CloudMonitoring cloud_monitoring, CloudTrace cloud_trace, CloudLogging cloud_logging,
+  GcpObservabilityConfig() : is_valid(false) {}
+  GcpObservabilityConfig(CloudMonitoring cloud_monitoring,
+                         CloudTrace cloud_trace, CloudLogging cloud_logging,
                          std::string project_id, std::vector<Label> labels)
-    : cloud_monitoring(cloud_monitoring), cloud_trace(cloud_trace), cloud_logging(cloud_logging),
-      project_id(project_id), labels(labels), is_valid(true) {}
+      : cloud_monitoring(cloud_monitoring),
+        cloud_trace(cloud_trace),
+        cloud_logging(cloud_logging),
+        project_id(project_id),
+        labels(labels),
+        is_valid(true) {}
 };
 
 // extern is requeired for Cython
@@ -92,7 +85,8 @@ extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
-void* CreateClientCallTracer(const char* method, const char* trace_id, const char* parent_span_id);
+void* CreateClientCallTracer(const char* method, const char* trace_id,
+                             const char* parent_span_id);
 
 void* CreateServerCallTracerFactory();
 
@@ -102,9 +96,11 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 
 void AddCensusDataToBuffer(CensusData buffer);
 
-void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels);
+void RecordIntMetric(MetricsName name, int64_t value,
+                     std::vector<Label>& labels);
 
-void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labels);
+void RecordDoubleMetric(MetricsName name, double value,
+                        std::vector<Label>& labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);
 

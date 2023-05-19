@@ -24,37 +24,31 @@ const std::string kClientStatus = "grpc_client_status";
 const std::string kServerMethod = "grpc_server_method";
 const std::string kServerStatus = "grpc_server_status";
 
-typedef enum {
-  kMeasurementDouble = 0,
-  kMeasurementInt
-} MeasurementType;
+typedef enum { kMeasurementDouble = 0, kMeasurementInt } MeasurementType;
+
+typedef enum { kSpanData = 0, kMetricData } DataType;
 
 typedef enum {
-  kSpanData = 0,
-  kMetricData
-} DataType;
-
-typedef enum {
-    kRpcClientApiLatencyMeasureName = 0,
-    kRpcClientSentMessagesPerRpcMeasureName,
-    kRpcClientSentBytesPerRpcMeasureName,
-    kRpcClientReceivedMessagesPerRpcMeasureName,
-    kRpcClientReceivedBytesPerRpcMeasureName,
-    kRpcClientRoundtripLatencyMeasureName,
-    kRpcClientServerLatencyMeasureName,
-    kRpcClientStartedRpcsMeasureName,
-    kRpcClientRetriesPerCallMeasureName,
-    kRpcClientTransparentRetriesPerCallMeasureName,
-    kRpcClientRetryDelayPerCallMeasureName,
-    kRpcClientTransportLatencyMeasureName,
-    kRpcServerSentMessagesPerRpcMeasureName,
-    kRpcServerSentBytesPerRpcMeasureName,
-    kRpcServerReceivedMessagesPerRpcMeasureName,
-    kRpcServerReceivedBytesPerRpcMeasureName,
-    kRpcServerServerLatencyMeasureName,
-    kRpcServerStartedRpcsMeasureName
+  kRpcClientApiLatencyMeasureName = 0,
+  kRpcClientSentMessagesPerRpcMeasureName,
+  kRpcClientSentBytesPerRpcMeasureName,
+  kRpcClientReceivedMessagesPerRpcMeasureName,
+  kRpcClientReceivedBytesPerRpcMeasureName,
+  kRpcClientRoundtripLatencyMeasureName,
+  kRpcClientServerLatencyMeasureName,
+  kRpcClientStartedRpcsMeasureName,
+  kRpcClientRetriesPerCallMeasureName,
+  kRpcClientTransparentRetriesPerCallMeasureName,
+  kRpcClientRetryDelayPerCallMeasureName,
+  kRpcClientTransportLatencyMeasureName,
+  kRpcServerSentMessagesPerRpcMeasureName,
+  kRpcServerSentBytesPerRpcMeasureName,
+  kRpcServerReceivedMessagesPerRpcMeasureName,
+  kRpcServerReceivedBytesPerRpcMeasureName,
+  kRpcServerServerLatencyMeasureName,
+  kRpcServerStartedRpcsMeasureName
 } MetricsName;
 
-}
+}  // namespace grpc_observability
 
-#endif // GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
+#endif  // GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
