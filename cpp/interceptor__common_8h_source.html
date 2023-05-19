@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -177,7 +177,7 @@ $(function() {
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  }</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
 <div class="line"><a name="l00107"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2973701f908f54161019ab84451a08b5">  107</a></span>&#160;  <a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2973701f908f54161019ab84451a08b5">GetSendStatus</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">StatusCode</a><span class="keyword">&gt;</span>(*code_), *error_message_,</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>(<span class="keyword">static_cast&lt;</span><a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b">StatusCode</a><span class="keyword">&gt;</span>(*code_), *error_message_,</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                  *error_details_);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  }</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
@@ -213,7 +213,7 @@ $(function() {
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160; </div>
 <div class="line"><a name="l00142"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ab8dcf880ad44d45f65c491827404530a">  142</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ab8dcf880ad44d45f65c491827404530a">SetSendMessage</a>(<a class="code" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>* buf, <span class="keyword">const</span> <span class="keywordtype">void</span>** msg,</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                      <span class="keywordtype">bool</span>* fail_send_message,</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                      std::function&lt;<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>*)&gt; serializer) {</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                      std::function&lt;<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>*)&gt; serializer) {</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    send_message_ = buf;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    orig_send_message_ = msg;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    fail_send_message_ = fail_send_message;</div>
@@ -457,7 +457,7 @@ $(function() {
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  ByteBuffer* send_message_ = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  <span class="keywordtype">bool</span>* fail_send_message_ = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">void</span>** orig_send_message_ = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  std::function&lt;<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>*)&gt; serializer_;</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  std::function&lt;<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>(<span class="keyword">const</span> <span class="keywordtype">void</span>*)&gt; serializer_;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160; </div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  std::multimap&lt;std::string, std::string&gt;* send_initial_metadata_;</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160; </div>
@@ -472,7 +472,7 @@ $(function() {
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160; </div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;  MetadataMap* recv_initial_metadata_ = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>* recv_status_ = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>* recv_status_ = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;  MetadataMap* recv_trailing_metadata_ = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;};</div>
@@ -537,7 +537,7 @@ $(function() {
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    <a class="code" href="support_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(<span class="keyword">false</span> &amp;&amp;</div>
 <div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;               <span class="stringliteral">&quot;It is illegal to call GetSendStatus on a method which &quot;</span></div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;               <span class="stringliteral">&quot;has a Cancel notification&quot;</span>);</div>
-<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>();</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>();</div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;  }</div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160; </div>
 <div class="line"><a name="l00471"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aebd80df936f4275f01c03945354f11ab">  471</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aebd80df936f4275f01c03945354f11ab">ModifySendStatus</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_status.html">Status</a>&amp; <span class="comment">/*status*/</span>)<span class="keyword"> override </span>{</div>
@@ -661,7 +661,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html_a80f87ee0eb65086c6e7afd350ec2e1b6"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a80f87ee0eb65086c6e7afd350ec2e1b6">grpc::internal::InterceptorBatchMethodsImpl::GetSendInitialMetadata</a></div><div class="ttdeci">std::multimap&lt; std::string, std::string &gt; * GetSendInitialMetadata() override</div><div class="ttdoc">Returns a modifiable multimap of the initial metadata to be sent.</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:103</div></div>
 <div class="ttc" id="asupport_2server__interceptor_8h_html"><div class="ttname"><a href="support_2server__interceptor_8h.html">server_interceptor.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html_a7953731b656ad92ebbf7ec89d087038a"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a7953731b656ad92ebbf7ec89d087038a">grpc::internal::InterceptorBatchMethodsImpl::GetSendMessage</a></div><div class="ttdeci">const void * GetSendMessage() override</div><div class="ttdoc">Returns a non-modifiable pointer to the non-serialized form of the message to be sent.</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:91</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36">grpc::experimental::InterceptionHookPoints::NUM_INTERCEPTION_HOOKS</a></div><div class="ttdeci">@ NUM_INTERCEPTION_HOOKS</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473">grpc::experimental::InterceptionHookPoints::PRE_SEND_MESSAGE</a></div><div class="ttdeci">@ PRE_SEND_MESSAGE</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html_ae7dfa6a9ee98dc63229f5299602f6861"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ae7dfa6a9ee98dc63229f5299602f6861">grpc::internal::InterceptorBatchMethodsImpl::SetRecvMessage</a></div><div class="ttdeci">void SetRecvMessage(void *message, bool *hijacked_recv_message_failed)</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:168</div></div>
@@ -687,6 +686,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_cancel_interceptor_batch_methods_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html">grpc::internal::CancelInterceptorBatchMethods</a></div><div class="ttdef"><b>Definition:</b> interceptor_common.h:410</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html_aabab88c365bd18c4772ce83ce1540bf0"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aabab88c365bd18c4772ce83ce1540bf0">grpc::internal::InterceptorBatchMethodsImpl::SetRecvTrailingMetadata</a></div><div class="ttdeci">void SetRecvTrailingMetadata(MetadataMap *map)</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:179</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html_af262b33c7ee283f53f459eca5568baa7"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#af262b33c7ee283f53f459eca5568baa7">grpc::internal::InterceptorBatchMethodsImpl::SetSendInitialMetadata</a></div><div class="ttdeci">void SetSendInitialMetadata(std::multimap&lt; std::string, std::string &gt; *metadata)</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:151</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_cancel_interceptor_batch_methods_html_ab5efa6c1ab93ca3a5ee46cff63f87b76"><div class="ttname"><a href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ab5efa6c1ab93ca3a5ee46cff63f87b76">grpc::internal::CancelInterceptorBatchMethods::QueryInterceptionHookPoint</a></div><div class="ttdeci">bool QueryInterceptionHookPoint(experimental::InterceptionHookPoints type) override</div><div class="ttdoc">Determine whether the current batch has an interception hook point of type type.</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:413</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1">grpc::experimental::InterceptionHookPoints</a></div><div class="ttdeci">InterceptionHookPoints</div><div class="ttdoc">An enumeration of different possible points at which the Intercept method of the Interceptor interfac...</div><div class="ttdef"><b>Definition:</b> interceptor.h:56</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">grpc::internal::InterceptorBatchMethodsImpl</a></div><div class="ttdef"><b>Definition:</b> interceptor_common.h:36</div></div>
@@ -698,7 +698,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_cancel_interceptor_batch_methods_html_a4dc85e0f1a3cdb0c95f04994d443f81f"><div class="ttname"><a href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4dc85e0f1a3cdb0c95f04994d443f81f">grpc::internal::CancelInterceptorBatchMethods::GetRecvTrailingMetadata</a></div><div class="ttdeci">std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; * GetRecvTrailingMetadata() override</div><div class="ttdoc">Returns a modifiable multimap of the received trailing metadata on PRE_RECV_STATUS and POST_RECV_STAT...</div><div class="ttdef"><b>Definition:</b> interceptor_common.h:506</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

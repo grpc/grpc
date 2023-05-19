@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -150,12 +150,12 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> Interface. </p>
-<h2><a class="anchor" id="autotoc_md310"></a>
+<h2><a class="anchor" id="autotoc_md315"></a>
 Overview</h2>
 <p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.</p>
 <p>This interface allows developers to provide their own event management and network stacks. Motivating uses cases for supporting custom EventEngines include the ability to hook into external event loops, and using different <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instances for each channel to better insulate network I/O and callback processing from other channels.</p>
 <p>A default cross-platform <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance is provided by gRPC.</p>
-<h2><a class="anchor" id="autotoc_md311"></a>
+<h2><a class="anchor" id="autotoc_md316"></a>
 Lifespan and Ownership</h2>
 <p>gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure that the engines remain available until they are no longer needed. Depending on the use case, engines may live until gRPC is shut down.</p>
 <p>EXAMPLE USAGE (Not yet implemented)</p>
@@ -163,7 +163,7 @@ Lifespan and Ownership</h2>
 <p>ChannelArguments args; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); args.SetEventEngine(engine); MyAppClient client(grpc::CreateCustomChannel( "localhost:50051", grpc::InsecureChannelCredentials(), args));</p>
 <p>A gRPC server can use a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> by calling the ServerBuilder::SetEventEngine method:</p>
 <p>ServerBuilder builder; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); builder.SetEventEngine(engine); std::unique_ptr&lt;Server&gt; server(builder.BuildAndStart()); server-&gt;Wait();</p>
-<h2><a class="anchor" id="autotoc_md312"></a>
+<h2><a class="anchor" id="autotoc_md317"></a>
 Blocking EventEngine Callbacks</h2>
 <p>Doing blocking work in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> callbacks is generally not advisable. While gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementations have some capacity to scale their thread pools to avoid starvation, this is not an instantaneous process. Further, user-provided EventEngines may not be optimized to handle excessive blocking work at all.</p>
 <p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads. </p>
@@ -605,7 +605,7 @@ Blocking EventEngine Callbacks</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

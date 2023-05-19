@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -66,15 +66,15 @@ $(function() {
 <div class="title">Load Balancing in gRPC </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md217"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md222"></a>
 Scope</h1>
 <p>This document explains the design for load balancing within gRPC.</p>
-<h1><a class="anchor" id="autotoc_md218"></a>
+<h1><a class="anchor" id="autotoc_md223"></a>
 Background</h1>
 <p>Load-balancing within gRPC happens on a per-call basis, not a per-connection basis. In other words, even if all requests come from a single client, we still want them to be load-balanced across all servers.</p>
-<h1><a class="anchor" id="autotoc_md219"></a>
+<h1><a class="anchor" id="autotoc_md224"></a>
 Architecture</h1>
-<h2><a class="anchor" id="autotoc_md220"></a>
+<h2><a class="anchor" id="autotoc_md225"></a>
 Overview</h2>
 <p>The gRPC client supports an API that allows load balancing policies to be implemented and plugged into gRPC. An LB policy is responsible for:</p><ul>
 <li>receiving updated configuration and list of server addresses from the resolver</li>
@@ -83,7 +83,7 @@ Overview</h2>
 <li>for each RPC sent on the channel, determining which subchannel to send the RPC on</li>
 </ul>
 <p>There are a number of LB policies provided with gRPC. The most notable ones are <code>pick_first</code> (the default), <code>round_robin</code>, and <code>grpclb</code>. There are also a number of additional LB policies to support <a class="el" href="grpc__xds__features_8md.html">xDS</a>, although they are not currently configurable directly.</p>
-<h2><a class="anchor" id="autotoc_md221"></a>
+<h2><a class="anchor" id="autotoc_md226"></a>
 Workflow</h2>
 <p>Load-balancing policies fit into the gRPC client workflow in between name resolution and the connection to the server. Here's how it all works:</p>
 <p><img src="images/load-balancing.png" alt="image" class="inline"/></p>
@@ -94,14 +94,14 @@ Workflow</h2>
 <li>For each RPC sent, the load balancing policy decides which subchannel (i.e., which server) the RPC should be sent to.</li>
 </ol>
 <p>See below for more information on <code>grpclb</code>.</p>
-<h2><a class="anchor" id="autotoc_md222"></a>
+<h2><a class="anchor" id="autotoc_md227"></a>
 Load Balancing Policies</h2>
-<h3><a class="anchor" id="autotoc_md223"></a>
+<h3><a class="anchor" id="autotoc_md228"></a>
 &lt;tt&gt;pick_first&lt;/tt&gt;</h3>
 <p>This is the default LB policy if the service config does not specify any LB policy. It does not require any configuration.</p>
 <p>The <code>pick_first</code> policy takes a list of addresses from the resolver. It attempts to connect to those addresses one at a time, in order, until it finds one that is reachable. If none of the addresses are reachable, it sets the channel's state to TRANSIENT_FAILURE while it attempts to reconnect. Appropriate <a class="el" href="connection-backoff_8md.html">backoff</a> is applied for repeated connection attempts.</p>
 <p>If it is able to connect to one of the addresses, it sets the channel's state to READY, and then all RPCs sent on the channel will be sent to that address. If the connection to that address is later broken, the <code>pick_first</code> policy will put the channel into state IDLE, and it will not attempt to reconnect until the application requests that it does so (either via the channel's connectivity state API or by sending an RPC).</p>
-<h3><a class="anchor" id="autotoc_md224"></a>
+<h3><a class="anchor" id="autotoc_md229"></a>
 &lt;tt&gt;round_robin&lt;/tt&gt;</h3>
 <p>This LB policy is selected via the service config. It does not require any configuration.</p>
 <p>This policy takes a list of addresses from the resolver. It creates a subchannel for each of those addresses and constantly monitors the connectivity state of the subchannels. Whenever a subchannel becomes disconnected, the <code>round_robin</code> policy will ask it to reconnect, with appropriate connection <a class="el" href="connection-backoff_8md.html">backoff</a>.</p>
@@ -113,7 +113,7 @@ Load Balancing Policies</h2>
 </ul>
 <p>Note that when a given subchannel reports TRANSIENT_FAILURE, it is considered to still be in TRANSIENT_FAILURE until it successfully reconnects and reports READY. In particular, we ignore the transition from TRANSIENT_FAILURE to CONNECTING.</p>
 <p>When an RPC is sent on the channel, the <code>round_robin</code> policy will iterate over all subchannels that are currently in READY state, sending each successive RPC to the next successive subchannel in the list, wrapping around to the start of the list when needed.</p>
-<h3><a class="anchor" id="autotoc_md225"></a>
+<h3><a class="anchor" id="autotoc_md230"></a>
 &lt;tt&gt;grpclb&lt;/tt&gt;</h3>
 <p>(This policy is deprecated. We recommend using <a class="el" href="grpc__xds__features_8md.html">xDS</a> instead.)</p>
 <p>This LB policy was originally intended as gRPC's primary extensibility mechanism for load balancing. The intent was that instead of adding new LB policies directly in the client, the client could implement only simple algorithms like <code>round_robin</code>, and any more complex algorithms would be provided by a look-aside load balancer.</p>
@@ -124,7 +124,7 @@ Load Balancing Policies</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>Client and server use <a href="../src/proto/grpc/testing/test.proto">test.proto</a>.</p>
-<h1><a class="anchor" id="autotoc_md139"></a>
+<h1><a class="anchor" id="autotoc_md144"></a>
 Server</h1>
 <p>The code for the custom http2 server can be found <a href="https://github.com/grpc/grpc/tree/master/test/http2_test">here</a>. It is responsible for handling requests and sending responses, and also for fulfilling the behavior of each particular test case.</p>
 <p>Server should accept these arguments:</p><ul>
@@ -80,7 +80,7 @@ Server</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md140"></a>
+<h1><a class="anchor" id="autotoc_md145"></a>
 Client</h1>
 <p>Clients implement test cases that test certain functionality. Each client is provided the test case it is expected to run as a command-line parameter. Names should be lowercase and without spaces.</p>
 <p>Clients should accept these arguments:</p><ul>
@@ -97,12 +97,12 @@ Client</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md141"></a>
+<h1><a class="anchor" id="autotoc_md146"></a>
 Note</h1>
 <p>Note that the server and client must be invoked with the same test case or else the test will be meaningless. For convenience, we provide a shell script wrapper that invokes both server and client at the same time, with the same test_case. This is the preferred way to run these tests.</p>
-<h1><a class="anchor" id="autotoc_md142"></a>
+<h1><a class="anchor" id="autotoc_md147"></a>
 Test Cases</h1>
-<h2><a class="anchor" id="autotoc_md143"></a>
+<h2><a class="anchor" id="autotoc_md148"></a>
 goaway</h2>
 <p>This test verifies that the client correctly responds to a goaway sent by the server. The client should handle the goaway by switching to a new stream without the user application having to do a thing.</p>
 <p>Client Procedure:</p><ol type="1">
@@ -120,7 +120,7 @@ goaway</h2>
 <p>Server asserts:</p><ul>
 <li>Two different connections were used from the client.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md144"></a>
+<h2><a class="anchor" id="autotoc_md149"></a>
 rst_after_header</h2>
 <p>This test verifies that the client fails correctly when the server sends a RST_STREAM immediately after sending headers to the client.</p>
 <p>Procedure:</p><ol type="1">
@@ -135,7 +135,7 @@ rst_after_header</h2>
 <li>Server sends a RST_STREAM with error code 0 after sending headers to the client.</li>
 </ol>
 <p><em>At the moment the error code and message returned are not standardized throughout all languages. Those checks will be added once all client languages behave the same way. <a href="https://github.com/grpc/grpc/issues/9142">#9142</a> is in flight.</em></p>
-<h2><a class="anchor" id="autotoc_md145"></a>
+<h2><a class="anchor" id="autotoc_md150"></a>
 rst_during_data</h2>
 <p>This test verifies that the client fails "correctly" when the server sends a RST_STREAM halfway through sending data to the client.</p>
 <p>Procedure:</p><ol type="1">
@@ -149,7 +149,7 @@ rst_during_data</h2>
 <p>Server Procedure:</p><ol type="1">
 <li>Server sends a RST_STREAM with error code 0 after sending half of the requested data to the client.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md146"></a>
+<h2><a class="anchor" id="autotoc_md151"></a>
 rst_after_data</h2>
 <p>This test verifies that the client fails "correctly" when the server sends a RST_STREAM after sending all of the data to the client.</p>
 <p>Procedure:</p><ol type="1">
@@ -164,7 +164,7 @@ rst_after_data</h2>
 <li>Server sends a RST_STREAM with error code 0 after sending all of the data to the client.</li>
 </ol>
 <p><em>Certain client languages allow the data to be accessed even though a RST_STREAM was encountered. Once all client languages behave this way, checks will be added on the incoming data.</em></p>
-<h2><a class="anchor" id="autotoc_md147"></a>
+<h2><a class="anchor" id="autotoc_md152"></a>
 ping</h2>
 <p>This test verifies that the client correctly acknowledges all pings it gets from the server.</p>
 <p>Procedure:</p><ol type="1">
@@ -183,7 +183,7 @@ ping</h2>
 <p>Server Asserts:</p><ul>
 <li>Number of outstanding pings is 0 when the connection is lost.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md148"></a>
+<h2><a class="anchor" id="autotoc_md153"></a>
 max_streams</h2>
 <p>This test verifies that the client observes the MAX_CONCURRENT_STREAMS limit set by the server.</p>
 <p>Client Procedure:</p><ol type="1">
@@ -197,7 +197,7 @@ max_streams</h2>
 <li>Sets MAX_CONCURRENT_STREAMS to one after the connection is made.</li>
 </ol>
 <p><em>The assertion that the MAX_CONCURRENT_STREAMS limit is upheld occurs in the http2 library we used.</em></p>
-<h2><a class="anchor" id="autotoc_md149"></a>
+<h2><a class="anchor" id="autotoc_md154"></a>
 data_frame_padding</h2>
 <p>This test verifies that the client can correctly receive padded http2 data frames. It also stresses the client's flow control (there is a high chance that the sender will deadlock if the client's flow control logic doesn't correctly account for padding).</p>
 <p>Client Procedure: (Note this is the same procedure as in the "large_unary" gRPC interop tests. Clients should use their "large_unary" gRPC interop test implementations.) Procedure:</p><ol type="1">
@@ -219,7 +219,7 @@ data_frame_padding</h2>
 <ul>
 <li>Note the 5 byte payload and 255 byte padding are partly arbitrary, and other numbers are also ok. With 255 bytes of padding for each 5 bytes of payload containing actual gRPC message, the 300KB response size will multiply into around 15 megabytes of flow control debt, which should stress flow control accounting.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md150"></a>
+<h2><a class="anchor" id="autotoc_md155"></a>
 no_df_padding_sanity_test</h2>
 <p>This test verifies that the client can correctly receive a series of small data frames. Note that this test is intentionally a slight variation of "data_frame_padding", with the only difference being that this test doesn't use data frame padding when the response is sent. This test is primarily meant to prove correctness of the http2 server implementation and highlight failures of the "data_frame_padding" test.</p>
 <p>Client Procedure: (Note this is the same procedure as in the "large_unary" gRPC interop tests. Clients should use their "large_unary" gRPC interop test implementations.) Procedure:</p><ol type="1">
@@ -239,7 +239,7 @@ no_df_padding_sanity_test</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

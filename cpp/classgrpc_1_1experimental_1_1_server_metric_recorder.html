@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -83,7 +83,7 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a7410969ad2736f9b5f305229c887b81f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a7410969ad2736f9b5f305229c887b81f">SetCpuUtilization</a> (double value)</td></tr>
-<tr class="memdesc:a7410969ad2736f9b5f305229c887b81f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records the server CPU utilization in the range [0, 1].  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a7410969ad2736f9b5f305229c887b81f">More...</a><br /></td></tr>
+<tr class="memdesc:a7410969ad2736f9b5f305229c887b81f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records the server CPU utilization in the range [0, infy).  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a7410969ad2736f9b5f305229c887b81f">More...</a><br /></td></tr>
 <tr class="separator:a7410969ad2736f9b5f305229c887b81f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3bad96ffa07bbf67f93a498b20efb5a0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3bad96ffa07bbf67f93a498b20efb5a0">SetMemoryUtilization</a> (double value)</td></tr>
 <tr class="memdesc:a3bad96ffa07bbf67f93a498b20efb5a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records the server memory utilization in the range [0, 1].  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3bad96ffa07bbf67f93a498b20efb5a0">More...</a><br /></td></tr>
@@ -290,8 +290,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Records the server CPU utilization in the range [0, 1]. </p>
-<p>Values outside of the valid range are rejected. Overrides the stored value when called again with a valid value. </p>
+<p>Records the server CPU utilization in the range [0, infy). </p>
+<p>Values may be larger than 1.0 when the usage exceeds the reporter dependent notion of soft limits. Values outside of the valid range are rejected. Overrides the stored value when called again with a valid value. </p>
 
 </div>
 </div>
@@ -440,7 +440,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

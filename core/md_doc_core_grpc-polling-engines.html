@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><em>Author: Sree Kuchibhotla (@sreecha) - Sep 2018</em></p>
-<h1><a class="anchor" id="autotoc_md107"></a>
+<h1><a class="anchor" id="autotoc_md112"></a>
 Why do we need a 'polling engine' ?</h1>
 <p>Polling engine component was created for the following reasons:</p>
 <ul>
@@ -82,7 +82,7 @@ Why do we need a 'polling engine' ?</h1>
 </li>
 <li>gRPC needed some component that can "efficiently" do the above operations <b>using the threads provided by the applications (i.e., not create any new threads)</b>. Also by "efficiently" we mean optimized for latency and throughput</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md108"></a>
+<h1><a class="anchor" id="autotoc_md113"></a>
 Polling Engine Implementations in gRPC</h1>
 <p>There are multiple polling engine implementations depending on the OS and the OS version. Fortunately all of them expose the same interface</p>
 <ul>
@@ -98,9 +98,9 @@ Polling Engine Implementations in gRPC</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md109"></a>
+<h1><a class="anchor" id="autotoc_md114"></a>
 Polling Engine Interface</h1>
-<h2><a class="anchor" id="autotoc_md110"></a>
+<h2><a class="anchor" id="autotoc_md115"></a>
 Opaque Structures exposed by the polling engine</h2>
 <p>The following are the <b>Opaque</b> structures exposed by Polling Engine interface (NOTE: Different polling engine implementations have different definitions of these structures)</p>
 <ul>
@@ -109,9 +109,9 @@ Opaque Structures exposed by the polling engine</h2>
 <li><b>grpc_pollset_worker:</b> Structure representing a ‘polling thread’ - more specifically, the thread that calls <code>grpc_pollset_work()</code> API</li>
 <li><b>grpc_pollset_set:</b> A group of <code>grpc_fd</code>s, <code>grpc_pollset</code>s and <code>grpc_pollset_set</code>s (yes, a <code>grpc_pollset_set</code> can contain other <code>grpc_pollset_set</code>s)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md111"></a>
+<h2><a class="anchor" id="autotoc_md116"></a>
 Polling engine API</h2>
-<h3><a class="anchor" id="autotoc_md112"></a>
+<h3><a class="anchor" id="autotoc_md117"></a>
 grpc_fd</h3>
 <ul>
 <li><b>grpc_fd_notify_on_[read|write|error]</b><ul>
@@ -135,7 +135,7 @@ grpc_fd</h3>
 </ul>
 </li>
 </ul>
-<h3><a class="anchor" id="autotoc_md113"></a>
+<h3><a class="anchor" id="autotoc_md118"></a>
 grpc_pollset</h3>
 <ul>
 <li><b>grpc_pollset_add_fd</b><ul>
@@ -160,7 +160,7 @@ grpc_pollset</h3>
 </ul>
 </li>
 </ul>
-<h3><a class="anchor" id="autotoc_md114"></a>
+<h3><a class="anchor" id="autotoc_md119"></a>
 grpc_pollset_set</h3>
 <ul>
 <li><b>grpc_pollset_set_[add|del]_fd</b><ul>
@@ -183,15 +183,15 @@ grpc_pollset_set</h3>
 </ul>
 </li>
 </ul>
-<h3><a class="anchor" id="autotoc_md115"></a>
+<h3><a class="anchor" id="autotoc_md120"></a>
 Recap:</h3>
 <p><b>Relation between grpc_pollset_worker, grpc_pollset and grpc_fd:</b></p>
 <p><img src="../images/grpc-ps-pss-fd.png" alt="image" class="inline"/></p>
 <p><b>grpc_pollset_set</b></p>
 <p><img src="../images/grpc-pss.png" alt="image" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md116"></a>
+<h1><a class="anchor" id="autotoc_md121"></a>
 Polling Engine Implementations</h1>
-<h2><a class="anchor" id="autotoc_md117"></a>
+<h2><a class="anchor" id="autotoc_md122"></a>
 epoll1</h2>
 <p><img src="../images/grpc-epoll1.png" alt="image" class="inline"/></p>
 <p>Code at <code>src/core/lib/iomgr/ev_epoll1_posix.cc</code></p>
@@ -203,7 +203,7 @@ epoll1</h2>
 </li>
 <li>See <a href="https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L729"><code>begin_worker()</code></a> function to see how a designated poller is chosen. Similarly <a href="https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L916"><code>end_worker()</code></a> function is called by the worker that was just out of <code>epoll_wait()</code> and will have to choose a new designated poller)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md118"></a>
+<h2><a class="anchor" id="autotoc_md123"></a>
 Other polling engine implementations (poll and windows polling engine)</h2>
 <ul>
 <li><b>poll</b> polling engine: gRPC's <code>poll</code> polling engine is quite complicated. It uses the <code>poll()</code> function to do the polling (and hence it is for platforms like osx where epoll is not available)<ul>
@@ -221,7 +221,7 @@ Other polling engine implementations (poll and windows polling engine)</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

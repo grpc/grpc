@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>Client and server use <a href="../src/proto/grpc/testing/test.proto">test.proto</a> and the <a class="el" href="_p_r_o_t_o_c_o_l-_h_t_t_p2_8md.html">gRPC over HTTP/2 v2 protocol</a>.</p>
-<h1><a class="anchor" id="autotoc_md158"></a>
+<h1><a class="anchor" id="autotoc_md163"></a>
 Client</h1>
 <p>Clients implement test cases that test certain functionally. Each client is provided the test case it is expected to run as a command-line parameter. Names should be lowercase and without spaces.</p>
 <p>Clients should accept these arguments:</p><ul>
@@ -113,7 +113,7 @@ Client</h1>
 </li>
 </ul>
 <p>Clients must support TLS with ALPN. Clients must not disable certificate checking.</p>
-<h2><a class="anchor" id="autotoc_md159"></a>
+<h2><a class="anchor" id="autotoc_md164"></a>
 empty_unary</h2>
 <p>This test verifies that implementations support zero-size messages. Ideally, client implementations would verify that the request and response were zero bytes serialized, but this is generally prohibitive to perform, so is not required.</p>
 <p>Server features:</p><ul>
@@ -127,7 +127,7 @@ empty_unary</h2>
 <li>response is non-null</li>
 </ul>
 <p><em>It may be possible to use UnaryCall instead of EmptyCall, but it is harder to ensure that the proto serialized to zero bytes.</em></p>
-<h2><a class="anchor" id="autotoc_md160"></a>
+<h2><a class="anchor" id="autotoc_md165"></a>
 cacheable_unary</h2>
 <p>This test verifies that gRPC requests marked as cacheable use GET verb instead of POST, and that server sets appropriate cache control headers for the response to be cached by a proxy. This test requires that the server is behind a caching proxy. Use of current timestamp in the request prevents accidental cache matches left over from previous tests.</p>
 <p>Server features:</p><ul>
@@ -141,7 +141,7 @@ cacheable_unary</h2>
 <li>Both calls were successful</li>
 <li>The payload body of both responses is the same.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md161"></a>
+<h2><a class="anchor" id="autotoc_md166"></a>
 large_unary</h2>
 <p>This test verifies unary calls succeed in sending messages, and touches on flow control (even if compression is enabled on the channel).</p>
 <p>Server features:</p><ul>
@@ -157,7 +157,7 @@ large_unary</h2>
 <li>response payload body is 314159 bytes in size</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md162"></a>
+<h2><a class="anchor" id="autotoc_md167"></a>
 client_compressed_unary</h2>
 <p>This test verifies the client can compress unary messages by sending two unary calls, for compressed and uncompressed payloads. It also sends an initial probing request to verify whether the server supports the <a href="#compressedrequest">CompressedRequest</a> feature by checking if the probing call fails with an <code>INVALID_ARGUMENT</code> status.</p>
 <p>Server features:</p><ul>
@@ -183,7 +183,7 @@ client_compressed_unary</h2>
 </ul>
 </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md163"></a>
+<h2><a class="anchor" id="autotoc_md168"></a>
 server_compressed_unary</h2>
 <p>This test verifies the server can compress unary messages. It sends two unary requests, expecting the server's response to be compressed or not according to the <code>response_compressed</code> boolean.</p>
 <p>Whether compression was actually performed is determined by the compression bit in the response's message flags. <em>Note that some languages may not have access to the message flags, in which case the client will be unable to verify that the <code>response_compressed</code> boolean is obeyed by the server</em>.</p>
@@ -203,7 +203,7 @@ server_compressed_unary</h2>
 </ul>
 </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md164"></a>
+<h2><a class="anchor" id="autotoc_md169"></a>
 client_streaming</h2>
 <p>This test verifies that client-only streaming succeeds.</p>
 <p>Server features:</p><ul>
@@ -229,7 +229,7 @@ client_streaming</h2>
 <li>call was successful</li>
 <li>response aggregated_payload_size is 74922</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md165"></a>
+<h2><a class="anchor" id="autotoc_md170"></a>
 client_compressed_streaming</h2>
 <p>This test verifies the client can compress requests on per-message basis by performing a two-request streaming call. It also sends an initial probing request to verify whether the server supports the <a href="#compressedrequest">CompressedRequest</a> feature by checking if the probing call fails with an <code>INVALID_ARGUMENT</code> status.</p>
 <p>Procedure:</p><ol type="1">
@@ -253,7 +253,7 @@ client_compressed_streaming</h2>
 <li>Next calls succeeds.</li>
 <li>Response aggregated payload size is 73086.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md166"></a>
+<h2><a class="anchor" id="autotoc_md171"></a>
 server_streaming</h2>
 <p>This test verifies that server-only streaming succeeds.</p>
 <p>Server features:</p><ul>
@@ -270,7 +270,7 @@ server_streaming</h2>
 <li>response payload bodies are sized (in order): 31415, 9, 2653, 58979</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response messages against golden responses</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md167"></a>
+<h2><a class="anchor" id="autotoc_md172"></a>
 server_compressed_streaming</h2>
 <p>This test verifies that the server can compress streaming messages and disable compression on individual messages, expecting the server's response to be compressed or not according to the <code>response_compressed</code> boolean.</p>
 <p>Whether compression was actually performed is determined by the compression bit in the response's message flags. <em>Note that some languages may not have access to the message flags, in which case the client will be unable to verify that the <code>response_compressed</code> boolean is obeyed by the server</em>.</p>
@@ -291,7 +291,7 @@ server_compressed_streaming</h2>
 </ul>
 </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md168"></a>
+<h2><a class="anchor" id="autotoc_md173"></a>
 ping_pong</h2>
 <p>This test verifies that full duplex bidi is supported.</p>
 <p>Server features:</p><ul>
@@ -318,7 +318,7 @@ ping_pong</h2>
 <li>response payload bodies are sized (in order): 31415, 9, 2653, 58979</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response messages against golden responses</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md169"></a>
+<h2><a class="anchor" id="autotoc_md174"></a>
 empty_stream</h2>
 <p>This test verifies that streams support having zero-messages in both directions.</p>
 <p>Server features:</p><ul>
@@ -331,7 +331,7 @@ empty_stream</h2>
 <li>call was successful</li>
 <li>exactly zero responses</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md170"></a>
+<h2><a class="anchor" id="autotoc_md175"></a>
 compute_engine_creds</h2>
 <p>This test is only for cloud-to-prod path.</p>
 <p>This test verifies unary calls succeed in sending messages while using Service Credentials from GCE metadata server. The client instance needs to be created with desired oauth scope.</p>
@@ -354,7 +354,7 @@ compute_engine_creds</h2>
 <li>response payload body is 314159 bytes in size</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md171"></a>
+<h2><a class="anchor" id="autotoc_md176"></a>
 jwt_token_creds</h2>
 <p>This test is only for cloud-to-prod path.</p>
 <p>This test verifies unary calls succeed in sending messages while using JWT token (created by the project's key file)</p>
@@ -376,7 +376,7 @@ jwt_token_creds</h2>
 <li>response payload body is 314159 bytes in size</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md172"></a>
+<h2><a class="anchor" id="autotoc_md177"></a>
 oauth2_auth_token</h2>
 <p>This test is only for cloud-to-prod path and some implementations may run in GCE only.</p>
 <p>This test verifies unary calls succeed in sending messages using an OAuth2 token that is obtained out of band. For the purpose of the test, the OAuth2 token is actually obtained from a service account credentials or GCE credentials via the language-specific authorization library.</p>
@@ -402,7 +402,7 @@ oauth2_auth_token</h2>
 <li>received SimpleResponse.username is valid. Depending on whether a service account key file or GCE credentials was used, client should check against the json key file or GCE default service account email.</li>
 <li>received SimpleResponse.oauth_scope is in <code>--oauth_scope</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md173"></a>
+<h2><a class="anchor" id="autotoc_md178"></a>
 per_rpc_creds</h2>
 <p>Similar to the other auth tests, this test is only for cloud-to-prod path.</p>
 <p>This test verifies unary calls succeed in sending messages using a JWT or a service account credentials set on the RPC.</p>
@@ -425,7 +425,7 @@ per_rpc_creds</h2>
 <li>call was successful</li>
 <li>received SimpleResponse.username is not empty and is in the json key file used by the auth library. The client can optionally check the username matches the email address in the key file.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md174"></a>
+<h2><a class="anchor" id="autotoc_md179"></a>
 google_default_credentials</h2>
 <p>Similar to the other auth tests, this test should only be run against prod servers. Different from some of the other auth tests however, this test may be also run from outside of GCP.</p>
 <p>This test verifies unary calls succeed when the client uses GoogleDefaultCredentials. The path to a service account key file in the GOOGLE_APPLICATION_CREDENTIALS environment variable may or may not be provided by the test runner. For example, the test runner might set this environment when outside of GCP but keep it unset when on GCP.</p>
@@ -447,7 +447,7 @@ google_default_credentials</h2>
 <li>call was successful</li>
 <li>received SimpleResponse.username matches the value of <code>--default_service_account</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md175"></a>
+<h2><a class="anchor" id="autotoc_md180"></a>
 compute_engine_channel_credentials</h2>
 <p>Similar to the other auth tests, this test should only be run against prod servers. Note that this test may only be ran on GCP.</p>
 <p>This test verifies unary calls succeed when the client uses ComputeEngineChannelCredentials. All that is needed by the test environment is for the client to be running on GCP.</p>
@@ -469,7 +469,7 @@ compute_engine_channel_credentials</h2>
 <li>call was successful</li>
 <li>received SimpleResponse.username matches the value of <code>--default_service_account</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md176"></a>
+<h2><a class="anchor" id="autotoc_md181"></a>
 custom_metadata</h2>
 <p>This test verifies that custom metadata in either binary or ascii format can be sent as initial-metadata by the client and as both initial- and trailing-metadata by the server.</p>
 <p>Server features:</p><ul>
@@ -495,7 +495,7 @@ custom_metadata</h2>
 <li>metadata with key <code>"x-grpc-test-echo-initial"</code> and value <code>"test_initial_metadata_value"</code>is received in the initial metadata for calls in Procedure steps 1 and 2.</li>
 <li>metadata with key <code>"x-grpc-test-echo-trailing-bin"</code> and value <code>0xababab</code> is received in the trailing metadata for calls in Procedure steps 1 and 2.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md177"></a>
+<h2><a class="anchor" id="autotoc_md182"></a>
 status_code_and_message</h2>
 <p>This test verifies unary calls succeed in sending messages, and propagate back status code and message sent along with the messages.</p>
 <p>Server features:</p><ul>
@@ -516,7 +516,7 @@ status_code_and_message</h2>
 <li>received status code is the same as the sent code for both Procedure steps 1 and 2</li>
 <li>received status message is the same as the sent message for both Procedure steps 1 and 2</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md178"></a>
+<h2><a class="anchor" id="autotoc_md183"></a>
 special_status_message</h2>
 <p>This test verifies Unicode and whitespace is correctly processed in status message. "\t" is horizontal tab. "\r" is carriage return. "\n" is line feed.</p>
 <p>Server features:</p><ul>
@@ -532,7 +532,7 @@ special_status_message</h2>
 <li>received status code is the same as the sent code for Procedure step 1</li>
 <li>received status message is the same as the sent message for Procedure step 1, including all whitespace characters</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md179"></a>
+<h2><a class="anchor" id="autotoc_md184"></a>
 unimplemented_method</h2>
 <p>This test verifies that calling an unimplemented RPC method returns the UNIMPLEMENTED status code.</p>
 <p>Server features: N/A</p>
@@ -544,7 +544,7 @@ unimplemented_method</h2>
 <p>Client asserts:</p><ul>
 <li>received status code is 12 (UNIMPLEMENTED)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md180"></a>
+<h2><a class="anchor" id="autotoc_md185"></a>
 unimplemented_service</h2>
 <p>This test verifies calling an unimplemented server returns the UNIMPLEMENTED status code.</p>
 <p>Server features: N/A</p>
@@ -554,7 +554,7 @@ unimplemented_service</h2>
 <p>Client asserts:</p><ul>
 <li>received status code is 12 (UNIMPLEMENTED)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md181"></a>
+<h2><a class="anchor" id="autotoc_md186"></a>
 cancel_after_begin</h2>
 <p>This test verifies that a request can be cancelled after metadata has been sent but before payloads are sent.</p>
 <p>Server features:</p><ul>
@@ -567,7 +567,7 @@ cancel_after_begin</h2>
 <p>Client asserts:</p><ul>
 <li>Call completed with status CANCELLED</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md182"></a>
+<h2><a class="anchor" id="autotoc_md187"></a>
 cancel_after_first_response</h2>
 <p>This test verifies that a request can be cancelled after receiving a message from the server.</p>
 <p>Server features:</p><ul>
@@ -582,7 +582,7 @@ cancel_after_first_response</h2>
 <p>Client asserts:</p><ul>
 <li>Call completed with status CANCELLED</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md183"></a>
+<h2><a class="anchor" id="autotoc_md188"></a>
 timeout_on_sleeping_server</h2>
 <p>This test verifies that an RPC request whose lifetime exceeds its configured timeout value will end with the DeadlineExceeded status.</p>
 <p>Server features:</p><ul>
@@ -597,7 +597,7 @@ timeout_on_sleeping_server</h2>
 <p>Client asserts:</p><ul>
 <li>Call completed with status DEADLINE_EXCEEDED.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md184"></a>
+<h2><a class="anchor" id="autotoc_md189"></a>
 rpc_soak</h2>
 <p>The client performs many large_unary RPCs in sequence over the same channel. The client records the latency and status of each RPC in some data structure. If the test ever consumes <code>soak_overall_timeout_seconds</code> seconds and still hasn't completed <code>soak_iterations</code> RPCs, then the test should discontinue sending RPCs as soon as possible. After performing all RPCs, the test should examine previously recorded RPC latency and status results in a second pass and fail if either:</p>
 <p>a) not all <code>soak_iterations</code> RPCs were completed</p>
@@ -626,11 +626,11 @@ rpc_soak</h2>
 <ul>
 <li>Implementations should log the number of milliseconds that each RPC takes. Additionally, implementations should use a histogram of RPC latencies to log interesting latency percentiles at the end of the test (e.g. median, 90th, and max latency percentiles).</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md185"></a>
+<h2><a class="anchor" id="autotoc_md190"></a>
 channel_soak</h2>
 <p>Similar to rpc_soak, but this time each RPC is performed on a new channel. The channel is created just before each RPC and is destroyed just after.</p>
 <p>This test is configured with the same command line flags that the rpc_soak test is configured with, with only one semantic difference: when measuring an RPCs latency to see if it exceeds <code>soak_per_iteration_max_acceptable_latency_ms</code> or not, the creation of the channel should be included in that latency measurement, but the teardown of that channel should <b>not</b> be included in that latency measurement (channel teardown semantics differ widely between languages). This latency measurement should also be the value that is logged and recorded in the latency histogram.</p>
-<h2><a class="anchor" id="autotoc_md186"></a>
+<h2><a class="anchor" id="autotoc_md191"></a>
 orca_per_rpc</h2>
 <p>The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive per-query metric reports from the backend.</p>
 <p>The client will register the custom LB policy named <code>test_backend_metrics_load_balancer</code>, which using ORCA APIs already installed a per-query report listener. The interop-testing client will run with a service config to select the load balancing config (using argument <code>--service_config_json</code>), so that it effectively uses this newly registered custom LB policy. A load report reference can be passed from the call to the LB policy through, e.g. CallOptions, to receive metric reports. The LB policy will fill in the reference with the latest load report from the report listener. This way, together with server behaviors we can verify the expected metric reports are received.</p>
@@ -646,7 +646,7 @@ orca_per_rpc</h2>
 <li>The call is successful.</li>
 <li>The per-query load report reference contains a metrics report that is identical to the metrics data sent in the request shown above.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md187"></a>
+<h2><a class="anchor" id="autotoc_md192"></a>
 orca_oob</h2>
 <p>The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive out-of-band metric reports from the backend.</p>
 <p>The client will register the custom LB policy named <code>test_backend_metrics_load_balancer</code>. It has similar and additional functions as described in the <a href="#orca_per_rpc">orca_per_rpc</a> test. We use ORCA APIs to install an out-of-band report listener (configure load report interval to be 1s) in the LB policy. The interop-testing client will run with a service config to select the load balancing config(using argument <code>--service_config_json</code>), so that it effectively uses this newly registered custom LB policy. A load report reference can be passed from the call to the LB policy through, e.g. CallOptions, to receive metric reports. The test framework will fill in the reference with the latest load report from the report listener. This way, together with server behaviors we can verify the expected metric reports are received.</p>
@@ -662,35 +662,35 @@ orca_oob</h2>
 <li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 3. Similar to step 2.</li>
 <li>Client half closes the stream, and asserts the streaming call is successful.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md188"></a>
+<h2><a class="anchor" id="autotoc_md193"></a>
 Experimental Tests</h2>
 <p>These tests are not yet standardized, and are not yet implemented in all languages. Therefore they are not part of our interop matrix.</p>
-<h3><a class="anchor" id="autotoc_md189"></a>
+<h3><a class="anchor" id="autotoc_md194"></a>
 long_lived_channel</h3>
 <p>The client performs a number of large_unary RPCs over a single long-lived channel with a fixed but configurable interval between each RPC.</p>
-<h3><a class="anchor" id="autotoc_md190"></a>
+<h3><a class="anchor" id="autotoc_md195"></a>
 concurrent_large_unary</h3>
 <p>Status: TODO</p>
 <p>Client performs 1000 large_unary tests in parallel on the same channel.</p>
-<h3><a class="anchor" id="autotoc_md191"></a>
+<h3><a class="anchor" id="autotoc_md196"></a>
 Flow control. Pushback at client for large messages (TODO: fix name)</h3>
 <p>Status: TODO</p>
 <p>This test verifies that a client sending faster than a server can drain sees pushback (i.e., attempts to send succeed only after appropriate delays).</p>
-<h2><a class="anchor" id="autotoc_md192"></a>
+<h2><a class="anchor" id="autotoc_md197"></a>
 TODO Tests</h2>
-<h3><a class="anchor" id="autotoc_md193"></a>
+<h3><a class="anchor" id="autotoc_md198"></a>
 High priority:</h3>
 <p>Propagation of status code and message (yangg)</p>
 <p>Multiple thousand simultaneous calls on same Channel (ctiller)</p>
 <p>Metadata: client headers, server headers + trailers, binary+ascii</p>
-<h3><a class="anchor" id="autotoc_md194"></a>
+<h3><a class="anchor" id="autotoc_md199"></a>
 Normal priority:</h3>
 <p>Cancel before start (ctiller)</p>
 <p>Cancel after sent first message (ctiller)</p>
 <p>Cancel after received headers (ctiller)</p>
 <p>Timeout but completed before expire (zhaoq)</p>
 <p>Multiple thousand simultaneous calls timeout on same Channel (ctiller)</p>
-<h3><a class="anchor" id="autotoc_md195"></a>
+<h3><a class="anchor" id="autotoc_md200"></a>
 Lower priority:</h3>
 <p>Flow control. Pushback at client for large messages (abhishek)</p>
 <p>Flow control. Pushback at server for large messages (abhishek)</p>
@@ -699,16 +699,16 @@ Lower priority:</h3>
 <p>Multiple thousand simultaneous calls on different Channels (ctiller)</p>
 <p>Failed TLS hostname verification (ejona?)</p>
 <p>Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.</p>
-<h3><a class="anchor" id="autotoc_md196"></a>
+<h3><a class="anchor" id="autotoc_md201"></a>
 To priorize:</h3>
 <p>Start streaming RPC but don't send any requests, server responds</p>
-<h2><a class="anchor" id="autotoc_md197"></a>
+<h2><a class="anchor" id="autotoc_md202"></a>
 Postponed Tests</h2>
 <p>Resilience to buggy servers: These tests would verify that a client application isn't affected negatively by the responses put on the wire by a buggy server (e.g. the client library won't make the application crash).</p>
 <p>Reconnect after transport failure</p>
 <p>Reconnect backoff</p>
 <p>Fuzz testing</p>
-<h1><a class="anchor" id="autotoc_md198"></a>
+<h1><a class="anchor" id="autotoc_md203"></a>
 Server</h1>
 <p>Servers implement various named features for clients to test with. Server features are orthogonal. If a server implements a feature, it is always available for clients. Names are simple descriptions for developer communication and tracking.</p>
 <p>Servers should accept these arguments:</p>
@@ -723,55 +723,55 @@ Server</h1>
 </li>
 </ul>
 <p>Servers must support TLS with ALPN. They should use <a href="https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem">server1.pem</a> for their certificate.</p>
-<h2><a class="anchor" id="autotoc_md199"></a>
+<h2><a class="anchor" id="autotoc_md204"></a>
 EmptyCall</h2>
 <p>Server implements EmptyCall which immediately returns the empty message.</p>
-<h2><a class="anchor" id="autotoc_md200"></a>
+<h2><a class="anchor" id="autotoc_md205"></a>
 UnaryCall</h2>
 <p>Server implements UnaryCall which immediately returns a SimpleResponse with a payload body of size <code>SimpleRequest.response_size</code> bytes and type as appropriate for the <code>SimpleRequest.response_type</code>. If the server does not support the <code>response_type</code>, then it should fail the RPC with <code>INVALID_ARGUMENT</code>.</p>
-<h2><a class="anchor" id="autotoc_md201"></a>
+<h2><a class="anchor" id="autotoc_md206"></a>
 CacheableUnaryCall</h2>
 <p>Server gets the default SimpleRequest proto as the request. The content of the request is ignored. It returns the SimpleResponse proto with the payload set to current timestamp. The timestamp is an integer representing current time with nanosecond resolution. This integer is formatted as ASCII decimal in the response. The format is not really important as long as the response payload is different for each request. In addition it adds</p><ol type="1">
 <li>cache control headers such that the response can be cached by proxies in the response path. Server should be behind a caching proxy for this test to pass. Currently we set the max-age to 60 seconds.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md202"></a>
+<h2><a class="anchor" id="autotoc_md207"></a>
 CompressedResponse</h2>
 <p>When the client sets <code>response_compressed</code> to true, the server's response is sent back compressed. Note that <code>response_compressed</code> is present on both <code>SimpleRequest</code> (unary) and <code>StreamingOutputCallRequest</code> (streaming).</p>
-<h2><a class="anchor" id="autotoc_md203"></a>
+<h2><a class="anchor" id="autotoc_md208"></a>
 CompressedRequest</h2>
 <p>When the client sets <code>expect_compressed</code> to true, the server expects the client request to be compressed. If it's not, it fails the RPC with <code>INVALID_ARGUMENT</code>. Note that <code>response_compressed</code> is present on both <code>SimpleRequest</code> (unary) and <code>StreamingOutputCallRequest</code> (streaming).</p>
-<h2><a class="anchor" id="autotoc_md204"></a>
+<h2><a class="anchor" id="autotoc_md209"></a>
 StreamingInputCall</h2>
 <p>Server implements StreamingInputCall which upon half close immediately returns a StreamingInputCallResponse where aggregated_payload_size is the sum of all request payload bodies received.</p>
-<h2><a class="anchor" id="autotoc_md205"></a>
+<h2><a class="anchor" id="autotoc_md210"></a>
 StreamingOutputCall</h2>
 <p>Server implements StreamingOutputCall by replying, in order, with one StreamingOutputCallResponse for each ResponseParameters in StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a payload body of size ResponseParameters.size bytes, as specified by its respective ResponseParameters. After sending all responses, it closes with OK.</p>
-<h2><a class="anchor" id="autotoc_md206"></a>
+<h2><a class="anchor" id="autotoc_md211"></a>
 FullDuplexCall</h2>
 <p>Server implements FullDuplexCall by replying, in order, with one StreamingOutputCallResponse for each ResponseParameters in each StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a payload body of size ResponseParameters.size bytes, as specified by its respective ResponseParameters. After receiving half close and sending all responses, it closes with OK.</p>
-<h2><a class="anchor" id="autotoc_md207"></a>
+<h2><a class="anchor" id="autotoc_md212"></a>
 Echo Status</h2>
 <p>When the client sends a response_status in the request payload, the server closes the stream with the status code and message contained within said response_status. The server will not process any further messages on the stream sent by the client. This can be used by clients to verify correct handling of different status codes and associated status messages end-to-end.</p>
-<h2><a class="anchor" id="autotoc_md208"></a>
+<h2><a class="anchor" id="autotoc_md213"></a>
 Echo Metadata</h2>
 <p>When the client sends metadata with the key <code>"x-grpc-test-echo-initial"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as part of initial metadata. When the client sends metadata with the key <code>"x-grpc-test-echo-trailing-bin"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as trailing metadata.</p>
-<h2><a class="anchor" id="autotoc_md209"></a>
+<h2><a class="anchor" id="autotoc_md214"></a>
 Observe ResponseParameters.interval_us</h2>
 <p>In StreamingOutputCall and FullDuplexCall, server delays sending a StreamingOutputCallResponse by the ResponseParameters' <code>interval_us</code> for that particular response, relative to the last response sent. That is, <code>interval_us</code> acts like a sleep <em>before</em> sending the response and accumulates from one response to the next.</p>
 <p>Interaction with flow control is unspecified.</p>
-<h2><a class="anchor" id="autotoc_md210"></a>
+<h2><a class="anchor" id="autotoc_md215"></a>
 Echo Auth Information</h2>
 <p>Status: Pending</p>
-<h3><a class="anchor" id="autotoc_md211"></a>
+<h3><a class="anchor" id="autotoc_md216"></a>
 Echo Authenticated Username</h3>
 <p>If a SimpleRequest has fill_username=true and that request was successfully authenticated, then the SimpleResponse should have username filled with the canonical form of the authenticated source. The canonical form is dependent on the authentication method, but is likely to be a base 10 integer identifier or an email address.</p>
-<h3><a class="anchor" id="autotoc_md212"></a>
+<h3><a class="anchor" id="autotoc_md217"></a>
 Echo OAuth scope</h3>
 <p>If a SimpleRequest has <code>fill_oauth_scope=true</code> and that request was successfully authenticated via OAuth, then the SimpleResponse should have oauth_scope filled with the scope of the method being invoked.</p>
 <p>Although a general server-side feature, most test servers won't implement this feature. The TLS server <code>grpc-test.sandbox.googleapis.com:443</code> supports this feature. It requires at least the OAuth scope <code><a href="https://www.googleapis.com/auth/xapi.zoo">https://www.googleapis.com/auth/xapi.zoo</a></code> for authentication to succeed.</p>
 <p>Discussion:</p>
 <p>Ideally, this would be communicated via metadata and not in the request/response, but we want to use this test in code paths that don't yet fully communicate metadata.</p>
-<h2><a class="anchor" id="autotoc_md213"></a>
+<h2><a class="anchor" id="autotoc_md218"></a>
 Backend metrics report</h2>
 <p>Server reports backend metrics data in both per-query and out-of-band cases, echoing metrics data from the unary or fullDuplex call.</p>
 <p>Using ORCA APIs we install the per-query metrics reporting server interceptor, so that it can attach metrics per RPC. We also register the <code>OpenRCAService</code> implementation to the server, so that it can report metrics periodically. The minimum report interval in the ORCA service is set to 1 sec.</p>
@@ -781,7 +781,7 @@ Backend metrics report</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

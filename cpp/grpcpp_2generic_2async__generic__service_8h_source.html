@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -174,7 +174,7 @@ $(function() {
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;      <a class="code" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a>* <span class="comment">/*ctx*/</span>) {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keyword">class </span>Reactor : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_server_bidi_reactor.html">ServerGenericBidiReactor</a> {</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;     <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      Reactor() { this-&gt;Finish(<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">StatusCode::UNIMPLEMENTED</a>, <span class="stringliteral">&quot;&quot;</span>)); }</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      Reactor() { this-&gt;Finish(<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>(<a class="code" href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">StatusCode::UNIMPLEMENTED</a>, <span class="stringliteral">&quot;&quot;</span>)); }</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;      <span class="keywordtype">void</span> OnDone()<span class="keyword"> override </span>{ <span class="keyword">delete</span> <span class="keyword">this</span>; }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    };</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">new</span> Reactor;</div>
@@ -211,7 +211,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_async_generic_service_html"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html">grpc::AsyncGenericService</a></div><div class="ttdef"><b>Definition:</b> async_generic_service.h:68</div></div>
 <div class="ttc" id="aclassgrpc_1_1_callback_generic_service_html_a96b8a38dcf92e833d2c1837825f27b32"><div class="ttname"><a href="classgrpc_1_1_callback_generic_service.html#a96b8a38dcf92e833d2c1837825f27b32">grpc::CallbackGenericService::CallbackGenericService</a></div><div class="ttdeci">CallbackGenericService()</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:104</div></div>
 <div class="ttc" id="aclassgrpc_1_1_generic_server_context_html"><div class="ttname"><a href="classgrpc_1_1_generic_server_context.html">grpc::GenericServerContext</a></div><div class="ttdef"><b>Definition:</b> async_generic_service.h:39</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
 <div class="ttc" id="asupport_2server__callback_8h_html"><div class="ttname"><a href="support_2server__callback_8h.html">server_callback.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_async_response_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html">grpc::ServerAsyncResponseWriter</a></div><div class="ttdoc">Async server-side API for handling unary calls, where the single response message sent to the client ...</div><div class="ttdef"><b>Definition:</b> server_context.h:60</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_bidi_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_bidi_handler.html">grpc::internal::CallbackBidiHandler</a></div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:668</div></div>
@@ -230,6 +229,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html_a881afd211852397742952ee4058e0f8b"><div class="ttname"><a href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">grpc::GenericServerAsyncWriter</a></div><div class="ttdeci">ServerAsyncWriter&lt; ByteBuffer &gt; GenericServerAsyncWriter</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:37</div></div>
 <div class="ttc" id="agrpcpp_2support_2async__stream_8h_html"><div class="ttname"><a href="grpcpp_2support_2async__stream_8h.html">async_stream.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_callback_generic_service_html_a0417a54e9986e8279e7d867d6379c6dd"><div class="ttname"><a href="classgrpc_1_1_callback_generic_service.html#a0417a54e9986e8279e7d867d6379c6dd">grpc::CallbackGenericService::CreateReactor</a></div><div class="ttdeci">virtual ServerGenericBidiReactor * CreateReactor(GenericCallbackServerContext *)</div><div class="ttdoc">The &quot;method handler&quot; for the generic API.</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:110</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <div class="ttc" id="aclassgrpc_1_1_callback_generic_service_html_a77cebcae2566b24c8c42fbeb9fee78ac"><div class="ttname"><a href="classgrpc_1_1_callback_generic_service.html#a77cebcae2566b24c8c42fbeb9fee78ac">grpc::CallbackGenericService::~CallbackGenericService</a></div><div class="ttdeci">virtual ~CallbackGenericService()</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:105</div></div>
 <div class="ttc" id="aclassgrpc_1_1_generic_server_context_html_a91245428f153d8b1418a58f5e45104bb"><div class="ttname"><a href="classgrpc_1_1_generic_server_context.html#a91245428f153d8b1418a58f5e45104bb">grpc::GenericServerContext::method</a></div><div class="ttdeci">const std::string &amp; method() const</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:41</div></div>
 <div class="ttc" id="aclassgrpc_1_1_async_generic_service_html_ab0cc86616c5abb3c99b1ec9d7d7fc5e7"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html#ab0cc86616c5abb3c99b1ec9d7d7fc5e7">grpc::AsyncGenericService::RequestCall</a></div><div class="ttdeci">void RequestCall(GenericServerContext *ctx, GenericServerAsyncReaderWriter *reader_writer, grpc::CompletionQueue *call_cq, grpc::ServerCompletionQueue *notification_cq, void *tag)</div></div>
@@ -237,7 +237,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

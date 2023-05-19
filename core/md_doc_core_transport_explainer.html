@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>@vjpai</p>
-<h1><a class="anchor" id="autotoc_md125"></a>
+<h1><a class="anchor" id="autotoc_md130"></a>
 Existing Transports</h1>
 <p><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport">gRPC transports</a> plug in below the core API (one level below the C++ or other wrapped-language API). You can write your transport in C or C++ though; currently (Nov 2017) all the transports are nominally written in C++ though they are idiomatically C. The existing transports are:</p>
 <ul>
@@ -76,7 +76,7 @@ Existing Transports</h1>
 <li><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport/inproc">In-process</a></li>
 </ul>
 <p>Among these, the in-process is likely the easiest to understand, though arguably also the least similar to a "real" sockets-based transport since it is only used in a single process.</p>
-<h1><a class="anchor" id="autotoc_md126"></a>
+<h1><a class="anchor" id="autotoc_md131"></a>
 Transport stream ops</h1>
 <p>In the gRPC core implementation, a fundamental struct is the <code>grpc_transport_stream_op_batch</code> which represents a collection of stream operations sent to a transport. (Note that in gRPC, <em>stream</em> and <em>RPC</em> are used synonymously since all RPCs are actually streams internally.) The ops in a batch can include:</p>
 <ul>
@@ -112,7 +112,7 @@ Transport stream ops</h1>
 <li>recv_message_ready (called by the transport when the recv_message op is complete)</li>
 <li>on_complete (called by the transport when the entire batch is complete)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md127"></a>
+<h1><a class="anchor" id="autotoc_md132"></a>
 Timelines of transport stream op batches</h1>
 <p>The transport's job is to sequence and interpret various possible interleavings of the basic stream ops. For example, a sample timeline of batches would be:</p>
 <ol type="1">
@@ -180,10 +180,10 @@ Timelines of transport stream op batches</h1>
 </li>
 </ol>
 <p>The sends on one side will call their own callbacks when complete, and they will in turn trigger actions that cause the other side's recv operations to complete. In some transports, a send can sometimes complete before the recv on the other side (e.g., in HTTP/2 if there is sufficient flow-control buffer space available)</p>
-<h1><a class="anchor" id="autotoc_md128"></a>
+<h1><a class="anchor" id="autotoc_md133"></a>
 Other transport duties</h1>
 <p>In addition to these basic stream ops, the transport must handle cancellations of a stream at any time and pass their effects to the other side. For example, in HTTP/2, this triggers a <code>RST_STREAM</code> being sent on the wire. The transport must perform operations like pings and statistics that are used to shape transport-level characteristics like flow control (see, for example, their use in the HTTP/2 transport).</p>
-<h1><a class="anchor" id="autotoc_md129"></a>
+<h1><a class="anchor" id="autotoc_md134"></a>
 Putting things together with detail: Sending Metadata</h1>
 <ul>
 <li>API layer: <code>map&lt;string, string&gt;</code> that is specific to this RPC</li>
@@ -196,7 +196,7 @@ Putting things together with detail: Sending Metadata</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md130"></a>
+<h1><a class="anchor" id="autotoc_md135"></a>
 Requirements for any transport</h1>
 <p>Each transport implements several operations in a vtbl (may change to actual virtual functions as transport moves to idiomatic C++).</p>
 <p>The most important and common one is <code>perform_stream_op</code>. This function processes a single stream op batch on a specific stream that is associated with a specific transport:</p>
@@ -235,7 +235,7 @@ Requirements for any transport</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md131"></a>
+<h1><a class="anchor" id="autotoc_md136"></a>
 Book-keeping responsibilities of the transport layer</h1>
 <p>A given transport must keep all of its transport and streams ref-counted. This is essential to make sure that no struct disappears before it is done being used.</p>
 <p>A transport must also preserve relevant orders for the different categories of ops on a stream, as described above. A transport must also make sure that all relevant batch operations have completed before scheduling the <code>on_complete</code> closure for a batch. Further examples include the idea that the server logic expects to not complete recv_trailing_metadata until after it actually sends trailing metadata since it would have already found this out by seeing a NULL’ed recv_message. This is considered part of the transport's duties in preserving orders. </p>
@@ -243,7 +243,7 @@ Book-keeping responsibilities of the transport layer</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

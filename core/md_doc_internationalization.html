@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,38 +67,38 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>As a universal RPC framework, gRPC needs to be fully usable within/across different international environments. This document describes gRPC API and behavior specifics when used in a non-english environment.</p>
-<h1><a class="anchor" id="autotoc_md151"></a>
+<h1><a class="anchor" id="autotoc_md156"></a>
 API Concepts</h1>
 <p>While some API elements need to be able to represent non-english content, some are intentionally left as ASCII-only for simplicity &amp; performance reasons.</p>
-<h2><a class="anchor" id="autotoc_md152"></a>
+<h2><a class="anchor" id="autotoc_md157"></a>
 Method name (in RPC Invocation)</h2>
 <p>Method names are ASCII-only and may only contain characters allowed by HTTP/2 text header values. That should not be very limiting as most gRPC services will use protobuf which only allows method names from an even more restricted ASCII subset. Also, handling method names is a very hot code path so any additional encoding/decoding step is to be avoided.</p>
 <p>Recommended representation in language-specific APIs: string type.</p>
-<h2><a class="anchor" id="autotoc_md153"></a>
+<h2><a class="anchor" id="autotoc_md158"></a>
 Host name (in RPC Invocation)</h2>
 <p>Host names are punycode encoded, but the user is responsible for providing the punycode-encoded string if she wishes to use an internationalized host name.</p>
 <p>Recommended representation in language-specific APIs: string/unicode string.</p>
 <p>NOTE: overriding host name when invoking RPCs is only supported by C-core based gRPC implementations.</p>
-<h2><a class="anchor" id="autotoc_md154"></a>
+<h2><a class="anchor" id="autotoc_md159"></a>
 Status detail/message (accompanies RPC status code)</h2>
 <p>Status messages are expected to contain national-alphabet characters. Allowed values are unicode strings (content will be percent-encoded on the wire).</p>
 <p>Recommended representation in language-specific APIs: unicode string.</p>
-<h2><a class="anchor" id="autotoc_md155"></a>
+<h2><a class="anchor" id="autotoc_md160"></a>
 Metadata key</h2>
 <p>Allowed values are defined by HTTP/2 standard (metadata keys are represented as HTTP/2 header/trailer names).</p>
 <p>Recommended representation in language-specific APIs: string.</p>
-<h2><a class="anchor" id="autotoc_md156"></a>
+<h2><a class="anchor" id="autotoc_md161"></a>
 Metadata value (text-valued metadata)</h2>
 <p>Allowed values are defined by HTTP/2 standard (metadata values are represented as HTTP/2 header/trailer text values).</p>
 <p>Recommended representation in language-specific APIs: string.</p>
-<h2><a class="anchor" id="autotoc_md157"></a>
+<h2><a class="anchor" id="autotoc_md162"></a>
 Channel target (in channel creation)</h2>
 <p>TBD </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -66,12 +66,12 @@ $(function() {
 <div class="title">gRPC Name Resolution </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md227"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md232"></a>
 Overview</h1>
 <p>gRPC supports DNS as the default name-system. A number of alternative name-systems are used in various deployments. We support an API that is general enough to support a range of name-systems and the corresponding syntax for names. The gRPC client library in various languages will provide a plugin mechanism so resolvers for different name-systems can be plugged in.</p>
-<h1><a class="anchor" id="autotoc_md228"></a>
+<h1><a class="anchor" id="autotoc_md233"></a>
 Detailed Design</h1>
-<h2><a class="anchor" id="autotoc_md229"></a>
+<h2><a class="anchor" id="autotoc_md234"></a>
 Name Syntax</h2>
 <p>A fully qualified, self contained name used for gRPC channel construction uses URI syntax as defined in <a href="https://tools.ietf.org/html/rfc3986">RFC 3986</a>.</p>
 <p>The URI scheme indicates what resolver plugin to use. If no scheme prefix is specified or the scheme is unknown, the <code>dns</code> scheme is used by default.</p>
@@ -117,7 +117,7 @@ Name Syntax</h2>
 </li>
 </ul>
 <p>In the future, additional schemes such as <code>etcd</code> could be added.</p>
-<h2><a class="anchor" id="autotoc_md230"></a>
+<h2><a class="anchor" id="autotoc_md235"></a>
 Resolver Plugins</h2>
 <p>The gRPC client library will use the specified scheme to pick the right resolver plugin and pass it the fully qualified name string.</p>
 <p>Resolvers should be able to contact the authority and get a resolution that they return back to the gRPC client library. The returned contents include:</p>
@@ -130,7 +130,7 @@ Resolver Plugins</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

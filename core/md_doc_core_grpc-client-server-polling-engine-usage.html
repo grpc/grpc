@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">31.0.0</span>
+   &#160;<span id="projectnumber">32.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,16 +68,16 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p><em>Author: Sree Kuchibhotla (@sreecha) - Sep 2018</em></p>
 <p>This document talks about how polling engine is used in gRPC core (both on client and server code paths).</p>
-<h1><a class="anchor" id="autotoc_md97"></a>
+<h1><a class="anchor" id="autotoc_md102"></a>
 gRPC client</h1>
-<h2><a class="anchor" id="autotoc_md98"></a>
+<h2><a class="anchor" id="autotoc_md103"></a>
 Relation between Call, Channel (sub-channels), Completion queue, &lt;tt&gt;grpc_pollset&lt;/tt&gt;</h2>
 <ul>
 <li>A gRPC Call is tied to a channel (more specifically a sub-channel) and a completion queue for the lifetime of the call.</li>
 <li>Once a <em>sub-channel</em> is picked for the call, the file-descriptor (socket fd in case of TCP channels) is added to the pollset corresponding to call's completion queue. (Recall that as per <a class="el" href="grpc-cq_8md.html">grpc-cq</a>, a completion queue has a pollset by default)</li>
 </ul>
 <p><img src="../images/grpc-call-channel-cq.png" alt="image" class="inline"/></p>
-<h2><a class="anchor" id="autotoc_md99"></a>
+<h2><a class="anchor" id="autotoc_md104"></a>
 Making progress on Async &lt;tt&gt;connect()&lt;/tt&gt; on sub-channels  (&lt;tt&gt;grpc_pollset_set&lt;/tt&gt; usecase)</h2>
 <ul>
 <li>A gRPC channel is created between a client and a 'target'. The 'target' may resolve in to one or more backend servers.</li>
@@ -89,7 +89,7 @@ Making progress on Async &lt;tt&gt;connect()&lt;/tt&gt; on sub-channels  (&lt;tt
 </li>
 </ul>
 <p><img src="../images/grpc-client-lb-pss.png" alt="image" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md100"></a>
+<h1><a class="anchor" id="autotoc_md105"></a>
 gRPC server</h1>
 <ul>
 <li>The listening fd (i.e., the socket fd corresponding to the server listening port) is added to each of the server completion queues. Note that in gRPC we use SO_REUSEPORT option and create multiple listening fds but all of them map to the same listening port</li>
@@ -100,7 +100,7 @@ gRPC server</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

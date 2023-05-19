@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.54.0</span>
+   &#160;<span id="projectnumber">1.55.0</span>
    </div>
   </td>
  </tr>
@@ -104,7 +104,7 @@ $(function() {
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">class </span>ChannelInterface;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">Status</a>;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">Status</a>;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">namespace </span>experimental {</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
@@ -209,7 +209,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_html_a6bf6f97f95c4e8ec2c9da1bc7134394e"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor.html#a6bf6f97f95c4e8ec2c9da1bc7134394e">grpc::experimental::Interceptor::~Interceptor</a></div><div class="ttdeci">virtual ~Interceptor()</div><div class="ttdef"><b>Definition:</b> interceptor.h:220</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_batch_methods_html_a1fa1f2c7437b6d49ef68af8e772625e4"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a1fa1f2c7437b6d49ef68af8e772625e4">grpc::experimental::InterceptorBatchMethods::GetSerializedSendMessage</a></div><div class="ttdeci">virtual ByteBuffer * GetSerializedSendMessage()=0</div><div class="ttdoc">Send Message Methods GetSerializedSendMessage and GetSendMessage/ModifySendMessage are the available ...</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_batch_methods_html_a55f28c464881763e44c003ad945395a5"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a55f28c464881763e44c003ad945395a5">grpc::experimental::InterceptorBatchMethods::~InterceptorBatchMethods</a></div><div class="ttdeci">virtual ~InterceptorBatchMethods()</div><div class="ttdef"><b>Definition:</b> interceptor.h:97</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_a717f1a5db6c98d3f27340afd6f28bf7e"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#a717f1a5db6c98d3f27340afd6f28bf7e">grpc::protobuf::util::Status</a></div><div class="ttdeci">::google::protobuf::util::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:93</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor.html">grpc::experimental::Interceptor</a></div><div class="ttdoc">Interface for an interceptor.</div><div class="ttdef"><b>Definition:</b> interceptor.h:218</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36">grpc::experimental::InterceptionHookPoints::NUM_INTERCEPTION_HOOKS</a></div><div class="ttdeci">@ NUM_INTERCEPTION_HOOKS</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473">grpc::experimental::InterceptionHookPoints::PRE_SEND_MESSAGE</a></div><div class="ttdeci">@ PRE_SEND_MESSAGE</div></div>
@@ -222,13 +221,14 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_batch_methods_html_a22943cffc568734c939df8157b10f4f9"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a22943cffc568734c939df8157b10f4f9">grpc::experimental::InterceptorBatchMethods::GetSendTrailingMetadata</a></div><div class="ttdeci">virtual std::multimap&lt; std::string, std::string &gt; * GetSendTrailingMetadata()=0</div><div class="ttdoc">Returns a modifiable multimap of the trailing metadata to be sent.</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1a28873db230a854864aaf46ce3c7d282a"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a28873db230a854864aaf46ce3c7d282a">grpc::experimental::InterceptionHookPoints::POST_RECV_CLOSE</a></div><div class="ttdeci">@ POST_RECV_CLOSE</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_interceptor_batch_methods_html_a640e84ae950a57b875b38de6ef9d87fe"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a640e84ae950a57b875b38de6ef9d87fe">grpc::experimental::InterceptorBatchMethods::Proceed</a></div><div class="ttdeci">virtual void Proceed()=0</div><div class="ttdoc">Signal that the interceptor is done intercepting the current batch of the RPC.</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1">grpc::experimental::InterceptionHookPoints</a></div><div class="ttdeci">InterceptionHookPoints</div><div class="ttdoc">An enumeration of different possible points at which the Intercept method of the Interceptor interfac...</div><div class="ttdef"><b>Definition:</b> interceptor.h:56</div></div>
 <div class="ttc" id="agrpcpp_2support_2string__ref_8h_html"><div class="ttname"><a href="grpcpp_2support_2string__ref_8h.html">string_ref.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2metadata__map_8h_html"><div class="ttname"><a href="grpcpp_2impl_2metadata__map_8h.html">metadata_map.h</a></div></div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2">grpc::experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA</a></div><div class="ttdeci">@ PRE_RECV_INITIAL_METADATA</div><div class="ttdoc">The following three are for hijacked clients only.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 13 2023 06:50:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
