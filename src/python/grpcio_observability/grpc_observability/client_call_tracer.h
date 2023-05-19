@@ -14,30 +14,24 @@
 
 // TODO(xuanwn): Clean up include
 #include <stdint.h>
-#include <queue>
-#include <condition_variable>
-#include <mutex>
-#include <chrono>
-#include <mutex>
-#include <map>
 
-#include <grpc/grpc.h>
+#include <string>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/synchronization/mutex.h"
-#include "absl/strings/strip.h"
 #include "absl/strings/escaping.h"
-#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
+#include "absl/time/time.h"
+
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/context.h"
-#include "src/cpp/ext/gcp/observability_config.h"
-
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
-#include "src/python/grpcio_observability/grpc_observability/constants.h"
 
 namespace grpc_observability {
 
@@ -46,13 +40,16 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   class PythonOpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
     PythonOpenCensusCallAttemptTracer(PythonOpenCensusCallTracer* parent,
-                                uint64_t attempt_num, bool is_transparent_retry);
+                                      uint64_t attempt_num,
+                                      bool is_transparent_retry);
     std::string TraceId() override {
-      return absl::BytesToHexString(absl::string_view(context_.SpanContext().TraceId()));
+      return absl::BytesToHexString(
+          absl::string_view(context_.SpanContext().TraceId()));
     }
 
     std::string SpanId() override {
-      return absl::BytesToHexString(absl::string_view(context_.SpanContext().SpanId()));
+      return absl::BytesToHexString(
+          absl::string_view(context_.SpanContext().SpanId()));
     }
 
     bool IsSampled() override { return context_.SpanContext().IsSampled(); }
@@ -95,15 +92,18 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   };
 
   explicit PythonOpenCensusCallTracer(const char* method, const char* trace_id,
-                                      const char* parent_span_id, bool tracing_enabled);
+                                      const char* parent_span_id,
+                                      bool tracing_enabled);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
-    return absl::BytesToHexString(absl::string_view(context_.SpanContext().TraceId()));
+    return absl::BytesToHexString(
+        absl::string_view(context_.SpanContext().TraceId()));
   }
 
   std::string SpanId() override {
-    return absl::BytesToHexString(absl::string_view(context_.SpanContext().SpanId()));
+    return absl::BytesToHexString(
+        absl::string_view(context_.SpanContext().SpanId()));
   }
 
   bool IsSampled() override { return context_.SpanContext().IsSampled(); }

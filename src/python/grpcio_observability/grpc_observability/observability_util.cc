@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-#include <cstdlib>
-
-#include "absl/strings/string_view.h"
-
 #include "src/python/grpcio_observability/grpc_observability/observability_util.h"
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+
+#include <constants.h>
+#include <python_census_context.h>
+
+#include <chrono>
+#include <cstdlib>
+#include <map>
+#include <string>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
+
+#include "src/cpp/ext/gcp/observability_config.h"
 #include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
+#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
 
 namespace grpc_observability {
 
@@ -27,8 +38,8 @@ std::queue<CensusData>* g_census_data_buffer;
 std::mutex g_census_data_buffer_mutex;
 std::condition_variable g_census_data_buffer_cv;
 // TODO(xuanwn): Change below to a more appropriate number.
-// Assume buffer will store 100 CensusData and start export when buffer is 50% full.
-// kMaxExportBufferSizeBytes = 100 * (2048(kMaxTagsLen) + 1024(Buffer))
+// Assume buffer will store 100 CensusData and start export when buffer is 50%
+// full. kMaxExportBufferSizeBytes = 100 * (2048(kMaxTagsLen) + 1024(Buffer))
 constexpr float kExportThreshold = 0.7;
 constexpr int kMaxExportBufferSizeBytes = 100 * 1024 * 3;
 
@@ -43,7 +54,8 @@ float GetExportThreadHold() {
 }
 
 int GetMaxExportBufferSize() {
-  const char* value = std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE_BYTES");
+  const char* value =
+      std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE_BYTES");
   if (value != nullptr) {
     return std::stoi(value);
   }
@@ -52,8 +64,8 @@ int GetMaxExportBufferSize() {
 
 }  // namespace
 
-
-void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels) {
+void RecordIntMetric(MetricsName name, int64_t value,
+                     std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
@@ -63,8 +75,8 @@ void RecordIntMetric(MetricsName name, int64_t value, std::vector<Label>& labels
   AddCensusDataToBuffer(data);
 }
 
-
-void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labels) {
+void RecordDoubleMetric(MetricsName name, double value,
+                        std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;
@@ -74,48 +86,48 @@ void RecordDoubleMetric(MetricsName name, double value, std::vector<Label>& labe
   AddCensusDataToBuffer(data);
 }
 
-
 void RecordSpan(const SpanCensusData& span_census_data) {
   CensusData data = CensusData(span_census_data);
   AddCensusDataToBuffer(data);
 }
 
-
 void NativeObservabilityInit() {
-    g_census_data_buffer= new std::queue<CensusData>;
+  g_census_data_buffer = new std::queue<CensusData>;
 }
 
-
-void* CreateClientCallTracer(const char* method, const char* trace_id, const char* parent_span_id) {
-    void* client_call_tracer = new PythonOpenCensusCallTracer(method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
-    return client_call_tracer;
+void* CreateClientCallTracer(const char* method, const char* trace_id,
+                             const char* parent_span_id) {
+  void* client_call_tracer = new PythonOpenCensusCallTracer(
+      method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
+  return client_call_tracer;
 }
-
 
 void* CreateServerCallTracerFactory() {
-    void* server_call_tracer_factory = new PythonOpenCensusServerCallTracerFactory();
-    return server_call_tracer_factory;
+  void* server_call_tracer_factory =
+      new PythonOpenCensusServerCallTracerFactory();
+  return server_call_tracer_factory;
 }
-
 
 void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
   auto now = std::chrono::system_clock::now();
-  g_census_data_buffer_cv.wait_until(lock, now + std::chrono::milliseconds(timeout_ms));
+  g_census_data_buffer_cv.wait_until(
+      lock, now + std::chrono::milliseconds(timeout_ms));
 }
-
 
 void AddCensusDataToBuffer(CensusData data) {
   std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
   if (g_census_data_buffer->size() >= GetMaxExportBufferSize()) {
-    gpr_log(GPR_DEBUG, "Reached maximum sensus data buffer size, discarding this CensusData entry");
+    gpr_log(GPR_DEBUG,
+            "Reached maximum sensus data buffer size, discarding this "
+            "CensusData entry");
   } else {
     g_census_data_buffer->push(data);
   }
-  if (g_census_data_buffer->size() >= (GetExportThreadHold() * GetMaxExportBufferSize())) {
-      g_census_data_buffer_cv.notify_all();
+  if (g_census_data_buffer->size() >=
+      (GetExportThreadHold() * GetMaxExportBufferSize())) {
+    g_census_data_buffer_cv.notify_all();
   }
 }
-
 
 GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
@@ -138,7 +150,7 @@ GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   if (!config->cloud_monitoring.has_value()) {
     EnablePythonOpenCensusStats(false);
   } else {
-      EnablePythonOpenCensusStats(true);
+    EnablePythonOpenCensusStats(true);
   }
 
   std::vector<Label> labels;
@@ -171,7 +183,6 @@ GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   return GcpObservabilityConfig(cloud_monitoring_config, cloud_trace_config,
                                 cloud_logging_config, project_id, labels);
 }
-
 
 absl::string_view StatusCodeToString(grpc_status_code code) {
   switch (code) {
