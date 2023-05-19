@@ -62,7 +62,7 @@ common name which is set to testclient2.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
   -out client2.pem -days 3650
 
-client3 is issued by CA:
+client-with-spiffe is issued by CA:
 -----------------------
 
 $ openssl genrsa -out client-with-spiffe.key.rsa 2048
