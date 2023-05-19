@@ -15,8 +15,6 @@
 
 #include "test/core/util/fuzzing_channel_args.h"
 
-#include <string>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/util/fuzzing_channel_args.pb.h"

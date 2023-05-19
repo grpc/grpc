@@ -432,7 +432,6 @@ grpc_cc_library(
     name = "fuzzing_channel_args",
     srcs = ["fuzzing_channel_args.cc"],
     hdrs = ["fuzzing_channel_args.h"],
-    external_deps = ["absl/strings"],
     deps = [
         "fuzzing_channel_args_proto",
         "//:gpr_platform",
