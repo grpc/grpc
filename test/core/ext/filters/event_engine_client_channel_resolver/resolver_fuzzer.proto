@@ -63,7 +63,7 @@ message TXTRecords {
     repeated TXTRecord txt_records = 1;
 }
 
-enum ShouldOrphan {
+enum ExecutionStep {
     NEVER = 0;
     DURING_LOOKUP_HOSTNAME = 1;
     AFTER_LOOKUP_HOSTNAME_CALLBACK = 2;
@@ -87,5 +87,5 @@ message Msg {
         TXTRecords txt_response = 6;
         Error txt_error = 7;
     }
-    ShouldOrphan should_orphan = 8;
+    ExecutionStep should_orphan_at_step = 8;
 }

@@ -49,16 +49,12 @@
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 
-// TODO(hork): exercise Orphan on the client channel resolver, which will
-// exercise the resolution cancellation path. Currently, all requests will get
-// responses.
-
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace {
 
-using event_engine_client_channel_resolver::ShouldOrphan;
+using event_engine_client_channel_resolver::ExecutionStep;
 using event_engine_client_channel_resolver::TXTRecordType;
 using grpc_core::EventEngineClientChannelDNSResolverFactory;
 using grpc_event_engine::experimental::EventEngine;
@@ -82,7 +78,7 @@ class FuzzingResolverEventEngine
       bool* done_resolving)
       : runner_(FuzzingEventEngine::Options(), fuzzing_event_engine::Actions()),
         done_resolving_(done_resolving),
-        should_orphan_(msg.should_orphan()) {
+        should_orphan_at_step_(msg.should_orphan_at_step()) {
     // Set hostname responses
     if (msg.has_hostname_error()) {
       hostname_responses_ = ErrorToAbslStatus(msg.hostname_error());
@@ -149,20 +145,20 @@ class FuzzingResolverEventEngine
     explicit FuzzingDNSResolver(FuzzingResolverEventEngine* engine)
         : engine_(engine) {}
 
-    ~FuzzingDNSResolver() override { GPR_ASSERT(known_handles == 0); }
+    ~FuzzingDNSResolver() override { GPR_ASSERT(known_handles_.empty()); }
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view /* name */,
                                     absl::string_view /* default_port */,
                                     Duration /* timeout */) override {
       int handle = NextHandle();
-      CheckAndSetOrphan(ShouldOrphan::DURING_LOOKUP_HOSTNAME);
+      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_HOSTNAME);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run(
             [this, cb = std::move(on_resolve), handle]() mutable {
               if (!HandleExists(handle)) return;
               DeleteHandle(handle);
               cb(engine_->hostname_responses_);
-              CheckAndSetOrphan(ShouldOrphan::AFTER_LOOKUP_HOSTNAME_CALLBACK);
+              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
             });
       }
       return {handle, 0};
@@ -171,14 +167,14 @@ class FuzzingResolverEventEngine
                                absl::string_view /* name */,
                                Duration /* timeout */) override {
       int handle = NextHandle();
-      CheckAndSetOrphan(ShouldOrphan::DURING_LOOKUP_SRV);
+      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_SRV);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run(
             [this, cb = std::move(on_resolve), handle]() mutable {
               if (!HandleExists(handle)) return;
               DeleteHandle(handle);
               cb(engine_->srv_responses_);
-              CheckAndSetOrphan(ShouldOrphan::AFTER_LOOKUP_SRV_CALLBACK);
+              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
             });
       }
       return {handle, 0};
@@ -187,14 +183,14 @@ class FuzzingResolverEventEngine
                                absl::string_view /* name */,
                                Duration /* timeout */) override {
       int handle = NextHandle();
-      CheckAndSetOrphan(ShouldOrphan::DURING_LOOKUP_TXT);
+      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_TXT);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run(
             [this, cb = std::move(on_resolve), handle]() mutable {
               if (!HandleExists(handle)) return;
               DeleteHandle(handle);
               cb(engine_->txt_responses_);
-              CheckAndSetOrphan(ShouldOrphan::AFTER_LOOKUP_TXT_CALLBACK);
+              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
             });
       }
       return {handle, 0};
@@ -208,33 +204,31 @@ class FuzzingResolverEventEngine
 
    private:
     int NextHandle() {
-      static int next_handle = 1;
-      if (next_handle == 0) ++next_handle;
-      known_handles |= next_handle;
-      auto ret = next_handle;
-      next_handle <<= 1;
-      return ret;
+      static uint64_t next_handle = 0;
+      known_handles_.insert(++next_handle);
+      return next_handle;
     }
 
-    bool HandleExists(int handle) { return known_handles & handle; }
+    bool HandleExists(int handle) { return known_handles_.contains(handle); }
 
-    void DeleteHandle(int handle) { known_handles -= handle; }
+    void DeleteHandle(int handle) { known_handles_.erase(handle); }
 
-    void CheckAndSetOrphan(ShouldOrphan current_pc) {
-      if (engine_->should_orphan_ == current_pc) {
+    void CheckAndSetOrphan(ExecutionStep current_execution_step) {
+      if (engine_->should_orphan_at_step_ == current_execution_step) {
         *engine_->done_resolving_ = true;
         engine_->has_been_orphaned_ = true;
       }
     }
 
     FuzzingResolverEventEngine* engine_;
-    int known_handles = 0;
+    // The set of outstanding LookupTaskHandles.
+    absl::flat_hash_set<uint64_t> known_handles_;
   };
 
   // members
   FuzzingEventEngine runner_;
   bool* done_resolving_;
-  ShouldOrphan should_orphan_;
+  ExecutionStep should_orphan_at_step_;
   bool has_been_orphaned_ = false;
 
   // responses
