@@ -232,21 +232,15 @@ class RingHash : public LoadBalancingPolicy {
    private:
     // A fire-and-forget class that schedules endpoint connection attempts
     // on the control plane WorkSerializer.
-    class EndpointConnectionAttempter : public Orphanable {
+    class EndpointConnectionAttempter {
      public:
-      explicit EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash)
-          : ring_hash_(std::move(ring_hash)) {
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-      }
-
-      void Orphan() override {
+      EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash,
+                                  RefCountedPtr<RingHashEndpoint> endpoint)
+          : ring_hash_(std::move(ring_hash)), endpoint_(std::move(endpoint)) {
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
+        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
         ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-      void AddEndpoint(RefCountedPtr<RingHashEndpoint> endpoint) {
-        endpoints_.push_back(std::move(endpoint));
       }
 
      private:
@@ -255,9 +249,7 @@ class RingHash : public LoadBalancingPolicy {
         self->ring_hash_->work_serializer()->Run(
             [self]() {
               if (!self->ring_hash_->shutdown_) {
-                for (auto& endpoint : self->endpoints_) {
-                  endpoint->RequestConnectionLocked();
-                }
+                self->endpoint_->RequestConnectionLocked();
               }
               delete self;
             },
@@ -265,8 +257,8 @@ class RingHash : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<RingHash> ring_hash_;
+      RefCountedPtr<RingHashEndpoint> endpoint_;
       grpc_closure closure_;
-      std::vector<RefCountedPtr<RingHashEndpoint>> endpoints_;
     };
 
     RefCountedPtr<RingHash> ring_hash_;
@@ -328,96 +320,55 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         absl::InternalError("ring hash value is not a number"));
   }
   const auto& ring = ring_->ring();
+  // Find the index in the ring to use for this RPC.
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
-  // for lowp, highp, and first_index. Do not change them!
+  // for lowp, highp, and index. Do not change them!
   size_t lowp = 0;
   size_t highp = ring.size();
-  size_t first_index = 0;
+  size_t index = 0;
   while (true) {
-    first_index = (lowp + highp) / 2;
-    if (first_index == ring.size()) {
-      first_index = 0;
+    index = (lowp + highp) / 2;
+    if (index == ring.size()) {
+      index = 0;
       break;
     }
-    uint64_t midval = ring[first_index].hash;
-    uint64_t midval1 = first_index == 0 ? 0 : ring[first_index - 1].hash;
+    uint64_t midval = ring[index].hash;
+    uint64_t midval1 = index == 0 ? 0 : ring[index - 1].hash;
     if (h <= midval && h > midval1) {
       break;
     }
     if (midval < h) {
-      lowp = first_index + 1;
+      lowp = index + 1;
     } else {
-      highp = first_index - 1;
+      highp = index - 1;
     }
     if (lowp > highp) {
-      first_index = 0;
+      index = 0;
       break;
     }
   }
-  OrphanablePtr<EndpointConnectionAttempter> endpoint_connection_attempter;
-  auto schedule_endpoint_connection_attempt =
-      [&](RefCountedPtr<RingHashEndpoint> endpoint) {
-        if (endpoint_connection_attempter == nullptr) {
-          endpoint_connection_attempter =
-              MakeOrphanable<EndpointConnectionAttempter>(ring_hash_->Ref(
-                  DEBUG_LOCATION, "EndpointConnectionAttempter"));
-        }
-        endpoint_connection_attempter->AddEndpoint(std::move(endpoint));
-      };
-  auto& first_endpoint = endpoints_[ring[first_index].endpoint_index];
-  switch (first_endpoint.state) {
-    case GRPC_CHANNEL_READY:
-      return first_endpoint.picker->Pick(args);
-    case GRPC_CHANNEL_IDLE:
-      schedule_endpoint_connection_attempt(first_endpoint.endpoint);
-      ABSL_FALLTHROUGH_INTENDED;
-    case GRPC_CHANNEL_CONNECTING:
-      return PickResult::Queue();
-    default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
-      break;
-  }
-  schedule_endpoint_connection_attempt(first_endpoint.endpoint);
-  // Loop through remaining endpoints to find one in READY.
-  // On the way, we make sure the right set of connection attempts
-  // will happen.
-  bool found_second_endpoint = false;
-  bool found_first_non_failed = false;
-  for (size_t i = 1; i < ring.size(); ++i) {
-    const auto& entry = ring[(first_index + i) % ring.size()];
-    if (entry.endpoint_index == ring[first_index].endpoint_index) {
-      continue;
-    }
-    auto& endpoint_info = endpoints_[entry.endpoint_index];
-    if (endpoint_info.state == GRPC_CHANNEL_READY) {
-      return endpoint_info.picker->Pick(args);
-    }
-    if (!found_second_endpoint) {
-      switch (endpoint_info.state) {
-        case GRPC_CHANNEL_IDLE:
-          schedule_endpoint_connection_attempt(endpoint_info.endpoint);
-          ABSL_FALLTHROUGH_INTENDED;
-        case GRPC_CHANNEL_CONNECTING:
-          return PickResult::Queue();
-        default:
-          break;
-      }
-      found_second_endpoint = true;
-    }
-    if (!found_first_non_failed) {
-      if (endpoint_info.state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        schedule_endpoint_connection_attempt(endpoint_info.endpoint);
-      } else {
-        if (endpoint_info.state == GRPC_CHANNEL_IDLE) {
-          schedule_endpoint_connection_attempt(endpoint_info.endpoint);
-        }
-        found_first_non_failed = true;
-      }
+  // Find the first endpoint we can use from the selected index.
+  for (size_t i = 0; i < ring.size(); ++i) {
+    const auto& entry = ring[(index + i) % ring.size()];
+    const auto& endpoint_info = endpoints_[entry.endpoint_index];
+    switch (endpoint_info.state) {
+      case GRPC_CHANNEL_READY:
+        return endpoint_info.picker->Pick(args);
+      case GRPC_CHANNEL_IDLE:
+        new EndpointConnectionAttempter(
+            ring_hash_->Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
+            endpoint_info.endpoint);
+        ABSL_FALLTHROUGH_INTENDED;
+      case GRPC_CHANNEL_CONNECTING:
+        return PickResult::Queue();
+      default:
+        break;
     }
   }
   return PickResult::Fail(absl::UnavailableError(absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
-      first_endpoint.status.message())));
+      endpoints_[ring[index].endpoint_index].status.message())));
 }
 
 //
