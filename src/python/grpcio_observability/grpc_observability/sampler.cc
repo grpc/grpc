@@ -14,12 +14,10 @@
 
 #include "src/python/grpcio_observability/grpc_observability/sampler.h"
 
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/escaping.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 

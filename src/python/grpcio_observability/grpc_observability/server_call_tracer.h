@@ -17,12 +17,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/resource_quota/arena.h"
-
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_observability {
 
