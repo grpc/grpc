@@ -23,7 +23,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
-#include "src/core/lib/config/load_config.h"
 #include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/env.h"
 
