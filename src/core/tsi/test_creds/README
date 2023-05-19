@@ -62,6 +62,19 @@ common name which is set to testclient2.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
   -out client2.pem -days 3650
 
+client3 is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client3.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client3.key.rsa -out client3.key -nocrypt
+$ openssl req -new -key client3.key -out client3.csr -config client3-openssl.cnf
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient3.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client3.csr \
+  -out client3.pem -extensions req_ext -extfile client3-openssl.cnf -days 3650
+
 server0 is issued by CA:
 ------------------------
 

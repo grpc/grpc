@@ -22,6 +22,8 @@ exports_files([
     "server0.pem",
     "client.key",
     "client.pem",
+    "client3.key",
+    "client3.pem",
     "badserver.key",
     "badserver.pem",
     "badclient.key",

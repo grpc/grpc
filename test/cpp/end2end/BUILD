@@ -943,8 +943,8 @@ grpc_cc_test(
     srcs = ["grpc_authz_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client3.key",
+        "//src/core/tsi/test_creds:client3.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
