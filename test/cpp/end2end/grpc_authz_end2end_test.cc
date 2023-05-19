@@ -541,7 +541,11 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   status = SendRpc(channel, &context2, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(audit_logs_.size(), 1);
+  ASSERT_EQ(audit_logs_.size(), 1);
+  EXPECT_EQ(audit_logs_[0],
+            "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":"
+            "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
 
   ClientContext context3;
   // Matches the deny rule.
@@ -549,16 +553,12 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   status = SendRpc(channel, &context3, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(audit_logs_.size(), 2);
-  EXPECT_THAT(
-      audit_logs_,
-      ::testing::ElementsAre(
-          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":"
-          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
-          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
-          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+  ASSERT_EQ(audit_logs_.size(), 2);
+  EXPECT_EQ(
+      audit_logs_[1],
+      "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
+      "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+      "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
@@ -610,7 +610,6 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
   context1.AddMetadata("key-foo", "foo");
   status = SendRpc(channel, &context1, &resp);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(audit_logs_.size(), 1);
   EXPECT_THAT(
       audit_logs_,
       ::testing::ElementsAre(
@@ -619,7 +618,7 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
           "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 
   ClientContext context2;
-  // Does not match the allow rule.
+  // Does not match the allow rule. No audit log emitted.
   context2.AddMetadata("key-foo", "bar");
   status = SendRpc(channel, &context2, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
@@ -627,7 +626,7 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnAllow) {
   EXPECT_EQ(audit_logs_.size(), 1);
 
   ClientContext context3;
-  // Matches the deny rule.
+  // Matches the deny rule. No audit log emitted.
   context3.AddMetadata("key-bar", "bar");
   status = SendRpc(channel, &context3, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
@@ -684,7 +683,11 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
   context1.AddMetadata("key-foo", "foo");
   status = SendRpc(channel, &context1, &resp);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(audit_logs_.size(), 1);
+  ASSERT_EQ(audit_logs_.size(), 1);
+  EXPECT_EQ(audit_logs_[0],
+            "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
+            "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
 
   ClientContext context2;
   // Does not match the allow rule.
@@ -692,7 +695,11 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
   status = SendRpc(channel, &context2, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(audit_logs_.size(), 2);
+  ASSERT_EQ(audit_logs_.size(), 2);
+  EXPECT_EQ(audit_logs_[1],
+            "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+            "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
 
   ClientContext context3;
   // Matches the deny rule.
@@ -700,19 +707,11 @@ TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDenyAndAllow) {
   status = SendRpc(channel, &context3, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_EQ(audit_logs_.size(), 3);
-  EXPECT_THAT(
-      audit_logs_,
-      ::testing::ElementsAre(
-          "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
-          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
-          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+  ASSERT_EQ(audit_logs_.size(), 3);
+  EXPECT_EQ(audit_logs_[2],
+            "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_"
+            "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
 }
 
 TEST_F(GrpcAuthzEnd2EndTest,
@@ -1106,7 +1105,11 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
-  EXPECT_EQ(audit_logs_.size(), 1);
+  ASSERT_EQ(audit_logs_.size(), 1);
+  EXPECT_EQ(audit_logs_[0],
+            "{\"authorized\":true,\"matched_rule\":\"allow_echo\","
+            "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
   gpr_event on_first_reload_done;
   gpr_event_init(&on_first_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback1 =
@@ -1133,6 +1136,10 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
   EXPECT_EQ(audit_logs_.size(), 2);
+  EXPECT_EQ(audit_logs_[1],
+            "{\"authorized\":true,\"matched_rule\":\"allow_echo\","
+            "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
   gpr_event on_second_reload_done;
   gpr_event_init(&on_second_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback2 =
@@ -1145,7 +1152,8 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
       ->SetCallbackForTesting(std::move(callback2));
-  // Replace the existing invalid policy with a valid authorization policy.
+  // Replace the existing invalid policy with a valid authorization
+  // policy.
   policy =
       "{"
       "  \"name\": \"authz\","
@@ -1190,21 +1198,13 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp3.message().empty());
   EXPECT_EQ(audit_logs_.size(), 3);
+  EXPECT_EQ(audit_logs_[2],
+            "{\"authorized\":false,\"matched_rule\":\"deny_echo\","
+            "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+            "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}");
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
       ->SetCallbackForTesting(nullptr);
-  EXPECT_THAT(
-      audit_logs_,
-      ::testing::ElementsAre(
-          "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
-          "{\"authorized\":true,\"matched_rule\":\"allow_echo\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}",
-          "{\"authorized\":false,\"matched_rule\":\"deny_echo\",\"policy_"
-          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
-          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 }
 
 }  // namespace
