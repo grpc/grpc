@@ -32,7 +32,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
@@ -50,6 +49,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
+#include "test/core/util/fuzzing_channel_args.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -246,18 +246,6 @@ class FuzzingResolverEventEngine
       "\"SimpleService\"}],\"waitForReady\":true}]}}]";
 };
 
-grpc_core::ChannelArgs ConstructChannelArgs(
-    const event_engine_client_channel_resolver::Msg& msg,
-    std::shared_ptr<FuzzingResolverEventEngine> engine) {
-  // put the engine in channel args
-  return grpc_core::ChannelArgs()
-      .SetObject<EventEngine>(std::move(engine))
-      .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION,
-           !msg.resolver_args().request_service_config())
-      .Set(GRPC_ARG_DNS_ENABLE_SRV_QUERIES,
-           msg.resolver_args().enable_srv_queries());
-}
-
 class FuzzingResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   explicit FuzzingResultHandler(bool* done_resolving)
@@ -301,7 +289,10 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
     auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
     EventEngineClientChannelDNSResolverFactory resolver_factory;
     auto resolver_args = ConstructResolverArgs(
-        ConstructChannelArgs(msg, engine), &done_resolving, work_serializer);
+        grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
+            msg.channel_args(), {})
+            .Set(GRPC_INTERNAL_ARG_EVENT_ENGINE, engine),
+        &done_resolving, work_serializer);
     auto resolver = resolver_factory.CreateResolver(std::move(resolver_args));
     work_serializer->Run(
         [resolver_ptr = resolver.get()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
