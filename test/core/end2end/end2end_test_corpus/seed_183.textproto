@@ -1,3 +1,0 @@
-suite: "PerCallCredsOnInsecureTest"
-test: "RequestResponseWithPayloadAndOverriddenInsecureCallCreds"
-config: "Chttp2FakeSecurityFullstack"

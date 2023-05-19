@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "WriteBufferHintAndNoCompressAcceptedOnSendMessage"
-config: "Chttp2FakeSecurityFullstack"

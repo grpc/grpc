@@ -1,6 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2InsecureCredentials"
-config_vars {
-  experiments: "unconstrained_max_quota_buffer_size"
-}

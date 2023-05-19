@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "SimpleRequest10"
-config: "Chttp2FakeSecurityFullstack"

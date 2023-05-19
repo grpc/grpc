@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "MaxConcurrentStreamsTimeoutOnSecond"
-config: "Chttp2FakeSecurityFullstack"

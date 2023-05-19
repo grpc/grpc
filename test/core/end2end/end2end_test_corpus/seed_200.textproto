@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "DeadlineDuringDelay"
-config: "Chttp2FakeSecurityFullstack"
