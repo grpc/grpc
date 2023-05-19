@@ -2238,6 +2238,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "thready_event_engine",
+    srcs = ["lib/event_engine/thready_event_engine/thready_event_engine.cc"],
+    hdrs = ["lib/event_engine/thready_event_engine/thready_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_event_engine",
     srcs = [
         "lib/event_engine/default_event_engine.cc",
@@ -2252,6 +2268,7 @@ grpc_cc_library(
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
+        "thready_event_engine",
         "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",

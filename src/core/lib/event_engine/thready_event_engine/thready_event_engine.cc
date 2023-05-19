@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/event_engine/thready_event_engine/thready_event_engine.h"
+#include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"
 
 #include <memory>
 #include <string>
