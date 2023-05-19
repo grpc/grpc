@@ -522,6 +522,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/thread_pool/original_thread_pool.cc',
     'src/core/lib/event_engine/thread_pool/thread_pool_factory.cc',
     'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc',
+    'src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc',
     'src/core/lib/event_engine/time_util.cc',
     'src/core/lib/event_engine/trace.cc',
     'src/core/lib/event_engine/utils.cc',
