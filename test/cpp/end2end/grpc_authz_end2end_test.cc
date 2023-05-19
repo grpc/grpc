@@ -17,8 +17,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "gmock/gmock.h"
-
 #include <grpc/support/json.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
