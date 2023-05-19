@@ -9331,6 +9331,16 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: load_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/config/load_config_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: lock_free_event_test
   gtest: true
   build: test

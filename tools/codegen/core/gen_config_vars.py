@@ -101,22 +101,37 @@ def put_copyright(file):
 RETURN_TYPE = {
     "int": "int32_t",
     "string": "absl::string_view",
+    "comma_separated_string": "absl::string_view",
     "bool": "bool",
 }
 
 MEMBER_TYPE = {
     "int": "int32_t",
     "string": "std::string",
+    "comma_separated_string": "std::string",
     "bool": "bool",
+}
+
+FLAG_TYPE = {
+    "int": "absl::optional<int32_t>",
+    "string": "absl::optional<std::string>",
+    "comma_separated_string": "std::vector<std::string>",
+    "bool": "absl::optional<bool>",
 }
 
 PROTO_TYPE = {
     "int": "int32",
     "string": "string",
+    "comma_separated_string": "string",
     "bool": "bool",
 }
 
-SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2}
+SORT_ORDER_FOR_PACKING = {
+    "int": 0,
+    "bool": 1,
+    "string": 2,
+    "comma_separated_string": 3
+}
 
 
 def bool_default_value(x, name):
@@ -147,12 +162,14 @@ DEFAULT_VALUE = {
     "int": int_default_value,
     "bool": bool_default_value,
     "string": string_default_value,
+    "comma_separated_string": string_default_value,
 }
 
 TO_STRING = {
     "int": "$",
     "bool": "$?\"true\":\"false\"",
     "string": "\"\\\"\", absl::CEscape($), \"\\\"\"",
+    "comma_separated_string": "\"\\\"\", absl::CEscape($), \"\\\"\"",
 }
 
 attrs_in_packing_order = sorted(attrs,
@@ -347,8 +364,8 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
             print(attr['prelude'], file=C)
 
     for attr in attrs:
-        print("ABSL_FLAG(absl::optional<%s>, %s, absl::nullopt, %s);" %
-              (MEMBER_TYPE[attr["type"]], 'grpc_' + attr['name'],
+        print("ABSL_FLAG(%s, %s, {}, %s);" %
+              (FLAG_TYPE[attr["type"]], 'grpc_' + attr['name'],
                c_str(attr['description'])),
               file=C)
     print(file=C)

@@ -15,7 +15,7 @@ settings:
   core_version: 32.0.0
   csharp_major_version: 2
   g_stands_for: galvanized
-  protobuf_version: 3.23.0
+  protobuf_version: 3.23.1
   version: 1.56.0-dev
 configs:
   asan:
