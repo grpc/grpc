@@ -20,9 +20,7 @@ import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/util/fuzz_config_vars.proto";
 
 message Msg {
-    string suite = 1;
-    string test = 2;
-    string config = 3;
+    string test = 1;
 
     fuzzing_event_engine.Actions event_engine_actions = 10;
     grpc.testing.FuzzConfigVars config_vars = 11;

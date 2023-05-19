@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2SimplSslFullstackTls13"
+test: "CoreClientChannelTest.CallHostOverride/Chttp2SimplSslFullstackTls13"
 config_vars {
   experiments: "monitoring_experiment"
 }

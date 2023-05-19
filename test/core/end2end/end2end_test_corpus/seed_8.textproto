@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2SimpleSslFullstack"
+test: "CoreClientChannelTest.CallHostOverride/Chttp2SimpleSslFullstack"
 config_vars {
   experiments: "promise_based_client_call"
 }

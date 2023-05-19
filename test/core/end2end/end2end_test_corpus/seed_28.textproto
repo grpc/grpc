@@ -1,3 +1,1 @@
-suite: "CoreDeadlineTest"
-test: "NegativeDeadline"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreDeadlineTest.NegativeDeadline/Chttp2FakeSecurityFullstack"

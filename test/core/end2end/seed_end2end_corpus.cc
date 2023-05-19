@@ -50,9 +50,8 @@ int main(int argc, char** argv) {
         suite_and_test_pairs.emplace(test.suite, test.name).second;
     const bool added_config = configs.emplace(test.config->name).second;
     if (!added_suite && !added_config) continue;
-    auto text =
-        absl::StrCat("suite: \"", test.suite, "\"\n", "test: \"", test.name,
-                     "\"\n", "config: \"", test.config->name, "\"\n");
+    auto text = absl::StrCat("test: \"", test.suite, ".", test.name, "/",
+                             test.config->name, "\"\n");
     if (!experiments.empty()) {
       absl::StrAppend(&text, "config_vars {\n  experiments: \"",
                       experiments.front(), "\"\n}\n");

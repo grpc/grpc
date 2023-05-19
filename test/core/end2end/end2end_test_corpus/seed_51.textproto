@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "CancelInAVacuum"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.CancelInAVacuum/Chttp2FakeSecurityFullstack"

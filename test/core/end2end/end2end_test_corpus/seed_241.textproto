@@ -1,3 +1,1 @@
-suite: "SecureEnd2endTest"
-test: "StaticInitAllowAuthorizedRequest"
-config: "Chttp2SimplSslFullstackTls12"
+test: "SecureEnd2endTest.StaticInitAllowAuthorizedRequest/Chttp2SimplSslFullstackTls12"

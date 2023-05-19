@@ -1,3 +1,1 @@
-suite: "RetryTest"
-test: "RetryRecvTrailingMetadataError"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryTest.RetryRecvTrailingMetadataError/Chttp2FakeSecurityFullstack"

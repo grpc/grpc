@@ -1,3 +1,1 @@
-suite: "Http2Test"
-test: "MaxAgeForciblyClose"
-config: "Chttp2FakeSecurityFullstack"
+test: "Http2Test.MaxAgeForciblyClose/Chttp2FakeSecurityFullstack"

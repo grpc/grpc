@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "InvokeRegisteredCall"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.InvokeRegisteredCall/Chttp2FakeSecurityFullstack"

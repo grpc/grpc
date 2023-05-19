@@ -807,11 +807,11 @@ extern bool g_is_fuzzing_core_e2e_tests;
   GTEST_SKIP() << "Skipping test for minstack"
 
 #define SKIP_IF_USES_EVENT_ENGINE_CLIENT()     \
-  if (grpc_core::IsEventEngineClientEnabled()) \
+  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineClientEnabled()) \
   GTEST_SKIP() << "Skipping test to prevent it from using EventEngine client"
 
 #define SKIP_IF_USES_EVENT_ENGINE_LISTENER()                            \
-  if (grpc_core::IsEventEngineListenerEnabled())                        \
+  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineListenerEnabled())                        \
   GTEST_SKIP() << "Skipping test to prevent it from using EventEngine " \
                   "listener"
 

@@ -1,3 +1,1 @@
-suite: "SecureEnd2endTest"
-test: "FileWatcherInitDenyUnauthorizedRequest"
-config: "Chttp2SimplSslFullstackTls12"
+test: "SecureEnd2endTest.FileWatcherInitDenyUnauthorizedRequest/Chttp2SimplSslFullstackTls12"

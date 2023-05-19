@@ -1,3 +1,1 @@
-suite: "RetryHttp2Test"
-test: "BadPing"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryHttp2Test.BadPing/Chttp2FakeSecurityFullstack"

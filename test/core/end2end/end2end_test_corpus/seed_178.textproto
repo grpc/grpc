@@ -1,3 +1,1 @@
-suite: "Http2Test"
-test: "ServerStreamingEmptyStream"
-config: "Chttp2FakeSecurityFullstack"
+test: "Http2Test.ServerStreamingEmptyStream/Chttp2FakeSecurityFullstack"

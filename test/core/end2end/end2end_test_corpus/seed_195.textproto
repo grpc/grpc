@@ -1,3 +1,1 @@
-suite: "RetryHttp2Test"
-test: "MaxConnectionIdle"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryHttp2Test.MaxConnectionIdle/Chttp2FakeSecurityFullstack"

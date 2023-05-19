@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "EmptyBatch"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.EmptyBatch/Chttp2FakeSecurityFullstack"

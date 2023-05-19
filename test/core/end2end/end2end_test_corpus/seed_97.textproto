@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "WriteBufferIntAcceptedOnSendMessage"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.WriteBufferIntAcceptedOnSendMessage/Chttp2FakeSecurityFullstack"

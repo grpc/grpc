@@ -1,3 +1,1 @@
-suite: "PerCallCredsTest"
-test: "RequestResponseWithPayloadAndInsecureCallCreds"
-config: "Chttp2SimplSslFullstackTls12"
+test: "PerCallCredsTest.RequestResponseWithPayloadAndInsecureCallCreds/Chttp2SimplSslFullstackTls12"

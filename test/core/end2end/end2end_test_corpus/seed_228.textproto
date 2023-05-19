@@ -1,3 +1,1 @@
-suite: "RetryTest"
-test: "RetryStreamingAfterCommit"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryTest.RetryStreamingAfterCommit/Chttp2FakeSecurityFullstack"

@@ -1,3 +1,1 @@
-suite: "Http2SingleHopTest"
-test: "Encode100Decode1000"
-config: "Chttp2FakeSecurityFullstack"
+test: "Http2SingleHopTest.Encode100Decode1000/Chttp2FakeSecurityFullstack"

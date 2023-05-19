@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "NoOp"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.NoOp/Chttp2FakeSecurityFullstack"

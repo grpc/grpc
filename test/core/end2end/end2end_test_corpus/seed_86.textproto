@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "ServerFilterCallInitFails"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.ServerFilterCallInitFails/Chttp2FakeSecurityFullstack"

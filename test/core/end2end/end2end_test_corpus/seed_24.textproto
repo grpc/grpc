@@ -1,3 +1,1 @@
-suite: "CoreDeadlineTest"
-test: "DeadlineAfterInvoke5"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreDeadlineTest.DeadlineAfterInvoke5/Chttp2FakeSecurityFullstack"

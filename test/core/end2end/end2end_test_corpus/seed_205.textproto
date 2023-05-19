@@ -1,3 +1,1 @@
-suite: "RetryTest"
-test: "RetryDeadline"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryTest.RetryDeadline/Chttp2FakeSecurityFullstack"

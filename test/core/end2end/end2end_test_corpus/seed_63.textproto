@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "ClientStreaming3"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.ClientStreaming3/Chttp2FakeSecurityFullstack"

@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2FullstackWithCensus"
+test: "CoreClientChannelTest.CallHostOverride/Chttp2FullstackWithCensus"
 config_vars {
   experiments: "memory_pressure_controller"
 }

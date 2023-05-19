@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "BadFlagsOnSendInitialMetadata"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.BadFlagsOnSendInitialMetadata/Chttp2FakeSecurityFullstack"

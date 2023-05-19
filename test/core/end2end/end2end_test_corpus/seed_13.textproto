@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "DeadlineAfterAcceptWithServiceConfig"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreClientChannelTest.DeadlineAfterAcceptWithServiceConfig/Chttp2FakeSecurityFullstack"
 config_vars {
   experiments: "schedule_cancellation_over_write"
 }

@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "WriteNoCompressAcceptedOnSendMessage"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.WriteNoCompressAcceptedOnSendMessage/Chttp2FakeSecurityFullstack"

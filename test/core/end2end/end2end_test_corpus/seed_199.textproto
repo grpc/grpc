@@ -1,3 +1,1 @@
-suite: "RetryTest"
-test: "CancelDuringDelay"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryTest.CancelDuringDelay/Chttp2FakeSecurityFullstack"

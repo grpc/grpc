@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "ShutdownFinishesTags"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.ShutdownFinishesTags/Chttp2FakeSecurityFullstack"

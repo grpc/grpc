@@ -1,3 +1,1 @@
-suite: "CoreDeadlineTest"
-test: "DeadlineAfterAccept"
-config: "Inproc"
+test: "CoreDeadlineTest.DeadlineAfterAccept/Inproc"

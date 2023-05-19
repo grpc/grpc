@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "FilterCausesClose"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.FilterCausesClose/Chttp2FakeSecurityFullstack"

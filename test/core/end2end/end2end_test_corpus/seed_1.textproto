@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2Fullstack"
+test: "CoreClientChannelTest.CallHostOverride/Chttp2Fullstack"
 config_vars {
   experiments: "tcp_rcv_lowat"
 }

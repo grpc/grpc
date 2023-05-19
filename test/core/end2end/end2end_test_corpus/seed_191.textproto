@@ -1,3 +1,1 @@
-suite: "ResourceQuotaTest"
-test: "ResourceQuota"
-config: "Chttp2FakeSecurityFullstack"
+test: "ResourceQuotaTest.ResourceQuota/Chttp2FakeSecurityFullstack"

@@ -1,3 +1,1 @@
-suite: "Http2SingleHopTest"
-test: "RequestWithLargeMetadataBetweenSoftAndHardLimits"
-config: "Chttp2FakeSecurityFullstack"
+test: "Http2SingleHopTest.RequestWithLargeMetadataBetweenSoftAndHardLimits/Chttp2FakeSecurityFullstack"

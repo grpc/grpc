@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "BadFlagsOnSendCloseFromClient"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.BadFlagsOnSendCloseFromClient/Chttp2FakeSecurityFullstack"

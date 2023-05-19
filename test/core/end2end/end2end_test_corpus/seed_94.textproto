@@ -1,3 +1,1 @@
-suite: "CoreEnd2endTest"
-test: "StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreEnd2endTest.StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately/Chttp2FakeSecurityFullstack"

@@ -1,3 +1,1 @@
-suite: "RetryHttp2Test"
-test: "ConnectivityWatch"
-config: "Chttp2FakeSecurityFullstack"
+test: "RetryHttp2Test.ConnectivityWatch/Chttp2FakeSecurityFullstack"

@@ -1,3 +1,1 @@
-suite: "SecureEnd2endTest"
-test: "FileWatcherInvalidPolicySkipReload"
-config: "Chttp2SimplSslFullstackTls12"
+test: "SecureEnd2endTest.FileWatcherInvalidPolicySkipReload/Chttp2SimplSslFullstackTls12"

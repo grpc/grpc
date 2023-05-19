@@ -1,3 +1,1 @@
-suite: "Http2SingleHopTest"
-test: "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"
-config: "Chttp2FakeSecurityFullstack"
+test: "Http2SingleHopTest.RequestWithSendMessageBeforeInitialMetadataDecompressInCore/Chttp2FakeSecurityFullstack"

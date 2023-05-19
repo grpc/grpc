@@ -1,3 +1,1 @@
-suite: "WriteBufferingTest"
-test: "WriteBufferingAtEnd"
-config: "Chttp2FakeSecurityFullstack"
+test: "WriteBufferingTest.WriteBufferingAtEnd/Chttp2FakeSecurityFullstack"

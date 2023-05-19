@@ -1,6 +1,4 @@
-suite: "CoreClientChannelTest"
-test: "DisappearingServer"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreClientChannelTest.DisappearingServer/Chttp2FakeSecurityFullstack"
 config_vars {
   experiments: "work_stealing"
 }

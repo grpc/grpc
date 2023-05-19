@@ -1,3 +1,1 @@
-suite: "CoreLargeSendTest"
-test: "RequestResponseWithPayload"
-config: "Chttp2FakeSecurityFullstack"
+test: "CoreLargeSendTest.RequestResponseWithPayload/Chttp2FakeSecurityFullstack"
