@@ -369,7 +369,9 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
               (ctr.max, ctr.buckets, ctr.name),
               file=H)
     print("  };", file=H)
-    print("  PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};", file=H)
+    print(
+        "  PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};",
+        file=H)
     print("};", file=H)
     print("}", file=H)
 
