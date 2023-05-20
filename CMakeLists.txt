@@ -2085,6 +2085,7 @@ add_library(grpc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -2786,6 +2787,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -4318,6 +4320,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -11551,6 +11554,7 @@ add_executable(frame_test
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -21496,7 +21500,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
-    test/core/event_engine/thready_event_engine/thready_event_engine.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )

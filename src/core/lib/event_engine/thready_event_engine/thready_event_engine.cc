@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/event_engine/thready_event_engine/thready_event_engine.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"
 
 #include <memory>
 #include <string>
-#include <thread>
 #include <type_traits>
 #include <vector>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 void ThreadyEventEngine::Asynchronously(absl::AnyInvocable<void()> fn) {
-  std::thread([fn = std::move(fn)]() mutable { fn(); }).detach();
+  grpc_core::Thread t("thready_event_engine", std::move(fn), nullptr,
+                      grpc_core::Thread::Options().set_joinable(false));
+  t.Start();
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>

@@ -1111,6 +1111,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_pool_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thready_event_engine/thready_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />

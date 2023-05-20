@@ -513,6 +513,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\thread_pool\\original_thread_pool.cc " +
     "src\\core\\lib\\event_engine\\thread_pool\\thread_pool_factory.cc " +
     "src\\core\\lib\\event_engine\\thread_pool\\work_stealing_thread_pool.cc " +
+    "src\\core\\lib\\event_engine\\thready_event_engine\\thready_event_engine.cc " +
     "src\\core\\lib\\event_engine\\time_util.cc " +
     "src\\core\\lib\\event_engine\\trace.cc " +
     "src\\core\\lib\\event_engine\\utils.cc " +
@@ -1599,6 +1600,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\cf_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\posix_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\thread_pool");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\thready_event_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\windows");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\work_queue");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\experiments");

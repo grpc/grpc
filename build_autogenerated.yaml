@@ -714,6 +714,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -1513,6 +1514,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -2091,6 +2093,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -2501,6 +2504,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -3586,6 +3590,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -3876,6 +3881,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -7524,6 +7530,7 @@ targets:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -7795,6 +7802,7 @@ targets:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -12157,7 +12165,6 @@ targets:
   - test/core/event_engine/test_suite/tests/client_test.h
   - test/core/event_engine/test_suite/tests/server_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
-  - test/core/event_engine/thready_event_engine/thready_event_engine.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -12166,7 +12173,6 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
-  - test/core/event_engine/thready_event_engine/thready_event_engine.cc
   deps:
   - grpc_unsecure
   - grpc_test_util
