@@ -663,11 +663,11 @@ class HPackParser::Parser {
       case 1:
         switch (cur & 0xf) {
           case 0:  // literal key
-            return FinishHeaderOmitFromTable(ParseLiteralKey());
+            return FinishHeaderOmitFromTable(ParseLiteralKey(false));
           case 0xf:  // varint encoded key index
-            return FinishHeaderOmitFromTable(ParseVarIdxKey(0xf));
+            return FinishHeaderOmitFromTable(ParseVarIdxKey(0xf, false));
           default:  // inline encoded key index
-            return FinishHeaderOmitFromTable(ParseIdxKey(cur & 0xf));
+            return FinishHeaderOmitFromTable(ParseIdxKey(cur & 0xf, false));
         }
         // Update max table size.
         // First byte format: 001xxxxx
@@ -694,20 +694,20 @@ class HPackParser::Parser {
       case 4:
         if (cur == 0x40) {
           // literal key
-          return FinishHeaderAndAddToTable(ParseLiteralKey());
+          return FinishHeaderAndAddToTable(ParseLiteralKey(true));
         }
         ABSL_FALLTHROUGH_INTENDED;
       case 5:
       case 6:
         // inline encoded key index
-        return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f));
+        return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f, true));
       case 7:
         if (cur == 0x7f) {
           // varint encoded key index
-          return FinishHeaderAndAddToTable(ParseVarIdxKey(0x3f));
+          return FinishHeaderAndAddToTable(ParseVarIdxKey(0x3f, true));
         } else {
           // inline encoded key index
-          return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f));
+          return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f, true));
         }
         // Indexed Header Field Representation
         // First byte format: 1xxxxxxx
@@ -875,7 +875,8 @@ class HPackParser::Parser {
   };
 
   // Parse a string encoded key and a string encoded value
-  absl::optional<HPackTable::Memento> ParseLiteralKey() {
+  absl::optional<HPackTable::Memento> ParseLiteralKey(
+      bool will_keep_past_request_lifetime) {
     auto key = String::Parse(input_);
     switch (key.status) {
       case String::ParseStatus::kOk:
@@ -898,9 +899,9 @@ class HPackParser::Parser {
     auto value_slice = value.value.Take();
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
-    return builder.Build(
-        grpc_metadata_batch::Parse(key_string, std::move(value_slice),
-                                   transport_size, builder.ErrorHandler()));
+    return builder.Build(grpc_metadata_batch::Parse(
+        key_string, std::move(value_slice), will_keep_past_request_lifetime,
+        transport_size, builder.ErrorHandler()));
   }
 
   absl::Status ValidateKey(absl::string_view key) {
@@ -913,7 +914,8 @@ class HPackParser::Parser {
   }
 
   // Parse an index encoded key and a string encoded value
-  absl::optional<HPackTable::Memento> ParseIdxKey(uint32_t index) {
+  absl::optional<HPackTable::Memento> ParseIdxKey(
+      uint32_t index, bool will_keep_past_request_lifetime) {
     const auto* elem = table_->Lookup(index);
     if (GPR_UNLIKELY(elem == nullptr)) {
       InvalidHPackIndexError(index);
@@ -923,14 +925,16 @@ class HPackParser::Parser {
     auto value = ParseValueString(elem->md.is_binary_header());
     if (!builder.HandleParseResult(value.status)) return absl::nullopt;
     return builder.Build(elem->md.WithNewValue(
-        value.value.Take(), value.wire_size, builder.ErrorHandler()));
+        value.value.Take(), will_keep_past_request_lifetime, value.wire_size,
+        builder.ErrorHandler()));
   };
 
   // Parse a varint index encoded key and a string encoded value
-  absl::optional<HPackTable::Memento> ParseVarIdxKey(uint32_t offset) {
+  absl::optional<HPackTable::Memento> ParseVarIdxKey(
+      uint32_t offset, bool will_keep_past_request_lifetime) {
     auto index = input_->ParseVarint(offset);
     if (GPR_UNLIKELY(!index.has_value())) return absl::nullopt;
-    return ParseIdxKey(*index);
+    return ParseIdxKey(*index, will_keep_past_request_lifetime);
   }
 
   // Parse a string, figuring out if it's binary or not by the key name.

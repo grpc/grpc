@@ -31,8 +31,10 @@ namespace grpc_core {
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
-  static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
-    if (IsUniqueMetadataStringsEnabled()) {
+  static MementoType ParseMemento(Slice value,
+                                  bool will_keep_past_request_lifetime,
+                                  MetadataParseErrorFn) {
+    if (will_keep_past_request_lifetime && IsUniqueMetadataStringsEnabled()) {
       return value.TakeUniquelyOwned();
     } else {
       return value.TakeOwned();
