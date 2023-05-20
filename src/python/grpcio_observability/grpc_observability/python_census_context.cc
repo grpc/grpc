@@ -29,20 +29,20 @@
 
 namespace grpc_observability {
 
-void EnablePythonOpenCensusStats(bool enable) {
-  g_open_census_stats_enabled = enable;
+void EnablePythonCensusStats(bool enable) {
+  g_python_census_stats_enabled = enable;
 }
 
-void EnablePythonOpenCensusTracing(bool enable) {
-  g_open_census_tracing_enabled = enable;
+void EnablePythonCensusTracing(bool enable) {
+  g_python_census_tracing_enabled = enable;
 }
 
-bool PythonOpenCensusStatsEnabled() {
-  return g_open_census_stats_enabled.load(std::memory_order_relaxed);
+bool PythonCensusStatsEnabled() {
+  return g_python_census_stats_enabled.load(std::memory_order_relaxed);
 }
 
-bool PythonOpenCensusTracingEnabled() {
-  return g_open_census_tracing_enabled.load(std::memory_order_relaxed);
+bool PythonCensusTracingEnabled() {
+  return g_python_census_tracing_enabled.load(std::memory_order_relaxed);
 }
 
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id,

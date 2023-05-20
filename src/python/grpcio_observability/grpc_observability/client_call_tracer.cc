@@ -60,7 +60,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 }
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
-  if (PythonOpenCensusStatsEnabled()) {
+  if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, std::string(method_));
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
                     context_.Labels());  // exclude first attempt
@@ -91,7 +91,7 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   {
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
-      if (PythonOpenCensusStatsEnabled() && num_active_rpcs_ == 0) {
+      if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
       }
     }
@@ -125,7 +125,7 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     context_.AddSpanAttribute("transparent-retry",
                               absl::StrCat(is_transparent_retry));
   }
-  if (!PythonOpenCensusStatsEnabled()) {
+  if (!PythonCensusStatsEnabled()) {
     return;
   }
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
@@ -144,7 +144,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
           grpc_core::Slice::FromCopiedBuffer(tracing_buf, tracing_len));
     }
   }
-  if (!PythonOpenCensusStatsEnabled()) {
+  if (!PythonCensusStatsEnabled()) {
     return;
   }
   grpc_slice tags = grpc_empty_slice();
@@ -169,7 +169,7 @@ namespace {
 
 // Returns 0 if no server stats are present in the metadata.
 uint64_t GetElapsedTimeFromTrailingMetadata(const grpc_metadata_batch* b) {
-  if (!PythonOpenCensusStatsEnabled()) {
+  if (!PythonCensusStatsEnabled()) {
     return 0;
   }
 
@@ -192,7 +192,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  if (!PythonOpenCensusStatsEnabled()) {
+  if (!PythonCensusStatsEnabled()) {
     return;
   }
   auto status_code_ = status.code();
@@ -240,7 +240,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
-  if (PythonOpenCensusStatsEnabled()) {
+  if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod,
                                    std::string(parent_->method_));
     context_.Labels().emplace_back(kClientStatus,
