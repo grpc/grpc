@@ -31,7 +31,7 @@ struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
-    return value.TakeOwned();
+    return value.TakeUniquelyOwned();
   }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
