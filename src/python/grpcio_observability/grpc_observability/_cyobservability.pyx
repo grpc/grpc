@@ -108,13 +108,13 @@ def set_gcp_observability_config(object py_config) -> bool:
   for label in c_config.labels:
     py_labels[_decode(label.key)] = _decode(label.value)
 
-  if PythonOpenCensusTracingEnabled():
+  if PythonCensusTracingEnabled():
     sampling_rate = c_config.cloud_trace.sampling_rate
     # Save sampling rate to global sampler.
     ProbabilitySampler.Get().SetThreshold(sampling_rate)
 
   py_config.set_configuration(_decode(c_config.project_id), sampling_rate, py_labels,
-                              PythonOpenCensusTracingEnabled(), PythonOpenCensusStatsEnabled())
+                              PythonCensusTracingEnabled(), PythonCensusStatsEnabled())
   return True
 
 
@@ -191,6 +191,8 @@ def _c_annotation_to_annotations(vector[Annotation] c_annotations) -> List[Tuple
 
 def observability_exit() -> None:
   _shutdown_exporting_thread()
+  EnablePythonCensusStats(False)
+  EnablePythonCensusTracing(False)
 
 
 @functools.lru_cache(maxsize=None)

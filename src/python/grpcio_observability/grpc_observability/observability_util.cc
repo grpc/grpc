@@ -98,7 +98,7 @@ void NativeObservabilityInit() {
 void* CreateClientCallTracer(const char* method, const char* trace_id,
                              const char* parent_span_id) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, trace_id, parent_span_id, PythonOpenCensusTracingEnabled());
+      method, trace_id, parent_span_id, PythonCensusTracingEnabled());
   return client_call_tracer;
 }
 
@@ -131,7 +131,6 @@ void AddCensusDataToBuffer(CensusData data) {
 
 GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
-
   if (!config.ok()) {
     return GcpObservabilityConfig();
   }
@@ -139,18 +138,14 @@ GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   if (!config->cloud_trace.has_value() &&
       !config->cloud_monitoring.has_value() &&
       !config->cloud_logging.has_value()) {
-    return GcpObservabilityConfig();
+    return GcpObservabilityConfig(true);
   }
 
-  if (!config->cloud_trace.has_value()) {
-    EnablePythonOpenCensusTracing(false);
-  } else {
-    EnablePythonOpenCensusTracing(true);
+  if (config->cloud_trace.has_value()) {
+    EnablePythonCensusTracing(true);
   }
-  if (!config->cloud_monitoring.has_value()) {
-    EnablePythonOpenCensusStats(false);
-  } else {
-    EnablePythonOpenCensusStats(true);
+  if (config->cloud_monitoring.has_value()) {
+    EnablePythonCensusStats(true);
   }
 
   std::vector<Label> labels;

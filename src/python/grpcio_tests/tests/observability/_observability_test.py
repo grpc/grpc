@@ -160,6 +160,19 @@ class ObservabilityTest(unittest.TestCase):
                     exporter=self.test_exporter):
                 pass
 
+    def testNoErrorAndDataWithEmptyConfig(self):
+        _EMPTY_CONFIG = '{}'
+        os.environ['GRPC_GCP_OBSERVABILITY_CONFIG'] = _EMPTY_CONFIG
+        # Empty config still require project_id
+        os.environ['GCP_PROJECT'] = 'test-project'
+        with grpc_observability.GCPOpenCensusObservability(
+                exporter=self.test_exporter):
+            self._start_server()
+            self.unary_unary_call()
+
+        self.assertEqual(len(self.all_metric), 0)
+        self.assertEqual(len(self.all_span), 0)
+
     def testThrowErrorWhenCallingMultipleInit(self):
         os.environ[
             'GRPC_GCP_OBSERVABILITY_CONFIG'] = _VALID_CONFIG_TRACING_STATS
