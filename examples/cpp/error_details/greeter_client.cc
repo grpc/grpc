@@ -27,10 +27,11 @@
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "google/rpc/error_details.pb.h"
+
 #include "src/proto/grpc/status/status.pb.h"
 #else
-#include "helloworld.grpc.pb.h"
 #include "error_details.pb.h"
+#include "helloworld.grpc.pb.h"
 #include "status.pb.h"
 #endif
 
@@ -66,13 +67,12 @@ class GreeterClient {
     Status status;
     std::cout << absl::StrFormat("### Send: SayHello(name=%s)", user)
               << std::endl;
-    stub_->async()->SayHello(&context, &request, &reply,
-                             [&](Status s) {
-                               status = std::move(s);
-                               std::lock_guard<std::mutex> lock(mu);
-                               done = true;
-                               cv.notify_one();
-                             });
+    stub_->async()->SayHello(&context, &request, &reply, [&](Status s) {
+      status = std::move(s);
+      std::lock_guard<std::mutex> lock(mu);
+      done = true;
+      cv.notify_one();
+    });
     std::unique_lock<std::mutex> lock(mu);
     while (!done) {
       cv.wait(lock);

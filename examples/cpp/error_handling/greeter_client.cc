@@ -62,13 +62,12 @@ class GreeterClient {
     Status status;
     std::cout << absl::StrFormat("### Send: SayHello(name=%s)", user)
               << std::endl;
-    stub_->async()->SayHello(&context, &request, &reply,
-                             [&](Status s) {
-                               status = std::move(s);
-                               std::lock_guard<std::mutex> lock(mu);
-                               done = true;
-                               cv.notify_one();
-                             });
+    stub_->async()->SayHello(&context, &request, &reply, [&](Status s) {
+      status = std::move(s);
+      std::lock_guard<std::mutex> lock(mu);
+      done = true;
+      cv.notify_one();
+    });
     std::unique_lock<std::mutex> lock(mu);
     while (!done) {
       cv.wait(lock);

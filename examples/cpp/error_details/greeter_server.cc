@@ -29,10 +29,11 @@
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "google/rpc/error_details.pb.h"
+
 #include "src/proto/grpc/status/status.pb.h"
 #else
-#include "helloworld.grpc.pb.h"
 #include "error_details.pb.h"
+#include "helloworld.grpc.pb.h"
 #include "status.pb.h"
 #endif
 
