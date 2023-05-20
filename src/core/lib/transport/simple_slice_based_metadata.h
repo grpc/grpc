@@ -19,6 +19,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
@@ -31,7 +32,11 @@ struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
-    return value.TakeUniquelyOwned();
+    if (IsUniqueMetadataStringsEnabled()) {
+      return value.TakeUniquelyOwned();
+    } else {
+      return value.TakeOwned();
+    }
   }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }

@@ -66,6 +66,10 @@ const char* const description_client_privacy = "If set, client privacy";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const description_server_privacy = "If set, server privacy";
+const char* const description_unique_metadata_strings =
+    "Ensure a unique copy of strings from parsed metadata are taken. The "
+    "hypothesis here is that ref counting these are causing read buffer "
+    "lifetimes to be extended leading to memory bloat.";
 }  // namespace
 
 namespace grpc_core {
@@ -98,6 +102,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"client_privacy", description_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy, false, false},
+    {"unique_metadata_strings", description_unique_metadata_strings, false,
+     true},
 };
 
 }  // namespace grpc_core

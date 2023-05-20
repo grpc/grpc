@@ -28,6 +28,7 @@ EXPERIMENTS = {
             "event_engine_listener",
             "promise_based_client_call",
             "promise_based_server_call",
+            "unique_metadata_strings",
         ],
         "cpp_end2end_test": [
             "promise_based_server_call",
