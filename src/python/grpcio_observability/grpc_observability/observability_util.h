@@ -69,6 +69,7 @@ struct GcpObservabilityConfig {
   std::vector<Label> labels;
   bool is_valid;
   GcpObservabilityConfig() : is_valid(false) {}
+  GcpObservabilityConfig(bool valid) : is_valid(true) {}
   GcpObservabilityConfig(CloudMonitoring cloud_monitoring,
                          CloudTrace cloud_trace, CloudLogging cloud_logging,
                          std::string project_id, std::vector<Label> labels)

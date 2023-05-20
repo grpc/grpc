@@ -37,17 +37,17 @@
 namespace grpc_observability {
 
 namespace {
-std::atomic<bool> g_open_census_stats_enabled(true);
-std::atomic<bool> g_open_census_tracing_enabled(true);
+std::atomic<bool> g_python_census_stats_enabled(false);
+std::atomic<bool> g_python_census_tracing_enabled(false);
 }  // namespace
 
-// Enables/Disables Python OpenCensus stats/tracing. It's only safe to do at the
+// Enables/Disables Python census stats/tracing. It's only safe to do at the
 // start of a program, before any channels/servers are built.
-void EnablePythonOpenCensusStats(bool enable);
-void EnablePythonOpenCensusTracing(bool enable);
+void EnablePythonCensusStats(bool enable);
+void EnablePythonCensusTracing(bool enable);
 // Gets the current status of Python OpenCensus stats/tracing
-bool PythonOpenCensusStatsEnabled();
-bool PythonOpenCensusTracingEnabled();
+bool PythonCensusStatsEnabled();
+bool PythonCensusTracingEnabled();
 
 static constexpr size_t kTraceIdSize = 16;
 static constexpr size_t kSpanIdSize = 8;

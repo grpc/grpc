@@ -48,6 +48,9 @@ cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
         pass
 
 cdef extern from "python_census_context.h" namespace "grpc_observability":
+  cdef void EnablePythonCensusStats(bint enable) nogil
+  cdef void EnablePythonCensusTracing(bint enable) nogil
+
   union MeasurementValue:
     double value_double
     int64_t value_int
@@ -87,8 +90,8 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
   cdef void* CreateServerCallTracerFactory() except +
   cdef queue[NativeCensusData]* g_census_data_buffer
   cdef void AwaitNextBatchLocked(unique_lock[mutex]&, int) nogil
-  cdef bint PythonOpenCensusStatsEnabled() nogil
-  cdef bint PythonOpenCensusTracingEnabled() nogil
+  cdef bint PythonCensusStatsEnabled() nogil
+  cdef bint PythonCensusTracingEnabled() nogil
   cdef mutex g_census_data_buffer_mutex
   cdef condition_variable g_census_data_buffer_cv
 
