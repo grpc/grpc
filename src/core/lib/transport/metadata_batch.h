@@ -155,8 +155,7 @@ struct HttpSchemeMetadata {
   using MementoType = ValueType;
   using CompressionTraits = HttpSchemeCompressor;
   static absl::string_view key() { return ":scheme"; }
-  static MementoType ParseMemento(Slice value,
-                                  bool will_keep_past_request_lifetime,
+  static MementoType ParseMemento(Slice value, bool,
                                   MetadataParseErrorFn on_error) {
     return Parse(value.as_string_view(), on_error);
   }
@@ -244,9 +243,7 @@ struct GrpcAcceptEncodingMetadata {
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
   using CompressionTraits = StableValueCompressor;
-  static MementoType ParseMemento(Slice value,
-                                  bool will_keep_past_request_lifetime,
-                                  MetadataParseErrorFn) {
+  static MementoType ParseMemento(Slice value, bool, MetadataParseErrorFn) {
     return CompressionAlgorithmSet::FromString(value.as_string_view());
   }
   static ValueType MementoToValue(MementoType x) { return x; }
@@ -336,8 +333,7 @@ struct SimpleIntBasedMetadataBase {
 template <typename Int, Int kInvalidValue>
 struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
   static constexpr Int invalid_value() { return kInvalidValue; }
-  static Int ParseMemento(Slice value, bool will_keep_past_request_lifetime,
-                          MetadataParseErrorFn on_error) {
+  static Int ParseMemento(Slice value, bool, MetadataParseErrorFn on_error) {
     Int out;
     if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
       on_error("not an integer", value);
