@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <random>
 #include <string>
@@ -38,6 +39,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
