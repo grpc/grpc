@@ -41,7 +41,15 @@ Clients should accept these arguments:
       default service config.
 * --additional_metadata=ADDITIONAL_METADATA
     * Additional metadata to send in each request, as a semicolon-separated list
-      of key:value pairs. All character but semicolons are permitted in values.
+      of key:value pairs. The first key/value pair is separated by the first colon.
+      The second key/value pair is separated by the next colon *following* the
+      next semi-colon thereafter, and so on. For example:
+      - `abc-key:abc-value;foo-key:foo-value`
+          - Key/value pairs: 'abc-key`/`abc-value`, `foo-key`/`foo-value`
+      - `abc-key:abc:value;foo-key:foo:value`
+          - Key/value pairs: 'abc-key`/`abc:value`, `foo-key`/`foo:value`
+      Keys must be ASCII only (no `-bin` headers allowed). Values may contain
+      any character except semi-colons.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
