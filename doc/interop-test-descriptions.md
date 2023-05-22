@@ -47,7 +47,8 @@ Clients should accept these arguments:
       - `abc-key:abc-value;foo-key:foo-value`
           - Key/value pairs: `abc-key`/`abc-value`, `foo-key`/`foo-value`
       - `abc-key:abc:value;foo-key:foo:value`
-          - Key/value pairs: `abc-key`/`abc:value`, `foo-key`/`foo:value`
+          - Key/value pairs: `abc-key`/`abc:value`, `foo-key`/`foo:value`.
+
       Keys must be ASCII only (no `-bin` headers allowed). Values may contain
       any character except semi-colons.
 
