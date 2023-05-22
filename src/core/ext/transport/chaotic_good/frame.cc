@@ -48,7 +48,7 @@ const NoDestruct<Slice> kZeroSlice{[] {
 class FrameSerializer {
  public:
   explicit FrameSerializer(FrameType type, uint32_t stream_id)
-      : header_{type, {}, stream_id, 0, 0, 0} {
+      : header_{type, {}, stream_id, 0, 0, 0, 0} {
     output_.AppendIndexed(kZeroSlice->Copy());
   }
   // If called, must be called before AddTrailers, Finish.
