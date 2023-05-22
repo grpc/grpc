@@ -356,9 +356,25 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 // Filter vtable
 //
 
-const grpc_channel_filter ClientChannel::kFilterVtable = {
+const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
+    ClientChannel::StartTransportOp,
+    sizeof(ClientChannel::FilterBasedCallData),
+    ClientChannel::FilterBasedCallData::Init,
+    ClientChannel::FilterBasedCallData::SetPollent,
+    ClientChannel::FilterBasedCallData::Destroy,
+    sizeof(ClientChannel),
+    ClientChannel::Init,
+    grpc_channel_stack_no_post_init,
+    ClientChannel::Destroy,
+    ClientChannel::GetChannelInfo,
+    "client-channel",
+};
+
+const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
+    ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
+    nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -1044,14 +1060,18 @@ class ClientChannel::ClientChannelControlHelper
 ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtable) return nullptr;
+  if (elem->filter != &kFilterVtableWithPromises &&
+      elem->filter != &kFilterVtableWithoutPromises) {
+    return nullptr;
+  }
   return static_cast<ClientChannel*>(elem->channel_data);
 }
 
 grpc_error_handle ClientChannel::Init(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_last);
-  GPR_ASSERT(elem->filter == &kFilterVtable);
+  GPR_ASSERT(elem->filter == &kFilterVtableWithPromises ||
+             elem->filter == &kFilterVtableWithoutPromises);
   grpc_error_handle error;
   new (elem->channel_data) ClientChannel(args, &error);
   return error;

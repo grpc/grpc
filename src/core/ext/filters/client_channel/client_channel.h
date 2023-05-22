@@ -104,7 +104,8 @@ namespace grpc_core {
 
 class ClientChannel {
  public:
-  static const grpc_channel_filter kFilterVtable;
+  static const grpc_channel_filter kFilterVtableWithPromises;
+  static const grpc_channel_filter kFilterVtableWithoutPromises;
 
   class LoadBalancedCall;
   class FilterBasedLoadBalancedCall;
