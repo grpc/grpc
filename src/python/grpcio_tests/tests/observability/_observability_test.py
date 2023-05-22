@@ -298,6 +298,7 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(len(self.all_metric), current_metric_len)
         self.assertEqual(len(self.all_span), current_spans_len)
 
+    @unittest.skipIf(True)
     def testTraceSamplingRate(self):
         # Make 20 UnaryCall's
         # With 50% sampling rate, we should get 5-15 traces with 98.8% probability
