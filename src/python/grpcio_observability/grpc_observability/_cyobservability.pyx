@@ -100,7 +100,7 @@ def set_gcp_observability_config(object py_config) -> bool:
 
   py_labels = {}
   sampling_rate = 0.0
-
+  import sys sys.stderr.write(f"> ReadAndActivateObservabilityConfig\n"); sys.stderr.flush()
   cdef cGcpObservabilityConfig c_config = ReadAndActivateObservabilityConfig()
   if not c_config.is_valid:
     return False
