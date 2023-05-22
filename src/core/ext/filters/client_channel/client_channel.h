@@ -62,9 +62,12 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -105,6 +108,7 @@ class ClientChannel {
 
   class LoadBalancedCall;
   class FilterBasedLoadBalancedCall;
+  class PromiseBasedLoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
@@ -113,6 +117,10 @@ class ClientChannel {
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
   static ClientChannel* GetFromChannel(Channel* channel);
+
+  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      grpc_channel_element* elem, CallArgs call_args,
+      NextPromiseFactory next_promise_factory);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -163,6 +171,9 @@ class ClientChannel {
       grpc_closure* on_call_destruction_complete,
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
+  ArenaPromise<ServerMetadataHandle> CreateLoadBalancedCallPromise(
+      CallArgs call_args, bool is_transparent_retry);
+
   // Exposed for testing only.
   static ChannelArgs MakeSubchannelArgs(
       const ChannelArgs& channel_args, const ChannelArgs& address_args,
@@ -172,6 +183,7 @@ class ClientChannel {
  private:
   class CallData;
   class FilterBasedCallData;
+  class PromiseBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -431,7 +443,7 @@ class ClientChannel::LoadBalancedCall
 
   virtual Arena* arena() const = 0;
   virtual grpc_call_context_element* call_context() const = 0;
-  virtual grpc_polling_entity* pollent() const = 0;
+  virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
   // Helper function for performing an LB pick with a specified picker.
@@ -495,7 +507,7 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_call_context_element* call_context() const override {
     return call_context_;
   }
-  grpc_polling_entity* pollent() const override { return pollent_; }
+  grpc_polling_entity* pollent() override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override {
     return pending_batches_[0]
         ->payload->send_initial_metadata.send_initial_metadata;
@@ -586,6 +598,31 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+};
+
+class ClientChannel::PromiseBasedLoadBalancedCall
+    : public ClientChannel::LoadBalancedCall {
+ public:
+  PromiseBasedLoadBalancedCall(ClientChannel* chand, bool is_transparent_retry);
+
+  void Orphan() override;
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+
+ private:
+  Arena* arena() const override;
+  grpc_call_context_element* call_context() const override;
+  grpc_polling_entity* pollent() override { return &pollent_; }
+  grpc_metadata_batch* send_initial_metadata() const override;
+
+  void RetryPickLocked() override;
+
+  grpc_polling_entity pollent_;
+  ClientMetadataHandle client_initial_metadata_;
+  Waker waker_;
+  bool was_queued_ = false;
+  bool recorded_completion_ = false;
+  Slice peer_string_;
 };
 
 }  // namespace grpc_core
