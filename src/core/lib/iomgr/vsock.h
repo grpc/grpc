@@ -30,8 +30,6 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-void grpc_create_socketpair_if_vsock(int sv[2]);
-
 absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
     absl::string_view name);
 

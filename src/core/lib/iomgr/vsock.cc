@@ -36,10 +36,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/transport/error_utils.h"
 
-void grpc_create_socketpair_if_vsock(int sv[2]) {
-  GPR_ASSERT(socketpair(AF_VSOCK, SOCK_STREAM, 0, sv) == 0);
-}
-
 absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
     absl::string_view name) {
   grpc_resolved_address addr;
