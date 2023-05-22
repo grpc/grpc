@@ -1231,7 +1231,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     prev = &cqd->completed_head;
     while ((c = reinterpret_cast<grpc_cq_completion*>(
                 prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
-      if (c->tag == tag) {
+      if (GPR_LIKELY(c->tag == tag)) {
         prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
         if (c == cqd->completed_tail) {
           cqd->completed_tail = prev;
