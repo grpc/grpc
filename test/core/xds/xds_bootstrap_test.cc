@@ -314,6 +314,19 @@ TEST(XdsBootstrapTest, MissingXdsServers) {
       << bootstrap.status();
 }
 
+TEST(XdsBootstrapTest, EmptyXdsServers) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "  ]"
+      "}";
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
+  EXPECT_EQ(
+      bootstrap.status().message(),
+      "errors validating JSON: [field:xds_servers error:must be non-empty]")
+      << bootstrap.status();
+}
+
 TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
   const char* json_str =
       "{"

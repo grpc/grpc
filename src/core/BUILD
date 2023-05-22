@@ -1066,7 +1066,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -1921,7 +1920,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -2097,17 +2095,33 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cf_event_engine",
-    srcs = ["lib/event_engine/cf_engine/cf_engine.cc"],
-    hdrs = ["lib/event_engine/cf_engine/cf_engine.h"],
+    srcs = [
+        "lib/event_engine/cf_engine/cf_engine.cc",
+        "lib/event_engine/cf_engine/cfstream_endpoint.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/cf_engine/cf_engine.h",
+        "lib/event_engine/cf_engine/cfstream_endpoint.h",
+        "lib/event_engine/cf_engine/cftype_unique_ref.h",
+    ],
+    external_deps = ["absl/strings:str_format"],
     deps = [
         "event_engine_common",
+        "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_lockfree_event",
         "posix_event_engine_timer_manager",
+        "ref_counted",
+        "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -2180,6 +2194,21 @@ grpc_cc_library(
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
         "//:windows_other": ["windows_event_engine"],
+        "//:mac": [
+            "posix_event_engine",
+            "cf_event_engine",
+        ],
+        "//:mac_x86_64": [
+            "posix_event_engine",
+            "cf_event_engine",
+        ],
+        "//:mac_arm64": [
+            "posix_event_engine",
+            "cf_event_engine",
+        ],
+        "//:ios": ["cf_event_engine"],
+        "//:tvos": ["cf_event_engine"],
+        "//:watchos": ["cf_event_engine"],
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
@@ -2209,6 +2238,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "thready_event_engine",
+    srcs = ["lib/event_engine/thready_event_engine/thready_event_engine.cc"],
+    hdrs = ["lib/event_engine/thready_event_engine/thready_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_event_engine",
     srcs = [
         "lib/event_engine/default_event_engine.cc",
@@ -2223,6 +2268,7 @@ grpc_cc_library(
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
+        "thready_event_engine",
         "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",
@@ -2746,9 +2792,11 @@ grpc_cc_library(
     name = "grpc_audit_logging",
     srcs = [
         "lib/security/authorization/audit_logging.cc",
+        "lib/security/authorization/stdout_logger.cc",
     ],
     hdrs = [
         "lib/security/authorization/audit_logging.h",
+        "lib/security/authorization/stdout_logger.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2756,6 +2804,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "//:gpr",
@@ -3665,6 +3714,7 @@ grpc_cc_library(
         "channel_fwd",
         "closure",
         "error",
+        "grpc_audit_logging",
         "grpc_authorization_base",
         "grpc_matchers",
         "grpc_rbac_engine",
@@ -4033,6 +4083,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "google_rpc_status_upb",
+        "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",

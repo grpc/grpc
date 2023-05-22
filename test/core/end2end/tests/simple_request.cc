@@ -98,9 +98,12 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-TEST_P(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  SimpleRequestBody(*this);
+}
 
-TEST_P(CoreEnd2endTest, SimpleRequest10) {
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }

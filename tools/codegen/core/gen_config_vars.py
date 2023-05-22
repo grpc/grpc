@@ -101,22 +101,37 @@ def put_copyright(file):
 RETURN_TYPE = {
     "int": "int32_t",
     "string": "absl::string_view",
+    "comma_separated_string": "absl::string_view",
     "bool": "bool",
 }
 
 MEMBER_TYPE = {
     "int": "int32_t",
     "string": "std::string",
+    "comma_separated_string": "std::string",
     "bool": "bool",
+}
+
+FLAG_TYPE = {
+    "int": "absl::optional<int32_t>",
+    "string": "absl::optional<std::string>",
+    "comma_separated_string": "std::vector<std::string>",
+    "bool": "absl::optional<bool>",
 }
 
 PROTO_TYPE = {
     "int": "int32",
     "string": "string",
+    "comma_separated_string": "string",
     "bool": "bool",
 }
 
-SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2}
+SORT_ORDER_FOR_PACKING = {
+    "int": 0,
+    "bool": 1,
+    "string": 2,
+    "comma_separated_string": 3
+}
 
 
 def bool_default_value(x, name):
@@ -147,12 +162,14 @@ DEFAULT_VALUE = {
     "int": int_default_value,
     "bool": bool_default_value,
     "string": string_default_value,
+    "comma_separated_string": string_default_value,
 }
 
 TO_STRING = {
     "int": "$",
     "bool": "$?\"true\":\"false\"",
     "string": "\"\\\"\", absl::CEscape($), \"\\\"\"",
+    "comma_separated_string": "\"\\\"\", absl::CEscape($), \"\\\"\"",
 }
 
 attrs_in_packing_order = sorted(attrs,
@@ -194,9 +211,13 @@ with open('test/core/util/fuzz_config_vars.h', 'w') as H:
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
     print("#include \"test/core/util/fuzz_config_vars.pb.h\"", file=H)
+    print("#include \"src/core/lib/config/config_vars.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
+    print(
+        "ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
+        file=H)
     print(
         "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars);",
         file=H)
@@ -214,23 +235,35 @@ with open('test/core/util/fuzz_config_vars.cc', 'w') as C:
     ])
 
     print("#include \"test/core/util/fuzz_config_vars.h\"", file=C)
-    print(file=C)
-    print("#include \"src/core/lib/config/config_vars.h\"", file=C)
+    print("#include \"test/core/util/fuzz_config_vars_helpers.h\"", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
     print(
-        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
+        "ConfigVars::Overrides OverridesFromFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
         file=C)
     print("  ConfigVars::Overrides overrides;", file=C)
     for attr in attrs_in_packing_order:
-        if attr.get("fuzz", False) == False:
+        fuzz = attr.get("fuzz", False)
+        if not fuzz:
             continue
         print("  if (vars.has_%s()) {" % attr['name'], file=C)
-        print("    overrides.%s = vars.%s();" % (attr['name'], attr['name']),
-              file=C)
+        if isinstance(fuzz, str):
+            print("    overrides.%s = %s(vars.%s());" %
+                  (attr['name'], fuzz, attr['name']),
+                  file=C)
+        else:
+            print("    overrides.%s = vars.%s();" %
+                  (attr['name'], attr['name']),
+                  file=C)
         print("  }", file=C)
-    print("  ConfigVars::SetOverrides(overrides);", file=C)
+    print("  return overrides;", file=C)
+    print("}", file=C)
+    print(
+        "void ApplyFuzzConfigVars(const grpc::testing::FuzzConfigVars& vars) {",
+        file=C)
+    print("  ConfigVars::SetOverrides(OverridesFromFuzzConfigVars(vars));",
+          file=C)
     print("}", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
@@ -331,8 +364,8 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
             print(attr['prelude'], file=C)
 
     for attr in attrs:
-        print("ABSL_FLAG(absl::optional<%s>, %s, absl::nullopt, %s);" %
-              (MEMBER_TYPE[attr["type"]], 'grpc_' + attr['name'],
+        print("ABSL_FLAG(%s, %s, {}, %s);" %
+              (FLAG_TYPE[attr["type"]], 'grpc_' + attr['name'],
                c_str(attr['description'])),
               file=C)
     print(file=C)

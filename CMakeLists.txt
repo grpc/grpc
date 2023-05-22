@@ -864,6 +864,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx cf_engine_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx cf_event_engine_test)
   endif()
   add_dependencies(buildtests_cxx cfstream_test)
@@ -1046,6 +1049,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
+  add_dependencies(buildtests_cxx load_config_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx lock_free_event_test)
   endif()
@@ -1083,6 +1087,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx orphanable_test)
+  add_dependencies(buildtests_cxx osa_distance_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx outlier_detection_lb_config_parser_test)
   add_dependencies(buildtests_cxx outlier_detection_test)
@@ -1107,10 +1112,10 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_engine_listener_utils_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_event_engine_connect_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_event_engine_test)
   endif()
   add_dependencies(buildtests_cxx prioritized_race_test)
@@ -2047,6 +2052,8 @@ add_library(grpc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
@@ -2078,6 +2085,7 @@ add_library(grpc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -2205,6 +2213,7 @@ add_library(grpc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -2745,6 +2754,8 @@ add_library(grpc_unsecure
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
@@ -2776,6 +2787,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -4275,6 +4287,8 @@ add_library(grpc_authorization_provider
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
@@ -4306,6 +4320,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -4428,6 +4443,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
+  src/core/lib/security/authorization/stdout_logger.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -7474,11 +7490,51 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+  add_executable(cf_engine_test
+    test/core/event_engine/cf/cf_engine_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+  target_compile_features(cf_engine_test PUBLIC cxx_std_14)
+  target_include_directories(cf_engine_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(cf_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
   add_executable(cf_event_engine_test
-    src/core/lib/event_engine/cf_engine/cf_engine.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/test_suite/cf_event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/tests/client_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -9276,6 +9332,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(core_end2end_tests
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
+  test/core/end2end/end2end_test_suites.cc
   test/core/end2end/end2end_tests.cc
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
@@ -11464,6 +11521,8 @@ add_executable(frame_test
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
@@ -11495,6 +11554,7 @@ add_executable(frame_test
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
@@ -14751,6 +14811,43 @@ target_link_libraries(lb_load_data_store_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(load_config_test
+  test/core/config/load_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(load_config_test PUBLIC cxx_std_14)
+target_include_directories(load_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(load_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(lock_free_event_test
@@ -15016,7 +15113,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
-  test/core/security/matchers_test.cc
+  test/core/matchers/matchers_test.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
@@ -15924,6 +16021,44 @@ target_link_libraries(orphanable_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(osa_distance_test
+  test/core/util/osa_distance.cc
+  test/core/util/osa_distance_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(osa_distance_test PUBLIC cxx_std_14)
+target_include_directories(osa_distance_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(osa_distance_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::strings
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(out_of_bounds_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/out_of_bounds.cc
@@ -16666,7 +16801,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(posix_event_engine_connect_test
     test/core/event_engine/event_engine_test_utils.cc
@@ -16709,7 +16844,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(posix_event_engine_test
     test/core/event_engine/event_engine_test_utils.cc
@@ -21365,7 +21500,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
-    test/core/event_engine/thready_event_engine/thready_event_engine.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )

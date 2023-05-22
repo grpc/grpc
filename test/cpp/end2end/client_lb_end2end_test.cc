@@ -264,8 +264,8 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses->emplace_back(address.addr, address.len,
-                                     per_address_args, std::move(attributes));
+      result.addresses->emplace_back(address, per_address_args,
+                                     std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";

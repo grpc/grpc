@@ -234,6 +234,10 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h":
+        "//test/core/event_engine/fuzzing_event_engine",
+    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h":
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     'google/api/expr/v1alpha1/syntax.upb.h':
         'google_type_expr_upb',
     'google/rpc/status.upb.h':
@@ -457,6 +461,7 @@ for dirname in [
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",
         "fuzztest",
+        "fuzztest/core/channel",
 ]:
     parsing_path = dirname
     exec(

@@ -259,6 +259,13 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
 void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
                                     const JsonArgs& /*args*/,
                                     ValidationErrors* errors) {
+  // Verify that there is at least one server present.
+  {
+    ValidationErrors::ScopedField field(errors, ".xds_servers");
+    if (servers_.empty() && !errors->FieldHasErrors()) {
+      errors->AddError("must be non-empty");
+    }
+  }
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {

@@ -33,7 +33,8 @@ namespace {
 // status is received before the recv_trailing_metadata op is started.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-TEST_P(RetryTest, RetryNonRetriableStatusBeforeRecvTrailingMetadataStarted) {
+CORE_END2END_TEST(RetryTest,
+                  RetryNonRetriableStatusBeforeRecvTrailingMetadataStarted) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -86,7 +86,7 @@ void LockfreeEvent::DestroyEvent() {
     // pattern to prevent error retention in a deleted object
   } while (!state_.compare_exchange_strong(curr, kShutdownBit,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed));
+                                           std::memory_order_acquire));
 }
 
 void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
@@ -103,14 +103,9 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
       case kClosureNotReady: {
         // kClosureNotReady -> <closure>.
 
-        // We're guaranteed by API that there's an acquire barrier before here,
-        // so there's no need to double-dip and this can be a release-only.
-
-        // The release itself pairs with the acquire half of a set_ready full
-        // barrier.
         if (state_.compare_exchange_strong(
                 curr, reinterpret_cast<intptr_t>(closure),
-                std::memory_order_acq_rel, std::memory_order_relaxed)) {
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
           return;  // Successful. Return
         }
 
@@ -122,13 +117,9 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         // successful. If not, the state most likely transitioned to shutdown.
         // We should retry.
 
-        // This can be a no-barrier cas since the state is being transitioned to
-        // kClosureNotReady; set_ready and set_shutdown do not schedule any
-        // closure when transitioning out of CLOSURE_NO_READY state (i.e there
-        // is no other code that needs to 'happen-after' this)
         if (state_.compare_exchange_strong(curr, kClosureNotReady,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           scheduler_->Run(closure);
           return;  // Successful. Return.
         }
@@ -175,7 +166,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // doesn't need a barrier
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           return true;  // early out
         }
         break;  // retry
@@ -196,7 +187,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // loading the shutdown state.
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
           scheduler_->Run(closure);
@@ -225,11 +216,9 @@ void LockfreeEvent::SetReady() {
       }
 
       case kClosureNotReady: {
-        // No barrier required as we're transitioning to a state that does not
-        // involve a closure
         if (state_.compare_exchange_strong(curr, kClosureReady,
                                            std::memory_order_acq_rel,
-                                           std::memory_order_relaxed)) {
+                                           std::memory_order_acquire)) {
           return;  // early out
         }
         break;  // retry
@@ -242,7 +231,7 @@ void LockfreeEvent::SetReady() {
           return;
         } else if (state_.compare_exchange_strong(curr, kClosureNotReady,
                                                   std::memory_order_acq_rel,
-                                                  std::memory_order_relaxed)) {
+                                                  std::memory_order_acquire)) {
           // Full cas: acquire pairs with this cas' release in the event of a
           // spurious set_ready; release pairs with this or the acquire in
           // notify_on (or set_shutdown)

@@ -1492,11 +1492,12 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
 
 void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
+    gpr_log(GPR_INFO, "chand=%p: starting name resolution for %s", this,
+            uri_to_resolve_.c_str());
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      uri_to_resolve_.c_str(), channel_args_, interested_parties_,
-      work_serializer_, std::make_unique<ResolverResultHandler>(this));
+      uri_to_resolve_, channel_args_, interested_parties_, work_serializer_,
+      std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);

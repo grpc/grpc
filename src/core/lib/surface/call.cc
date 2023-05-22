@@ -445,6 +445,8 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
   }
   // Ignore any te metadata key value pairs specified.
   md.Remove(TeMetadata());
+  // Should never come from applications
+  md.Remove(GrpcLbClientStatsMetadata());
 }
 
 void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
@@ -1047,8 +1049,8 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
-    gpr_log(GPR_DEBUG, "%s", StatusToString(error).c_str());
+    gpr_log(GPR_DEBUG, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
+            StatusToString(error).c_str());
   }
   if (is_client()) {
     std::string status_details;
@@ -1295,8 +1297,9 @@ void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s", completion_data_.notify_tag.tag,
-            error.ToString().c_str());
+    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
+            completion_data_.notify_tag.tag, error.ToString().c_str(),
+            grpc_transport_stream_op_batch_string(&op_, false).c_str());
   }
 
   if (op_.send_initial_metadata) {
@@ -1314,15 +1317,15 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
   }
+  if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
+    grpc_byte_buffer_destroy(*call->receiving_buffer_);
+    *call->receiving_buffer_ = nullptr;
+  }
   if (op_.recv_trailing_metadata) {
     // propagate cancellation to any interested children
     gpr_atm_rel_store(&call->received_final_op_atm_, 1);
     call->PropagateCancellationToChildren();
     error = absl::OkStatus();
-  }
-  if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
-    grpc_byte_buffer_destroy(*call->receiving_buffer_);
-    *call->receiving_buffer_ = nullptr;
   }
   batch_error_.set(absl::OkStatus());
 

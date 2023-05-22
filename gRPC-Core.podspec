@@ -38,15 +38,15 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.10'
-  s.tvos.deployment_target = '10.0'
-  s.watchos.deployment_target = '4.0'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target = '10.12'
+  s.tvos.deployment_target = '12.0'
+  s.watchos.deployment_target = '6.0'
 
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20230125.0'
+  abseil_version = '1.20230125.3'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -182,7 +182,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.28'
+    ss.dependency 'BoringSSL-GRPC', '0.0.29'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -1150,6 +1150,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/cf_engine/cf_engine.cc',
+                      'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                      'src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc',
+                      'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
+                      'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.cc',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/common_closures.h',
@@ -1218,6 +1223,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/thread_pool/thread_pool_factory.cc',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                      'src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc',
+                      'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                       'src/core/lib/event_engine/time_util.cc',
                       'src/core/lib/event_engine/time_util.h',
                       'src/core/lib/event_engine/trace.cc',
@@ -1576,6 +1583,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/matchers.h',
                       'src/core/lib/security/authorization/rbac_policy.cc',
                       'src/core/lib/security/authorization/rbac_policy.h',
+                      'src/core/lib/security/authorization/stdout_logger.cc',
+                      'src/core/lib/security/authorization/stdout_logger.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_registry.cc',
                       'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
@@ -2502,6 +2511,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                              'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
+                              'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
@@ -2538,6 +2550,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                              'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                               'src/core/lib/event_engine/time_util.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/event_engine/utils.h',
@@ -2727,6 +2740,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/grpc_server_authz_filter.h',
                               'src/core/lib/security/authorization/matchers.h',
                               'src/core/lib/security/authorization/rbac_policy.h',
+                              'src/core/lib/security/authorization/stdout_logger.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
                               'src/core/lib/security/context/security_context.h',

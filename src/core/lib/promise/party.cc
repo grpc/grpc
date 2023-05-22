@@ -29,9 +29,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
 
-// #define GRPC_PARTY_MAXIMIZE_THREADS
-
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
+#ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
@@ -202,7 +200,7 @@ void Party::RunLocked() {
       PartyOver();
     }
   };
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
+#ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
       [body]() {

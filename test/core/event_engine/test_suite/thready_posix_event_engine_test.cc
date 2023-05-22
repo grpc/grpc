@@ -18,12 +18,12 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/event_engine/test_suite/tests/client_test.h"
 #include "test/core/event_engine/test_suite/tests/server_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
-#include "test/core/event_engine/thready_event_engine/thready_event_engine.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
