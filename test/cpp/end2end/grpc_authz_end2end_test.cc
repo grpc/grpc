@@ -484,6 +484,72 @@ TEST_F(GrpcAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingNone) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"NONE\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+
+  ClientContext context1;
+  // Matches the allow rule.
+  context1.AddMetadata("key-foo", "foo");
+  status = SendRpc(channel, &context1, &resp);
+  EXPECT_TRUE(status.ok());
+
+  ClientContext context2;
+  // Does not match the allow rule or deny rule.
+  context2.AddMetadata("key-foo", "bar");
+  status = SendRpc(channel, &context2, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+
+  ClientContext context3;
+  // Matches the deny rule.
+  context3.AddMetadata("key-bar", "bar");
+  status = SendRpc(channel, &context3, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
 TEST_F(GrpcAuthzEnd2EndTest, StaticInitWithAuditLoggingOnDeny) {
   std::string policy =
       "{"
