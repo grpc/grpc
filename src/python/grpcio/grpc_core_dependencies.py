@@ -568,6 +568,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gprpp/linux/env.cc',
     'src/core/lib/gprpp/load_file.cc',
     'src/core/lib/gprpp/mpscq.cc',
+    'src/core/lib/gprpp/per_cpu.cc',
     'src/core/lib/gprpp/posix/env.cc',
     'src/core/lib/gprpp/posix/stat.cc',
     'src/core/lib/gprpp/posix/thd.cc',

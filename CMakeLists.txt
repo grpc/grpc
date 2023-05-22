@@ -2098,6 +2098,7 @@ add_library(grpc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -2799,6 +2800,7 @@ add_library(grpc_unsecure
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -4332,6 +4334,7 @@ add_library(grpc_authorization_provider
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -11566,6 +11569,7 @@ add_executable(frame_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc

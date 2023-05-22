@@ -1217,6 +1217,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/overload.h )
   s.files += %w( src/core/lib/gprpp/packed_table.h )
+  s.files += %w( src/core/lib/gprpp/per_cpu.cc )
   s.files += %w( src/core/lib/gprpp/per_cpu.h )
   s.files += %w( src/core/lib/gprpp/posix/env.cc )
   s.files += %w( src/core/lib/gprpp/posix/stat.cc )
