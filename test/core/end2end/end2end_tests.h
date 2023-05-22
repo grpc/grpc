@@ -324,7 +324,7 @@ class CoreEnd2endTest : public ::testing::Test {
     grpc_op MakeOp();
 
    private:
-    int cancelled_;
+    int cancelled_ = false;
   };
 
   // Build one batch. Returned from NewBatch (use that to instantiate this!)
