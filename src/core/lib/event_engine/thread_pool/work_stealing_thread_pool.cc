@@ -48,11 +48,11 @@ constexpr grpc_core::Duration kIdleThreadLimit =
 constexpr grpc_core::Duration kTimeBetweenThrottledThreadStarts =
     grpc_core::Duration::Seconds(1);
 constexpr grpc_core::Duration kWorkerThreadMinSleepBetweenChecks{
-    grpc_core::Duration::Milliseconds(33)};
+    grpc_core::Duration::Milliseconds(15)};
 constexpr grpc_core::Duration kWorkerThreadMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(3)};
 constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
-    grpc_core::Duration::Milliseconds(50)};
+    grpc_core::Duration::Milliseconds(15)};
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
 constexpr absl::Duration kSleepBetweenQuiesceCheck{absl::Milliseconds(10)};
@@ -217,6 +217,9 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard()
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start(
     std::shared_ptr<WorkStealingThreadPoolImpl> pool) {
+  // thread_running_ is set early to avoid a quiesce race while the lifeguard is
+  // still starting up.
+  thread_running_.store(true);
   pool_ = std::move(pool);
   grpc_core::Thread(
       "lifeguard",
@@ -231,7 +234,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
-  thread_running_.store(true);
   while (true) {
     absl::SleepFor(absl::Milliseconds(
         (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now()).millis()));
@@ -239,8 +241,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown() && pool_->IsQuiesced()) break;
     MaybeStartNewThread();
   }
-  thread_running_.store(false);
   pool_.reset();
+  thread_running_.store(false);
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
