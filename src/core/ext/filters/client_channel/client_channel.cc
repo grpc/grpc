@@ -311,6 +311,23 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
       CallArgs call_args) {
     pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
     client_initial_metadata_ = std::move(call_args.client_initial_metadata);
+    // If we're still in IDLE, we need to start resolving.
+    if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
+                     GRPC_CHANNEL_IDLE)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+        gpr_log(GPR_INFO, "%s[client-channel]: triggering exit idle",
+                Activity::current()->DebugTag().c_str());
+      }
+      // Bounce into the control plane work serializer to start resolving.
+      GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
+      chand_->work_serializer_->Run(
+          [chand = chand_]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+                chand->CheckConnectivityState(/*try_to_connect=*/true);
+                GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
+              },
+          DEBUG_LOCATION);
+    }
     return [this, call_args = std::move(
                       call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
       auto result = CheckResolution(was_queued_);
@@ -1921,8 +1938,10 @@ void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked() {
 
 void ClientChannel::CallData::AddCallToResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
-            chand(), this);
+    gpr_log(
+        GPR_INFO,
+        "chand=%p calld=%p: adding to resolver queued picks list; pollent=%s",
+        chand(), this, grpc_polling_entity_string(pollent()).c_str());
   }
   // Add call's pollent to channel's interested_parties, so that I/O
   // can be done under the call's CQ.
