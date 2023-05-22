@@ -15,6 +15,7 @@
 from concurrent import futures
 import json
 import logging
+import random
 import os
 from typing import List
 import unittest
@@ -298,7 +299,7 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(len(self.all_metric), current_metric_len)
         self.assertEqual(len(self.all_span), current_spans_len)
 
-    @unittest.skipIf(True)
+    @unittest.skipIf(True, "Skip")
     def testTraceSamplingRate(self):
         # Make 20 UnaryCall's
         # With 50% sampling rate, we should get 5-15 traces with 98.8% probability
@@ -327,7 +328,8 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testConfigFileOverEnvVar(self):
-        config_file_path = '/tmp/config_file'
+        # Use random number here so test can run in parallel
+        config_file_path = '/tmp/' + str(random.randint(0, 100000))
         # cofig_file have only tracing enabled
         _VALID_CONFIG_TRACING_STATS_DICT = {
             'project_id': 'test-project',
