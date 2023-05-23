@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "CancelAfterInvoke6"
-config: "Chttp2FakeSecurityFullstack"

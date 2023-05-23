@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "KeepaliveTimeout"
-config: "Chttp2FakeSecurityFullstack"

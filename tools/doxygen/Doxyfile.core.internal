@@ -1903,6 +1903,8 @@ src/core/lib/event_engine/thread_pool/thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
@@ -1991,6 +1993,7 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \

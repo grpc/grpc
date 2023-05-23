@@ -239,7 +239,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
-  PerCpu<Stats> stats_{32};
+  PerCpu<Stats> stats_{PerCpuOptions().SetMaxShards(32).SetCpusPerShard(4)};
 };
 
 }  // namespace grpc_core

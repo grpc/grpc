@@ -360,12 +360,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and first_index. Do not change them!
-  size_t lowp = 0;
-  size_t highp = ring.size();
-  size_t first_index = 0;
+  int64_t lowp = 0;
+  int64_t highp = ring.size();
+  int64_t first_index = 0;
   while (true) {
     first_index = (lowp + highp) / 2;
-    if (first_index == ring.size()) {
+    if (first_index == static_cast<int64_t>(ring.size())) {
       first_index = 0;
       break;
     }
@@ -509,7 +509,7 @@ RingHash::RingHashSubchannelList::Ring::Ring(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
-  const size_t ring_size = std::ceil(scale);
+  const uint64_t ring_size = std::ceil(scale);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each

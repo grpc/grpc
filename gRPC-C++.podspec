@@ -34,9 +34,10 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.10'
-  s.tvos.deployment_target = '10.0'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target = '10.12'
+  s.tvos.deployment_target = '12.0'
+  s.watchos.deployment_target = '6.0'
 
   s.requires_arc = false
 
@@ -214,7 +215,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20230125.0'
+    abseil_version = '1.20230125.3'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -785,6 +786,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
                       'src/core/lib/event_engine/thread_pool/thread_pool.h',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                      'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                       'src/core/lib/event_engine/time_util.h',
                       'src/core/lib/event_engine/trace.h',
                       'src/core/lib/event_engine/utils.h',
@@ -1822,6 +1824,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                              'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                               'src/core/lib/event_engine/time_util.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/event_engine/utils.h',

@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "ServerFinishesRequest"
-config: "Chttp2FakeSecurityFullstack"

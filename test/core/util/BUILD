@@ -439,3 +439,22 @@ grpc_cc_library(
         "//src/core:json_writer",
     ],
 )
+
+grpc_proto_library(
+    name = "fuzzing_channel_args_proto",
+    srcs = ["fuzzing_channel_args.proto"],
+    has_services = False,
+)
+
+grpc_cc_library(
+    name = "fuzzing_channel_args",
+    srcs = ["fuzzing_channel_args.cc"],
+    hdrs = ["fuzzing_channel_args.h"],
+    deps = [
+        "fuzzing_channel_args_proto",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:resource_quota",
+    ],
+)
