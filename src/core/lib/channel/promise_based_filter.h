@@ -546,6 +546,7 @@ class BaseCallData : public Activity, private Wakeable {
  private:
   // Wakeable implementation.
   void Wakeup(WakeupMask) final;
+  void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
   void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
