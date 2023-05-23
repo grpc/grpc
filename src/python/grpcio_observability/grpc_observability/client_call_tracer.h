@@ -14,7 +14,7 @@
 
 // TODO(xuanwn): Clean up include
 #include <stdint.h>
-#include <grpc/support/time.h>
+
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -22,13 +22,16 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_observability {
 
