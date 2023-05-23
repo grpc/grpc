@@ -431,6 +431,7 @@ grpc_cc_library(
         "arena",
         "construct_destruct",
         "context",
+        "default_event_engine",
         "promise_factory",
         "promise_trace",
         "ref_counted",

@@ -26,6 +26,7 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
@@ -81,6 +82,10 @@ class FreestandingActivity::Handle final : public Wakeable {
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
+  }
+
+  void WakeupAsync(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
+    Crash("not implemented");
   }
 
   void Drop(WakeupMask) override { Unref(); }
