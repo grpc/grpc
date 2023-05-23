@@ -111,7 +111,10 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
             self.set_stats(True)
 
     def exit(self) -> None:
-        # Sleep for 0.5s so all data can be flushed.
+        # Sleep so we don't loss any data. If we shutdown export thread
+        # immediately after exit, it's possible that core didn't call RecordEnd
+        # in callTracer, and all data recorded by calling RecordEnd will be
+        # lost.
         # The time equals to the time in AwaitNextBatchLocked.
         time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
         self.set_tracing(False)
