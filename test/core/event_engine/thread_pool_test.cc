@@ -160,6 +160,16 @@ TYPED_TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   ASSERT_EQ(runcount.load(), pow(2, branch_factor + 1) - 1);
 }
 
+TYPED_TEST(ThreadPoolTest, QuiesceRaceStressTest) {
+  int cycle_count = 333;
+  int thread_count = 8;
+  for (int i = 0; i < cycle_count; i++) {
+    TypeParam p(thread_count);
+    p.Run([]() {});
+    p.Quiesce();
+  }
+}
+
 class WorkStealingThreadPoolTest : public ::testing::Test {};
 
 // TODO(hork): This is currently a pathological case for the original thread

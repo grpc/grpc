@@ -55,7 +55,9 @@ constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
     grpc_core::Duration::Milliseconds(15)};
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
-constexpr absl::Duration kSleepBetweenQuiesceCheck{absl::Milliseconds(10)};
+// TODO(hork): quiesce may be faster and more efficient with a lock + condition
+// on thread_count = N.
+constexpr absl::Duration kSleepBetweenQuiesceCheck{absl::Microseconds(50)};
 }  // namespace
 
 thread_local WorkQueue* g_local_queue = nullptr;
@@ -155,6 +157,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   // Note that if this is a threadpool thread then we won't exit this thread
   // until all other threads have exited, so we need to wait for just one thread
   // running instead of zero.
+  gpr_cycle_counter start_time = gpr_get_cycle_counter();
   bool is_threadpool_thread = g_local_queue != nullptr;
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount,
                                         is_threadpool_thread ? 1 : 0,
@@ -162,6 +165,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdown();
+  GRPC_EVENT_ENGINE_TRACE("%f cycles spent quiescing the pool",
+                          gpr_get_cycle_counter() - start_time);
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
@@ -235,10 +240,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start(
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
   while (true) {
-    absl::SleepFor(absl::Milliseconds(
-        (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now()).millis()));
     if (pool_->IsForking()) break;
-    if (pool_->IsShutdown() && pool_->IsQuiesced()) break;
+    // If the pool is shut down, loop quickly until quiesced. Otherwise, reduce
+    // the check rate if the pool is idle.
+    if (pool_->IsShutdown()) {
+      if (pool_->IsQuiesced()) break;
+    } else {
+      pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptTime() -
+                                            grpc_core::Timestamp::Now());
+    }
     MaybeStartNewThread();
   }
   pool_.reset();
