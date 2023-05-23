@@ -284,6 +284,9 @@ cdef void _export_census_data(object exporter):
     if GLOBAL_SHUTDOWN_EXPORT_THREAD:
       break # Break to shutdown exporting thead
 
+  # Flush one last time before shutdown thread
+  _flush_census_data(exporter)
+
 
 cdef void _flush_census_data(object exporter):
   exporter: grpc_observability.Exporter
