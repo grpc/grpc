@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test structure borrowed with gratitude from
-# https://github.com/grpc/grpc-go/tree/master/examples/features
-
 # Run this script as root
 
 clean() {
@@ -39,9 +36,9 @@ pass() {
     echo "SUCCESS: $1"
 }
 
-bazel build --define=use_systemd=true //examples/cpp/features/sd_sock_act:all || fail "Failed to build sd_sock_act"
-cp ../../../../bazel-bin/examples/cpp/features/sd_sock_act/server /tmp/greeter_server
-cp ../../../../bazel-bin/examples/cpp/features/sd_sock_act/client /tmp/greeter_client
+bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || fail "Failed to build sd_sock_act"
+cp ../../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
+cp ../../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
 
 cat << EOF > /etc/systemd/system/sdsockact.service
 [Service]
