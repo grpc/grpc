@@ -162,10 +162,13 @@ TYPED_TEST(ThreadPoolTest, CanStartLotsOfClosures) {
 
 TYPED_TEST(ThreadPoolTest, QuiesceRaceStressTest) {
   int cycle_count = 333;
+  int run_count = 5;
   int thread_count = 8;
   for (int i = 0; i < cycle_count; i++) {
     TypeParam p(thread_count);
-    p.Run([]() {});
+    for (int j = 0; j < run_count; j++) {
+      p.Run([]() {});
+    }
     p.Quiesce();
   }
 }
