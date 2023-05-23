@@ -285,7 +285,6 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
       }
     }
   }
-// FIXME: verify that cert providers specified in TLS config actually exist
 }
 
 std::string GrpcXdsBootstrap::ToString() const {
