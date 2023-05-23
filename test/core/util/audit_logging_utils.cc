@@ -48,7 +48,7 @@ using experimental::Json;
 
 absl::string_view TestAuditLogger::name() const { return kLoggerName; }
 void TestAuditLogger::Log(const AuditContext& context) {
-  audit_logs_->push_back(grpc_core::JsonDump(Json::FromObject({
+  audit_logs_->push_back(JsonDump(Json::FromObject({
       {"rpc_method", Json::FromString(std::string(context.rpc_method()))},
       {"principal", Json::FromString(std::string(context.principal()))},
       {"policy_name", Json::FromString(std::string(context.policy_name()))},
