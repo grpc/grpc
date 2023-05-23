@@ -179,8 +179,9 @@ absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
     return config_json.status();
   }
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(*config_json);
-  std::cout << "Done grpc_core::LoadFromJson<... " << std::endl;
+  std::cout << "Done grpc_core::LoadFromJson... " << std::endl;
   if (!config.ok()) {
+    std::cout << "grpc_core::LoadFromJson !config_json.ok()... " << std::endl;
     return config.status();
   }
   if (config->project_id.empty()) {
