@@ -18,15 +18,13 @@
 #include <observability_util.h>
 #include <python_census_context.h>
 #include <stddef.h>
-
+#include <grpc/slice.h>
 #include <vector>
+#include <algorithm>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice.h"
