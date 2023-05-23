@@ -960,9 +960,9 @@ grpc_cc_test(
         "//:grpc++_authorization_provider",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:audit_logging_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
-        "//test/core/util:audit_logging_utils",
     ],
 )
 

@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "audit_logging_utils.h"
+#include "test/core/util/audit_logging_utils.h"
 
 #include <memory>
 #include <string>
@@ -31,7 +31,6 @@
 
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
-#include "test/core/util/audit_logging_utils.h"
 
 namespace grpc_core {
 namespace testing {
