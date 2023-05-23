@@ -321,6 +321,8 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
         pool_->queue()->Add(closure);
       }
     }
+  } else if (pool_->IsShutdown()) {
+    FinishDraining();
   }
   GPR_ASSERT(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
@@ -393,6 +395,28 @@ bool WorkStealingThreadPool::ThreadState::Step() {
   }
   backoff_.Reset();
   return should_run_again;
+}
+
+void WorkStealingThreadPool::ThreadState::FinishDraining() {
+  // If a fork occurs at any point during shutdown, quit draining. The post-fork
+  // threads will finish draining the global queue.
+  while (!pool_->IsForking()) {
+    if (!g_local_queue->Empty()) {
+      auto* closure = g_local_queue->PopMostRecent();
+      if (closure != nullptr) {
+        closure->Run();
+      }
+      continue;
+    }
+    if (!pool_->queue()->Empty()) {
+      auto* closure = pool_->queue()->PopMostRecent();
+      if (closure != nullptr) {
+        closure->Run();
+      }
+      continue;
+    }
+    break;
+  }
 }
 
 // -------- WorkStealingThreadPool::ThreadCount --------
