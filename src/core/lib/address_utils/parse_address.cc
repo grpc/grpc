@@ -187,9 +187,7 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
 
 bool grpc_parse_vsock(const grpc_core::URI& /* uri */,
                       grpc_resolved_address* /* resolved_addr */) {
-  GPR_UNREACHABLE_CODE(
-      "vsock unsupported. This function should never be called.");
-  return false;
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 namespace grpc_core {
@@ -197,8 +195,7 @@ namespace grpc_core {
 grpc_error_handle VSockaddrPopulate(
     absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
   GPR_UNREACHABLE_CODE(
-      "vsock unsupported. This function should never be called.");
-  return absl::InvalidArgumentError("vsock unsupported.");
+      return absl::InvalidArgumentError("vsock unsupported."));
 }
 
 }  // namespace grpc_core
