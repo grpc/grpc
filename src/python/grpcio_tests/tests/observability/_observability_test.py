@@ -17,7 +17,7 @@ import json
 import logging
 import random
 import os
-from typing import List
+from typing import Any, Dict, List
 import unittest
 
 import grpc
@@ -36,30 +36,26 @@ STREAM_LENGTH = 5
 
 CONFIG_ENV_VAR_NAME = 'GRPC_GCP_OBSERVABILITY_CONFIG'
 CONFIG_FILE_ENV_VAR_NAME = 'GRPC_GCP_OBSERVABILITY_CONFIG_FILE'
-_VALID_CONFIG_TRACING_STATS = """
-{
-    "project_id":"test-project",
-    "cloud_trace":{
-       "sampling_rate":1.00
-    },
-    "cloud_monitoring":{},
-}
-"""
-_VALID_CONFIG_TRACING_ONLY = """
-{
-    "project_id":"test-project",
-    "cloud_trace":{
-    "sampling_rate":1.00
-    }
-}
-"""
-_VALID_CONFIG_STATS_ONLY = """
-{
-    "project_id":"test-project",
-    "cloud_monitoring":{}
-}
-"""
 
+_VALID_CONFIG_TRACING_STATS = {
+    'project_id': 'test-project',
+    'cloud_trace': {'sampling_rate': 1.00},
+    'cloud_monitoring': {}
+}
+_VALID_CONFIG_TRACING_ONLY = {
+    'project_id': 'test-project',
+    'cloud_trace': {'sampling_rate': 1.00},
+}
+_VALID_CONFIG_STATS_ONLY = {
+    'project_id': 'test-project',
+    'cloud_monitoring': {}
+}
+_VALID_CONFIG_STATS_ONLY_STR = """
+{
+    'project_id': 'test-project',
+    'cloud_monitoring': {}
+}
+"""
 # Depends on grpc_core::IsTransportSuppliesClientLatencyEnabled,
 # the following metrcis might not exist.
 _SKIP_VEFIRY = [grpc_observability.MetricsName.CLIENT_TRANSPORT_LATENCY]
@@ -153,8 +149,7 @@ class ObservabilityTest(unittest.TestCase):
             self._server.stop(0)
 
     def testRecordUnaryUnary(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -173,15 +168,15 @@ class ObservabilityTest(unittest.TestCase):
 
     def testThrowErrorWithInvalidConfig(self):
         _INVALID_CONFIG = 'INVALID'
-        os.environ[CONFIG_ENV_VAR_NAME] = _INVALID_CONFIG
+        self._set_config_file(_INVALID_CONFIG)
         with self.assertRaises(ValueError):
             with grpc_observability.GCPOpenCensusObservability(
                     exporter=self.test_exporter):
                 pass
 
     def testNoErrorAndDataWithEmptyConfig(self):
-        _EMPTY_CONFIG = '{}'
-        os.environ[CONFIG_ENV_VAR_NAME] = _EMPTY_CONFIG
+        _EMPTY_CONFIG = {}
+        self._set_config_file(_EMPTY_CONFIG)
         # Empty config still require project_id
         os.environ['GCP_PROJECT'] = 'test-project'
         with grpc_observability.GCPOpenCensusObservability(
@@ -193,15 +188,14 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(len(self.all_span), 0)
 
     def testThrowErrorWhenCallingMultipleInit(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with self.assertRaises(ValueError):
             with grpc_observability.GCPOpenCensusObservability(
                     exporter=self.test_exporter) as o11y:
                 grpc._observability.observability_init(o11y)
 
     def testRecordUnaryUnaryStatsOnly(self):
-        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_STATS_ONLY
+        self._set_config_file(_VALID_CONFIG_STATS_ONLY)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -212,7 +206,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_metrics(self.all_metric)
 
     def testRecordUnaryUnaryTracingOnly(self):
-        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_ONLY
+        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -223,8 +217,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testRecordUnaryStream(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -236,8 +229,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testRecordStreamUnary(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -249,8 +241,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testRecordStreamStream(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -262,8 +253,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testNoRecordBeforeInit(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         self._start_server()
         self.unary_unary_call()
         self.assertEqual(len(self.all_metric), 0)
@@ -281,8 +271,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testNoRecordAfterExit(self):
-        os.environ[
-            CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_STATS
+        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -307,15 +296,11 @@ class ObservabilityTest(unittest.TestCase):
         _CALLS = 20
         _LOWER_BOUND = 5 * 3
         _HIGHER_BOUND = 15 * 3
-        _VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF = """
-            {
-                "project_id":"test-project",
-                "cloud_trace":{
-                "sampling_rate":0.5
-                }
-            }
-            """
-        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF
+        _VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF = {
+            'project_id': 'test-project',
+            'cloud_trace': {'sampling_rate': 0.5},
+        }
+        self._set_config_file(_VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF)
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
             self._start_server()
@@ -328,19 +313,10 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def testConfigFileOverEnvVar(self):
-        # Use random number here so test can run in parallel
-        config_file_path = '/tmp/' + str(random.randint(0, 100000))
-        # cofig_file have only tracing enabled
-        _VALID_CONFIG_TRACING_STATS_DICT = {
-            'project_id': 'test-project',
-            'cloud_trace': {'sampling_rate': 1.00}
-        }
         # env var have only stats enabled
-        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_STATS_ONLY
-
-        with open(config_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(_VALID_CONFIG_TRACING_STATS_DICT))
-        os.environ[CONFIG_FILE_ENV_VAR_NAME] = config_file_path
+        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_STATS_ONLY_STR
+        # cofig_file have only tracing enabled
+        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
 
         with grpc_observability.GCPOpenCensusObservability(
                 exporter=self.test_exporter):
@@ -350,6 +326,12 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
         self._validate_spans(self.all_span)
+
+    def _set_config_file(self, config: Dict[str, Any]) -> None:
+        config_file_path = '/tmp/' + str(random.randint(0, 100000))
+        with open(config_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(config))
+        os.environ[CONFIG_FILE_ENV_VAR_NAME] = config_file_path
 
     def unary_unary_call(self):
         with grpc.insecure_channel(f'localhost:{self._port}') as channel:

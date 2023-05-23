@@ -954,7 +954,7 @@ absl::StatusOr<Json> JsonReader::Parse(absl::string_view input) {
 }  // namespace
 
 absl::StatusOr<Json> JsonParse(absl::string_view json_str) {
-  std::cout << "JsonParse: " << json_str << std::endl;
+  std::cout << "JsonParse called with: " << json_str << std::endl;
   return JsonReader::Parse(json_str);
 }
 

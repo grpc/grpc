@@ -167,18 +167,17 @@ void GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonPostLoad(
 absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
   std::cout << "GetGcpObservabilityConfigContents... " << std::endl;
   auto config_contents = GetGcpObservabilityConfigContents();
-  std::cout << "Done GetGcpObservabilityConfigContents... " << std::endl;
   if (!config_contents.ok()) {
     return config_contents.status();
   }
+  std::cout << "grpc_core::JsonParse... " << std::endl;
   auto config_json = grpc_core::JsonParse(*config_contents);
-  std::cout << "Done  grpc_core::JsonParse... " << std::endl;
   if (!config_json.ok()) {
     std::cout << "grpc_core::JsonParse !config_json.ok()... " << std::endl;
     return config_json.status();
   }
+  std::cout << "grpc_core::LoadFromJson... " << std::endl;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(*config_json);
-  std::cout << "Done grpc_core::LoadFromJson... " << std::endl;
   if (!config.ok()) {
     std::cout << "grpc_core::LoadFromJson !config_json.ok()... " << std::endl;
     return config.status();

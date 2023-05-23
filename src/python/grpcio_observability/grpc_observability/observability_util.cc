@@ -132,7 +132,6 @@ void AddCensusDataToBuffer(CensusData data) {
 GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
   std::cout << "ReadFromEnv... " << std::endl;
   auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
-  std::cout << "Done ReadFromEnv... " << std::endl;
   if (!config.ok()) {
     std::cout << "!config.ok()... " << std::endl;
     return GcpObservabilityConfig();
