@@ -138,6 +138,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(readonly) double retryFactor;
 
+/** A test property for the e2e tests. */
+@property(nonatomic, readonly) NSString *hostNotShareChannel;
+
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
@@ -343,6 +346,8 @@ NS_ASSUME_NONNULL_BEGIN
  * Internal-only property used for GTMSessionFetcher transport retry policy.
  */
 @property(nonatomic, readwrite) double retryFactor;
+
+@property(nonatomic, readwrite) NSString *hostNotShareChannel;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the

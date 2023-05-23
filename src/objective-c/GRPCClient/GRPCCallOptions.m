@@ -331,6 +331,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
   if (!areObjectsEqual(callOptions.channelPoolDomain, _channelPoolDomain)) return NO;
   if (!(callOptions.channelID == _channelID)) return NO;
+  if (!areObjectsEqual(callOptions.hostNotShareChannel, _hostNotShareChannel)) return NO;
 
   return YES;
 }
