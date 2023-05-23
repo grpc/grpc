@@ -84,7 +84,7 @@ FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
 }
 
 void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+    const Json& json, const JsonArgs& /*args*/, ValidationErrors* errors) {
   if ((json.object().find("certificate_file") == json.object().end()) !=
       (json.object().find("private_key_file") == json.object().end())) {
     errors->AddError(
