@@ -32,20 +32,24 @@ namespace grpc_core {
 
 // Global registry for all the certificate provider plugins.
 class CertificateProviderRegistry {
+ private:
+  using FactoryMap =
+      std::map<absl::string_view, std::unique_ptr<CertificateProviderFactory>>;
+
  public:
   class Builder {
    public:
-    // Register a provider with the registry. Can only be called after calling
-    // InitRegistry(). The key of the factory is extracted from factory
-    // parameter with method CertificateProviderFactory::name. If the same key
-    // is registered twice, an exception is raised.
+    // Register a provider with the registry. The key of the factory is
+    // extracted from factory parameter with method
+    // CertificateProviderFactory::name. The registry with a given name
+    // cannot be registered twice.
     void RegisterCertificateProviderFactory(
         std::unique_ptr<CertificateProviderFactory> factory);
 
     CertificateProviderRegistry Build();
 
    private:
-    std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
+    FactoryMap factories_;
   };
 
   CertificateProviderRegistry(const CertificateProviderRegistry&) = delete;
@@ -60,9 +64,10 @@ class CertificateProviderRegistry {
       absl::string_view name) const;
 
  private:
-  CertificateProviderRegistry() = default;
+  explicit CertificateProviderRegistry(FactoryMap factories)
+      : factories_(std::move(factories)) {}
 
-  std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
+  FactoryMap factories_;
 };
 
 }  // namespace grpc_core
