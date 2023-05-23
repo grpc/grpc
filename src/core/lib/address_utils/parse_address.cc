@@ -20,9 +20,12 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 #endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -194,8 +197,7 @@ namespace grpc_core {
 
 grpc_error_handle VSockaddrPopulate(
     absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
-  GPR_UNREACHABLE_CODE(
-      return absl::InvalidArgumentError("vsock unsupported."));
+  GPR_UNREACHABLE_CODE(return absl::InvalidArgumentError("vsock unsupported."));
 }
 
 }  // namespace grpc_core
