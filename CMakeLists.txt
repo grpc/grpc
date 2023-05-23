@@ -12103,6 +12103,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authorization_engine_test
   test/core/security/grpc_authorization_engine_test.cc
+  test/core/util/audit_logging_utils.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
@@ -12218,6 +12219,7 @@ add_executable(grpc_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   src/cpp/server/authorization_policy_provider.cc
+  test/core/util/audit_logging_utils.cc
   test/cpp/end2end/grpc_authz_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc

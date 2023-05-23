@@ -509,6 +509,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_rbac_engine",
+        "//test/core/util:audit_logging_utils",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

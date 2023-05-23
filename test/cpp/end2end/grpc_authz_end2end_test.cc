@@ -35,6 +35,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/audit_logging_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -54,14 +55,10 @@ constexpr char kClientKeyPath[] =
 
 constexpr char kMessage[] = "Hello";
 
-constexpr absl::string_view kLoggerName = "test_logger";
-
-using experimental::AuditContext;
-using experimental::AuditLogger;
-using experimental::AuditLoggerFactory;
 using experimental::RegisterAuditLoggerFactory;
 using grpc_core::experimental::AuditLoggerRegistry;
 using grpc_core::experimental::Json;
+using grpc_core::testing::TestAuditLoggerFactory;
 
 std::string ReadFile(const char* file_path) {
   grpc_slice slice;
@@ -71,50 +68,6 @@ std::string ReadFile(const char* file_path) {
   grpc_slice_unref(slice);
   return file_contents;
 }
-
-class TestAuditLogger : public AuditLogger {
- public:
-  explicit TestAuditLogger(std::vector<std::string>* audit_logs)
-      : audit_logs_(audit_logs) {}
-
-  absl::string_view name() const override { return kLoggerName; }
-  void Log(const AuditContext& context) override {
-    audit_logs_->push_back(grpc_core::JsonDump(Json::FromObject({
-        {"rpc_method", Json::FromString(std::string(context.rpc_method()))},
-        {"principal", Json::FromString(std::string(context.principal()))},
-        {"policy_name", Json::FromString(std::string(context.policy_name()))},
-        {"matched_rule", Json::FromString(std::string(context.matched_rule()))},
-        {"authorized", Json::FromBool(context.authorized())},
-    })));
-  }
-
- private:
-  std::vector<std::string>* audit_logs_;
-};
-
-class TestAuditLoggerFactory : public AuditLoggerFactory {
- public:
-  class Config : public AuditLoggerFactory::Config {
-    absl::string_view name() const override { return kLoggerName; }
-    std::string ToString() const override { return "{}"; }
-  };
-
-  explicit TestAuditLoggerFactory(std::vector<std::string>* audit_logs)
-      : audit_logs_(audit_logs) {}
-
-  absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(const Json&) override {
-    return std::make_unique<Config>();
-  }
-  std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
-    return std::make_unique<TestAuditLogger>(audit_logs_);
-  }
-
- private:
-  std::vector<std::string>* audit_logs_;
-};
 
 class GrpcAuthzEnd2EndTest : public ::testing::Test {
  protected:

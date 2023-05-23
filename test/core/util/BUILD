@@ -421,3 +421,21 @@ grpc_cc_library(
         "//src/core:experiments",
     ],
 )
+
+grpc_cc_library(
+    name = "audit_logging_utils",
+    srcs = ["audit_logging_utils.cc"],
+    hdrs = ["audit_logging_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
+    ],
+)
