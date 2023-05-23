@@ -17,7 +17,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <grpc/support/json.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -27,8 +26,6 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -57,7 +54,6 @@ constexpr char kMessage[] = "Hello";
 
 using experimental::RegisterAuditLoggerFactory;
 using grpc_core::experimental::AuditLoggerRegistry;
-using grpc_core::experimental::Json;
 using grpc_core::testing::TestAuditLoggerFactory;
 
 std::string ReadFile(const char* file_path) {
