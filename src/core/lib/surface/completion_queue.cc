@@ -349,7 +349,7 @@ struct cq_callback_data {
 struct grpc_completion_queue {
   /// Once owning_refs drops to zero, we will destroy the cq
   grpc_core::RefCount owning_refs;
-
+  /// Add the paddings to fix the false sharing
   char padding_1[GPR_CACHELINE_SIZE];
   gpr_mu* mu;
 
