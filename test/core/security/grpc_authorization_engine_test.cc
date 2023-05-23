@@ -21,8 +21,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "gmock/gmock.h"
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
 
