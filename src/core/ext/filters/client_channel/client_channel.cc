@@ -361,7 +361,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   void RetryCheckResolutionLocked() override {
     gpr_log(GPR_DEBUG, "%s[client-channel] RetryCheckResolutionLocked",
             waker_.ActivityDebugTag().c_str());
-    waker_.Wakeup();
+    waker_.WakeupAsync();
   }
 
   void ResetDeadline(Duration timeout) override {
@@ -3445,7 +3445,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
 }
 
 void ClientChannel::PromiseBasedLoadBalancedCall::RetryPickLocked() {
-  waker_.Wakeup();
+  waker_.WakeupAsync();
 }
 
 }  // namespace grpc_core
