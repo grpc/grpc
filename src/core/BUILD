@@ -2767,10 +2767,13 @@ grpc_cc_library(
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_factory.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
         "error",
         "json",
+        "json_args",
         "ref_counted",
+        "validation_errors",
         "//:alts_util",
         "//:gpr",
         "//:ref_counted_ptr",
@@ -4237,28 +4240,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_security_base",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_google_mesh_ca_certificate_provider_factory",
-    srcs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.cc",
-    ],
-    hdrs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.h",
-    ],
-    language = "c++",
-    deps = [
-        "certificate_provider_factory",
-        "error",
-        "grpc_tls_credentials",
-        "json",
-        "json_util",
-        "time",
-        "//:alts_util",
-        "//:gpr_platform",
         "//:ref_counted_ptr",
     ],
 )
