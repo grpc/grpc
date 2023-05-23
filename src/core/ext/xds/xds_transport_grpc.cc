@@ -247,17 +247,18 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 };
 
 //
-// GrpcXdsClient::GrpcXdsTransport
+// GrpcXdsTransportFactory::GrpcXdsTransport
 //
 
 namespace {
 
 grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
+                               const GrpcXdsBootstrap::GrpcXdsServer& server,
+                               CertificateProviderStore* store) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_type(),
-          Json::FromObject(server.channel_creds_config()));
+          Json::FromObject(server.channel_creds_config()), store);
   return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
@@ -277,7 +278,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     : factory_(factory) {
   channel_ = CreateXdsChannel(
       factory->args_,
-      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
+      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server),
+      factory_->certificate_provider_store_);
   GPR_ASSERT(channel_ != nullptr);
   if (IsLameChannel(channel_)) {
     *status = absl::UnavailableError("xds client has a lame channel");

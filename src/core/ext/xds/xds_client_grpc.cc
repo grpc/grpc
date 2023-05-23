@@ -187,7 +187,11 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                        .value_or(Duration::Seconds(15)))),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
-              .certificate_providers())) {}
+              .certificate_providers())) {
+  auto* factory =
+      reinterpret_cast<GrpcXdsTransportFactory*>(transport_factory());
+  factory->set_certificate_provider_store(certificate_provider_store_.get());
+}
 
 GrpcXdsClient::~GrpcXdsClient() {
   MutexLock lock(g_mu);

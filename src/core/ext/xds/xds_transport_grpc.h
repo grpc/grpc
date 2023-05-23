@@ -29,6 +29,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -56,9 +57,14 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  void set_certificate_provider_store(CertificateProviderStore* store) {
+    certificate_provider_store_ = store;
+  }
+
  private:
   ChannelArgs args_;
   grpc_pollset_set* interested_parties_;
+  CertificateProviderStore* certificate_provider_store_ = nullptr;
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport

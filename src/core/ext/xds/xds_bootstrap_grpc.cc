@@ -136,18 +136,17 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& creds = (*channel_creds_list)[i];
-      // Select the first channel creds type that we support.
-      if (channel_creds_.type.empty() &&
-          CoreConfiguration::Get().channel_creds_registry().IsSupported(
+      // Select the first channel creds type that we support, but
+      // validate all entries.
+      if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
               creds.type)) {
-        if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
-                creds.type, Json::FromObject(creds.config))) {
-          errors->AddError(absl::StrCat(
-              "invalid config for channel creds type \"", creds.type, "\""));
-          continue;
+        ValidationErrors::ScopedField field(errors, ".config");
+        CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
+            creds.type, Json::FromObject(creds.config), args, errors);
+        if (channel_creds_.type.empty()) {
+          channel_creds_.type = std::move(creds.type);
+          channel_creds_.config = std::move(creds.config);
         }
-        channel_creds_.type = std::move(creds.type);
-        channel_creds_.config = std::move(creds.config);
       }
     }
     if (channel_creds_.type.empty()) {
@@ -286,6 +285,7 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
       }
     }
   }
+// FIXME: verify that cert providers specified in TLS config actually exist
 }
 
 std::string GrpcXdsBootstrap::ToString() const {

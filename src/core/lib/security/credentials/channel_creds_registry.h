@@ -27,20 +27,26 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 
 struct grpc_channel_credentials;
 
 namespace grpc_core {
+
+// Forward declaration to avoid dependency mess.
+class CertificateProviderStore;
 
 template <typename T = grpc_channel_credentials>
 class ChannelCredsFactory final {
  public:
   virtual ~ChannelCredsFactory() {}
   virtual absl::string_view creds_type() const = delete;
-  virtual bool IsValidConfig(const Json& config) const = delete;
-  virtual RefCountedPtr<T> CreateChannelCreds(const Json& config) const =
-      delete;
+  virtual bool IsValidConfig(const Json& config, const JsonArgs& args,
+                             ValidationErrors* errors) const = delete;
+  virtual RefCountedPtr<T> CreateChannelCreds(
+      const Json& config, CertificateProviderStore* store) const = delete;
 };
 
 template <>
@@ -48,9 +54,10 @@ class ChannelCredsFactory<grpc_channel_credentials> {
  public:
   virtual ~ChannelCredsFactory() {}
   virtual absl::string_view creds_type() const = 0;
-  virtual bool IsValidConfig(const Json& config) const = 0;
+  virtual bool IsValidConfig(const Json& config, const JsonArgs& args,
+                             ValidationErrors* errors) const = 0;
   virtual RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& config) const = 0;
+      const Json& config, CertificateProviderStore* store) const = 0;
 };
 
 template <typename T = grpc_channel_credentials>
@@ -80,16 +87,19 @@ class ChannelCredsRegistry {
     return factories_.find(creds_type) != factories_.end();
   }
 
-  bool IsValidConfig(const std::string& creds_type, const Json& config) const {
+  bool IsValidConfig(const std::string& creds_type, const Json& config,
+                     const JsonArgs& args, ValidationErrors* errors) const {
     const auto iter = factories_.find(creds_type);
-    return iter != factories_.cend() && iter->second->IsValidConfig(config);
+    return iter != factories_.cend() &&
+           iter->second->IsValidConfig(config, args, errors);
   }
 
   RefCountedPtr<T> CreateChannelCreds(const std::string& creds_type,
-                                      const Json& config) const {
+                                      const Json& config,
+                                      CertificateProviderStore* store) const {
     const auto iter = factories_.find(creds_type);
     if (iter == factories_.cend()) return nullptr;
-    return iter->second->CreateChannelCreds(config);
+    return iter->second->CreateChannelCreds(config, store);
   }
 
  private:
