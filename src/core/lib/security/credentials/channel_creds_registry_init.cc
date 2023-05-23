@@ -25,7 +25,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -47,8 +46,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
     return true;
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/, CertificateProviderStore* /*store*/)
-      const override {
+      const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_google_default_credentials_create(nullptr));
   }
@@ -66,10 +64,12 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
   }
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& config_json, CertificateProviderStore* store) const override {
+      const Json& config_json) const override {
     auto config = LoadFromJson<TlsConfig>(config_json);
     GPR_ASSERT(config.ok());
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
+// FIXME:
+#if 0
     if (!config->cert_provider_instance.empty()) {
       auto cert_provider =
           store->CreateOrGetCertificateProvider(config->cert_provider_instance);
@@ -84,41 +84,31 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
         options->set_identity_cert_name(std::move(*config->identity_cert_name));
       }
     }
+#endif
     return MakeRefCounted<TlsCredentials>(std::move(options));
   }
 
  private:
   struct TlsConfig {
-    std::string cert_provider_instance;
-    absl::optional<std::string> root_cert_name;
-    absl::optional<std::string> identity_cert_name;
+    std::string certificate_file;
+    std::string private_key_file;
+    std::string ca_certificate_file;
+    Duration refresh_interval;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TlsConfig>()
-              .OptionalField("certificate_provider_instance",
-                             &TlsConfig::cert_provider_instance)
-              .OptionalField("root_certificate_name",
-                             &TlsConfig::root_cert_name)
-              .OptionalField("identity_certificate_name",
-                             &TlsConfig::identity_cert_name)
+              .OptionalField("certificate_file", &TlsConfig::certificate_file)
+              .OptionalField("private_key_file", &TlsConfig::private_key_file)
+              .OptionalField("ca_certificate_file",
+                             &TlsConfig::ca_certificate_file)
+              .OptionalField("refresh_interval", &TlsConfig::refresh_interval)
               .Finish();
       return loader;
     }
 
     void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
-      if (!cert_provider_instance.empty()) {
-        if (root_cert_name.has_value()) {
-          ValidationErrors::ScopedField field(errors, ".root_cert_name");
-          errors->AddError("must not be present if "
-                           "certificate_provider_instance is not set");
-        }
-        if (identity_cert_name.has_value()) {
-          ValidationErrors::ScopedField field(errors, ".identity_cert_name");
-          errors->AddError("must not be present if "
-                           "certificate_provider_instance is not set");
-        }
-      }
+// FIXME: implement validation checks
     }
   };
 };
@@ -131,8 +121,7 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
     return true;
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/, CertificateProviderStore* /*store*/)
-      const override {
+      const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   }
@@ -146,8 +135,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
     return true;
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/, CertificateProviderStore* /*store*/)
-      const override {
+      const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }

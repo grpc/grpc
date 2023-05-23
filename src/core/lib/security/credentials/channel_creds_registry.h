@@ -35,9 +35,6 @@ struct grpc_channel_credentials;
 
 namespace grpc_core {
 
-// Forward declaration to avoid dependency mess.
-class CertificateProviderStore;
-
 template <typename T = grpc_channel_credentials>
 class ChannelCredsFactory final {
  public:
@@ -45,8 +42,8 @@ class ChannelCredsFactory final {
   virtual absl::string_view creds_type() const = delete;
   virtual bool IsValidConfig(const Json& config, const JsonArgs& args,
                              ValidationErrors* errors) const = delete;
-  virtual RefCountedPtr<T> CreateChannelCreds(
-      const Json& config, CertificateProviderStore* store) const = delete;
+  virtual RefCountedPtr<T> CreateChannelCreds(const Json& config) const =
+      delete;
 };
 
 template <>
@@ -57,7 +54,7 @@ class ChannelCredsFactory<grpc_channel_credentials> {
   virtual bool IsValidConfig(const Json& config, const JsonArgs& args,
                              ValidationErrors* errors) const = 0;
   virtual RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& config, CertificateProviderStore* store) const = 0;
+      const Json& config) const = 0;
 };
 
 template <typename T = grpc_channel_credentials>
@@ -95,11 +92,10 @@ class ChannelCredsRegistry {
   }
 
   RefCountedPtr<T> CreateChannelCreds(const std::string& creds_type,
-                                      const Json& config,
-                                      CertificateProviderStore* store) const {
+                                      const Json& config) const {
     const auto iter = factories_.find(creds_type);
     if (iter == factories_.cend()) return nullptr;
-    return iter->second->CreateChannelCreds(config, store);
+    return iter->second->CreateChannelCreds(config);
   }
 
  private:
