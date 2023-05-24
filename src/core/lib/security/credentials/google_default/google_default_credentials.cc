@@ -161,8 +161,7 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
-    const {
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
 }

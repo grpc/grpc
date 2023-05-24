@@ -111,6 +111,7 @@ class ChannelCredsRegistry {
 
   RefCountedPtr<T> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> config) const {
+    if (config == nullptr) return nullptr;
     const auto it = factories_.find(config->type());
     if (it == factories_.cend()) return nullptr;
     return it->second->CreateChannelCreds(std::move(config));

@@ -71,24 +71,33 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
   RefCountedPtr<ChannelCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const override {
-    return MakeRefCounted<TlsConfig>(
-        LoadFromJson<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
-            config, args, errors));
+    RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
+        file_watcher_config;
+    // The file watcher config generates an error if neither "certificate_file"
+    // nor "ca_certificate_file" are present.  But in this case, we want
+    // to allow that config, which means to use basic TLS with
+    // system-wide root certs.
+    if (config.object().find("certificate_file") != config.object().end() ||
+        config.object().find("ca_certificate_file") != config.object().end()) {
+      file_watcher_config =
+          LoadFromJson<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
+              config, args, errors);
+    }
+    return MakeRefCounted<TlsConfig>(std::move(file_watcher_config));
   }
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> base_config) const override {
-    auto& config = static_cast<const TlsConfig*>(base_config.get())->config();
+    auto* config = static_cast<const TlsConfig*>(base_config.get())->config();
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
-    if (!config.certificate_file().empty() ||
-        !config.ca_certificate_file().empty()) {
+    if (config != nullptr) {
       options->set_certificate_provider(
           MakeRefCounted<FileWatcherCertificateProvider>(
-              config.private_key_file(), config.certificate_file(),
-              config.ca_certificate_file(),
-              config.refresh_interval().millis() / GPR_MS_PER_SEC));
-      options->set_watch_root_cert(!config.ca_certificate_file().empty());
-      options->set_watch_identity_pair(!config.certificate_file().empty());
+              config->private_key_file(), config->certificate_file(),
+              config->ca_certificate_file(),
+              config->refresh_interval().millis() / GPR_MS_PER_SEC));
+      options->set_watch_root_cert(!config->ca_certificate_file().empty());
+      options->set_watch_identity_pair(!config->certificate_file().empty());
     }
     return MakeRefCounted<TlsCredentials>(std::move(options));
   }
@@ -105,15 +114,24 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
 
     bool Equals(const ChannelCredsConfig& other) const override {
       auto& o = static_cast<const TlsConfig&>(other);
+      // If one is null and the other isn't, they're not equal.
+      if ((cert_provider_config_ == nullptr) !=
+          (o.cert_provider_config_ == nullptr)) {
+        return false;
+      }
+      // If they're both null, they're equal.
+      if (cert_provider_config_ == nullptr) return true;
+      // If neither one is null, compare them.
       return cert_provider_config_->Equals(*o.cert_provider_config_);
     }
 
     Json ToJson() const override {
+      if (cert_provider_config_ == nullptr) return Json::FromObject({});
       return cert_provider_config_->ToJson();
     }
 
-    const FileWatcherCertificateProviderFactory::Config& config() const {
-      return *cert_provider_config_;
+    const FileWatcherCertificateProviderFactory::Config* config() const {
+      return cert_provider_config_.get();
     }
 
    private:

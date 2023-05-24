@@ -41,6 +41,31 @@
 
 // -- Fake transport security credentials. --
 
+class grpc_fake_channel_credentials final : public grpc_channel_credentials {
+ public:
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, grpc_core::ChannelArgs* args) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override;
+};
+
+class grpc_fake_server_credentials final : public grpc_server_credentials {
+ public:
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector(const grpc_core::ChannelArgs& /*args*/) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+};
+
 // Creates a fake transport security credentials object for testing.
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);
 
