@@ -172,6 +172,11 @@ grpc_cc_binary(
         "absl/flags:parse",
     ],
     language = "C++",
+    tags = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
