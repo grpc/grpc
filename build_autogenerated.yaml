@@ -8110,6 +8110,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -8125,6 +8126,7 @@ targets:
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
+  - test/core/util/audit_logging_utils.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -8179,6 +8181,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -8186,6 +8189,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/cpp/server/authorization_policy_provider.cc
+  - test/core/util/audit_logging_utils.cc
   - test/cpp/end2end/grpc_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
