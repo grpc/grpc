@@ -60,8 +60,6 @@ namespace grpc_core {
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_FLOW_CONTROL_FIXES
-inline bool IsFlowControlFixesEnabled() { return true; }
 inline bool IsMemoryPressureControllerEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
@@ -86,52 +84,48 @@ inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(1); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_FLOW_CONTROL_FIXES
-inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_PRESSURE_CONTROLLER
 inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(4);
+  return IsExperimentEnabled(3);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(5);
+  return IsExperimentEnabled(4);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
-inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(6); }
+inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(5); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
-inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(7); }
+inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(6); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
-inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(8); }
+inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(7); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
-inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(9); }
+inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(8); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() {
-  return IsExperimentEnabled(10);
-}
+inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
 inline bool IsTransportSuppliesClientLatencyEnabled() {
-  return IsExperimentEnabled(11);
+  return IsExperimentEnabled(10);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(12); }
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(11); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
-  return IsExperimentEnabled(13);
+  return IsExperimentEnabled(12);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(14); }
+inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(13); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(15); }
+inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(14); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() { return IsExperimentEnabled(16); }
+inline bool IsWorkStealingEnabled() { return IsExperimentEnabled(15); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
-inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(17); }
+inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(16); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
-inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(18); }
+inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(17); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
-inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(19); }
+inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(18); }
 
-constexpr const size_t kNumExperiments = 20;
+constexpr const size_t kNumExperiments = 19;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif
