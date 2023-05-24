@@ -61,9 +61,6 @@ EXPERIMENTS = {
         ],
     },
     "on": {
-        "flow_control_test": [
-            "flow_control_fixes",
-        ],
     },
     "opt": {
     },
