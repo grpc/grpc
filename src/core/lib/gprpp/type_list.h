@@ -29,4 +29,4 @@ struct Typelist {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_TYPE_LIST_H
