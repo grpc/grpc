@@ -194,6 +194,8 @@ class EventEngineDNSTest : public EventEngineTest {
 
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
@@ -365,6 +367,7 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \
   do {                             \
