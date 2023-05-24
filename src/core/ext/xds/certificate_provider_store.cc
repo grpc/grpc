@@ -26,8 +26,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {

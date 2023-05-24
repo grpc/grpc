@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

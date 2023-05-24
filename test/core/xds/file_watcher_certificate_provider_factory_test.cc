@@ -19,16 +19,15 @@
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
 #include <initializer_list>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/json/json_reader.h"
 #include "test/core/util/test_config.h"
 

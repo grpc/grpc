@@ -73,9 +73,9 @@ grpc_cc_test(
     srcs = ["xds_channel_stack_modifier_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["no_test_ios"],
     deps = [
         "//:gpr",
         "//:grpc",

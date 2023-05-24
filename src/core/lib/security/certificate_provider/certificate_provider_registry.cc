@@ -20,11 +20,8 @@
 
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
-#include <string.h>
-
-#include <algorithm>
+#include <string>
 #include <utility>
-#include <vector>
 
 #include <grpc/support/log.h>
 
