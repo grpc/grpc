@@ -542,13 +542,13 @@ struct EncodableTraits<void> {
 };
 
 template <typename Trait>
-bool EncodableNameLookupKeyComparison(absl::string_view key) {
-  return key == Trait::key();
+struct EncodableNameLookupKeyComparison {
+  bool operator()(absl::string_view key) { return key == Trait::key(); }
 };
 
 template <typename Trait, typename Op>
-auto EncodableNameLookupOnFound(Op* op) {
-  return op->Found(Trait());
+struct EncodableNameLookupOnFound {
+  auto operator()(Op* op) { return op->Found(Trait()); }
 };
 
 template <typename... Traits>
@@ -557,8 +557,8 @@ struct EncodableNameLookup {
   static auto Lookup(absl::string_view key, Op* op) {
     return IfList(
         key, op, [key](Op* op) { return op->NotFound(key); },
-        EncodableNameLookupKeyComparison<Traits>...,
-        EncodableNameLookupOnFound<Traits, Op>...);
+        EncodableNameLookupKeyComparison<Traits>()...,
+        EncodableNameLookupOnFound<Traits, Op>()...);
   }
 };
 
