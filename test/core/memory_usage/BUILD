@@ -140,9 +140,9 @@ MEMORY_USAGE_DATA = [
 ]
 
 MEMORY_USAGE_TAGS = [
-        "bazel_only",
-        "no_mac",
-        "no_windows",
+    "bazel_only",
+    "no_mac",
+    "no_windows",
 ]
 
 grpc_cc_test(
