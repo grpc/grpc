@@ -150,6 +150,8 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
+  sudo apt-get update && sudo apt-get install tree
+
   # Source the test captured from the master branch.
   echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
