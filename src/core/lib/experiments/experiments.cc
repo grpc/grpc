@@ -34,9 +34,6 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "";
-const char* const description_flow_control_fixes =
-    "Various fixes for flow control, max frame size setting.";
-const char* const additional_constraints_flow_control_fixes = "";
 const char* const description_memory_pressure_controller =
     "New memory pressure controller";
 const char* const additional_constraints_memory_pressure_controller = "";
@@ -98,8 +95,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
-    {"flow_control_fixes", description_flow_control_fixes,
-     additional_constraints_flow_control_fixes, true, true},
     {"memory_pressure_controller", description_memory_pressure_controller,
      additional_constraints_memory_pressure_controller, false, true},
     {"unconstrained_max_quota_buffer_size",

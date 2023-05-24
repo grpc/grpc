@@ -28,8 +28,6 @@
   default: false
 - name: peer_state_based_framing
   default: false
-- name: flow_control_fixes
-  default: true
 - name: memory_pressure_controller
   default: false
 - name: unconstrained_max_quota_buffer_size

@@ -55,11 +55,6 @@
   expiry: 2023/06/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
-- name: flow_control_fixes
-  description: Various fixes for flow control, max frame size setting.
-  expiry: 2023/06/01
-  owner: ctiller@google.com
-  test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
   expiry: 2023/06/01
