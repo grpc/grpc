@@ -541,14 +541,24 @@ struct EncodableTraits<void> {
   using List = Typelist<>;
 };
 
+template <typename Trait>
+bool EncodableNameLookupKeyComparison(absl::string_view key) {
+  return key == Trait::key();
+};
+
+template <typename Trait, typename Op>
+auto EncodableNameLookupOnFound(Op* op) {
+  return op->Found(Trait());
+};
+
 template <typename... Traits>
 struct EncodableNameLookup {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op) {
     return IfList(
         key, op, [key](Op* op) { return op->NotFound(key); },
-        [](absl::string_view key) { return key == Traits::key(); }...,
-        [](Op* op) { return op->Found(Traits()); }...);
+        EncodableNameLookupKeyComparison<Traits>...,
+        EncodableNameLookupOnFound<Traits, Op>...);
   }
 };
 
