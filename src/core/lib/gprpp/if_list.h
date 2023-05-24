@@ -23,8 +23,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
-
 namespace grpc_core {
 
 template <typename CheckArg, typename ActionArg, typename ActionFail,
