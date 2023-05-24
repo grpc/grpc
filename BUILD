@@ -1550,6 +1550,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:http2_errors",
         "//src/core:if",
+        "//src/core:if_list",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",

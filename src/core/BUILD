@@ -2759,6 +2759,26 @@ grpc_cc_library(
         "lib/gprpp/sorted_pack.h",
     ],
     language = "c++",
+    deps = [
+        "type_list",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "type_list",
+    hdrs = [
+        "lib/gprpp/type_list.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "if_list",
+    hdrs = [
+        "lib/gprpp/if_list.h",
+    ],
+    language = "c++",
     deps = ["//:gpr_platform"],
 )
 
