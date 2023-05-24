@@ -20,7 +20,6 @@ licenses(["notice"])
 
 grpc_cc_library(
     name = "memstats",
-    testonly = 1,
     srcs = [
         "memstats.cc",
         "memstats.h",
@@ -41,7 +40,6 @@ grpc_cc_library(
 
 grpc_cc_binary(
     name = "memory_usage_client",
-    testonly = 1,
     srcs = ["client.cc"],
     external_deps = [
         "absl/flags:flag",
@@ -54,8 +52,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -64,7 +62,6 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "memory_usage_server",
-    testonly = 1,
     srcs = ["server.cc"],
     external_deps = [
         "absl/flags:flag",
@@ -77,8 +74,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//src/core:channel_args",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
@@ -88,13 +85,11 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "memory_usage_callback_client",
-    testonly = 1,
     srcs = ["callback_client.cc"],
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
         "absl/time",
-        "gtest",
     ],
     tags = [
         "bazel_only",
@@ -103,8 +98,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
@@ -115,12 +110,10 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "memory_usage_callback_server",
-    testonly = 1,
     srcs = ["callback_server.cc"],
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
-        "gtest",
     ],
     tags = [
         "bazel_only",
@@ -129,8 +122,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
@@ -139,7 +132,7 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
     data = [
@@ -156,15 +149,20 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "bazel_only",
+        "local",
         "no_mac",
         "no_windows",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
+)
+
+sh_test(
+  name = "run_memory_usage_test",
+  srcs = ["run.sh"],
+  data = [":memory_usage_test"]
 )
