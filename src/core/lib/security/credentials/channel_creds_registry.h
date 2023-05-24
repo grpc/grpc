@@ -53,8 +53,8 @@ class ChannelCredsFactory final {
   virtual ~ChannelCredsFactory() {}
   virtual absl::string_view type() const = delete;
   virtual RefCountedPtr<ChannelCredsConfig> ParseConfig(
-      const Json& config, const JsonArgs& args, ValidationErrors* errors)
-      const = delete;
+      const Json& config, const JsonArgs& args,
+      ValidationErrors* errors) const = delete;
   virtual RefCountedPtr<T> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> config) const = delete;
 };
@@ -65,8 +65,8 @@ class ChannelCredsFactory<grpc_channel_credentials> {
   virtual ~ChannelCredsFactory() {}
   virtual absl::string_view type() const = 0;
   virtual RefCountedPtr<ChannelCredsConfig> ParseConfig(
-      const Json& config, const JsonArgs& args, ValidationErrors* errors)
-      const = 0;
+      const Json& config, const JsonArgs& args,
+      ValidationErrors* errors) const = 0;
   virtual RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> config) const = 0;
 };

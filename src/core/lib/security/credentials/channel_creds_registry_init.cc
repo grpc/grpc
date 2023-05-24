@@ -79,9 +79,9 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
     // system-wide root certs.
     if (config.object().find("certificate_file") != config.object().end() ||
         config.object().find("ca_certificate_file") != config.object().end()) {
-      file_watcher_config =
-          LoadFromJson<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
-              config, args, errors);
+      file_watcher_config = LoadFromJson<
+          RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
+          config, args, errors);
     }
     return MakeRefCounted<TlsConfig>(std::move(file_watcher_config));
   }

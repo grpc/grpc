@@ -25,9 +25,9 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "test/core/util/test_config.h"
 
@@ -69,15 +69,15 @@ class ChannelCredsRegistryTest : public ::testing::Test {
   // credential_type is the resulting type of the actual channel creds object.
   void TestCreds(absl::string_view type, UniqueTypeName credential_type,
                  Json json = Json::FromObject({})) {
-    EXPECT_TRUE(CoreConfiguration::Get().channel_creds_registry().IsSupported(
-        type));
+    EXPECT_TRUE(
+        CoreConfiguration::Get().channel_creds_registry().IsSupported(type));
     ValidationErrors errors;
     auto config = CoreConfiguration::Get().channel_creds_registry().ParseConfig(
         type, json, JsonArgs(), &errors);
     EXPECT_TRUE(errors.ok()) << errors.message("unexpected errors");
     ASSERT_NE(config, nullptr);
     EXPECT_EQ(config->type(), type);
-    auto creds = 
+    auto creds =
         CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
             std::move(config));
     ASSERT_NE(creds, nullptr);
@@ -87,7 +87,8 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     if (creds->type() == grpc_composite_channel_credentials::Type()) {
       actual_type =
           static_cast<grpc_composite_channel_credentials*>(creds.get())
-          ->inner_creds()->type();
+              ->inner_creds()
+              ->type();
     }
     EXPECT_EQ(actual_type, credential_type)
         << "Actual: " << actual_type.name()
@@ -113,20 +114,20 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsNoConfig) {
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
   Json json = Json::FromObject({
-    {"certificate_file", Json::FromString("/path/to/cert_file")},
-    {"private_key_file", Json::FromString("/path/to/private_key_file")},
-    {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
-    {"refresh_interval", Json::FromString("1s")},
+      {"certificate_file", Json::FromString("/path/to/cert_file")},
+      {"private_key_file", Json::FromString("/path/to/private_key_file")},
+      {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
+      {"refresh_interval", Json::FromString("1s")},
   });
   TestCreds("tls", TlsCredentials::Type(), json);
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
   Json json = Json::FromObject({
-    {"certificate_file", Json::FromObject({})},
-    {"private_key_file", Json::FromArray({})},
-    {"ca_certificate_file", Json::FromBool(true)},
-    {"refresh_interval", Json::FromNumber(1)},
+      {"certificate_file", Json::FromObject({})},
+      {"private_key_file", Json::FromArray({})},
+      {"ca_certificate_file", Json::FromBool(true)},
+      {"refresh_interval", Json::FromNumber(1)},
   });
   ValidationErrors errors;
   auto config = CoreConfiguration::Get().channel_creds_registry().ParseConfig(

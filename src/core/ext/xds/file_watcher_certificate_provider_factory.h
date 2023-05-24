@@ -48,9 +48,7 @@ class FileWatcherCertificateProviderFactory
 
     Json ToJson() const;
 
-    const std::string& certificate_file() const {
-      return certificate_file_;
-    }
+    const std::string& certificate_file() const { return certificate_file_; }
 
     const std::string& private_key_file() const { return private_key_file_; }
 

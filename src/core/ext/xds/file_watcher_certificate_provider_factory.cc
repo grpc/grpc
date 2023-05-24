@@ -49,7 +49,7 @@ constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
 //
 
 constexpr Duration
-FileWatcherCertificateProviderFactory::Config::kDefaultRefreshInterval;
+    FileWatcherCertificateProviderFactory::Config::kDefaultRefreshInterval;
 
 absl::string_view FileWatcherCertificateProviderFactory::Config::name() const {
   return kFileWatcherPlugin;
