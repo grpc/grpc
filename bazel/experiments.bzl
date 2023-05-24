@@ -62,6 +62,4 @@ EXPERIMENTS = {
     },
     "on": {
     },
-    "opt": {
-    },
 }
