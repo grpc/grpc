@@ -279,6 +279,7 @@ class FilterTestBase::Call::ScopedContext final
         if (impl != nullptr) impl->StepLoop();
       });
     }
+    void WakeupAsync(WakeupMask) override { Wakeup(0); }
     void Drop(WakeupMask) override { delete this; }
     std::string ActivityDebugTag(WakeupMask) const override { return tag_; }
 

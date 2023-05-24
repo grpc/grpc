@@ -434,6 +434,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_trace",
         "ref_counted",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
