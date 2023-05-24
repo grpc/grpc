@@ -139,6 +139,12 @@ MEMORY_USAGE_DATA = [
     ":memory_usage_server",
 ]
 
+MEMORY_USAGE_TAGS = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
+]
+
 grpc_cc_test(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
@@ -149,11 +155,7 @@ grpc_cc_test(
         "absl/flags:parse",
     ],
     language = "C++",
-    tags = [
-        "bazel_only",
-        "no_mac",
-        "no_windows",
-    ],
+    tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -172,11 +174,7 @@ grpc_cc_binary(
         "absl/flags:parse",
     ],
     language = "C++",
-    tags = [
-        "bazel_only",
-        "no_mac",
-        "no_windows",
-    ],
+    tags = MEMORY_USAGE_TAGS,
     deps = [
         "//:gpr",
         "//:grpc",
