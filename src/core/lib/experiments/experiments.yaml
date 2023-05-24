@@ -129,7 +129,7 @@
     If set, use a work stealing thread pool implementation in EventEngine
   expiry: 2023/06/01
   owner: hork@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
 - name: client_privacy
   description:
