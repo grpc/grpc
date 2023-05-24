@@ -1590,6 +1590,7 @@ grpc_cc_library(
         "//src/core:transport_fwd",
         "//src/core:try_join",
         "//src/core:try_seq",
+        "//src/core:type_list",
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
