@@ -13,4 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 set -ex
+# memory_usage_test is a grpc_cc_binary, and this script lets us launch it as
+# a test under bazel.
 $(dirname $0)/memory_usage_test

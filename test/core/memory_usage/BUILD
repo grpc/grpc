@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package")
 
 grpc_package(name = "test/core/memory_usage")
 
@@ -52,8 +52,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -74,8 +74,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//src/core:channel_args",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
@@ -98,8 +98,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
@@ -122,8 +122,8 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
@@ -154,15 +154,21 @@ grpc_cc_binary(
         "no_windows",
     ],
     deps = [
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
 )
 
 sh_test(
-  name = "run_memory_usage_test",
-  srcs = ["run.sh"],
-  data = [":memory_usage_test"]
+    name = "run_memory_usage_test",
+    srcs = ["run.sh"],
+    data = [":memory_usage_test"],
+    tags = [
+        "bazel_only",
+        "local",
+        "no_mac",
+        "no_windows",
+    ],
 )
