@@ -195,7 +195,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
-  Channel* channel() {
+  Channel* channel() const {
     GPR_DEBUG_ASSERT(channel_ != nullptr);
     return channel_.get();
   }
@@ -2011,6 +2011,10 @@ class PromiseBasedCall : public Call,
   virtual ServerCallContext* server_call_context() { return nullptr; }
   bool failed_before_recv_message() const final {
     return failed_before_recv_message_.load(std::memory_order_relaxed);
+  }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+    return channel()->event_engine();
   }
 
   using Call::arena;

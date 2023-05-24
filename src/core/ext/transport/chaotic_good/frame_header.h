@@ -32,37 +32,27 @@ enum class FrameType : uint8_t {
   kCancel = 0x81,
 };
 
-struct FrameSizes {
-  uint64_t message_offset;
-  uint64_t trailer_offset;
-  uint64_t frame_length;
-
-  bool operator==(const FrameSizes& other) const {
-    return message_offset == other.message_offset &&
-           trailer_offset == other.trailer_offset &&
-           frame_length == other.frame_length;
-  }
-};
-
 struct FrameHeader {
   FrameType type;
-  BitSet<3> flags;
+  BitSet<2> flags;
   uint32_t stream_id;
   uint32_t header_length;
   uint32_t message_length;
+  uint32_t message_padding;
   uint32_t trailer_length;
 
-  // Parses a frame header from a buffer of 64 bytes. All 64 bytes are consumed.
+  // Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
   static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 64 bytes.
+  // Serializes a frame header into a buffer of 24 bytes.
   void Serialize(uint8_t* data) const;
   // Compute frame sizes from the header.
-  FrameSizes ComputeFrameSizes() const;
+  uint32_t GetFrameLength() const;
 
   bool operator==(const FrameHeader& h) const {
     return type == h.type && flags == h.flags && stream_id == h.stream_id &&
            header_length == h.header_length &&
            message_length == h.message_length &&
+           message_padding == h.message_padding &&
            trailer_length == h.trailer_length;
   }
 };
