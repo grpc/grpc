@@ -36,9 +36,9 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-const char* kIdentityCertFile = "/path/to/identity_cert_file";
+const char* kCertificateFile = "/path/to/certificate_file";
 const char* kPrivateKeyFile = "/path/to/private_key_file";
-const char* kRootCertFile = "/path/to/root_cert_file";
+const char* kCaCertificateFile = "/path/to/ca_certificate_file";
 const int kRefreshInterval = 400;
 
 absl::StatusOr<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>
@@ -64,12 +64,12 @@ TEST(FileWatcherConfigTest, Basic) {
       "  \"ca_certificate_file\": \"%s\","
       "  \"refresh_interval\": \"%ds\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kRefreshInterval);
+      kCertificateFile, kPrivateKeyFile, kCaCertificateFile, kRefreshInterval);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
+  EXPECT_EQ((*config)->certificate_file(), kCertificateFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
-  EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->ca_certificate_file(), kCaCertificateFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(kRefreshInterval));
 }
 
@@ -80,12 +80,12 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
       "  \"private_key_file\": \"%s\","
       "  \"ca_certificate_file\": \"%s\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile, kRootCertFile);
+      kCertificateFile, kPrivateKeyFile, kCaCertificateFile);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
+  EXPECT_EQ((*config)->certificate_file(), kCertificateFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
-  EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->ca_certificate_file(), kCaCertificateFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
@@ -94,12 +94,12 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
       "{"
       "  \"ca_certificate_file\": \"%s\""
       "}",
-      kRootCertFile);
+      kCaCertificateFile);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ((*config)->identity_cert_file(), "");
+  EXPECT_EQ((*config)->certificate_file(), "");
   EXPECT_EQ((*config)->private_key_file(), "");
-  EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->ca_certificate_file(), kCaCertificateFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
@@ -109,12 +109,12 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
       "  \"certificate_file\": \"%s\","
       "  \"private_key_file\": \"%s\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile);
+      kCertificateFile, kPrivateKeyFile);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
+  EXPECT_EQ((*config)->certificate_file(), kCertificateFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
-  EXPECT_EQ((*config)->root_cert_file(), "");
+  EXPECT_EQ((*config)->ca_certificate_file(), "");
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
@@ -141,7 +141,7 @@ TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
       "{"
       "  \"certificate_file\": \"%s\""
       "}",
-      kIdentityCertFile);
+      kCertificateFile);
   auto config = ParseConfig(json_str);
   EXPECT_EQ(config.status().message(),
             "validation errors: ["
@@ -156,7 +156,7 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
       "  \"ca_certificate_file\": \"%s\","
       "  \"private_key_file\": \"%s\""
       "}",
-      kRootCertFile, kPrivateKeyFile);
+      kCaCertificateFile, kPrivateKeyFile);
   auto config = ParseConfig(json_str);
   EXPECT_EQ(config.status().message(),
             "validation errors: ["

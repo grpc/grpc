@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -40,105 +41,137 @@ namespace grpc_core {
 
 class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
  public:
-  absl::string_view creds_type() const override { return "google_default"; }
-  bool IsValidConfig(const Json& /*config*/, const JsonArgs& /*args*/,
-                     ValidationErrors* /*errors*/) const override {
-    return true;
+  absl::string_view type() const override { return Type(); }
+  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/) const override {
+      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_google_default_credentials_create(nullptr));
   }
+
+ private:
+  class Config : public ChannelCredsConfig {
+   public:
+    absl::string_view type() const override { return Type(); }
+    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    Json ToJson() const override { return Json::FromObject({}); }
+  };
+
+  static absl::string_view Type() { return "google_default"; }
 };
 
 class TlsChannelCredsFactory : public ChannelCredsFactory<> {
  public:
-  absl::string_view creds_type() const override { return "tls"; }
+  absl::string_view type() const override { return Type(); }
 
-  bool IsValidConfig(const Json& config_json, const JsonArgs& args,
-                     ValidationErrors* errors) const override {
-    const size_t original_error_count = errors->size();
-    LoadFromJson<TlsConfig>(config_json, args, errors);
-    return original_error_count == errors->size();
+  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+      const Json& config, const JsonArgs& args,
+      ValidationErrors* errors) const override {
+    return MakeRefCounted<TlsConfig>(
+        LoadFromJson<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
+            config, args, errors));
   }
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& config_json) const override {
-    auto config = LoadFromJson<TlsConfig>(config_json);
-    GPR_ASSERT(config.ok());
+      RefCountedPtr<ChannelCredsConfig> base_config) const override {
+    auto& config = static_cast<const TlsConfig*>(base_config.get())->config();
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
-// FIXME:
-#if 0
-    if (!config->cert_provider_instance.empty()) {
-      auto cert_provider =
-          store->CreateOrGetCertificateProvider(config->cert_provider_instance);
-      GPR_ASSERT(cert_provider != nullptr);
-      options->set_certificate_provider(std::move(cert_provider));
-      if (config->root_cert_name.has_value()) {
-        options->set_watch_root_cert(true);
-        options->set_root_cert_name(std::move(*config->root_cert_name));
-      }
-      if (config->identity_cert_name.has_value()) {
-        options->set_watch_identity_pair(true);
-        options->set_identity_cert_name(std::move(*config->identity_cert_name));
-      }
+    if (!config.certificate_file().empty() ||
+        !config.ca_certificate_file().empty()) {
+      options->set_certificate_provider(
+          MakeRefCounted<FileWatcherCertificateProvider>(
+              config.private_key_file(), config.certificate_file(),
+              config.ca_certificate_file(),
+              config.refresh_interval().millis() / GPR_MS_PER_SEC));
+      options->set_watch_root_cert(!config.ca_certificate_file().empty());
+      options->set_watch_identity_pair(!config.certificate_file().empty());
     }
-#endif
     return MakeRefCounted<TlsCredentials>(std::move(options));
   }
 
  private:
-  struct TlsConfig {
-    std::string certificate_file;
-    std::string private_key_file;
-    std::string ca_certificate_file;
-    Duration refresh_interval;
+  class TlsConfig : public ChannelCredsConfig {
+   public:
+    explicit TlsConfig(
+        RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
+            cert_provider_config)
+        : cert_provider_config_(std::move(cert_provider_config)) {}
 
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-      static const auto* loader =
-          JsonObjectLoader<TlsConfig>()
-              .OptionalField("certificate_file", &TlsConfig::certificate_file)
-              .OptionalField("private_key_file", &TlsConfig::private_key_file)
-              .OptionalField("ca_certificate_file",
-                             &TlsConfig::ca_certificate_file)
-              .OptionalField("refresh_interval", &TlsConfig::refresh_interval)
-              .Finish();
-      return loader;
+    absl::string_view type() const override { return Type(); }
+
+    bool Equals(const ChannelCredsConfig& other) const override {
+      auto& o = static_cast<const TlsConfig&>(other);
+      return cert_provider_config_->Equals(*o.cert_provider_config_);
     }
 
-    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
-// FIXME: implement validation checks
+    Json ToJson() const override {
+      return cert_provider_config_->ToJson();
     }
+
+    const FileWatcherCertificateProviderFactory::Config& config() const {
+      return *cert_provider_config_;
+    }
+
+   private:
+    RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
+        cert_provider_config_;
   };
+
+  static absl::string_view Type() { return "tls"; }
 };
 
 class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
  public:
-  absl::string_view creds_type() const override { return "insecure"; }
-  bool IsValidConfig(const Json& /*config*/, const JsonArgs& /*args*/,
-                     ValidationErrors* /*errors*/) const override {
-    return true;
+  absl::string_view type() const override { return Type(); }
+  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/) const override {
+      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   }
+
+ private:
+  class Config : public ChannelCredsConfig {
+   public:
+    absl::string_view type() const override { return Type(); }
+    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    Json ToJson() const override { return Json::FromObject({}); }
+  };
+
+  static absl::string_view Type() { return "insecure"; }
 };
 
 class FakeChannelCredsFactory : public ChannelCredsFactory<> {
  public:
-  absl::string_view creds_type() const override { return "fake"; }
-  bool IsValidConfig(const Json& /*config*/, const JsonArgs& /*args*/,
-                     ValidationErrors* /*errors*/) const override {
-    return true;
+  absl::string_view type() const override { return Type(); }
+  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      const Json& /*config*/) const override {
+      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }
+
+ private:
+  class Config : public ChannelCredsConfig {
+   public:
+    absl::string_view type() const override { return Type(); }
+    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    Json ToJson() const override { return Json::FromObject({}); }
+  };
+
+  static absl::string_view Type() { return "fake"; }
 };
 
 void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
