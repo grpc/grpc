@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package", "grpc_cc_test")
 
 grpc_package(name = "test/core/memory_usage")
 
@@ -132,15 +132,17 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
+MEMORY_USAGE_DATA = [
+    ":memory_usage_callback_client",
+    ":memory_usage_callback_server",
+    ":memory_usage_client",
+    ":memory_usage_server",
+]
+
+grpc_cc_test(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
-    data = [
-        ":memory_usage_callback_client",
-        ":memory_usage_callback_server",
-        ":memory_usage_client",
-        ":memory_usage_server",
-    ],
+    data = MEMORY_USAGE_DATA,
     external_deps = [
         "absl/algorithm:container",
         "absl/flags:flag",
@@ -161,14 +163,20 @@ grpc_cc_binary(
     ],
 )
 
-sh_test(
-    name = "run_memory_usage_test",
-    srcs = ["run.sh"],
-    data = [":memory_usage_test"],
-    tags = [
-        "bazel_only",
-        "local",
-        "no_mac",
-        "no_windows",
+grpc_cc_binary(
+    name = "memory_usage",
+    srcs = ["memory_usage_test.cc"],
+    data = MEMORY_USAGE_DATA,
+    external_deps = [
+        "absl/algorithm:container",
+        "absl/flags:flag",
+        "absl/flags:parse",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
