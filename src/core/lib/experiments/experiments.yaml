@@ -31,6 +31,8 @@
 #   promise_test:        tests around the promise architecture
 #   resource_quota_test: tests known to exercse resource quota
 
+# This file only defines the experiments. Refer to rollouts.yaml for the rollout
+# state of each experiment.
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.

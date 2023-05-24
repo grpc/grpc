@@ -168,12 +168,13 @@ def put_copyright(file, prefix):
             copyright.append(line)
         put_banner([file], [line[2:].rstrip() for line in copyright], prefix)
 
+
 def get_rollout_attr_for_experiment(name):
-  for rollout_attr in rollouts:
-    if rollout_attr['name'] == name:
-      return rollout_attr
-  print('WARNING. experiment: %r has no rollout config. Disabling it.' % name)
-  return {'name': name, 'default': 'false'}
+    for rollout_attr in rollouts:
+        if rollout_attr['name'] == name:
+            return rollout_attr
+    print('WARNING. experiment: %r has no rollout config. Disabling it.' % name)
+    return {'name': name, 'default': 'false'}
 
 
 WTF = """
@@ -235,8 +236,8 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
             print(define_fmt %
                   ("GRPC_EXPERIMENT_IS_INCLUDED_%s" % attr['name'].upper()),
                   file=H)
-        print("inline bool Is%sEnabled() { %s }" %
-              (snake_to_pascal(attr['name']), FINAL_RETURN[rollout_attr['default']]),
+        print("inline bool Is%sEnabled() { %s }" % (snake_to_pascal(
+            attr['name']), FINAL_RETURN[rollout_attr['default']]),
               file=H)
     print("#else", file=H)
     for i, attr in enumerate(attrs):
@@ -274,8 +275,10 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
               (attr['name'], c_str(attr['description'])),
               file=C)
         print("const char* const additional_constraints_%s = \"\";" %
-              attr['name'], file=C)
-    have_defaults = set(DEFAULTS[rollout_attr['default']] for rollout_attr in rollouts)
+              attr['name'],
+              file=C)
+    have_defaults = set(
+        DEFAULTS[rollout_attr['default']] for rollout_attr in rollouts)
     if 'kDefaultForDebugOnly' in have_defaults:
         print("#ifdef NDEBUG", file=C)
         if 'kDefaultForDebugOnly' in have_defaults:
@@ -294,7 +297,7 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
         print(
             "  {%s, description_%s, additional_constraints_%s, %s, %s}," %
             (c_str(attr['name']), attr['name'], attr['name'],
-            DEFAULTS[rollout_attr['default']],
+             DEFAULTS[rollout_attr['default']],
              'true' if attr.get('allow_in_fuzzing_config', True) else 'false'),
             file=C)
     print("};", file=C)
@@ -309,7 +312,8 @@ bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
 for attr in attrs:
     rollout_attr = get_rollout_attr_for_experiment(attr['name'])
     for tag in attr['test_tags']:
-        bzl_to_tags_to_experiments[rollout_attr['default']][tag].append(attr['name'])
+        bzl_to_tags_to_experiments[rollout_attr['default']][tag].append(
+            attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")

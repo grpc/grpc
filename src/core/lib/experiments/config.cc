@@ -21,7 +21,9 @@
 #include <algorithm>
 #include <atomic>
 #include <string>
+#include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -50,7 +52,7 @@ ForcedExperiment g_forced_experiments[kNumExperiments];
 
 std::atomic<bool> g_loaded(false);
 
-absl::AnyInvocable<bool(struct ExperimentMetadata)> g_check_constraints_cb =
+absl::AnyInvocable<bool(struct ExperimentMetadata)>* g_check_constraints_cb =
     nullptr;
 
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
@@ -61,7 +63,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
     if (!g_forced_experiments[i].forced) {
       if (g_check_constraints_cb != nullptr) {
         experiments.enabled[i] =
-            g_check_constraints_cb(g_experiment_metadata[i]);
+            (*g_check_constraints_cb)(g_experiment_metadata[i]);
       } else {
         experiments.enabled[i] = g_experiment_metadata[i].default_value;
       }
@@ -161,7 +163,9 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
 
 void RegisterExperimentConstraintsValidator(
     absl::AnyInvocable<bool(struct ExperimentMetadata)> check_constraints_cb) {
-  g_check_constraints_cb = std::move(check_constraints_cb);
+  g_check_constraints_cb =
+      new absl::AnyInvocable<bool(struct ExperimentMetadata)>(
+          std::move(check_constraints_cb));
 }
 
 }  // namespace grpc_core
