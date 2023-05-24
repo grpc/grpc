@@ -120,7 +120,10 @@ grpc_cc_library(
         "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
         "//conditions:default": [],
     }),
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "no_destruct",
