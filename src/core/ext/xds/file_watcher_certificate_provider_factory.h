@@ -57,7 +57,7 @@ class FileWatcherCertificateProviderFactory
     Duration refresh_interval() const { return refresh_interval_; }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
-    void JsonPostLoad(const Json& source, const JsonArgs& args,
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ValidationErrors* errors);
 
    private:
