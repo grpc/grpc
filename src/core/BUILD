@@ -2771,7 +2771,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
-        "error",
         "json",
         "json_args",
         "ref_counted",

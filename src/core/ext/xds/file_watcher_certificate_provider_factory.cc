@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -32,7 +33,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 

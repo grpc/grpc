@@ -23,11 +23,9 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -37,7 +35,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -45,8 +42,9 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
@@ -593,8 +591,8 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader = JsonObjectLoader<Config>()
-          .OptionalField("value", &Config::value_)
-          .Finish();
+                                      .OptionalField("value", &Config::value_)
+                                      .Finish();
       return loader;
     }
 
@@ -605,8 +603,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
   absl::string_view name() const override { return "fake"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  const JsonArgs& args,
+  CreateCertificateProviderConfig(const Json& config_json, const JsonArgs& args,
                                   ValidationErrors* errors) override {
     return LoadFromJson<RefCountedPtr<Config>>(config_json, args, errors);
   }
@@ -636,11 +633,10 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "  }"
       "}";
   auto bootstrap = GrpcXdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:certificate_providers[\"fake_plugin\"].config.value "
-      "error:is not a number]")
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"fake_plugin\"].config.value "
+            "error:is not a number]")
       << bootstrap.status();
 }
 
