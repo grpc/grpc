@@ -201,6 +201,8 @@ class EventEngineDNSTest : public EventEngineTest {
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 bool EventEngineDNSTest::skip_end2end_tests_ = false;
 
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   // TODO(yijiem): remove once the docker images are fixed.
   if (skip_end2end_tests_) {
@@ -412,6 +414,7 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \
   do {                             \
