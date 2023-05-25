@@ -97,13 +97,13 @@ class MockEndpoint
     local_address_ = local_address;
   }
 
-  // only for an error read task
+  // Only for an error read task.
   void ScheduleReadTask(const absl::Status& status, bool ready = false) {
     GPR_ASSERT(!status.ok());
     read_task_queue_.push({ready, status, {}, {}, {}});
   }
 
-  // only for a successful read task
+  // Only for a successful read task.
   void ScheduleReadTask(const std::string& buffer, bool ready = false) {
     read_task_queue_.push({ready, absl::OkStatus(), buffer, {}, {}});
   }
@@ -160,7 +160,7 @@ class MockEndpoint
       grpc_event_engine::experimental::SliceBuffer* buffer,
       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
       /* args */) {
-    // should always schedule a read first
+    // Should always schedule a read first.
     GPR_ASSERT(!read_task_queue_.empty());
     GPR_ASSERT(buffer != nullptr);
 
@@ -171,7 +171,7 @@ class MockEndpoint
             *(read_task_queue_.front().source_buffer)));
         buffer->Append(std::move(slice));
         read_task_queue_.pop();
-        return true;  // returns true since the data is already available
+        return true;  // Returns true since the data is already available.
       } else {
         auto status = read_task_queue_.front().status;
         read_task_queue_.pop();
@@ -197,13 +197,13 @@ class MockEndpoint
       grpc_event_engine::experimental::SliceBuffer* /* data */,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
       /* args */) {
-    // should always schedule a write first
+    // Should always schedule a write first.
     GPR_ASSERT(!write_task_queue_.empty());
 
     if (write_task_queue_.front().ready) {
       if (write_task_queue_.front().status.ok()) {
         write_task_queue_.pop();
-        return true;  // returns true since the data is already available
+        return true;  // Returns true since the data is already available.
       } else {
         auto status = write_task_queue_.front().status;
         write_task_queue_.pop();
@@ -234,18 +234,19 @@ class MockActivity : public grpc_core::Activity, public grpc_core::Wakeable {
  public:
   MOCK_METHOD(void, WakeupRequested, ());
 
-  void ForceImmediateRepoll() override { WakeupRequested(); }
+  void ForceImmediateRepoll(grpc_core::WakeupMask mask) override { WakeupRequested(); }
   void Orphan() override {}
   grpc_core::Waker MakeOwningWaker() override {
-    return grpc_core::Waker(this, nullptr);
+    return grpc_core::Waker(this, 0);
   }
   grpc_core::Waker MakeNonOwningWaker() override {
-    return grpc_core::Waker(this, nullptr);
+    return grpc_core::Waker(this, 0);
   }
-  void Wakeup(void*) override { WakeupRequested(); }
-  void Drop(void*) override {}
+  void Wakeup(grpc_core::WakeupMask mask) override { WakeupRequested(); }
+  void WakeupAsync(grpc_core::WakeupMask mask) override { WakeupRequested(); }
+  void Drop(grpc_core::WakeupMask mask) override {}
   std::string DebugTag() const override { return "MockActivity"; }
-  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+  std::string ActivityDebugTag(grpc_core::WakeupMask mask) const override { return DebugTag(); }
 
   void Activate() {
     if (scoped_activity_ == nullptr) {
@@ -1142,7 +1143,7 @@ TEST_F(PromiseEndpointTest, WriteAndWaitFailed) {
 }
 
 TEST_F(PromiseEndpointTest, GetPeerAddress) {
-  // just some random bytes
+  // Just some random bytes.
   const char raw_peer_address[] = {0x55, 0x66, 0x01, 0x55, 0x66, 0x01};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address(
       reinterpret_cast<const sockaddr*>(raw_peer_address),
@@ -1159,7 +1160,7 @@ TEST_F(PromiseEndpointTest, GetPeerAddress) {
 }
 
 TEST_F(PromiseEndpointTest, GetLocalAddress) {
-  // just some random bytes
+  // Just some random bytes.
   const char raw_local_address[] = {0x52, 0x55, 0x66, 0x52, 0x55, 0x66};
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address(
       reinterpret_cast<const sockaddr*>(raw_local_address),

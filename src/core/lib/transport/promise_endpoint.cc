@@ -85,7 +85,7 @@ void PromiseEndpoint::ReadCallback(
         struct grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs>
         requested_read_args) {
   if (!status.ok()) {
-    // invalidates all previous reads
+    // Invalidates all previous reads.
     pending_read_buffer_.Clear();
     read_buffer_.Clear();
 
@@ -93,13 +93,16 @@ void PromiseEndpoint::ReadCallback(
     read_result_ = status;
     read_waker_.Wakeup();
   } else {
-    // appends `pending_read_buffer_` to `read_buffer_`
+    // Appends `pending_read_buffer_` to `read_buffer_`.
     pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
         pending_read_buffer_.Length(), read_buffer_);
     GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
 
     if (read_buffer_.Length() < num_bytes_requested) {
       // A further read is needed.
+      // If `Read()` returns true immediately, the callback will not be
+      // called. We still need to call our callback to pick up the result and
+      // maybe do further reads.
       if (endpoint_->Read(std::bind(&PromiseEndpoint::ReadCallback, this,
                                     std::placeholders::_1, num_bytes_requested,
                                     requested_read_args),
@@ -107,9 +110,6 @@ void PromiseEndpoint::ReadCallback(
                           requested_read_args.has_value()
                               ? (&(requested_read_args.value()))
                               : nullptr /* uses default arguments */)) {
-        // If read call returns true immediately, the callback will not be
-        // called. We still need to call our callback to pick up the result and
-        // maybe do further reads.
         ReadCallback(absl::OkStatus(), num_bytes_requested,
                      requested_read_args);
       }
