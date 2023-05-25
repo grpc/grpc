@@ -20,8 +20,11 @@
 
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
-#include <string>
+#include <string.h>
+
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 #include <grpc/support/log.h>
 
@@ -29,22 +32,29 @@ namespace grpc_core {
 
 void CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
     std::unique_ptr<CertificateProviderFactory> factory) {
-  absl::string_view name = factory->name();
   gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
-          std::string(name).c_str());
-  GPR_ASSERT(factories_.emplace(name, std::move(factory)).second);
+          factory->name());
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
+  }
+  factories_.push_back(std::move(factory));
 }
 
 CertificateProviderRegistry CertificateProviderRegistry::Builder::Build() {
-  return CertificateProviderRegistry(std::move(factories_));
+  CertificateProviderRegistry r;
+  r.factories_ = std::move(factories_);
+  return r;
 }
 
 CertificateProviderFactory*
 CertificateProviderRegistry::LookupCertificateProviderFactory(
     absl::string_view name) const {
-  auto it = factories_.find(name);
-  if (it == factories_.end()) return nullptr;
-  return it->second.get();
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    if (name == factories_[i]->name()) {
+      return factories_[i].get();
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace grpc_core

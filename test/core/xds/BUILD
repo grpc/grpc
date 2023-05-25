@@ -31,8 +31,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//src/core:grpc_xds_client",
@@ -45,8 +43,6 @@ grpc_cc_test(
     srcs = ["certificate_provider_store_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -59,11 +55,22 @@ grpc_cc_test(
     srcs = ["file_watcher_certificate_provider_factory_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "google_mesh_ca_certificate_provider_factory_test",
+    srcs = ["google_mesh_ca_certificate_provider_factory_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_google_mesh_ca_certificate_provider_factory",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -74,8 +81,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -92,8 +97,6 @@ grpc_cc_test(
     srcs = ["xds_certificate_provider_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",

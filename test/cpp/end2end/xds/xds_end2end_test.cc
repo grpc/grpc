@@ -216,30 +216,28 @@ class FakeCertificateProviderFactory
  public:
   class Config : public grpc_core::CertificateProviderFactory::Config {
    public:
-    explicit Config(absl::string_view name) : name_(name) {}
+    explicit Config(const char* name) : name_(name) {}
 
-    absl::string_view name() const override { return name_; }
+    const char* name() const override { return name_; }
 
     std::string ToString() const override { return "{}"; }
 
    private:
-    absl::string_view name_;
+    const char* name_;
   };
 
   FakeCertificateProviderFactory(
-      absl::string_view name,
+      const char* name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
     GPR_ASSERT(cert_data_map != nullptr);
   }
 
-  absl::string_view name() const override { return name_; }
+  const char* name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(
-      const grpc_core::Json& /*config_json*/,
-      const grpc_core::JsonArgs& /*args*/,
-      grpc_core::ValidationErrors* /*errors*/) override {
+  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
+                                  grpc_error_handle* /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
@@ -253,7 +251,7 @@ class FakeCertificateProviderFactory
   }
 
  private:
-  absl::string_view name_;
+  const char* name_;
   FakeCertificateProvider::CertDataMapWrapper* cert_data_map_;
 };
 

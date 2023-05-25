@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <initializer_list>
-#include <map>
 #include <memory>
 #include <vector>
 
@@ -33,13 +32,14 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
 namespace {
 
-constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
+const char* kFileWatcherPlugin = "file_watcher";
 
 }  // namespace
 
@@ -47,7 +47,7 @@ constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
 // FileWatcherCertificateProviderFactory::Config
 //
 
-absl::string_view FileWatcherCertificateProviderFactory::Config::name() const {
+const char* FileWatcherCertificateProviderFactory::Config::name() const {
   return kFileWatcherPlugin;
 }
 
@@ -71,46 +71,58 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
   return absl::StrJoin(parts, "");
 }
 
-const JsonLoaderInterface*
-FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<Config>()
-          .OptionalField("certificate_file", &Config::identity_cert_file_)
-          .OptionalField("private_key_file", &Config::private_key_file_)
-          .OptionalField("ca_certificate_file", &Config::root_cert_file_)
-          .OptionalField("refresh_interval", &Config::refresh_interval_)
-          .Finish();
-  return loader;
-}
-
-void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
-    const Json& json, const JsonArgs& /*args*/, ValidationErrors* errors) {
-  if ((json.object().find("certificate_file") == json.object().end()) !=
-      (json.object().find("private_key_file") == json.object().end())) {
-    errors->AddError(
+RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
+FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
+                                                     grpc_error_handle* error) {
+  auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
+  if (config_json.type() != Json::Type::kObject) {
+    *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
+    return nullptr;
+  }
+  std::vector<grpc_error_handle> error_list;
+  ParseJsonObjectField(config_json.object(), "certificate_file",
+                       &config->identity_cert_file_, &error_list, false);
+  ParseJsonObjectField(config_json.object(), "private_key_file",
+                       &config->private_key_file_, &error_list, false);
+  if (config->identity_cert_file_.empty() !=
+      config->private_key_file_.empty()) {
+    error_list.push_back(GRPC_ERROR_CREATE(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
-        "or both unset");
+        "or both unset."));
   }
-  if ((json.object().find("certificate_file") == json.object().end()) &&
-      (json.object().find("ca_certificate_file") == json.object().end())) {
-    errors->AddError(
-        "at least one of \"certificate_file\" and \"ca_certificate_file\" must "
-        "be specified");
+  ParseJsonObjectField(config_json.object(), "ca_certificate_file",
+                       &config->root_cert_file_, &error_list, false);
+  if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
+    error_list.push_back(GRPC_ERROR_CREATE(
+        "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
+        "be specified."));
   }
+  if (!ParseJsonObjectFieldAsDuration(config_json.object(), "refresh_interval",
+                                      &config->refresh_interval_, &error_list,
+                                      false)) {
+    config->refresh_interval_ = Duration::Minutes(10);  // 10 minutes default
+  }
+  if (!error_list.empty()) {
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+        "Error parsing file watcher certificate provider config", &error_list);
+    return nullptr;
+  }
+  return config;
 }
 
 //
 // FileWatcherCertificateProviderFactory
 //
 
-absl::string_view FileWatcherCertificateProviderFactory::name() const {
+const char* FileWatcherCertificateProviderFactory::name() const {
   return kFileWatcherPlugin;
 }
 
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, const JsonArgs& args, ValidationErrors* errors) {
-  return LoadFromJson<RefCountedPtr<Config>>(config_json, args, errors);
+    const Json& config_json, grpc_error_handle* error) {
+  return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
+                                                              error);
 }
 
 RefCountedPtr<grpc_tls_certificate_provider>
@@ -118,7 +130,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     RefCountedPtr<CertificateProviderFactory::Config> config) {
   if (config->name() != name()) {
     gpr_log(GPR_ERROR, "Wrong config type Actual:%s vs Expected:%s",
-            std::string(config->name()).c_str(), std::string(name()).c_str());
+            config->name(), name());
     return nullptr;
   }
   auto* file_watcher_config =
