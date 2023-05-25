@@ -72,7 +72,7 @@
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
-  expiry: 2023/11/01
+  expiry: never-ever
   owner: ctiller@google.com
   test_tags: []
 - name: promise_based_client_call
