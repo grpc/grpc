@@ -150,6 +150,7 @@ grpc_proto_fuzzer(
     ],
     language = "C++",
     proto = "memory_quota_fuzzer.proto",
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
@@ -164,5 +165,6 @@ grpc_proto_fuzzer(
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:useful",
+        "//test/core/util:fuzz_config_vars",
     ],
 )
