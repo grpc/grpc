@@ -163,6 +163,7 @@ grpc_proto_fuzzer(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:memory_quota",
         "//src/core:useful",
         "//test/core/util:fuzz_config_vars",
