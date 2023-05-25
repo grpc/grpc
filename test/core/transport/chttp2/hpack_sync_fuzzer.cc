@@ -45,6 +45,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -169,5 +170,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 
 DEFINE_PROTO_FUZZER(const hpack_sync_fuzzer::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::FuzzOneInput(msg);
 }
