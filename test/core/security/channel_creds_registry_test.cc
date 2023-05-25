@@ -96,9 +96,15 @@ class ChannelCredsRegistryTest : public ::testing::Test {
   }
 };
 
+// Run this test on Linux only.
+// On Windows, GoogleDefaultCreds wants to read a file that doesn't
+// exist on kokoro.
+// On Mac, GoogleDefaultCreds is unuspported.
+#ifdef GPR_LINUX
 TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
   TestCreds("google_default", grpc_google_default_channel_credentials::Type());
 }
+#endif  // GPR_LINUX
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {
   TestCreds("insecure", InsecureCredentials::Type());
