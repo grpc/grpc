@@ -28,18 +28,17 @@ grpc_cc_library(
     hdrs = ["xds_server.h"],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/service/discovery/v3:pkg_cc_grpc",
+        "envoy/config/endpoint/v3:pkg_cc_proto",
+        "envoy/config/listener/v3:pkg_cc_proto",
+        "envoy/service/load_stats/v3:pkg_cc_grpc",
+        "envoy/config/route/v3:pkg_cc_proto",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:ads_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:lrs_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
     ],
@@ -52,6 +51,15 @@ grpc_cc_library(
     hdrs = ["xds_end2end_test_lib.h"],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/service/discovery/v3:pkg_cc_grpc",
+        "envoy/config/endpoint/v3:pkg_cc_proto",
+        "envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
+        "envoy/config/listener/v3:pkg_cc_proto",
+        "envoy/service/load_stats/v3:pkg_cc_grpc",
+        "envoy/config/route/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
     ],
     deps = [
         ":xds_server",
@@ -62,16 +70,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds/v3:ads_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:lrs_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
         "//test/cpp/end2end:test_service_impl",
@@ -94,6 +92,17 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/config/endpoint/v3:pkg_cc_proto",
+        "envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
+        "envoy/config/listener/v3:pkg_cc_proto",
+        "envoy/config/route/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
+        "envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
+        "envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -113,17 +122,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
-        "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -162,6 +160,7 @@ grpc_cc_test(
     srcs = ["xds_cluster_type_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -176,7 +175,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
@@ -213,9 +211,16 @@ grpc_cc_test(
     srcs = ["xds_csds_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/config/endpoint/v3:pkg_cc_proto",
+        "envoy/config/listener/v3:pkg_cc_proto",
+        "envoy/config/route/v3:pkg_cc_proto",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
         "no_test_ios",
         "no_windows",
         "xds_end2end_test",
@@ -226,10 +231,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_csds",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -240,6 +241,7 @@ grpc_cc_test(
     srcs = ["xds_fault_injection_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
     ],
     flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -254,10 +256,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -268,6 +266,8 @@ grpc_cc_test(
     srcs = ["xds_outlier_detection_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
     ],
     flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -281,8 +281,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -293,6 +291,9 @@ grpc_cc_test(
     srcs = ["xds_wrr_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg_cc_proto",
+        "envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg_cc_proto",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
@@ -305,9 +306,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:client_side_weighted_round_robin_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],
@@ -319,6 +317,11 @@ grpc_cc_test(
     srcs = ["xds_ring_hash_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/config/cluster/v3:pkg_cc_proto",
+        "envoy/config/endpoint/v3:pkg_cc_proto",
+        "envoy/config/listener/v3:pkg_cc_proto",
+        "envoy/config/route/v3:pkg_cc_proto",
+        "envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -334,11 +337,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
@@ -376,6 +374,8 @@ grpc_cc_test(
     srcs = ["xds_routing_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -390,8 +390,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -424,6 +422,9 @@ grpc_cc_test(
     srcs = ["xds_override_host_end2end_test.cc"],
     external_deps = [
         "gtest",
+        "envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "envoy/extensions/http/stateful_session/cookie/v3:pkg_cc_proto",
+        "envoy/extensions/filters/http/stateful_session/v3:pkg_cc_proto",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
@@ -436,9 +437,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
-        "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
-        "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],

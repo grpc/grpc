@@ -72,6 +72,8 @@ def _get_external_deps(external_deps):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
             ret.append("@com_google_googleapis//" + dep)
+        elif dep.startswith("envoy/"):
+            ret.append("@envoy_api//" + dep)
         else:
             ret.append("//external:" + dep)
     return ret

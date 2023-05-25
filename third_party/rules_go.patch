@@ -1,0 +1,31 @@
+# Patch copied from https://github.com/envoyproxy/envoy/blob/main/bazel/rules_go.patch
+# I believe we might be running into the same issue that envoyproxy ran into. Original comment -
+# Bazel RBE on Windows GCP workers currently will not invoke cmd.exe batch files correctly
+#
+# Symptom is program not found 'bazel-out', because of the way that the CreateProcess command
+# is constructed by bazel with actions.run with forward slashes, e.g. the command
+#   cmd.exe /c "bazel-out/host/bin/external/go_sdk/builder.exe.bat"
+# where cmd.exe on GCP is treating 'bazel-out' as the target, and /host as a command line switch.
+# This problem was not observed on Azure CI pipelines or locally by the developers. The eventual
+# fix is not specific to rules_go; this patch simply addresses immediate breakage and can be removed
+# once the underlying issue within Bazel/RBE is fixed.
+# See:
+# - https://github.com/bazelbuild/rules_go/pull/2542
+# - https://github.com/envoyproxy/envoy/issues/11657
+#
+diff --git a/go/private/rules/binary.bzl b/go/private/rules/binary.bzl
+index 91748eda..c1aeb91e 100644
+--- a/go/private/rules/binary.bzl
++++ b/go/private/rules/binary.bzl
+@@ -443,8 +443,9 @@ def _go_tool_binary_impl(ctx):
+             content = cmd,
+         )
+         ctx.actions.run(
+-            executable = bat,
+-            inputs = sdk.headers + sdk.tools + sdk.srcs + ctx.files.srcs + [sdk.go],
++            executable = "cmd.exe",
++            arguments = ["/S", "/C", bat.path.replace("/", "\\")],
++            inputs = sdk.headers + sdk.tools + sdk.srcs + ctx.files.srcs + [sdk.go, bat],
+             outputs = [out, gopath, gocache],
+             mnemonic = "GoToolchainBinaryBuild",
+         )
