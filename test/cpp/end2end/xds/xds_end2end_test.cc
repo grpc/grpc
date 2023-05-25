@@ -1955,7 +1955,7 @@ class XdsRbacTest : public XdsServerRdsTest {
         std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
   }
 
-  ~XdsRbacTest() { AuditLoggerRegistry::TestOnlyResetRegistry(); }
+  ~XdsRbacTest() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
 
   void SetServerRbacPolicies(Listener listener,
                              const std::vector<RBAC>& rbac_policies) {
