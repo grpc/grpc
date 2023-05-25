@@ -44,13 +44,11 @@ Clients should accept these arguments:
       of key:value pairs. The first key/value pair is separated by the first colon.
       The second key/value pair is separated by the next colon *following* the
       next semi-colon thereafter, and so on. For example:
-      - `abc-key:abc-value;foo-key:foo-value`
-          - Key/value pairs: `abc-key`/`abc-value`, `foo-key`/`foo-value`.
-      - `abc-key:abc:value;foo-key:foo:value`
-          - Key/value pairs: `abc-key`/`abc:value`, `foo-key`/`foo:value`.
+      - Flag value: `abc-key:abc-value;foo-key:foo-value`
+      - Key/value pairs: `abc-key`/`abc-value`, `foo-key`/`foo-value`
 
       Keys must be ASCII only (no `-bin` headers allowed). Values may contain
-      any character except semi-colons.
+      any character except `:` and `;`.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
