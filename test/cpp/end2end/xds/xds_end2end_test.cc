@@ -2001,26 +2001,6 @@ class XdsRbacTest : public XdsServerRdsTest {
     SetServerRbacPolicy(default_server_listener_, rbac);
   }
 
-  // Only works where audit_condition and action are parameteraized.
-  bool ShouldLog(bool expects_match) {
-    auto audit_condition = GetParam().rbac_audit_condition();
-    if (audit_condition ==
-        RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW) {
-      return true;
-    }
-    // True means request is allowed. Defaults to true for Action_LOG.
-    bool decision = true;
-    if (GetParam().rbac_action() == RBAC_Action_DENY) {
-      decision = !expects_match;
-    } else if (GetParam().rbac_action() == RBAC_Action_ALLOW) {
-      decision = expects_match;
-    }
-    return (decision && audit_condition ==
-                            RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW) ||
-           (!decision &&
-            audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
-  }
-
   std::vector<std::string> audit_logs_;
 };
 
@@ -3060,17 +3040,25 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
+  auto action = GetParam().rbac_action();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
-          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          /*test_expects_failure=*/action == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  if (ShouldLog(true)) {
-    EXPECT_THAT(
-        audit_logs_,
-        ::testing::ElementsAre(absl::StrFormat(
-            "{\"authorized\":%s,\"matched_rule\":\"policy\","
-            "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
-            "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-            GetParam().rbac_action() == RBAC_Action_DENY ? "false" : "true")));
+  auto audit_condition = GetParam().rbac_audit_condition();
+  bool should_log =
+      (audit_condition ==
+       RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW) ||
+      (action != RBAC_Action_DENY &&
+       audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW) ||
+      (action == RBAC_Action_DENY &&
+       audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  if (should_log) {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAre(absl::StrFormat(
+                    "{\"authorized\":%s,\"matched_rule\":\"policy\","
+                    "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                    "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                    action == RBAC_Action_DENY ? "false" : "true")));
   } else {
     EXPECT_TRUE(audit_logs_.empty());
   }
