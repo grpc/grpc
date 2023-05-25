@@ -44,6 +44,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -442,6 +443,8 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::chttp2::InitGlobals();
   grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {

@@ -50,12 +50,14 @@ grpc_proto_fuzzer(
     corpus = "flow_control_fuzzer_corpus",
     language = "C++",
     proto = "flow_control_fuzzer.proto",
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//src/core:chttp2_flow_control",
+        "//test/core/util:fuzz_config_vars",
     ],
 )
 
