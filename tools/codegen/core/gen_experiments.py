@@ -111,11 +111,11 @@ for attr in attrs:
         if check_dates:
             if expiry < today:
                 print("experiment %s expired on %s" %
-                    (attr['name'], attr['expiry']))
+                      (attr['name'], attr['expiry']))
                 error = True
             if expiry > two_quarters_from_now:
                 print("experiment %s expires far in the future on %s" %
-                    (attr['name'], attr['expiry']))
+                      (attr['name'], attr['expiry']))
                 print("expiry should be no more than two quarters from now")
                 error = True
             experiment_annotation += attr['name'] + ':0,'
