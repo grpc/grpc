@@ -49,6 +49,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/fuzzing_channel_args.h"
 
 bool squelch = true;
@@ -278,6 +279,8 @@ grpc_core::ResolverArgs ConstructResolverArgs(
 DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
   bool done_resolving = false;
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory([msg,
                                                           &done_resolving]() {
     return std::make_unique<FuzzingResolverEventEngine>(msg, &done_resolving);

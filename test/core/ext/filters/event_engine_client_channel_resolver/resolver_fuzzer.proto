@@ -17,6 +17,7 @@ syntax = "proto3";
 package event_engine_client_channel_resolver;
 
 import "test/core/util/fuzzing_channel_args.proto";
+import "test/core/util/fuzz_config_vars.proto";
 
 message Error {
     uint32 code = 1;
@@ -72,6 +73,7 @@ enum ExecutionStep {
 
 message Msg {
     grpc.testing.FuzzingChannelArgs channel_args = 1;
+    grpc.testing.FuzzConfigVars config_vars = 9;
     oneof hostname {
         ResolvedAddresses hostname_response = 2;
         Error hostname_error = 3;

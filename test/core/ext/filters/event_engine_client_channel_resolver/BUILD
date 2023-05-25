@@ -26,7 +26,7 @@ grpc_proto_fuzzer(
     corpus = "resolver_fuzzer_corpus",
     language = "C++",
     proto = "resolver_fuzzer.proto",
-    proto_deps = ["//test/core/util:fuzzing_channel_args_proto"],
+    proto_deps = ["//test/core/util:fuzzing_channel_args_proto","//test/core/util:fuzz_config_vars_proto"],
     tags = [
         "no_mac",
         "no_windows",
@@ -40,6 +40,7 @@ grpc_proto_fuzzer(
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:fuzzing_channel_args",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
