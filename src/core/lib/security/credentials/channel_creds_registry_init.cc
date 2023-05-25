@@ -65,7 +65,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
-    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    bool Equals(const ChannelCredsConfig&) const override { return true; }
     Json ToJson() const override { return Json::FromObject({}); }
   };
 
@@ -168,7 +168,7 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
-    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    bool Equals(const ChannelCredsConfig&) const override { return true; }
     Json ToJson() const override { return Json::FromObject({}); }
   };
 
@@ -193,7 +193,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
-    bool Equals(const ChannelCredsConfig& other) const override { return true; }
+    bool Equals(const ChannelCredsConfig&) const override { return true; }
     Json ToJson() const override { return Json::FromObject({}); }
   };
 
