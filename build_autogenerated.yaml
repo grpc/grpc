@@ -3694,6 +3694,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
@@ -5465,6 +5466,7 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -7110,6 +7112,7 @@ targets:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -7635,6 +7638,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
@@ -8040,17 +8044,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++_test_util
-- name: google_mesh_ca_certificate_provider_factory_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
-  src:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
-  - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
-  deps:
-  - grpc_test_util
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -13000,6 +12993,7 @@ targets:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -13009,6 +13003,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
