@@ -10233,6 +10233,17 @@ targets:
   deps:
   - gpr
   uses_polling: false
+- name: promise_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/transport/promise_endpoint.h
+  src:
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/transport/promise_endpoint_test.cc
+  deps:
+  - grpc
 - name: promise_factory_test
   gtest: true
   build: test
