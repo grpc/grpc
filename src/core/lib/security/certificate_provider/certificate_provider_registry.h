@@ -21,9 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
 #include <memory>
-#include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 
@@ -33,24 +32,20 @@ namespace grpc_core {
 
 // Global registry for all the certificate provider plugins.
 class CertificateProviderRegistry {
- private:
-  using FactoryMap =
-      std::map<absl::string_view, std::unique_ptr<CertificateProviderFactory>>;
-
  public:
   class Builder {
    public:
-    // Register a provider with the registry. The key of the factory is
-    // extracted from factory parameter with method
-    // CertificateProviderFactory::name. The registry with a given name
-    // cannot be registered twice.
+    // Register a provider with the registry. Can only be called after calling
+    // InitRegistry(). The key of the factory is extracted from factory
+    // parameter with method CertificateProviderFactory::name. If the same key
+    // is registered twice, an exception is raised.
     void RegisterCertificateProviderFactory(
         std::unique_ptr<CertificateProviderFactory> factory);
 
     CertificateProviderRegistry Build();
 
    private:
-    FactoryMap factories_;
+    std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
   };
 
   CertificateProviderRegistry(const CertificateProviderRegistry&) = delete;
@@ -65,10 +60,9 @@ class CertificateProviderRegistry {
       absl::string_view name) const;
 
  private:
-  explicit CertificateProviderRegistry(FactoryMap factories)
-      : factories_(std::move(factories)) {}
+  CertificateProviderRegistry() = default;
 
-  FactoryMap factories_;
+  std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
 };
 
 }  // namespace grpc_core

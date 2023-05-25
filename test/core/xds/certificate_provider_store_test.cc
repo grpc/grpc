@@ -30,6 +30,7 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/error.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -68,17 +69,16 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    absl::string_view name() const override { return "fake1"; }
+    const char* name() const override { return "fake1"; }
 
     std::string ToString() const override { return "{}"; }
   };
 
-  absl::string_view name() const override { return "fake1"; }
+  const char* name() const override { return "fake1"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  const JsonArgs& /*args*/,
-                                  ValidationErrors* /*errors*/) override {
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -92,17 +92,16 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    absl::string_view name() const override { return "fake2"; }
+    const char* name() const override { return "fake2"; }
 
     std::string ToString() const override { return "{}"; }
   };
 
-  absl::string_view name() const override { return "fake2"; }
+  const char* name() const override { return "fake2"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  const JsonArgs& /*args*/,
-                                  ValidationErrors* /*errors*/) override {
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -128,13 +127,13 @@ TEST_F(CertificateProviderStoreTest, Basic) {
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::FromObject({}), JsonArgs(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
             {"fake_plugin_2",
              {"fake2", fake_factory_2->CreateCertificateProviderConfig(
-                           Json::FromObject({}), JsonArgs(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
             {"fake_plugin_3",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::FromObject({}), JsonArgs(), nullptr)}},
+                           Json::FromObject({}), nullptr)}},
         };
         auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
         // Test for creating certificate providers with known plugin
@@ -176,7 +175,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                           Json::FromObject({}), JsonArgs(), nullptr)}}};
+                           Json::FromObject({}), nullptr)}}};
         auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
         // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
         std::vector<std::thread> threads;
