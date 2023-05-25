@@ -52,6 +52,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/audit_logging.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -82,6 +83,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -96,12 +98,16 @@
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/util/audit_logging_utils.h"
 #include "test/core/util/port.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
@@ -116,15 +122,26 @@ using ::envoy::config::rbac::v3::Policy;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
 using ::envoy::config::rbac::v3::RBAC_Action_LOG;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
+using ::xds::type::v3::TypedStruct;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::RegisterAuditLoggerFactory;
 using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc_core::experimental::AuditLoggerRegistry;
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
+using ::grpc_core::testing::TestAuditLoggerFactory;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
@@ -1933,6 +1950,13 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
 // override permutations.
 class XdsRbacTest : public XdsServerRdsTest {
  protected:
+  XdsRbacTest() {
+    RegisterAuditLoggerFactory(
+        std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
+  }
+
+  ~XdsRbacTest() { AuditLoggerRegistry::TestOnlyResetRegistry(); }
+
   void SetServerRbacPolicies(Listener listener,
                              const std::vector<RBAC>& rbac_policies) {
     HttpConnectionManager http_connection_manager =
@@ -1976,6 +2000,28 @@ class XdsRbacTest : public XdsServerRdsTest {
   void SetServerRbacPolicy(const RBAC& rbac) {
     SetServerRbacPolicy(default_server_listener_, rbac);
   }
+
+  // Only works where audit_condition and action are parameteraized.
+  bool ShouldLog(bool expects_match) {
+    auto audit_condition = GetParam().rbac_audit_condition();
+    if (audit_condition ==
+        RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW) {
+      return true;
+    }
+    // True means request is allowed. Defaults to true for Action_LOG.
+    bool decision = true;
+    if (GetParam().rbac_action() == RBAC_Action_DENY) {
+      decision = !expects_match;
+    } else if (GetParam().rbac_action() == RBAC_Action_ALLOW) {
+      decision = expects_match;
+    }
+    return (decision && audit_condition ==
+                            RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW) ||
+           (!decision &&
+            audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  }
+
+  std::vector<std::string> audit_logs_;
 };
 
 TEST_P(XdsRbacTest, AbsentRbacPolicy) {
@@ -2102,6 +2148,34 @@ TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations,
+       AuditLoggerNotInvokedOnAuditConditionNone) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  rbac.mutable_rules()->set_action(GetParam().rbac_action());
+  auto* logging_options = rbac.mutable_rules()->mutable_audit_logging_options();
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger = test_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // An empty RBAC policy leads to all RPCs being rejected.
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_TRUE(audit_logs_.empty());
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -2141,6 +2215,139 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger = test_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the rpc, only one log from the first rbac.
+  // Otherwise, all three rbacs log.
+  EXPECT_EQ(audit_logs_.size(),
+            GetParam().rbac_action() == RBAC_Action_DENY ? 1 : 3);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger = test_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // Only the second rbac logs if it denies the rpc.
+  EXPECT_EQ(audit_logs_.size(),
+            GetParam().rbac_action() == RBAC_Action_DENY ? 1 : 0);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnDenyAndAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger = test_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the request, the last rbac won't log. Otherwise
+  // all rbacs log.
+  EXPECT_EQ(audit_logs_.size(),
+            GetParam().rbac_action() == RBAC_Action_DENY ? 2 : 3);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
@@ -2788,6 +2995,87 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+// Adds Audit Condition Permutations to XdsRbacTest
+using XdsRbacTestWithActionAndAuditConditionPermutations = XdsRbacTest;
+
+TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
+       AuditLoggingDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(GetParam().rbac_audit_condition());
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger = test_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_TRUE(audit_logs_.empty());
+}
+
+TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(GetParam().rbac_audit_condition());
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      stdout_logger;
+  auto* audit_logger = stdout_logger.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = stdout_logger;
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      test_logger;
+  auto* audit_logger2 = test_logger.mutable_audit_logger();
+  audit_logger2->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger2->mutable_typed_config()->PackFrom(typed_struct);
+  *logging_options->add_logger_configs() = test_logger;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  if (ShouldLog(true)) {
+    EXPECT_THAT(
+        audit_logs_,
+        ::testing::ElementsAre(absl::StrFormat(
+            "{\"authorized\":%s,\"matched_rule\":\"policy\","
+            "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+            "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+            GetParam().rbac_action() == RBAC_Action_DENY ? "false" : "true")));
+  } else {
+    EXPECT_TRUE(audit_logs_.empty());
+  }
+}
+
 // CDS depends on XdsResolver.
 // Security depends on v3.
 // Not enabling load reporting or RDS, since those are irrelevant to these
@@ -2940,6 +3228,48 @@ INSTANTIATE_TEST_SUITE_P(
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithActionAndAuditConditionPermutations,
+    ::testing::Values(
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
     &XdsTestType::Name);
 
