@@ -102,18 +102,23 @@ for attr in attrs:
     if 'expiry' not in attr:
         print("no expiry for experiment %s" % attr['name'])
         error = True
-    expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
-    if check_dates:
-        if expiry < today:
-            print("experiment %s expired on %s" %
-                  (attr['name'], attr['expiry']))
+    if attr['name'] == 'monitoring_experiment':
+        if attr['expiry'] != 'never-ever':
+            print("monitoring_experiment should never expire")
             error = True
-        if expiry > two_quarters_from_now:
-            print("experiment %s expires far in the future on %s" %
-                  (attr['name'], attr['expiry']))
-            print("expiry should be no more than two quarters from now")
-            error = True
-        experiment_annotation += attr['name'] + ':0,'
+    else:
+        expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
+        if check_dates:
+            if expiry < today:
+                print("experiment %s expired on %s" %
+                    (attr['name'], attr['expiry']))
+                error = True
+            if expiry > two_quarters_from_now:
+                print("experiment %s expires far in the future on %s" %
+                    (attr['name'], attr['expiry']))
+                print("expiry should be no more than two quarters from now")
+                error = True
+            experiment_annotation += attr['name'] + ':0,'
 
 if len(experiment_annotation) > 2000:
     print("comma-delimited string of experiments is too long")
