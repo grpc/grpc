@@ -25,12 +25,12 @@ grpc_proto_fuzzer(
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
     proto = "hpack_parser_fuzzer.proto",
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
-    proto_deps=["//test/core/util:fuzz_config_vars_proto",],
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
         "//test/core/util:fuzz_config_vars",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -39,12 +39,12 @@ grpc_proto_fuzzer(
     srcs = ["hpack_sync_fuzzer.cc"],
     corpus = "hpack_sync_corpus",
     proto = "hpack_sync_fuzzer.proto",
-    proto_deps=["//test/core/util:fuzz_config_vars_proto",],
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
         "//test/core/util:fuzz_config_vars",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
