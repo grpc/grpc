@@ -43,6 +43,7 @@
 #include "absl/strings/str_replace.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -2128,34 +2129,6 @@ TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTestWithActionPermutations,
-       AuditLoggerNotInvokedOnAuditConditionNone) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  RBAC rbac;
-  rbac.mutable_rules()->set_action(GetParam().rbac_action());
-  auto* logging_options = rbac.mutable_rules()->mutable_audit_logging_options();
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger = test_logger.mutable_audit_logger();
-  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
-  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
-      grpc::StatusCode::OK);
-  // An empty RBAC policy leads to all RPCs being rejected.
-  SendRpc(
-      [this]() { return CreateInsecureChannel(); }, {}, {},
-      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
-  EXPECT_TRUE(audit_logs_.empty());
-}
-
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -2195,139 +2168,6 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-}
-
-TEST_P(XdsRbacTestWithActionPermutations,
-       MultipleRbacPoliciesWithAuditOnAllow) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  RBAC always_allow;
-  auto* rules = always_allow.mutable_rules();
-  rules->set_action(RBAC_Action_ALLOW);
-  Policy policy;
-  policy.add_permissions()->set_any(true);
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  auto* logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger = test_logger.mutable_audit_logger();
-  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
-  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
-  RBAC rbac;
-  rules = rbac.mutable_rules();
-  rules->set_action(GetParam().rbac_action());
-  (*rules->mutable_policies())["policy"] = policy;
-  logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
-  *logging_options->add_logger_configs() = test_logger;
-  SetServerRbacPolicies(default_server_listener_,
-                        {always_allow, rbac, always_allow});
-  backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
-      grpc::StatusCode::OK);
-  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
-          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
-  // If the second rbac denies the rpc, only one log from the first rbac.
-  // Otherwise, all three rbacs log.
-  EXPECT_EQ(audit_logs_.size(),
-            GetParam().rbac_action() == RBAC_Action_DENY ? 1 : 3);
-}
-
-TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  RBAC always_allow;
-  auto* rules = always_allow.mutable_rules();
-  rules->set_action(RBAC_Action_ALLOW);
-  Policy policy;
-  policy.add_permissions()->set_any(true);
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  auto* logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger = test_logger.mutable_audit_logger();
-  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
-  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
-  RBAC rbac;
-  rules = rbac.mutable_rules();
-  rules->set_action(GetParam().rbac_action());
-  (*rules->mutable_policies())["policy"] = policy;
-  logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
-  *logging_options->add_logger_configs() = test_logger;
-  SetServerRbacPolicies(default_server_listener_,
-                        {always_allow, rbac, always_allow});
-  backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
-      grpc::StatusCode::OK);
-  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
-          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
-  // Only the second rbac logs if it denies the rpc.
-  EXPECT_EQ(audit_logs_.size(),
-            GetParam().rbac_action() == RBAC_Action_DENY ? 1 : 0);
-}
-
-TEST_P(XdsRbacTestWithActionPermutations,
-       MultipleRbacPoliciesWithAuditOnDenyAndAllow) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
-  RBAC always_allow;
-  auto* rules = always_allow.mutable_rules();
-  rules->set_action(RBAC_Action_ALLOW);
-  Policy policy;
-  policy.add_permissions()->set_any(true);
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  auto* logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger = test_logger.mutable_audit_logger();
-  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
-  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
-  RBAC rbac;
-  rules = rbac.mutable_rules();
-  rules->set_action(GetParam().rbac_action());
-  (*rules->mutable_policies())["policy"] = policy;
-  logging_options = rules->mutable_audit_logging_options();
-  logging_options->set_audit_condition(
-      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
-  *logging_options->add_logger_configs() = test_logger;
-  SetServerRbacPolicies(default_server_listener_,
-                        {always_allow, rbac, always_allow});
-  backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
-      grpc::StatusCode::OK);
-  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
-          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
-  // If the second rbac denies the request, the last rbac won't log. Otherwise
-  // all rbacs log.
-  EXPECT_EQ(audit_logs_.size(),
-            GetParam().rbac_action() == RBAC_Action_DENY ? 2 : 3);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
@@ -2975,6 +2815,206 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations,
+       AuditLoggerNotInvokedOnAuditConditionNone) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  rbac.mutable_rules()->set_action(GetParam().rbac_action());
+  auto* logging_options = rbac.mutable_rules()->mutable_audit_logging_options();
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // An empty RBAC policy leads to all RPCs being rejected.
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the rpc, only one log from the first rbac.
+  // Otherwise, all three rbacs log.
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAreArray(
+                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  } else {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAreArray(
+                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                     "{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                     "{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac3\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  }
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // Only the second rbac logs if it denies the rpc.
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAreArray(
+                    {"{\"authorized\":false,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  } else {
+    EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+  }
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnDenyAndAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the request, the last rbac won't log. Otherwise
+  // all rbacs log.
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAreArray(
+                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                     "{\"authorized\":false,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  } else {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAreArray(
+                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                     "{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                     "{\"authorized\":true,\"matched_rule\":\"policy\","
+                     "\"policy_name\":\"rbac3\",\"principal\":\"\",\"rpc_"
+                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  }
+}
+
 // Adds Audit Condition Permutations to XdsRbacTest
 using XdsRbacTestWithActionAndAuditConditionPermutations = XdsRbacTest;
 
@@ -2989,15 +3029,13 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   (*rules->mutable_policies())["policy"] = policy;
   auto* logging_options = rules->mutable_audit_logging_options();
   logging_options->set_audit_condition(GetParam().rbac_audit_condition());
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger = test_logger.mutable_audit_logger();
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
   typed_struct.mutable_value()->mutable_fields();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -3006,7 +3044,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  EXPECT_TRUE(audit_logs_.empty());
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
 }
 
 TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
@@ -3020,21 +3058,17 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   (*rules->mutable_policies())["policy"] = policy;
   auto* logging_options = rules->mutable_audit_logging_options();
   logging_options->set_audit_condition(GetParam().rbac_audit_condition());
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      stdout_logger;
-  auto* audit_logger = stdout_logger.mutable_audit_logger();
-  audit_logger->mutable_typed_config()->set_type_url(
+  auto* stdout_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  stdout_logger->mutable_typed_config()->set_type_url(
       "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
-  *logging_options->add_logger_configs() = stdout_logger;
-  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
-      test_logger;
-  auto* audit_logger2 = test_logger.mutable_audit_logger();
-  audit_logger2->mutable_typed_config()->set_type_url("/test_logger");
+  auto* test_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  test_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
   typed_struct.mutable_value()->mutable_fields();
-  audit_logger2->mutable_typed_config()->PackFrom(typed_struct);
-  *logging_options->add_logger_configs() = test_logger;
+  test_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -3060,7 +3094,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
                     action == RBAC_Action_DENY ? "false" : "true")));
   } else {
-    EXPECT_TRUE(audit_logs_.empty());
+    EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
   }
 }
 

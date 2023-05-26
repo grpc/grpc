@@ -147,18 +147,13 @@ class XdsTestType {
     } else if (rbac_action_ == ::envoy::config::rbac::v3::RBAC_Action_DENY) {
       retval += "RbacDeny";
     }
-    if (rbac_audit_condition_ ==
+    if (rbac_audit_condition_ !=
         ::envoy::config::rbac::v3::
-            RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW) {
-      retval += "AuditConditionOnAllow";
-    } else if (rbac_audit_condition_ ==
-               ::envoy::config::rbac::v3::
-                   RBAC_AuditLoggingOptions_AuditCondition_ON_DENY) {
-      retval += "AuditConditionOnDeny";
-    } else if (rbac_audit_condition_ ==
-               ::envoy::config::rbac::v3::
-                   RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW) {
-      retval += "AuditConditionOnDenyAndAllow";
+            RBAC_AuditLoggingOptions_AuditCondition_NONE) {
+      retval += absl::StrCat("AuditCondition",
+                             ::envoy::config::rbac::v3::
+                                 RBAC_AuditLoggingOptions_AuditCondition_Name(
+                                     rbac_audit_condition_));
     }
     return retval;
   }
