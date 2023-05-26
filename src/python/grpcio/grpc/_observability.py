@@ -109,7 +109,7 @@ def observability_init(observability_plugin: ObservabilityPlugin) -> None:
         _LOGGER.exception("Failed to set server call tracer factory!")
 
 
-def observability_exit() -> None:
+def observability_deinit() -> None:
     # Clear the plugin so it can be re-initizialized again.
     set_plugin(None)
     _cygrpc.clear_server_call_tracer_factory()

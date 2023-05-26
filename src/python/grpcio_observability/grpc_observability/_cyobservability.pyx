@@ -189,7 +189,7 @@ def _c_annotation_to_annotations(vector[Annotation] c_annotations) -> List[Tuple
   return py_annotations
 
 
-def observability_exit() -> None:
+def observability_deinit() -> None:
   _shutdown_exporting_thread()
   EnablePythonCensusStats(False)
   EnablePythonCensusTracing(False)
