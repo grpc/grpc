@@ -35,6 +35,7 @@ from framework.helpers import grpc as helpers_grpc
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
 from framework.helpers import skips
+import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -174,6 +175,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value)
         cls.gcp_api_manager = gcp.api.GcpApiManager()
+
+        # Other
+        cls.yaml_highlighter = framework.helpers.highlighter.HighlighterYaml()
 
     @classmethod
     def tearDownClass(cls):

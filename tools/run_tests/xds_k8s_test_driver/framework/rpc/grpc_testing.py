@@ -33,6 +33,7 @@ LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
 _LoadBalancerAccumulatedStatsRequest = messages_pb2.LoadBalancerAccumulatedStatsRequest
 LoadBalancerAccumulatedStatsResponse = messages_pb2.LoadBalancerAccumulatedStatsResponse
 MethodStats = messages_pb2.LoadBalancerAccumulatedStatsResponse.MethodStats
+RpcsByPeer = messages_pb2.LoadBalancerStatsResponse.RpcsByPeer
 
 
 class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):

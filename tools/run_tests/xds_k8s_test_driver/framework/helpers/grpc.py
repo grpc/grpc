@@ -14,13 +14,15 @@
 """This contains common helpers for working with grpc data structures."""
 import dataclasses
 import functools
-import json
 from typing import Dict, List, Optional
 
 import grpc
 import yaml
 
 from framework.rpc import grpc_testing
+
+# Type aliases
+RpcsByPeer: Dict[str, int]
 
 
 @functools.cache  # pylint: disable=no-member
@@ -90,19 +92,46 @@ def accumulated_stats_pretty(
     return yaml.dump(result, sort_keys=False)
 
 
+@dataclasses.dataclass(frozen=True)
+class PrettyLoadBalancerStats:
+    num_failures: int
+    rpcs_by_peer: "RpcsByPeer"
+    rpcs_by_method: Dict[str, "RpcsByPeer"]
+
+    @staticmethod
+    def _parse_rpcs_by_peer(
+            rpcs_by_peer: grpc_testing.RpcsByPeer) -> "RpcsByPeer":
+        result = dict()
+        for peer, count in rpcs_by_peer.items():
+            result[peer] = count
+        return result
+
+    @classmethod
+    def from_response(
+        cls, lb_stats: grpc_testing.LoadBalancerStatsResponse
+    ) -> "PrettyLoadBalancerStats":
+        rpcs_by_method: Dict[str, "RpcsByPeer"] = dict()
+        for method_name, stats in lb_stats.rpcs_by_method.items():
+            if stats:
+                rpcs_by_method[method_name] = cls._parse_rpcs_by_peer(
+                    stats.rpcs_by_peer)
+        return PrettyLoadBalancerStats(
+            num_failures=lb_stats.num_failures,
+            rpcs_by_peer=cls._parse_rpcs_by_peer(lb_stats.rpcs_by_peer),
+            rpcs_by_method=rpcs_by_method,
+        )
+
+
 def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
     """Pretty print LoadBalancerStatsResponse.
 
     Example:
-      - method: EMPTY
-        rpcs_started: 0
-        result:
-          (2, UNKNOWN): 20
-      - method: UNARY
-        rpcs_started: 31
-        result:
-          (0, OK): 10
-          (14, UNAVAILABLE): 20
+      num_failures: 0
+      rpcs_by_method:
+        UnaryCall:
+          psm-grpc-server-6b6547dcdb-gzfm6: 100
+      rpcs_by_peer:
+        psm-grpc-server-6b6547dcdb-gzfm6: 100
     """
-    # tbd
-    return ""
+    pretty_lb_stats = PrettyLoadBalancerStats.from_response(lb)
+    return yaml.dump(dataclasses.asdict(pretty_lb_stats), sort_keys=False)
