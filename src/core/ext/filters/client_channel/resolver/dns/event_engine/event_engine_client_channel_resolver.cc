@@ -53,6 +53,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -227,6 +228,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
@@ -240,7 +243,11 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     srv_handle_ = event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) { self->OnSRVResolved(std::move(srv_records)); },
+                srv_records) {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          self->OnSRVResolved(std::move(srv_records));
+        },
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()),
         resolver_->query_timeout_ms_);
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
@@ -253,6 +260,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::vector<std::string>> service_config) {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
@@ -264,6 +273,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     ~EventEngineDNSRequestWrapper() {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 

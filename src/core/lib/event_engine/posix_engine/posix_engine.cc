@@ -51,7 +51,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -529,15 +528,8 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
-        [cb = std::move(on_resolve), status = request.status()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          {
-            // Destroys the closure before ExecCtx destroys.
-            auto c = std::move(cb);
-            c(status);
-          }
-        });
+        [on_resolve = std::move(on_resolve),
+         status = request.status()]() mutable { on_resolve(status); });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -554,6 +546,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
           // on_resolve called, no longer inflight.
           GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
+        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
         on_resolve(std::move(result));
       });
   return handle;
@@ -569,15 +562,8 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
-        [cb = std::move(on_resolve), status = request.status()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          {
-            // Destroys the closure before ExecCtx destroys.
-            auto c = std::move(cb);
-            c(status);
-          }
-        });
+        [on_resolve = std::move(on_resolve),
+         status = request.status()]() mutable { on_resolve(status); });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -594,6 +580,7 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
           // on_resolve called, no longer inflight.
           GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
+        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
         on_resolve(std::move(result));
       });
   return handle;
@@ -609,15 +596,8 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
   if (!request.ok()) {
     // Report back initialization failure through on_resolve.
     event_engine_->Run(
-        [cb = std::move(on_resolve), status = request.status()]() mutable {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          {
-            // Destroys the closure before ExecCtx destroys.
-            auto c = std::move(cb);
-            c(status);
-          }
-        });
+        [on_resolve = std::move(on_resolve),
+         status = request.status()]() mutable { on_resolve(status); });
     return LookupTaskHandle::kInvalid;
   }
   LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
@@ -634,17 +614,20 @@ LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
           // on_resolve called, no longer inflight.
           GPR_ASSERT(inflight_requests_.erase(handle) == 1);
         }
+        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
         on_resolve(std::move(result));
       });
   return handle;
 }
 
 bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::ReleasableMutexLock lock(&mu_);
   auto iter = inflight_requests_.find(handle);
   if (iter != inflight_requests_.end()) {
     if (reinterpret_cast<GrpcAresRequest*>(iter->keys[0])->Cancel()) {
       inflight_requests_.erase(iter);
+      lock.Release();
+      reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
       return true;
     }
   }
