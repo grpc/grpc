@@ -393,6 +393,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         except retryers.RetryError:
             logging.exception('Got error during teardown')
         finally:
+            if hasattr(cls, 'test_client_runner') and cls.test_client_runner:
+                logging.info('----- Test client logs -----')
+                cls.test_client_runner.logs_explorer_link()
+
             # Fail if any of the pods restarted.
             error_msg = (
                 'Client pods unexpectedly restarted'
