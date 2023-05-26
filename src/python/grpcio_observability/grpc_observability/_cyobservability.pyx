@@ -92,6 +92,7 @@ def _start_exporting_thread(object exporter) -> None:
   global GLOBAL_EXPORT_THREAD
   global GLOBAL_SHUTDOWN_EXPORT_THREAD
   GLOBAL_SHUTDOWN_EXPORT_THREAD = False
+  # TODO(xuanwn): Change it to daemon thread.
   GLOBAL_EXPORT_THREAD = Thread(target=_export_census_data, args=(exporter,))
   GLOBAL_EXPORT_THREAD.start()
 

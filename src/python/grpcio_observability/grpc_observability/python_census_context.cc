@@ -151,7 +151,6 @@ size_t TraceContextSerialize(const PythonCensusContext& context,
 }
 
 size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
-  // TODO(unknown): Add implementation. Waiting on stats tagging to be added.
   return 0;
 }
 
