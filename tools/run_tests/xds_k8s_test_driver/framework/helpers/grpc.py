@@ -50,6 +50,10 @@ class PrettyStatsPerMethod:
     rpcs_started: int
     result: Dict[str, int]
 
+    @functools.cached_property
+    def total_count(self):
+        return sum(self.result.values())
+
     @staticmethod
     def from_response(
             method_name: str,
@@ -67,7 +71,9 @@ class PrettyStatsPerMethod:
 
 
 def accumulated_stats_pretty(
-    accumulated_stats: grpc_testing.LoadBalancerAccumulatedStatsResponse
+    accumulated_stats: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+    *,
+    ignore_empty: bool = False,
 ) -> str:
     """Pretty print LoadBalancerAccumulatedStatsResponse.
 
@@ -87,6 +93,10 @@ def accumulated_stats_pretty(
     for method_name, method_stats in accumulated_stats.stats_per_method.items():
         pretty_stats = PrettyStatsPerMethod.from_response(
             method_name, method_stats)
+        # Skip methods with no RPCs reported when ignore_empty is True.
+        if ignore_empty and not max(pretty_stats.rpcs_started,
+                                    pretty_stats.total_count):
+            continue
         result.append(dataclasses.asdict(pretty_stats))
 
     return yaml.dump(result, sort_keys=False)

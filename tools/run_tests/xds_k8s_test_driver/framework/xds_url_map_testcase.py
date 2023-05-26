@@ -469,8 +469,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         # Configure RPC might race with get stats RPC on slower machines.
         time.sleep(_CLIENT_CONFIGURE_WAIT_SEC)
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
-        logging.info('[%s] Received LoadBalancerStatsResponse:\n%s',
-                     test_client.hostname, cls._pretty_lb_stats(lb_stats))
+        logging.info('[%s] << Received LoadBalancerStatsResponse:\n%s',
+                     test_client.hostname,
+                     helpers_grpc.lb_stats_pretty(lb_stats))
         return RpcDistributionStats(json_format.MessageToDict(lb_stats))
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:

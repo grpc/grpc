@@ -184,8 +184,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     @classmethod
     def _pretty_accumulated_stats(
             cls,
-            accumulated_stats: _LoadBalancerAccumulatedStatsResponse) -> str:
-        stats_yaml = helpers_grpc.accumulated_stats_pretty(accumulated_stats)
+            accumulated_stats: _LoadBalancerAccumulatedStatsResponse,
+            *,
+            ignore_empty: bool = False) -> str:
+        stats_yaml = helpers_grpc.accumulated_stats_pretty(
+            accumulated_stats, ignore_empty=ignore_empty)
         return cls.yaml_highlighter.highlight(stats_yaml)
 
     @classmethod
@@ -301,13 +304,13 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.debug(
-            '[%s] LoadBalancerAccumulatedStatsResponse initial measurement:'
+            '[%s] << LoadBalancerAccumulatedStatsResponse initial measurement:'
             '\n%s', test_client.hostname,
             self._pretty_accumulated_stats(before_stats))
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.debug(
-            '[%s] LoadBalancerAccumulatedStatsResponse after %s seconds:'
+            '[%s] << LoadBalancerAccumulatedStatsResponse after %s seconds:'
             '\n%s', test_client.hostname, duration.total_seconds(),
             self._pretty_accumulated_stats(after_stats))
 
@@ -315,10 +318,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                                                         after_stats)
 
         logger.info(
-            '[%s] Expecting RPCs with status %s for method %s. '
-            'Calculated stats diff:\n%s', test_client.hostname,
-            helpers_grpc.status_pretty(expected_status), method,
-            self._pretty_accumulated_stats(diff_stats))
+            '[%s] << Received accumulated stats difference.'
+            ' Expecting RPCs with status %s for method %s:\n%s',
+            test_client.hostname, helpers_grpc.status_pretty(expected_status),
+            method, self._pretty_accumulated_stats(diff_stats,
+                                                   ignore_empty=True))
         stats = diff_stats.stats_per_method[method]
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
@@ -461,7 +465,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     def getClientRpcStats(cls, test_client: XdsTestClient,
                           num_rpcs: int) -> _LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
-        logger.info('[%s] Received LoadBalancerStatsResponse:\n%s',
+        logger.info('[%s] << Received LoadBalancerStatsResponse:\n%s',
                     test_client.hostname, cls._pretty_lb_stats(lb_stats))
         return lb_stats
 
