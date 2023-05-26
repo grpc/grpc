@@ -234,7 +234,9 @@ class MockActivity : public grpc_core::Activity, public grpc_core::Wakeable {
  public:
   MOCK_METHOD(void, WakeupRequested, ());
 
-  void ForceImmediateRepoll(grpc_core::WakeupMask mask) override { WakeupRequested(); }
+  void ForceImmediateRepoll(grpc_core::WakeupMask mask) override {
+    WakeupRequested();
+  }
   void Orphan() override {}
   grpc_core::Waker MakeOwningWaker() override {
     return grpc_core::Waker(this, 0);
@@ -246,7 +248,9 @@ class MockActivity : public grpc_core::Activity, public grpc_core::Wakeable {
   void WakeupAsync(grpc_core::WakeupMask mask) override { WakeupRequested(); }
   void Drop(grpc_core::WakeupMask mask) override {}
   std::string DebugTag() const override { return "MockActivity"; }
-  std::string ActivityDebugTag(grpc_core::WakeupMask mask) const override { return DebugTag(); }
+  std::string ActivityDebugTag(grpc_core::WakeupMask mask) const override {
+    return DebugTag();
+  }
 
   void Activate() {
     if (scoped_activity_ == nullptr) {
