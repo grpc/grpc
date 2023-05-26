@@ -2881,25 +2881,21 @@ TEST_P(XdsRbacTestWithActionPermutations,
           grpc::StatusCode::PERMISSION_DENIED);
   // If the second rbac denies the rpc, only one log from the first rbac.
   // Otherwise, all three rbacs log.
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    EXPECT_THAT(audit_logs_,
-                ::testing::ElementsAreArray(
-                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
-  } else {
-    EXPECT_THAT(audit_logs_,
-                ::testing::ElementsAreArray(
-                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-                     "{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-                     "{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac3\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+  std::vector<absl::string_view> expected = {
+      "{\"authorized\":true,\"matched_rule\":\"policy\","
+      "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+      "method\":\"/grpc.testing.EchoTestService/Echo\"}"};
+  if (GetParam().rbac_action() != RBAC_Action_DENY) {
+    expected.push_back(
+        "{\"authorized\":true,\"matched_rule\":\"policy\","
+        "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
+        "method\":\"/grpc.testing.EchoTestService/Echo\"}");
+    expected.push_back(
+        "{\"authorized\":true,\"matched_rule\":\"policy\","
+        "\"policy_name\":\"rbac3\",\"principal\":\"\",\"rpc_"
+        "method\":\"/grpc.testing.EchoTestService/Echo\"}");
   }
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
@@ -2940,15 +2936,14 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
   // Only the second rbac logs if it denies the rpc.
+  std::vector<absl::string_view> expected;
   if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    EXPECT_THAT(audit_logs_,
-                ::testing::ElementsAreArray(
-                    {"{\"authorized\":false,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
-  } else {
-    EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+    expected.push_back(
+        "{\"authorized\":false,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"rbac2\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
   }
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
 }
 
 TEST_P(XdsRbacTestWithActionPermutations,
@@ -2991,28 +2986,26 @@ TEST_P(XdsRbacTestWithActionPermutations,
           grpc::StatusCode::PERMISSION_DENIED);
   // If the second rbac denies the request, the last rbac won't log. Otherwise
   // all rbacs log.
+  std::vector<absl::string_view> expected = {
+      "{\"authorized\":true,\"matched_rule\":\"policy\",\"policy_name\":"
+      "\"rbac1\",\"principal\":\"\",\"rpc_method\":\"/"
+      "grpc.testing.EchoTestService/Echo\"}"};
   if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    EXPECT_THAT(audit_logs_,
-                ::testing::ElementsAreArray(
-                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-                     "{\"authorized\":false,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+    expected.push_back(
+        "{\"authorized\":false,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"rbac2\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
   } else {
-    EXPECT_THAT(audit_logs_,
-                ::testing::ElementsAreArray(
-                    {"{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-                     "{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac2\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
-                     "{\"authorized\":true,\"matched_rule\":\"policy\","
-                     "\"policy_name\":\"rbac3\",\"principal\":\"\",\"rpc_"
-                     "method\":\"/grpc.testing.EchoTestService/Echo\"}"}));
+    expected.push_back(
+        "{\"authorized\":true,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"rbac2\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
+    expected.push_back(
+        "{\"authorized\":true,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"rbac3\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
   }
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
 }
 
 // Adds Audit Condition Permutations to XdsRbacTest
@@ -3090,7 +3083,8 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
     EXPECT_THAT(audit_logs_,
                 ::testing::ElementsAre(absl::StrFormat(
                     "{\"authorized\":%s,\"matched_rule\":\"policy\","
-                    "\"policy_name\":\"rbac1\",\"principal\":\"\",\"rpc_"
+                    "\"policy_name\":\"rbac1\",\"principal\":\"\","
+                    "\"rpc_"
                     "method\":\"/grpc.testing.EchoTestService/Echo\"}",
                     action == RBAC_Action_DENY ? "false" : "true")));
   } else {
