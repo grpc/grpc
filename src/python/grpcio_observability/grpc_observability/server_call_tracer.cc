@@ -226,6 +226,10 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
       RecordSpan(context_.Span().ToCensusData());
     }
   }
+
+  // After RecordEnd, Core will make no further usage of this ServerCallTracer,
+  // so we are free it here.
+  delete this;
 }
 
 //
@@ -235,7 +239,9 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
 grpc_core::ServerCallTracer*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena) {
-  return arena->ManagedNew<PythonOpenCensusServerCallTracer>();
+  // We don't use arena here to to ensure that memory is allocated and freed in
+  // the same DDL in Windows.
+  return new PythonOpenCensusServerCallTracer();
 }
 
 }  // namespace grpc_observability
