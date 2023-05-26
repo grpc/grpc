@@ -50,7 +50,7 @@ class PrettyStatsPerMethod:
     rpcs_started: int
     result: Dict[str, int]
 
-    @functools.cached_property
+    @functools.cached_property  # pylint: disable=no-member
     def total_count(self):
         return sum(self.result.values())
 
