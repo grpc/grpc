@@ -65,7 +65,7 @@ int GetMaxExportBufferSize() {
 }  // namespace
 
 void RecordIntMetric(MetricsName name, int64_t value,
-                     std::vector<Label>& labels) {
+                     const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
@@ -76,7 +76,7 @@ void RecordIntMetric(MetricsName name, int64_t value,
 }
 
 void RecordDoubleMetric(MetricsName name, double value,
-                        std::vector<Label>& labels) {
+                        const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;
@@ -114,7 +114,7 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms) {
       lock, now + std::chrono::milliseconds(timeout_ms));
 }
 
-void AddCensusDataToBuffer(CensusData data) {
+void AddCensusDataToBuffer(const CensusData& data) {
   std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
   if (g_census_data_buffer->size() >= GetMaxExportBufferSize()) {
     gpr_log(GPR_DEBUG,

@@ -129,7 +129,9 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         # in callTracer, and all data recorded by calling RecordEnd will be
         # lost.
         # The time equals to the time in AwaitNextBatchLocked.
-        time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
+        # TODO(xuanwn): explicit synchronization
+        # https://github.com/grpc/grpc/issues/33262
+        time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL_SECS)
         self.set_tracing(False)
         self.set_stats(False)
         _cyobservability.observability_deinit()

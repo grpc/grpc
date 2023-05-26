@@ -26,7 +26,7 @@ import grpc_observability
 
 # Time we wait for batch exporting census data
 # TODO(xuanwn): change interval to a more appropriate number
-CENSUS_EXPORT_BATCH_INTERVAL = float(os.environ.get('GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL', 0.5))
+CENSUS_EXPORT_BATCH_INTERVAL_SECS = float(os.environ.get('GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL_SECS', 0.5))
 GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT = float(os.environ.get('GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT', 10))
 cdef const char* CLIENT_CALL_TRACER = "client_call_tracer"
 cdef const char* SERVER_CALL_TRACER_FACTORY = "server_call_tracer_factory"
@@ -265,7 +265,7 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 cdef void _export_census_data(object exporter):
   exporter: grpc_observability.Exporter
 
-  cdef int export_interval_ms = CENSUS_EXPORT_BATCH_INTERVAL * 1000
+  cdef int export_interval_ms = CENSUS_EXPORT_BATCH_INTERVAL_SECS * 1000
   while True:
     with nogil:
       while not GLOBAL_SHUTDOWN_EXPORT_THREAD:
