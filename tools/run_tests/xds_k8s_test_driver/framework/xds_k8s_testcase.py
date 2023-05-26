@@ -265,6 +265,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                     raise AssertionError("Diff of count shouldn't be negative")
                 if count > 0:
                     diff.stats_per_method[method].result[status] = count
+            rpcs_started = (method_stats.rpcs_started -
+                            before.stats_per_method[method].rpcs_started)
+            if rpcs_started < 0:
+                raise AssertionError("Diff of count shouldn't be negative")
+            diff.stats_per_method[method].rpcs_started = rpcs_started
         return diff
 
     def assertRpcStatusCodes(self,
@@ -277,25 +282,40 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
-        response_type = 'LoadBalancerAccumulatedStatsResponse'
-        logging.info('Received %s from test client %s: before:\n%s',
-                     response_type, test_client.hostname, before_stats)
+        logging.debug(
+            '[%s] LoadBalancerAccumulatedStatsResponse initial measurement:'
+            '\n%s', test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(before_stats))
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
-        logging.info('Received %s from test client %s: after:\n%s',
-                     response_type, test_client.hostname, after_stats)
+        logging.debug(
+            '[%s] LoadBalancerAccumulatedStatsResponse after %s seconds:'
+            '\n%s', test_client.hostname, duration.total_seconds(),
+            helpers_grpc.accumulated_stats_pretty(after_stats))
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
+
+        logger.info(
+            '[%s] Expecting RPCs with status %s for method %s. '
+            'Calculated stats diff:\n%s', test_client.hostname,
+            helpers_grpc.status_pretty(expected_status), method,
+            helpers_grpc.accumulated_stats_pretty(diff_stats))
         stats = diff_stats.stats_per_method[method]
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
-                self.fail(f"Expected only status"
-                          f" {helpers_grpc.status_pretty(expected_status)},"
-                          " but found status"
-                          f" {helpers_grpc.status_pretty(found_status)}"
-                          f" for method {method}:\n{diff_stats}")
+                self.fail(
+                    f"Expected only status"
+                    f" {helpers_grpc.status_pretty(expected_status)},"
+                    " but found status"
+                    f" {helpers_grpc.status_pretty(found_status)}"
+                    f" for method {method}. Stats before:"
+                    f"\n{helpers_grpc.accumulated_stats_pretty(before_stats)}"
+                    f"\nStats after:"
+                    f"\n{helpers_grpc.accumulated_stats_pretty(after_stats)}"
+                    f"\nDiff stats:"
+                    f"\n{helpers_grpc.accumulated_stats_pretty(diff_stats)}")
 
         expected_status_int: int = expected_status.value[0]
         self.assertGreater(
@@ -303,7 +323,12 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             0,
             msg=("Expected non-zero RPCs with status"
                  f" {helpers_grpc.status_pretty(expected_status)}"
-                 f" for method {method}, got:\n{diff_stats}"))
+                 f" for method {method}. Stats before:"
+                 f"\n{helpers_grpc.accumulated_stats_pretty(before_stats)}"
+                 f"\nStats after:"
+                 f"\n{helpers_grpc.accumulated_stats_pretty(after_stats)}"
+                 f"\nDiff stats:"
+                 f"\n{helpers_grpc.accumulated_stats_pretty(diff_stats)}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,

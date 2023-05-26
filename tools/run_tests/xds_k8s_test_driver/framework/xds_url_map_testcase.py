@@ -32,6 +32,7 @@ import grpc
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
+from framework.helpers import grpc as helpers_grpc
 from framework.helpers import retryers
 from framework.helpers import skips
 from framework.infrastructure import k8s
@@ -488,12 +489,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.hostname, before_stats)
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(before_stats))
         time.sleep(length)
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.hostname, after_stats)
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(after_stats))
 
         # Validate the diff
         for expected_result in expected:

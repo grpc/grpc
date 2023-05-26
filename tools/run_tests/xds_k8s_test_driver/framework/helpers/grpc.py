@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This contains common helpers for working with grpc data structures."""
+import dataclasses
 import functools
-from typing import Optional
+import json
+from typing import Dict, List, Optional
 
 import grpc
+import yaml
+
+from framework.rpc import grpc_testing
 
 
 @functools.cache  # pylint: disable=no-member
@@ -35,3 +40,69 @@ def status_eq(grpc_status_int: int, grpc_status: grpc.StatusCode) -> bool:
 def status_pretty(grpc_status: grpc.StatusCode) -> str:
     """Formats the status code as (int, NAME), f.e. (4, DEADLINE_EXCEEDED)"""
     return f"({grpc_status.value[0]}, {grpc_status.name})"
+
+
+@dataclasses.dataclass(frozen=True)
+class PrettyStatsPerMethod:
+    method: str
+    rpcs_started: int
+    result: Dict[str, int]
+
+    @staticmethod
+    def from_response(
+            method_name: str,
+            method_stats: grpc_testing.MethodStats) -> "PrettyStatsPerMethod":
+        stats: Dict[str, int] = dict()
+        for status_int, count in method_stats.result.items():
+            status: Optional[grpc.StatusCode] = status_from_int(status_int)
+            status_formatted = status_pretty(status) if status else "None"
+            stats[status_formatted] = count
+        return PrettyStatsPerMethod(
+            method=method_name,
+            rpcs_started=method_stats.rpcs_started,
+            result=stats,
+        )
+
+
+def accumulated_stats_pretty(
+    accumulated_stats: grpc_testing.LoadBalancerAccumulatedStatsResponse
+) -> str:
+    """Pretty print LoadBalancerAccumulatedStatsResponse.
+
+    Example:
+      - method: EMPTY
+        rpcs_started: 0
+        result:
+          (2, UNKNOWN): 20
+      - method: UNARY
+        rpcs_started: 31
+        result:
+          (0, OK): 10
+          (14, UNAVAILABLE): 20
+    """
+    # Only look at stats_per_method, as the other fields are deprecated.
+    result: List[Dict] = []
+    for method_name, method_stats in accumulated_stats.stats_per_method.items():
+        pretty_stats = PrettyStatsPerMethod.from_response(
+            method_name, method_stats)
+        result.append(dataclasses.asdict(pretty_stats))
+
+    return yaml.dump(result, sort_keys=False)
+
+
+def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
+    """Pretty print LoadBalancerStatsResponse.
+
+    Example:
+      - method: EMPTY
+        rpcs_started: 0
+        result:
+          (2, UNKNOWN): 20
+      - method: UNARY
+        rpcs_started: 31
+        result:
+          (0, OK): 10
+          (14, UNAVAILABLE): 20
+    """
+    # tbd
+    return ""
