@@ -65,7 +65,7 @@ void InitDNSTests() {}
 class EventEngineDNSTest : public EventEngineTest {};
 
 // TODO(yijiem): make the test run on Windows
-TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
+TEST_F(EventEngineDNSTest, TODO) {}
 #else
 
 namespace {

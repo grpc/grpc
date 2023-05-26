@@ -170,8 +170,6 @@ class GrpcAresRequest
       ABSL_LOCKS_EXCLUDED(mu());
   void OnWritable(FdNode* fd_node, absl::Status status)
       ABSL_LOCKS_EXCLUDED(mu());
-  void OnHandleDestroyed(FdNode* fd_node, absl::Status status)
-      ABSL_LOCKS_EXCLUDED(mu());
   void OnQueryTimeout() ABSL_LOCKS_EXCLUDED(mu());
   void OnAresBackupPollAlarm() ABSL_LOCKS_EXCLUDED(mu());
   void ShutdownPolledFdsLocked(absl::Status status)

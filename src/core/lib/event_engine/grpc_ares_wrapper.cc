@@ -134,217 +134,12 @@ absl::Status AresStatusToAbslStatus(int status, const std::string& error_msg) {
 
 }  // namespace
 
-void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
-                                                     int /*timeouts*/,
-                                                     struct hostent* hostent) {
-  std::unique_ptr<HostbynameArg> harg(static_cast<HostbynameArg*>(arg));
-  GrpcAresHostnameRequest* request = harg->request;
-  GPR_ASSERT(--request->pending_queries_ >= 0);
-  if (request->pending_queries_ == 0) {
-    request->set_shutting_down();
-  }
-  if (status != ARES_SUCCESS) {
-    std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
-        request->host().c_str(), ares_strerror(status));
-    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
-                                request, error_msg.c_str());
-    request->AddError(AresStatusToAbslStatus(status, error_msg));
-    return;
-  }
-  GRPC_ARES_WRAPPER_TRACE_LOG(
-      "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
-      request, harg->qtype, request->host().c_str());
-
-  std::vector<EventEngine::ResolvedAddress> resolved_addresses;
-  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
-    switch (hostent->h_addrtype) {
-      case AF_INET6: {
-        size_t addr_len = sizeof(struct sockaddr_in6);
-        struct sockaddr_in6 addr;
-        memset(&addr, 0, addr_len);
-        memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
-               sizeof(struct in6_addr));
-        addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin6_port = htons(request->port_);
-        resolved_addresses.emplace_back(
-            reinterpret_cast<const sockaddr*>(&addr), addr_len);
-        char output[INET6_ADDRSTRLEN];
-        ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-        GRPC_ARES_WRAPPER_TRACE_LOG(
-            "request:%p c-ares resolver gets a AF_INET6 result: \n"
-            "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-            request, output, request->port_, addr.sin6_scope_id);
-        break;
-      }
-      case AF_INET: {
-        size_t addr_len = sizeof(struct sockaddr_in);
-        struct sockaddr_in addr;
-        memset(&addr, 0, addr_len);
-        memcpy(&addr.sin_addr, hostent->h_addr_list[i], sizeof(struct in_addr));
-        addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin_port = htons(request->port_);
-        resolved_addresses.emplace_back(
-            reinterpret_cast<const sockaddr*>(&addr), addr_len);
-        char output[INET_ADDRSTRLEN];
-        ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-        GRPC_ARES_WRAPPER_TRACE_LOG(
-            "request:%p c-ares resolver gets a AF_INET result: \n"
-            "  addr: %s\n  port: %d\n",
-            request, output, request->port_);
-        break;
-      }
-    }
-  }
-  if (request->result_.ok()) {
-    request->result_->insert(request->result_->end(),
-                             resolved_addresses.begin(),
-                             resolved_addresses.end());
-  } else {
-    // Override the existing error.
-    request->result_ = std::move(resolved_addresses);
-  }
-}
-
-void GrpcAresSRVRequest::OnSRVQueryDoneLocked(void* arg, int status,
-                                              int /*timeouts*/,
-                                              unsigned char* abuf, int alen) {
-  GrpcAresSRVRequest* r = static_cast<GrpcAresSRVRequest*>(arg);
-  r->set_shutting_down();
-  if (status != ARES_SUCCESS) {
-    std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
-        r->host().c_str(), ares_strerror(status));
-    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
-                                error_msg.c_str());
-    r->AddError(AresStatusToAbslStatus(status, error_msg));
-    return;
-  }
-  GRPC_ARES_WRAPPER_TRACE_LOG(
-      "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
-      r->host().c_str());
-  struct ares_srv_reply* reply = nullptr;
-  const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
-  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
-                              parse_status);
-  Result result;
-  if (parse_status == ARES_SUCCESS) {
-    for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
-         srv_it = srv_it->next) {
-      EventEngine::DNSResolver::SRVRecord record;
-      record.host = srv_it->host;
-      record.port = srv_it->port;
-      record.priority = srv_it->priority;
-      record.weight = srv_it->weight;
-      result.push_back(std::move(record));
-    }
-  }
-  if (reply != nullptr) {
-    ares_free_data(reply);
-  }
-  r->result_ = std::move(result);
-}
-
-void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
-                                         int /*timeouts*/, unsigned char* buf,
-                                         int len) {
-  GrpcAresTXTRequest* r = static_cast<GrpcAresTXTRequest*>(arg);
-  r->set_shutting_down();
-  struct ares_txt_ext* reply = nullptr;
-  int parse_status = ARES_SUCCESS;
-  if (status == ARES_SUCCESS) {
-    GRPC_ARES_WRAPPER_TRACE_LOG(
-        "request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
-        r->host().c_str());
-    parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
-  }
-  if (status != ARES_SUCCESS || parse_status != ARES_SUCCESS) {
-    std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
-        r->host().c_str(), ares_strerror(status));
-    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
-                                error_msg.c_str());
-    r->AddError(AresStatusToAbslStatus(status, error_msg));
-    return;
-  }
-  Result result;
-  for (struct ares_txt_ext* part = reply; part != nullptr; part = part->next) {
-    if (part->record_start) {
-      result.emplace_back(reinterpret_cast<char*>(part->txt), part->length);
-    } else {
-      absl::StrAppend(
-          &result.back(),
-          std::string(reinterpret_cast<char*>(part->txt), part->length));
-    }
-  }
-  GRPC_ARES_WRAPPER_TRACE_LOG("request: %p, got %zu TXT records", r,
-                              result.size());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper)) {
-    for (const auto& record : result) {
-      gpr_log(GPR_INFO, "%s", record.c_str());
-    }
-  }
-  // Clean up.
-  ares_free_data(reply);
-  r->result_ = std::move(result);
-}
-
-GrpcAresRequest::GrpcAresRequest(
-    absl::string_view name, EventEngine::Duration timeout,
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine)
-    : grpc_core::InternallyRefCounted<GrpcAresRequest>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper) ? "GrpcAresRequest"
-                                                           : nullptr),
-      name_(name),
-      timeout_(timeout),
-      polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(event_engine) {}
-
 GrpcAresRequest::~GrpcAresRequest() {
   GPR_ASSERT(fd_node_list_.empty());
   if (initialized_) {
     ares_destroy(channel_);
-    PrintCurrentStackTrace();
   }
   GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
-}
-
-absl::StatusOr<std::string> GrpcAresRequest::ParseNameToResolve()
-    ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GPR_DEBUG_ASSERT(!initialized_);
-  std::string port;
-  // parse name, splitting it into host and port parts
-  grpc_core::SplitHostPort(name_, &host_, &port);
-  absl::Status error;
-  if (host_.empty()) {
-    return absl::Status(absl::StatusCode::kInvalidArgument,
-                        absl::StrCat("Unparseable name: ", name_));
-  }
-  return port;
-}
-
-absl::Status GrpcAresRequest::InitializeAresOptions(
-    absl::string_view dns_server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GPR_DEBUG_ASSERT(!initialized_);
-  ares_options opts = {};
-  opts.flags |= ARES_FLAG_STAYOPEN;
-  int status = ares_init_options(&channel_, &opts, ARES_OPT_FLAGS);
-  if (status != ARES_SUCCESS) {
-    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
-    return AresStatusToAbslStatus(
-        status, absl::StrCat("Failed to init ares channel. c-ares error: ",
-                             ares_strerror(status)));
-  }
-  event_engine_grpc_ares_test_only_inject_config(channel_);
-  // If dns_server is specified, use it.
-  absl::Status error = SetRequestDNSServer(dns_server);
-  if (!error.ok()) {
-    ares_destroy(channel_);
-    return error;
-  }
-  initialized_ = true;
-  return absl::OkStatus();
 }
 
 bool GrpcAresRequest::Cancel() {
@@ -359,6 +154,18 @@ bool GrpcAresRequest::Cancel() {
       absl::StatusCode::kCancelled, "Cancel", DEBUG_LOCATION, {}));
   return true;
 }
+
+GrpcAresRequest::GrpcAresRequest(
+    absl::string_view name, EventEngine::Duration timeout,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : grpc_core::InternallyRefCounted<GrpcAresRequest>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper) ? "GrpcAresRequest"
+                                                           : nullptr),
+      name_(name),
+      timeout_(timeout),
+      polled_fd_factory_(std::move(polled_fd_factory)),
+      event_engine_(event_engine) {}
 
 void GrpcAresRequest::Work() {
   FdNodeList new_list;
@@ -464,6 +271,43 @@ void GrpcAresRequest::CancelTimers() {
     event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
     ares_backup_poll_alarm_handle_.reset();
   }
+}
+
+absl::StatusOr<std::string> GrpcAresRequest::ParseNameToResolve()
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  GPR_DEBUG_ASSERT(!initialized_);
+  std::string port;
+  // parse name, splitting it into host and port parts
+  grpc_core::SplitHostPort(name_, &host_, &port);
+  absl::Status error;
+  if (host_.empty()) {
+    return absl::Status(absl::StatusCode::kInvalidArgument,
+                        absl::StrCat("Unparseable name: ", name_));
+  }
+  return port;
+}
+
+absl::Status GrpcAresRequest::InitializeAresOptions(
+    absl::string_view dns_server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  GPR_DEBUG_ASSERT(!initialized_);
+  ares_options opts = {};
+  opts.flags |= ARES_FLAG_STAYOPEN;
+  int status = ares_init_options(&channel_, &opts, ARES_OPT_FLAGS);
+  if (status != ARES_SUCCESS) {
+    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
+    return AresStatusToAbslStatus(
+        status, absl::StrCat("Failed to init ares channel. c-ares error: ",
+                             ares_strerror(status)));
+  }
+  event_engine_grpc_ares_test_only_inject_config(channel_);
+  // If dns_server is specified, use it.
+  absl::Status error = SetRequestDNSServer(dns_server);
+  if (!error.ok()) {
+    ares_destroy(channel_);
+    return error;
+  }
+  initialized_ = true;
+  return absl::OkStatus();
 }
 
 absl::Status GrpcAresRequest::SetRequestDNSServer(
@@ -623,18 +467,29 @@ void GrpcAresRequest::ShutdownPolledFdsLocked(absl::Status status) {
   }
 }
 
-GrpcAresHostnameRequest::GrpcAresHostnameRequest(
+absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
     absl::string_view name, absl::string_view default_port,
-    EventEngine::Duration timeout,
+    absl::string_view dns_server, EventEngine::Duration timeout,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine)
-    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
-                      event_engine),
-      default_port_(default_port),
-      event_engine_(event_engine) {}
-
-GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
-  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto* request = new GrpcAresHostnameRequest(
+      name, default_port, timeout, std::move(polled_fd_factory), event_engine);
+  absl::StatusOr<std::string> result = request->ParseNameToResolve();
+  if (!result.ok()) {
+    delete request;
+    return result.status();
+  }
+  absl::Status status = request->ParsePort(*result);
+  if (!status.ok()) {
+    delete request;
+    return status;
+  }
+  status = request->InitializeAresOptions(dns_server);
+  if (!status.ok()) {
+    delete request;
+    return status;
+  }
+  return request;
 }
 
 void GrpcAresHostnameRequest::Start(
@@ -697,6 +552,92 @@ void GrpcAresHostnameRequest::Start(
     return;
   }
   StartTimers();
+}
+
+void GrpcAresHostnameRequest::OnHostbynameDoneLocked(void* arg, int status,
+                                                     int /*timeouts*/,
+                                                     struct hostent* hostent) {
+  std::unique_ptr<HostbynameArg> harg(static_cast<HostbynameArg*>(arg));
+  GrpcAresHostnameRequest* request = harg->request;
+  GPR_ASSERT(--request->pending_queries_ >= 0);
+  if (request->pending_queries_ == 0) {
+    request->set_shutting_down();
+  }
+  if (status != ARES_SUCCESS) {
+    std::string error_msg = absl::StrFormat(
+        "c-ares status is not ARES_SUCCESS qtype=%s name=%s: %s", harg->qtype,
+        request->host().c_str(), ares_strerror(status));
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
+                                request, error_msg.c_str());
+    request->AddError(AresStatusToAbslStatus(status, error_msg));
+    return;
+  }
+  GRPC_ARES_WRAPPER_TRACE_LOG(
+      "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS",
+      request, harg->qtype, request->host().c_str());
+
+  std::vector<EventEngine::ResolvedAddress> resolved_addresses;
+  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+    switch (hostent->h_addrtype) {
+      case AF_INET6: {
+        size_t addr_len = sizeof(struct sockaddr_in6);
+        struct sockaddr_in6 addr;
+        memset(&addr, 0, addr_len);
+        memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
+               sizeof(struct in6_addr));
+        addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
+        addr.sin6_port = htons(request->port_);
+        resolved_addresses.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), addr_len);
+        char output[INET6_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+        GRPC_ARES_WRAPPER_TRACE_LOG(
+            "request:%p c-ares resolver gets a AF_INET6 result: \n"
+            "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
+            request, output, request->port_, addr.sin6_scope_id);
+        break;
+      }
+      case AF_INET: {
+        size_t addr_len = sizeof(struct sockaddr_in);
+        struct sockaddr_in addr;
+        memset(&addr, 0, addr_len);
+        memcpy(&addr.sin_addr, hostent->h_addr_list[i], sizeof(struct in_addr));
+        addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
+        addr.sin_port = htons(request->port_);
+        resolved_addresses.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), addr_len);
+        char output[INET_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+        GRPC_ARES_WRAPPER_TRACE_LOG(
+            "request:%p c-ares resolver gets a AF_INET result: \n"
+            "  addr: %s\n  port: %d\n",
+            request, output, request->port_);
+        break;
+      }
+    }
+  }
+  if (request->result_.ok()) {
+    request->result_->insert(request->result_->end(),
+                             resolved_addresses.begin(),
+                             resolved_addresses.end());
+  } else {
+    // Override the existing error.
+    request->result_ = std::move(resolved_addresses);
+  }
+}
+
+GrpcAresHostnameRequest::GrpcAresHostnameRequest(
+    absl::string_view name, absl::string_view default_port,
+    EventEngine::Duration timeout,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
+                      event_engine),
+      default_port_(default_port),
+      event_engine_(event_engine) {}
+
+GrpcAresHostnameRequest::~GrpcAresHostnameRequest() {
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresHostnameRequest::AddError(absl::Status error) {
@@ -816,16 +757,30 @@ absl::Status GrpcAresHostnameRequest::ParsePort(absl::string_view port)
   return absl::OkStatus();
 }
 
-GrpcAresSRVRequest::GrpcAresSRVRequest(
+absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
+    absl::string_view dns_server,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine)
-    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
-                      event_engine),
-      event_engine_(event_engine) {}
-
-GrpcAresSRVRequest::~GrpcAresSRVRequest() {
-  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto* request = new GrpcAresSRVRequest(
+      name, timeout, std::move(polled_fd_factory), event_engine);
+  absl::StatusOr<std::string> result = request->ParseNameToResolve();
+  if (!result.ok()) {
+    delete request;
+    return result.status();
+  }
+  // Don't query for SRV records if the target is "localhost"
+  if (absl::EqualsIgnoreCase(request->host(), "localhost")) {
+    delete request;
+    return absl::Status(absl::StatusCode::kUnknown,
+                        "Skip querying for SRV records for localhost target");
+  }
+  absl::Status status = request->InitializeAresOptions(dns_server);
+  if (!status.ok()) {
+    delete request;
+    return status;
+  }
+  return request;
 }
 
 void GrpcAresSRVRequest::Start(
@@ -850,6 +805,57 @@ void GrpcAresSRVRequest::Start(
     return;
   }
   StartTimers();
+}
+
+void GrpcAresSRVRequest::OnSRVQueryDoneLocked(void* arg, int status,
+                                              int /*timeouts*/,
+                                              unsigned char* abuf, int alen) {
+  GrpcAresSRVRequest* r = static_cast<GrpcAresSRVRequest*>(arg);
+  r->set_shutting_down();
+  if (status != ARES_SUCCESS) {
+    std::string error_msg = absl::StrFormat(
+        "c-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
+        r->host().c_str(), ares_strerror(status));
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
+                                error_msg.c_str());
+    r->AddError(AresStatusToAbslStatus(status, error_msg));
+    return;
+  }
+  GRPC_ARES_WRAPPER_TRACE_LOG(
+      "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
+      r->host().c_str());
+  struct ares_srv_reply* reply = nullptr;
+  const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
+                              parse_status);
+  Result result;
+  if (parse_status == ARES_SUCCESS) {
+    for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
+         srv_it = srv_it->next) {
+      EventEngine::DNSResolver::SRVRecord record;
+      record.host = srv_it->host;
+      record.port = srv_it->port;
+      record.priority = srv_it->priority;
+      record.weight = srv_it->weight;
+      result.push_back(std::move(record));
+    }
+  }
+  if (reply != nullptr) {
+    ares_free_data(reply);
+  }
+  r->result_ = std::move(result);
+}
+
+GrpcAresSRVRequest::GrpcAresSRVRequest(
+    absl::string_view name, EventEngine::Duration timeout,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
+                      event_engine),
+      event_engine_(event_engine) {}
+
+GrpcAresSRVRequest::~GrpcAresSRVRequest() {
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresSRVRequest::AddError(absl::Status error) {
@@ -885,16 +891,30 @@ void GrpcAresSRVRequest::OnResolveLockedAndUnlock() {
   on_resolve(std::move(result));
 }
 
-GrpcAresTXTRequest::GrpcAresTXTRequest(
+absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
     absl::string_view name, EventEngine::Duration timeout,
+    absl::string_view dns_server,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine)
-    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
-                      event_engine),
-      event_engine_(event_engine) {}
-
-GrpcAresTXTRequest::~GrpcAresTXTRequest() {
-  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
+    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto* request = new GrpcAresTXTRequest(
+      name, timeout, std::move(polled_fd_factory), event_engine);
+  absl::StatusOr<std::string> result = request->ParseNameToResolve();
+  if (!result.ok()) {
+    delete request;
+    return result.status();
+  }
+  // Don't query for TXT records if the target is "localhost"
+  if (absl::EqualsIgnoreCase(request->host(), "localhost")) {
+    delete request;
+    return absl::Status(absl::StatusCode::kUnknown,
+                        "Skip querying for TXT records for localhost target");
+  }
+  absl::Status status = request->InitializeAresOptions(dns_server);
+  if (!status.ok()) {
+    delete request;
+    return status;
+  }
+  return request;
 }
 
 void GrpcAresTXTRequest::Start(
@@ -918,6 +938,62 @@ void GrpcAresTXTRequest::Start(
     return;
   }
   StartTimers();
+}
+
+void GrpcAresTXTRequest::OnTXTDoneLocked(void* arg, int status,
+                                         int /*timeouts*/, unsigned char* buf,
+                                         int len) {
+  GrpcAresTXTRequest* r = static_cast<GrpcAresTXTRequest*>(arg);
+  r->set_shutting_down();
+  struct ares_txt_ext* reply = nullptr;
+  int parse_status = ARES_SUCCESS;
+  if (status == ARES_SUCCESS) {
+    GRPC_ARES_WRAPPER_TRACE_LOG(
+        "request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
+        r->host().c_str());
+    parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
+  }
+  if (status != ARES_SUCCESS || parse_status != ARES_SUCCESS) {
+    std::string error_msg = absl::StrFormat(
+        "c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+        r->host().c_str(), ares_strerror(status));
+    GRPC_ARES_WRAPPER_TRACE_LOG("request:%p on_txt_done_locked %s", r,
+                                error_msg.c_str());
+    r->AddError(AresStatusToAbslStatus(status, error_msg));
+    return;
+  }
+  Result result;
+  for (struct ares_txt_ext* part = reply; part != nullptr; part = part->next) {
+    if (part->record_start) {
+      result.emplace_back(reinterpret_cast<char*>(part->txt), part->length);
+    } else {
+      absl::StrAppend(
+          &result.back(),
+          std::string(reinterpret_cast<char*>(part->txt), part->length));
+    }
+  }
+  GRPC_ARES_WRAPPER_TRACE_LOG("request: %p, got %zu TXT records", r,
+                              result.size());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_wrapper)) {
+    for (const auto& record : result) {
+      gpr_log(GPR_INFO, "%s", record.c_str());
+    }
+  }
+  // Clean up.
+  ares_free_data(reply);
+  r->result_ = std::move(result);
+}
+
+GrpcAresTXTRequest::GrpcAresTXTRequest(
+    absl::string_view name, EventEngine::Duration timeout,
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    EventEngine* event_engine)
+    : GrpcAresRequest(name, timeout, std::move(polled_fd_factory),
+                      event_engine),
+      event_engine_(event_engine) {}
+
+GrpcAresTXTRequest::~GrpcAresTXTRequest() {
+  GRPC_ARES_WRAPPER_TRACE_LOG("request:%p destructor", this);
 }
 
 void GrpcAresTXTRequest::AddError(absl::Status error) {
@@ -951,83 +1027,6 @@ void GrpcAresTXTRequest::OnResolveLockedAndUnlock() {
   // unlock
   mu().Unlock();
   on_resolve(std::move(result));
-}
-
-absl::StatusOr<GrpcAresHostnameRequest*> GrpcAresHostnameRequest::Create(
-    absl::string_view name, absl::string_view default_port,
-    absl::string_view dns_server, EventEngine::Duration timeout,
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  auto* request = new GrpcAresHostnameRequest(
-      name, default_port, timeout, std::move(polled_fd_factory), event_engine);
-  absl::StatusOr<std::string> result = request->ParseNameToResolve();
-  if (!result.ok()) {
-    delete request;
-    return result.status();
-  }
-  absl::Status status = request->ParsePort(*result);
-  if (!status.ok()) {
-    delete request;
-    return status;
-  }
-  status = request->InitializeAresOptions(dns_server);
-  if (!status.ok()) {
-    delete request;
-    return status;
-  }
-  return request;
-}
-
-absl::StatusOr<GrpcAresSRVRequest*> GrpcAresSRVRequest::Create(
-    absl::string_view name, EventEngine::Duration timeout,
-    absl::string_view dns_server,
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  auto* request = new GrpcAresSRVRequest(
-      name, timeout, std::move(polled_fd_factory), event_engine);
-  absl::StatusOr<std::string> result = request->ParseNameToResolve();
-  if (!result.ok()) {
-    delete request;
-    return result.status();
-  }
-  // Don't query for SRV records if the target is "localhost"
-  if (absl::EqualsIgnoreCase(request->host(), "localhost")) {
-    delete request;
-    return absl::Status(absl::StatusCode::kUnknown,
-                        "Skip querying for SRV records for localhost target");
-  }
-  absl::Status status = request->InitializeAresOptions(dns_server);
-  if (!status.ok()) {
-    delete request;
-    return status;
-  }
-  return request;
-}
-
-absl::StatusOr<GrpcAresTXTRequest*> GrpcAresTXTRequest::Create(
-    absl::string_view name, EventEngine::Duration timeout,
-    absl::string_view dns_server,
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  auto* request = new GrpcAresTXTRequest(
-      name, timeout, std::move(polled_fd_factory), event_engine);
-  absl::StatusOr<std::string> result = request->ParseNameToResolve();
-  if (!result.ok()) {
-    delete request;
-    return result.status();
-  }
-  // Don't query for TXT records if the target is "localhost"
-  if (absl::EqualsIgnoreCase(request->host(), "localhost")) {
-    delete request;
-    return absl::Status(absl::StatusCode::kUnknown,
-                        "Skip querying for TXT records for localhost target");
-  }
-  absl::Status status = request->InitializeAresOptions(dns_server);
-  if (!status.ok()) {
-    delete request;
-    return status;
-  }
-  return request;
 }
 
 }  // namespace experimental
