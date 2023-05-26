@@ -612,8 +612,6 @@ void GrpcAresRequest::OnAresBackupPollAlarm() {
   mu().Unlock();
 }
 
-// TODO(yijiem): Consider report this status or as part of the result when
-// calling on_resolve_. This status is received in OnReadable/OnWritable.
 void GrpcAresRequest::ShutdownPolledFdsLocked(absl::Status status) {
   for (const auto& fd_node : fd_node_list_) {
     if (!fd_node->already_shutdown) {
