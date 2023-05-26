@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
+
 #if GRPC_ARES == 1
 
 #include <stddef.h>

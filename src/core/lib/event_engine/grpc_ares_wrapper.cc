@@ -16,6 +16,8 @@
 
 #include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 
+#include <iterator>
+
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -56,13 +58,11 @@
 #include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/time_util.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER

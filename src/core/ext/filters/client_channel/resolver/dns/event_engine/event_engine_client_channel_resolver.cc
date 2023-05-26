@@ -228,8 +228,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   hostname_handle_ = event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
       },
       resolver_->name_to_resolve(), kDefaultSecurePort,
@@ -244,8 +244,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
           self->OnSRVResolved(std::move(srv_records));
         },
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()),
@@ -260,8 +260,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::vector<std::string>> service_config) {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
@@ -273,8 +273,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     ~EventEngineDNSRequestWrapper() {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 

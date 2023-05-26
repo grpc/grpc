@@ -27,8 +27,6 @@
 #include <string>
 #include <thread>
 #include <tuple>
-#include <type_traits>
-#include <utility>
 #include <vector>
 
 #include <address_sorting/address_sorting.h>
@@ -47,13 +45,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
