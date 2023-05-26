@@ -36,7 +36,10 @@ class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
                                   ServerCallTracerFactoryCapsule],
                           metaclass=abc.ABCMeta):
     """
-    Note: Any future methods added to this interface cannot have the @abc.abstractmethod annotation.
+    Note:
+      * This is a semi-private class that was intended for the exclusive use of the gRPC team.
+      * Any future methods added to this interface cannot have the @abc.abstractmethod annotation.
+
     """
     _tracing_enabled: bool = False
     _stats_enabled: bool = False
