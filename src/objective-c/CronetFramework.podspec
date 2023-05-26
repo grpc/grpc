@@ -69,7 +69,7 @@ Pod::Spec.new do |s|
   }
   s.vendored_framework = "Cronet.framework"
   s.author             = "The Chromium Authors"
-  s.ios.deployment_target = "9.0"
+  s.ios.deployment_target = '10.0'
   s.source       = { :http => "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v#{v}.zip"}
   s.preserve_paths = "Cronet.framework"
   s.public_header_files = "Cronet.framework/Headers/**/*{.h}"
