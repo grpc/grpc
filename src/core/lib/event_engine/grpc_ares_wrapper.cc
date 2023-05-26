@@ -515,10 +515,7 @@ void GrpcAresHostnameRequest::Start(
   // TODO(yijiem): Early out if the target is localhost and we're on Windows.
 
   // We add up pending_queries_ here since ares_gethostbyname may directly
-  // invoke the callback inline e.g. if there is any error with the input. The
-  // callback will invoke OnResolve with an error status and may start the
-  // shutdown process too early (before the second ares_gethostbyname) if we
-  // haven't added up here.
+  // invoke the callback inline e.g. if there is any error in the input.
   ++pending_queries_;
   if (IsIpv6LoopbackAvailable()) {
     ++pending_queries_;

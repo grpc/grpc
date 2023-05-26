@@ -29,10 +29,11 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// A wrapped fd that integrates with the grpc iomgr of the current platform.
-// A GrpcPolledFd knows how to create grpc platform-specific iomgr endpoints
-// from "ares_socket_t" sockets, and then sign up for readability/writeability
-// with that poller, and do shutdown and destruction.
+// A wrapped fd that integrates with the EventEngine poller of the current
+// platform. A GrpcPolledFd knows how to create grpc platform-specific poller
+// handle from "ares_socket_t" sockets, and then sign up for
+// readability/writeability with that poller handle, and do shutdown and
+// destruction.
 class GrpcPolledFd {
  public:
   virtual ~GrpcPolledFd() {}
@@ -53,10 +54,9 @@ class GrpcPolledFd {
   virtual const char* GetName() const = 0;
 };
 
-// A GrpcPolledFdFactory is 1-to-1 with and owned by the
-// ares event driver. It knows how to create GrpcPolledFd's
-// for the current platform, and the ares driver uses it for all of
-// its fd's.
+// A GrpcPolledFdFactory is 1-to-1 with and owned by a GrpcAresRequest. It knows
+// how to create GrpcPolledFd's for the current platform, and the
+// GrpcAresRequest uses it for all of its fd's.
 class GrpcPolledFdFactory {
  public:
   virtual ~GrpcPolledFdFactory() {}
