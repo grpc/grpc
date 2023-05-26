@@ -160,7 +160,6 @@ class CoreEnd2endTest : public ::testing::Test {
           step_fn) {
     step_fn_ = std::move(step_fn);
   }
-  void SetCrashOnStepFailure() { crash_on_step_failure_ = true; }
   void SetQuiesceEventEngine(
       absl::AnyInvocable<
           void(std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
@@ -687,10 +686,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (cq_verifier_ == nullptr) {
       fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          cq_,
-          crash_on_step_failure_ ? CqVerifier::FailUsingGprCrash
-                                 : CqVerifier::FailUsingGtestFail,
-          std::move(step_fn_));
+          cq_, CqVerifier::FailUsingGprCrash, std::move(step_fn_));
     }
     return *cq_verifier_;
   }
@@ -703,7 +699,6 @@ class CoreEnd2endTest : public ::testing::Test {
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;
-  bool crash_on_step_failure_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
