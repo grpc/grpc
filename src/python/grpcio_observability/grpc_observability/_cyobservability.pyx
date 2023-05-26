@@ -27,6 +27,7 @@ import grpc_observability
 # Time we wait for batch exporting census data
 # TODO(xuanwn): change interval to a more appropriate number
 CENSUS_EXPORT_BATCH_INTERVAL = float(os.environ.get('GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL', 0.5))
+GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT = float(os.environ.get('GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT', 10))
 cdef const char* CLIENT_CALL_TRACER = "client_call_tracer"
 cdef const char* SERVER_CALL_TRACER_FACTORY = "server_call_tracer_factory"
 cdef bint GLOBAL_SHUTDOWN_EXPORT_THREAD = False
@@ -320,7 +321,7 @@ cdef void _shutdown_exporting_thread():
     global GLOBAL_SHUTDOWN_EXPORT_THREAD
     GLOBAL_SHUTDOWN_EXPORT_THREAD = True
     g_census_data_buffer_cv.notify_all()
-  GLOBAL_EXPORT_THREAD.join()
+  GLOBAL_EXPORT_THREAD.join(timeout=GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT)
 
 
 cdef str _decode(bytes bytestring):
