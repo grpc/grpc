@@ -267,7 +267,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     }
   }
 
-  // After RecordEnd, Core will make no further usage of thisCallAttemptTracer,
+  // After RecordEnd, Core will make no further usage of this CallAttemptTracer,
   // so we are free it here.
   delete this;
 }

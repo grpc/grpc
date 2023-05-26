@@ -110,18 +110,6 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         if self.config.stats_enabled:
             self.set_stats(True)
 
-    def exit(self) -> None:
-        # Sleep so we don't loss any data. If we shutdown export thread
-        # immediately after exit, it's possible that core didn't call RecordEnd
-        # in callTracer, and all data recorded by calling RecordEnd will be
-        # lost.
-        # The time equals to the time in AwaitNextBatchLocked.
-        time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
-        self.set_tracing(False)
-        self.set_stats(False)
-        _cyobservability.observability_exit()
-        grpc._observability.observability_exit()
-
     def __enter__(self):
         try:
             _cyobservability.cyobservability_init(self.exporter)
@@ -134,6 +122,18 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.exit()
+
+    def exit(self) -> None:
+        # Sleep so we don't loss any data. If we shutdown export thread
+        # immediately after exit, it's possible that core didn't call RecordEnd
+        # in callTracer, and all data recorded by calling RecordEnd will be
+        # lost.
+        # The time equals to the time in AwaitNextBatchLocked.
+        time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL)
+        self.set_tracing(False)
+        self.set_stats(False)
+        _cyobservability.observability_deinit()
+        grpc._observability.observability_deinit()
 
     def create_client_call_tracer(
             self, method_name: bytes) -> ClientCallTracerCapsule:
