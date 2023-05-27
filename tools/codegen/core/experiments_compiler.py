@@ -110,7 +110,7 @@ def PutCopyright(file, prefix):
         PutBanner([file], [line[2:].rstrip() for line in copyright], prefix)
 
 
-class ExperimentDefnition(object):
+class ExperimentDefinition(object):
     def __init__(self, attributes):
         self._error = False
         if 'name' not in attributes:

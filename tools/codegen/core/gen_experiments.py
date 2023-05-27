@@ -107,7 +107,7 @@ compiler = exp.ExperimentsCompiler(
 
 experiment_annotation = "gRPC Experiments: "
 for attr in attrs:
-    exp_definition = exp.ExperimentDefnition(attr)
+    exp_definition = exp.ExperimentDefinition(attr)
     if not exp_definition.IsValid(args.check):
         sys.exit(1)
     experiment_annotation += exp_definition.name + ':0,'
