@@ -84,6 +84,10 @@ void CoreEnd2endTest::SetUp() {
 
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee;
+  if (grpc_is_initialized()) {
+    ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
   ShutdownAndDestroyClient();
   ShutdownAndDestroyServer();
   cq_verifier_.reset();
@@ -102,9 +106,8 @@ void CoreEnd2endTest::TearDown() {
 #ifndef GPR_WINDOWS
   // Creating an EventEngine requires gRPC initialization, which the NoOp test
   // does not do. Skip the EventEngine check if unnecessary.
-  if (grpc_is_initialized()) {
-    quiesce_event_engine_(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+  if (ee != nullptr) {
+    quiesce_event_engine_(std::move(ee));
   }
 #endif
   if (do_shutdown) {
