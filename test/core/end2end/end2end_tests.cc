@@ -85,9 +85,12 @@ void CoreEnd2endTest::SetUp() {
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee;
+// TODO(hork): locate the windows leak so we can enable end2end experiments.
+#ifndef GPR_WINDOWS
   if (grpc_is_initialized()) {
     ee = grpc_event_engine::experimental::GetDefaultEventEngine();
   }
+#endif
   ShutdownAndDestroyClient();
   ShutdownAndDestroyServer();
   cq_verifier_.reset();
@@ -102,14 +105,11 @@ void CoreEnd2endTest::TearDown() {
     cq_ = nullptr;
   }
   fixture_.reset();
-// TODO(hork): locate the windows leak so we can enable end2end experiments.
-#ifndef GPR_WINDOWS
   // Creating an EventEngine requires gRPC initialization, which the NoOp test
   // does not do. Skip the EventEngine check if unnecessary.
   if (ee != nullptr) {
     quiesce_event_engine_(std::move(ee));
   }
-#endif
   if (do_shutdown) {
     grpc_shutdown_blocking();
     // This will wait until gRPC shutdown has actually happened to make sure
