@@ -1201,7 +1201,7 @@ class FunMaker {
       if (bytes_needed == 8) {
         new_value = "0";
       } else {
-        new_value = absl::StrCat("(buffer_ <<= ", 8 * bytes_needed, ")");
+        new_value = absl::StrCat("(buffer_ << ", 8 * bytes_needed, ")");
       }
       for (int i = 0; i < bytes_needed; i++) {
         absl::StrAppend(&new_value, "| (static_cast<uint64_t>(begin_[", i,

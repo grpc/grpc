@@ -318,25 +318,25 @@ class HuffDecoder : public HuffDecoderCommon {
     }
   }
   void Fill1() {
-    buffer_ = (buffer_ <<= 8) | (static_cast<uint64_t>(begin_[0]) << 0);
+    buffer_ = (buffer_ << 8) | (static_cast<uint64_t>(begin_[0]) << 0);
     begin_ += 1;
     buffer_len_ += 8;
   }
   void Fill2() {
-    buffer_ = (buffer_ <<= 16) | (static_cast<uint64_t>(begin_[0]) << 8) |
+    buffer_ = (buffer_ << 16) | (static_cast<uint64_t>(begin_[0]) << 8) |
               (static_cast<uint64_t>(begin_[1]) << 0);
     begin_ += 2;
     buffer_len_ += 16;
   }
   void Fill3() {
-    buffer_ = (buffer_ <<= 24) | (static_cast<uint64_t>(begin_[0]) << 16) |
+    buffer_ = (buffer_ << 24) | (static_cast<uint64_t>(begin_[0]) << 16) |
               (static_cast<uint64_t>(begin_[1]) << 8) |
               (static_cast<uint64_t>(begin_[2]) << 0);
     begin_ += 3;
     buffer_len_ += 24;
   }
   void Fill4() {
-    buffer_ = (buffer_ <<= 32) | (static_cast<uint64_t>(begin_[0]) << 24) |
+    buffer_ = (buffer_ << 32) | (static_cast<uint64_t>(begin_[0]) << 24) |
               (static_cast<uint64_t>(begin_[1]) << 16) |
               (static_cast<uint64_t>(begin_[2]) << 8) |
               (static_cast<uint64_t>(begin_[3]) << 0);
@@ -344,7 +344,7 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ += 32;
   }
   void Fill5() {
-    buffer_ = (buffer_ <<= 40) | (static_cast<uint64_t>(begin_[0]) << 32) |
+    buffer_ = (buffer_ << 40) | (static_cast<uint64_t>(begin_[0]) << 32) |
               (static_cast<uint64_t>(begin_[1]) << 24) |
               (static_cast<uint64_t>(begin_[2]) << 16) |
               (static_cast<uint64_t>(begin_[3]) << 8) |
@@ -353,7 +353,7 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ += 40;
   }
   void Fill6() {
-    buffer_ = (buffer_ <<= 48) | (static_cast<uint64_t>(begin_[0]) << 40) |
+    buffer_ = (buffer_ << 48) | (static_cast<uint64_t>(begin_[0]) << 40) |
               (static_cast<uint64_t>(begin_[1]) << 32) |
               (static_cast<uint64_t>(begin_[2]) << 24) |
               (static_cast<uint64_t>(begin_[3]) << 16) |
@@ -363,7 +363,7 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ += 48;
   }
   void Fill7() {
-    buffer_ = (buffer_ <<= 56) | (static_cast<uint64_t>(begin_[0]) << 48) |
+    buffer_ = (buffer_ << 56) | (static_cast<uint64_t>(begin_[0]) << 48) |
               (static_cast<uint64_t>(begin_[1]) << 40) |
               (static_cast<uint64_t>(begin_[2]) << 32) |
               (static_cast<uint64_t>(begin_[3]) << 24) |
