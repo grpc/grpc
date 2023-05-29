@@ -263,7 +263,6 @@ class HuffDecoder : public HuffDecoderCommon {
  private:
   bool RefillTo8() {
     switch (buffer_len_) {
-      case 0:
       case 1:
       case 2:
       case 3:
@@ -271,17 +270,155 @@ class HuffDecoder : public HuffDecoderCommon {
       case 5:
       case 6:
       case 7: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;
   }
-  bool Read1() {
-    if (end_ - begin_ < 1) return false;
+  bool Read1to8Bytes() {
+    switch (end_ - begin_) {
+      case 1: {
+        Fill1();
+        return true;
+      }
+      case 2: {
+        Fill2();
+        return true;
+      }
+      case 3: {
+        Fill3();
+        return true;
+      }
+      case 4: {
+        Fill4();
+        return true;
+      }
+      case 5: {
+        Fill5();
+        return true;
+      }
+      case 6: {
+        Fill6();
+        return true;
+      }
+      case 7: {
+        Fill7();
+        return true;
+      }
+      default: {
+        Fill8();
+        return true;
+      }
+      case 0: {
+        return false;
+      }
+    }
+  }
+  void Fill1() {
     buffer_ <<= 8;
     buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
     buffer_len_ += 8;
-    return true;
+  }
+  void Fill2() {
+    buffer_ <<= 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 16;
+  }
+  void Fill3() {
+    buffer_ <<= 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 24;
+  }
+  void Fill4() {
+    buffer_ <<= 32;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 32;
+  }
+  void Fill5() {
+    buffer_ <<= 40;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 40;
+  }
+  void Fill6() {
+    buffer_ <<= 48;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 48;
+  }
+  void Fill7() {
+    buffer_ <<= 56;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 48;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 56;
+  }
+  void Fill8() {
+    buffer_ = 0;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 56;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 48;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 64;
+  }
+  bool Read1to7Bytes() {
+    switch (end_ - begin_) {
+      case 1: {
+        Fill1();
+        return true;
+      }
+      case 2: {
+        Fill2();
+        return true;
+      }
+      case 3: {
+        Fill3();
+        return true;
+      }
+      case 4: {
+        Fill4();
+        return true;
+      }
+      case 5: {
+        Fill5();
+        return true;
+      }
+      case 6: {
+        Fill6();
+        return true;
+      }
+      default: {
+        Fill7();
+        return true;
+      }
+      case 0: {
+        return false;
+      }
+    }
   }
   void Done0() {
     done_ = true;
@@ -357,9 +494,11 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo2() {
     switch (buffer_len_) {
-      case 0:
       case 1: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;
@@ -397,14 +536,16 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo7() {
     switch (buffer_len_) {
-      case 0:
       case 1:
       case 2:
       case 3:
       case 4:
       case 5:
       case 6: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;
@@ -646,7 +787,7 @@ class HuffDecoder : public HuffDecoderCommon {
   bool RefillTo1() {
     switch (buffer_len_) {
       case 0: {
-        return Read1();
+        return Read1to8Bytes();
       }
     }
     return true;
@@ -771,10 +912,12 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo3() {
     switch (buffer_len_) {
-      case 0:
       case 1:
       case 2: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;
@@ -804,11 +947,13 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo4() {
     switch (buffer_len_) {
-      case 0:
       case 1:
       case 2:
       case 3: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;
@@ -848,12 +993,14 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo5() {
     switch (buffer_len_) {
-      case 0:
       case 1:
       case 2:
       case 3:
       case 4: {
-        return Read1();
+        return Read1to7Bytes();
+      }
+      case 0: {
+        return Read1to8Bytes();
       }
     }
     return true;

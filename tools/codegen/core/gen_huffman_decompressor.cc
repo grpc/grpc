@@ -424,7 +424,11 @@ class Switch : public Item {
     lines.push_back(absl::StrCat("switch (", cond_, ") {"));
     for (const auto& kv : reverse_map) {
       for (const auto& cond : kv.second) {
-        lines.push_back(absl::StrCat("  case ", cond, ":"));
+        if (cond == "") {
+          lines.push_back("  default:");
+        } else {
+          lines.push_back(absl::StrCat("  case ", cond, ":"));
+        }
       }
       lines.back().append(" {");
       for (const auto& case_line :
@@ -1139,7 +1143,9 @@ class FunMaker {
       for (int i = 0; i < n; i++) {
         auto c = s->Case(absl::StrCat(i));
         const int bytes_needed = (n - i + 7) / 8;
-        c->Add(absl::StrCat("return ", ReadBytes(bytes_needed), ";"));
+        const int bytes_allowed = (64 - i) / 8;
+        c->Add(absl::StrCat("return ", ReadBytes(bytes_needed, bytes_allowed),
+                            ";"));
       }
       fn->Add("return true;");
     }
@@ -1166,25 +1172,48 @@ class FunMaker {
 
   // Bring in some number of bytes from the input stream to our current read
   // bits.
-  std::string ReadBytes(int bytes_needed) {
-    if (have_reads_.count(bytes_needed) == 0) {
-      have_reads_.insert(bytes_needed);
-      auto fn = NewFun(absl::StrCat("Read", bytes_needed), "bool");
-      fn->Add(absl::StrCat("if (end_ - begin_ < ", bytes_needed,
-                           ") return false;"));
-      fn->Add(absl::StrCat("buffer_ <<= ", 8 * bytes_needed, ";"));
+  std::string ReadBytes(int bytes_needed, int bytes_allowed) {
+    auto fn_name =
+        absl::StrCat("Read", bytes_needed, "to", bytes_allowed, "Bytes");
+    if (have_reads_.count(std::make_pair(bytes_needed, bytes_allowed)) == 0) {
+      have_reads_.insert(std::make_pair(bytes_needed, bytes_allowed));
+      auto fn = NewFun(fn_name, "bool");
+      auto s = fn->Add<Switch>("end_ - begin_");
+      for (int i = 0; i <= bytes_allowed; i++) {
+        auto c = i == bytes_allowed ? s->Case("") : s->Case(absl::StrCat(i));
+        if (i < bytes_needed) {
+          c->Add(absl::StrCat("return false;"));
+        } else {
+          c->Add(absl::StrCat(FillFromInput(i), "();"));
+          c->Add("return true;");
+        }
+      }
+    }
+    return absl::StrCat(fn_name, "()");
+  }
+
+  std::string FillFromInput(int bytes_needed) {
+    auto fn_name = absl::StrCat("Fill", bytes_needed);
+    if (have_fill_from_input_.count(bytes_needed) == 0) {
+      have_fill_from_input_.insert(bytes_needed);
+      auto fn = NewFun(fn_name, "void");
+      if (bytes_needed == 8) {
+        fn->Add(absl::StrCat("buffer_ = 0;"));
+      } else {
+        fn->Add(absl::StrCat("buffer_ <<= ", 8 * bytes_needed, ";"));
+      }
       for (int i = 0; i < bytes_needed; i++) {
         fn->Add(absl::StrCat("buffer_ |= static_cast<uint64_t>(*begin_++) << ",
                              8 * (bytes_needed - i - 1), ";"));
       }
       fn->Add(absl::StrCat("buffer_len_ += ", 8 * bytes_needed, ";"));
-      fn->Add("return true;");
     }
-    return absl::StrCat("Read", bytes_needed, "()");
+    return fn_name;
   }
 
   std::set<int> have_refills_;
-  std::set<int> have_reads_;
+  std::set<std::pair<int, int>> have_reads_;
+  std::set<int> have_fill_from_input_;
   std::map<std::string, int> have_funs_;
   Sink* sink_;
 };
@@ -1387,8 +1416,10 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   auto src = std::make_unique<Sink>();
   hdr->Add<Prelude>();
   src->Add<Prelude>();
-  hdr->Add("#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
-  hdr->Add("#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
+  hdr->Add(
+      "#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
+  hdr->Add(
+      "#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
   src->Add(
       "#include \"src/core/ext/transport/chttp2/transport/decode_huff.h\"");
   hdr->Add("#include <cstddef>");
@@ -1414,7 +1445,8 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   FunMaker fun_maker(prv->Add<Sink>());
   hdr->Add("};");
   hdr->Add("}  // namespace grpc_core");
-  hdr->Add("#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
+  hdr->Add(
+      "#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
   auto global_values = src->Add<Indent>();
   src->Add("}  // namespace grpc_core");
   BuildCtx ctx(std::move(max_bits_for_depth), global_fns, global_decls,
