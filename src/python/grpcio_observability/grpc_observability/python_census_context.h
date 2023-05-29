@@ -16,7 +16,6 @@
 #include <stdint.h>
 
 #include <grpc/slice.h>
-// TODO(xuanwn): clean up includes
 #include <algorithm>
 #include <atomic>
 #include <string>
