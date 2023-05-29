@@ -23,38 +23,49 @@
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
-const std::vector<uint8_t>* Input() {
-  static const grpc_core::NoDestruct<std::vector<uint8_t>> v([]() {
-    std::vector<uint8_t> v;
-    std::mt19937 rd(0);
-    std::uniform_int_distribution<> dist_ty(0, 100);
-    std::uniform_int_distribution<> dist_byte(0, 255);
-    std::uniform_int_distribution<> dist_normal(32, 126);
-    for (int i = 0; i < 1024 * 1024; i++) {
-      if (dist_ty(rd) == 1) {
-        v.push_back(dist_byte(rd));
-      } else {
-        v.push_back(dist_normal(rd));
-      }
-    }
-    grpc_core::Slice s = grpc_core::Slice::FromCopiedBuffer(v);
-    grpc_core::Slice c(grpc_chttp2_huffman_compress(s.c_slice()));
-    return std::vector<uint8_t>(c.begin(), c.end());
-  }());
+const std::vector<uint8_t> MakeInput(int min, int max) {
+  std::vector<uint8_t> v;
+  std::uniform_int_distribution<> distribution(min, max);
+  static std::mt19937 rd(0);
+  for (int i = 0; i < 1024 * 1024; i++) {
+    v.push_back(distribution(rd));
+  }
+  grpc_core::Slice s = grpc_core::Slice::FromCopiedBuffer(v);
+  grpc_core::Slice c(grpc_chttp2_huffman_compress(s.c_slice()));
+  return std::vector<uint8_t>(c.begin(), c.end());
+}
+
+const std::vector<uint8_t>* AllChars() {
+  static const grpc_core::NoDestruct<std::vector<uint8_t>> v(MakeInput(0, 255));
   return v.get();
 }
 
-static void BM_Decode(benchmark::State& state) {
+const std::vector<uint8_t>* AsciiChars() {
+  static const grpc_core::NoDestruct<std::vector<uint8_t>> v(
+      MakeInput(32, 126));
+  return v.get();
+}
+
+const std::vector<uint8_t>* AlphaChars() {
+  static const grpc_core::NoDestruct<std::vector<uint8_t>> v(
+      MakeInput('a', 'z'));
+  return v.get();
+}
+
+static void BM_Decode(benchmark::State& state,
+                      const std::vector<uint8_t>* input) {
   std::vector<uint8_t> output;
   auto add = [&output](uint8_t c) { output.push_back(c); };
   for (auto _ : state) {
     output.clear();
-    grpc_core::HuffDecoder<decltype(add)>(add, Input()->data(),
-                                          Input()->data() + Input()->size())
+    grpc_core::HuffDecoder<decltype(add)>(add, input->data(),
+                                          input->data() + input->size())
         .Run();
   }
 }
-BENCHMARK(BM_Decode);
+BENCHMARK_CAPTURE(BM_Decode, all_chars, AllChars());
+BENCHMARK_CAPTURE(BM_Decode, ascii_chars, AsciiChars());
+BENCHMARK_CAPTURE(BM_Decode, alpha_chars, AlphaChars());
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
@@ -65,7 +76,6 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   benchmark::Initialize(&argc, argv);
-  Input();  // Force initialization of input data.
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

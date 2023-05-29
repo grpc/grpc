@@ -1491,6 +1491,7 @@ class PermutationBuilder {
 
  private:
   void Step(std::vector<int> so_far) {
+    const int min_step = so_far.empty() ? 15 : 5;
     int sum_so_far = std::accumulate(so_far.begin(), so_far.end(), 0);
     if (so_far.size() > max_depth_ ||
         (so_far.size() == max_depth_ && sum_so_far != 30)) {
@@ -1500,7 +1501,7 @@ class PermutationBuilder {
       perms_.emplace_back(std::move(so_far));
       return;
     }
-    for (int i = 5; i <= std::min(30 - sum_so_far, 16); i++) {
+    for (int i = min_step; i <= std::min(30 - sum_so_far, 16); i++) {
       auto p = so_far;
       p.push_back(i);
       Step(std::move(p));
