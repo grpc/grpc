@@ -15,8 +15,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <grpc/slice.h>
-// TODO(xuanwn): clean up includes
 #include <algorithm>
 #include <atomic>
 #include <string>
@@ -26,6 +24,8 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
