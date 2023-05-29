@@ -14,6 +14,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+import importlib
 import logging
 import threading
 import time
@@ -94,12 +95,10 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         if exporter:
             self.exporter = exporter
         else:
-            pass
-            # Actual implementation of OC exporter
-            # open_census = importlib.import_module(
-            #     "grpc_observability._open_census")
-            # self.exporter = open_census.OpenCensusExporter(
-            #     self.config.get().labels)
+            open_census = importlib.import_module(
+                "grpc_observability._open_census_exporter")
+            self.exporter = open_census.OpenCensusExporter(
+                self.config.get().labels)
         config_valid = _cyobservability.set_gcp_observability_config(
             self.config)
         if not config_valid:

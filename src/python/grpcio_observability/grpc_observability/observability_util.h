@@ -72,7 +72,8 @@ struct GcpObservabilityConfig {
   GcpObservabilityConfig(bool valid) : is_valid(true) {}
   GcpObservabilityConfig(CloudMonitoring cloud_monitoring,
                          CloudTrace cloud_trace, CloudLogging cloud_logging,
-                         const std::string& project_id, const std::vector<Label>& labels)
+                         const std::string& project_id,
+                         const std::vector<Label>& labels)
       : cloud_monitoring(cloud_monitoring),
         cloud_trace(cloud_trace),
         cloud_logging(cloud_logging),
