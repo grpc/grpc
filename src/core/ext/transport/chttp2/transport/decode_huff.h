@@ -318,71 +318,71 @@ class HuffDecoder : public HuffDecoderCommon {
     }
   }
   void Fill1() {
-    buffer_ <<= 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 8) | (static_cast<uint64_t>(begin_[0]) << 0);
+    begin_ += 1;
     buffer_len_ += 8;
   }
   void Fill2() {
-    buffer_ <<= 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 16) | (static_cast<uint64_t>(begin_[0]) << 8) |
+              (static_cast<uint64_t>(begin_[1]) << 0);
+    begin_ += 2;
     buffer_len_ += 16;
   }
   void Fill3() {
-    buffer_ <<= 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 24) | (static_cast<uint64_t>(begin_[0]) << 16) |
+              (static_cast<uint64_t>(begin_[1]) << 8) |
+              (static_cast<uint64_t>(begin_[2]) << 0);
+    begin_ += 3;
     buffer_len_ += 24;
   }
   void Fill4() {
-    buffer_ <<= 32;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 32) | (static_cast<uint64_t>(begin_[0]) << 24) |
+              (static_cast<uint64_t>(begin_[1]) << 16) |
+              (static_cast<uint64_t>(begin_[2]) << 8) |
+              (static_cast<uint64_t>(begin_[3]) << 0);
+    begin_ += 4;
     buffer_len_ += 32;
   }
   void Fill5() {
-    buffer_ <<= 40;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 40) | (static_cast<uint64_t>(begin_[0]) << 32) |
+              (static_cast<uint64_t>(begin_[1]) << 24) |
+              (static_cast<uint64_t>(begin_[2]) << 16) |
+              (static_cast<uint64_t>(begin_[3]) << 8) |
+              (static_cast<uint64_t>(begin_[4]) << 0);
+    begin_ += 5;
     buffer_len_ += 40;
   }
   void Fill6() {
-    buffer_ <<= 48;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 48) | (static_cast<uint64_t>(begin_[0]) << 40) |
+              (static_cast<uint64_t>(begin_[1]) << 32) |
+              (static_cast<uint64_t>(begin_[2]) << 24) |
+              (static_cast<uint64_t>(begin_[3]) << 16) |
+              (static_cast<uint64_t>(begin_[4]) << 8) |
+              (static_cast<uint64_t>(begin_[5]) << 0);
+    begin_ += 6;
     buffer_len_ += 48;
   }
   void Fill7() {
-    buffer_ <<= 56;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 48;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = (buffer_ <<= 56) | (static_cast<uint64_t>(begin_[0]) << 48) |
+              (static_cast<uint64_t>(begin_[1]) << 40) |
+              (static_cast<uint64_t>(begin_[2]) << 32) |
+              (static_cast<uint64_t>(begin_[3]) << 24) |
+              (static_cast<uint64_t>(begin_[4]) << 16) |
+              (static_cast<uint64_t>(begin_[5]) << 8) |
+              (static_cast<uint64_t>(begin_[6]) << 0);
+    begin_ += 7;
     buffer_len_ += 56;
   }
   void Fill8() {
-    buffer_ = 0;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 56;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 48;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 40;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 32;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 24;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 16;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
-    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_ = 0 | (static_cast<uint64_t>(begin_[0]) << 56) |
+              (static_cast<uint64_t>(begin_[1]) << 48) |
+              (static_cast<uint64_t>(begin_[2]) << 40) |
+              (static_cast<uint64_t>(begin_[3]) << 32) |
+              (static_cast<uint64_t>(begin_[4]) << 24) |
+              (static_cast<uint64_t>(begin_[5]) << 16) |
+              (static_cast<uint64_t>(begin_[6]) << 8) |
+              (static_cast<uint64_t>(begin_[7]) << 0);
+    begin_ += 8;
     buffer_len_ += 64;
   }
   bool Read1to7Bytes() {

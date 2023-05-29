@@ -1197,15 +1197,18 @@ class FunMaker {
     if (have_fill_from_input_.count(bytes_needed) == 0) {
       have_fill_from_input_.insert(bytes_needed);
       auto fn = NewFun(fn_name, "void");
+      std::string new_value;
       if (bytes_needed == 8) {
-        fn->Add(absl::StrCat("buffer_ = 0;"));
+        new_value = "0";
       } else {
-        fn->Add(absl::StrCat("buffer_ <<= ", 8 * bytes_needed, ";"));
+        new_value = absl::StrCat("(buffer_ <<= ", 8 * bytes_needed, ")");
       }
       for (int i = 0; i < bytes_needed; i++) {
-        fn->Add(absl::StrCat("buffer_ |= static_cast<uint64_t>(*begin_++) << ",
-                             8 * (bytes_needed - i - 1), ";"));
+        absl::StrAppend(&new_value, "| (static_cast<uint64_t>(begin_[", i,
+                        "]) << ", 8 * (bytes_needed - i - 1), ")");
       }
+      fn->Add(absl::StrCat("buffer_ = ", new_value, ";"));
+      fn->Add(absl::StrCat("begin_ += ", bytes_needed, ";"));
       fn->Add(absl::StrCat("buffer_len_ += ", 8 * bytes_needed, ";"));
     }
     return fn_name;
