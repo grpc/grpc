@@ -74,7 +74,6 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -756,7 +755,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   sp = s->head;
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
-        !grpc_is_vsock(&sp->addr) && pollsets->size() > 1) {
+        pollsets->size() > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
       for (i = 0; i < pollsets->size(); i++) {

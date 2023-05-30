@@ -49,12 +49,6 @@ Most gRPC implementations support the following URI schemes:
     as the first character; the implementation will prepend this null. Do not include
     the null in `abstract_path`.
 
-- `vsock:cid:port` -- VSOCK (Linux systems only)
-  - `cid` is 32-bit Context Identifier (CID). It indicates the source or
-    destination, which is either a virtual machine or the host.
-  - `port` is a 32-bit port number. It differentiates between multiple
-    services running on a single machine.
-
 The following schemes are supported by the gRPC C-core implementation,
 but may not be supported in other languages:
 

@@ -40,11 +40,6 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
 bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr);
 
-/// Populate \a resolved_addr from \a uri, whose path is expected to contain a
-/// vsock cid:port pair. Returns true upon success.
-bool grpc_parse_vsock(const grpc_core::URI& uri,
-                      grpc_resolved_address* resolved_addr);
-
 /// Populate \a resolved_addr from \a uri, whose path is expected to contain an
 /// IPv4 host:port pair. Returns true upon success.
 bool grpc_parse_ipv4(const grpc_core::URI& uri,
@@ -86,9 +81,6 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr);
 
-/// Populate \a resolved_addr to be a vsock at \a path
-grpc_error_handle VSockaddrPopulate(absl::string_view path,
-                                    grpc_resolved_address* resolved_addr);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H

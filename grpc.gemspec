@@ -1397,8 +1397,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.cc )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.h )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix_noop.cc )
-  s.files += %w( src/core/lib/iomgr/vsock.cc )
-  s.files += %w( src/core/lib/iomgr/vsock.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_eventfd.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_nospecial.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.cc )
