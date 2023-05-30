@@ -180,11 +180,6 @@ absl::optional<std::string> HttpProxyMapper::MapName(
             std::string(server_uri).c_str());
     return absl::nullopt;
   }
-  if (uri->scheme() == "vsock") {
-    gpr_log(GPR_INFO, "not using proxy for VSock '%s'",
-            std::string(server_uri).c_str());
-    return absl::nullopt;
-  }
   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
   auto no_proxy_str = GetEnv("no_grpc_proxy");
   if (!no_proxy_str.has_value()) {

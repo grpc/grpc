@@ -172,26 +172,6 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 };
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
-#ifdef GRPC_HAVE_VSOCK
-class VSockResolverFactory : public ResolverFactory {
- public:
-  bool IsValidUri(const URI& uri) const override {
-    return ParseUri(uri, grpc_parse_vsock, nullptr);
-  }
-
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return CreateSockaddrResolver(std::move(args), grpc_parse_vsock);
-  }
-
-  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
-    return "localhost";
-  }
-
-  absl::string_view scheme() const override { return "vsock"; }
-};
-
-#endif  // GRPC_HAVE_VSOCK
-
 }  // namespace
 
 void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
@@ -204,10 +184,6 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
       std::make_unique<UnixResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<UnixAbstractResolverFactory>());
-#endif
-#ifdef GRPC_HAVE_VSOCK
-  builder->resolver_registry()->RegisterResolverFactory(
-      std::make_unique<VSockResolverFactory>());
 #endif
 }
 

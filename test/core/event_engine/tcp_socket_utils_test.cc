@@ -16,15 +16,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
 #include <errno.h>
-
-#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
-
-#ifdef GRPC_HAVE_VSOCK
-#include <linux/vm_sockets.h>
-#endif
-
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -33,6 +25,8 @@
 // IWYU pragma: no_include <arpa/inet.h>
 
 #include <string>
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
@@ -139,25 +133,6 @@ absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
 #endif
 }
 #endif  //  GRPC_HAVE_UNIX_SOCKET
-
-#ifdef GRPC_HAVE_VSOCK
-absl::StatusOr<EventEngine::ResolvedAddress> VSockaddrPopulate(
-    absl::string_view path) {
-  EventEngine::ResolvedAddress resolved_addr;
-  memset(const_cast<sockaddr*>(resolved_addr.address()), 0,
-         resolved_addr.size());
-  struct sockaddr_vm* vm = reinterpret_cast<struct sockaddr_vm*>(
-      const_cast<sockaddr*>(resolved_addr.address()));
-  vm->svm_family = AF_VSOCK;
-  std::string s = std::string(path);
-  if (sscanf(s.c_str(), "%u:%u", &vm->svm_cid, &vm->svm_port) != 2) {
-    return absl::InternalError(
-        absl::StrCat("Failed to parse vsock cid/port: ", s));
-  }
-  return EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(vm),
-                                      static_cast<socklen_t>(sizeof(*vm)));
-}
-#endif  //  GRPC_HAVE_VSOCK
 
 }  // namespace
 
@@ -279,12 +254,6 @@ TEST(TcpSocketUtilsTest, ResolvedAddressToNormalizedStringTest) {
       *UnixAbstractSockaddrPopulate(max_abspath);
   EXPECT_EQ(ResolvedAddressToNormalizedString(inputun3).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
-#endif
-
-#ifdef GRPC_HAVE_VSOCK
-  EventEngine::ResolvedAddress inputvm = *VSockaddrPopulate("-1:12345");
-  EXPECT_EQ(ResolvedAddressToNormalizedString(inputvm).value(),
-            absl::StrCat((uint32_t)-1, ":12345"));
 #endif
 }
 

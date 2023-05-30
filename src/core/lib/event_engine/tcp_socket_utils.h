@@ -61,9 +61,6 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
 absl::optional<int> ResolvedAddressIsWildcard(
     const EventEngine::ResolvedAddress& addr);
 
-// Returns true if resolved_addr is an VSOCK address. Otherwise returns false.
-bool ResolvedAddressIsVSock(const EventEngine::ResolvedAddress& resolved_addr);
-
 // Converts a EventEngine::ResolvedAddress into a newly-allocated
 // human-readable string.
 // Currently, only the AF_INET, AF_INET6, and AF_UNIX families are
