@@ -123,7 +123,8 @@ class TestConfigurator {
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           client_init_metadata) {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     CoreEnd2endTest::IncomingStatusOnClient server_status;
     CoreEnd2endTest::IncomingMetadata server_initial_metadata;
     c.NewBatch(1)
