@@ -85,6 +85,9 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 namespace grpc_core {
+
+extern bool g_is_fuzzing_core_e2e_tests;
+
 class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() = default;
@@ -567,7 +570,10 @@ class CoreEnd2endTest : public ::testing::Test {
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify(timeout.value_or(Duration::Seconds(10)), whence);
+    cq_verifier().Verify(
+        timeout.value_or(g_is_fuzzing_core_e2e_tests ? Duration::Minutes(10)
+                                                     : Duration::Seconds(10)),
+        whence);
   }
 
   // Initialize the client.
@@ -796,8 +802,6 @@ class CoreEnd2endTestRegistry {
   std::map<absl::string_view, std::map<absl::string_view, MakeTestFn>>
       tests_by_suite_;
 };
-
-extern bool g_is_fuzzing_core_e2e_tests;
 
 }  // namespace grpc_core
 
