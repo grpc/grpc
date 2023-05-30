@@ -137,6 +137,12 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
 
 ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
     CallArgs call_args) {
+  // If not using channelz, we just need to call the channel stack.
+  if (channelz_subchannel() == nullptr) {
+    return channel_stack_->MakeClientCallPromise(std::move(call_args));
+  }
+  // Otherwise, we need to wrap the channel stack promise with code that
+  // handles the channelz updates.
   return OnCancel(
       Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
           [self = Ref()](ServerMetadataHandle metadata) {

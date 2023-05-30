@@ -314,8 +314,8 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
                      GRPC_CHANNEL_IDLE)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-        gpr_log(GPR_INFO, "%s[client-channel]: triggering exit idle",
-                Activity::current()->DebugTag().c_str());
+        gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle",
+                chand_, this, Activity::current()->DebugTag().c_str());
       }
       // Bounce into the control plane work serializer to start resolving.
       GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
@@ -331,8 +331,8 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
                       call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
       auto result = CheckResolution(was_queued_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-        gpr_log(GPR_INFO, "%s[client-channel] CheckResolution returns %s",
-                Activity::current()->DebugTag().c_str(),
+        gpr_log(GPR_INFO, "chand=%p calld=%p: %sCheckResolution returns %s",
+                chand_, this, Activity::current()->DebugTag().c_str(),
                 result.has_value() ? result->ToString().c_str() : "Pending");
       }
       if (!result.has_value()) {
@@ -359,8 +359,8 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 
   void RetryCheckResolutionLocked() override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "%s[client-channel] RetryCheckResolutionLocked",
-              waker_.ActivityDebugTag().c_str());
+      gpr_log(GPR_INFO, "chand=%p calld=%p: RetryCheckResolutionLocked()",
+              chand_, this);
     }
     waker_.WakeupAsync();
   }
@@ -3390,6 +3390,14 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
           [this, call_args = std::move(
                      call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
             auto result = PickSubchannel(was_queued_);
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+              gpr_log(GPR_INFO,
+                      "chand=%p lb_call=%p: %sPickSubchannel() returns %s",
+                      chand(), this, Activity::current()->DebugTag().c_str(),
+                      result.has_value()
+                          ? result->ToString().c_str()
+                          : "Pending");
+            }
             if (!result.has_value()) {
               waker_ = Activity::current()->MakeNonOwningWaker();
               was_queued_ = true;
@@ -3402,7 +3410,6 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
           },
           // Start call on subchannel.
           [this](CallArgs call_args) {
-            Commit();
             return connected_subchannel()->MakeCallPromise(
                 std::move(call_args));
           }),
@@ -3444,6 +3451,9 @@ ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
 }
 
 void ClientChannel::PromiseBasedLoadBalancedCall::RetryPickLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p lb_call=%p: RetryPickLocked()", chand(), this);
+  }
   waker_.WakeupAsync();
 }
 
