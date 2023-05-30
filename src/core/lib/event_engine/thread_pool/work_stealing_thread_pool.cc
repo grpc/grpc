@@ -486,7 +486,7 @@ void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
 }
 
 size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
-    CounterType counter_type, int desired_threads,
+    CounterType counter_type, size_t desired_threads,
     grpc_core::Duration timeout) {
   size_t count;
   auto deadline = absl::Now() + absl::Milliseconds(timeout.millis());

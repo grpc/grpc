@@ -117,7 +117,7 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Wait for the desired count to be reached.
     // Returns the current thread count either when the desired count is
     // reached, or when the deadline has passed, whichever happens first.
-    size_t WaitForCountChange(CounterType counter_type, int desired_threads,
+    size_t WaitForCountChange(CounterType counter_type, size_t desired_threads,
                               grpc_core::Duration timeout);
 
     grpc_core::Mutex wait_mu_[2];
