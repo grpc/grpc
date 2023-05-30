@@ -54,8 +54,7 @@ float GetExportThreadHold() {
 }
 
 int GetMaxExportBufferSize() {
-  const char* value =
-      std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE");
+  const char* value = std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE");
   if (value != nullptr) {
     return std::stoi(value);
   }
