@@ -415,7 +415,7 @@ else:
 
 # Fix for multiprocessing support on Apple devices.
 # TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (('GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER', 1))
+DEFINE_MACROS += (('GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
