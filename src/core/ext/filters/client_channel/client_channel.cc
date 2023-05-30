@@ -315,8 +315,8 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
                      GRPC_CHANNEL_IDLE)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-        gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle",
-                chand_, this, Activity::current()->DebugTag().c_str());
+        gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle", chand_,
+                this, Activity::current()->DebugTag().c_str());
       }
       // Bounce into the control plane work serializer to start resolving.
       GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
@@ -460,8 +460,8 @@ class DynamicTerminationFilter {
     return chand->chand_->CreateLoadBalancedCallPromise(
         std::move(call_args),
         []() {
-          auto* service_config_call_data = GetServiceConfigCallData(
-              GetContext<grpc_call_context_element>());
+          auto* service_config_call_data =
+              GetServiceConfigCallData(GetContext<grpc_call_context_element>());
           service_config_call_data->Commit();
         },
         /*is_transparent_retry=*/false);
@@ -3374,20 +3374,19 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
       });
   client_initial_metadata_ = std::move(call_args.client_initial_metadata);
   return OnCancel(
-      Seq(
-          TrySeq(
+      Seq(TrySeq(
               // LB pick.
-              [this, call_args = std::move(
-                         call_args)]() mutable
-                         -> Poll<absl::StatusOr<CallArgs>> {
+              [this, call_args = std::move(call_args)]() mutable
+              -> Poll<absl::StatusOr<CallArgs>> {
                 auto result = PickSubchannel(was_queued_);
-                if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+                if (GRPC_TRACE_FLAG_ENABLED(
+                        grpc_client_channel_lb_call_trace)) {
                   gpr_log(GPR_INFO,
                           "chand=%p lb_call=%p: %sPickSubchannel() returns %s",
-                          chand(), this, Activity::current()->DebugTag().c_str(),
-                          result.has_value()
-                              ? result->ToString().c_str()
-                              : "Pending");
+                          chand(), this,
+                          Activity::current()->DebugTag().c_str(),
+                          result.has_value() ? result->ToString().c_str()
+                                             : "Pending");
                 }
                 if (!result.has_value()) {
                   waker_ = Activity::current()->MakeNonOwningWaker();
@@ -3409,20 +3408,22 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
           // Record call completion.
           [this](ServerMetadataHandle metadata) {
             absl::Status status;
-            grpc_status_code code =
-                metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+            grpc_status_code code = metadata->get(GrpcStatusMetadata())
+                                        .value_or(GRPC_STATUS_UNKNOWN);
             if (code != GRPC_STATUS_OK) {
               absl::string_view message;
               if (const auto* grpc_message =
                       metadata->get_pointer(GrpcMessageMetadata())) {
                 message = grpc_message->as_string_view();
               }
-              status = absl::Status(static_cast<absl::StatusCode>(code), message);
+              status =
+                  absl::Status(static_cast<absl::StatusCode>(code), message);
             }
-            RecordCallCompletion(
-                status, metadata.get(),
-                &GetContext<CallContext>()->call_stats()->transport_stream_stats,
-                peer_string_.as_string_view());
+            RecordCallCompletion(status, metadata.get(),
+                                 &GetContext<CallContext>()
+                                      ->call_stats()
+                                      ->transport_stream_stats,
+                                 peer_string_.as_string_view());
             return metadata;
           }),
       [this]() {
@@ -3432,7 +3433,6 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
         RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
                              nullptr, "");
       });
-
 }
 
 Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {

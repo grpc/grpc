@@ -606,9 +606,9 @@ class ClientChannel::FilterBasedLoadBalancedCall
 class ClientChannel::PromiseBasedLoadBalancedCall
     : public ClientChannel::LoadBalancedCall {
  public:
-  PromiseBasedLoadBalancedCall(
-      ClientChannel* chand, absl::AnyInvocable<void()> on_commit,
-      bool is_transparent_retry);
+  PromiseBasedLoadBalancedCall(ClientChannel* chand,
+                               absl::AnyInvocable<void()> on_commit,
+                               bool is_transparent_retry);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
