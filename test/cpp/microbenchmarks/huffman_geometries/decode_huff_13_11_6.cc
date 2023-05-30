@@ -1585,9 +1585,6 @@ const uint8_t* const HuffDecoderCommon::table19_ops_[4] = {
     table9_0_ops_,
     table19_3_ops_,
 };
-const uint8_t HuffDecoderCommon::table20_0_emit_[0] = {
-
-};
 const uint8_t HuffDecoderCommon::table20_0_ops_[128] = {
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -1635,8 +1632,8 @@ const uint8_t HuffDecoderCommon::table20_7_ops_[128] = {
     0xde, 0xe2, 0xe6, 0xea, 0xee, 0xf2, 0xf6, 0xfa, 0xfe, 0x01, 0x01, 0x01,
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00};
 const uint8_t* const HuffDecoderCommon::table20_emit_[8] = {
-    table20_0_emit_, table18_0_emit_, table20_0_emit_, table18_1_emit_,
-    table20_0_emit_, table18_2_emit_, table20_6_emit_, table20_7_emit_,
+    nullptr, table18_0_emit_, nullptr,         table18_1_emit_,
+    nullptr, table18_2_emit_, table20_6_emit_, table20_7_emit_,
 };
 const uint8_t* const HuffDecoderCommon::table20_ops_[8] = {
     table20_0_ops_, table9_0_ops_, table20_0_ops_, table9_0_ops_,

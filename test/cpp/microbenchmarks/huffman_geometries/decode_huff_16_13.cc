@@ -674,9 +674,6 @@ const uint8_t* const HuffDecoderCommon::table11_ops_[32] = {
     table11_23_ops_, table11_23_ops_, table11_23_ops_, table11_23_ops_,
     table11_23_ops_, table11_23_ops_, table11_23_ops_, table11_31_ops_,
 };
-const uint8_t HuffDecoderCommon::table12_0_emit_[0] = {
-
-};
 const uint8_t HuffDecoderCommon::table12_0_ops_[512] = {
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -812,11 +809,11 @@ const uint8_t HuffDecoderCommon::table12_63_ops_[512] = {
     0x01, 0x01, 0x01, 0x3e, 0x01, 0x01, 0x01, 0x42, 0x01, 0x01, 0x01, 0x46,
     0x01, 0x4a, 0x01, 0x4e, 0x52, 0x56, 0x5a, 0x00};
 const uint8_t* const HuffDecoderCommon::table12_emit_[64] = {
-    table12_0_emit_,  table9_0_emit_,   table12_0_emit_,  table9_1_emit_,
-    table12_0_emit_,  table9_2_emit_,   table12_0_emit_,  table9_3_emit_,
-    table12_0_emit_,  table9_4_emit_,   table12_0_emit_,  table9_5_emit_,
-    table12_0_emit_,  table9_6_emit_,   table12_0_emit_,  table9_7_emit_,
-    table12_0_emit_,  table9_8_emit_,   table12_0_emit_,  table9_9_emit_,
+    nullptr,          table9_0_emit_,   nullptr,          table9_1_emit_,
+    nullptr,          table9_2_emit_,   nullptr,          table9_3_emit_,
+    nullptr,          table9_4_emit_,   nullptr,          table9_5_emit_,
+    nullptr,          table9_6_emit_,   nullptr,          table9_7_emit_,
+    nullptr,          table9_8_emit_,   nullptr,          table9_9_emit_,
     table12_20_emit_, table12_21_emit_, table12_22_emit_, table12_23_emit_,
     table12_24_emit_, table12_25_emit_, table12_26_emit_, table12_27_emit_,
     table12_28_emit_, table12_29_emit_, table12_30_emit_, table12_31_emit_,

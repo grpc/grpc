@@ -304,7 +304,6 @@ class HuffDecoderCommon {
   static const uint8_t table16_7_ops_[128];
   static const uint8_t* const table16_emit_[8];
   static const uint8_t* const table16_ops_[8];
-  static const uint8_t table17_0_emit_[0];
   static const uint8_t table17_0_ops_[128];
   static const uint8_t table17_12_emit_[1];
   static const uint8_t table17_13_emit_[1];

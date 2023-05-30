@@ -1078,6 +1078,7 @@ class TableBuilder {
                                   const std::vector<T>& values, bool hex,
                                   Sink* global_decls,
                                   Sink* global_values) const {
+    if (values.empty()) return std::make_unique<NamedArray>("nullptr");
     if (!force_array) {
       auto fn = ArrayToFunction(values);
       if (fn != nullptr) return fn;
