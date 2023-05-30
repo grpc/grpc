@@ -26,10 +26,11 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/huffman_geometries/index.h"
 
-const std::vector<uint8_t> MakeInput(int min, int max) {
+std::vector<uint8_t> MakeInput(int min, int max) {
   std::vector<uint8_t> v;
   std::uniform_int_distribution<> distribution(min, max);
   static std::mt19937 rd(0);
+  v.reserve(1024 * 1024);
   for (int i = 0; i < 1024 * 1024; i++) {
     v.push_back(distribution(rd));
   }
@@ -38,7 +39,7 @@ const std::vector<uint8_t> MakeInput(int min, int max) {
   return std::vector<uint8_t>(c.begin(), c.end());
 }
 
-const std::vector<uint8_t> MakeBase64() {
+std::vector<uint8_t> MakeBase64() {
   auto src = MakeInput(0, 255);
   auto s = absl::Base64Escape(
       absl::string_view(reinterpret_cast<char*>(src.data()), src.size()));
