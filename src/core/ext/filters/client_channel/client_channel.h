@@ -607,8 +607,6 @@ class ClientChannel::PromiseBasedLoadBalancedCall
  public:
   PromiseBasedLoadBalancedCall(ClientChannel* chand, bool is_transparent_retry);
 
-  void Orphan() override;
-
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
  private:
@@ -623,7 +621,6 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   ClientMetadataHandle client_initial_metadata_;
   Waker waker_;
   bool was_queued_ = false;
-  bool recorded_completion_ = false;
   Slice peer_string_;
 };
 
