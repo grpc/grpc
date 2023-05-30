@@ -808,6 +808,12 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   void Done4() {
     done_ = true;
+    switch (end_ - begin_) {
+      case 1: {
+        Fill1();
+        break;
+      }
+    }
     switch (buffer_len_) {
       case 1:
       case 2: {

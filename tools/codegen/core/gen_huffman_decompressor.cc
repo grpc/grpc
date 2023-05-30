@@ -1200,6 +1200,28 @@ class FunMaker {
     return NewFun(name, "void");
   }
 
+  std::string FillFromInput(int bytes_needed) {
+    auto fn_name = absl::StrCat("Fill", bytes_needed);
+    if (have_fill_from_input_.count(bytes_needed) == 0) {
+      have_fill_from_input_.insert(bytes_needed);
+      auto fn = NewFun(fn_name, "void");
+      std::string new_value;
+      if (bytes_needed == 8) {
+        new_value = "0";
+      } else {
+        new_value = absl::StrCat("(buffer_ << ", 8 * bytes_needed, ")");
+      }
+      for (int i = 0; i < bytes_needed; i++) {
+        absl::StrAppend(&new_value, "| (static_cast<uint64_t>(begin_[", i,
+                        "]) << ", 8 * (bytes_needed - i - 1), ")");
+      }
+      fn->Add(absl::StrCat("buffer_ = ", new_value, ";"));
+      fn->Add(absl::StrCat("begin_ += ", bytes_needed, ";"));
+      fn->Add(absl::StrCat("buffer_len_ += ", 8 * bytes_needed, ";"));
+    }
+    return fn_name;
+  }
+
  private:
   Sink* NewFun(std::string name, std::string returns) {
     sink_->Add(absl::StrCat(returns, " ", name, "() {"));
@@ -1230,28 +1252,6 @@ class FunMaker {
     return absl::StrCat(fn_name, "()");
   }
 
-  std::string FillFromInput(int bytes_needed) {
-    auto fn_name = absl::StrCat("Fill", bytes_needed);
-    if (have_fill_from_input_.count(bytes_needed) == 0) {
-      have_fill_from_input_.insert(bytes_needed);
-      auto fn = NewFun(fn_name, "void");
-      std::string new_value;
-      if (bytes_needed == 8) {
-        new_value = "0";
-      } else {
-        new_value = absl::StrCat("(buffer_ << ", 8 * bytes_needed, ")");
-      }
-      for (int i = 0; i < bytes_needed; i++) {
-        absl::StrAppend(&new_value, "| (static_cast<uint64_t>(begin_[", i,
-                        "]) << ", 8 * (bytes_needed - i - 1), ")");
-      }
-      fn->Add(absl::StrCat("buffer_ = ", new_value, ";"));
-      fn->Add(absl::StrCat("begin_ += ", bytes_needed, ";"));
-      fn->Add(absl::StrCat("buffer_len_ += ", 8 * bytes_needed, ";"));
-    }
-    return fn_name;
-  }
-
   std::set<int> have_refills_;
   std::set<std::pair<int, int>> have_reads_;
   std::set<int> have_fill_from_input_;
@@ -1268,6 +1268,14 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
   if (num_bits == 1) {
     if (!all_ones_so_far) out->Add("ok_ = false;");
     return;
+  }
+  if (num_bits > 7) {
+    auto consume_rest = out->Add<Switch>("end_ - begin_");
+    for (int i = 1; i < (num_bits + 7) / 8; i++) {
+      auto c = consume_rest->Case(i);
+      c->Add(absl::StrCat(fun_maker_->FillFromInput(i), "();"));
+      c->Add("break;");
+    }
   }
   // we must have 0 < buffer_len_ < num_bits
   auto s = out->Add<Switch>("buffer_len_");
