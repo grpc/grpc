@@ -111,6 +111,7 @@ def PutCopyright(file, prefix):
 
 
 class ExperimentDefinition(object):
+
     def __init__(self, attributes):
         self._error = False
         if 'name' not in attributes:
@@ -142,7 +143,8 @@ class ExperimentDefinition(object):
         self._test_tags = []
 
         if 'allow_in_fuzzing_config' in attributes:
-            self._allow_in_fuzzing_config = attributes['allow_in_fuzzing_config']
+            self._allow_in_fuzzing_config = attributes[
+                'allow_in_fuzzing_config']
 
         if 'test_tags' in attributes:
             self._test_tags = attributes['test_tags']
@@ -185,7 +187,8 @@ class ExperimentDefinition(object):
                   (rollout_attributes['name'], rollout_attributes['default']))
             self._error = True
         if 'additional_constraints' in rollout_attributes:
-            self._additional_constraints = rollout_attributes['additional_constraints']
+            self._additional_constraints = rollout_attributes[
+                'additional_constraints']
         self._default = rollout_attributes['default']
         return True
 
@@ -215,7 +218,11 @@ class ExperimentDefinition(object):
 
 
 class ExperimentsCompiler(object):
-    def __init__(self, defaults, final_return, final_define,
+
+    def __init__(self,
+                 defaults,
+                 final_return,
+                 final_define,
                  bzl_list_for_defaults=None):
         self._defaults = defaults
         self._final_return = final_return
@@ -229,7 +236,8 @@ class ExperimentsCompiler(object):
             print("ERROR: Duplicate experiment definition: %s" %
                   experiment_definition.name)
             return False
-        self._experiment_definitions[experiment_definition.name] = experiment_definition
+        self._experiment_definitions[
+            experiment_definition.name] = experiment_definition
         return True
 
     def AddRolloutSpecification(self, rollout_attributes):
@@ -240,8 +248,9 @@ class ExperimentsCompiler(object):
         if rollout_attributes['name'] not in self._experiment_definitions:
             print("WARNING: rollout for an undefined experiment: %s ignored" %
                   rollout_attributes['name'])
-        return (self._experiment_definitions[rollout_attributes['name']]
-                .AddRolloutSpecification(self._defaults, rollout_attributes))
+        return (self._experiment_definitions[
+            rollout_attributes['name']].AddRolloutSpecification(
+                self._defaults, rollout_attributes))
 
     def GenerateExperimentsHdr(self, output_file):
         with open(output_file, 'w') as H:
@@ -268,19 +277,23 @@ class ExperimentsCompiler(object):
                     print(define_fmt %
                           ("GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper()),
                           file=H)
-                print("inline bool Is%sEnabled() { %s }" % (SnakeToPascal(
-                    exp.name), self._final_return[exp.default]),
+                print(
+                    "inline bool Is%sEnabled() { %s }" %
+                    (SnakeToPascal(exp.name), self._final_return[exp.default]),
                     file=H)
             print("#else", file=H)
             for i, (_, exp) in enumerate(self._experiment_definitions.items()):
                 print("#define GRPC_EXPERIMENT_IS_INCLUDED_%s" %
-                      exp.name.upper(), file=H)
-                print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
-                      (SnakeToPascal(exp.name), i),
+                      exp.name.upper(),
                       file=H)
+                print(
+                    "inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }"
+                    % (SnakeToPascal(exp.name), i),
+                    file=H)
             print(file=H)
             print("constexpr const size_t kNumExperiments = %d;" %
-                  len(self._experiment_definitions.keys()), file=H)
+                  len(self._experiment_definitions.keys()),
+                  file=H)
             print(
                 "extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];",
                 file=H)
@@ -309,9 +322,10 @@ class ExperimentsCompiler(object):
                 print("const char* const description_%s = %s;" %
                       (exp.name, ToCStr(exp.description)),
                       file=C)
-                print("const char* const additional_constraints_%s = %s;" %
-                      (exp.name, ToCStr(json.dumps(exp.additional_constraints))),
-                      file=C)
+                print(
+                    "const char* const additional_constraints_%s = %s;" %
+                    (exp.name, ToCStr(json.dumps(exp.additional_constraints))),
+                    file=C)
                 have_defaults.add(exp.default)
             if 'kDefaultForDebugOnly' in have_defaults:
                 print("#ifdef NDEBUG", file=C)
@@ -325,14 +339,14 @@ class ExperimentsCompiler(object):
             print(file=C)
             print("namespace grpc_core {", file=C)
             print(file=C)
-            print(
-                "const ExperimentMetadata g_experiment_metadata[] = {", file=C)
+            print("const ExperimentMetadata g_experiment_metadata[] = {",
+                  file=C)
             for _, exp in self._experiment_definitions.items():
                 print(
-                    "  {%s, description_%s, additional_constraints_%s, %s, %s}," %
-                    (ToCStr(exp.name), exp.name, exp.name,
-                     'true' if exp.default else 'false',
-                     'true' if exp.allow_in_fuzzing_config else 'false'),
+                    "  {%s, description_%s, additional_constraints_%s, %s, %s},"
+                    % (ToCStr(exp.name), exp.name, exp.name,
+                       'true' if exp.default else 'false',
+                       'true' if exp.allow_in_fuzzing_config else 'false'),
                     file=C)
             print("};", file=C)
             print(file=C)
@@ -343,9 +357,10 @@ class ExperimentsCompiler(object):
         if self._bzl_list_for_defaults is None:
             return
 
-        bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
-                                          for key in self._bzl_list_for_defaults.keys()
-                                          if key is not None)
+        bzl_to_tags_to_experiments = dict(
+            (key, collections.defaultdict(list))
+            for key in self._bzl_list_for_defaults.keys()
+            if key is not None)
 
         for _, exp in self._experiment_definitions.items():
             for tag in exp.test_tags:
@@ -364,7 +379,8 @@ class ExperimentsCompiler(object):
 
             bzl_to_tags_to_experiments = sorted(
                 (self._bzl_list_for_defaults[default], tags_to_experiments)
-                for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
+                for default, tags_to_experiments in
+                bzl_to_tags_to_experiments.items()
                 if self._bzl_list_for_defaults[default] is not None)
 
             print(file=B)

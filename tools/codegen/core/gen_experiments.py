@@ -24,10 +24,9 @@ from __future__ import print_function
 
 import argparse
 import sys
-import yaml
 
 import experiments_compiler as exp
-
+import yaml
 
 DEFAULTS = {
     'broken': 'false',
@@ -101,9 +100,8 @@ with open('src/core/lib/experiments/experiments.yaml') as f:
 with open('src/core/lib/experiments/rollouts.yaml') as f:
     rollouts = yaml.safe_load(f.read())
 
-compiler = exp.ExperimentsCompiler(
-    DEFAULTS, FINAL_RETURN, FINAL_DEFINE, BZL_LIST_FOR_DEFAULTS)
-
+compiler = exp.ExperimentsCompiler(DEFAULTS, FINAL_RETURN, FINAL_DEFINE,
+                                   BZL_LIST_FOR_DEFAULTS)
 
 experiment_annotation = "gRPC Experiments: "
 for attr in attrs:
