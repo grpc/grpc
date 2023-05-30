@@ -150,6 +150,7 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "nomsan",
     ],
     deps = [
         ":helpers",
