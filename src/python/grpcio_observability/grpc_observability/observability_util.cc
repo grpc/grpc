@@ -38,10 +38,10 @@ std::queue<CensusData>* g_census_data_buffer;
 std::mutex g_census_data_buffer_mutex;
 std::condition_variable g_census_data_buffer_cv;
 // TODO(xuanwn): Change below to a more appropriate number.
-// Assume buffer will store 100 CensusData and start export when buffer is 50%
-// full. kMaxExportBufferSizeBytes = 100 * (2048(kMaxTagsLen) + 1024(Buffer))
+// Assume buffer will store 100 CensusData and start export when buffer is 70%
+// full.
 constexpr float kExportThreshold = 0.7;
-constexpr int kMaxExportBufferSizeBytes = 100 * 1024 * 3;
+constexpr int kMaxExportBufferSizeBytes = 100;
 
 namespace {
 
@@ -55,7 +55,7 @@ float GetExportThreadHold() {
 
 int GetMaxExportBufferSize() {
   const char* value =
-      std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE_BYTES");
+      std::getenv("GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE");
   if (value != nullptr) {
     return std::stoi(value);
   }
