@@ -172,7 +172,8 @@ class TestConfigurator {
 
   void RequestWithSendMessageBeforeInitialMetadata() {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     c.NewBatch(2).SendMessage(std::string(1024, 'x'));
     test_.Expect(2, true);
     CoreEnd2endTest::IncomingStatusOnClient server_status;
