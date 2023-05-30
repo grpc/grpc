@@ -52,9 +52,7 @@ class HuffDecoderCommon {
     return (emit < 2 ? (emit + 33) : ((emit - 2) + 40));
   }
   static inline uint64_t GetOp7(size_t i) {
-    return ((i < 2 ? (i) : ((i - 2) + 1)) < 1
-                ? (((void)(i < 2 ? (i) : ((i - 2) + 1)), 2))
-                : (((i < 2 ? (i) : ((i - 2) + 1)) - 1) ? 0 : 1));
+    return (i < 2 ? (i) : ((i - 2) + 1));
   }
   static inline uint64_t GetEmit7(size_t, size_t emit) {
     return ((void)emit, 63);
@@ -83,15 +81,17 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit12(size_t, size_t emit) {
     return table12_0_emit_[emit];
   }
-  static inline uint64_t GetOp13(size_t i) { return table13_0_ops_[i]; }
-  static inline uint64_t GetEmit13(size_t, size_t emit) {
-    return table12_0_emit_[emit];
+  static inline uint64_t GetOp13(size_t i) {
+    return table13_ops_[i >> 5][i & 0x1f];
+  }
+  static inline uint64_t GetEmit13(size_t i, size_t emit) {
+    return table13_emit_[i >> 5][emit];
   }
   static inline uint64_t GetOp14(size_t i) {
-    return table14_ops_[i >> 6][i & 0x3f];
+    return table14_ops_[i >> 5][i & 0x1f];
   }
   static inline uint64_t GetEmit14(size_t i, size_t emit) {
-    return table14_emit_[i >> 6][emit];
+    return table14_emit_[i >> 5][emit];
   }
   static inline uint64_t GetOp6(size_t i) {
     return table6_ops_[i >> 6][i & 0x3f];
@@ -113,7 +113,7 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit17(size_t, size_t emit) {
     return table17_0_emit_[emit];
   }
-  static inline uint64_t GetOp19(size_t i) { return i ? 1 : 2; }
+  static inline uint64_t GetOp19(size_t i) { return i; }
   static inline uint64_t GetEmit19(size_t, size_t emit) {
     return ((void)emit, 208);
   }
@@ -126,7 +126,7 @@ class HuffDecoderCommon {
     return (emit < 1 ? (((void)emit, 208)) : ((emit - 1) ? 130 : 128));
   }
   static inline uint64_t GetOp21(size_t i) {
-    return (i < 1 ? (((void)i, 0)) : (((void)(i - 1), 1))) ? 1 : 2;
+    return (i < 1 ? (((void)i, 0)) : (((void)(i - 1), 1)));
   }
   static inline uint64_t GetEmit21(size_t, size_t emit) {
     return ((void)emit, 230);
@@ -139,8 +139,8 @@ class HuffDecoderCommon {
   }
   static inline uint64_t GetOp23(size_t i) {
     return ((i < 2 ? (i) : (((void)(i - 2), 2))) < 1
-                ? (((void)(i < 2 ? (i) : (((void)(i - 2), 2))), 2))
-                : (((i < 2 ? (i) : (((void)(i - 2), 2))) - 1) ? 1 : 6));
+                ? (((void)(i < 2 ? (i) : (((void)(i - 2), 2))), 0))
+                : (((i < 2 ? (i) : (((void)(i - 2), 2))) - 1) ? 1 : 2));
   }
   static inline uint64_t GetEmit23(size_t, size_t emit) {
     return emit ? 226 : 224;
@@ -184,16 +184,16 @@ class HuffDecoderCommon {
     return table31_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp32(size_t i) {
-    return table32_ops_[i >> 7][i & 0x7f];
+    return table32_ops_[i >> 6][i & 0x3f];
   }
   static inline uint64_t GetEmit32(size_t i, size_t emit) {
-    return table32_emit_[i >> 7][emit];
+    return table32_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp33(size_t i) {
-    return table33_ops_[i >> 7][i & 0x7f];
+    return table33_ops_[i >> 6][i & 0x3f];
   }
   static inline uint64_t GetEmit33(size_t i, size_t emit) {
-    return table33_emit_[i >> 7][emit];
+    return table33_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp26(size_t i) {
     return table26_ops_[i >> 7][i & 0x7f];
@@ -225,33 +225,57 @@ class HuffDecoderCommon {
   static const uint8_t table10_0_ops_[32];
   static const uint8_t table11_0_emit_[14];
   static const uint8_t table11_0_ops_[64];
-  static const uint8_t table12_0_emit_[17];
+  static const uint8_t table12_0_emit_[36];
   static const uint8_t table12_0_ops_[128];
-  static const uint8_t table13_0_ops_[256];
-  static const uint8_t table14_0_ops_[64];
-  static const uint8_t table14_1_emit_[1];
-  static const uint8_t table14_1_ops_[64];
-  static const uint8_t table14_2_emit_[1];
-  static const uint8_t table14_3_emit_[1];
-  static const uint8_t table14_4_emit_[1];
-  static const uint8_t table14_5_emit_[2];
-  static const uint8_t table14_5_ops_[64];
-  static const uint8_t table14_6_emit_[4];
-  static const uint8_t table14_6_ops_[64];
-  static const uint8_t table14_7_emit_[7];
-  static const uint8_t table14_7_ops_[64];
-  static const uint8_t* const table14_emit_[8];
-  static const uint8_t* const table14_ops_[8];
+  static const uint8_t table13_0_emit_[44];
+  static const uint8_t table13_0_ops_[32];
+  static const uint8_t table13_1_emit_[28];
+  static const uint8_t table13_1_ops_[32];
+  static const uint8_t table13_2_emit_[20];
+  static const uint8_t table13_2_ops_[32];
+  static const uint8_t table13_3_emit_[20];
+  static const uint8_t table13_4_emit_[20];
+  static const uint8_t table13_5_emit_[2];
+  static const uint8_t table13_5_ops_[32];
+  static const uint8_t table13_6_emit_[4];
+  static const uint8_t table13_6_ops_[32];
+  static const uint8_t table13_7_emit_[7];
+  static const uint8_t table13_7_ops_[32];
+  static const uint8_t* const table13_emit_[8];
+  static const uint8_t* const table13_ops_[8];
+  static const uint8_t table14_0_emit_[16];
+  static const uint8_t table14_0_ops_[32];
+  static const uint8_t table14_1_emit_[28];
+  static const uint8_t table14_1_ops_[32];
+  static const uint8_t table14_2_emit_[36];
+  static const uint8_t table14_2_ops_[32];
+  static const uint8_t table14_3_emit_[56];
+  static const uint8_t table14_3_ops_[32];
+  static const uint8_t table14_4_emit_[44];
+  static const uint8_t table14_5_emit_[28];
+  static const uint8_t table14_6_emit_[44];
+  static const uint8_t table14_7_emit_[28];
+  static const uint8_t table14_8_emit_[44];
+  static const uint8_t table14_9_emit_[28];
+  static const uint8_t table14_10_emit_[20];
+  static const uint8_t table14_11_emit_[20];
+  static const uint8_t table14_12_emit_[2];
+  static const uint8_t table14_13_emit_[2];
+  static const uint8_t table14_14_emit_[2];
+  static const uint8_t table14_15_emit_[5];
+  static const uint8_t table14_15_ops_[32];
+  static const uint8_t* const table14_emit_[16];
+  static const uint8_t* const table14_ops_[16];
+  static const uint8_t table6_0_emit_[1];
   static const uint16_t table6_0_ops_[64];
+  static const uint8_t table6_4_emit_[1];
   static const uint16_t table6_4_ops_[64];
+  static const uint8_t table6_6_emit_[1];
+  static const uint8_t table6_8_emit_[1];
   static const uint8_t table6_10_emit_[1];
   static const uint16_t table6_10_ops_[64];
   static const uint8_t table6_11_emit_[1];
-  static const uint8_t table6_12_emit_[2];
   static const uint16_t table6_12_ops_[64];
-  static const uint8_t table6_13_emit_[2];
-  static const uint8_t table6_14_emit_[2];
-  static const uint8_t table6_15_emit_[5];
   static const uint16_t table6_15_ops_[64];
   static const uint8_t* const table6_emit_[16];
   static const uint16_t* const table6_ops_[16];
@@ -274,6 +298,7 @@ class HuffDecoderCommon {
   static const uint8_t table30_0_emit_[52];
   static const uint8_t table30_0_ops_[256];
   static const uint8_t table31_0_emit_[4];
+  static const uint8_t table31_0_ops_[64];
   static const uint8_t table31_1_emit_[4];
   static const uint8_t table31_2_emit_[4];
   static const uint8_t table31_3_emit_[4];
@@ -286,36 +311,71 @@ class HuffDecoderCommon {
   static const uint8_t table31_7_ops_[64];
   static const uint8_t* const table31_emit_[8];
   static const uint8_t* const table31_ops_[8];
-  static const uint8_t table32_0_ops_[128];
-  static const uint8_t table32_5_ops_[128];
-  static const uint8_t table32_6_ops_[128];
-  static const uint8_t table32_7_emit_[63];
-  static const uint8_t table32_7_ops_[128];
-  static const uint8_t* const table32_emit_[8];
-  static const uint8_t* const table32_ops_[8];
-  static const uint8_t table33_0_emit_[2];
-  static const uint8_t table33_0_ops_[128];
-  static const uint8_t table33_1_emit_[2];
-  static const uint8_t table33_2_emit_[2];
-  static const uint8_t table33_3_emit_[2];
-  static const uint8_t table33_4_emit_[2];
-  static const uint8_t table33_5_emit_[2];
-  static const uint8_t table33_6_emit_[2];
-  static const uint8_t table33_7_emit_[2];
-  static const uint8_t table33_8_emit_[2];
-  static const uint8_t table33_9_emit_[2];
-  static const uint8_t table33_10_emit_[3];
-  static const uint8_t table33_10_ops_[128];
-  static const uint8_t table33_11_emit_[4];
-  static const uint8_t table33_12_emit_[4];
-  static const uint8_t table33_13_emit_[6];
-  static const uint8_t table33_13_ops_[128];
-  static const uint8_t table33_14_emit_[17];
-  static const uint8_t table33_14_ops_[128];
-  static const uint8_t table33_15_emit_[46];
-  static const uint8_t table33_15_ops_[128];
-  static const uint8_t* const table33_emit_[16];
-  static const uint8_t* const table33_ops_[16];
+  static const uint8_t table32_0_emit_[40];
+  static const uint8_t table32_0_ops_[64];
+  static const uint8_t table32_1_emit_[40];
+  static const uint8_t table32_2_emit_[40];
+  static const uint8_t table32_3_emit_[40];
+  static const uint8_t table32_4_emit_[40];
+  static const uint8_t table32_5_emit_[40];
+  static const uint8_t table32_6_emit_[40];
+  static const uint8_t table32_7_emit_[40];
+  static const uint8_t table32_8_emit_[40];
+  static const uint8_t table32_9_emit_[40];
+  static const uint8_t table32_10_emit_[22];
+  static const uint8_t table32_10_ops_[64];
+  static const uint8_t table32_11_emit_[4];
+  static const uint8_t table32_11_ops_[64];
+  static const uint8_t table32_12_emit_[4];
+  static const uint8_t table32_13_emit_[6];
+  static const uint8_t table32_13_ops_[64];
+  static const uint8_t table32_14_emit_[17];
+  static const uint8_t table32_14_ops_[64];
+  static const uint8_t table32_15_emit_[46];
+  static const uint8_t table32_15_ops_[64];
+  static const uint8_t* const table32_emit_[16];
+  static const uint8_t* const table32_ops_[16];
+  static const uint8_t table33_0_emit_[72];
+  static const uint16_t table33_0_ops_[64];
+  static const uint8_t table33_1_emit_[72];
+  static const uint8_t table33_2_emit_[72];
+  static const uint8_t table33_3_emit_[72];
+  static const uint8_t table33_4_emit_[72];
+  static const uint8_t table33_5_emit_[72];
+  static const uint8_t table33_6_emit_[72];
+  static const uint8_t table33_7_emit_[72];
+  static const uint8_t table33_8_emit_[72];
+  static const uint8_t table33_9_emit_[72];
+  static const uint8_t table33_10_emit_[72];
+  static const uint8_t table33_11_emit_[72];
+  static const uint8_t table33_12_emit_[72];
+  static const uint8_t table33_13_emit_[72];
+  static const uint8_t table33_14_emit_[72];
+  static const uint8_t table33_15_emit_[72];
+  static const uint8_t table33_16_emit_[72];
+  static const uint8_t table33_17_emit_[72];
+  static const uint8_t table33_18_emit_[72];
+  static const uint8_t table33_19_emit_[72];
+  static const uint8_t table33_20_emit_[72];
+  static const uint8_t table33_21_emit_[40];
+  static const uint16_t table33_21_ops_[64];
+  static const uint8_t table33_22_emit_[40];
+  static const uint8_t table33_23_emit_[40];
+  static const uint8_t table33_24_emit_[40];
+  static const uint8_t table33_25_emit_[40];
+  static const uint8_t table33_26_emit_[40];
+  static const uint8_t table33_27_emit_[4];
+  static const uint16_t table33_27_ops_[64];
+  static const uint8_t table33_28_emit_[8];
+  static const uint16_t table33_28_ops_[64];
+  static const uint8_t table33_29_emit_[9];
+  static const uint16_t table33_29_ops_[64];
+  static const uint8_t table33_30_emit_[16];
+  static const uint16_t table33_30_ops_[64];
+  static const uint8_t table33_31_emit_[30];
+  static const uint16_t table33_31_ops_[64];
+  static const uint8_t* const table33_emit_[32];
+  static const uint16_t* const table33_ops_[32];
   static const uint8_t table26_0_emit_[1];
   static const uint16_t table26_0_ops_[128];
   static const uint8_t table26_1_emit_[1];
@@ -345,13 +405,9 @@ class HuffDecoderCommon {
   static const uint8_t table26_24_emit_[2];
   static const uint8_t table26_25_emit_[2];
   static const uint8_t table26_26_emit_[2];
-  static const uint8_t table26_27_emit_[4];
   static const uint16_t table26_27_ops_[128];
-  static const uint8_t table26_28_emit_[8];
   static const uint16_t table26_28_ops_[128];
-  static const uint8_t table26_29_emit_[9];
   static const uint16_t table26_29_ops_[128];
-  static const uint8_t table26_30_emit_[16];
   static const uint16_t table26_30_ops_[128];
   static const uint8_t table26_31_emit_[33];
   static const uint16_t table26_31_ops_[128];
@@ -567,12 +623,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 31;
         const auto op = GetOp2(index);
         switch (op & 3) {
-          case 1: {
-            ok_ = false;
+          case 0: {
+            sink_(GetEmit2(index, (op >> 2) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit2(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -582,12 +638,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 63;
         const auto op = GetOp3(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit3(index, op >> 2));
+          case 1: {
+            sink_(GetEmit3(index, (op >> 2) + 0));
             break;
           }
         }
@@ -597,12 +653,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 127;
         const auto op = GetOp4(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit4(index, op >> 2));
+          case 1: {
+            sink_(GetEmit4(index, (op >> 2) + 0));
             break;
           }
         }
@@ -834,12 +890,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 3;
         const auto op = GetOp7(index);
         switch (op & 3) {
-          case 1: {
-            ok_ = false;
+          case 0: {
+            sink_(GetEmit7(index, (op >> 2) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit7(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -849,12 +905,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 7;
         const auto op = GetOp8(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit8(index, op >> 2));
+          case 1: {
+            sink_(GetEmit8(index, (op >> 2) + 0));
             break;
           }
         }
@@ -864,12 +920,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 15;
         const auto op = GetOp9(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit9(index, op >> 2));
+          case 1: {
+            sink_(GetEmit9(index, (op >> 2) + 0));
             break;
           }
         }
@@ -879,12 +935,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 31;
         const auto op = GetOp10(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit10(index, op >> 2));
+          case 1: {
+            sink_(GetEmit10(index, (op >> 2) + 0));
             break;
           }
         }
@@ -894,12 +950,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 63;
         const auto op = GetOp11(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit11(index, op >> 2));
+          case 1: {
+            sink_(GetEmit11(index, (op >> 2) + 0));
             break;
           }
         }
@@ -909,12 +965,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 127;
         const auto op = GetOp12(index);
         switch (op & 3) {
+          case 0: {
+            sink_(GetEmit12(index, (op >> 2) + 0));
+            sink_(GetEmit12(index, (op >> 2) + 1));
+            break;
+          }
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit12(index, op >> 2));
+            sink_(GetEmit12(index, (op >> 2) + 0));
             break;
           }
         }
@@ -924,12 +985,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 255;
         const auto op = GetOp13(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit13(index, (op >> 2) + 0));
+            sink_(GetEmit13(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit13(index, op >> 2));
+            sink_(GetEmit13(index, (op >> 2) + 0));
             break;
           }
         }
@@ -939,12 +1005,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 511;
         const auto op = GetOp14(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit14(index, (op >> 2) + 0));
+            sink_(GetEmit14(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit14(index, op >> 2));
+            sink_(GetEmit14(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1054,13 +1125,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 1: {
         const auto index = buffer_ & 1;
         const auto op = GetOp19(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit19(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit19(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1109,13 +1180,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 3: {
         const auto index = buffer_ & 7;
         const auto op = GetOp21(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit21(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit21(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1146,13 +1217,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 2: {
         const auto index = buffer_ & 3;
         const auto op = GetOp23(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit23(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit23(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1199,13 +1270,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 4: {
         const auto index = buffer_ & 15;
         const auto op = GetOp25(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit25(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit25(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1280,12 +1351,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 31;
         const auto op = GetOp27(index);
         switch (op & 3) {
-          case 1: {
-            ok_ = false;
+          case 0: {
+            sink_(GetEmit27(index, (op >> 2) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit27(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1295,12 +1366,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 63;
         const auto op = GetOp28(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit28(index, op >> 2));
+          case 1: {
+            sink_(GetEmit28(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1310,12 +1381,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 127;
         const auto op = GetOp29(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit29(index, op >> 2));
+          case 1: {
+            sink_(GetEmit29(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1325,12 +1396,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 255;
         const auto op = GetOp30(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit30(index, op >> 2));
+          case 1: {
+            sink_(GetEmit30(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1340,12 +1411,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 511;
         const auto op = GetOp31(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit31(index, op >> 2));
+          case 1: {
+            sink_(GetEmit31(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1355,12 +1426,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 1023;
         const auto op = GetOp32(index);
         switch (op & 3) {
+          case 0: {
+            sink_(GetEmit32(index, (op >> 2) + 0));
+            sink_(GetEmit32(index, (op >> 2) + 1));
+            break;
+          }
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit32(index, op >> 2));
+            sink_(GetEmit32(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1370,12 +1446,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 2047;
         const auto op = GetOp33(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit33(index, (op >> 2) + 0));
+            sink_(GetEmit33(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit33(index, op >> 2));
+            sink_(GetEmit33(index, (op >> 2) + 0));
             break;
           }
         }

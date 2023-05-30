@@ -90,22 +90,22 @@ class HuffDecoderCommon {
     return table14_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp15(size_t i) {
-    return table15_ops_[i >> 7][i & 0x7f];
+    return table15_ops_[i >> 6][i & 0x3f];
   }
   static inline uint64_t GetEmit15(size_t i, size_t emit) {
-    return table15_emit_[i >> 7][emit];
+    return table15_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp16(size_t i) {
-    return table16_ops_[i >> 7][i & 0x7f];
+    return table16_ops_[i >> 6][i & 0x3f];
   }
   static inline uint64_t GetEmit16(size_t i, size_t emit) {
-    return table16_emit_[i >> 7][emit];
+    return table16_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp17(size_t i) {
-    return table17_ops_[i >> 7][i & 0x7f];
+    return table17_ops_[i >> 6][i & 0x3f];
   }
   static inline uint64_t GetEmit17(size_t i, size_t emit) {
-    return table17_emit_[i >> 7][emit];
+    return table17_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp18(size_t i) {
     return table18_ops_[i >> 7][i & 0x7f];
@@ -114,22 +114,22 @@ class HuffDecoderCommon {
     return table18_emit_[i >> 7][emit];
   }
   static inline uint64_t GetOp19(size_t i) {
-    return table19_ops_[i >> 8][i & 0xff];
+    return table19_ops_[i >> 7][i & 0x7f];
   }
   static inline uint64_t GetEmit19(size_t i, size_t emit) {
-    return table19_emit_[i >> 8][emit];
+    return table19_emit_[i >> 7][emit];
   }
   static inline uint64_t GetOp20(size_t i) {
-    return table20_ops_[i >> 9][i & 0x1ff];
+    return table20_ops_[i >> 7][i & 0x7f];
   }
   static inline uint64_t GetEmit20(size_t i, size_t emit) {
-    return table20_emit_[i >> 9][emit];
+    return table20_emit_[i >> 7][emit];
   }
   static inline uint64_t GetOp21(size_t i) {
-    return table21_ops_[i >> 9][i & 0x1ff];
+    return table21_ops_[i >> 7][i & 0x7f];
   }
   static inline uint64_t GetEmit21(size_t i, size_t emit) {
-    return table21_emit_[i >> 9][emit];
+    return table21_emit_[i >> 7][emit];
   }
   static inline uint64_t GetOp8(size_t i) {
     return table8_inner_[i >> 9][table8_outer_[i >> 9][i & 0x1ff]];
@@ -187,7 +187,7 @@ class HuffDecoderCommon {
     return (i < 2 ? (i ? 6 : 2) : ((i - 2) ? 14 : 10));
   }
   static inline uint64_t GetEmit36(size_t, size_t emit) { return emit + 28; }
-  static inline uint64_t GetOp38(size_t i) { return i ? 1 : 2; }
+  static inline uint64_t GetOp38(size_t i) { return i; }
   static inline uint64_t GetEmit38(size_t, size_t emit) {
     return ((void)emit, 254);
   }
@@ -200,7 +200,7 @@ class HuffDecoderCommon {
     return (emit < 1 ? (((void)emit, 254)) : ((emit - 1) + 2));
   }
   static inline uint64_t GetOp40(size_t i) {
-    return (i < 2 ? (i ? 6 : 2) : ((i - 2) ? 0 : 10));
+    return (i < 2 ? (i ? 2 : 0) : ((i - 2) ? 1 : 4));
   }
   static inline uint64_t GetEmit40(size_t, size_t emit) {
     return (emit < 1 ? (((void)emit, 127)) : ((emit - 1) ? 249 : 220));
@@ -217,7 +217,7 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit39(size_t, size_t emit) {
     return table39_0_emit_[emit];
   }
-  static inline uint64_t GetOp43(size_t i) { return i ? 1 : 2; }
+  static inline uint64_t GetOp43(size_t i) { return i; }
   static inline uint64_t GetEmit43(size_t, size_t emit) {
     return ((void)emit, 124);
   }
@@ -301,75 +301,615 @@ class HuffDecoderCommon {
   static const uint8_t table11_0_ops_[32];
   static const uint8_t table12_0_ops_[64];
   static const uint8_t table13_0_ops_[128];
-  static const uint8_t table14_0_emit_[2];
+  static const uint8_t table14_0_emit_[40];
   static const uint8_t table14_0_ops_[64];
-  static const uint8_t table14_1_emit_[2];
-  static const uint8_t table14_2_emit_[2];
+  static const uint8_t table14_1_emit_[40];
+  static const uint8_t table14_2_emit_[40];
   static const uint8_t table14_3_emit_[5];
   static const uint8_t table14_3_ops_[64];
   static const uint8_t* const table14_emit_[4];
   static const uint8_t* const table14_ops_[4];
-  static const uint8_t table15_0_ops_[128];
-  static const uint8_t table15_3_emit_[8];
-  static const uint8_t table15_3_ops_[128];
-  static const uint8_t* const table15_emit_[4];
-  static const uint8_t* const table15_ops_[4];
-  static const uint8_t table16_0_emit_[1];
-  static const uint8_t table16_0_ops_[128];
-  static const uint8_t table16_1_emit_[1];
-  static const uint8_t table16_2_emit_[1];
-  static const uint8_t table16_3_emit_[1];
-  static const uint8_t table16_4_emit_[1];
-  static const uint8_t table16_5_emit_[1];
-  static const uint8_t table16_6_emit_[2];
-  static const uint8_t table16_7_emit_[14];
-  static const uint8_t table16_7_ops_[128];
-  static const uint8_t* const table16_emit_[8];
-  static const uint8_t* const table16_ops_[8];
-  static const uint8_t table17_0_ops_[128];
-  static const uint8_t table17_12_emit_[1];
-  static const uint8_t table17_13_emit_[1];
-  static const uint8_t table17_14_emit_[2];
-  static const uint8_t table17_15_emit_[25];
-  static const uint8_t table17_15_ops_[128];
-  static const uint8_t* const table17_emit_[16];
-  static const uint8_t* const table17_ops_[16];
-  static const uint8_t table18_28_emit_[1];
-  static const uint8_t table18_29_emit_[1];
-  static const uint8_t table18_30_emit_[1];
+  static const uint8_t table15_0_emit_[72];
+  static const uint16_t table15_0_ops_[64];
+  static const uint8_t table15_1_emit_[72];
+  static const uint8_t table15_2_emit_[72];
+  static const uint8_t table15_3_emit_[72];
+  static const uint8_t table15_4_emit_[72];
+  static const uint8_t table15_5_emit_[72];
+  static const uint8_t table15_6_emit_[40];
+  static const uint16_t table15_6_ops_[64];
+  static const uint8_t table15_7_emit_[6];
+  static const uint16_t table15_7_ops_[64];
+  static const uint8_t* const table15_emit_[8];
+  static const uint16_t* const table15_ops_[8];
+  static const uint8_t table16_0_emit_[44];
+  static const uint16_t table16_0_ops_[64];
+  static const uint8_t table16_1_emit_[92];
+  static const uint16_t table16_1_ops_[64];
+  static const uint8_t table16_2_emit_[44];
+  static const uint8_t table16_3_emit_[92];
+  static const uint8_t table16_4_emit_[44];
+  static const uint8_t table16_5_emit_[92];
+  static const uint8_t table16_6_emit_[44];
+  static const uint8_t table16_7_emit_[92];
+  static const uint8_t table16_8_emit_[44];
+  static const uint8_t table16_9_emit_[92];
+  static const uint8_t table16_10_emit_[44];
+  static const uint8_t table16_11_emit_[92];
+  static const uint8_t table16_12_emit_[72];
+  static const uint8_t table16_13_emit_[72];
+  static const uint8_t table16_14_emit_[40];
+  static const uint8_t table16_15_emit_[31];
+  static const uint16_t table16_15_ops_[64];
+  static const uint8_t* const table16_emit_[16];
+  static const uint16_t* const table16_ops_[16];
+  static const uint8_t table17_0_emit_[16];
+  static const uint16_t table17_0_ops_[64];
+  static const uint8_t table17_1_emit_[28];
+  static const uint16_t table17_1_ops_[64];
+  static const uint8_t table17_2_emit_[36];
+  static const uint16_t table17_2_ops_[64];
+  static const uint8_t table17_3_emit_[68];
+  static const uint16_t table17_3_ops_[64];
+  static const uint8_t table17_4_emit_[16];
+  static const uint8_t table17_5_emit_[28];
+  static const uint8_t table17_6_emit_[36];
+  static const uint8_t table17_7_emit_[68];
+  static const uint8_t table17_8_emit_[16];
+  static const uint8_t table17_9_emit_[28];
+  static const uint8_t table17_10_emit_[36];
+  static const uint8_t table17_11_emit_[68];
+  static const uint8_t table17_12_emit_[16];
+  static const uint8_t table17_13_emit_[28];
+  static const uint8_t table17_14_emit_[36];
+  static const uint8_t table17_15_emit_[68];
+  static const uint8_t table17_16_emit_[16];
+  static const uint8_t table17_17_emit_[28];
+  static const uint8_t table17_18_emit_[36];
+  static const uint8_t table17_19_emit_[68];
+  static const uint8_t table17_20_emit_[16];
+  static const uint8_t table17_21_emit_[28];
+  static const uint8_t table17_22_emit_[36];
+  static const uint8_t table17_23_emit_[68];
+  static const uint8_t table17_24_emit_[44];
+  static const uint8_t table17_25_emit_[92];
+  static const uint8_t table17_26_emit_[44];
+  static const uint8_t table17_27_emit_[92];
+  static const uint8_t table17_28_emit_[72];
+  static const uint8_t table17_29_emit_[72];
+  static const uint8_t table17_30_emit_[72];
+  static const uint8_t table17_31_emit_[24];
+  static const uint16_t table17_31_ops_[64];
+  static const uint8_t* const table17_emit_[32];
+  static const uint16_t* const table17_ops_[32];
+  static const uint16_t table18_0_ops_[128];
+  static const uint16_t table18_1_ops_[128];
+  static const uint16_t table18_2_ops_[128];
+  static const uint16_t table18_3_ops_[128];
+  static const uint16_t table18_24_ops_[128];
+  static const uint8_t table18_25_emit_[104];
+  static const uint16_t table18_25_ops_[128];
+  static const uint8_t table18_27_emit_[104];
+  static const uint8_t table18_28_emit_[136];
+  static const uint16_t table18_28_ops_[128];
+  static const uint8_t table18_29_emit_[136];
+  static const uint8_t table18_30_emit_[136];
   static const uint8_t table18_31_emit_[50];
-  static const uint8_t table18_31_ops_[128];
+  static const uint16_t table18_31_ops_[128];
   static const uint8_t* const table18_emit_[32];
-  static const uint8_t* const table18_ops_[32];
-  static const uint16_t table19_0_ops_[256];
-  static const uint16_t table19_3_ops_[256];
-  static const uint8_t table19_31_emit_[79];
-  static const uint16_t table19_31_ops_[256];
-  static const uint8_t* const table19_emit_[32];
-  static const uint16_t* const table19_ops_[32];
-  static const uint16_t table20_0_ops_[512];
-  static const uint16_t table20_3_ops_[512];
-  static const uint8_t table20_31_emit_[91];
-  static const uint16_t table20_31_ops_[512];
-  static const uint8_t* const table20_emit_[32];
-  static const uint16_t* const table20_ops_[32];
-  static const uint8_t table21_62_emit_[15];
-  static const uint16_t table21_62_ops_[512];
-  static const uint8_t table21_63_emit_[80];
-  static const uint16_t table21_63_ops_[512];
-  static const uint8_t* const table21_emit_[64];
-  static const uint16_t* const table21_ops_[64];
+  static const uint16_t* const table18_ops_[32];
+  static const uint8_t table19_0_emit_[120];
+  static const uint16_t table19_0_ops_[128];
+  static const uint8_t table19_1_emit_[120];
+  static const uint8_t table19_2_emit_[68];
+  static const uint16_t table19_2_ops_[128];
+  static const uint8_t table19_3_emit_[16];
+  static const uint16_t table19_3_ops_[128];
+  static const uint8_t table19_4_emit_[16];
+  static const uint8_t table19_5_emit_[20];
+  static const uint16_t table19_5_ops_[128];
+  static const uint8_t table19_6_emit_[32];
+  static const uint16_t table19_6_ops_[128];
+  static const uint8_t table19_7_emit_[46];
+  static const uint16_t table19_7_ops_[128];
+  static const uint8_t table19_8_emit_[120];
+  static const uint8_t table19_9_emit_[120];
+  static const uint8_t table19_10_emit_[68];
+  static const uint8_t table19_11_emit_[16];
+  static const uint8_t table19_12_emit_[16];
+  static const uint8_t table19_13_emit_[20];
+  static const uint8_t table19_14_emit_[32];
+  static const uint8_t table19_15_emit_[46];
+  static const uint8_t table19_16_emit_[120];
+  static const uint8_t table19_17_emit_[120];
+  static const uint8_t table19_18_emit_[68];
+  static const uint8_t table19_19_emit_[16];
+  static const uint8_t table19_20_emit_[16];
+  static const uint8_t table19_21_emit_[20];
+  static const uint8_t table19_22_emit_[32];
+  static const uint8_t table19_23_emit_[46];
+  static const uint8_t table19_24_emit_[120];
+  static const uint8_t table19_25_emit_[120];
+  static const uint8_t table19_26_emit_[68];
+  static const uint8_t table19_27_emit_[16];
+  static const uint8_t table19_28_emit_[16];
+  static const uint8_t table19_29_emit_[20];
+  static const uint8_t table19_30_emit_[32];
+  static const uint8_t table19_31_emit_[46];
+  static const uint8_t table19_32_emit_[120];
+  static const uint8_t table19_33_emit_[120];
+  static const uint8_t table19_34_emit_[68];
+  static const uint8_t table19_35_emit_[16];
+  static const uint8_t table19_36_emit_[16];
+  static const uint8_t table19_37_emit_[20];
+  static const uint8_t table19_38_emit_[32];
+  static const uint8_t table19_39_emit_[46];
+  static const uint8_t table19_40_emit_[120];
+  static const uint8_t table19_41_emit_[120];
+  static const uint8_t table19_42_emit_[68];
+  static const uint8_t table19_43_emit_[16];
+  static const uint8_t table19_44_emit_[16];
+  static const uint8_t table19_45_emit_[20];
+  static const uint8_t table19_46_emit_[32];
+  static const uint8_t table19_47_emit_[46];
+  static const uint8_t table19_48_emit_[16];
+  static const uint8_t table19_49_emit_[28];
+  static const uint16_t table19_49_ops_[128];
+  static const uint8_t table19_50_emit_[36];
+  static const uint16_t table19_50_ops_[128];
+  static const uint8_t table19_51_emit_[68];
+  static const uint16_t table19_51_ops_[128];
+  static const uint8_t table19_52_emit_[16];
+  static const uint8_t table19_53_emit_[28];
+  static const uint8_t table19_54_emit_[36];
+  static const uint8_t table19_55_emit_[68];
+  static const uint8_t table19_56_emit_[44];
+  static const uint16_t table19_56_ops_[128];
+  static const uint8_t table19_57_emit_[104];
+  static const uint16_t table19_57_ops_[128];
+  static const uint8_t table19_58_emit_[44];
+  static const uint8_t table19_59_emit_[104];
+  static const uint8_t table19_60_emit_[44];
+  static const uint8_t table19_61_emit_[104];
+  static const uint8_t table19_62_emit_[15];
+  static const uint16_t table19_62_ops_[128];
+  static const uint8_t table19_63_emit_[64];
+  static const uint16_t table19_63_ops_[128];
+  static const uint8_t* const table19_emit_[64];
+  static const uint16_t* const table19_ops_[64];
+  static const uint8_t table20_0_emit_[216];
+  static const uint16_t table20_0_ops_[128];
+  static const uint8_t table20_1_emit_[216];
+  static const uint8_t table20_2_emit_[216];
+  static const uint8_t table20_3_emit_[216];
+  static const uint8_t table20_4_emit_[216];
+  static const uint8_t table20_5_emit_[120];
+  static const uint16_t table20_5_ops_[128];
+  static const uint8_t table20_6_emit_[120];
+  static const uint8_t table20_7_emit_[120];
+  static const uint8_t table20_8_emit_[120];
+  static const uint8_t table20_9_emit_[120];
+  static const uint8_t table20_10_emit_[120];
+  static const uint8_t table20_11_emit_[68];
+  static const uint16_t table20_11_ops_[128];
+  static const uint8_t table20_12_emit_[16];
+  static const uint16_t table20_12_ops_[128];
+  static const uint8_t table20_13_emit_[16];
+  static const uint8_t table20_14_emit_[16];
+  static const uint8_t table20_15_emit_[36];
+  static const uint16_t table20_15_ops_[128];
+  static const uint8_t table20_16_emit_[216];
+  static const uint8_t table20_17_emit_[216];
+  static const uint8_t table20_18_emit_[216];
+  static const uint8_t table20_19_emit_[216];
+  static const uint8_t table20_20_emit_[216];
+  static const uint8_t table20_21_emit_[120];
+  static const uint8_t table20_22_emit_[120];
+  static const uint8_t table20_23_emit_[120];
+  static const uint8_t table20_24_emit_[120];
+  static const uint8_t table20_25_emit_[120];
+  static const uint8_t table20_26_emit_[120];
+  static const uint8_t table20_27_emit_[68];
+  static const uint8_t table20_28_emit_[16];
+  static const uint8_t table20_29_emit_[16];
+  static const uint8_t table20_30_emit_[16];
+  static const uint8_t table20_31_emit_[36];
+  static const uint8_t table20_32_emit_[216];
+  static const uint8_t table20_33_emit_[216];
+  static const uint8_t table20_34_emit_[216];
+  static const uint8_t table20_35_emit_[216];
+  static const uint8_t table20_36_emit_[216];
+  static const uint8_t table20_37_emit_[120];
+  static const uint8_t table20_38_emit_[120];
+  static const uint8_t table20_39_emit_[120];
+  static const uint8_t table20_40_emit_[120];
+  static const uint8_t table20_41_emit_[120];
+  static const uint8_t table20_42_emit_[120];
+  static const uint8_t table20_43_emit_[68];
+  static const uint8_t table20_44_emit_[16];
+  static const uint8_t table20_45_emit_[16];
+  static const uint8_t table20_46_emit_[16];
+  static const uint8_t table20_47_emit_[36];
+  static const uint8_t table20_48_emit_[216];
+  static const uint8_t table20_49_emit_[216];
+  static const uint8_t table20_50_emit_[216];
+  static const uint8_t table20_51_emit_[216];
+  static const uint8_t table20_52_emit_[216];
+  static const uint8_t table20_53_emit_[120];
+  static const uint8_t table20_54_emit_[120];
+  static const uint8_t table20_55_emit_[120];
+  static const uint8_t table20_56_emit_[120];
+  static const uint8_t table20_57_emit_[120];
+  static const uint8_t table20_58_emit_[120];
+  static const uint8_t table20_59_emit_[68];
+  static const uint8_t table20_60_emit_[16];
+  static const uint8_t table20_61_emit_[16];
+  static const uint8_t table20_62_emit_[16];
+  static const uint8_t table20_63_emit_[36];
+  static const uint8_t table20_64_emit_[216];
+  static const uint8_t table20_65_emit_[216];
+  static const uint8_t table20_66_emit_[216];
+  static const uint8_t table20_67_emit_[216];
+  static const uint8_t table20_68_emit_[216];
+  static const uint8_t table20_69_emit_[120];
+  static const uint8_t table20_70_emit_[120];
+  static const uint8_t table20_71_emit_[120];
+  static const uint8_t table20_72_emit_[120];
+  static const uint8_t table20_73_emit_[120];
+  static const uint8_t table20_74_emit_[120];
+  static const uint8_t table20_75_emit_[68];
+  static const uint8_t table20_76_emit_[16];
+  static const uint8_t table20_77_emit_[16];
+  static const uint8_t table20_78_emit_[16];
+  static const uint8_t table20_79_emit_[36];
+  static const uint8_t table20_80_emit_[216];
+  static const uint8_t table20_81_emit_[216];
+  static const uint8_t table20_82_emit_[216];
+  static const uint8_t table20_83_emit_[216];
+  static const uint8_t table20_84_emit_[216];
+  static const uint8_t table20_85_emit_[120];
+  static const uint8_t table20_86_emit_[120];
+  static const uint8_t table20_87_emit_[120];
+  static const uint8_t table20_88_emit_[120];
+  static const uint8_t table20_89_emit_[120];
+  static const uint8_t table20_90_emit_[120];
+  static const uint8_t table20_91_emit_[68];
+  static const uint8_t table20_92_emit_[16];
+  static const uint8_t table20_93_emit_[16];
+  static const uint8_t table20_94_emit_[16];
+  static const uint8_t table20_95_emit_[36];
+  static const uint8_t table20_96_emit_[120];
+  static const uint8_t table20_97_emit_[120];
+  static const uint8_t table20_98_emit_[68];
+  static const uint8_t table20_99_emit_[16];
+  static const uint8_t table20_100_emit_[16];
+  static const uint8_t table20_101_emit_[20];
+  static const uint16_t table20_101_ops_[128];
+  static const uint8_t table20_102_emit_[32];
+  static const uint16_t table20_102_ops_[128];
+  static const uint8_t table20_103_emit_[46];
+  static const uint16_t table20_103_ops_[128];
+  static const uint8_t table20_104_emit_[120];
+  static const uint8_t table20_105_emit_[120];
+  static const uint8_t table20_106_emit_[68];
+  static const uint8_t table20_107_emit_[16];
+  static const uint8_t table20_108_emit_[16];
+  static const uint8_t table20_109_emit_[20];
+  static const uint8_t table20_110_emit_[32];
+  static const uint8_t table20_111_emit_[46];
+  static const uint8_t table20_112_emit_[16];
+  static const uint8_t table20_113_emit_[28];
+  static const uint16_t table20_113_ops_[128];
+  static const uint8_t table20_114_emit_[36];
+  static const uint16_t table20_114_ops_[128];
+  static const uint8_t table20_115_emit_[68];
+  static const uint16_t table20_115_ops_[128];
+  static const uint8_t table20_116_emit_[16];
+  static const uint8_t table20_117_emit_[28];
+  static const uint8_t table20_118_emit_[36];
+  static const uint8_t table20_119_emit_[68];
+  static const uint8_t table20_120_emit_[16];
+  static const uint8_t table20_121_emit_[28];
+  static const uint8_t table20_122_emit_[36];
+  static const uint8_t table20_123_emit_[68];
+  static const uint8_t table20_124_emit_[62];
+  static const uint16_t table20_124_ops_[128];
+  static const uint8_t table20_125_emit_[10];
+  static const uint16_t table20_125_ops_[128];
+  static const uint8_t table20_126_emit_[23];
+  static const uint16_t table20_126_ops_[128];
+  static const uint8_t table20_127_emit_[53];
+  static const uint16_t table20_127_ops_[128];
+  static const uint8_t* const table20_emit_[128];
+  static const uint16_t* const table20_ops_[128];
+  static const uint8_t table21_0_emit_[204];
+  static const uint16_t table21_0_ops_[128];
+  static const uint8_t table21_1_emit_[204];
+  static const uint8_t table21_2_emit_[204];
+  static const uint8_t table21_3_emit_[204];
+  static const uint8_t table21_4_emit_[204];
+  static const uint8_t table21_5_emit_[204];
+  static const uint8_t table21_6_emit_[204];
+  static const uint8_t table21_7_emit_[204];
+  static const uint8_t table21_8_emit_[204];
+  static const uint8_t table21_9_emit_[204];
+  static const uint8_t table21_10_emit_[216];
+  static const uint8_t table21_11_emit_[216];
+  static const uint8_t table21_12_emit_[216];
+  static const uint8_t table21_13_emit_[216];
+  static const uint8_t table21_14_emit_[216];
+  static const uint8_t table21_15_emit_[216];
+  static const uint8_t table21_16_emit_[216];
+  static const uint8_t table21_17_emit_[216];
+  static const uint8_t table21_18_emit_[216];
+  static const uint8_t table21_19_emit_[216];
+  static const uint8_t table21_20_emit_[216];
+  static const uint8_t table21_21_emit_[216];
+  static const uint8_t table21_22_emit_[216];
+  static const uint8_t table21_23_emit_[120];
+  static const uint8_t table21_24_emit_[120];
+  static const uint8_t table21_25_emit_[120];
+  static const uint8_t table21_26_emit_[120];
+  static const uint8_t table21_27_emit_[120];
+  static const uint8_t table21_28_emit_[120];
+  static const uint8_t table21_29_emit_[120];
+  static const uint8_t table21_30_emit_[120];
+  static const uint8_t table21_31_emit_[32];
+  static const uint16_t table21_31_ops_[128];
+  static const uint8_t table21_32_emit_[204];
+  static const uint8_t table21_33_emit_[204];
+  static const uint8_t table21_34_emit_[204];
+  static const uint8_t table21_35_emit_[204];
+  static const uint8_t table21_36_emit_[204];
+  static const uint8_t table21_37_emit_[204];
+  static const uint8_t table21_38_emit_[204];
+  static const uint8_t table21_39_emit_[204];
+  static const uint8_t table21_40_emit_[204];
+  static const uint8_t table21_41_emit_[204];
+  static const uint8_t table21_42_emit_[216];
+  static const uint8_t table21_43_emit_[216];
+  static const uint8_t table21_44_emit_[216];
+  static const uint8_t table21_45_emit_[216];
+  static const uint8_t table21_46_emit_[216];
+  static const uint8_t table21_47_emit_[216];
+  static const uint8_t table21_48_emit_[216];
+  static const uint8_t table21_49_emit_[216];
+  static const uint8_t table21_50_emit_[216];
+  static const uint8_t table21_51_emit_[216];
+  static const uint8_t table21_52_emit_[216];
+  static const uint8_t table21_53_emit_[216];
+  static const uint8_t table21_54_emit_[216];
+  static const uint8_t table21_55_emit_[120];
+  static const uint8_t table21_56_emit_[120];
+  static const uint8_t table21_57_emit_[120];
+  static const uint8_t table21_58_emit_[120];
+  static const uint8_t table21_59_emit_[120];
+  static const uint8_t table21_60_emit_[120];
+  static const uint8_t table21_61_emit_[120];
+  static const uint8_t table21_62_emit_[120];
+  static const uint8_t table21_63_emit_[32];
+  static const uint8_t table21_64_emit_[204];
+  static const uint8_t table21_65_emit_[204];
+  static const uint8_t table21_66_emit_[204];
+  static const uint8_t table21_67_emit_[204];
+  static const uint8_t table21_68_emit_[204];
+  static const uint8_t table21_69_emit_[204];
+  static const uint8_t table21_70_emit_[204];
+  static const uint8_t table21_71_emit_[204];
+  static const uint8_t table21_72_emit_[204];
+  static const uint8_t table21_73_emit_[204];
+  static const uint8_t table21_74_emit_[216];
+  static const uint8_t table21_75_emit_[216];
+  static const uint8_t table21_76_emit_[216];
+  static const uint8_t table21_77_emit_[216];
+  static const uint8_t table21_78_emit_[216];
+  static const uint8_t table21_79_emit_[216];
+  static const uint8_t table21_80_emit_[216];
+  static const uint8_t table21_81_emit_[216];
+  static const uint8_t table21_82_emit_[216];
+  static const uint8_t table21_83_emit_[216];
+  static const uint8_t table21_84_emit_[216];
+  static const uint8_t table21_85_emit_[216];
+  static const uint8_t table21_86_emit_[216];
+  static const uint8_t table21_87_emit_[120];
+  static const uint8_t table21_88_emit_[120];
+  static const uint8_t table21_89_emit_[120];
+  static const uint8_t table21_90_emit_[120];
+  static const uint8_t table21_91_emit_[120];
+  static const uint8_t table21_92_emit_[120];
+  static const uint8_t table21_93_emit_[120];
+  static const uint8_t table21_94_emit_[120];
+  static const uint8_t table21_95_emit_[32];
+  static const uint8_t table21_96_emit_[204];
+  static const uint8_t table21_97_emit_[204];
+  static const uint8_t table21_98_emit_[204];
+  static const uint8_t table21_99_emit_[204];
+  static const uint8_t table21_100_emit_[204];
+  static const uint8_t table21_101_emit_[204];
+  static const uint8_t table21_102_emit_[204];
+  static const uint8_t table21_103_emit_[204];
+  static const uint8_t table21_104_emit_[204];
+  static const uint8_t table21_105_emit_[204];
+  static const uint8_t table21_106_emit_[216];
+  static const uint8_t table21_107_emit_[216];
+  static const uint8_t table21_108_emit_[216];
+  static const uint8_t table21_109_emit_[216];
+  static const uint8_t table21_110_emit_[216];
+  static const uint8_t table21_111_emit_[216];
+  static const uint8_t table21_112_emit_[216];
+  static const uint8_t table21_113_emit_[216];
+  static const uint8_t table21_114_emit_[216];
+  static const uint8_t table21_115_emit_[216];
+  static const uint8_t table21_116_emit_[216];
+  static const uint8_t table21_117_emit_[216];
+  static const uint8_t table21_118_emit_[216];
+  static const uint8_t table21_119_emit_[120];
+  static const uint8_t table21_120_emit_[120];
+  static const uint8_t table21_121_emit_[120];
+  static const uint8_t table21_122_emit_[120];
+  static const uint8_t table21_123_emit_[120];
+  static const uint8_t table21_124_emit_[120];
+  static const uint8_t table21_125_emit_[120];
+  static const uint8_t table21_126_emit_[120];
+  static const uint8_t table21_127_emit_[32];
+  static const uint8_t table21_128_emit_[204];
+  static const uint8_t table21_129_emit_[204];
+  static const uint8_t table21_130_emit_[204];
+  static const uint8_t table21_131_emit_[204];
+  static const uint8_t table21_132_emit_[204];
+  static const uint8_t table21_133_emit_[204];
+  static const uint8_t table21_134_emit_[204];
+  static const uint8_t table21_135_emit_[204];
+  static const uint8_t table21_136_emit_[204];
+  static const uint8_t table21_137_emit_[204];
+  static const uint8_t table21_138_emit_[216];
+  static const uint8_t table21_139_emit_[216];
+  static const uint8_t table21_140_emit_[216];
+  static const uint8_t table21_141_emit_[216];
+  static const uint8_t table21_142_emit_[216];
+  static const uint8_t table21_143_emit_[216];
+  static const uint8_t table21_144_emit_[216];
+  static const uint8_t table21_145_emit_[216];
+  static const uint8_t table21_146_emit_[216];
+  static const uint8_t table21_147_emit_[216];
+  static const uint8_t table21_148_emit_[216];
+  static const uint8_t table21_149_emit_[216];
+  static const uint8_t table21_150_emit_[216];
+  static const uint8_t table21_151_emit_[120];
+  static const uint8_t table21_152_emit_[120];
+  static const uint8_t table21_153_emit_[120];
+  static const uint8_t table21_154_emit_[120];
+  static const uint8_t table21_155_emit_[120];
+  static const uint8_t table21_156_emit_[120];
+  static const uint8_t table21_157_emit_[120];
+  static const uint8_t table21_158_emit_[120];
+  static const uint8_t table21_159_emit_[32];
+  static const uint8_t table21_160_emit_[204];
+  static const uint8_t table21_161_emit_[204];
+  static const uint8_t table21_162_emit_[204];
+  static const uint8_t table21_163_emit_[204];
+  static const uint8_t table21_164_emit_[204];
+  static const uint8_t table21_165_emit_[204];
+  static const uint8_t table21_166_emit_[204];
+  static const uint8_t table21_167_emit_[204];
+  static const uint8_t table21_168_emit_[204];
+  static const uint8_t table21_169_emit_[204];
+  static const uint8_t table21_170_emit_[216];
+  static const uint8_t table21_171_emit_[216];
+  static const uint8_t table21_172_emit_[216];
+  static const uint8_t table21_173_emit_[216];
+  static const uint8_t table21_174_emit_[216];
+  static const uint8_t table21_175_emit_[216];
+  static const uint8_t table21_176_emit_[216];
+  static const uint8_t table21_177_emit_[216];
+  static const uint8_t table21_178_emit_[216];
+  static const uint8_t table21_179_emit_[216];
+  static const uint8_t table21_180_emit_[216];
+  static const uint8_t table21_181_emit_[216];
+  static const uint8_t table21_182_emit_[216];
+  static const uint8_t table21_183_emit_[120];
+  static const uint8_t table21_184_emit_[120];
+  static const uint8_t table21_185_emit_[120];
+  static const uint8_t table21_186_emit_[120];
+  static const uint8_t table21_187_emit_[120];
+  static const uint8_t table21_188_emit_[120];
+  static const uint8_t table21_189_emit_[120];
+  static const uint8_t table21_190_emit_[120];
+  static const uint8_t table21_191_emit_[32];
+  static const uint8_t table21_192_emit_[216];
+  static const uint8_t table21_193_emit_[216];
+  static const uint8_t table21_194_emit_[216];
+  static const uint8_t table21_195_emit_[216];
+  static const uint8_t table21_196_emit_[216];
+  static const uint8_t table21_197_emit_[120];
+  static const uint8_t table21_198_emit_[120];
+  static const uint8_t table21_199_emit_[120];
+  static const uint8_t table21_200_emit_[120];
+  static const uint8_t table21_201_emit_[120];
+  static const uint8_t table21_202_emit_[120];
+  static const uint8_t table21_203_emit_[68];
+  static const uint8_t table21_204_emit_[16];
+  static const uint8_t table21_205_emit_[16];
+  static const uint8_t table21_206_emit_[16];
+  static const uint8_t table21_207_emit_[36];
+  static const uint8_t table21_208_emit_[216];
+  static const uint8_t table21_209_emit_[216];
+  static const uint8_t table21_210_emit_[216];
+  static const uint8_t table21_211_emit_[216];
+  static const uint8_t table21_212_emit_[216];
+  static const uint8_t table21_213_emit_[120];
+  static const uint8_t table21_214_emit_[120];
+  static const uint8_t table21_215_emit_[120];
+  static const uint8_t table21_216_emit_[120];
+  static const uint8_t table21_217_emit_[120];
+  static const uint8_t table21_218_emit_[120];
+  static const uint8_t table21_219_emit_[68];
+  static const uint8_t table21_220_emit_[16];
+  static const uint8_t table21_221_emit_[16];
+  static const uint8_t table21_222_emit_[16];
+  static const uint8_t table21_223_emit_[36];
+  static const uint8_t table21_224_emit_[120];
+  static const uint8_t table21_225_emit_[120];
+  static const uint8_t table21_226_emit_[68];
+  static const uint8_t table21_227_emit_[16];
+  static const uint8_t table21_228_emit_[16];
+  static const uint8_t table21_229_emit_[20];
+  static const uint8_t table21_230_emit_[32];
+  static const uint8_t table21_231_emit_[46];
+  static const uint8_t table21_232_emit_[120];
+  static const uint8_t table21_233_emit_[120];
+  static const uint8_t table21_234_emit_[68];
+  static const uint8_t table21_235_emit_[16];
+  static const uint8_t table21_236_emit_[16];
+  static const uint8_t table21_237_emit_[20];
+  static const uint8_t table21_238_emit_[32];
+  static const uint8_t table21_239_emit_[46];
+  static const uint8_t table21_240_emit_[120];
+  static const uint8_t table21_241_emit_[120];
+  static const uint8_t table21_242_emit_[68];
+  static const uint8_t table21_243_emit_[16];
+  static const uint8_t table21_244_emit_[16];
+  static const uint8_t table21_245_emit_[20];
+  static const uint8_t table21_246_emit_[32];
+  static const uint8_t table21_247_emit_[46];
+  static const uint8_t table21_248_emit_[144];
+  static const uint16_t table21_248_ops_[128];
+  static const uint8_t table21_249_emit_[112];
+  static const uint16_t table21_249_ops_[128];
+  static const uint8_t table21_250_emit_[80];
+  static const uint16_t table21_250_ops_[128];
+  static const uint8_t table21_251_emit_[44];
+  static const uint16_t table21_251_ops_[128];
+  static const uint8_t table21_252_emit_[8];
+  static const uint16_t table21_252_ops_[128];
+  static const uint8_t table21_253_emit_[15];
+  static const uint16_t table21_253_ops_[128];
+  static const uint8_t table21_254_emit_[20];
+  static const uint16_t table21_254_ops_[128];
+  static const uint8_t table21_255_emit_[37];
+  static const uint16_t table21_255_ops_[128];
+  static const uint8_t* const table21_emit_[256];
+  static const uint16_t* const table21_ops_[256];
+  static const uint8_t table8_0_emit_[1];
   static const uint32_t table8_0_inner_[1];
   static const uint8_t table8_0_outer_[512];
+  static const uint8_t table8_16_emit_[1];
+  static const uint8_t table8_32_emit_[1];
+  static const uint8_t table8_48_emit_[1];
+  static const uint8_t table8_64_emit_[1];
+  static const uint8_t table8_80_emit_[1];
+  static const uint8_t table8_96_emit_[1];
   static const uint32_t table8_96_inner_[1];
+  static const uint8_t table8_104_emit_[1];
+  static const uint8_t table8_112_emit_[1];
   static const uint32_t table8_112_inner_[1];
+  static const uint8_t table8_116_emit_[1];
+  static const uint8_t table8_120_emit_[1];
   static const uint8_t table8_124_emit_[5];
   static const uint32_t table8_124_inner_[5];
   static const uint8_t table8_124_outer_[512];
-  static const uint8_t table8_125_emit_[10];
   static const uint32_t table8_125_inner_[10];
   static const uint8_t table8_125_outer_[512];
-  static const uint8_t table8_126_emit_[23];
   static const uint32_t table8_126_inner_[23];
   static const uint8_t table8_126_outer_[512];
   static const uint8_t table8_127_emit_[72];
@@ -672,12 +1212,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 31;
         const auto op = GetOp2(index);
         switch (op & 3) {
-          case 1: {
-            ok_ = false;
+          case 0: {
+            sink_(GetEmit2(index, (op >> 2) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit2(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -687,12 +1227,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 63;
         const auto op = GetOp3(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit3(index, op >> 2));
+          case 1: {
+            sink_(GetEmit3(index, (op >> 2) + 0));
             break;
           }
         }
@@ -702,12 +1242,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 127;
         const auto op = GetOp4(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit4(index, op >> 2));
+          case 1: {
+            sink_(GetEmit4(index, (op >> 2) + 0));
             break;
           }
         }
@@ -717,12 +1257,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 255;
         const auto op = GetOp5(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit5(index, op >> 2));
+          case 1: {
+            sink_(GetEmit5(index, (op >> 2) + 0));
             break;
           }
         }
@@ -732,12 +1272,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 511;
         const auto op = GetOp6(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit6(index, op >> 2));
+          case 1: {
+            sink_(GetEmit6(index, (op >> 2) + 0));
             break;
           }
         }
@@ -943,12 +1483,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 7;
         const auto op = GetOp9(index);
         switch (op & 3) {
-          case 1: {
-            ok_ = false;
+          case 0: {
+            sink_(GetEmit9(index, (op >> 2) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit9(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -958,12 +1498,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 15;
         const auto op = GetOp10(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit10(index, op >> 2));
+          case 1: {
+            sink_(GetEmit10(index, (op >> 2) + 0));
             break;
           }
         }
@@ -973,12 +1513,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 31;
         const auto op = GetOp11(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit11(index, op >> 2));
+          case 1: {
+            sink_(GetEmit11(index, (op >> 2) + 0));
             break;
           }
         }
@@ -988,12 +1528,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 63;
         const auto op = GetOp12(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit12(index, op >> 2));
+          case 1: {
+            sink_(GetEmit12(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1003,12 +1543,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 127;
         const auto op = GetOp13(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit13(index, op >> 2));
+          case 1: {
+            sink_(GetEmit13(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1018,12 +1558,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 255;
         const auto op = GetOp14(index);
         switch (op & 3) {
+          case 0: {
+            sink_(GetEmit14(index, (op >> 2) + 0));
+            sink_(GetEmit14(index, (op >> 2) + 1));
+            break;
+          }
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit14(index, op >> 2));
+            sink_(GetEmit14(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1033,12 +1578,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 511;
         const auto op = GetOp15(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit15(index, (op >> 2) + 0));
+            sink_(GetEmit15(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit15(index, op >> 2));
+            sink_(GetEmit15(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1048,12 +1598,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 1023;
         const auto op = GetOp16(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit16(index, (op >> 2) + 0));
+            sink_(GetEmit16(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit16(index, op >> 2));
+            sink_(GetEmit16(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1063,12 +1618,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 2047;
         const auto op = GetOp17(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit17(index, (op >> 2) + 0));
+            sink_(GetEmit17(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit17(index, op >> 2));
+            sink_(GetEmit17(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1078,12 +1638,17 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 4095;
         const auto op = GetOp18(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit18(index, (op >> 2) + 0));
+            sink_(GetEmit18(index, (op >> 2) + 1));
+            break;
+          }
           case 2: {
-            sink_(GetEmit18(index, op >> 2));
+            sink_(GetEmit18(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1092,13 +1657,24 @@ class HuffDecoder : public HuffDecoderCommon {
       case 13: {
         const auto index = buffer_ & 8191;
         const auto op = GetOp19(index);
-        switch (op & 3) {
+        switch (op & 7) {
+          case 0: {
+            sink_(GetEmit19(index, (op >> 3) + 0));
+            sink_(GetEmit19(index, (op >> 3) + 1));
+            sink_(GetEmit19(index, (op >> 3) + 2));
+            break;
+          }
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit19(index, op >> 2));
+            sink_(GetEmit19(index, (op >> 3) + 0));
+            sink_(GetEmit19(index, (op >> 3) + 1));
+            break;
+          }
+          case 3: {
+            sink_(GetEmit19(index, (op >> 3) + 0));
             break;
           }
         }
@@ -1107,13 +1683,24 @@ class HuffDecoder : public HuffDecoderCommon {
       case 14: {
         const auto index = buffer_ & 16383;
         const auto op = GetOp20(index);
-        switch (op & 3) {
-          case 1: {
+        switch (op & 7) {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit20(index, (op >> 3) + 0));
+            sink_(GetEmit20(index, (op >> 3) + 1));
+            sink_(GetEmit20(index, (op >> 3) + 2));
+            break;
+          }
           case 2: {
-            sink_(GetEmit20(index, op >> 2));
+            sink_(GetEmit20(index, (op >> 3) + 0));
+            sink_(GetEmit20(index, (op >> 3) + 1));
+            break;
+          }
+          case 3: {
+            sink_(GetEmit20(index, (op >> 3) + 0));
             break;
           }
         }
@@ -1122,13 +1709,24 @@ class HuffDecoder : public HuffDecoderCommon {
       case 15: {
         const auto index = buffer_ & 32767;
         const auto op = GetOp21(index);
-        switch (op & 3) {
-          case 1: {
+        switch (op & 7) {
+          case 0: {
             ok_ = false;
             break;
           }
+          case 1: {
+            sink_(GetEmit21(index, (op >> 3) + 0));
+            sink_(GetEmit21(index, (op >> 3) + 1));
+            sink_(GetEmit21(index, (op >> 3) + 2));
+            break;
+          }
           case 2: {
-            sink_(GetEmit21(index, op >> 2));
+            sink_(GetEmit21(index, (op >> 3) + 0));
+            sink_(GetEmit21(index, (op >> 3) + 1));
+            break;
+          }
+          case 3: {
+            sink_(GetEmit21(index, (op >> 3) + 0));
             break;
           }
         }
@@ -1444,13 +2042,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 1: {
         const auto index = buffer_ & 1;
         const auto op = GetOp38(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit38(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit38(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }
@@ -1507,13 +2105,9 @@ class HuffDecoder : public HuffDecoderCommon {
       case 2: {
         const auto index = buffer_ & 3;
         const auto op = GetOp40(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit40(index, op >> 2));
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit40(index, (op >> 1) + 0));
             break;
           }
         }
@@ -1523,12 +2117,12 @@ class HuffDecoder : public HuffDecoderCommon {
         const auto index = buffer_ & 7;
         const auto op = GetOp41(index);
         switch (op & 3) {
-          case 1: {
+          case 0: {
             ok_ = false;
             break;
           }
-          case 2: {
-            sink_(GetEmit41(index, op >> 2));
+          case 1: {
+            sink_(GetEmit41(index, (op >> 2) + 0));
             break;
           }
         }
@@ -1557,13 +2151,13 @@ class HuffDecoder : public HuffDecoderCommon {
       case 1: {
         const auto index = buffer_ & 1;
         const auto op = GetOp43(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
+        switch (op & 1) {
+          case 0: {
+            sink_(GetEmit43(index, (op >> 1) + 0));
             break;
           }
-          case 2: {
-            sink_(GetEmit43(index, op >> 2));
+          case 1: {
+            ok_ = false;
             break;
           }
         }

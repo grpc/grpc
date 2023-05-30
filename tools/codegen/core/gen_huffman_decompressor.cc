@@ -521,6 +521,10 @@ class BuildCtx {
   Sink* global_values() const { return global_values_; }
 
  private:
+  void AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far, SymSet syms,
+                   std::vector<uint8_t> emit, TableBuilder* table_builder,
+                   std::map<absl::optional<int>, int>* cases);
+
   const std::vector<int> max_bits_for_depth_;
   std::map<Hash, std::string> arrays_;
   int next_id_ = 1;
@@ -648,6 +652,11 @@ class TableBuilder {
             int offset = emit.size() - check_len;
             for (size_t i = check_len; i < x.size(); i++) {
               emit.push_back(x[i]);
+            }
+            for (size_t i = 0; i < x.size(); i++) {
+              if (emit[offset + i] != x[i]) {
+                abort();
+              }
             }
             return offset;
           }
@@ -1299,30 +1308,9 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
       continue;
     }
     TableBuilder table_builder(this);
-    enum Cases {
-      kNoEmitOk,
-      kFail,
-      kEmitOk,
-    };
+    std::map<absl::optional<int>, int> cases;
     for (size_t n = 0; n < (1 << i); n++) {
-      if (all_ones_so_far && n == (1 << i) - 1) {
-        table_builder.Add(kNoEmitOk, {}, 0);
-        goto next;
-      }
-      for (auto sym : maybe) {
-        if ((n >> (i - sym.bits.length())) == sym.bits.mask()) {
-          for (int j = 0; j < (i - sym.bits.length()); j++) {
-            if ((n & (1 << j)) == 0) {
-              table_builder.Add(kFail, {}, 0);
-              goto next;
-            }
-          }
-          table_builder.Add(kEmitOk, {static_cast<uint8_t>(sym.symbol)}, 0);
-          goto next;
-        }
-      }
-      table_builder.Add(kFail, {}, 0);
-    next:;
+      AddDoneCase(n, i, all_ones_so_far, maybe, {}, &table_builder, &cases);
     }
     table_builder.Build();
     c->Add(absl::StrCat("const auto index = buffer_ & ", (1 << i) - 1, ";"));
@@ -1334,18 +1322,63 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
     }
     auto s_fin = c->Add<Switch>(
         absl::StrCat("op & ", (1 << table_builder.MatchBits()) - 1));
-    auto emit_ok = s_fin->Case(kEmitOk);
-    emit_ok->Add(absl::StrCat(
-        "sink_(",
-        table_builder.EmitAccessor(
-            "index", absl::StrCat("op >>", table_builder.MatchBits())),
-        ");"));
-    emit_ok->Add("break;");
-    auto fail = s_fin->Case(kFail);
-    fail->Add("ok_ = false;");
-    fail->Add("break;");
+    for (auto& kv : cases) {
+      if (kv.first.has_value()) {
+        if (*kv.first == 0) continue;
+        auto emit_ok = s_fin->Case(kv.second);
+        for (int i = 0; i < *kv.first; i++) {
+          emit_ok->Add(absl::StrCat(
+              "sink_(",
+              table_builder.EmitAccessor(
+                  "index", absl::StrCat("(op >> ", table_builder.MatchBits(),
+                                        ") + ", i)),
+              ");"));
+        }
+        emit_ok->Add("break;");
+      } else {
+        auto fail = s_fin->Case(kv.second);
+        fail->Add("ok_ = false;");
+        fail->Add("break;");
+      }
+    }
     c->Add("return;");
   }
+}
+
+void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
+                           SymSet syms, std::vector<uint8_t> emit,
+                           TableBuilder* table_builder,
+                           std::map<absl::optional<int>, int>* cases) {
+  auto add_case = [cases](absl::optional<int> which) {
+    auto it = cases->find(which);
+    if (it == cases->end()) {
+      it = cases->emplace(which, cases->size()).first;
+    }
+    return it->second;
+  };
+  if (all_ones_so_far && n == (1 << n_bits) - 1) {
+    table_builder->Add(add_case(emit.size()), emit, 0);
+    return;
+  }
+  for (auto sym : syms) {
+    if ((n >> (n_bits - sym.bits.length())) == sym.bits.mask()) {
+      emit.push_back(sym.symbol);
+      size_t bits_left = n_bits - sym.bits.length();
+      if (bits_left == 0) {
+        table_builder->Add(add_case(emit.size()), emit, 0);
+        return;
+      }
+      SymSet next_syms;
+      for (auto sym : AllSyms()) {
+        if (sym.bits.length() > bits_left) continue;
+        next_syms.push_back(sym);
+      }
+      AddDoneCase(n & ((1 << bits_left) - 1), n_bits - sym.bits.length(), true,
+                  std::move(next_syms), std::move(emit), table_builder, cases);
+      return;
+    }
+  }
+  table_builder->Add(add_case(absl::nullopt), {}, 0);
 }
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
