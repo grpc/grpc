@@ -93,7 +93,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -331,7 +330,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     return [this, call_args = std::move(
                       call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
       auto result = CheckResolution(was_queued_);
-      if (grpc_call_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "%s[client-channel] CheckResolution returns %s",
                 Activity::current()->DebugTag().c_str(),
                 result.has_value() ? result->ToString().c_str() : "Pending");
@@ -359,8 +358,10 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   }
 
   void RetryCheckResolutionLocked() override {
-    gpr_log(GPR_DEBUG, "%s[client-channel] RetryCheckResolutionLocked",
-            waker_.ActivityDebugTag().c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO, "%s[client-channel] RetryCheckResolutionLocked",
+              waker_.ActivityDebugTag().c_str());
+    }
     waker_.WakeupAsync();
   }
 
