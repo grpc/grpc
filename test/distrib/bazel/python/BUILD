@@ -67,11 +67,6 @@ py_test(
     srcs = ["helloworld.py"],
     main = "helloworld.py",
     python_version = "PY3",
-    tags = [
-        # TODO(jtattermusch): Remove the "manual" tag to run on CI again once
-        # https://github.com/grpc/grpc/issues/32778 is fixed.
-        "manual",
-    ],
     deps = [
         ":duration_py_pb2",
         ":helloworld_py_pb2",
@@ -113,11 +108,6 @@ py_test(
     srcs = ["helloworld_moved.py"],
     main = "helloworld_moved.py",
     python_version = "PY3",
-    tags = [
-        # TODO(jtattermusch): Remove the "manual" tag to run on CI again once
-        # https://github.com/grpc/grpc/issues/32778 is fixed.
-        "manual",
-    ],
     deps = [
         ":duration_py_pb2",
         ":helloworld_moved_py_pb2",
