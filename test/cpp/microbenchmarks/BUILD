@@ -151,7 +151,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
+    deps = [":helpers", "//test/cpp/microbenchmarks/huffman_geometries:huffman_geometries"],
 )
 
 grpc_cc_test(
