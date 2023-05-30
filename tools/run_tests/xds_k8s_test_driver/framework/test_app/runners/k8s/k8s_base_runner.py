@@ -14,6 +14,7 @@
 """
 Common functionality for running xDS Test Client and Server on Kubernetes.
 """
+from abc import ABCMeta
 import contextlib
 import datetime
 import logging
@@ -37,42 +38,95 @@ logger = logging.getLogger(__name__)
 _RunnerError = base_runner.RunnerError
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _helper_datetime = framework.helpers.datetime
+_datetime = datetime.datetime
 _timedelta = datetime.timedelta
 
 
-class KubernetesBaseRunner(base_runner.BaseRunner):
+class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
+    # Pylint wants abstract classes to override abstract methods.
+    # pylint: disable=abstract-method
+
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
     TEMPLATE_DIR_RELATIVE_PATH = f'../../../../{TEMPLATE_DIR_NAME}'
     ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
     pod_port_forwarders: List[k8s.PortForwarder]
     pod_log_collectors: List[k8s.PodLogCollector]
 
-    def __init__(self,
-                 k8s_namespace,
-                 namespace_template=None,
-                 reuse_namespace=False):
-        super().__init__()
-        self._highlighter = _HighlighterYaml()
+    # Required fields.
+    k8s_namespace: k8s.KubernetesNamespace
+    deployment_name: str
+    image_name: str
+    gcp_project: str
+    gcp_service_account: str
+    gcp_ui_url: str
 
-        # Kubernetes namespaced resources manager
-        self.k8s_namespace: k8s.KubernetesNamespace = k8s_namespace
+    # Fields with default values.
+    namespace_template: str = 'namespace.yaml'
+    reuse_namespace: bool = False
+
+    # Mutable state.
+    deployment: Optional[k8s.V1Deployment] = None
+    service_account: Optional[k8s.V1ServiceAccount] = None
+    time_start_requested: Optional[_datetime] = None
+    time_start_completed: Optional[_datetime] = None
+    time_stopped: Optional[_datetime] = None
+
+    def __init__(self,
+                 k8s_namespace: k8s.KubernetesNamespace,
+                 *,
+                 deployment_name: str,
+                 image_name: str,
+                 gcp_project: str,
+                 gcp_service_account: str,
+                 gcp_ui_url: str,
+                 namespace_template: Optional[str] = 'namespace.yaml',
+                 reuse_namespace: bool = False):
+        super().__init__()
+
+        # Required fields.
+        self.deployment_name = deployment_name
+        self.image_name = image_name
+        self.gcp_project = gcp_project
+        # Maps GCP service account to Kubernetes service account
+        self.gcp_service_account = gcp_service_account
+        self.gcp_ui_url = gcp_ui_url
+
+        # Kubernetes namespace resources manager.
+        self.k8s_namespace = k8s_namespace
+        if namespace_template:
+            self.namespace_template = namespace_template
         self.reuse_namespace = reuse_namespace
-        self.namespace_template = namespace_template or 'namespace.yaml'
 
         # Mutable state
         self.namespace: Optional[k8s.V1Namespace] = None
         self.pod_port_forwarders = []
         self.pod_log_collectors = []
 
+        # Highlighter.
+        self._highlighter = _HighlighterYaml()
+
     def run(self, **kwargs):
         del kwargs
+        if self.time_start_requested:
+            if self.time_start_completed:
+                raise RuntimeError(
+                    f"Deployment {self.deployment_name}: has already been"
+                    f" started at {self.time_start_completed.isoformat()}")
+            else:
+                raise RuntimeError(
+                    f"Deployment {self.deployment_name}: start has already been"
+                    f" requested at {self.time_start_requested.isoformat()}")
+
+        self.time_start_requested = _datetime.now()
+        self.logs_explorer_link()
+
         if self.reuse_namespace:
             self.namespace = self._reuse_namespace()
         if not self.namespace:
             self.namespace = self._create_namespace(
                 self.namespace_template, namespace_name=self.k8s_namespace.name)
 
-    def cleanup(self, *, force=False):
+    def _cleanup_namespace(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
             self.delete_namespace()
             self.namespace = None
@@ -405,6 +459,19 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
 
+    def logs_explorer_link(self):
+        if not self.time_start_requested:
+            logger.warning(
+                'Skipped printing GCP log link for a non-started deployment %s',
+                self.deployment_name)
+            return
+        self._logs_explorer_link(deployment_name=self.deployment_name,
+                                 namespace_name=self.k8s_namespace.name,
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url,
+                                 start_time=self.time_start_requested,
+                                 end_time=self.time_stopped)
+
     @classmethod
     def _logs_explorer_link(cls,
                             *,
@@ -412,13 +479,17 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                             namespace_name: str,
                             gcp_project: str,
                             gcp_ui_url: str,
-                            end_delta: Optional[_timedelta] = None) -> None:
+                            start_time: Optional[_datetime] = None,
+                            end_time: Optional[_datetime] = None):
         """Output the link to test server/client logs in GCP Logs Explorer."""
-        if end_delta is None:
-            end_delta = _timedelta(hours=1)
-        time_now = _helper_datetime.iso8601_utc_time()
-        time_end = _helper_datetime.iso8601_utc_time(end_delta)
-        request = {'timeRange': f'{time_now}/{time_end}'}
+        if not start_time:
+            start_time = _datetime.now()
+        if not end_time:
+            end_time = start_time + _timedelta(minutes=30)
+
+        logs_start = _helper_datetime.iso8601_utc_time(start_time)
+        logs_end = _helper_datetime.iso8601_utc_time(end_time)
+        request = {'timeRange': f'{logs_start}/{logs_end}'}
         query = {
             'resource.type': 'k8s_container',
             'resource.labels.project_id': gcp_project,

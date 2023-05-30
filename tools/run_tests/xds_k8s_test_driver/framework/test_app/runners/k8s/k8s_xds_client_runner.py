@@ -14,7 +14,7 @@
 """
 Run xDS Test Client on Kubernetes.
 """
-
+import datetime
 import logging
 from typing import Optional
 
@@ -28,61 +28,69 @@ logger = logging.getLogger(__name__)
 
 class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
 
+    # Required fields.
+    xds_server_uri: str
+    stats_port: int
+    deployment_template: str
+    enable_workload_identity: bool
+    debug_use_port_forwarding: bool
+    td_bootstrap_image: str
+    network: str
+
+    # Optional fields.
+    service_account_name: Optional[str] = None
+    service_account_template: Optional[str] = None
+    gcp_iam: Optional[gcp.iam.IamV1] = None
+
     def __init__(  # pylint: disable=too-many-locals
             self,
-            k8s_namespace,
+            k8s_namespace: k8s.KubernetesNamespace,
             *,
-            deployment_name,
-            image_name,
-            td_bootstrap_image,
+            deployment_name: str,
+            image_name: str,
+            td_bootstrap_image: str,
+            network='default',
+            xds_server_uri: Optional[str] = None,
             gcp_api_manager: gcp.api.GcpApiManager,
             gcp_project: str,
             gcp_service_account: str,
-            xds_server_uri=None,
-            network='default',
-            service_account_name=None,
-            stats_port=8079,
-            deployment_template='client.deployment.yaml',
-            service_account_template='service-account.yaml',
-            reuse_namespace=False,
-            namespace_template=None,
-            debug_use_port_forwarding=False,
-            enable_workload_identity=True):
-        super().__init__(k8s_namespace, namespace_template, reuse_namespace)
+            service_account_name: Optional[str] = None,
+            stats_port: int = 8079,
+            deployment_template: str = 'client.deployment.yaml',
+            service_account_template: str = 'service-account.yaml',
+            reuse_namespace: bool = False,
+            namespace_template: Optional[str] = None,
+            debug_use_port_forwarding: bool = False,
+            enable_workload_identity: bool = True):
+        super().__init__(k8s_namespace,
+                         deployment_name=deployment_name,
+                         image_name=image_name,
+                         gcp_project=gcp_project,
+                         gcp_service_account=gcp_service_account,
+                         gcp_ui_url=gcp_api_manager.gcp_ui_url,
+                         namespace_template=namespace_template,
+                         reuse_namespace=reuse_namespace)
 
         # Settings
-        self.deployment_name = deployment_name
-        self.image_name = image_name
         self.stats_port = stats_port
-        # xDS bootstrap generator
-        self.td_bootstrap_image = td_bootstrap_image
-        self.xds_server_uri = xds_server_uri
-        self.network = network
         self.deployment_template = deployment_template
-        self.debug_use_port_forwarding = debug_use_port_forwarding
         self.enable_workload_identity = enable_workload_identity
-        # Service account settings:
-        # Kubernetes service account
+        self.debug_use_port_forwarding = debug_use_port_forwarding
+
+        # Used by the TD bootstrap generator.
+        self.td_bootstrap_image = td_bootstrap_image
+        self.network = network
+        self.xds_server_uri = xds_server_uri
+
+        # Workload identity settings:
         if self.enable_workload_identity:
+            # Kubernetes service account.
             self.service_account_name = service_account_name or deployment_name
             self.service_account_template = service_account_template
-        else:
-            self.service_account_name = None
-            self.service_account_template = None
-        # GCP.
-        self.gcp_project = gcp_project
-        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
-        # GCP service account to map to Kubernetes service account
-        self.gcp_service_account = gcp_service_account
-        # GCP IAM API used to grant allow workload service accounts permission
-        # to use GCP service account identity.
-        self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
+            # GCP IAM API used to grant allow workload service accounts
+            # permission to use GCP service account identity.
+            self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
 
-        # Mutable state
-        self.deployment: Optional[k8s.V1Deployment] = None
-        self.service_account: Optional[k8s.V1ServiceAccount] = None
-
-    # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(  # pylint: disable=arguments-differ
             self,
             *,
@@ -99,11 +107,6 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
             'print_response=%s', self.deployment_name, self.k8s_namespace.name,
             server_target, rpc, qps, metadata, secure_mode, print_response)
-        self._logs_explorer_link(deployment_name=self.deployment_name,
-                                 namespace_name=self.k8s_namespace.name,
-                                 gcp_project=self.gcp_project,
-                                 gcp_ui_url=self.gcp_ui_url)
-
         super().run()
 
         if self.enable_workload_identity:
@@ -148,6 +151,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)
+        self.time_start_completed = datetime.datetime.now()
 
         return self._xds_test_client_for_pod(pod, server_target=server_target)
 
@@ -165,18 +169,25 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
                              hostname=pod.metadata.name,
                              rpc_host=rpc_host)
 
-    def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
-        if self.deployment or force:
-            self._delete_deployment(self.deployment_name)
-            self.deployment = None
-        if self.enable_workload_identity and (self.service_account or force):
-            self._revoke_workload_identity_user(
-                gcp_iam=self.gcp_iam,
-                gcp_service_account=self.gcp_service_account,
-                service_account_name=self.service_account_name)
-            self._delete_service_account(self.service_account_name)
-            self.service_account = None
-        super().cleanup(force=force_namespace and force)
+    # pylint: disable=arguments-differ
+    def cleanup(self, *, force=False, force_namespace=False):
+        try:
+            if self.deployment or force:
+                self._delete_deployment(self.deployment_name)
+                self.deployment = None
+            if (self.enable_workload_identity and
+                (self.service_account or force)):
+                self._revoke_workload_identity_user(
+                    gcp_iam=self.gcp_iam,
+                    gcp_service_account=self.gcp_service_account,
+                    service_account_name=self.service_account_name)
+                self._delete_service_account(self.service_account_name)
+                self.service_account = None
+            self._cleanup_namespace(force=force_namespace and force)
+        finally:
+            self.time_stopped = datetime.datetime.now()
+
+    # pylint: enable=arguments-differ
 
     @classmethod
     def make_namespace_name(cls,

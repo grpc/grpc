@@ -409,6 +409,9 @@ bool WorkStealingThreadPool::ThreadState::Step() {
 }
 
 void WorkStealingThreadPool::ThreadState::FinishDraining() {
+  // The thread is definitionally busy while draining
+  ThreadCount::AutoThreadCount auto_busy{pool_->thread_count(),
+                                         CounterType::kBusyCount};
   // If a fork occurs at any point during shutdown, quit draining. The post-fork
   // threads will finish draining the global queue.
   while (!pool_->IsForking()) {

@@ -943,8 +943,8 @@ grpc_cc_test(
     srcs = ["grpc_authz_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client-with-spiffe.key",
+        "//src/core/tsi/test_creds:client-with-spiffe.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
@@ -960,6 +960,7 @@ grpc_cc_test(
         "//:grpc++_authorization_provider",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:audit_logging_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
