@@ -93,6 +93,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -310,9 +311,31 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
       CallArgs call_args) {
     pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
     client_initial_metadata_ = std::move(call_args.client_initial_metadata);
+    // If we're still in IDLE, we need to start resolving.
+    if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
+                     GRPC_CHANNEL_IDLE)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+        gpr_log(GPR_INFO, "%s[client-channel]: triggering exit idle",
+                Activity::current()->DebugTag().c_str());
+      }
+      // Bounce into the control plane work serializer to start resolving.
+      GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
+      chand_->work_serializer_->Run(
+          [chand = chand_]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+                chand->CheckConnectivityState(/*try_to_connect=*/true);
+                GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
+              },
+          DEBUG_LOCATION);
+    }
     return [this, call_args = std::move(
                       call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
       auto result = CheckResolution(was_queued_);
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%s[client-channel] CheckResolution returns %s",
+                Activity::current()->DebugTag().c_str(),
+                result.has_value() ? result->ToString().c_str() : "Pending");
+      }
       if (!result.has_value()) {
         waker_ = Activity::current()->MakeNonOwningWaker();
         was_queued_ = true;
@@ -335,7 +358,11 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     return GetContext<grpc_call_context_element>();
   }
 
-  void RetryCheckResolutionLocked() override { waker_.Wakeup(); }
+  void RetryCheckResolutionLocked() override {
+    gpr_log(GPR_DEBUG, "%s[client-channel] RetryCheckResolutionLocked",
+            waker_.ActivityDebugTag().c_str());
+    waker_.WakeupAsync();
+  }
 
   void ResetDeadline(Duration timeout) override {
     CallContext* call_context = GetContext<CallContext>();
@@ -356,9 +383,25 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 // Filter vtable
 //
 
-const grpc_channel_filter ClientChannel::kFilterVtable = {
+const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
+    ClientChannel::StartTransportOp,
+    sizeof(ClientChannel::FilterBasedCallData),
+    ClientChannel::FilterBasedCallData::Init,
+    ClientChannel::FilterBasedCallData::SetPollent,
+    ClientChannel::FilterBasedCallData::Destroy,
+    sizeof(ClientChannel),
+    ClientChannel::Init,
+    grpc_channel_stack_no_post_init,
+    ClientChannel::Destroy,
+    ClientChannel::GetChannelInfo,
+    "client-channel",
+};
+
+const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
+    ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
+    nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -1044,14 +1087,18 @@ class ClientChannel::ClientChannelControlHelper
 ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtable) return nullptr;
+  if (elem->filter != &kFilterVtableWithPromises &&
+      elem->filter != &kFilterVtableWithoutPromises) {
+    return nullptr;
+  }
   return static_cast<ClientChannel*>(elem->channel_data);
 }
 
 grpc_error_handle ClientChannel::Init(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_last);
-  GPR_ASSERT(elem->filter == &kFilterVtable);
+  GPR_ASSERT(elem->filter == &kFilterVtableWithPromises ||
+             elem->filter == &kFilterVtableWithoutPromises);
   grpc_error_handle error;
   new (elem->channel_data) ClientChannel(args, &error);
   return error;
@@ -1891,8 +1938,10 @@ void ClientChannel::CallData::RemoveCallFromResolverQueuedCallsLocked() {
 
 void ClientChannel::CallData::AddCallToResolverQueuedCallsLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
-            chand(), this);
+    gpr_log(
+        GPR_INFO,
+        "chand=%p calld=%p: adding to resolver queued picks list; pollent=%s",
+        chand(), this, grpc_polling_entity_string(pollent()).c_str());
   }
   // Add call's pollent to channel's interested_parties, so that I/O
   // can be done under the call's CQ.
@@ -3394,7 +3443,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
 }
 
 void ClientChannel::PromiseBasedLoadBalancedCall::RetryPickLocked() {
-  waker_.Wakeup();
+  waker_.WakeupAsync();
 }
 
 }  // namespace grpc_core

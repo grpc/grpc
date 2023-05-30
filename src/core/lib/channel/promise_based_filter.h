@@ -603,6 +603,8 @@ class ClientCallData : public BaseCallData {
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
+    // Request was cancelled while forwarding
+    kCancelledWhileForwarded,
     // The op has completed from below, but we haven't yet forwarded it up
     // (the promise gets to interject and mutate it).
     kComplete,
