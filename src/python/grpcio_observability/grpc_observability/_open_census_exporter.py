@@ -25,9 +25,9 @@ class OpenCensusExporter(grpc_observability.Exporter):
     def export_stats_data(
             self, stats_data: List[grpc_observability.StatsData]) -> None:
         # TODO(xuanwn): Add implementation
-        pass
+        raise NotImplementedError()
 
     def export_tracing_data(
             self, tracing_data: List[grpc_observability.TracingData]) -> None:
         # TODO(xuanwn): Add implementation
-        pass
+        raise NotImplementedError()
