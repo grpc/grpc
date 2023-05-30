@@ -37,6 +37,7 @@
 #include "absl/types/variant.h"
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
+#include "src/core/lib/gprpp/match.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SHA256 hash handling
@@ -423,23 +424,41 @@ class While : public Sink {
 // Identical cases are collapsed into 'case X: case Y:' type blocks.
 class Switch : public Item {
  public:
+  struct Default {
+    bool operator<(const Default&) const { return false; }
+    bool operator==(const Default&) const { return true; }
+  };
+  using CaseLabel = absl::variant<int, std::string, Default>;
   // \a cond is the condition to place at the head of the switch statement.
   // eg. "switch (cond) {".
   explicit Switch(std::string cond) : cond_(std::move(cond)) {}
   std::vector<std::string> ToLines() const override {
-    std::map<std::string, std::vector<std::string>> reverse_map;
+    std::map<std::string, std::vector<CaseLabel>> reverse_map;
     for (const auto& kv : cases_) {
       reverse_map[kv.second.ToString()].push_back(kv.first);
     }
+    std::vector<std::pair<std::string, std::vector<CaseLabel>>>
+        sorted_reverse_map;
+    sorted_reverse_map.reserve(reverse_map.size());
+    for (auto& kv : reverse_map) {
+      sorted_reverse_map.push_back(kv);
+    }
+    for (auto& e : sorted_reverse_map) {
+      std::sort(e.second.begin(), e.second.end());
+    }
+    std::sort(sorted_reverse_map.begin(), sorted_reverse_map.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; });
     std::vector<std::string> lines;
     lines.push_back(absl::StrCat("switch (", cond_, ") {"));
-    for (const auto& kv : reverse_map) {
+    for (const auto& kv : sorted_reverse_map) {
       for (const auto& cond : kv.second) {
-        if (cond == "") {
-          lines.push_back("  default:");
-        } else {
-          lines.push_back(absl::StrCat("  case ", cond, ":"));
-        }
+        lines.push_back(absl::StrCat(
+            "  ",
+            grpc_core::Match(
+                cond, [](Default) -> std::string { return "default"; },
+                [](int i) { return absl::StrCat("case ", i); },
+                [](const std::string& s) { return absl::StrCat("case ", s); }),
+            ":"));
       }
       lines.back().append(" {");
       for (const auto& case_line :
@@ -452,11 +471,11 @@ class Switch : public Item {
     return lines;
   }
 
-  Sink* Case(std::string cond) { return &cases_[cond]; }
+  Sink* Case(CaseLabel cond) { return &cases_[cond]; }
 
  private:
   std::string cond_;
-  std::map<std::string, Sink> cases_;
+  std::map<CaseLabel, Sink> cases_;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1160,7 +1179,7 @@ class FunMaker {
       auto fn = NewFun(absl::StrCat("RefillTo", n), "bool");
       auto s = fn->Add<Switch>("buffer_len_");
       for (int i = 0; i < n; i++) {
-        auto c = s->Case(absl::StrCat(i));
+        auto c = s->Case(i);
         const int bytes_needed = (n - i + 7) / 8;
         const int bytes_allowed = (64 - i) / 8;
         c->Add(absl::StrCat("return ", ReadBytes(bytes_needed, bytes_allowed),
@@ -1199,7 +1218,7 @@ class FunMaker {
       auto fn = NewFun(fn_name, "bool");
       auto s = fn->Add<Switch>("end_ - begin_");
       for (int i = 0; i <= bytes_allowed; i++) {
-        auto c = i == bytes_allowed ? s->Case("") : s->Case(absl::StrCat(i));
+        auto c = i == bytes_allowed ? s->Case(Switch::Default{}) : s->Case(i);
         if (i < bytes_needed) {
           c->Add(absl::StrCat("return false;"));
         } else {
@@ -1256,7 +1275,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
   if (!all_ones_so_far) c0->Add("ok_ = false;");
   c0->Add("return;");
   for (int i = 1; i < num_bits; i++) {
-    auto c = s->Case(absl::StrCat(i));
+    auto c = s->Case(i);
     SymSet maybe;
     for (auto sym : start_syms) {
       if (sym.bits.length() > i) continue;
@@ -1307,14 +1326,14 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
     }
     auto s_fin = c->Add<Switch>(
         absl::StrCat("op & ", (1 << table_builder.MatchBits()) - 1));
-    auto emit_ok = s_fin->Case(absl::StrCat(kEmitOk));
+    auto emit_ok = s_fin->Case(kEmitOk);
     emit_ok->Add(absl::StrCat(
         "sink_(",
         table_builder.EmitAccessor(
             "index", absl::StrCat("op >>", table_builder.MatchBits())),
         ");"));
     emit_ok->Add("break;");
-    auto fail = s_fin->Case(absl::StrCat(kFail));
+    auto fail = s_fin->Case(kFail);
     fail->Add("ok_ = false;");
     fail->Add("break;");
     c->Add("return;");
@@ -1385,7 +1404,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
         absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
                      (1 << table_builder.MatchBits()) - 1));
     for (auto kv : match_cases) {
-      auto c = s->Case(absl::StrCat(kv.second));
+      auto c = s->Case(kv.second);
       AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
                    refill, depth, c);
       c->Add("break;");

@@ -396,6 +396,10 @@ class HuffDecoder : public HuffDecoderCommon {
       buffer_len_ -= consumed;
       const auto emit_ofs = op >> 7;
       switch ((op >> 4) & 7) {
+        case 0: {
+          sink_(GetEmit1(index, emit_ofs + 0));
+          break;
+        }
         case 1: {
           DecodeStep0();
           break;
@@ -412,10 +416,6 @@ class HuffDecoder : public HuffDecoderCommon {
           DecodeStep3();
           break;
         }
-        case 0: {
-          sink_(GetEmit1(index, emit_ofs + 0));
-          break;
-        }
       }
     }
     return ok_;
@@ -424,6 +424,9 @@ class HuffDecoder : public HuffDecoderCommon {
  private:
   bool RefillTo9() {
     switch (buffer_len_) {
+      case 0: {
+        return Read2to8Bytes();
+      }
       case 1:
       case 2:
       case 3:
@@ -434,14 +437,15 @@ class HuffDecoder : public HuffDecoderCommon {
       case 8: {
         return Read1to7Bytes();
       }
-      case 0: {
-        return Read2to8Bytes();
-      }
     }
     return true;
   }
   bool Read2to8Bytes() {
     switch (end_ - begin_) {
+      case 0:
+      case 1: {
+        return false;
+      }
       case 2: {
         Fill2();
         return true;
@@ -469,10 +473,6 @@ class HuffDecoder : public HuffDecoderCommon {
       default: {
         Fill8();
         return true;
-      }
-      case 0:
-      case 1: {
-        return false;
       }
     }
   }
@@ -541,6 +541,9 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool Read1to7Bytes() {
     switch (end_ - begin_) {
+      case 0: {
+        return false;
+      }
       case 1: {
         Fill1();
         return true;
@@ -569,9 +572,6 @@ class HuffDecoder : public HuffDecoderCommon {
         Fill7();
         return true;
       }
-      case 0: {
-        return false;
-      }
     }
   }
   void Fill1() {
@@ -582,34 +582,11 @@ class HuffDecoder : public HuffDecoderCommon {
   void Done0() {
     done_ = true;
     switch (buffer_len_) {
-      case 7: {
-        const auto index = buffer_ & 127;
-        const auto op = GetOp4(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit4(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 8: {
-        const auto index = buffer_ & 255;
-        const auto op = GetOp5(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit5(index, op >> 2));
-            break;
-          }
-        }
+      case 1:
+      case 2:
+      case 3:
+      case 4: {
+        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
         return;
       }
       case 5: {
@@ -642,11 +619,34 @@ class HuffDecoder : public HuffDecoderCommon {
         }
         return;
       }
-      case 1:
-      case 2:
-      case 3:
-      case 4: {
-        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
+      case 7: {
+        const auto index = buffer_ & 127;
+        const auto op = GetOp4(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit4(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 8: {
+        const auto index = buffer_ & 255;
+        const auto op = GetOp5(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit5(index, op >> 2));
+            break;
+          }
+        }
         return;
       }
       case 0: {
@@ -676,6 +676,9 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool Read1to8Bytes() {
     switch (end_ - begin_) {
+      case 0: {
+        return false;
+      }
       case 1: {
         Fill1();
         return true;
@@ -707,9 +710,6 @@ class HuffDecoder : public HuffDecoderCommon {
       default: {
         Fill8();
         return true;
-      }
-      case 0: {
-        return false;
       }
     }
   }
@@ -747,11 +747,11 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo2() {
     switch (buffer_len_) {
-      case 1: {
-        return Read1to7Bytes();
-      }
       case 0: {
         return Read1to8Bytes();
+      }
+      case 1: {
+        return Read1to7Bytes();
       }
     }
     return true;
@@ -791,6 +791,10 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ -= consumed;
     const auto emit_ofs = op >> 7;
     switch ((op >> 4) & 7) {
+      case 0: {
+        sink_(GetEmit10(index, emit_ofs + 0));
+        break;
+      }
       case 1: {
         DecodeStep4();
         break;
@@ -807,14 +811,13 @@ class HuffDecoder : public HuffDecoderCommon {
         DecodeStep7();
         break;
       }
-      case 0: {
-        sink_(GetEmit10(index, emit_ofs + 0));
-        break;
-      }
     }
   }
   bool RefillTo8() {
     switch (buffer_len_) {
+      case 0: {
+        return Read1to8Bytes();
+      }
       case 1:
       case 2:
       case 3:
@@ -824,25 +827,41 @@ class HuffDecoder : public HuffDecoderCommon {
       case 7: {
         return Read1to7Bytes();
       }
-      case 0: {
-        return Read1to8Bytes();
-      }
     }
     return true;
   }
   void Done4() {
     done_ = true;
     switch (buffer_len_) {
-      case 7: {
-        const auto index = buffer_ & 127;
-        const auto op = GetOp16(index);
+      case 1: {
+        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
+        return;
+      }
+      case 2: {
+        const auto index = buffer_ & 3;
+        const auto op = GetOp11(index);
         switch (op & 3) {
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit16(index, op >> 2));
+            sink_(GetEmit11(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 3: {
+        const auto index = buffer_ & 7;
+        const auto op = GetOp12(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit12(index, op >> 2));
             break;
           }
         }
@@ -878,21 +897,6 @@ class HuffDecoder : public HuffDecoderCommon {
         }
         return;
       }
-      case 2: {
-        const auto index = buffer_ & 3;
-        const auto op = GetOp11(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit11(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
       case 6: {
         const auto index = buffer_ & 63;
         const auto op = GetOp15(index);
@@ -908,23 +912,19 @@ class HuffDecoder : public HuffDecoderCommon {
         }
         return;
       }
-      case 3: {
-        const auto index = buffer_ & 7;
-        const auto op = GetOp12(index);
+      case 7: {
+        const auto index = buffer_ & 127;
+        const auto op = GetOp16(index);
         switch (op & 3) {
           case 1: {
             ok_ = false;
             break;
           }
           case 2: {
-            sink_(GetEmit12(index, op >> 2));
+            sink_(GetEmit16(index, op >> 2));
             break;
           }
         }
-        return;
-      }
-      case 1: {
-        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
         return;
       }
       case 0: {
@@ -946,12 +946,12 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo3() {
     switch (buffer_len_) {
+      case 0: {
+        return Read1to8Bytes();
+      }
       case 1:
       case 2: {
         return Read1to7Bytes();
-      }
-      case 0: {
-        return Read1to8Bytes();
       }
     }
     return true;
@@ -959,6 +959,11 @@ class HuffDecoder : public HuffDecoderCommon {
   void Done5() {
     done_ = true;
     switch (buffer_len_) {
+      case 1:
+      case 0: {
+        ok_ = false;
+        return;
+      }
       case 2: {
         const auto index = buffer_ & 3;
         const auto op = GetOp18(index);
@@ -972,11 +977,6 @@ class HuffDecoder : public HuffDecoderCommon {
             break;
           }
         }
-        return;
-      }
-      case 0:
-      case 1: {
-        ok_ = false;
         return;
       }
     }
@@ -995,13 +995,13 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo4() {
     switch (buffer_len_) {
+      case 0: {
+        return Read1to8Bytes();
+      }
       case 1:
       case 2:
       case 3: {
         return Read1to7Bytes();
-      }
-      case 0: {
-        return Read1to8Bytes();
       }
     }
     return true;
@@ -1009,6 +1009,12 @@ class HuffDecoder : public HuffDecoderCommon {
   void Done6() {
     done_ = true;
     switch (buffer_len_) {
+      case 1:
+      case 2:
+      case 0: {
+        ok_ = false;
+        return;
+      }
       case 3: {
         const auto index = buffer_ & 7;
         const auto op = GetOp20(index);
@@ -1022,12 +1028,6 @@ class HuffDecoder : public HuffDecoderCommon {
             break;
           }
         }
-        return;
-      }
-      case 0:
-      case 1:
-      case 2: {
-        ok_ = false;
         return;
       }
     }
@@ -1046,14 +1046,14 @@ class HuffDecoder : public HuffDecoderCommon {
   }
   bool RefillTo5() {
     switch (buffer_len_) {
+      case 0: {
+        return Read1to8Bytes();
+      }
       case 1:
       case 2:
       case 3:
       case 4: {
         return Read1to7Bytes();
-      }
-      case 0: {
-        return Read1to8Bytes();
       }
     }
     return true;
@@ -1061,6 +1061,13 @@ class HuffDecoder : public HuffDecoderCommon {
   void Done7() {
     done_ = true;
     switch (buffer_len_) {
+      case 1:
+      case 2:
+      case 3:
+      case 0: {
+        ok_ = false;
+        return;
+      }
       case 4: {
         const auto index = buffer_ & 15;
         const auto op = GetOp22(index);
@@ -1076,13 +1083,6 @@ class HuffDecoder : public HuffDecoderCommon {
         }
         return;
       }
-      case 0:
-      case 1:
-      case 2:
-      case 3: {
-        ok_ = false;
-        return;
-      }
     }
   }
   void DecodeStep7() {
@@ -1096,30 +1096,21 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ -= consumed;
     const auto emit_ofs = op >> 5;
     switch ((op >> 4) & 1) {
+      case 0: {
+        sink_(GetEmit23(index, emit_ofs + 0));
+        break;
+      }
       case 1: {
         begin_ = end_;
         buffer_len_ = 0;
-        break;
-      }
-      case 0: {
-        sink_(GetEmit23(index, emit_ofs + 0));
         break;
       }
     }
   }
   bool RefillTo13() {
     switch (buffer_len_) {
-      case 10:
-      case 11:
-      case 12:
-      case 9: {
-        return Read1to6Bytes();
-      }
-      case 5:
-      case 6:
-      case 7:
-      case 8: {
-        return Read1to7Bytes();
+      case 0: {
+        return Read2to8Bytes();
       }
       case 1:
       case 2:
@@ -1127,14 +1118,27 @@ class HuffDecoder : public HuffDecoderCommon {
       case 4: {
         return Read2to7Bytes();
       }
-      case 0: {
-        return Read2to8Bytes();
+      case 5:
+      case 6:
+      case 7:
+      case 8: {
+        return Read1to7Bytes();
+      }
+      case 9:
+      case 10:
+      case 11:
+      case 12: {
+        return Read1to6Bytes();
       }
     }
     return true;
   }
   bool Read2to7Bytes() {
     switch (end_ - begin_) {
+      case 0:
+      case 1: {
+        return false;
+      }
       case 2: {
         Fill2();
         return true;
@@ -1159,14 +1163,13 @@ class HuffDecoder : public HuffDecoderCommon {
         Fill7();
         return true;
       }
-      case 0:
-      case 1: {
-        return false;
-      }
     }
   }
   bool Read1to6Bytes() {
     switch (end_ - begin_) {
+      case 0: {
+        return false;
+      }
       case 1: {
         Fill1();
         return true;
@@ -1191,72 +1194,16 @@ class HuffDecoder : public HuffDecoderCommon {
         Fill6();
         return true;
       }
-      case 0: {
-        return false;
-      }
     }
   }
   void Done8() {
     done_ = true;
     switch (buffer_len_) {
-      case 10: {
-        const auto index = buffer_ & 1023;
-        const auto op = GetOp29(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit29(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 7: {
-        const auto index = buffer_ & 127;
-        const auto op = GetOp26(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit26(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 11: {
-        const auto index = buffer_ & 2047;
-        const auto op = GetOp30(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit30(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 8: {
-        const auto index = buffer_ & 255;
-        const auto op = GetOp27(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit27(index, op >> 2));
-            break;
-          }
-        }
+      case 1:
+      case 2:
+      case 3:
+      case 4: {
+        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
         return;
       }
       case 5: {
@@ -1269,36 +1216,6 @@ class HuffDecoder : public HuffDecoderCommon {
           }
           case 2: {
             sink_(GetEmit24(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 12: {
-        const auto index = buffer_ & 4095;
-        const auto op = GetOp31(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit31(index, op >> 2));
-            break;
-          }
-        }
-        return;
-      }
-      case 9: {
-        const auto index = buffer_ & 511;
-        const auto op = GetOp28(index);
-        switch (op & 3) {
-          case 1: {
-            ok_ = false;
-            break;
-          }
-          case 2: {
-            sink_(GetEmit28(index, op >> 2));
             break;
           }
         }
@@ -1319,11 +1236,94 @@ class HuffDecoder : public HuffDecoderCommon {
         }
         return;
       }
-      case 1:
-      case 2:
-      case 3:
-      case 4: {
-        ok_ = (buffer_ & ((1 << buffer_len_) - 1)) == (1 << buffer_len_) - 1;
+      case 7: {
+        const auto index = buffer_ & 127;
+        const auto op = GetOp26(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit26(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 8: {
+        const auto index = buffer_ & 255;
+        const auto op = GetOp27(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit27(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 9: {
+        const auto index = buffer_ & 511;
+        const auto op = GetOp28(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit28(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 10: {
+        const auto index = buffer_ & 1023;
+        const auto op = GetOp29(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit29(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 11: {
+        const auto index = buffer_ & 2047;
+        const auto op = GetOp30(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit30(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 12: {
+        const auto index = buffer_ & 4095;
+        const auto op = GetOp31(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit31(index, op >> 2));
+            break;
+          }
+        }
         return;
       }
       case 0: {
