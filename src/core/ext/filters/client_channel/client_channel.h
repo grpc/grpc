@@ -173,7 +173,8 @@ class ClientChannel {
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   ArenaPromise<ServerMetadataHandle> CreateLoadBalancedCallPromise(
-      CallArgs call_args, bool is_transparent_retry);
+      CallArgs call_args, absl::AnyInvocable<void()> on_commit,
+      bool is_transparent_retry);
 
   // Exposed for testing only.
   static ChannelArgs MakeSubchannelArgs(
@@ -605,7 +606,9 @@ class ClientChannel::FilterBasedLoadBalancedCall
 class ClientChannel::PromiseBasedLoadBalancedCall
     : public ClientChannel::LoadBalancedCall {
  public:
-  PromiseBasedLoadBalancedCall(ClientChannel* chand, bool is_transparent_retry);
+  PromiseBasedLoadBalancedCall(
+      ClientChannel* chand, absl::AnyInvocable<void()> on_commit,
+      bool is_transparent_retry);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 

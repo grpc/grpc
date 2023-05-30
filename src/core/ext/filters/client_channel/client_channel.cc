@@ -458,7 +458,13 @@ class DynamicTerminationFilter {
       grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     return chand->chand_->CreateLoadBalancedCallPromise(
-        std::move(call_args), /*is_transparent_retry=*/false);
+        std::move(call_args),
+        []() {
+          auto* service_config_call_data = GetServiceConfigCallData(
+              GetContext<grpc_call_context_element>());
+          service_config_call_data->Commit();
+        },
+        /*is_transparent_retry=*/false);
   }
 
  private:
@@ -1243,9 +1249,10 @@ ClientChannel::CreateLoadBalancedCall(
 }
 
 ArenaPromise<ServerMetadataHandle> ClientChannel::CreateLoadBalancedCallPromise(
-    CallArgs call_args, bool is_transparent_retry) {
+    CallArgs call_args, absl::AnyInvocable<void()> on_commit,
+    bool is_transparent_retry) {
   auto* lb_call = GetContext<Arena>()->ManagedNew<PromiseBasedLoadBalancedCall>(
-      this, is_transparent_retry);
+      this, std::move(on_commit), is_transparent_retry);
   return lb_call->MakeCallPromise(std::move(call_args));
 }
 
@@ -3349,17 +3356,10 @@ void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
 //
 
 ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
-    ClientChannel* chand, bool is_transparent_retry)
-    : LoadBalancedCall(
-          chand, GetContext<grpc_call_context_element>(),
-          // TODO(roth): Need some way to pass the on_commit callback in
-          // from the retry code when we convert it to promises.
-          []() {
-            auto* service_config_call_data = GetServiceConfigCallData(
-                GetContext<grpc_call_context_element>());
-            service_config_call_data->Commit();
-          },
-          is_transparent_retry) {}
+    ClientChannel* chand, absl::AnyInvocable<void()> on_commit,
+    bool is_transparent_retry)
+    : LoadBalancedCall(chand, GetContext<grpc_call_context_element>(),
+                       std::move(on_commit), is_transparent_retry) {}
 
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
