@@ -395,7 +395,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         finally:
             if hasattr(cls, 'test_client_runner') and cls.test_client_runner:
                 logging.info('----- Test client logs -----')
-                cls.test_client_runner.logs_explorer_link()
+                cls.test_client_runner.logs_explorer_run_history_links()
 
             # Fail if any of the pods restarted.
             error_msg = (
