@@ -38,7 +38,7 @@ uint64_t CalculateThreshold(double probability) {
          static_cast<uint64_t>(lo_bits);
 }
 
-uint64_t CalculateThresholdFromBuffer(const std::string trace_id) {
+uint64_t CalculateThresholdFromBuffer(const std::string& trace_id) {
   const std::string trace_id_bytes = absl::HexStringToBytes(trace_id);
   const uint8_t* buf = reinterpret_cast<const uint8_t*>(trace_id_bytes.c_str());
   uint64_t res = 0;
@@ -59,7 +59,7 @@ void ProbabilitySampler::SetThreshold(double probability) {
   threshold_ = threshold;
 }
 
-bool ProbabilitySampler::ShouldSample(const std::string trace_id) {
+bool ProbabilitySampler::ShouldSample(const std::string& trace_id) {
   if (threshold_ == 0 || trace_id.length() < 32) return false;
   // All Spans within the same Trace will get the same sampling decision, so
   // full trees of Spans will be sampled.

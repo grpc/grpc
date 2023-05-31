@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_PYRHON_OPENCENSUS_SERVER_CALL_TRACER_H
+#define GRPC_PYRHON_OPENCENSUS_SERVER_CALL_TRACER_H
+
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
@@ -39,3 +42,5 @@ inline absl::string_view GetMethod(const grpc_core::Slice& path) {
 }
 
 }  // namespace grpc_observability
+
+#endif  // GRPC_PYRHON_OPENCENSUS_SERVER_CALL_TRACER_H
