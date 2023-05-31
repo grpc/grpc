@@ -2663,6 +2663,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64_msvc.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
@@ -2690,7 +2691,6 @@
     <file baseinstalldir="/" name="third_party/re2/re2/simplify.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_array.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_set.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/tostring.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.cc" role="src" />
@@ -2699,13 +2699,10 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/alloc.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/arena.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/array.h" role="src" />

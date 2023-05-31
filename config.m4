@@ -1262,6 +1262,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/re2/re2/bitmap256.cc \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1278,7 +1279,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/regexp.cc \
     third_party/re2/re2/set.cc \
     third_party/re2/re2/simplify.cc \
-    third_party/re2/re2/stringpiece.cc \
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
