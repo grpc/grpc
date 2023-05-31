@@ -41,7 +41,8 @@ bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest*,
 
 AsyncCertificateVerifier::AsyncCertificateVerifier(bool success)
     : success_(success),
-      thread_("AsyncCertificateVerifierWorkerThread", WorkerThread, this) {
+      thread_("AsyncCertificateVerifierWorkerThread", WorkerThread, this,
+              nullptr) {
   thread_.Start();
 }
 

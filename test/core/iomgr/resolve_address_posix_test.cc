@@ -118,7 +118,8 @@ static void actually_poll(void* argsp) {
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
-  args->thd = grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
+  args->thd =
+      grpc_core::Thread("grpc_poll_pollset", actually_poll, args, nullptr);
   args->thd.Start();
 }
 

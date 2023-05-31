@@ -76,8 +76,9 @@ TEST(ForkTest, ThdCount) {
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
-    thds[i] = grpc_core::Thread("grpc_fork_test", sleeping_thd,
-                                reinterpret_cast<void*>(sleep_time_ms));
+    thds[i] =
+        grpc_core::Thread("grpc_fork_test", sleeping_thd,
+                          reinterpret_cast<void*>(sleep_time_ms), nullptr);
     thds[i].Start();
   }
   grpc_core::Fork::AwaitThreads();
@@ -116,8 +117,8 @@ TEST(ForkTest, ExecCount) {
 
   // Test that block_exec_ctx() blocks grpc_core::Fork::IncExecCtxCount
   bool exec_ctx_created = false;
-  grpc_core::Thread thd =
-      grpc_core::Thread("grpc_fork_test", exec_ctx_thread, &exec_ctx_created);
+  grpc_core::Thread thd = grpc_core::Thread("grpc_fork_test", exec_ctx_thread,
+                                            &exec_ctx_created, nullptr);
   grpc_core::Fork::IncExecCtxCount();
   ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
