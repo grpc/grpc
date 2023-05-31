@@ -80,10 +80,9 @@
 
 namespace grpc_core {
 
-// TODO(donnadionne): Remove once RLS is no longer experimental
 bool XdsRlsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
