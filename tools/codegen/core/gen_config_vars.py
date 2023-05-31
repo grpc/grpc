@@ -29,7 +29,7 @@ import sys
 import yaml
 
 with open('src/core/lib/config/config_vars.yaml') as f:
-    attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
+    attrs = yaml.safe_load(f.read(), Loader=yaml.FullLoader)
 
 error = False
 today = datetime.date.today()
