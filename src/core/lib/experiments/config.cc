@@ -72,12 +72,8 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
     }
   }
   // For each comma-separated experiment in the global config:
-  for (auto experiment : absl::StrSplit(
-           absl::string_view(ConfigVars::Get().Experiments()), ',')) {
-    // Strip whitespace.
-    experiment = absl::StripAsciiWhitespace(experiment);
-    // Handle ",," without crashing.
-    if (experiment.empty()) continue;
+  for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                        absl::SkipWhitespace())) {
     // Enable unless prefixed with '-' (=> disable).
     bool enable = true;
     if (experiment[0] == '-') {
