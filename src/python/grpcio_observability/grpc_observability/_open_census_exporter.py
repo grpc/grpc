@@ -15,7 +15,7 @@
 import logging
 from typing import List
 
-from grpc_observability import _observability
+from grpc_observability import _observability  # pytype: disable=pyi-error
 
 logger = logging.getLogger(__name__)
 
