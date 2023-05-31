@@ -18,7 +18,7 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generator, Generic, Optional, TypeVar
 
 from grpc._cython import cygrpc as _cygrpc
 
@@ -91,7 +91,7 @@ class ObservabilityPlugin(Generic[ClientCallTracerCapsule,
 
 
 @contextlib.contextmanager
-def get_plugin() -> Optional[ObservabilityPlugin]:
+def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
     with _plugin_lock:
         yield _OBSERVABILITY_PLUGIN
 
