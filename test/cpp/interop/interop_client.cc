@@ -1021,7 +1021,7 @@ bool InteropClient::DoOrcaPerRpc() {
 }
 
 bool InteropClient::DoOrcaOob() {
-  static constexpr auto TIMEOUT = absl::Seconds(10);
+  static constexpr auto TIMEOUT = absl::Seconds(5);
   gpr_log(GPR_DEBUG, "testing orca oob");
   load_report_tracker_.ResetCollectedLoadReports();
   grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
