@@ -15,19 +15,19 @@
 import logging
 from typing import List
 
-import grpc_observability
+from grpc_observability import _observability
 
 logger = logging.getLogger(__name__)
 
 
-class OpenCensusExporter(grpc_observability.Exporter):
+class OpenCensusExporter(_observability.Exporter):
 
-    def export_stats_data(
-            self, stats_data: List[grpc_observability.StatsData]) -> None:
+    def export_stats_data(self,
+                          stats_data: List[_observability.StatsData]) -> None:
         # TODO(xuanwn): Add implementation
         raise NotImplementedError()
 
     def export_tracing_data(
-            self, tracing_data: List[grpc_observability.TracingData]) -> None:
+            self, tracing_data: List[_observability.TracingData]) -> None:
         # TODO(xuanwn): Add implementation
         raise NotImplementedError()

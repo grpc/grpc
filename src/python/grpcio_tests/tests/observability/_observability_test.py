@@ -22,6 +22,8 @@ import unittest
 
 import grpc
 import grpc_observability
+from grpc_observability import _cyobservability
+from grpc_observability import _observability
 
 logger = logging.getLogger(__name__)
 
@@ -62,24 +64,24 @@ _VALID_CONFIG_STATS_ONLY_STR = """
 """
 # Depends on grpc_core::IsTransportSuppliesClientLatencyEnabled,
 # the following metrcis might not exist.
-_SKIP_VEFIRY = [grpc_observability.MetricsName.CLIENT_TRANSPORT_LATENCY]
+_SKIP_VEFIRY = [_cyobservability.MetricsName.CLIENT_TRANSPORT_LATENCY]
 _SPAN_PREFIXS = ['Recv', 'Sent', 'Attempt']
 
 
-class TestExporter(grpc_observability.Exporter):
+class TestExporter(_observability.Exporter):
 
-    def __init__(self, metrics: List[grpc_observability.StatsData],
-                 spans: List[grpc_observability.TracingData]):
+    def __init__(self, metrics: List[_observability.StatsData],
+                 spans: List[_observability.TracingData]):
         self.span_collecter = spans
         self.metric_collecter = metrics
         self._server = None
 
-    def export_stats_data(
-            self, stats_data: List[grpc_observability.StatsData]) -> None:
+    def export_stats_data(self,
+                          stats_data: List[_observability.StatsData]) -> None:
         self.metric_collecter.extend(stats_data)
 
     def export_tracing_data(
-            self, tracing_data: List[grpc_observability.TracingData]) -> None:
+            self, tracing_data: List[_observability.TracingData]) -> None:
         self.span_collecter.extend(tracing_data)
 
 
@@ -372,9 +374,9 @@ class ObservabilityTest(unittest.TestCase):
         self._server.start()
 
     def _validate_metrics(self,
-                          metrics: List[grpc_observability.StatsData]) -> None:
+                          metrics: List[_observability.StatsData]) -> None:
         metric_names = set(metric.name for metric in metrics)
-        for name in grpc_observability.MetricsName:
+        for name in _cyobservability.MetricsName:
             if name in _SKIP_VEFIRY:
                 continue
             if name not in metric_names:
@@ -382,8 +384,8 @@ class ObservabilityTest(unittest.TestCase):
                              name, metric_names)
             self.assertTrue(name in metric_names)
 
-    def _validate_spans(
-            self, tracing_data: List[grpc_observability.TracingData]) -> None:
+    def _validate_spans(self,
+                        tracing_data: List[_observability.TracingData]) -> None:
         span_names = set(data.name for data in tracing_data)
         for prefix in _SPAN_PREFIXS:
             prefix_exist = any(prefix in name for name in span_names)
