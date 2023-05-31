@@ -39,7 +39,7 @@ FINAL_RETURN = {
     'broken': 'return false;',
     False: 'return false;',
     True: 'return true;',
-    'debug': '#ifdef NDEBUG\nreturn false;\n#else\nreturn true;\n#endif',
+    'debug': '\n#ifdef NDEBUG\nreturn false;\n#else\nreturn true;\n#endif\n',
 }
 
 FINAL_DEFINE = {

@@ -326,7 +326,7 @@ class ExperimentsCompiler(object):
                     "const char* const additional_constraints_%s = %s;" %
                     (exp.name, ToCStr(json.dumps(exp.additional_constraints))),
                     file=C)
-                have_defaults.add(exp.default)
+                have_defaults.add(self._defaults[exp.default])
             if 'kDefaultForDebugOnly' in have_defaults:
                 print("#ifdef NDEBUG", file=C)
                 if 'kDefaultForDebugOnly' in have_defaults:
