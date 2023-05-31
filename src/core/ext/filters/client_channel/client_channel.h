@@ -407,7 +407,6 @@ class ClientChannel::LoadBalancedCall
     return static_cast<ClientCallTracer::CallAttemptTracer*>(
         call_context()[GRPC_CONTEXT_CALL_TRACER].value);
   }
-  gpr_cycle_counter lb_call_start_time() const { return lb_call_start_time_; }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }

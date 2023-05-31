@@ -3367,9 +3367,26 @@ ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
     CallArgs call_args) {
   pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
+  // Record ops in tracer.
+  if (call_attempt_tracer() != nullptr) {
+    call_attempt_tracer()->RecordSendInitialMetadata(
+        call_args.client_initial_metadata.get());
+    // TODO(ctiller): Find a way to do this without registering a no-op mapper.
+    call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+        [](MessageHandle message) { return message; },  // No-op.
+        [this]() {
+          // TODO(roth): Change CallTracer API to not pass metadata
+          // batch to this method, since the batch is always empty.
+          grpc_metadata_batch metadata(GetContext<Arena>());
+          call_attempt_tracer()->RecordSendTrailingMetadata(&metadata);
+        });
+  }
   // Extract peer name from server initial metadata.
   call_args.server_initial_metadata->InterceptAndMap(
       [this](ServerMetadataHandle metadata) {
+        if (call_attempt_tracer() != nullptr) {
+          call_attempt_tracer()->RecordReceivedInitialMetadata(metadata.get());
+        }
         Slice* peer_string = metadata->get_pointer(PeerString());
         if (peer_string != nullptr) peer_string_ = peer_string->Ref();
         return metadata;
@@ -3409,31 +3426,49 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
               }),
           // Record call completion.
           [this](ServerMetadataHandle metadata) {
-            absl::Status status;
-            grpc_status_code code = metadata->get(GrpcStatusMetadata())
-                                        .value_or(GRPC_STATUS_UNKNOWN);
-            if (code != GRPC_STATUS_OK) {
-              absl::string_view message;
-              if (const auto* grpc_message =
-                      metadata->get_pointer(GrpcMessageMetadata())) {
-                message = grpc_message->as_string_view();
+            if (call_attempt_tracer() != nullptr ||
+                lb_subchannel_call_tracker() != nullptr) {
+              absl::Status status;
+              grpc_status_code code = metadata->get(GrpcStatusMetadata())
+                                          .value_or(GRPC_STATUS_UNKNOWN);
+              if (code != GRPC_STATUS_OK) {
+                absl::string_view message;
+                if (const auto* grpc_message =
+                        metadata->get_pointer(GrpcMessageMetadata())) {
+                  message = grpc_message->as_string_view();
+                }
+                status =
+                    absl::Status(static_cast<absl::StatusCode>(code), message);
               }
-              status =
-                  absl::Status(static_cast<absl::StatusCode>(code), message);
+              RecordCallCompletion(status, metadata.get(),
+                                   &GetContext<CallContext>()
+                                        ->call_stats()
+                                        ->transport_stream_stats,
+                                   peer_string_.as_string_view());
             }
-            RecordCallCompletion(status, metadata.get(),
-                                 &GetContext<CallContext>()
-                                      ->call_stats()
-                                      ->transport_stream_stats,
-                                 peer_string_.as_string_view());
             return metadata;
           }),
       [this]() {
-        // If we were cancelled without recording call completion, then
-        // record call completion here, as best we can.  We assume status
-        // CANCELLED in this case.
-        RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
-                             nullptr, "");
+        // TODO(ctiller): We don't have access to the call's actual status
+        // here, so we just assume CANCELLED.  We could change this to use
+        // CallFinalization instead of OnCancel() so that we can get the
+        // actual status.  But we should also have access to the trailing
+        // metadata, which we don't have in either case.  Ultimately, we
+        // need a better story for code that needs to run at the end of a
+        // call in both cancellation and non-cancellation cases that needs
+        // access to server trailing metadata and the call's real status.
+        if (call_attempt_tracer() != nullptr) {
+          call_attempt_tracer()->RecordCancel(
+              absl::CancelledError("call cancelled"));
+        }
+        if (call_attempt_tracer() != nullptr ||
+            lb_subchannel_call_tracker() != nullptr) {
+          // If we were cancelled without recording call completion, then
+          // record call completion here, as best we can.  We assume status
+          // CANCELLED in this case.
+          RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
+                               nullptr, "");
+        }
       });
 }
 
