@@ -114,9 +114,9 @@ void ParseTracers(absl::string_view tracers) {
     s = absl::StripAsciiWhitespace(s);
     if (s.empty()) continue;
     if (s[0] == '-') {
-      grpc_core::TraceFlagList::Set(s.substr(1), false);
+      TraceFlagList::Set(s.substr(1), false);
     } else {
-      grpc_core::TraceFlagList::Set(s, true);
+      TraceFlagList::Set(s, true);
     }
   }
 }
