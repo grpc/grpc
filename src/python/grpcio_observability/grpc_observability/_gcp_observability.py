@@ -21,8 +21,7 @@ import time
 from typing import Any, Mapping, Optional
 
 import grpc
-from grpc_observability import \
-    _open_census_exporter  # pytype: disable=pyi-error
+from grpc_observability._open_census_exporter import OpenCensusExporter
 from grpc_observability import _cyobservability  # pytype: disable=pyi-error
 from opencensus.trace import execution_context
 from opencensus.trace import span_context as span_context_module
@@ -97,8 +96,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         if exporter:
             self.exporter = exporter
         else:
-            self.exporter = _open_census_exporter.OpenCensusExporter(
-                self.config.get().labels)
+            self.exporter = OpenCensusExporter(self.config.get().labels)
         config_valid = _cyobservability.set_gcp_observability_config(
             self.config)
         if not config_valid:
