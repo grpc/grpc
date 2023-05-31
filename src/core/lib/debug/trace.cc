@@ -20,8 +20,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-#include <string.h>
-
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -32,7 +30,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
