@@ -16,6 +16,7 @@ Common functionality for running xDS Test Client and Server on Kubernetes.
 """
 from abc import ABCMeta
 import contextlib
+import dataclasses
 import datetime
 import logging
 import pathlib
@@ -42,6 +43,14 @@ _datetime = datetime.datetime
 _timedelta = datetime.timedelta
 
 
+@dataclasses.dataclass(frozen=True)
+class RunHistory:
+    deployment_id: str
+    time_start_requested: _datetime
+    time_start_completed: Optional[_datetime]
+    time_stopped: _datetime
+
+
 class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
     # Pylint wants abstract classes to override abstract methods.
     # pylint: disable=abstract-method
@@ -64,12 +73,16 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
     namespace_template: str = 'namespace.yaml'
     reuse_namespace: bool = False
 
-    # Mutable state.
+    # Mutable state. Describes the current run.
+    namespace: Optional[k8s.V1Namespace] = None
     deployment: Optional[k8s.V1Deployment] = None
+    deployment_id: Optional[str] = None
     service_account: Optional[k8s.V1ServiceAccount] = None
     time_start_requested: Optional[_datetime] = None
     time_start_completed: Optional[_datetime] = None
     time_stopped: Optional[_datetime] = None
+    # The history of all runs performed by this runner.
+    run_history: List[RunHistory]
 
     def __init__(self,
                  k8s_namespace: k8s.KubernetesNamespace,
@@ -98,7 +111,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         self.reuse_namespace = reuse_namespace
 
         # Mutable state
-        self.namespace: Optional[k8s.V1Namespace] = None
+        self.run_history = []
         self.pod_port_forwarders = []
         self.pod_log_collectors = []
 
@@ -107,7 +120,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def run(self, **kwargs):
         del kwargs
-        if self.time_start_requested:
+        if not self.time_stopped and self.time_start_requested:
             if self.time_start_completed:
                 raise RuntimeError(
                     f"Deployment {self.deployment_name}: has already been"
@@ -117,14 +130,51 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
                     f"Deployment {self.deployment_name}: start has already been"
                     f" requested at {self.time_start_requested.isoformat()}")
 
+        self._reset_state()
         self.time_start_requested = _datetime.now()
-        self.logs_explorer_link()
 
+        self.logs_explorer_link()
         if self.reuse_namespace:
             self.namespace = self._reuse_namespace()
         if not self.namespace:
             self.namespace = self._create_namespace(
                 self.namespace_template, namespace_name=self.k8s_namespace.name)
+
+    def _start_completed(self):
+        self.time_start_completed = _datetime.now()
+
+    def _stop(self):
+        self.time_stopped = _datetime.now()
+        if self.time_start_requested and self.deployment_id:
+            run_history = RunHistory(
+                deployment_id=self.deployment_id,
+                time_start_requested=self.time_start_requested,
+                time_start_completed=self.time_start_completed,
+                time_stopped=self.time_stopped,
+            )
+            self.run_history.append(run_history)
+
+    def _reset_state(self):
+        """Reset the mutable state of the previous run."""
+        if self.pod_port_forwarders:
+            logger.warning(
+                "Port forwarders weren't cleaned up from the past run: %s",
+                len(self.pod_port_forwarders))
+
+        if self.pod_log_collectors:
+            logger.warning(
+                "Pod log collectors weren't cleaned up from the past run: %s",
+                len(self.pod_log_collectors))
+
+        self.namespace = None
+        self.deployment = None
+        self.deployment_id = None
+        self.service_account = None
+        self.time_start_requested = None
+        self.time_start_completed = None
+        self.time_stopped = None
+        self.pod_port_forwarders = []
+        self.pod_log_collectors = []
 
     def _cleanup_namespace(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
@@ -312,7 +362,10 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             # \" or n, but found 9, error found in #10 byte of ...|ent_id'.
             # Prepending deployment name forces deployment_id into a string,
             # as well as it's just a better description.
-            kwargs['deployment_id'] = f'{kwargs["deployment_name"]}-{rand_id}'
+            self.deployment_id = f'{kwargs["deployment_name"]}-{rand_id}'
+            kwargs['deployment_id'] = self.deployment_id
+        else:
+            self.deployment_id = kwargs['deployment_id']
 
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
@@ -361,6 +414,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_service_deleted(name)
+
         logger.debug('Service %s deleted', name)
 
     def _delete_service_account(self, name, wait_for_deletion=True):
@@ -460,17 +514,29 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
                     neg_zones)
 
     def logs_explorer_link(self):
-        if not self.time_start_requested:
-            logger.warning(
-                'Skipped printing GCP log link for a non-started deployment %s',
-                self.deployment_name)
-            return
+        """Prints GCP Logs Explorer link to all runs of the deployment."""
         self._logs_explorer_link(deployment_name=self.deployment_name,
                                  namespace_name=self.k8s_namespace.name,
                                  gcp_project=self.gcp_project,
-                                 gcp_ui_url=self.gcp_ui_url,
-                                 start_time=self.time_start_requested,
-                                 end_time=self.time_stopped)
+                                 gcp_ui_url=self.gcp_ui_url)
+
+    def logs_explorer_run_history_links(self):
+        """Prints a separate GCP Logs Explorer link for each run *completed* by
+        the runner.
+
+        This excludes the current run, if it hasn't been completed.
+        """
+        if not self.run_history:
+            logger.info('No completed deployments of %s', self.deployment_name)
+            return
+        for run in self.run_history:
+            self._logs_explorer_link(deployment_name=self.deployment_name,
+                                     namespace_name=self.k8s_namespace.name,
+                                     gcp_project=self.gcp_project,
+                                     gcp_ui_url=self.gcp_ui_url,
+                                     deployment_id=run.deployment_id,
+                                     start_time=run.time_start_requested,
+                                     end_time=run.time_stopped)
 
     @classmethod
     def _logs_explorer_link(cls,
@@ -479,6 +545,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
                             namespace_name: str,
                             gcp_project: str,
                             gcp_ui_url: str,
+                            deployment_id: Optional[str] = None,
                             start_time: Optional[_datetime] = None,
                             end_time: Optional[_datetime] = None):
         """Output the link to test server/client logs in GCP Logs Explorer."""
@@ -496,13 +563,16 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             'resource.labels.container_name': deployment_name,
             'resource.labels.namespace_name': namespace_name,
         }
+        if deployment_id:
+            query['labels."k8s-pod/deployment_id"'] = deployment_id
 
         link = cls._logs_explorer_link_from_params(gcp_ui_url=gcp_ui_url,
                                                    gcp_project=gcp_project,
                                                    query=query,
                                                    request=request)
+        link_to = deployment_id if deployment_id else deployment_name
         # A whitespace at the end to indicate the end of the url.
-        logger.info("GCP Logs Explorer link to %s:\n%s ", deployment_name, link)
+        logger.info("GCP Logs Explorer link to %s:\n%s ", link_to, link)
 
     @classmethod
     def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,

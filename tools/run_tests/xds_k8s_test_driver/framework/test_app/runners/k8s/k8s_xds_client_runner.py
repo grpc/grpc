@@ -14,7 +14,6 @@
 """
 Run xDS Test Client on Kubernetes.
 """
-import datetime
 import logging
 from typing import Optional
 
@@ -151,7 +150,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)
-        self.time_start_completed = datetime.datetime.now()
+        self._start_completed()
 
         return self._xds_test_client_for_pod(pod, server_target=server_target)
 
@@ -171,6 +170,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
 
     # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
+        # TODO(sergiitk): rename to stop().
         try:
             if self.deployment or force:
                 self._delete_deployment(self.deployment_name)
@@ -185,7 +185,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
                 self.service_account = None
             self._cleanup_namespace(force=force_namespace and force)
         finally:
-            self.time_stopped = datetime.datetime.now()
+            self._stop()
 
     # pylint: enable=arguments-differ
 
