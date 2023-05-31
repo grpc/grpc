@@ -700,7 +700,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_tcp_server_start(proxy->server, &proxy->pollset);
 
   // Start proxy thread.
-  proxy->thd = grpc_core::Thread("grpc_http_proxy", thread_main, proxy);
+  proxy->thd =
+      grpc_core::Thread("grpc_http_proxy", thread_main, proxy, nullptr);
   proxy->thd.Start();
   return proxy;
 }

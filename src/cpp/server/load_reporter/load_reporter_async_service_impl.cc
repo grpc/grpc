@@ -42,8 +42,10 @@ void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
     : cq_(std::move(cq)) {
-  thread_ =
-      std::make_unique<grpc_core::Thread>("server_load_reporting", Work, this);
+  bool success = false;
+  thread_ = std::make_unique<grpc_core::Thread>("server_load_reporting", Work,
+                                                this, &success);
+  GPR_ASSERT(success);
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
 #if defined(GPR_LINUX) || defined(GPR_WINDOWS) || defined(GPR_APPLE)
   cpu_stats_provider = std::make_unique<CpuStatsProviderDefaultImpl>();

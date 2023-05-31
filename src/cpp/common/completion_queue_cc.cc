@@ -56,7 +56,9 @@ struct CallbackAlternativeCQ {
       int num_nexting_threads =
           grpc_core::Clamp(gpr_cpu_num_cores() / 2, 2u, 16u);
       nexting_threads = new std::vector<grpc_core::Thread>;
+      int num_created_threads = 0;
       for (int i = 0; i < num_nexting_threads; i++) {
+        bool success = false;
         nexting_threads->emplace_back(
             "nexting_thread",
             [](void* arg) {
@@ -94,8 +96,15 @@ struct CallbackAlternativeCQ {
                 functor->functor_run(functor, ev.success);
               }
             },
-            cq);
+            cq, &success);
+        if (success) {
+          ++num_created_threads;
+        } else {
+          gpr_log(GPR_ERROR, "CompletionQueue failed to create a thread.");
+          nexting_threads->pop_back();
+        }
       }
+      GPR_ASSERT(num_created_threads > 1);
       for (auto& th : *nexting_threads) {
         th.Start();
       }

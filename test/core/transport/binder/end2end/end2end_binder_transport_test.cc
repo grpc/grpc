@@ -474,7 +474,7 @@ TEST_P(End2EndBinderTransportTest, BiDirStreamingCall) {
   };
 
   grpc_core::Thread writer_thread("writer-thread", writer_fn,
-                                  static_cast<void*>(&writer_args));
+                                  static_cast<void*>(&writer_args), nullptr);
   writer_thread.Start();
   for (size_t i = 0; i < kBiDirStreamingCounts; ++i) {
     grpc::testing::EchoResponse response;
@@ -522,7 +522,7 @@ TEST_P(End2EndBinderTransportTest,
   };
 
   grpc_core::Thread writer_thread("writer-thread", writer_fn,
-                                  static_cast<void*>(&writer_args));
+                                  static_cast<void*>(&writer_args), nullptr);
   writer_thread.Start();
   for (size_t i = 0; i < kBiDirStreamingCounts / 2; ++i) {
     grpc::testing::EchoResponse response;

@@ -244,7 +244,8 @@ void grpc_run_bad_client_test(
   a.validator = server_validator;
   // Start validator
 
-  grpc_core::Thread server_validator_thd("grpc_bad_client", thd_func, &a);
+  grpc_core::Thread server_validator_thd("grpc_bad_client", thd_func, &a,
+                                         nullptr);
   server_validator_thd.Start();
   for (int i = 0; i < num_args; i++) {
     grpc_run_client_side_validator(&args[i], i == (num_args - 1) ? flags : 0,

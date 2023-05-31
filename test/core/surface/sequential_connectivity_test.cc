@@ -108,7 +108,8 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
   grpc_server_start(server);
 
   server_thread_args sta = {server, server_cq};
-  grpc_core::Thread server_thread("grpc_server", server_thread_func, &sta);
+  grpc_core::Thread server_thread("grpc_server", server_thread_func, &sta,
+                                  nullptr);
   server_thread.Start();
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);

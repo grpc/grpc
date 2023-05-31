@@ -88,7 +88,7 @@ CreateClientServerBindersPairForTesting() {
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>());
       },
-      &args);
+      &args, nullptr);
   client_thread.Start();
   grpc_core::Transport* server_transport = grpc_create_binder_transport_server(
       helper.WaitForClientBinder(),

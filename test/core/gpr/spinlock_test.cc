@@ -70,7 +70,7 @@ static void test_destroy(struct test* m) {
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   int i;
   for (i = 0; i != m->thread_count; i++) {
-    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
+    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m, nullptr);
     m->threads[i].Start();
   }
 }

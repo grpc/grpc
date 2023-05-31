@@ -89,7 +89,7 @@ TEST(MpscqTest, Mt) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    thds[i] = grpc_core::Thread("grpc_mt_test", test_thread, &ta[i]);
+    thds[i] = grpc_core::Thread("grpc_mt_test", test_thread, &ta[i], nullptr);
     thds[i].Start();
   }
   size_t num_done = 0;
@@ -157,7 +157,8 @@ TEST(MpscqTest, MtMultipop) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    thds[i] = grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
+    thds[i] =
+        grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i], nullptr);
     thds[i].Start();
   }
   pull_args pa;
@@ -169,7 +170,8 @@ TEST(MpscqTest, MtMultipop) {
   pa.start = &start;
   gpr_mu_init(&pa.mu);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
+    pull_thds[i] =
+        grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa, nullptr);
     pull_thds[i].Start();
   }
   gpr_event_set(&start, reinterpret_cast<void*>(1));

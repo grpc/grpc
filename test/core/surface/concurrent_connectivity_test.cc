@@ -197,7 +197,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     args.addr = "localhost:54321";
     for (auto& th : threads) {
       th = grpc_core::Thread("grpc_wave_1", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char*>(args.addr.c_str()), nullptr);
       th.Start();
     }
     for (auto& th : threads) {
@@ -218,13 +218,14 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     args.cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(args.server, args.cq, nullptr);
     grpc_server_start(args.server);
-    grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args);
+    grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args,
+                              nullptr);
     server2.Start();
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
       th = grpc_core::Thread("grpc_wave_2", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char*>(args.addr.c_str()), nullptr);
       th.Start();
     }
     for (auto& th : threads) {
@@ -244,14 +245,15 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     grpc_pollset_init(pollset, &args.mu);
     args.pollset.push_back(pollset);
     gpr_event_init(&args.ready);
-    grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
+    grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args,
+                              nullptr);
     server3.Start();
     gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
       th = grpc_core::Thread("grpc_wave_3", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char*>(args.addr.c_str()), nullptr);
       th.Start();
     }
     for (auto& th : threads) {
@@ -304,7 +306,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentWatchesWithShortTimeoutsTest) {
   grpc_core::Thread threads[NUM_THREADS];
   for (auto& th : threads) {
     th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
-                           const_cast<char*>("localhost:54321"));
+                           const_cast<char*>("localhost:54321"), nullptr);
     th.Start();
   }
   for (auto& th : threads) {

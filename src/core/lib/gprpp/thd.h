@@ -92,14 +92,14 @@ class Thread {
   /// Normal constructor to create a thread with name \a thd_name,
   /// which will execute a thread based on function \a thd_body
   /// with argument \a arg once it is started.
-  /// The optional \a success argument indicates whether the thread
+  /// The \a success argument indicates whether the thread
   /// is successfully created.
   /// The optional \a options can be used to set the thread detachable.
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-         bool* success = nullptr, const Options& options = Options());
+         bool* success, const Options& options = Options());
 
-  Thread(const char* thd_name, absl::AnyInvocable<void()> fn,
-         bool* success = nullptr, const Options& options = Options())
+  Thread(const char* thd_name, absl::AnyInvocable<void()> fn, bool* success,
+         const Options& options = Options())
       : Thread(
             thd_name,
             [](void* p) {

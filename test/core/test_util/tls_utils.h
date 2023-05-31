@@ -105,7 +105,8 @@ class AsyncExternalVerifier {
  public:
   explicit AsyncExternalVerifier(bool success)
       : success_(success),
-        thread_("AsyncExternalVerifierWorkerThread", WorkerThread, this),
+        thread_("AsyncExternalVerifierWorkerThread", WorkerThread, this,
+                nullptr),
         base_{this, Verify, Cancel, Destruct} {
     grpc_init();
     thread_.Start();

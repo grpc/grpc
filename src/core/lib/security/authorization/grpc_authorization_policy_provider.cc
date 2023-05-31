@@ -122,9 +122,11 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
+  bool success = false;
   refresh_thread_ = std::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
-      WeakRef().release());
+      WeakRef().release(), &success);
+  GPR_ASSERT(success);
   refresh_thread_->Start();
 }
 

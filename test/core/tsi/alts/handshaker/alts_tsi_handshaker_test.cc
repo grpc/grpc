@@ -1074,7 +1074,7 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailsAfterShutdown) {
   cb_event = nullptr;
   // Tests.
   grpc_core::Thread thd("alts_tsi_handshaker_test",
-                        &check_handle_response_with_shutdown, nullptr);
+                        &check_handle_response_with_shutdown, nullptr, nullptr);
   thd.Start();
   check_handshaker_next_with_shutdown();
   thd.Join();
@@ -1090,7 +1090,7 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerSuccess) {
   notification_init(&tsi_to_caller_notification);
   // Tests.
   grpc_core::Thread thd("alts_tsi_handshaker_test",
-                        &check_handle_response_success, nullptr);
+                        &check_handle_response_success, nullptr, nullptr);
   thd.Start();
   check_handshaker_next_success();
   thd.Join();

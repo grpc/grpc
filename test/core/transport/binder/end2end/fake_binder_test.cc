@@ -328,7 +328,8 @@ TEST_P(FakeBinderTest, StressTest) {
     args[i].num_transactions_per_pair = kNumTransactionsPerPair;
     args[i].mu = &mu;
     thr_names[i] = absl::StrFormat("thread-%d", i);
-    thrs[i] = grpc_core::Thread(thr_names[i].c_str(), th_function, &args[i]);
+    thrs[i] =
+        grpc_core::Thread(thr_names[i].c_str(), th_function, &args[i], nullptr);
   }
   for (auto& th : thrs) th.Start();
   for (auto& th : thrs) th.Join();

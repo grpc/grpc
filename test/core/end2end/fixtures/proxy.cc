@@ -126,7 +126,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(
   grpc_server_start(proxy->server);
 
   grpc_call_details_init(&proxy->new_call_details);
-  proxy->thd = grpc_core::Thread("grpc_end2end_proxy", thread_main, proxy);
+  proxy->thd =
+      grpc_core::Thread("grpc_end2end_proxy", thread_main, proxy, nullptr);
   proxy->thd.Start();
 
   request_call(proxy);

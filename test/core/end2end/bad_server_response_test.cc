@@ -321,8 +321,8 @@ static grpc_core::Thread* poll_server_until_read_done(
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  auto* th =
-      new grpc_core::Thread("grpc_poll_server", actually_poll_server, pa);
+  auto* th = new grpc_core::Thread("grpc_poll_server", actually_poll_server, pa,
+                                   nullptr);
   th->Start();
   return th;
 }

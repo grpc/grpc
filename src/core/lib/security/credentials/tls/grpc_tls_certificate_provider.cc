@@ -148,8 +148,10 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       provider->ForceUpdate();
     }
   };
+  bool success = false;
   refresh_thread_ = Thread("FileWatcherCertificateProvider_refreshing_thread",
-                           thread_lambda, this);
+                           thread_lambda, this, &success);
+  GPR_ASSERT(success);
   refresh_thread_.Start();
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
