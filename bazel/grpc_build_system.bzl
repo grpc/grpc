@@ -540,6 +540,9 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
+def grpc_generate_one_off_internal_targets():
+    pass
+
 def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
     """Execute an sh_test for every <poller> x <EventEngine> combination
 
