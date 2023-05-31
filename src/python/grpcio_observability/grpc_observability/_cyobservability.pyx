@@ -22,7 +22,7 @@ import os
 from threading import Thread
 from typing import List, Mapping, Tuple, Union
 
-import grpc_observability
+import _observability
 
 # Time we wait for batch exporting census data
 # TODO(xuanwn): change interval to a more appropriate number
@@ -80,14 +80,14 @@ class MetricsName(enum.Enum):
 _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING = {x.value: x for x in MetricsName}
 
 def cyobservability_init(object exporter) -> None:
-  exporter: grpc_observability.Exporter
+  exporter: _observability.Exporter
 
   NativeObservabilityInit()
   _start_exporting_thread(exporter)
 
 
 def _start_exporting_thread(object exporter) -> None:
-  exporter: grpc_observability.Exporter
+  exporter: _observability.Exporter
 
   global GLOBAL_EXPORT_THREAD
   global GLOBAL_SHUTDOWN_EXPORT_THREAD
@@ -98,7 +98,7 @@ def _start_exporting_thread(object exporter) -> None:
 
 
 def set_gcp_observability_config(object py_config) -> bool:
-  py_config: grpc_observability._observability.GcpObservabilityPythonConfig
+  py_config: _gcp_observability.GcpObservabilityPythonConfig
 
   py_labels = {}
   sampling_rate = 0.0
@@ -123,7 +123,7 @@ def set_gcp_observability_config(object py_config) -> bool:
 def create_client_call_tracer(bytes method_name, bytes trace_id,
                               bytes parent_span_id=b'') -> cpython.PyObject:
   """
-  Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
+  Returns: A grpc._observability.ClientCallTracerCapsule object.
   """
   cdef char* c_method = cpython.PyBytes_AsString(method_name)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
@@ -136,7 +136,7 @@ def create_client_call_tracer(bytes method_name, bytes trace_id,
 
 def create_server_call_tracer_factory_capsule() -> cpython.PyObject:
   """
-  Returns: A grpc_observability._observability.ServerCallTracerFactoryCapsule object.
+  Returns: A grpc._observability.ServerCallTracerFactoryCapsule object.
   """
   cdef void* call_tracer_factory = CreateServerCallTracerFactory()
   capsule = cpython.PyCapsule_New(call_tracer_factory, SERVER_CALL_TRACER_FACTORY, NULL)
@@ -144,7 +144,7 @@ def create_server_call_tracer_factory_capsule() -> cpython.PyObject:
 
 
 def delete_client_call_tracer(object client_call_tracer) -> None:
-  client_call_tracer: grpc_observability._observability.ClientCallTracerCapsule
+  client_call_tracer: grpc._observability.ClientCallTracerCapsule
 
   if cpython.PyCapsule_IsValid(client_call_tracer, CLIENT_CALL_TRACER):
     capsule_ptr = cpython.PyCapsule_GetPointer(client_call_tracer, CLIENT_CALL_TRACER)
@@ -198,14 +198,14 @@ def observability_deinit() -> None:
 
 
 @functools.lru_cache(maxsize=None)
-def _cy_metric_name_to_py_metric_name(cMetricsName metric_name) -> grpc_observability.MetricsName:
+def _cy_metric_name_to_py_metric_name(cMetricsName metric_name) -> MetricsName:
   try:
       return _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING[metric_name]
   except KeyError:
       raise ValueError('Invalid metric name %s' % metric_name)
 
 
-def _get_stats_data(object measurement, object labels) -> grpc_observability.StatsData:
+def _get_stats_data(object measurement, object labels) -> _observability.StatsData:
   """
   Args:
     measurement: A dict of type Mapping[str, Union[enum, Mapping[str, Union[float, int]]]]
@@ -220,35 +220,35 @@ def _get_stats_data(object measurement, object labels) -> grpc_observability.Sta
 
   metric_name = _cy_metric_name_to_py_metric_name(measurement['name'])
   if measurement['type'] == kMeasurementDouble:
-    py_stat = grpc_observability.StatsData(name=metric_name, measure_double=True,
-                                           value_float=measurement['value']['value_double'],
-                                           labels=labels)
+    py_stat = _observability.StatsData(name=metric_name, measure_double=True,
+                                       value_float=measurement['value']['value_double'],
+                                       labels=labels)
   else:
-    py_stat = grpc_observability.StatsData(name=metric_name, measure_double=False,
-                                           value_int=measurement['value']['value_int'],
-                                           labels=labels)
+    py_stat = _observability.StatsData(name=metric_name, measure_double=False,
+                                       value_int=measurement['value']['value_int'],
+                                       labels=labels)
   return py_stat
 
 
 def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
-                      vector[Annotation] span_annotations) -> grpc_observability.TracingData:
+                      vector[Annotation] span_annotations) -> _observability.TracingData:
   py_span_labels = _c_label_to_labels(span_labels)
   py_span_annotations = _c_annotation_to_annotations(span_annotations)
-  return grpc_observability.TracingData(name=_decode(span_data.name),
-                                   start_time = _decode(span_data.start_time),
-                                   end_time = _decode(span_data.end_time),
-                                   trace_id = _decode(span_data.trace_id),
-                                   span_id = _decode(span_data.span_id),
-                                   parent_span_id = _decode(span_data.parent_span_id),
-                                   status = _decode(span_data.status),
-                                   should_sample = span_data.should_sample,
-                                   child_span_count = span_data.child_span_count,
-                                   span_labels = py_span_labels,
-                                   span_annotations = py_span_annotations)
+  return _observability.TracingData(name=_decode(span_data.name),
+                                    start_time = _decode(span_data.start_time),
+                                    end_time = _decode(span_data.end_time),
+                                    trace_id = _decode(span_data.trace_id),
+                                    span_id = _decode(span_data.span_id),
+                                    parent_span_id = _decode(span_data.parent_span_id),
+                                    status = _decode(span_data.status),
+                                    should_sample = span_data.should_sample,
+                                    child_span_count = span_data.child_span_count,
+                                    span_labels = py_span_labels,
+                                    span_annotations = py_span_annotations)
 
 
 def _record_rpc_latency(object exporter, str method, float rpc_latency, str status_code) -> None:
-  exporter: grpc_observability.Exporter
+  exporter: _observability.Exporter
 
   measurement = {}
   measurement['name'] = kRpcClientApiLatencyMeasureName
@@ -263,7 +263,7 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 
 
 cdef void _export_census_data(object exporter):
-  exporter: grpc_observability.Exporter
+  exporter: _observability.Exporter
 
   cdef int export_interval_ms = CENSUS_EXPORT_BATCH_INTERVAL_SECS * 1000
   while True:
@@ -291,7 +291,7 @@ cdef void _export_census_data(object exporter):
 
 
 cdef void _flush_census_data(object exporter):
-  exporter: grpc_observability.Exporter
+  exporter: _observability.Exporter
 
   lk = new unique_lock[mutex](g_census_data_buffer_mutex)
   if g_census_data_buffer.empty():

@@ -60,6 +60,8 @@ py_library(
     srcs = [
         "__init__.py",
         "_observability.py",
+        "_gcp_observability.py",
+        "_open_census_exporter.py",
         # The fllowing files are used only for OC stackdriver extension.
         # TODO(xuanwn): Uncomment after those files are implemented.
         # "_measures.py",
