@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(xuanwn): clean up includes
+#ifndef OBSERVABILITY_MAIN_H
+#define OBSERVABILITY_MAIN_H
+
 #include <stdint.h>
 
 #include <algorithm>
@@ -29,9 +31,6 @@
 
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
 #include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
-
-#ifndef OBSERVABILITY_MAIN_H
-#define OBSERVABILITY_MAIN_H
 
 namespace grpc_observability {
 

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdint>
-#include <string>
-
 #ifndef SAMPLER_MAIN_H
 #define SAMPLER_MAIN_H
+
+#include <cstdint>
+#include <string>
 
 namespace grpc_observability {
 
@@ -27,7 +27,7 @@ class ProbabilitySampler final {
  public:
   static ProbabilitySampler& Get();
 
-  bool ShouldSample(const std::string trace_id);
+  bool ShouldSample(const std::string& trace_id);
 
   void SetThreshold(double probability);
 

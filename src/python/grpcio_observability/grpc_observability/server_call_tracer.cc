@@ -241,6 +241,7 @@ PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena) {
   // We don't use arena here to to ensure that memory is allocated and freed in
   // the same DLL in Windows.
+  (void)arena;
   return new PythonOpenCensusServerCallTracer();
 }
 

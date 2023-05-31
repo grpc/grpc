@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_PYRHON_OPENCENSUS_H
+#define GRPC_PYRHON_OPENCENSUS_H
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -30,9 +33,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/python/grpcio_observability/grpc_observability/constants.h"
 #include "src/python/grpcio_observability/grpc_observability/sampler.h"
-
-#ifndef GRPC_PYRHON_OPENCENSUS_H
-#define GRPC_PYRHON_OPENCENSUS_H
 
 namespace grpc_observability {
 
