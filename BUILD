@@ -3031,6 +3031,7 @@ grpc_cc_library(
         "//src/core:json_args",
         "//src/core:json_channel_args",
         "//src/core:json_object_loader",
+        "//src/core:latch",
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:memory_quota",

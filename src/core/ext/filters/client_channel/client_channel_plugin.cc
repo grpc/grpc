@@ -18,9 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -30,7 +35,7 @@ namespace grpc_core {
 
 namespace {
 bool IsEverythingBelowClientChannelPromiseSafe(const ChannelArgs& args) {
-  return args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true) == false;
+  return !args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
 }
 }  // namespace
 
