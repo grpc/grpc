@@ -178,7 +178,7 @@ void GrpcAresRequest::Work() {
         auto iter = std::find_if(
             fd_node_list_.begin(), fd_node_list_.end(),
             [sock = socks[i]](const auto& node) { return node->as == sock; });
-        if (iter == std::end(fd_node_list_)) {
+        if (iter == fd_node_list_.end()) {
           new_list.emplace_back(new FdNode(
               socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
           GRPC_ARES_WRAPPER_TRACE_LOG("request:%p new fd: %d", this, socks[i]);

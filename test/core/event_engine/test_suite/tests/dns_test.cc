@@ -211,7 +211,6 @@ class EventEngineDNSTest : public EventEngineTest {
     delete _dns_server.server_process;
   }
 
- protected:
   class NotifyOnDestroy {
    public:
     explicit NotifyOnDestroy(grpc_core::Notification& dns_resolver_signal)
