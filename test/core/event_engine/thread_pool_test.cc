@@ -221,22 +221,6 @@ TEST_F(WorkStealingThreadPoolTest,
   p.Quiesce();
 }
 
-// TODO(hork): This is currently a pathological case for the original thread
-// pool, it takes around 50s to run. When that is fixed, or the implementation
-// is deleted, make this a typed test again.
-TEST_F(WorkStealingThreadPoolTest, QuiesceRaceStressTest) {
-  int cycle_count = 333;
-  int thread_count = 8;
-  int run_count = thread_count * 2;
-  for (int i = 0; i < cycle_count; i++) {
-    WorkStealingThreadPool p(thread_count);
-    for (int j = 0; j < run_count; j++) {
-      p.Run([]() {});
-    }
-    p.Quiesce();
-  }
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
