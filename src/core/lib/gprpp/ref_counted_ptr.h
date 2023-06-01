@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <iosfwd>
 #include <type_traits>
 #include <utility>
