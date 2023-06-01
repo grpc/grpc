@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "ChannelzWithChannelTrace"
-config: "Chttp2FakeSecurityFullstack"

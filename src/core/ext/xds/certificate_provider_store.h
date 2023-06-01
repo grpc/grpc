@@ -55,7 +55,7 @@ class CertificateProviderStore
     RefCountedPtr<CertificateProviderFactory::Config> config;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&,
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ValidationErrors* errors);
   };
 

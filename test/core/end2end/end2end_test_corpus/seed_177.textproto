@@ -1,3 +1,0 @@
-suite: "Http2Test"
-test: "ServerStreaming10Messages"
-config: "Chttp2FakeSecurityFullstack"

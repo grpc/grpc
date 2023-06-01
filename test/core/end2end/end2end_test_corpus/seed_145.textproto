@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "ReadDelaysKeepalive"
-config: "Chttp2FakeSecurityFullstack"

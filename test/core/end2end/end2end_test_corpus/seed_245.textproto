@@ -1,3 +1,0 @@
-suite: "WriteBufferingTest"
-test: "WriteBufferingWorks"
-config: "Chttp2FakeSecurityFullstack"

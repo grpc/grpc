@@ -1,3 +1,0 @@
-suite: "SecureEnd2endTest"
-test: "StaticInitDenyUnauthorizedRequest"
-config: "Chttp2SimplSslFullstackTls12"

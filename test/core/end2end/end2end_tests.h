@@ -85,6 +85,9 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 namespace grpc_core {
+
+extern bool g_is_fuzzing_core_e2e_tests;
+
 class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() = default;
@@ -160,7 +163,6 @@ class CoreEnd2endTest : public ::testing::Test {
           step_fn) {
     step_fn_ = std::move(step_fn);
   }
-  void SetCrashOnStepFailure() { crash_on_step_failure_ = true; }
   void SetQuiesceEventEngine(
       absl::AnyInvocable<
           void(std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
@@ -567,7 +569,10 @@ class CoreEnd2endTest : public ::testing::Test {
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify(timeout.value_or(Duration::Seconds(10)), whence);
+    cq_verifier().Verify(
+        timeout.value_or(g_is_fuzzing_core_e2e_tests ? Duration::Minutes(10)
+                                                     : Duration::Seconds(10)),
+        whence);
   }
 
   // Initialize the client.
@@ -687,10 +692,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (cq_verifier_ == nullptr) {
       fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          cq_,
-          crash_on_step_failure_ ? CqVerifier::FailUsingGprCrash
-                                 : CqVerifier::FailUsingGtestFail,
-          std::move(step_fn_));
+          cq_, CqVerifier::FailUsingGprCrash, std::move(step_fn_));
     }
     return *cq_verifier_;
   }
@@ -703,7 +705,6 @@ class CoreEnd2endTest : public ::testing::Test {
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;
-  bool crash_on_step_failure_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
@@ -797,14 +798,22 @@ class CoreEnd2endTestRegistry {
       tests_by_suite_;
 };
 
-extern bool g_is_fuzzing_core_e2e_tests;
-
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
 #define SKIP_IF_MINSTACK()                                 \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
+
+#define SKIP_IF_USES_EVENT_ENGINE_CLIENT()                                     \
+  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineClientEnabled()) \
+  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine client"
+
+#define SKIP_IF_USES_EVENT_ENGINE_LISTENER()                            \
+  if (!g_is_fuzzing_core_e2e_tests &&                                   \
+      grpc_core::IsEventEngineListenerEnabled())                        \
+  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine " \
+                  "listener"
 
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
