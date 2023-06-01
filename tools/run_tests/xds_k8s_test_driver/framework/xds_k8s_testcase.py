@@ -331,7 +331,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                           f" {helpers_grpc.status_pretty(expected_status)},"
                           " but found status"
                           f" {helpers_grpc.status_pretty(found_status)}"
-                          f" for method {method}. Stats before:"
+                          f" for method {method}.\nStats before:"
                           f"\n{self._pretty_accumulated_stats(before_stats)}"
                           f"\nStats after:"
                           f"\n{self._pretty_accumulated_stats(after_stats)}"
@@ -344,7 +344,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             0,
             msg=("Expected non-zero RPCs with status"
                  f" {helpers_grpc.status_pretty(expected_status)}"
-                 f" for method {method}. Stats before:"
+                 f" for method {method}.\nStats before:"
                  f"\n{self._pretty_accumulated_stats(before_stats)}"
                  f"\nStats after:"
                  f"\n{self._pretty_accumulated_stats(after_stats)}"

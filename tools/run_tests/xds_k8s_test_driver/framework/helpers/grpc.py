@@ -46,12 +46,23 @@ def status_pretty(grpc_status: grpc.StatusCode) -> str:
 
 @dataclasses.dataclass(frozen=True)
 class PrettyStatsPerMethod:
+    # The name of the method.
     method: str
+
+    # The number of RPCs started for this method, completed and in-flight.
     rpcs_started: int
+
+    # The number of RPCs that completed with each status for this method.
+    # Format: status code -> RPC count, f.e.:
+    # {
+    #   "(0, OK)": 20,
+    #   "(14, UNAVAILABLE)": 10
+    # }
     result: Dict[str, int]
 
     @functools.cached_property  # pylint: disable=no-member
-    def total_count(self):
+    def rpcs_completed(self):
+        """Returns the total count of competed RPCs across all statuses."""
         return sum(self.result.values())
 
     @staticmethod
@@ -78,11 +89,11 @@ def accumulated_stats_pretty(
     """Pretty print LoadBalancerAccumulatedStatsResponse.
 
     Example:
-      - method: EMPTY
+      - method: EMPTY_CALL
         rpcs_started: 0
         result:
           (2, UNKNOWN): 20
-      - method: UNARY
+      - method: UNARY_CALL
         rpcs_started: 31
         result:
           (0, OK): 10
@@ -94,8 +105,7 @@ def accumulated_stats_pretty(
         pretty_stats = PrettyStatsPerMethod.from_response(
             method_name, method_stats)
         # Skip methods with no RPCs reported when ignore_empty is True.
-        if ignore_empty and not max(pretty_stats.rpcs_started,
-                                    pretty_stats.total_count):
+        if ignore_empty and not pretty_stats.rpcs_started:
             continue
         result.append(dataclasses.asdict(pretty_stats))
 
@@ -104,8 +114,20 @@ def accumulated_stats_pretty(
 
 @dataclasses.dataclass(frozen=True)
 class PrettyLoadBalancerStats:
+    # The number of RPCs that failed to record a remote peer.
     num_failures: int
+
+    # The number of completed RPCs for each peer.
+    # Format: a dictionary from the host name (str) to the RPC count (int), f.e.
+    # {"host-a": 10, "host-b": 20}
     rpcs_by_peer: "RpcsByPeer"
+
+    # The number of completed RPCs per method per each pear.
+    # Format: a dictionary from the method name to RpcsByPeer (see above), f.e.:
+    # {
+    #   "UNARY_CALL": {"host-a": 10, "host-b": 20},
+    #   "EMPTY_CALL": {"host-a": 42},
+    # }
     rpcs_by_method: Dict[str, "RpcsByPeer"]
 
     @staticmethod
@@ -136,12 +158,16 @@ def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
     """Pretty print LoadBalancerStatsResponse.
 
     Example:
-      num_failures: 0
+      num_failures: 13
       rpcs_by_method:
-        UnaryCall:
-          psm-grpc-server-6b6547dcdb-gzfm6: 100
+        UNARY_CALL:
+          psm-grpc-server-a: 100
+          psm-grpc-server-b: 42
+        EMPTY_CALL:
+          psm-grpc-server-a: 200
       rpcs_by_peer:
-        psm-grpc-server-6b6547dcdb-gzfm6: 100
+        psm-grpc-server-a: 200
+        psm-grpc-server-b: 42
     """
     pretty_lb_stats = PrettyLoadBalancerStats.from_response(lb)
     return yaml.dump(dataclasses.asdict(pretty_lb_stats), sort_keys=False)
