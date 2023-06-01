@@ -453,7 +453,7 @@ void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
   AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&shard.shard_mu);
+    MutexLock l(&shard.shard_mu);
     shard.allocators.emplace(allocator);
   }
 }
@@ -467,7 +467,7 @@ void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
       small_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&small_shard.shard_mu);
+    MutexLock l(&small_shard.shard_mu);
     if (small_shard.allocators.erase(allocator) == 1) {
       return;
     }
@@ -476,7 +476,7 @@ void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
   AllocatorBucket::Shard& big_shard = big_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&big_shard.shard_mu);
+    MutexLock l(&big_shard.shard_mu);
     big_shard.allocators.erase(allocator);
   }
 }
@@ -513,14 +513,14 @@ void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
   AllocatorBucket::Shard& old_shard = big_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&old_shard.shard_mu);
+    MutexLock l(&old_shard.shard_mu);
     if (old_shard.allocators.erase(allocator) == 0) return;
   }
 
   AllocatorBucket::Shard& new_shard = small_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&new_shard.shard_mu);
+    MutexLock l(&new_shard.shard_mu);
     new_shard.allocators.emplace(allocator);
   }
 }
@@ -534,14 +534,14 @@ void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
   AllocatorBucket::Shard& old_shard = small_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&old_shard.shard_mu);
+    MutexLock l(&old_shard.shard_mu);
     if (old_shard.allocators.erase(allocator) == 0) return;
   }
 
   AllocatorBucket::Shard& new_shard = big_allocators_.SelectShard(allocator);
 
   {
-    absl::MutexLock l(&new_shard.shard_mu);
+    MutexLock l(&new_shard.shard_mu);
     new_shard.allocators.emplace(allocator);
   }
 }
@@ -645,7 +645,7 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint = 95.0;
+  static const double kSetPoint = 0.95;
 
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {

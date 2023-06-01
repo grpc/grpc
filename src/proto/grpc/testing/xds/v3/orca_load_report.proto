@@ -23,7 +23,9 @@ package xds.data.orca.v3;
 
 message OrcaLoadReport {
   // CPU utilization expressed as a fraction of available CPU resources. This
-  // should be derived from the latest sample or measurement.
+  // should be derived from the latest sample or measurement. The value may be
+  // larger than 1.0 when the usage exceeds the reporter dependent notion of
+  // soft limits.
   double cpu_utilization = 1;
 
   // Memory utilization expressed as a fraction of available memory
@@ -43,4 +45,12 @@ message OrcaLoadReport {
   map<string, double> utilization = 5;
 
   double rps_fractional = 6;
+
+  // Total EPS (errors/second) being served by an endpoint. This should cover
+  // all services that an endpoint is responsible for.
+  double eps = 7;
+
+  // Application specific opaque metrics.
+  map<string, double> named_metrics = 8;
 }
+

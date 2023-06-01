@@ -76,7 +76,6 @@
               set(address_sorting_unwanted_files))
              | set(list_lib_files("re2", ("headers", )))))
   grpc_abseil_specs = list_abseil_specs("grpc")
-  grpc_tests_abseil_specs = list(sorted(set(list_abseil_specs("end2end_tests")) - set(grpc_abseil_specs)))
 
   # TODO(jtattermusch): build.yaml is now generated from bazel build
   # which doesn't have an explicit "grpc_cronet" target. Until it exists
@@ -95,15 +94,6 @@
 
   grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
   grpc_cronet_public_headers = list(sorted(grpc_cronet_extra_public_headers))
-
-  grpc_test_util_files = list(sorted(
-    set(list_lib_files("end2end_tests", ("src", "headers")))
-    - set(grpc_private_files)
-    - set(address_sorting_unwanted_files)
-    - set([
-      # Subprocess is not supported in tvOS and not needed by our tests.
-      "test/core/util/subprocess_posix.cc",
-    ])))
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -124,15 +114,15 @@
     # which was released in Cocoapods v1.2.0.
     s.cocoapods_version = '>= 1.2.0'
 
-    s.ios.deployment_target = '9.0'
-    s.osx.deployment_target = '10.10'
-    s.tvos.deployment_target = '10.0'
-    s.watchos.deployment_target = '4.0'
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
 
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20230125.0'
+    abseil_version = '1.20230125.3'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -164,6 +154,7 @@
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
       # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
@@ -198,7 +189,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.26'
+      ss.dependency 'BoringSSL-GRPC', '0.0.29'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -226,18 +217,6 @@
       ss.dependency "#{s.name}/Cronet-Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}
-    end
-
-    s.subspec 'Tests' do |ss|
-      ss.header_mappings_dir = '.'
-
-      ss.dependency "#{s.name}/Interface", version
-      ss.dependency "#{s.name}/Implementation", version
-      % for abseil_spec in grpc_tests_abseil_specs:
-      ss.dependency '${abseil_spec}', abseil_version
-      % endfor
-
-      ss.source_files = ${ruby_multiline_list(grpc_test_util_files, 22)}
     end
 
     # patch include of openssl to openssl_grpc

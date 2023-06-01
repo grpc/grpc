@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener.upb.h"
 
@@ -28,7 +28,7 @@ extern _upb_DefPool_Init udpa_annotations_security_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
-static const char descriptor[4082] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
+static const char descriptor[4152] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\032', ')', 'e', 'n', 'v', 'o', 'y', '/', 
 'c', 'o', 'n', 'f', 'i', 'g', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 'v', '3', '/', 'a', 'c', 'c', 'e', 's', 
@@ -185,13 +185,16 @@ static const char descriptor[4082] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 
 '\017', '\n', '\013', 'M', 'O', 'D', 'I', 'F', 'Y', '_', 'O', 'N', 'L', 'Y', '\020', '\001', ':', '\034', '\232', '\305', '\210', '\036', '\027', '\n', '\025', 
 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'B', '\024', '\n', '\022', 
 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '_', 's', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'r', 'J', '\004', '\010', '\016', '\020', '\017', 'J', 
-'\004', '\010', '\027', '\020', '\030', 'B', '\215', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 
-'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', 'B', '\r', 
-'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 
-'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 
-'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 
-'e', 'r', '/', 'v', '3', ';', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', 
-'\006', 'p', 'r', 'o', 't', 'o', '3', 
+'\004', '\010', '\027', '\020', '\030', '\"', '\021', '\n', '\017', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'M', 'a', 'n', 'a', 'g', 'e', 'r', '\"', 
+'\033', '\n', '\031', 'V', 'a', 'l', 'i', 'd', 'a', 't', 'i', 'o', 'n', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'M', 'a', 'n', 'a', 
+'g', 'e', 'r', '\"', '\024', '\n', '\022', 'A', 'p', 'i', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'M', 'a', 'n', 'a', 'g', 'e', 'r', 
+'B', '\215', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
+'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', 'B', '\r', 'L', 'i', 's', 't', 'e', 
+'n', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 
+'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', 
+'/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', '3', 
+';', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 
+'o', '3', 
 };
 
 static _upb_DefPool_Init *deps[19] = {
@@ -220,5 +223,5 @@ _upb_DefPool_Init envoy_config_listener_v3_listener_proto_upbdefinit = {
   deps,
   &envoy_config_listener_v3_listener_proto_upb_file_layout,
   "envoy/config/listener/v3/listener.proto",
-  UPB_STRINGVIEW_INIT(descriptor, 4082)
+  UPB_STRINGVIEW_INIT(descriptor, 4152)
 };

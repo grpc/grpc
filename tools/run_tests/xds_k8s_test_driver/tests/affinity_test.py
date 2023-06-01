@@ -124,15 +124,28 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             rpc_distribution = xds_url_map_testcase.RpcDistributionStats(
                 json_lb_stats)
             self.assertEqual(1, rpc_distribution.num_peers)
+
+            # Check subchannel states.
+            # One should be READY.
+            ready_channels = test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY)
             self.assertLen(
-                test_client.find_subchannels_with_state(
-                    _ChannelzChannelState.READY),
+                ready_channels,
                 1,
+                msg=('(AffinityTest) The client expected to have one READY'
+                     ' subchannel to one of the test servers. Found'
+                     f' {len(ready_channels)} instead.'),
             )
+            # The rest should be IDLE.
+            expected_idle_channels = _REPLICA_COUNT - 1
+            idle_channels = test_client.find_subchannels_with_state(
+                _ChannelzChannelState.IDLE)
             self.assertLen(
-                test_client.find_subchannels_with_state(
-                    _ChannelzChannelState.IDLE),
-                2,
+                idle_channels,
+                expected_idle_channels,
+                msg=('(AffinityTest) The client expected to have IDLE'
+                     f' subchannels to {expected_idle_channels} of the test'
+                     f' servers. Found {len(idle_channels)} instead.'),
             )
             # Remember the backend inuse, and turn it down later.
             first_backend_inuse = list(

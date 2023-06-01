@@ -24,24 +24,14 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/thread_local.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
 //       AROUND VERY SPECIFIC USE CASES.
 //
-
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
-#else
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
-                              GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
-                              "Enable fork support");
 
 namespace grpc_core {
 namespace {
@@ -176,7 +166,7 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
+    support_enabled_.store(ConfigVars::Get().EnableForkSupport(),
                            std::memory_order_relaxed);
   }
 }

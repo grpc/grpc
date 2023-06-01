@@ -21,7 +21,8 @@
 #include <map>
 #include <string>
 
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
+#include "upb/collections/map.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>

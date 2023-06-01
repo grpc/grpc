@@ -78,6 +78,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -Dabsl_DIR=/tmp/stage/lib/cmake/absl \
       -DProtobuf_DIR=/tmp/stage/lib/cmake/protobuf \
+      -Dutf8_range_DIR=/tmp/stage/lib/cmake/utf8_range \
       -DgRPC_DIR=/tmp/stage/lib/cmake/grpc \
       ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"

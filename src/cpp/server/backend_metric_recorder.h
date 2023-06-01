@@ -59,10 +59,13 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   experimental::CallMetricRecorder& RecordMemoryUtilizationMetric(
       double value) override;
   experimental::CallMetricRecorder& RecordQpsMetric(double value) override;
+  experimental::CallMetricRecorder& RecordEpsMetric(double value) override;
   experimental::CallMetricRecorder& RecordUtilizationMetric(
       string_ref name, double value) override;
   experimental::CallMetricRecorder& RecordRequestCostMetric(
       string_ref name, double value) override;
+  experimental::CallMetricRecorder& RecordNamedMetric(string_ref name,
+                                                      double value) override;
   // This clears metrics currently recorded. Don't call twice.
   grpc_core::BackendMetricData GetBackendMetricData() override;
 
@@ -71,9 +74,11 @@ class BackendMetricState : public grpc_core::BackendMetricProvider,
   std::atomic<double> cpu_utilization_{-1.0};
   std::atomic<double> mem_utilization_{-1.0};
   std::atomic<double> qps_{-1.0};
+  std::atomic<double> eps_{-1.0};
   internal::Mutex mu_;
   std::map<absl::string_view, double> utilization_ ABSL_GUARDED_BY(mu_);
   std::map<absl::string_view, double> request_cost_ ABSL_GUARDED_BY(mu_);
+  std::map<absl::string_view, double> named_metrics_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc

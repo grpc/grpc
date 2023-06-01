@@ -16,223 +16,94 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
+#include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-#define MAX_CONNECTION_IDLE_MS 2000
-#define MAX_CONNECTION_AGE_MS 9999
+namespace grpc_core {
+namespace {
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+void SimpleRequestBody(CoreEnd2endTest& test) {
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata(
+          {}, GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                  GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  auto s = test.RequestCall(101);
+  test.Expect(101, true);
+  test.Step();
+  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  s.NewBatch(102)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
+      .RecvCloseOnServer(client_close);
+  test.Expect(102, true);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(s.method(), "/foo");
+  EXPECT_FALSE(client_close.was_cancelled());
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture* f) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_core::CqVerifier cqv(f->cq);
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-  char* peer;
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer_before_call=%s", peer);
-  gpr_free(peer);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
-  cqv.Verify();
-
-  peer = grpc_call_get_peer(s);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
-  gpr_free(peer);
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
-  gpr_free(peer);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-}
-
-static void test_max_connection_idle(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::CqVerifier cqv(f.cq);
-
-  auto client_args = grpc_core::ChannelArgs()
-                         .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
-                         .ToC();
-  grpc_arg server_a[2];
-  server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
-  server_a[0].value.integer = MAX_CONNECTION_IDLE_MS;
-  server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
-  server_a[1].value.integer = MAX_CONNECTION_AGE_MS;
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
-
-  config.init_client(&f, client_args.get());
-  config.init_server(&f, &server_args);
-
+CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
+  const auto kMaxConnectionIdle = Duration::Seconds(2);
+  const auto kMaxConnectionAge = Duration::Seconds(10);
+  InitClient(
+      ChannelArgs()
+          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+               Duration::Seconds(1).millis())
+          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, Duration::Seconds(1).millis())
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
+               Duration::Seconds(5).millis()));
+  InitServer(
+      ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, kMaxConnectionIdle.millis())
+          .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, kMaxConnectionAge.millis()));
   // check that we're still in idle, and start connecting
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
-             GRPC_CHANNEL_IDLE);
+  grpc_connectivity_state state = CheckConnectivityState(true);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
   // we'll go through some set of transitions (some might be missed), until
   // READY is reached
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
-    cqv.Expect(tag(99), true);
-    cqv.Verify();
-    state = grpc_channel_check_connectivity_state(f.client, 0);
-    GPR_ASSERT(state == GRPC_CHANNEL_READY ||
-               state == GRPC_CHANNEL_CONNECTING ||
-               state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+    WatchConnectivityState(state, Duration::Seconds(10), 99);
+    Expect(99, true);
+    Step();
+    state = CheckConnectivityState(false);
+    EXPECT_THAT(state,
+                ::testing::AnyOf(GRPC_CHANNEL_READY, GRPC_CHANNEL_CONNECTING,
+                                 GRPC_CHANNEL_TRANSIENT_FAILURE));
   }
-
   // Use a simple request to cancel and reset the max idle timer
-  simple_request_body(config, &f);
-
+  SimpleRequestBody(*this);
   // wait for the channel to reach its maximum idle time
-  grpc_channel_watch_connectivity_state(
-      f.client, GRPC_CHANNEL_READY,
-      gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),
-                   gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
-      f.cq, tag(99));
-  cqv.Expect(tag(99), true);
-  cqv.Verify();
-  state = grpc_channel_check_connectivity_state(f.client, 0);
-  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-             state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
-
-  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(tag(0xdead), true);
-  cqv.Verify();
-
-  grpc_server_destroy(f.server);
-  grpc_channel_destroy(f.client);
-  grpc_completion_queue_shutdown(f.cq);
-  drain_cq(f.cq);
-  grpc_completion_queue_destroy(f.cq);
-  config.tear_down_data(&f);
+  WatchConnectivityState(GRPC_CHANNEL_READY,
+                         Duration::Seconds(3) + kMaxConnectionIdle, 99);
+  Expect(99, true);
+  Step();
+  state = CheckConnectivityState(false);
+  EXPECT_THAT(state,
+              ::testing::AnyOf(GRPC_CHANNEL_IDLE, GRPC_CHANNEL_CONNECTING,
+                               GRPC_CHANNEL_TRANSIENT_FAILURE));
+  ShutdownServerAndNotify(1000);
+  Expect(1000, true);
+  Step();
 }
 
-void max_connection_idle(grpc_end2end_test_config config) {
-  test_max_connection_idle(config);
-}
-
-void max_connection_idle_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core

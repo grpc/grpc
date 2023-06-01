@@ -27,25 +27,20 @@
 #include <string.h>
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_poll_strategy, "all",
-    "Declares which polling engines to try when starting gRPC. "
-    "This is a comma-separated list of engines, which are tried in priority "
-    "order first -> last.")
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling");  // Disabled by default
@@ -106,40 +101,14 @@ static const grpc_event_engine_vtable* g_vtables[] = {
     nullptr,
 };
 
-static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
-  size_t n = *ns;
-  size_t np = n + 1;
-  char* s;
-  size_t len;
-  GPR_ASSERT(end >= beg);
-  len = static_cast<size_t>(end - beg);
-  s = static_cast<char*>(gpr_malloc(len + 1));
-  memcpy(s, beg, len);
-  s[len] = 0;
-  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
-  (*ss)[n] = s;
-  *ns = np;
+static bool is(absl::string_view want, absl::string_view have) {
+  return want == "all" || want == have;
 }
 
-static void split(const char* s, char*** ss, size_t* ns) {
-  const char* c = strchr(s, ',');
-  if (c == nullptr) {
-    add(s, s + strlen(s), ss, ns);
-  } else {
-    add(s, c, ss, ns);
-    split(c + 1, ss, ns);
-  }
-}
-
-static bool is(const char* want, const char* have) {
-  return 0 == strcmp(want, "all") || 0 == strcmp(want, have);
-}
-
-static void try_engine(const char* engine) {
+static void try_engine(absl::string_view engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_vtables); i++) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
-        g_vtables[i]->check_engine_available(
-            0 == strcmp(engine, g_vtables[i]->name))) {
+        g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
       gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
       return;
@@ -173,25 +142,16 @@ const char* grpc_get_poll_strategy_name() { return g_event_engine->name; }
 
 void grpc_event_engine_init(void) {
   gpr_once_init(&g_choose_engine, []() {
-    grpc_core::UniquePtr<char> value =
-        GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-
-    char** strings = nullptr;
-    size_t nstrings = 0;
-    split(value.get(), &strings, &nstrings);
-
-    for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
-      try_engine(strings[i]);
+    auto value = grpc_core::ConfigVars::Get().PollStrategy();
+    for (auto trial : absl::StrSplit(value, ',')) {
+      try_engine(trial);
+      if (g_event_engine != nullptr) return;
     }
-
-    for (size_t i = 0; i < nstrings; i++) {
-      gpr_free(strings[i]);
-    }
-    gpr_free(strings);
 
     if (g_event_engine == nullptr) {
-      grpc_core::Crash(absl::StrFormat(
-          "No event engine could be initialized from %s", value.get()));
+      grpc_core::Crash(
+          absl::StrFormat("No event engine could be initialized from %s",
+                          std::string(value).c_str()));
     }
   });
   g_event_engine->init_engine();

@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -40,6 +41,8 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
+const char kMaxConcurrentStreamsEnvironmentVariable[] =
+    "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 const size_t kHandshakerClientOpNum = 4;
 const size_t kMaxRpcVersionMajor = 3;
 const size_t kMaxRpcVersionMinor = 2;
@@ -506,6 +509,26 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
         config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, Default) {
+  grpc_core::UnsetEnv(kMaxConcurrentStreamsEnvironmentVariable);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNotInt) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "not-a-number");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNegative) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "-10");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarSuccess) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "10");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 10);
 }
 
 int main(int argc, char** argv) {

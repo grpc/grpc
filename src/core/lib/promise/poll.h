@@ -88,6 +88,8 @@ class Poll {
   Poll(U value) : ready_(true) {
     Construct(&value_, std::move(value));
   }
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(T&& value) : ready_(true) { Construct(&value_, std::forward<T>(value)); }
   ~Poll() {
     if (ready_) Destruct(&value_);
   }
@@ -138,7 +140,53 @@ class Poll {
 };
 
 template <>
+class Poll<Empty> {
+ public:
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(Pending) : ready_(false) {}
+  Poll() : ready_(false) {}
+  Poll(const Poll& other) = default;
+  Poll(Poll&& other) noexcept = default;
+  Poll& operator=(const Poll& other) = default;
+  Poll& operator=(Poll&& other) = default;
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  Poll(Empty) : ready_(true) {}
+  ~Poll() = default;
+
+  bool pending() const { return !ready_; }
+  bool ready() const { return ready_; }
+
+  Empty value() const {
+    GPR_DEBUG_ASSERT(ready());
+    return Empty{};
+  }
+
+  Empty* value_if_ready() {
+    static Empty value;
+    if (ready()) return &value;
+    return nullptr;
+  }
+
+  const Empty* value_if_ready() const {
+    static Empty value;
+    if (ready()) return &value;
+    return nullptr;
+  }
+
+ private:
+  // Flag indicating readiness.
+  bool ready_;
+};
+
+// Ensure degenerate cases are not defined:
+
+// Can't poll for a Pending
+template <>
 class Poll<Pending>;
+
+// Can't poll for a poll
+template <class T>
+class Poll<Poll<T>>;
 
 template <typename T>
 bool operator==(const Poll<T>& a, const Poll<T>& b) {

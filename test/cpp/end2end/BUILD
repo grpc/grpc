@@ -103,7 +103,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_test_ios"],
+    shard_count = 10,
+    tags = [
+        "cpp_end2end_test",
+        "no_test_ios",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -127,6 +131,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "cpp_end2end_test",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
@@ -197,6 +202,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -217,6 +223,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -235,6 +242,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -287,7 +295,10 @@ grpc_cc_test(
     ],
     # TODO(yulin-liang): The test is not able to load the certificate files on
     # iOS. Figure out why.
-    tags = ["no_test_ios"],
+    tags = [
+        "cpp_end2end_test",
+        "no_test_ios",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -309,6 +320,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -324,7 +336,11 @@ grpc_cc_test(
     name = "end2end_test",
     size = "large",
     flaky = True,  # TODO(b/151704375)
-    tags = ["no_test_ios"],
+    shard_count = 10,
+    tags = [
+        "cpp_end2end_test",
+        "no_test_ios",
+    ],
     deps = [
         ":end2end_test_lib",
         # DO NOT REMOVE THE grpc++ dependence below since the internal build
@@ -356,6 +372,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -374,6 +391,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -392,6 +410,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_health_check_service_impl",
         ":test_service_impl",
@@ -413,6 +432,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -432,6 +452,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -451,6 +472,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -470,6 +492,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -488,7 +511,10 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/151315347)
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":connection_attempt_injector",
         ":test_service_impl",
@@ -518,7 +544,10 @@ grpc_cc_test(
         "absl/types:optional",
     ],
     flaky = True,
-    tags = ["no_test_ios"],
+    tags = [
+        "cpp_end2end_test",
+        "no_test_ios",
+    ],
     deps = [
         ":counted_service",
         ":rls_server",
@@ -544,6 +573,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -565,7 +595,10 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":counted_service",
         ":test_service_impl",
@@ -590,6 +623,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -611,6 +645,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -677,6 +712,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -697,6 +733,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "cpp_end2end_test",
         "no_test_ios",
         "no_windows",
     ],
@@ -739,6 +776,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -757,7 +795,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -778,7 +819,10 @@ grpc_cc_test(
         "gtest",
     ],
     shard_count = 5,
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
         "//:grpc",
@@ -825,6 +869,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -844,6 +889,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -863,6 +909,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -881,6 +928,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -895,14 +943,15 @@ grpc_cc_test(
     srcs = ["grpc_authz_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client-with-spiffe.key",
+        "//src/core/tsi/test_creds:client-with-spiffe.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -911,6 +960,7 @@ grpc_cc_test(
         "//:grpc++_authorization_provider",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:audit_logging_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -929,6 +979,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -946,6 +997,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["cpp_end2end_test"],
     deps = [
         "//:grpc++",
         "//:grpcpp_backend_metric_recorder",

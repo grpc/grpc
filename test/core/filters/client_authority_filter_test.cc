@@ -14,114 +14,56 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <memory>
-
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/promise/test_context.h"
+#include "test/core/filters/filter_test.h"
+
+using ::testing::StrictMock;
 
 namespace grpc_core {
 namespace {
+
+using ClientAuthorityFilterTest = FilterTest<ClientAuthorityFilter>;
 
 ChannelArgs TestChannelArgs(absl::string_view default_authority) {
   return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
 }
 
-TEST(ClientAuthorityFilterTest, DefaultFails) {
-  EXPECT_FALSE(
-      ClientAuthorityFilter::Create(ChannelArgs(), ChannelFilter::Args()).ok());
+TEST_F(ClientAuthorityFilterTest, DefaultFails) {
+  EXPECT_FALSE(MakeChannel(ChannelArgs()).ok());
 }
 
-TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_EQ(ClientAuthorityFilter::Create(TestChannelArgs("foo.test.google.au"),
-                                          ChannelFilter::Args())
-                .status(),
+TEST_F(ClientAuthorityFilterTest, WithArgSucceeds) {
+  EXPECT_EQ(MakeChannel(TestChannelArgs("foo.test.google.au")).status(),
             absl::OkStatus());
 }
 
-TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  EXPECT_FALSE(ClientAuthorityFilter::Create(
-                   ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123),
-                   ChannelFilter::Args())
-                   .ok());
+TEST_F(ClientAuthorityFilterTest, NonStringArgFails) {
+  EXPECT_FALSE(
+      MakeChannel(ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123)).ok());
 }
 
-TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
-  auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch initial_metadata_batch(arena.get());
-  grpc_metadata_batch trailing_metadata_batch(arena.get());
-  bool seen = false;
-  // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena.get());
-  auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
-                                    Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
-      [&](CallArgs call_args) {
-        EXPECT_EQ(call_args.client_initial_metadata
-                      ->get_pointer(HttpAuthorityMetadata())
-                      ->as_string_view(),
-                  "foo.test.google.au");
-        seen = true;
-        return ArenaPromise<ServerMetadataHandle>(
-            [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch,
-                                          Arena::PooledDeleter(nullptr));
-            });
-      });
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(seen);
+TEST_F(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
+  StrictMock<FilterTest::Call> call(
+      MakeChannel(TestChannelArgs("foo.test.google.au")).value());
+  EXPECT_EVENT(
+      Started(&call, HasMetadataKeyValue(":authority", "foo.test.google.au")));
+  call.Start(call.NewClientMetadata());
 }
 
-TEST(ClientAuthorityFilterTest,
-     PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
-  auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch initial_metadata_batch(arena.get());
-  grpc_metadata_batch trailing_metadata_batch(arena.get());
-  initial_metadata_batch.Set(HttpAuthorityMetadata(),
-                             Slice::FromStaticString("bar.test.google.au"));
-  bool seen = false;
-  // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena.get());
-  auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
-                                    Arena::PooledDeleter(nullptr)),
-               nullptr, nullptr, nullptr},
-      [&](CallArgs call_args) {
-        EXPECT_EQ(call_args.client_initial_metadata
-                      ->get_pointer(HttpAuthorityMetadata())
-                      ->as_string_view(),
-                  "bar.test.google.au");
-        seen = true;
-        return ArenaPromise<ServerMetadataHandle>(
-            [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch,
-                                          Arena::PooledDeleter(nullptr));
-            });
-      });
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(seen);
+TEST_F(ClientAuthorityFilterTest,
+       PromiseCompletesImmediatelyAndDoesNotSetAuthority) {
+  StrictMock<FilterTest::Call> call(
+      MakeChannel(TestChannelArgs("foo.test.google.au")).value());
+  EXPECT_EVENT(
+      Started(&call, HasMetadataKeyValue(":authority", "bar.test.google.au")));
+  call.Start(call.NewClientMetadata({{":authority", "bar.test.google.au"}}));
 }
 
 }  // namespace

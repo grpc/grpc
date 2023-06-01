@@ -44,19 +44,21 @@ def save(fpath, contents):
 class GuardValidator(object):
 
     def __init__(self):
-        self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
-        self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
+        self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_0-9]*)')
+        self.define_re = re.compile(r'#define ([A-Z][A-Z_0-9]*)')
         self.endif_c_core_re = re.compile(
-            r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_1-9]*) (?:\\\n *)?\*/$')
-        self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
+            r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_0-9]*) (?:\\\n *)?\*/$')
+        self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_0-9]*)')
         self.comments_then_includes_re = re.compile(
             r'^((//.*?$|/\*.*?\*/|[ \r\n\t])*)(([ \r\n\t]|#include .*)*)(#ifndef [^\n]*\n#define [^\n]*\n)',
             re.DOTALL | re.MULTILINE)
         self.failed = False
 
     def _is_c_core_header(self, fpath):
-        return 'include' in fpath and not ('grpc++' in fpath or 'grpcpp'
-                                           in fpath or 'event_engine' in fpath)
+        return 'include' in fpath and not (
+            'grpc++' in fpath or 'grpcpp' in fpath or 'event_engine' in fpath or
+            fpath.endswith('/grpc_audit_logging.h') or
+            fpath.endswith('/json.h'))
 
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
         c_core_header = self._is_c_core_header(fpath)
@@ -189,7 +191,7 @@ argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
-grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp)/.*\.h$'"
+grep_filter = r"grep -E '^(include|src/core|src/cpp|test/core|test/cpp|fuzztest/)/.*\.h$'"
 if args.precommit:
     git_command = 'git diff --name-only HEAD'
 else:

@@ -142,6 +142,7 @@ _ENFORCE_CPP_STYLE_COMMENT_PATH_PREFIX = tuple([
     'src/cpp/',
     'test/core/',
     'test/cpp/',
+    'fuzztest/',
 ])
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'

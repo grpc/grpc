@@ -542,7 +542,7 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
   ParseLoadBalancingConfig(const Json& json) const override {
     std::vector<grpc_error_handle> error_list;
     std::string address;
-    ParseJsonObjectField(json.object_value(), "address", &address, &error_list);
+    ParseJsonObjectField(json.object(), "address", &address, &error_list);
     if (!error_list.empty()) {
       grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "errors parsing fixed_address_lb config", &error_list);

@@ -223,16 +223,17 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, TraitSpecializedTest, InterestingTraits);
 TEST(KeyValueTest, Simple) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString("key"),
-                                 Slice::FromCopiedString("value"));
+  PMPtr p =
+      std::make_unique<PM>(PM::FromSlicePair{}, Slice::FromCopiedString("key"),
+                           Slice::FromCopiedString("value"), 40);
   EXPECT_EQ(p->DebugString(), "key: value");
   EXPECT_EQ(p->transport_size(), 40);
-  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
-                          [](absl::string_view msg, const Slice& value) {
-                            ASSERT_TRUE(false)
-                                << "Should not be called: msg=" << msg
-                                << ", value=" << value.as_string_view();
-                          });
+  PM p2 = p->WithNewValue(
+      Slice::FromCopiedString("some_other_value"), strlen("some_other_value"),
+      [](absl::string_view msg, const Slice& value) {
+        ASSERT_TRUE(false) << "Should not be called: msg=" << msg
+                           << ", value=" << value.as_string_view();
+      });
   EXPECT_EQ(p->DebugString(), "key: value");
   EXPECT_EQ(p2.DebugString(), "key: some_other_value");
   EXPECT_EQ(p2.transport_size(), 51);
@@ -247,18 +248,19 @@ TEST(KeyValueTest, Simple) {
 TEST(KeyValueTest, LongKey) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
-                                 Slice::FromCopiedString("value"));
+  PMPtr p = std::make_unique<PM>(PM::FromSlicePair{},
+                                 Slice::FromCopiedString(std::string(60, 'a')),
+                                 Slice::FromCopiedString("value"), 60 + 5 + 32);
   EXPECT_EQ(
       p->DebugString(),
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
   EXPECT_EQ(p->transport_size(), 97);
-  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
-                          [](absl::string_view msg, const Slice& value) {
-                            ASSERT_TRUE(false)
-                                << "Should not be called: msg=" << msg
-                                << ", value=" << value.as_string_view();
-                          });
+  PM p2 = p->WithNewValue(
+      Slice::FromCopiedString("some_other_value"), strlen("some_other_value"),
+      [](absl::string_view msg, const Slice& value) {
+        ASSERT_TRUE(false) << "Should not be called: msg=" << msg
+                           << ", value=" << value.as_string_view();
+      });
   EXPECT_EQ(
       p->DebugString(),
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");

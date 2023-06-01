@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 

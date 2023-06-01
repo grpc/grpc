@@ -80,7 +80,7 @@ static void create_sockets(SOCKET sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char*, grpc_channel_args* /* channel_args */) {
+    const char*, const grpc_channel_args* /* channel_args */) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);

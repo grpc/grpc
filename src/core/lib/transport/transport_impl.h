@@ -38,6 +38,13 @@ typedef struct grpc_transport_vtable {
   // layers and initialized by the transport
   size_t sizeof_stream;  // = sizeof(transport stream)
 
+  // HACK: inproc does not handle stream op batch callbacks correctly (receive
+  // ops are required to complete prior to on_complete triggering).
+  // This flag is used to disable coalescing of batches in connected_channel for
+  // that specific transport.
+  // TODO(ctiller): This ought not be necessary once we have promises complete.
+  bool hacky_disable_stream_op_batch_coalescing_in_connected_channel;
+
   // name of this transport implementation
   const char* name;
 

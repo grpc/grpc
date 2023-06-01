@@ -29,6 +29,7 @@
 #include <new>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -47,7 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -78,7 +79,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -103,7 +103,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+#define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
 #define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
 #define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
@@ -205,21 +206,18 @@ static void keepalive_watchdog_fired_locked(
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace {
-void MaybeRecordTransportAnnotation(grpc_chttp2_stream* s,
-                                    absl::string_view annotation) {
-  GPR_ASSERT(s->context);
-  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
-    return;
+grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
+  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+    return nullptr;
   }
-  grpc_core::CallTracer* call_tracer = static_cast<grpc_core::CallTracer*>(
+  return static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
-  if (!call_tracer) {
-    return;
-  }
-  call_tracer->RecordAnnotation(annotation);
 }
+
+grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
+grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -246,6 +244,40 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
   test_only_disable_transient_failure_state_notification = disable;
 }
 
+void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
+  g_write_timestamps_callback = fn;
+}
+
+void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
+  g_get_copied_context_fn = fn;
+}
+
+WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
+  return g_write_timestamps_callback;
+}
+
+CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
+
+// For each entry in the passed ContextList, it executes the function set using
+// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
+// and \a ts. It also deletes/frees up the passed ContextList after this
+// operation.
+void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
+                                    grpc_error_handle error) {
+  ContextList* context_list = reinterpret_cast<ContextList*>(arg);
+  if (!context_list) {
+    return;
+  }
+  for (auto it = context_list->begin(); it != context_list->end(); it++) {
+    ContextListEntry& entry = (*it);
+    if (ts) {
+      ts->byte_offset = static_cast<uint32_t>(entry.ByteOffsetInStream());
+    }
+    g_write_timestamps_callback(entry.TraceContext(), ts, error);
+  }
+  delete context_list;
+}
+
 }  // namespace grpc_core
 
 //
@@ -270,7 +302,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  grpc_core::ContextList::Execute(cl, nullptr, error);
+  if (cl != nullptr) {
+    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
+  }
   cl = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -369,10 +403,27 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)),
             std::string(t->peer_string.as_string_view()),
-            absl::StrFormat("%s %s", get_vtable()->name,
-                            t->peer_string.as_string_view()),
+            absl::StrCat(get_vtable()->name, " ",
+                         t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+  }
+
+  t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
+
+  const int soft_limit =
+      channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
+  if (soft_limit < 0) {
+    // Set soft limit to 0.8 * hard limit if this is larger than
+    // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
+    // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
+    t->max_header_list_size_soft_limit = std::max(
+        DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT,
+        static_cast<int>(
+            0.8 * channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE)
+                      .value_or(-1)));
+  } else {
+    t->max_header_list_size_soft_limit = soft_limit;
   }
 
   static const struct {
@@ -394,7 +445,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        0,
                        INT32_MAX,
                        {true, true}},
-                      {GRPC_ARG_MAX_METADATA_SIZE,
+                      {GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
                        GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        -1,
                        0,
@@ -427,6 +478,21 @@ static void read_channel_args(grpc_chttp2_transport* t,
       if (value >= 0) {
         queue_setting_update(t, setting.setting_id,
                              grpc_core::Clamp(value, setting.min, setting.max));
+      } else if (setting.setting_id ==
+                 GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE) {
+        // Set value to 1.25 * soft limit if this is larger than
+        // `DEFAULT_MAX_HEADER_LIST_SIZE` and
+        // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
+        const int soft_limit = channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE)
+                                   .value_or(setting.default_value);
+        const int value = (soft_limit >= 0 && soft_limit < (INT_MAX / 1.25))
+                              ? static_cast<int>(soft_limit * 1.25)
+                              : soft_limit;
+        if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
+          queue_setting_update(
+              t, setting.setting_id,
+              grpc_core::Clamp(value, setting.min, setting.max));
+        }
       }
     } else if (channel_args.Contains(setting.channel_arg_name)) {
       gpr_log(GPR_DEBUG, "%s is not available on %s",
@@ -528,6 +594,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       event_engine(
           channel_args
               .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
+  cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
@@ -959,7 +1026,17 @@ static void write_action_begin_locked(void* gt,
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
-  t->cl = nullptr;
+  if (!t->cl->empty()) {
+    // Transfer the ownership of the context list to the endpoint and create and
+    // associate a new context list with the transport.
+    // The old context list is stored in the cl local variable which is passed
+    // to the endpoint. Its upto the endpoint to manage its lifetime.
+    t->cl = new grpc_core::ContextList();
+  } else {
+    // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
+    // to nullptr.
+    cl = nullptr;
+  }
   // Choose max_frame_size as the prefered rx crypto frame size indicated by the
   // peer.
   int max_frame_size =
@@ -1210,7 +1287,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc) {
+                                       const char* desc,
+                                       grpc_core::DebugLocation whence) {
   grpc_closure* closure = *pclosure;
   *pclosure = nullptr;
   if (closure == nullptr) {
@@ -1221,20 +1299,21 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
-        "write_state=%s",
+        "write_state=%s whence=%s:%d",
         t, closure,
         static_cast<int>(closure->next_data.scratch /
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         static_cast<int>(closure->next_data.scratch %
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         desc, grpc_core::StatusToString(error).c_str(),
-        write_state_name(t->write_state));
+        write_state_name(t->write_state), whence.file(), whence.line());
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure,
-                           desc, grpc_core::StatusToString(error).c_str()));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(
+        absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
+                        grpc_core::StatusToString(error).c_str()));
   }
 
   if (!error.ok()) {
@@ -1309,12 +1388,12 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (s->context != nullptr) {
-    MaybeRecordTransportAnnotation(
-        s, absl::StrFormat(
-               "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
-               op, grpc_transport_stream_op_batch_string(op, true).c_str(),
-               op->on_complete));
+  auto* tracer = CallTracerIfEnabled(s);
+  if (tracer != nullptr) {
+    tracer->RecordAnnotation(absl::StrFormat(
+        "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
+        grpc_transport_stream_op_batch_string(op, true).c_str(),
+        op->on_complete));
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -1667,7 +1746,7 @@ namespace {
 // Fire and forget (deletes itself on completion). Does a graceful shutdown by
 // sending a GOAWAY frame with the last stream id set to 2^31-1, sending a ping
 // and waiting for an ack (effective waiting for an RTT) and then sending a
-// final GOAWAY freame with an updated last stream identifier. This helps ensure
+// final GOAWAY frame with an updated last stream identifier. This helps ensure
 // that a connection can be cleanly shut down without losing requests.
 // In the event, that the client does not respond to the ping for some reason,
 // we add a 20 second deadline, after which we send the second goaway.
@@ -1680,6 +1759,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
   }
 
  private:
+  using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
+
   explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t) {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     GRPC_CHTTP2_REF_TRANSPORT(t_, "graceful goaway");
@@ -1687,10 +1768,17 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
-    Ref().release();  // Ref for the timer
-    grpc_timer_init(
-        &timer_, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20),
-        GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr));
+    timer_handle_ = t_->event_engine->RunAfter(
+        grpc_core::Duration::Seconds(20),
+        [self = Ref(DEBUG_LOCATION, "GoawayTimer")]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          // The ref will be unreffed in the combiner.
+          auto* ptr = self.release();
+          ptr->t_->combiner->Run(
+              GRPC_CLOSURE_INIT(&ptr->on_timer_, OnTimerLocked, ptr, nullptr),
+              absl::OkStatus());
+        });
   }
 
   void MaybeSendFinalGoawayLocked() {
@@ -1730,31 +1818,25 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   static void OnPingAckLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
-    grpc_timer_cancel(&self->timer_);
+    if (self->timer_handle_ != TaskHandle::kInvalid) {
+      self->t_->event_engine->Cancel(
+          std::exchange(self->timer_handle_, TaskHandle::kInvalid));
+    }
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
   }
 
-  static void OnTimer(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<GracefulGoaway*>(arg);
-    if (!error.ok()) {
-      self->Unref();
-      return;
-    }
-    self->t_->combiner->Run(
-        GRPC_CLOSURE_INIT(&self->on_timer_, OnTimerLocked, self, nullptr),
-        absl::OkStatus());
-  }
-
   static void OnTimerLocked(void* arg, grpc_error_handle /* error */) {
     auto* self = static_cast<GracefulGoaway*>(arg);
+    // Clearing the handle since the timer has fired and the handle is invalid.
+    self->timer_handle_ = TaskHandle::kInvalid;
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
   }
 
   grpc_chttp2_transport* t_;
   grpc_closure on_ping_ack_;
-  grpc_timer timer_;
+  TaskHandle timer_handle_ = TaskHandle::kInvalid;
   grpc_closure on_timer_;
 };
 
@@ -3078,6 +3160,7 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
 }
 
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             false,
                                              "chttp2",
                                              init_stream,
                                              nullptr,
@@ -3116,9 +3199,24 @@ void grpc_chttp2_transport_start_reading(
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
-  t->notify_on_receive_settings = notify_on_receive_settings;
-  t->notify_on_close = notify_on_close;
   t->combiner->Run(
-      GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t, nullptr),
+      grpc_core::NewClosure([t, notify_on_receive_settings,
+                             notify_on_close](grpc_error_handle) {
+        if (!t->closed_with_error.ok()) {
+          if (notify_on_receive_settings != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
+                                    t->closed_with_error);
+          }
+          if (notify_on_close != nullptr) {
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
+                                    t->closed_with_error);
+          }
+          GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
+          return;
+        }
+        t->notify_on_receive_settings = notify_on_receive_settings;
+        t->notify_on_close = notify_on_close;
+        read_action_locked(t, absl::OkStatus());
+      }),
       absl::OkStatus());
 }

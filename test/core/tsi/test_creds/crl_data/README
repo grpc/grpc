@@ -41,6 +41,12 @@ Generate the CRL file:
 $ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem -crldays 3650
 $ openssl rehash ./
 
+Generate a chain with a leaf cert signed by an intermediate CA and revoke the intermediate certificate
+----------------------------------------------------------------------------
+
+Run `intermediate_gen.sh` from the `test/core/tsi/test_creds/crl_data` directory
+
+
 Clean up:
 ---------
 $ rm *.rsa

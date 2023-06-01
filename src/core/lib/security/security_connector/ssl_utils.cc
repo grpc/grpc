@@ -32,19 +32,18 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -76,22 +75,9 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
 
-// All cipher suites for default are compliant with HTTP2.
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_ssl_cipher_suites,
-    "TLS_AES_128_GCM_SHA256:"
-    "TLS_AES_256_GCM_SHA384:"
-    "TLS_CHACHA20_POLY1305_SHA256:"
-    "ECDHE-ECDSA-AES128-GCM-SHA256:"
-    "ECDHE-ECDSA-AES256-GCM-SHA384:"
-    "ECDHE-RSA-AES128-GCM-SHA256:"
-    "ECDHE-RSA-AES256-GCM-SHA384",
-    "A colon separated list of cipher suites to use with OpenSSL")
-
 static void init_cipher_suites(void) {
-  grpc_core::UniquePtr<char> value =
-      GPR_GLOBAL_CONFIG_GET(grpc_ssl_cipher_suites);
-  cipher_suites = value.release();
+  cipher_suites = gpr_strdup(
+      std::string(grpc_core::ConfigVars::Get().SslCipherSuites()).c_str());
 }
 
 // --- Util ---
@@ -573,14 +559,13 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  const bool not_use_system_roots =
-      GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  UniquePtr<char> default_root_certs_path =
-      GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
-  if (strlen(default_root_certs_path.get()) > 0) {
+  auto default_root_certs_path = ConfigVars::Get().DefaultSslRootsFilePath();
+  if (!default_root_certs_path.empty()) {
     GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
+        "load_file",
+        grpc_load_file(std::string(default_root_certs_path).c_str(), 1,
+                       &result));
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -596,7 +581,8 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     gpr_free(pem_root_certs);
   }
   // Try loading roots from OS trust store if flag is enabled.
-  if (GRPC_SLICE_IS_EMPTY(result) && !not_use_system_roots) {
+  if (GRPC_SLICE_IS_EMPTY(result) &&
+      !ConfigVars::Get().NotUseSystemSslRoots()) {
     result = LoadSystemRootCerts();
   }
   // Fallback to roots manually shipped with gRPC.

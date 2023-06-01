@@ -38,6 +38,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
@@ -63,6 +64,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -307,10 +309,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     void Start() override;
     void Orphan() override;
     Json::Array override_child_policy() override {
-      return Json::Array{
-          Json::Object{
-              {"pick_first", Json::Object()},
-          },
+      return {
+          Json::FromObject({
+              {"pick_first", Json::FromObject({})},
+          }),
       };
     }
     bool disable_reresolution() override { return false; };
@@ -877,8 +879,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()
                .empty()) {
-        child_policy =
-            discovery_entry.discovery_mechanism->override_child_policy();
+        child_policy = Json::FromArray(
+            discovery_entry.discovery_mechanism->override_child_policy());
       } else {
         child_policy = config_->xds_lb_policy();
       }
@@ -888,32 +890,34 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       };
       if (!discovery_config.override_host_statuses.empty()) {
         xds_override_host_lb_config["overrideHostStatus"] =
-            discovery_config.override_host_statuses;
+            Json::FromArray(discovery_config.override_host_statuses);
       }
-      Json::Array xds_override_host_config = {Json::Object{
+      Json::Array xds_override_host_config = {Json::FromObject({
           {"xds_override_host_experimental",
-           std::move(xds_override_host_lb_config)},
-      }};
+           Json::FromObject(std::move(xds_override_host_lb_config))},
+      })};
       // Wrap it in the xds_cluster_impl policy.
       Json::Array drop_categories;
       if (discovery_entry.latest_update->drop_config != nullptr) {
         for (const auto& category :
              discovery_entry.latest_update->drop_config->drop_category_list()) {
-          drop_categories.push_back(Json::Object{
-              {"category", category.name},
-              {"requests_per_million", category.parts_per_million},
-          });
+          drop_categories.push_back(Json::FromObject({
+              {"category", Json::FromString(category.name)},
+              {"requests_per_million",
+               Json::FromNumber(category.parts_per_million)},
+          }));
         }
       }
       Json::Object xds_cluster_impl_config = {
-          {"clusterName", discovery_config.cluster_name},
-          {"childPolicy", std::move(xds_override_host_config)},
-          {"dropCategories", std::move(drop_categories)},
-          {"maxConcurrentRequests", discovery_config.max_concurrent_requests},
+          {"clusterName", Json::FromString(discovery_config.cluster_name)},
+          {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
+          {"dropCategories", Json::FromArray(std::move(drop_categories))},
+          {"maxConcurrentRequests",
+           Json::FromNumber(discovery_config.max_concurrent_requests)},
       };
       if (!discovery_config.eds_service_name.empty()) {
         xds_cluster_impl_config["edsServiceName"] =
-            discovery_config.eds_service_name;
+            Json::FromString(discovery_config.eds_service_name);
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
@@ -925,38 +929,39 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         outlier_detection_config =
             discovery_entry.config().outlier_detection_lb_config.value();
       }
-      outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
-          {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
-      }};
-      Json locality_picking_policy = Json::Array{Json::Object{
+      outlier_detection_config["childPolicy"] =
+          Json::FromArray({Json::FromObject({
+              {"xds_cluster_impl_experimental",
+               Json::FromObject(std::move(xds_cluster_impl_config))},
+          })});
+      Json locality_picking_policy = Json::FromArray({Json::FromObject({
           {"outlier_detection_experimental",
-           std::move(outlier_detection_config)},
-      }};
+           Json::FromObject(std::move(outlier_detection_config))},
+      })});
       // Add priority entry, with the appropriate child name.
       std::string child_name = discovery_entry.GetChildPolicyName(priority);
-      priority_priorities.emplace_back(child_name);
+      priority_priorities.emplace_back(Json::FromString(child_name));
       Json::Object child_config = {
           {"config", std::move(locality_picking_policy)},
       };
       if (discovery_entry.discovery_mechanism->disable_reresolution()) {
-        child_config["ignore_reresolution_requests"] = true;
+        child_config["ignore_reresolution_requests"] = Json::FromBool(true);
       }
-      priority_children[child_name] = std::move(child_config);
+      priority_children[child_name] = Json::FromObject(std::move(child_config));
     }
   }
-  Json json = Json::Array{Json::Object{
+  Json json = Json::FromArray({Json::FromObject({
       {"priority_experimental",
-       Json::Object{
-           {"children", std::move(priority_children)},
-           {"priorities", std::move(priority_priorities)},
-       }},
-  }};
+       Json::FromObject({
+           {"children", Json::FromObject(std::move(priority_children))},
+           {"priorities", Json::FromArray(std::move(priority_priorities))},
+       })},
+  })});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    std::string json_str = json.Dump(/*indent=*/1);
     gpr_log(
         GPR_INFO,
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
-        this, json_str.c_str());
+        this, JsonDump(json, /*indent=*/1).c_str());
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -1060,8 +1065,8 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Parse "type".
   {
-    auto type_field = LoadJsonObjectField<std::string>(json.object_value(),
-                                                       args, "type", errors);
+    auto type_field =
+        LoadJsonObjectField<std::string>(json.object(), args, "type", errors);
     if (type_field.has_value()) {
       if (*type_field == "EDS") {
         type = DiscoveryMechanismType::EDS;
@@ -1075,14 +1080,14 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "edsServiceName" if type is EDS.
   if (type == DiscoveryMechanismType::EDS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "edsServiceName", errors,
                                                   /*required=*/false);
     if (value.has_value()) eds_service_name = std::move(*value);
   }
   // Parse "dnsHostname" if type is LOGICAL_DNS.
   if (type == DiscoveryMechanismType::LOGICAL_DNS) {
-    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+    auto value = LoadJsonObjectField<std::string>(json.object(), args,
                                                   "dnsHostname", errors);
     if (value.has_value()) dns_hostname = std::move(*value);
   }
@@ -1112,8 +1117,8 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   // Parse "xdsLbPolicy".
   {
     ValidationErrors::ScopedField field(errors, ".xdsLbPolicy");
-    auto it = json.object_value().find("xdsLbPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("xdsLbPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto lb_config = CoreConfiguration::Get()
@@ -1145,15 +1150,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // xds_cluster_resolver was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_resolver policy "
-          "requires configuration. "
-          "Please use loadBalancingConfig field of service config instead.");
-    }
-    return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsClusterResolverLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }

@@ -30,6 +30,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
@@ -45,6 +46,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -86,8 +88,8 @@ class XdsWrrLocalityLbConfig : public LoadBalancingPolicy::Config {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors) {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
       return;
     }
@@ -210,23 +212,23 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
     const std::string& locality_name = p.first;
     uint32_t weight = p.second;
     // Add weighted target entry.
-    weighted_targets[locality_name] = Json::Object{
-        {"weight", weight},
+    weighted_targets[locality_name] = Json::FromObject({
+        {"weight", Json::FromNumber(weight)},
         {"childPolicy", config->child_config()},
-    };
+    });
   }
-  Json child_config_json = Json::Array{
-      Json::Object{
+  Json child_config_json = Json::FromArray({
+      Json::FromObject({
           {"weighted_target_experimental",
-           Json::Object{
-               {"targets", std::move(weighted_targets)},
-           }},
-      },
-  };
+           Json::FromObject({
+               {"targets", Json::FromObject(std::move(weighted_targets))},
+           })},
+      }),
+  });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_wrr_locality_lb %p] generated child policy config: %s", this,
-            child_config_json.Dump(/*indent=*/1).c_str());
+            JsonDump(child_config_json, /*indent=*/1).c_str());
   }
   // Parse config.
   auto child_config =
@@ -345,15 +347,7 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // xds_wrr_locality was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_wrr_locality policy requires "
-          "configuration.  Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<XdsWrrLocalityLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsWrrLocalityLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_wrr_locality LB policy config");
   }

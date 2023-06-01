@@ -60,6 +60,10 @@ build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
+build:coverage --copt=-fprofile-instr-generate
+build:coverage --copt=-fcoverage-mapping
+build:coverage --linkopt=-fprofile-instr-generate
+
 build:fork_support --cxxopt=-DGRPC_ENABLE_FORK_SUPPORT=1
 build:fork_support --cxxopt=-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1
 build:fork_support --action_env=GRPC_ENABLE_FORK_SUPPORT=1
@@ -101,10 +105,17 @@ build:tsan --copt=-fno-omit-frame-pointer
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
-# This is needed to address false positive problem with abseil.
-# https://github.com/google/sanitizers/issues/953
-build:tsan --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+
+# a TSAN build that tries to create new threads whenever possible
+build:thready_tsan --strip=never
+build:thready_tsan --copt=-fsanitize=thread
+build:thready_tsan --copt=-fno-omit-frame-pointer
+build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:thready_tsan --copt=-DGRPC_TSAN
+build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
+build:thready_tsan --linkopt=-fsanitize=thread
+build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:tsan_macos --strip=never
 build:tsan_macos --copt=-fsanitize=thread
@@ -112,7 +123,6 @@ build:tsan_macos --copt=-fno-omit-frame-pointer
 build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan_macos --copt=-DGRPC_TSAN
 build:tsan_macos --linkopt=-fsanitize=thread
-build:tsan_macos --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 build:tsan_macos --dynamic_mode=off
 
@@ -142,3 +152,8 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check
+
+try-import %workspace%/tools/fuzztest.bazelrc
+build:fuzztest --cxxopt=-std=c++17
+
+build:fuzztest_test --cxxopt=-std=c++17

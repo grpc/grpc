@@ -94,6 +94,14 @@ std::shared_ptr<Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
+std::shared_ptr<Channel> CreateTestChannel(
+    const std::string& server, const std::string& credential_type,
+    const std::shared_ptr<CallCredentials>& creds,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators,
+    ChannelArguments channel_args);
+
 }  // namespace grpc
 
 #endif  // GRPC_TEST_CPP_UTIL_CREATE_TEST_CHANNEL_H

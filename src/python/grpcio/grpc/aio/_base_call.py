@@ -20,7 +20,7 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Optional, Union
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
@@ -141,7 +141,7 @@ class UnaryUnaryCall(Generic[RequestType, ResponseType],
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -154,13 +154,13 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
                       metaclass=ABCMeta):
 
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod
@@ -197,7 +197,7 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
         """
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -210,13 +210,13 @@ class StreamStreamCall(Generic[RequestType, ResponseType],
                        metaclass=ABCMeta):
 
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod

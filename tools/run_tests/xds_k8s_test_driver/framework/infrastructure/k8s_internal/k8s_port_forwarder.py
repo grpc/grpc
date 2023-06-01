@@ -52,6 +52,8 @@ class PortForwarder:
             "port-forward", "--address", self.local_address, self.destination,
             port_mapping
         ]
+        logger.debug('Executing port forwarding subprocess cmd: %s',
+                     ' '.join(cmd))
         self.subprocess = subprocess.Popen(cmd,
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT,

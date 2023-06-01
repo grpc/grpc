@@ -44,7 +44,10 @@ def _commandfile_spawn(self, command):
             escaped_args = [
                 '"' + arg.replace('\\', '\\\\') + '"' for arg in command[1:]
             ]
-            command_file.write(' '.join(escaped_args))
+            # add each arg on a separate line to avoid hitting the
+            # "line in command file contains 131071 or more characters" error
+            # (can happen for extra long link commands)
+            command_file.write(' \n'.join(escaped_args))
         modified_command = command[:1] + ['@{}'.format(command_filename)]
         try:
             _classic_spawn(self, modified_command)

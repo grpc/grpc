@@ -29,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
+#include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -80,7 +81,8 @@ class HPackParser {
   // Begin parsing a new frame
   // Sink receives each parsed header,
   void BeginFrame(grpc_metadata_batch* metadata_buffer,
-                  uint32_t metadata_size_limit, Boundary boundary,
+                  uint32_t metadata_size_soft_limit,
+                  uint32_t metadata_size_hard_limit, Boundary boundary,
                   Priority priority, LogInfo log_info);
   // Start throwing away any received headers after parsing them.
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
@@ -103,7 +105,9 @@ class HPackParser {
   class String;
 
   grpc_error_handle ParseInput(Input input, bool is_last);
-  bool ParseInputInner(Input* input);
+  void ParseInputInner(Input* input);
+  GPR_ATTRIBUTE_NOINLINE
+  void HandleMetadataSoftSizeLimitExceeded(Input* input);
 
   // Target metadata buffer
   grpc_metadata_batch* metadata_buffer_ = nullptr;
@@ -121,7 +125,7 @@ class HPackParser {
   uint8_t dynamic_table_updates_allowed_;
   // Length of frame so far.
   uint32_t frame_length_;
-  uint32_t metadata_size_limit_;
+  RandomEarlyDetection metadata_early_detection_;
   // Information for logging
   LogInfo log_info_;
 

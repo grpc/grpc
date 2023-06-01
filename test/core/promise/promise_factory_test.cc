@@ -14,13 +14,10 @@
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 
-#include <functional>
-
 #include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
 namespace promise_detail {
@@ -43,13 +40,12 @@ TEST(AdaptorTest, FactoryFromPromise) {
               return Poll<int>(Poll<int>(42));
             }).Make()(),
             Poll<int>(42));
-  EXPECT_EQ(MakeOnceFactory<void>(Promise<int>([]() {
+  EXPECT_EQ(
+      MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
+      Poll<int>(42));
+  EXPECT_EQ(MakeRepeatedFactory<void>([]() {
               return Poll<int>(Poll<int>(42));
-            })).Make()(),
-            Poll<int>(42));
-  EXPECT_EQ(MakeRepeatedFactory<void>(Promise<int>([]() {
-              return Poll<int>(Poll<int>(42));
-            })).Make()(),
+            }).Make()(),
             Poll<int>(42));
 }
 

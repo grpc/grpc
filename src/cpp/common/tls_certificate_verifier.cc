@@ -65,6 +65,13 @@ grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
              : "";
 }
 
+grpc::string_ref TlsCustomVerificationCheckRequest::verified_root_cert_subject()
+    const {
+  return c_request_->peer_info.verified_root_cert_subject != nullptr
+             ? c_request_->peer_info.verified_root_cert_subject
+             : "";
+}
+
 std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::uri_names()
     const {
   std::vector<grpc::string_ref> uri_names;

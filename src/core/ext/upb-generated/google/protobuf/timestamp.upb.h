@@ -9,32 +9,36 @@
 #ifndef GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 #define GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct google_protobuf_Timestamp;
 typedef struct google_protobuf_Timestamp google_protobuf_Timestamp;
-extern const upb_MiniTable google_protobuf_Timestamp_msginit;
+extern const upb_MiniTable google_protobuf_Timestamp_msg_init;
 
 
 
 /* google.protobuf.Timestamp */
 
 UPB_INLINE google_protobuf_Timestamp* google_protobuf_Timestamp_new(upb_Arena* arena) {
-  return (google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
+  return (google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
 }
 UPB_INLINE google_protobuf_Timestamp* google_protobuf_Timestamp_parse(const char* buf, size_t size, upb_Arena* arena) {
   google_protobuf_Timestamp* ret = google_protobuf_Timestamp_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &google_protobuf_Timestamp_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &google_protobuf_Timestamp_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -44,7 +48,7 @@ UPB_INLINE google_protobuf_Timestamp* google_protobuf_Timestamp_parse_ex(const c
                            int options, upb_Arena* arena) {
   google_protobuf_Timestamp* ret = google_protobuf_Timestamp_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &google_protobuf_Timestamp_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &google_protobuf_Timestamp_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -52,41 +56,53 @@ UPB_INLINE google_protobuf_Timestamp* google_protobuf_Timestamp_parse_ex(const c
 }
 UPB_INLINE char* google_protobuf_Timestamp_serialize(const google_protobuf_Timestamp* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &google_protobuf_Timestamp_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &google_protobuf_Timestamp_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* google_protobuf_Timestamp_serialize_ex(const google_protobuf_Timestamp* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &google_protobuf_Timestamp_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &google_protobuf_Timestamp_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void google_protobuf_Timestamp_clear_seconds(const google_protobuf_Timestamp* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = 0;
+UPB_INLINE void google_protobuf_Timestamp_clear_seconds(google_protobuf_Timestamp* msg) {
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t google_protobuf_Timestamp_seconds(const google_protobuf_Timestamp* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void google_protobuf_Timestamp_clear_nanos(const google_protobuf_Timestamp* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
+UPB_INLINE void google_protobuf_Timestamp_clear_nanos(google_protobuf_Timestamp* msg) {
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t google_protobuf_Timestamp_nanos(const google_protobuf_Timestamp* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void google_protobuf_Timestamp_set_seconds(google_protobuf_Timestamp *msg, int64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void google_protobuf_Timestamp_set_nanos(google_protobuf_Timestamp *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+  const upb_MiniTableField field = {2, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
-extern const upb_MiniTable_File google_protobuf_timestamp_proto_upb_file_layout;
+extern const upb_MiniTableFile google_protobuf_timestamp_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_ */

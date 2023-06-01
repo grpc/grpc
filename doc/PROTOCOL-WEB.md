@@ -48,7 +48,8 @@ Content-Type
 HTTP wire protocols
 
 1. support any HTTP/*, with no dependency on HTTP/2 specific framing
-2. use lower-case header/trailer names
+2. header names may be upper- or mixed-case over HTTP/1.1, but trailers encoded in
+   the last length-prefixed message must always use lower-case names.
 3. use EOF (end of body) to close the stream
 
 ---

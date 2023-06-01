@@ -694,6 +694,7 @@ static grpc_endpoint* get_endpoint(grpc_transport*) {
 
 // See grpc_transport_vtable declaration for meaning of each field
 static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
+                                             false,
                                              "binder",
                                              init_stream,
                                              nullptr,

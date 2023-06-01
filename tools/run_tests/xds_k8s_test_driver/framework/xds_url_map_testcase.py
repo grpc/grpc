@@ -34,7 +34,9 @@ from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
 from framework.helpers import retryers
 from framework.helpers import skips
+from framework.infrastructure import k8s
 from framework.test_app import client_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
 
 # Load existing flags
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -56,7 +58,9 @@ XdsTestClient = client_app.XdsTestClient
 GcpResourceManager = xds_url_map_test_resources.GcpResourceManager
 HostRule = xds_url_map_test_resources.HostRule
 PathMatcher = xds_url_map_test_resources.PathMatcher
+_KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 JsonType = Any
+_timedelta = datetime.timedelta
 
 # ProtoBuf translatable RpcType enums
 RpcTypeUnaryCall = 'UNARY_CALL'
@@ -246,6 +250,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     - rpc_distribution_validate: Validates if the routing behavior is correct
     """
 
+    test_client_runner: Optional[_KubernetesClientRunner] = None
+
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         """Allow the test case to decide whether it supports the given config.
@@ -337,6 +343,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         # support current test case.
         skips.evaluate_test_config(cls.is_supported)
 
+        # Configure cleanup to run after all tests regardless of
+        # whether setUpClass failed.
+        cls.addClassCleanup(cls.cleanupAfterTests)
+
         if not cls.started_test_cases:
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
@@ -357,11 +367,48 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             print_response=True)
 
     @classmethod
-    def tearDownClass(cls):
-        cls.test_client_runner.cleanup(force=True, force_namespace=True)
+    def cleanupAfterTests(cls):
+        logging.info('----- TestCase %s teardown -----', cls.__name__)
+        client_restarts: int = 0
+        if cls.test_client_runner:
+            try:
+                logging.debug('Getting pods restart times')
+                client_restarts = cls.test_client_runner.get_pod_restarts(
+                    cls.test_client_runner.deployment)
+            except (retryers.RetryError, k8s.NotFound) as e:
+                logging.exception(e)
+
         cls.finished_test_cases.add(cls.__name__)
-        if cls.finished_test_cases == cls.test_case_names:
-            # Tear down the GCP resource after all tests finished
+        # Whether to clean up shared pre-provisioned infrastructure too.
+        # We only do it after all tests are finished.
+        cleanup_all = cls.finished_test_cases == cls.test_case_names
+
+        # Graceful cleanup: try three times, and don't fail the test on
+        # a cleanup failure.
+        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
+                                            attempts=3,
+                                            log_level=logging.INFO)
+        try:
+            retryer(cls._cleanup, cleanup_all)
+        except retryers.RetryError:
+            logging.exception('Got error during teardown')
+        finally:
+            if hasattr(cls, 'test_client_runner') and cls.test_client_runner:
+                logging.info('----- Test client logs -----')
+                cls.test_client_runner.logs_explorer_run_history_links()
+
+            # Fail if any of the pods restarted.
+            error_msg = (
+                'Client pods unexpectedly restarted'
+                f' {client_restarts} times during test.'
+                ' In most cases, this is caused by the test client app crash.')
+            assert client_restarts == 0, error_msg
+
+    @classmethod
+    def _cleanup(cls, cleanup_all: bool = False):
+        if cls.test_client_runner:
+            cls.test_client_runner.cleanup(force=True, force_namespace=True)
+        if cleanup_all:
             GcpResourceManager().cleanup()
 
     def _fetch_and_check_xds_config(self):

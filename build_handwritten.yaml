@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 30.1.0
+  core_version: 33.0.0
   csharp_major_version: 2
-  g_stands_for: gracious
-  protobuf_version: 3.21.12
-  version: 1.54.0-dev
+  g_stands_for: grounded
+  protobuf_version: 3.23.1
+  version: 1.57.0-dev
 configs:
   asan:
     CC: clang
@@ -150,7 +150,7 @@ defaults:
     COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
       -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
-      -Ithird_party/xxhash
+      -Ithird_party/utf8_range -Ithird_party/xxhash
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden

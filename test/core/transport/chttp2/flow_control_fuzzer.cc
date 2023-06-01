@@ -37,6 +37,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,6 +45,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -404,11 +406,16 @@ void FlowControlFuzzer::AssertNoneStuck() const {
       fprintf(stderr,
               "FAILED: stream %d has stream_window=%" PRId64
               ", transport_window=%" PRId64 ", delta=%" PRId64
-              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64 "\n",
+              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
+              ", transport announced_stream_total_over_incoming_window=%" PRId64
+              ", transport announced_window=%" PRId64
+              " transport target_window=%" PRId64 "\n",
               id_stream.first, stream_window, reconciled_transport_window,
               reconciled_stream_deltas[id_stream.first],
               reconciled_initial_window,
-              (id_stream.second.fc.min_progress_size()));
+              (id_stream.second.fc.min_progress_size()),
+              tfc_->announced_stream_total_over_incoming_window(),
+              tfc_->announced_window(), tfc_->target_window());
       fprintf(stderr,
               "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
               remote_initial_window_size_,
@@ -437,6 +444,8 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::chttp2::InitGlobals();
   grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {

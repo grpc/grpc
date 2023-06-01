@@ -28,7 +28,7 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -57,8 +57,8 @@ void LogErrorMessage(int messageid, absl::string_view context) {
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
@@ -135,12 +135,12 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   wrapped_client_socket->Shutdown();
   wrapped_server_socket->Shutdown();
   iocp.Shutdown();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
@@ -202,14 +202,14 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   delete on_read;
   wrapped_client_socket->Shutdown();
   iocp.Shutdown();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   grpc_core::Notification kicked;
-  executor.Run([&iocp, &kicked] {
+  thread_pool->Run([&iocp, &kicked] {
     bool cb_invoked = false;
     Poller::WorkResult result = iocp.Work(
         std::chrono::seconds(30), [&cb_invoked]() { cb_invoked = true; });
@@ -217,22 +217,22 @@ TEST_F(IOCPTest, KickWorks) {
     ASSERT_FALSE(cb_invoked);
     kicked.Notify();
   });
-  executor.Run([&iocp] {
+  thread_pool->Run([&iocp] {
     // give the worker thread a chance to start
     absl::SleepFor(absl::Milliseconds(42));
     iocp.Kick();
   });
   // wait for the callbacks to run
   kicked.WaitForNotification();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   // kick twice
   iocp.Kick();
   iocp.Kick();
@@ -251,17 +251,17 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
                      [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
   ASSERT_FALSE(cb_invoked);
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   closesocket(sockpair[0]);
   ASSERT_DEATH({ auto wrapped_client_socket = iocp.Watch(sockpair[0]); }, "");
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(IOCPTest, StressTestThousandsOfSockets) {
@@ -276,8 +276,8 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   threads.reserve(thread_count);
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([sockets_per_thread, &read_count, &write_count] {
-      ThreadPool executor;
-      IOCP iocp(&executor);
+      auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+      IOCP iocp(thread_pool.get());
       // Start a looping worker thread with a moderate timeout
       std::thread iocp_worker([&iocp] {
         Poller::WorkResult result;
@@ -343,7 +343,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
         }
       }
       iocp_worker.join();
-      executor.Quiesce();
+      thread_pool->Quiesce();
     });
   }
   for (auto& t : threads) {

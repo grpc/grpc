@@ -19,6 +19,7 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -26,6 +27,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_join.h"
@@ -273,6 +275,66 @@ TEST_F(PipeTest, CanCloseSend) {
       MakeScopedArena(1024, &memory_allocator_));
 }
 
+TEST_F(PipeTest, CanCloseWithErrorSend) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        return Seq(
+            // Concurrently:
+            // - wait for a received value (will stall forever since we push
+            //   nothing into the queue)
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.Next(),
+                 [pipe]() mutable {
+                   pipe->sender.CloseWithError();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_TRUE(std::get<0>(result).cancelled());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
+TEST_F(PipeTest, CanCloseWithErrorRecv) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        return Seq(
+            // Concurrently:
+            // - wait for a received value (will stall forever since we push
+            //   nothing into the queue)
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.Next(),
+                 [pipe]() mutable {
+                   pipe->receiver.CloseWithError();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_TRUE(std::get<0>(result).cancelled());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
 TEST_F(PipeTest, CanCloseSendWithInterceptor) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -379,6 +441,58 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       MakeScopedArena(1024, &memory_allocator_));
   ASSERT_TRUE(*done);
+}
+
+TEST_F(PipeTest, AwaitClosedWorks) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        pipe->sender.InterceptAndMap([](int value) { return value + 1; });
+        return Seq(
+            // Concurrently:
+            // - wait for closed on both ends
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.AwaitClosed(), pipe->sender.AwaitClosed(),
+                 [pipe]() mutable {
+                   pipe->sender.Close();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<bool, bool, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result));
+              EXPECT_FALSE(std::get<1>(result));
+              EXPECT_EQ(std::get<2>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
+class FakeActivity final : public Activity {
+ public:
+  void Orphan() override {}
+  void ForceImmediateRepoll(WakeupMask) override {}
+  Waker MakeOwningWaker() override { Crash("Not implemented"); }
+  Waker MakeNonOwningWaker() override { Crash("Not implemented"); }
+  void Run(absl::FunctionRef<void()> f) {
+    ScopedActivity activity(this);
+    f();
+  }
+};
+
+TEST_F(PipeTest, PollAckWaitsForReadyClosed) {
+  FakeActivity().Run([]() {
+    pipe_detail::Center<int> c;
+    int i = 1;
+    EXPECT_EQ(c.Push(&i), Poll<bool>(true));
+    c.MarkClosed();
+    EXPECT_EQ(c.PollAck(), Poll<bool>(Pending{}));
+  });
 }
 
 }  // namespace grpc_core

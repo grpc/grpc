@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -68,6 +69,8 @@ ABSL_FLAG(
     //"large_unary : single request and (large) response;\n"
     //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
     //"oauth2_auth_token: raw oauth2 access token auth;\n"
+    //"orca_per_rpc: custom LB policy receives per-query metric reports;\n"
+    //"orca_oob: receives out-of-band metric reports from the backend;\n"
     //"per_rpc_creds: raw oauth2 access token on a single rpc;\n"
     //"ping_pong : full-duplex streaming;\n"
     //"response streaming;\n"
@@ -124,6 +127,9 @@ ABSL_FLAG(
     bool, log_metadata_and_status, false,
     "If set to 'true', will print received initial and trailing metadata, "
     "grpc-status and error message to the console, in a stable format.");
+ABSL_FLAG(std::string, service_config_json, "",
+          "Disables service config lookups and sets the provided string as the "
+          "default service config");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -135,16 +141,18 @@ namespace {
 // alphanumeric characters and dashes in keys, and any character but semicolons
 // in values. Convert keys to lowercase. On failure, log an error and return
 // false.
-bool ParseAdditionalMetadataFlag(
-    const std::string& flag,
-    std::multimap<std::string, std::string>* additional_metadata) {
+absl::StatusOr<std::multimap<std::string, std::string>>
+ParseAdditionalMetadataFlag(const std::string& flag) {
+  std::multimap<std::string, std::string> additional_metadata;
+  if (flag.empty()) {
+    return additional_metadata;
+  }
   size_t start_pos = 0;
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
     if (colon_pos == std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: extra characters at end of flag");
-      return false;
+      return absl::InvalidArgumentError(
+          "Couldn't parse metadata flag: extra characters at end of flag");
     }
     size_t semicolon_pos = flag.find(';', colon_pos);
 
@@ -157,11 +165,10 @@ bool ParseAdditionalMetadataFlag(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: key contains characters other "
-              "than alphanumeric and hyphens: %s",
-              key.c_str());
-      return false;
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Couldn't parse metadata flag: key contains characters other "
+          "than alphanumeric and hyphens: ",
+          key));
     }
 
     // Convert to lowercase.
@@ -173,7 +180,7 @@ bool ParseAdditionalMetadataFlag(
 
     gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
             key.c_str(), value.c_str());
-    additional_metadata->insert({key, value});
+    additional_metadata.insert({key, value});
 
     if (semicolon_pos == std::string::npos) {
       break;
@@ -182,7 +189,7 @@ bool ParseAdditionalMetadataFlag(
     }
   }
 
-  return true;
+  return additional_metadata;
 }
 
 }  // namespace
@@ -194,40 +201,36 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_test_case).c_str());
   int ret = 0;
 
-  grpc::testing::ChannelCreationFunc channel_creation_func;
   std::string test_case = absl::GetFlag(FLAGS_test_case);
-  if (absl::GetFlag(FLAGS_additional_metadata).empty()) {
-    channel_creation_func = [test_case]() {
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          factories;
-      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
-        factories.emplace_back(
-            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
-      }
-      return CreateChannelForTestCase(test_case, std::move(factories));
-    };
-  } else {
-    std::multimap<std::string, std::string> additional_metadata;
-    if (!ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata),
-                                     &additional_metadata)) {
-      return 1;
-    }
-
-    channel_creation_func = [test_case, additional_metadata]() {
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          factories;
-      factories.emplace_back(
-          new grpc::testing::AdditionalMetadataInterceptorFactory(
-              additional_metadata));
-      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
-        factories.emplace_back(
-            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
-      }
-      return CreateChannelForTestCase(test_case, std::move(factories));
-    };
+  auto additional_metadata =
+      ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata));
+  if (!additional_metadata.ok()) {
+    gpr_log(GPR_ERROR, "%s",
+            std::string(additional_metadata.status().message()).c_str());
+    return 1;
   }
+  grpc::testing::ChannelCreationFunc channel_creation_func =
+      [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
+        std::vector<std::unique_ptr<
+            grpc::experimental::ClientInterceptorFactoryInterface>>
+            factories;
+        if (!additional_metadata->empty()) {
+          factories.emplace_back(
+              new grpc::testing::AdditionalMetadataInterceptorFactory(
+                  *additional_metadata));
+        }
+        if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
+          factories.emplace_back(
+              new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
+        }
+        std::string service_config_json =
+            absl::GetFlag(FLAGS_service_config_json);
+        if (!service_config_json.empty()) {
+          arguments.SetServiceConfigJSON(service_config_json);
+        }
+        return CreateChannelForTestCase(test_case, std::move(factories),
+                                        arguments);
+      };
 
   grpc::testing::InteropClient client(
       channel_creation_func, true,
@@ -267,6 +270,10 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
   actions["pick_first_unary"] =
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
+  actions["orca_per_rpc"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
+  actions["orca_oob"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
   if (absl::GetFlag(FLAGS_use_tls)) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,

@@ -80,6 +80,11 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
 #else
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
 #endif
+    if (clock_type == GPR_CLOCK_MONOTONIC) {
+      // Add 5 seconds arbitrarily: avoids weird conditions in gprpp/time.cc
+      // when there's a small number of seconds returned.
+      now.tv_sec += 5;
+    }
     return gpr_from_timespec(now, clock_type);
   }
 }

@@ -34,13 +34,16 @@
 using grpc_core::BackendMetricData;
 
 namespace {
-// All utilization values must be in [0, 1].
+// CPU utilization values must be in [0, infy).
+bool IsCpuUtilizationValid(double cpu) { return cpu >= 0.0; }
+
+// Other utilization values must be in [0, 1].
 bool IsUtilizationValid(double utilization) {
   return utilization >= 0.0 && utilization <= 1.0;
 }
 
-// QPS must be in [0, infy).
-bool IsQpsValid(double qps) { return qps >= 0.0; }
+// Rate values (qps and eps) must be in [0, infy).
+bool IsRateValid(double rate) { return rate >= 0.0; }
 
 grpc_core::TraceFlag grpc_backend_metric_trace(false, "backend_metric");
 }  // namespace
@@ -65,7 +68,7 @@ void ServerMetricRecorder::UpdateBackendMetricDataState(
 }
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsCpuUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization rejected: %f", this, value);
     }
@@ -93,7 +96,7 @@ void ServerMetricRecorder::SetMemoryUtilization(double value) {
 }
 
 void ServerMetricRecorder::SetQps(double value) {
-  if (!IsQpsValid(value)) {
+  if (!IsRateValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] QPS rejected: %f", this, value);
     }
@@ -103,6 +106,20 @@ void ServerMetricRecorder::SetQps(double value) {
       [value](BackendMetricData* data) { data->qps = value; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] QPS set: %f", this, value);
+  }
+}
+
+void ServerMetricRecorder::SetEps(double value) {
+  if (!IsRateValid(value)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+      gpr_log(GPR_INFO, "[%p] EPS rejected: %f", this, value);
+    }
+    return;
+  }
+  UpdateBackendMetricDataState(
+      [value](BackendMetricData* data) { data->eps = value; });
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] EPS set: %f", this, value);
   }
 }
 
@@ -162,6 +179,13 @@ void ServerMetricRecorder::ClearQps() {
   }
 }
 
+void ServerMetricRecorder::ClearEps() {
+  UpdateBackendMetricDataState([](BackendMetricData* data) { data->eps = -1; });
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] EPS utilization cleared.", this);
+  }
+}
+
 void ServerMetricRecorder::ClearNamedUtilization(string_ref name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Named utilization cleared. name: %s", this,
@@ -188,9 +212,9 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
     const auto& data = result->data;
     gpr_log(GPR_INFO,
             "[%p] GetMetrics() returned: seq:%" PRIu64
-            " cpu:%f mem:%f qps:%f utilization size: %" PRIuPTR,
+            " cpu:%f mem:%f qps:%f eps:%f utilization size: %" PRIuPTR,
             this, result->sequence_number, data.cpu_utilization,
-            data.mem_utilization, data.qps, data.utilization.size());
+            data.mem_utilization, data.qps, data.eps, data.utilization.size());
   }
   return result;
 }
@@ -199,7 +223,7 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
 
 experimental::CallMetricRecorder&
 BackendMetricState::RecordCpuUtilizationMetric(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsCpuUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this, value);
     }
@@ -229,7 +253,7 @@ BackendMetricState::RecordMemoryUtilizationMetric(double value) {
 
 experimental::CallMetricRecorder& BackendMetricState::RecordQpsMetric(
     double value) {
-  if (!IsQpsValid(value)) {
+  if (!IsRateValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] QPS value rejected: %f", this, value);
     }
@@ -238,6 +262,21 @@ experimental::CallMetricRecorder& BackendMetricState::RecordQpsMetric(
   qps_.store(value, std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] QPS recorded: %f", this, value);
+  }
+  return *this;
+}
+
+experimental::CallMetricRecorder& BackendMetricState::RecordEpsMetric(
+    double value) {
+  if (!IsRateValid(value)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+      gpr_log(GPR_INFO, "[%p] EPS value rejected: %f", this, value);
+    }
+    return *this;
+  }
+  eps_.store(value, std::memory_order_relaxed);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] EPS recorded: %f", this, value);
   }
   return *this;
 }
@@ -273,6 +312,18 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
   return *this;
 }
 
+experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetric(
+    string_ref name, double value) {
+  internal::MutexLock lock(&mu_);
+  absl::string_view name_sv(name.data(), name.length());
+  named_metrics_[name_sv] = value;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] Named metric recorded: %s %f", this,
+            std::string(name_sv).c_str(), value);
+  }
+  return *this;
+}
+
 BackendMetricData BackendMetricState::GetBackendMetricData() {
   // Merge metrics from the ServerMetricRecorder first since metrics recorded
   // to CallMetricRecorder takes a higher precedence.
@@ -282,7 +333,7 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
   }
   // Only overwrite if the value is set i.e. in the valid range.
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
-  if (IsUtilizationValid(cpu)) {
+  if (IsCpuUtilizationValid(cpu)) {
     data.cpu_utilization = cpu;
   }
   const double mem = mem_utilization_.load(std::memory_order_relaxed);
@@ -290,20 +341,33 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
     data.mem_utilization = mem;
   }
   const double qps = qps_.load(std::memory_order_relaxed);
-  if (IsQpsValid(qps)) {
+  if (IsRateValid(qps)) {
     data.qps = qps;
+  }
+  const double eps = eps_.load(std::memory_order_relaxed);
+  if (IsRateValid(eps)) {
+    data.eps = eps;
   }
   {
     internal::MutexLock lock(&mu_);
-    data.utilization = std::move(utilization_);
-    data.request_cost = std::move(request_cost_);
+    for (const auto& u : utilization_) {
+      data.utilization[u.first] = u.second;
+    }
+    for (const auto& r : request_cost_) {
+      data.request_cost[r.first] = r.second;
+    }
+    for (const auto& r : named_metrics_) {
+      data.named_metrics[r.first] = r.second;
+    }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO,
-            "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f "
-            "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR,
+            "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f eps:%f "
+            "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR
+            "named_metrics size:%" PRIuPTR,
             this, data.cpu_utilization, data.mem_utilization, data.qps,
-            data.utilization.size(), data.request_cost.size());
+            data.eps, data.utilization.size(), data.request_cost.size(),
+            data.named_metrics.size());
   }
   return data;
 }

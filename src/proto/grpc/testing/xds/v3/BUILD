@@ -237,6 +237,7 @@ grpc_proto_library(
         "percent_proto",
         "range_proto",
         "regex_proto",
+        "string_proto",
     ],
 )
 
@@ -382,6 +383,14 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "rbac_proto",
+    ],
+)
+
+# Contains stdout audit logger.
+grpc_proto_library(
+    name = "audit_logger_stream_proto",
+    srcs = [
+        "audit_logger_stream.proto",
     ],
 )
 

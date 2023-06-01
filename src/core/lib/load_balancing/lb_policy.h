@@ -366,6 +366,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// whether the LB policy accepted the update; if non-OK, informs
   /// polling-based resolvers that they should go into backoff delay and
   /// eventually reattempt the resolution.
+  ///
+  /// The first time that UpdateLocked() is called, the LB policy will
+  /// generally not be able to determine the appropriate connectivity
+  /// state by the time UpdateLocked() returns (e.g., it will need to
+  /// wait for connectivity state notifications from each subchannel,
+  /// which will be delivered asynchronously).  In this case, the LB
+  /// policy should not call the helper's UpdateState() method until it
+  /// does have a clear picture of the connectivity state (e.g., it
+  /// should wait for all subchannels to report connectivity state
+  /// before calling the helper's UpdateState() method), although it is
+  /// expected to do so within some short period of time.  The parent of
+  /// the LB policy will assume that the policy's initial state is
+  /// CONNECTING and that picks should be queued.
   virtual absl::Status UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.

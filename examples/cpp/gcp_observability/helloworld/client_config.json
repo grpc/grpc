@@ -1,0 +1,18 @@
+{
+  "cloud_monitoring": {},
+  "cloud_trace": {
+    "sampling_rate": 1.0
+  },
+  "cloud_logging": {
+    "client_rpc_events": [{
+      "methods": ["*"]
+    }],
+    "server_rpc_events": [{
+      "methods": ["*"]
+    }]
+  },
+  "labels": {
+    "environment" : "example-client"
+  }
+}
+
