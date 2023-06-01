@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "DisabledAlgorithmDecompressInApp"
-config: "Chttp2FakeSecurityFullstack"

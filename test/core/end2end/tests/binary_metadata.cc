@@ -117,6 +117,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 
 CORE_END2END_TEST(CoreEnd2endTest,
                   BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   BinaryMetadata(*this, false, false);
 }
 

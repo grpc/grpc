@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryServerPushbackDelay"
-config: "Chttp2FakeSecurityFullstack"

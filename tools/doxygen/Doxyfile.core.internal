@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 32.0.0
+PROJECT_NUMBER         = 33.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1905,6 +1905,8 @@ src/core/lib/event_engine/thread_pool/thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
@@ -1993,6 +1995,7 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
@@ -2266,6 +2269,8 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/authorization/stdout_logger.cc \
+src/core/lib/security/authorization/stdout_logger.h \
 src/core/lib/security/certificate_provider/certificate_provider_factory.h \
 src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
 src/core/lib/security/certificate_provider/certificate_provider_registry.h \

@@ -15,14 +15,6 @@
 # Format of each entry:
 # name:        name of the experiment
 # description: description of the experiment
-# default:     one of:
-#              - broken  - the experiment defaults to off and is not tested on
-#              - false   - the experiment defaults to off
-#              - debug   - the experiment defaults to on in debug,
-#                          off in release
-#              - release - the experiment defaults to on in release,
-#                          off in debug
-#              - true    - the experiment defaults to on
 # expiry:      when is the next time this experiment *must* be updated
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
@@ -39,19 +31,19 @@
 #   promise_test:        tests around the promise architecture
 #   resource_quota_test: tests known to exercse resource quota
 
+# This file only defines the experiments. Refer to rollouts.yaml for the rollout
+# state of each experiment.
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  default: false
   expiry: 2023/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  default: false
   expiry: 2023/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
@@ -60,51 +52,38 @@
     If set, the max sizes of frames sent to lower layers is controlled based
     on the peer's memory pressure which is reflected in its max http2 frame
     size.
-  default: false
   expiry: 2023/06/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
-- name: flow_control_fixes
-  description: Various fixes for flow control, max frame size setting.
-  default: true
-  expiry: 2023/06/01
-  owner: ctiller@google.com
-  test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/08/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  default: false
-  expiry: 2023/06/13
+  expiry: 2023/10/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
-  default: true
-  expiry: 2023/06/01
+  expiry: never-ever
   owner: ctiller@google.com
   test_tags: []
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  default: false
   expiry: 2023/11/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
@@ -112,55 +91,46 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test"]
-  disabled_test_tags: ["cpp_end2end_test", "xds_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
 - name: transport_supplies_client_latency
   description: If set, use the transport represented value for client latency in opencensus
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/09/01
   owner: ctiller@google.com
   test_tags: [census_test]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  default: false
-  expiry: 2023/06/13
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
-  test_tags: ["event_engine_listener_test"]
+  test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  default: false
   expiry: 2023/07/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  default: false
   expiry: 2023/07/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/10/01
   owner: yijiem@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
-  default: false
-  expiry: 2023/06/01
+  expiry: 2023/08/01
   owner: hork@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
 - name: client_privacy
   description:
     If set, client privacy
-  default: false
   expiry: 2023/11/01
   owner: alishananda@google.com
   test_tags: []
@@ -168,7 +138,6 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  default: false
   expiry: 2023/11/01
   owner: alishananda@google.com
   test_tags: []
@@ -176,7 +145,6 @@
 - name: server_privacy
   description:
     If set, server privacy
-  default: false
   expiry: 2023/11/01
   owner: alishananda@google.com
   test_tags: []

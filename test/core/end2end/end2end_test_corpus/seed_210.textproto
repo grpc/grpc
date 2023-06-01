@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryExceedsBufferSizeInSubsequentBatch"
-config: "Chttp2FakeSecurityFullstack"

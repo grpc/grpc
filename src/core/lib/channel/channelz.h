@@ -158,7 +158,7 @@ class PerCpuCallCountingHelper {
     std::atomic<int64_t> calls_failed{0};
     std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
   };
-  PerCpu<PerCpuData> per_cpu_data_;
+  PerCpu<PerCpuData> per_cpu_data_{PerCpuOptions().SetCpusPerShard(4)};
 };
 
 // Handles channelz bookkeeping for channels

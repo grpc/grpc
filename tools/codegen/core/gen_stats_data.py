@@ -25,7 +25,7 @@ import sys
 import yaml
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
-    attrs = yaml.load(f.read(), Loader=yaml.Loader)
+    attrs = yaml.safe_load(f.read(), Loader=yaml.Loader)
 
 REQUIRED_FIELDS = ['name', 'doc']
 
@@ -369,7 +369,9 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
               (ctr.max, ctr.buckets, ctr.name),
               file=H)
     print("  };", file=H)
-    print("  PerCpu<Data> data_;", file=H)
+    print(
+        "  PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};",
+        file=H)
     print("};", file=H)
     print("}", file=H)
 

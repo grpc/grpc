@@ -715,6 +715,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -882,6 +883,7 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/stdout_logger.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/context/security_context.h
@@ -1514,6 +1516,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -1526,6 +1529,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1641,6 +1645,7 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/stdout_logger.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1953,7 +1958,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
-  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h
@@ -2092,6 +2096,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -2330,7 +2335,6 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
-  - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
@@ -2361,7 +2365,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
-  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
@@ -2503,6 +2506,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -2515,6 +2519,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -3588,6 +3593,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -3692,6 +3698,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
@@ -3746,6 +3753,7 @@ libs:
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
+  - src/core/lib/security/authorization/stdout_logger.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/context/security_context.h
@@ -3877,6 +3885,7 @@ libs:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -3889,6 +3898,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -3999,6 +4009,7 @@ libs:
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
+  - src/core/lib/security/authorization/stdout_logger.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -5459,6 +5470,7 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -7104,6 +7116,7 @@ targets:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -7524,6 +7537,7 @@ targets:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
@@ -7628,6 +7642,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
@@ -7795,6 +7810,7 @@ targets:
   - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
@@ -7807,6 +7823,7 @@ targets:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -8031,17 +8048,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++_test_util
-- name: google_mesh_ca_certificate_provider_factory_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
-  src:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
-  - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
-  deps:
-  - grpc_test_util
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -8101,6 +8107,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -8116,6 +8123,7 @@ targets:
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
+  - test/core/util/audit_logging_utils.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -8170,6 +8178,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -8177,6 +8186,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/cpp/server/authorization_policy_provider.cc
+  - test/core/util/audit_logging_utils.cc
   - test/cpp/end2end/grpc_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -9331,6 +9341,16 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: load_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/config/load_config_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: lock_free_event_test
   gtest: true
   build: test
@@ -9520,7 +9540,7 @@ targets:
   - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
-  - test/core/security/matchers_test.cc
+  - test/core/matchers/matchers_test.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -12147,7 +12167,6 @@ targets:
   - test/core/event_engine/test_suite/tests/client_test.h
   - test/core/event_engine/test_suite/tests/server_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
-  - test/core/event_engine/thready_event_engine/thready_event_engine.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -12156,7 +12175,6 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
-  - test/core/event_engine/thready_event_engine/thready_event_engine.cc
   deps:
   - grpc_unsecure
   - grpc_test_util
@@ -12979,6 +12997,7 @@ targets:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -12988,6 +13007,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
@@ -13344,6 +13364,8 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -13385,6 +13407,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
+  - src/proto/grpc/testing/xds/v3/typed_struct.proto
+  - test/core/util/audit_logging_utils.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc

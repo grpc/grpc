@@ -224,6 +224,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     void ThreadBody();
     void SleepIfRunning();
     bool Step();
+    // After the pool is shut down, ensure all local and global callbacks are
+    // executed before quitting the thread.
+    void FinishDraining();
 
    private:
     // pool_ must be the first member so that it is alive when the thread count

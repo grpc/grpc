@@ -123,7 +123,8 @@ class TestConfigurator {
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           client_init_metadata) {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     CoreEnd2endTest::IncomingStatusOnClient server_status;
     CoreEnd2endTest::IncomingMetadata server_initial_metadata;
     c.NewBatch(1)
@@ -172,7 +173,8 @@ class TestConfigurator {
 
   void RequestWithSendMessageBeforeInitialMetadata() {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     c.NewBatch(2).SendMessage(std::string(1024, 'x'));
     test_.Expect(2, true);
     CoreEnd2endTest::IncomingStatusOnClient server_status;

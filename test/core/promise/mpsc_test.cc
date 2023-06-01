@@ -41,6 +41,7 @@ class MockActivity : public Activity, public Wakeable {
   Waker MakeOwningWaker() override { return Waker(this, 0); }
   Waker MakeNonOwningWaker() override { return Waker(this, 0); }
   void Wakeup(WakeupMask) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask) override { WakeupRequested(); }
   void Drop(WakeupMask) override {}
   std::string DebugTag() const override { return "MockActivity"; }
   std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }

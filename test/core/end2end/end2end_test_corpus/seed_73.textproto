@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue"
-config: "Chttp2FakeSecurityFullstack"

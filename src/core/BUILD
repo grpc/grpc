@@ -15,6 +15,7 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_generate_one_off_internal_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -120,7 +121,10 @@ grpc_cc_library(
         "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
         "//conditions:default": [],
     }),
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "no_destruct",
@@ -434,6 +438,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_trace",
         "ref_counted",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
@@ -1066,7 +1071,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -1921,7 +1925,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -2240,6 +2243,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "thready_event_engine",
+    srcs = ["lib/event_engine/thready_event_engine/thready_event_engine.cc"],
+    hdrs = ["lib/event_engine/thready_event_engine/thready_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_event_engine",
     srcs = [
         "lib/event_engine/default_event_engine.cc",
@@ -2254,6 +2273,7 @@ grpc_cc_library(
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
+        "thready_event_engine",
         "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",
@@ -2380,10 +2400,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "per_cpu",
+    srcs = [
+        "lib/gprpp/per_cpu.cc",
+    ],
     hdrs = [
         "lib/gprpp/per_cpu.h",
     ],
     deps = [
+        "useful",
         "//:exec_ctx",
         "//:gpr",
     ],
@@ -2748,10 +2772,12 @@ grpc_cc_library(
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_factory.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
-        "error",
         "json",
+        "json_args",
         "ref_counted",
+        "validation_errors",
         "//:alts_util",
         "//:gpr",
         "//:ref_counted_ptr",
@@ -2777,9 +2803,11 @@ grpc_cc_library(
     name = "grpc_audit_logging",
     srcs = [
         "lib/security/authorization/audit_logging.cc",
+        "lib/security/authorization/stdout_logger.cc",
     ],
     hdrs = [
         "lib/security/authorization/audit_logging.h",
+        "lib/security/authorization/stdout_logger.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2787,6 +2815,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
     ],
     deps = [
         "//:gpr",
@@ -3696,6 +3725,7 @@ grpc_cc_library(
         "channel_fwd",
         "closure",
         "error",
+        "grpc_audit_logging",
         "grpc_authorization_base",
         "grpc_matchers",
         "grpc_rbac_engine",
@@ -4064,6 +4094,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "google_rpc_status_upb",
+        "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",
@@ -4213,28 +4244,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_security_base",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_google_mesh_ca_certificate_provider_factory",
-    srcs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.cc",
-    ],
-    hdrs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.h",
-    ],
-    language = "c++",
-    deps = [
-        "certificate_provider_factory",
-        "error",
-        "grpc_tls_credentials",
-        "json",
-        "json_util",
-        "time",
-        "//:alts_util",
-        "//:gpr_platform",
         "//:ref_counted_ptr",
     ],
 )
@@ -5577,7 +5586,6 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
-        "context",
         "no_destruct",
         "slice",
         "slice_buffer",
@@ -5994,3 +6002,5 @@ WELL_KNOWN_PROTO_TARGETS = [
     name = "protobuf_" + target + "_upbdefs",
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
+
+grpc_generate_one_off_internal_targets()

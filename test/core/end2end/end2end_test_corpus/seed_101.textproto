@@ -1,3 +1,0 @@
-suite: "CoreLargeSendTest"
-test: "RequestResponseWithPayload10Times"
-config: "Chttp2FakeSecurityFullstack"

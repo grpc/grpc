@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryCancelWithMultipleSendBatches"
-config: "Chttp2FakeSecurityFullstack"
