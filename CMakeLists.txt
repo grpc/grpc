@@ -312,6 +312,24 @@ if(UNIX AND NOT HAIKU)
   endif()
 endif()
 
+include(CheckCXXSourceCompiles)
+
+if(UNIX OR APPLE)
+  # Some systems require the __STDC_FORMAT_MACROS macro to be defined
+  # to get the fixed-width integer type formatter macros.
+  check_cxx_source_compiles("#include <inttypes.h>
+  #include <cstdio>
+  int main()
+  {
+    int64_t i64{};
+    std::printf(\"%\" PRId64, i64);
+  }"
+  HAVE_STDC_FORMAT_MACROS)
+  if(NOT HAVE_STDC_FORMAT_MACROS)
+    add_definitions(-D__STDC_FORMAT_MACROS)
+  endif()
+endif()
+
 # configure ccache if requested
 include(cmake/ccache.cmake)
 
