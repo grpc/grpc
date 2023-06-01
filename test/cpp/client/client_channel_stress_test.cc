@@ -231,9 +231,8 @@ class ClientChannelStressTest {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(
-          address.addr, address.len,
-          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
-                                       addr.balancer_name));
+          address, grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                                addr.balancer_name));
     }
     return addresses;
   }

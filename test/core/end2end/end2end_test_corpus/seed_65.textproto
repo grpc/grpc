@@ -1,3 +1,0 @@
-suite: "CoreEnd2endTest"
-test: "ContentLengthIsFiltered"
-config: "Chttp2FakeSecurityFullstack"

@@ -1,6 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2SslCredReloadTls12"
-config_vars {
-  experiments: "transport_supplies_client_latency"
-}

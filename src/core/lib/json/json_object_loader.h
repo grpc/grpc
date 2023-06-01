@@ -253,14 +253,14 @@ class LoadMap : public LoaderInterface {
   virtual const LoaderInterface* ElementLoader() const = 0;
 };
 
-// Load an optional of some type.
-class LoadOptional : public LoaderInterface {
+// Load a wrapped value of some type.
+class LoadWrapped : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
 
  protected:
-  ~LoadOptional() = default;
+  ~LoadWrapped() = default;
 
  private:
   virtual void* Emplace(void* dst) const = 0;
@@ -392,7 +392,7 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 
 // Specializations of AutoLoader for absl::optional<>.
 template <typename T>
-class AutoLoader<absl::optional<T>> final : public LoadOptional {
+class AutoLoader<absl::optional<T>> final : public LoadWrapped {
  public:
   void* Emplace(void* dst) const final {
     return &static_cast<absl::optional<T>*>(dst)->emplace();
@@ -410,7 +410,7 @@ class AutoLoader<absl::optional<T>> final : public LoadOptional {
 
 // Specializations of AutoLoader for std::unique_ptr<>.
 template <typename T>
-class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
+class AutoLoader<std::unique_ptr<T>> final : public LoadWrapped {
  public:
   void* Emplace(void* dst) const final {
     auto& p = *static_cast<std::unique_ptr<T>*>(dst);
@@ -430,7 +430,7 @@ class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
 
 // Specializations of AutoLoader for RefCountedPtr<>.
 template <typename T>
-class AutoLoader<RefCountedPtr<T>> final : public LoadOptional {
+class AutoLoader<RefCountedPtr<T>> final : public LoadWrapped {
  public:
   void* Emplace(void* dst) const final {
     auto& p = *static_cast<RefCountedPtr<T>*>(dst);

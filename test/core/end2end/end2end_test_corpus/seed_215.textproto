@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryPerAttemptRecvTimeout"
-config: "Chttp2FakeSecurityFullstack"

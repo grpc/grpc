@@ -461,6 +461,7 @@ for dirname in [
         "test/core/resource_quota",
         "test/core/transport/chaotic_good",
         "fuzztest",
+        "fuzztest/core/channel",
 ]:
     parsing_path = dirname
     exec(
@@ -486,6 +487,7 @@ for dirname in [
             'grpc_upb_proto_library': lambda name, **kwargs: None,
             'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
             'grpc_generate_one_off_targets': lambda: None,
+            'grpc_generate_one_off_internal_targets': lambda: None,
             'grpc_package': lambda **kwargs: None,
             'filegroup': lambda name, **kwargs: None,
             'sh_library': lambda name, **kwargs: None,

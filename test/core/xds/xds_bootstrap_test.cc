@@ -23,11 +23,9 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -37,7 +35,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -45,8 +42,9 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
@@ -314,6 +312,19 @@ TEST(XdsBootstrapTest, MissingXdsServers) {
       << bootstrap.status();
 }
 
+TEST(XdsBootstrapTest, EmptyXdsServers) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "  ]"
+      "}";
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
+  EXPECT_EQ(
+      bootstrap.status().message(),
+      "errors validating JSON: [field:xds_servers error:must be non-empty]")
+      << bootstrap.status();
+}
+
 TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
   const char* json_str =
       "{"
@@ -566,11 +577,9 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    explicit Config(int value) : value_(value) {}
-
     int value() const { return value_; }
 
-    const char* name() const override { return "fake"; }
+    absl::string_view name() const override { return "fake"; }
 
     std::string ToString() const override {
       return absl::StrFormat(
@@ -580,28 +589,23 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
           value_);
     }
 
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader = JsonObjectLoader<Config>()
+                                      .OptionalField("value", &Config::value_)
+                                      .Finish();
+      return loader;
+    }
+
    private:
     int value_;
   };
 
-  const char* name() const override { return "fake"; }
+  absl::string_view name() const override { return "fake"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error_handle* error) override {
-    std::vector<grpc_error_handle> error_list;
-    EXPECT_EQ(config_json.type(), Json::Type::kObject);
-    auto it = config_json.object().find("value");
-    if (it == config_json.object().end()) {
-      return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
-    } else if (it->second.type() != Json::Type::kNumber) {
-      *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
-    } else {
-      int value = 0;
-      EXPECT_TRUE(absl::SimpleAtoi(it->second.string(), &value));
-      return MakeRefCounted<FakeCertificateProviderFactory::Config>(value);
-    }
-    return nullptr;
+  CreateCertificateProviderConfig(const Json& config_json, const JsonArgs& args,
+                                  ValidationErrors* errors) override {
+    return LoadFromJson<RefCountedPtr<Config>>(config_json, args, errors);
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
@@ -623,20 +627,16 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "    \"fake_plugin\": {"
       "      \"plugin_name\": \"fake\","
       "      \"config\": {"
-      "        \"value\": \"10\""
+      "        \"value\": []"
       "      }"
       "    }"
       "  }"
       "}";
   auto bootstrap = GrpcXdsBootstrap::Create(json_str);
-  EXPECT_THAT(
-      // Explicit conversion to std::string to work around
-      // https://github.com/google/googletest/issues/3949.
-      std::string(bootstrap.status().message()),
-      ::testing::MatchesRegex(
-          "errors validating JSON: \\["
-          "field:certificate_providers\\[\"fake_plugin\"\\].config "
-          "error:UNKNOWN:field:config field:value not of type number.*\\]"))
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"fake_plugin\"].config.value "
+            "error:is not a number]")
       << bootstrap.status();
 }
 
@@ -664,7 +664,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
-  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
                 fake_plugin.config)
                 ->value(),
@@ -692,7 +692,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
-  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
                 fake_plugin.config)
                 ->value(),

@@ -156,10 +156,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
  private:
   class FakeXdsTransport : public XdsTransport {
    public:
-    FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_failure,
+    FakeXdsTransport(RefCountedPtr<FakeXdsTransportFactory> factory,
+                     const XdsBootstrap::XdsServer& server,
+                     std::function<void(absl::Status)> on_connectivity_failure,
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
-        : auto_complete_messages_from_client_(
+        : factory_(std::move(factory)),
+          server_(server),
+          auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
           on_connectivity_failure_(
@@ -207,6 +211,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void ResetBackoff() override {}
 
+    RefCountedPtr<FakeXdsTransportFactory> factory_;
+    const XdsBootstrap::XdsServer& server_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
 

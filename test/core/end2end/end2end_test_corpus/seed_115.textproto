@@ -1,3 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "Encode1000Decode4194304"
-config: "Chttp2FakeSecurityFullstack"

@@ -334,6 +334,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
+  if (srv_records->empty()) {
+    result = OnResolvedLocked();
+    return;
+  }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -401,7 +405,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
-      constexpr char kServiceConfigAttributePrefix[] = "grpc_config=";
+      static constexpr absl::string_view kServiceConfigAttributePrefix =
+          "grpc_config=";
       auto result = std::find_if(service_config->begin(), service_config->end(),
                                  [&](absl::string_view s) {
                                    return absl::StartsWith(
@@ -409,7 +414,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                  });
       if (result != service_config->end()) {
         service_config_json_ =
-            result->substr(sizeof(kServiceConfigAttributePrefix));
+            result->substr(kServiceConfigAttributePrefix.size());
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
@@ -495,6 +500,11 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     absl::Status status = errors_.status(
         absl::StatusCode::kUnavailable,
         absl::StrCat("errors resolving ", resolver_->name_to_resolve()));
+    if (status.ok()) {
+      // If no errors were returned, but the results are empty, we still need to
+      // return an error. Validation errors may be empty.
+      status = absl::UnavailableError("No results from DNS queries");
+    }
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
     result.addresses = status;
     result.service_config = status;

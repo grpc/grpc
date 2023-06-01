@@ -193,7 +193,7 @@ TEST(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
       "  \"loadBalancingConfig\":[{\n"
       "    \"xds_override_host_experimental\":{\n"
       "      \"childPolicy\":{\n"
-      "        \"grpclb\":{},\n"
+      "        \"grpclb\":{}\n"
       "      }\n"
       "    }\n"
       "  }]\n"

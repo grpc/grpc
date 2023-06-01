@@ -28,10 +28,9 @@ template <typename T>
 void AssertRoundTrips(const T input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
-  EXPECT_GE(serialized.Length(), 64);
-  EXPECT_EQ(serialized.Length() % 64, 0);
-  uint8_t header_bytes[64];
-  serialized.MoveFirstNBytesIntoBuffer(64, header_bytes);
+  EXPECT_GE(serialized.Length(), 24);
+  uint8_t header_bytes[24];
+  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   EXPECT_TRUE(header.ok()) << header.status();
   EXPECT_EQ(header->type, expected_frame_type);

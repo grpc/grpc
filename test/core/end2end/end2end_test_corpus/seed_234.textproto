@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "UnrefBeforeRecv"
-config: "Chttp2FakeSecurityFullstack"
