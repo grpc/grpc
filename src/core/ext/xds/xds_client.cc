@@ -152,7 +152,8 @@ class XdsClient::ChannelState::AdsCallState
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    void ResourceWrapperParsingFailed(size_t idx) override;
+    void ResourceWrapperParsingFailed(size_t idx,
+                                      absl::string_view message) override;
 
     Result TakeResult() { return std::move(result_); }
 
@@ -878,9 +879,9 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
 }
 
 void XdsClient::ChannelState::AdsCallState::AdsResponseParser::
-    ResourceWrapperParsingFailed(size_t idx) {
-  result_.errors.emplace_back(absl::StrCat(
-      "resource index ", idx, ": Can't decode Resource proto wrapper"));
+    ResourceWrapperParsingFailed(size_t idx, absl::string_view message) {
+  result_.errors.emplace_back(
+      absl::StrCat("resource index ", idx, ": ", message));
 }
 
 //

@@ -244,7 +244,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   //
   //          ▲
   //          │
-  // 16mb ────┤---------x----
+  //  4mb ────┤---------x----
   //          │              -----
   //  BDP ────┤                   ----x---
   //          │                           ----
@@ -259,7 +259,8 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   //                                                                pressure
   const double kAnythingGoesPressure = 0.2;
   const double kAdjustedToBdpPressure = 0.5;
-  const double kAnythingGoesWindow = std::max(double{1 << 24}, bdp);
+  const double kOneMegabyte = 1024.0 * 1024.0;
+  const double kAnythingGoesWindow = std::max(4.0 * kOneMegabyte, bdp);
   if (memory_pressure < kAnythingGoesPressure) {
     return kAnythingGoesWindow;
   } else if (memory_pressure < kAdjustedToBdpPressure) {

@@ -111,8 +111,41 @@ buildConfigs() {
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l dotnet -l go -l java
+# Add languages
+declare -a configLangArgs8core=()
+declare -a configLangArgs32core=()
+declare -a runnerLangArgs=()
+
+# c++
+configLangArgs8core+=( -l c++ )
+configLangArgs32core+=( -l c++ )
+runnerLangArgs+=( -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+# dotnet
+configLangArgs8core+=( -l dotnet )
+configLangArgs32core+=( -l dotnet )
+runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
+
+# go
+configLangArgs8core+=( -l go )
+configLangArgs32core+=( -l go )
+runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
+
+# java
+configLangArgs8core+=( -l java )
+configLangArgs32core+=( -l java )
+runnerLangArgs+=( -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" )
+
+# python
+configLangArgs8core+=( -l python )  # 8-core only.
+runnerLangArgs+=( -l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+# ruby
+configLangArgs8core+=( -l ruby )  # 8-core only.
+runnerLangArgs+=( -l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}"
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}"
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -124,13 +157,7 @@ deleteImages() {
 trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
-time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" \
-    -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" \
-    -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" \
-    -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" \
-    -l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" \
-    -l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" \
+time ../test-infra/bin/prepare_prebuilt_workers "${runnerLangArgs[@]}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"

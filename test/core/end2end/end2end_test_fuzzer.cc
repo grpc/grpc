@@ -128,7 +128,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
   auto test = tests[test_id].factory();
-  test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
         static_cast<FuzzingEventEngine*>(ee.get())->TickUntilIdle();

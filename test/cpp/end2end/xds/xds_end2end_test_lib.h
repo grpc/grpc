@@ -45,6 +45,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -104,6 +105,13 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_rbac_audit_condition(
+      ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+          audit_condition) {
+    rbac_audit_condition_ = audit_condition;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
@@ -114,6 +122,10 @@ class XdsTestType {
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
+  }
+  ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+  rbac_audit_condition() const {
+    return rbac_audit_condition_;
   }
 
   std::string AsString() const {
@@ -135,6 +147,14 @@ class XdsTestType {
     } else if (rbac_action_ == ::envoy::config::rbac::v3::RBAC_Action_DENY) {
       retval += "RbacDeny";
     }
+    if (rbac_audit_condition_ !=
+        ::envoy::config::rbac::v3::
+            RBAC_AuditLoggingOptions_AuditCondition_NONE) {
+      retval += absl::StrCat("AuditCondition",
+                             ::envoy::config::rbac::v3::
+                                 RBAC_AuditLoggingOptions_AuditCondition_Name(
+                                     rbac_audit_condition_));
+    }
     return retval;
   }
 
@@ -152,6 +172,9 @@ class XdsTestType {
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
   ::envoy::config::rbac::v3::RBAC_Action rbac_action_ =
       ::envoy::config::rbac::v3::RBAC_Action_LOG;
+  ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+      rbac_audit_condition_ = ::envoy::config::rbac::v3::
+          RBAC_AuditLoggingOptions_AuditCondition_NONE;
 };
 
 // A base class for xDS end-to-end tests.

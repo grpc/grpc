@@ -57,29 +57,29 @@
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  expiry: 2023/06/01
+  expiry: 2023/08/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2023/06/01
+  expiry: 2023/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2023/06/13
+  expiry: 2023/10/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
-  expiry: 2023/06/01
+  expiry: never-ever
   owner: ctiller@google.com
   test_tags: []
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/06/01
+  expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
 - name: free_large_allocator
@@ -91,17 +91,17 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/06/01
+  expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
 - name: transport_supplies_client_latency
   description: If set, use the transport represented value for client latency in opencensus
-  expiry: 2023/06/01
+  expiry: 2023/09/01
   owner: ctiller@google.com
   test_tags: [census_test]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2023/06/13
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
@@ -117,14 +117,14 @@
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2023/06/01
+  expiry: 2023/10/01
   owner: yijiem@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
-  expiry: 2023/06/01
+  expiry: 2023/08/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false

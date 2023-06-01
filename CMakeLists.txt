@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.56.0-dev")
-set(gRPC_CORE_VERSION     "32.0.0")
-set(gRPC_CORE_SOVERSION   "32")
+set(gRPC_CORE_VERSION     "33.0.0")
+set(gRPC_CORE_SOVERSION   "33")
 set(gRPC_CPP_VERSION      "1.56.0-dev")
 set(gRPC_CPP_SOVERSION    "1.56")
 set(gRPC_CSHARP_VERSION   "2.56.0-dev")
@@ -24396,6 +24396,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h
+    test/core/util/audit_logging_utils.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
