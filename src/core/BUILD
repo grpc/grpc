@@ -15,6 +15,7 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_generate_one_off_internal_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -5987,3 +5988,5 @@ WELL_KNOWN_PROTO_TARGETS = [
     name = "protobuf_" + target + "_upbdefs",
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
+
+grpc_generate_one_off_internal_targets()
