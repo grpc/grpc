@@ -328,8 +328,10 @@ class ClientChannel {
   mutable Mutex lb_mu_;
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(lb_mu_);
-  absl::flat_hash_set<LoadBalancedCall*> lb_queued_calls_
-      ABSL_GUARDED_BY(lb_mu_);
+  absl::flat_hash_set<RefCountedPtr<LoadBalancedCall>,
+                      RefCountedPtrHash<LoadBalancedCall>,
+                      RefCountedPtrEq<LoadBalancedCall>>
+      lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_);
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -390,7 +392,7 @@ class ClientChannel::LoadBalancedCall
                    bool is_transparent_retry);
   ~LoadBalancedCall() override;
 
-  void Orphan() override;
+  void Orphan() override { Unref(); }
 
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()
@@ -436,6 +438,8 @@ class ClientChannel::LoadBalancedCall
                             grpc_metadata_batch* recv_trailing_metadata,
                             grpc_transport_stream_stats* transport_stream_stats,
                             absl::string_view peer_address);
+
+  void RecordLatency();
 
  private:
   class LbCallState;
@@ -609,7 +613,8 @@ class ClientChannel::PromiseBasedLoadBalancedCall
                                absl::AnyInvocable<void()> on_commit,
                                bool is_transparent_retry);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
 
  private:
   Arena* arena() const override;

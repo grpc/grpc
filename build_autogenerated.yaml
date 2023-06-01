@@ -6647,6 +6647,7 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/event_engine/endpoint_config_test.cc
   deps:
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9305,6 +9306,7 @@ targets:
   - src/core/lib/promise/trace.cc
   - test/core/promise/latch_test.cc
   deps:
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -12132,6 +12134,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - test/core/resource_quota/thread_quota_test.cc
   deps:
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: thread_stress_test

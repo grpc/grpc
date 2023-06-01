@@ -1253,9 +1253,11 @@ ClientChannel::CreateLoadBalancedCall(
 ArenaPromise<ServerMetadataHandle> ClientChannel::CreateLoadBalancedCallPromise(
     CallArgs call_args, absl::AnyInvocable<void()> on_commit,
     bool is_transparent_retry) {
-  auto* lb_call = GetContext<Arena>()->ManagedNew<PromiseBasedLoadBalancedCall>(
-      this, std::move(on_commit), is_transparent_retry);
-  return lb_call->MakeCallPromise(std::move(call_args));
+  OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call(
+      GetContext<Arena>()->New<PromiseBasedLoadBalancedCall>(
+          this, std::move(on_commit), is_transparent_retry));
+  auto* call_ptr = lb_call.get();
+  return call_ptr->MakeCallPromise(std::move(call_args), std::move(lb_call));
 }
 
 ChannelArgs ClientChannel::MakeSubchannelArgs(
@@ -1719,7 +1721,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
   MutexLock lock(&lb_mu_);
   picker_.swap(picker);
   // Reprocess queued picks.
-  for (LoadBalancedCall* call : lb_queued_calls_) {
+  for (auto& call : lb_queued_calls_) {
     call->RemoveCallFromLbQueuedCallsLocked();
     call->RetryPickLocked();
   }
@@ -2669,16 +2671,6 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   }
 }
 
-void ClientChannel::LoadBalancedCall::Orphan() {
-  // Compute latency and report it to the tracer.
-  if (call_attempt_tracer() != nullptr) {
-    gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
-    call_attempt_tracer()->RecordEnd(latency);
-  }
-  Unref();
-}
-
 void ClientChannel::LoadBalancedCall::RecordCallCompletion(
     absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
     grpc_transport_stream_stats* transport_stream_stats,
@@ -2697,6 +2689,15 @@ void ClientChannel::LoadBalancedCall::RecordCallCompletion(
         peer_address, status, &trailing_metadata, &backend_metric_accessor};
     lb_subchannel_call_tracker_->Finish(args);
     lb_subchannel_call_tracker_.reset();
+  }
+}
+
+void ClientChannel::LoadBalancedCall::RecordLatency() {
+  // Compute latency and report it to the tracer.
+  if (call_attempt_tracer() != nullptr) {
+    gpr_timespec latency =
+        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
+    call_attempt_tracer()->RecordEnd(latency);
   }
 }
 
@@ -2724,7 +2725,7 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   grpc_polling_entity_add_to_pollset_set(pollent(),
                                          chand_->interested_parties_);
   // Add to queue.
-  chand_->lb_queued_calls_.insert(this);
+  chand_->lb_queued_calls_.insert(Ref());
   OnAddToQueueLocked();
 }
 
@@ -2923,6 +2924,7 @@ void ClientChannel::FilterBasedLoadBalancedCall::Orphan() {
     RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
                          nullptr, "");
   }
+  RecordLatency();
   // Delegate to parent.
   LoadBalancedCall::Orphan();
 }
@@ -3263,7 +3265,7 @@ class ClientChannel::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
         // Remove pick from list of queued picks.
         lb_call->RemoveCallFromLbQueuedCallsLocked();
         // Remove from queued picks list.
-        chand->lb_queued_calls_.erase(lb_call);
+        chand->lb_queued_calls_.erase(self->lb_call_);
         // Fail pending batches on the call.
         lb_call->PendingBatchesFail(error,
                                     YieldCallCombinerIfPendingBatchesFound);
@@ -3365,7 +3367,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
 
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
-    CallArgs call_args) {
+    CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call) {
   pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
   // Record ops in tracer.
   if (call_attempt_tracer() != nullptr) {
@@ -3446,9 +3448,20 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                                         ->transport_stream_stats,
                                    peer_string_.as_string_view());
             }
+            RecordLatency();
             return metadata;
           }),
-      [this]() {
+      [lb_call = std::move(lb_call)]() {
+        // If the waker is pending, then we need to remove ourself from
+        // the list of queued LB calls.
+        if (!lb_call->waker_.is_unwakeable()) {
+          MutexLock lock(&lb_call->chand()->lb_mu_);
+          lb_call->Commit();
+          // Remove pick from list of queued picks.
+          lb_call->RemoveCallFromLbQueuedCallsLocked();
+          // Remove from queued picks list.
+          lb_call->chand()->lb_queued_calls_.erase(lb_call.get());
+        }
         // TODO(ctiller): We don't have access to the call's actual status
         // here, so we just assume CANCELLED.  We could change this to use
         // CallFinalization instead of OnCancel() so that we can get the
@@ -3457,17 +3470,17 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
         // need a better story for code that needs to run at the end of a
         // call in both cancellation and non-cancellation cases that needs
         // access to server trailing metadata and the call's real status.
-        if (call_attempt_tracer() != nullptr) {
-          call_attempt_tracer()->RecordCancel(
+        if (lb_call->call_attempt_tracer() != nullptr) {
+          lb_call->call_attempt_tracer()->RecordCancel(
               absl::CancelledError("call cancelled"));
         }
-        if (call_attempt_tracer() != nullptr ||
-            lb_subchannel_call_tracker() != nullptr) {
+        if (lb_call->call_attempt_tracer() != nullptr ||
+            lb_call->lb_subchannel_call_tracker() != nullptr) {
           // If we were cancelled without recording call completion, then
           // record call completion here, as best we can.  We assume status
           // CANCELLED in this case.
-          RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
-                               nullptr, "");
+          lb_call->RecordCallCompletion(absl::CancelledError("call cancelled"),
+                                        nullptr, nullptr, "");
         }
       });
 }

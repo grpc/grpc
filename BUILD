@@ -2493,6 +2493,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "ref_counted_ptr",
+    external_deps = ["absl/hash"],
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/ref_counted_ptr.h"],
     visibility = ["@grpc:ref_counted_ptr"],
