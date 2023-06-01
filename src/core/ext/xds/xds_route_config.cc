@@ -80,6 +80,7 @@
 
 namespace grpc_core {
 
+// TODO(apolcyn): remove this flag by the 1.58 release
 bool XdsRlsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   if (!value.has_value()) return true;
