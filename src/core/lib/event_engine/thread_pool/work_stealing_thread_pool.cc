@@ -23,6 +23,7 @@
 #include <inttypes.h>
 
 #include <atomic>
+#include <cmath>
 #include <memory>
 #include <utility>
 
@@ -176,8 +177,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdown();
-  GRPC_EVENT_ENGINE_TRACE("%f cycles spent quiescing the pool",
-                          gpr_get_cycle_counter() - start_time);
+  GRPC_EVENT_ENGINE_TRACE("%ld cycles spent quiescing the pool",
+                          std::lround(gpr_get_cycle_counter() - start_time));
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
