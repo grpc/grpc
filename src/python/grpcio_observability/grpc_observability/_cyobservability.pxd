@@ -12,40 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc.stdio cimport printf
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
 ctypedef   signed long long int64_t
 
 cdef extern from "<queue>" namespace "std" nogil:
-    cdef cppclass queue[T]:
-        queue()
-        bint empty()
-        T& front()
-        T& back()
-        void pop()
-        void push(T&)
-        size_t size()
+  cdef cppclass queue[T]:
+    bint empty()
+    T& front()
+    void pop()
 
 cdef extern from "<mutex>" namespace "std" nogil:
-    cdef cppclass mutex:
-        mutex()
-        void lock()
-        void unlock()
+  cdef cppclass mutex:
+    mutex()
 
-    cdef cppclass unique_lock[Mutex]:
-      unique_lock(Mutex&)
+  cdef cppclass unique_lock[Mutex]:
+    unique_lock(Mutex&)
 
 cdef extern from "<condition_variable>" namespace "std" nogil:
   cdef cppclass condition_variable:
-    condition_variable()
     void notify_all()
-    void wait(unique_lock[mutex]&)
 
 cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
-    cdef cppclass ClientCallTracer:
-        pass
+  cdef cppclass ClientCallTracer:
+    pass
 
 cdef extern from "python_census_context.h" namespace "grpc_observability":
   cdef void EnablePythonCensusStats(bint enable) nogil

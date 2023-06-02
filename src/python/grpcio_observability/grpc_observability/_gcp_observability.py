@@ -87,6 +87,18 @@ class GcpObservabilityPythonConfig:
 
 # pylint: disable=no-self-use
 class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
+    """GCP OpenCensus based plugin implementation.
+
+    If no exporter is passed, the default will be OpenCensus StackDriver
+    based exporter.
+
+    For more details, please refer to User Guide:
+      * https://cloud.google.com/stackdriver/docs/solutions/grpc
+
+    Attributes:
+      config: Configuration for GCP OpenCensus Observability.
+      exporter: Exporter used to export data.
+    """
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
 
