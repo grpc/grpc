@@ -24,7 +24,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -107,9 +106,7 @@ void SavedTraceFlags::Restore() {
 
 namespace {
 void ParseTracers(absl::string_view tracers) {
-  for (auto s : absl::StrSplit(tracers, ',')) {
-    s = absl::StripAsciiWhitespace(s);
-    if (s.empty()) continue;
+  for (auto s : absl::StrSplit(tracers, ',', absl::SkipWhitespace())) {
     if (s[0] == '-') {
       TraceFlagList::Set(s.substr(1), false);
     } else {
