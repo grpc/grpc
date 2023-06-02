@@ -32,6 +32,7 @@ import grpc
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
+from framework.helpers import grpc as helpers_grpc
 from framework.helpers import retryers
 from framework.helpers import skips
 from framework.infrastructure import k8s
@@ -453,8 +454,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     def test_rpc_distribution(self):
         self.rpc_distribution_validate(self.test_client)
 
-    @staticmethod
-    def configure_and_send(test_client: XdsTestClient,
+    @classmethod
+    def configure_and_send(cls,
+                           test_client: XdsTestClient,
                            *,
                            rpc_types: Iterable[str],
                            metadata: Optional[Iterable[Tuple[str, str,
@@ -466,12 +468,11 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                                             app_timeout=app_timeout)
         # Configure RPC might race with get stats RPC on slower machines.
         time.sleep(_CLIENT_CONFIGURE_WAIT_SEC)
-        json_lb_stats = json_format.MessageToDict(
-            test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
-        logging.info(
-            'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.hostname, json.dumps(json_lb_stats, indent=2))
-        return RpcDistributionStats(json_lb_stats)
+        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        logging.info('[%s] << Received LoadBalancerStatsResponse:\n%s',
+                     test_client.hostname,
+                     helpers_grpc.lb_stats_pretty(lb_stats))
+        return RpcDistributionStats(json_format.MessageToDict(lb_stats))
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:
         self.assertLen(
@@ -488,12 +489,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.hostname, before_stats)
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(before_stats))
         time.sleep(length)
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.hostname, after_stats)
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(after_stats))
 
         # Validate the diff
         for expected_result in expected:
