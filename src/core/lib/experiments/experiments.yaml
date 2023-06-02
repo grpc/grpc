@@ -23,7 +23,7 @@
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
 # platforms:   A list of platforms on which the CI will consider running tests.
-#              Supported platforms: posix, windows, mac
+#              Supported platforms: linux, windows, mac
 #              An empty list or missing entry implies all platforms.
 #
 # Well known test tags:
@@ -73,7 +73,7 @@
   expiry: 2023/10/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
-  platforms: ["posix"]
+  platforms: ["linux"]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever

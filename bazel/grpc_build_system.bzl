@@ -366,9 +366,17 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         for tag in tags:
             if tag not in tag_to_experiments:
                 continue
-            for experiment in tag_to_experiments[tag]:
-                experiments[mode][experiment] = 1
-        experiments[mode] = list(experiments[mode].keys())
+            for experiment, platforms in tag_to_experiments[tag].items():
+                experiments[mode][experiment] = []
+                # convert platform support to tags
+                if len(platforms) == 0:
+                    continue
+                if "linux" not in platforms:
+                    experiments[mode][experiment].append("no_linux")
+                if "windows" not in platforms:
+                    experiments[mode][experiment].append("no_windows")
+                if "mac" not in platforms:
+                    experiments[mode][experiment].append("no_mac")
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
@@ -390,7 +398,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     generated_experiment_configs = list(poller_config)
     for mode, (enabled_tags, disabled_tags) in mode_config.items():
         if enabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment, exclude_platform_tags in experiments[mode].items():
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
@@ -398,14 +406,14 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = experiment
                     config["env"] = env
                     tags = config["tags"]
-                    for tag in must_have_tags + enabled_tags:
+                    for tag in must_have_tags + enabled_tags + exclude_platform_tags:
                         if tag not in tags:
                             tags = tags + [tag]
                     config["tags"] = tags
                     config["flaky"] = True
                     generated_experiment_configs.append(config)
         if disabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment, exclude_platform_tags in experiments[mode].items():
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
@@ -413,7 +421,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     config["env"] = env
                     tags = config["tags"]
-                    for tag in must_have_tags + disabled_tags:
+                    for tag in must_have_tags + disabled_tags + exclude_platform_tags:
                         if tag not in tags:
                             tags = tags + [tag]
                     config["tags"] = tags
