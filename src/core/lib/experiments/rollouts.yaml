@@ -53,7 +53,7 @@
 - name: event_engine_dns
   default: false
 - name: work_stealing
-  default: false
+  default: debug
 - name: client_privacy
   default: false
 - name: canary_client_privacy
