@@ -368,6 +368,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 continue
             for experiment, platforms in tag_to_experiments[tag].items():
                 experiments[mode][experiment] = []
+
                 # convert platform support to tags
                 if len(platforms) == 0:
                     continue
