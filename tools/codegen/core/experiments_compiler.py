@@ -369,7 +369,6 @@ class ExperimentsCompiler(object):
 
         for _, exp in self._experiment_definitions.items():
             for tag in exp.test_tags:
-                print(exp.name, exp.platforms)
                 bzl_to_tags_to_experiments[exp.default][tag][
                     exp.name] = exp.platforms
 
