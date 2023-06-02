@@ -1886,8 +1886,7 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
 }
 
 TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
-  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB",
-                                           "false");
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB", "false");
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
