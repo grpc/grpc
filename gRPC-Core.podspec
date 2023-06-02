@@ -1311,7 +1311,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/packed_table.h',
-                      'src/core/lib/gprpp/per_cpu.cc',
                       'src/core/lib/gprpp/per_cpu.h',
                       'src/core/lib/gprpp/posix/env.cc',
                       'src/core/lib/gprpp/posix/stat.cc',

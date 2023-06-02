@@ -1199,7 +1199,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/stat.cc" role="src" />

@@ -22,41 +22,18 @@
 #include <limits>
 #include <memory>
 
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
-class PerCpuOptions {
- public:
-  // Set the number of cpus that colocate on the same shard
-  PerCpuOptions SetCpusPerShard(size_t cpus_per_shard) {
-    cpus_per_shard_ = std::max<size_t>(1, cpus_per_shard);
-    return *this;
-  }
-
-  // Set the maximum number of allowable shards
-  PerCpuOptions SetMaxShards(size_t max_shards) {
-    max_shards_ = std::max<size_t>(1, max_shards);
-    return *this;
-  }
-
-  size_t cpus_per_shard() const { return cpus_per_shard_; }
-  size_t max_shards() const { return max_shards_; }
-
-  size_t Shards();
-  size_t ShardsForCpuCount(size_t cpu_count);
-
- private:
-  size_t cpus_per_shard_ = 1;
-  size_t max_shards_ = std::numeric_limits<size_t>::max();
-};
-
 template <typename T>
 class PerCpu {
  public:
-  // Options are not defaulted to try and force consideration of what the
-  // options specify.
-  explicit PerCpu(PerCpuOptions options) : cpus_(options.Shards()) {}
+  explicit PerCpu(size_t max = std::numeric_limits<size_t>::max())
+      : cpus_(std::min<size_t>(max, gpr_cpu_num_cores())),
+        data_{new T[cpus_]} {}
 
   T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
 
@@ -67,7 +44,7 @@ class PerCpu {
 
  private:
   const size_t cpus_;
-  std::unique_ptr<T[]> data_{new T[cpus_]};
+  std::unique_ptr<T[]> data_;
 };
 
 }  // namespace grpc_core
