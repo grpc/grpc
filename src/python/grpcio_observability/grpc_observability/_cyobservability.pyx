@@ -122,8 +122,9 @@ def set_gcp_observability_config(object py_config) -> bool:
 
 def create_client_call_tracer(bytes method_name, bytes trace_id,
                               bytes parent_span_id=b'') -> cpython.PyObject:
-  """
-  Returns: A grpc._observability.ClientCallTracerCapsule object.
+  """Create a ClientCallTracer and save to PyCapsule.
+
+  Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
   """
   cdef char* c_method = cpython.PyBytes_AsString(method_name)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
@@ -135,8 +136,9 @@ def create_client_call_tracer(bytes method_name, bytes trace_id,
 
 
 def create_server_call_tracer_factory_capsule() -> cpython.PyObject:
-  """
-  Returns: A grpc._observability.ServerCallTracerFactoryCapsule object.
+  """Create a ServerCallTracerFactory and save to PyCapsule.
+
+  Returns: A grpc_observability._observability.ServerCallTracerFactoryCapsule object.
   """
   cdef void* call_tracer_factory = CreateServerCallTracerFactory()
   capsule = cpython.PyCapsule_New(call_tracer_factory, SERVER_CALL_TRACER_FACTORY, NULL)
@@ -161,15 +163,17 @@ def _c_label_to_labels(vector[Label] c_labels) -> Mapping[str, str]:
 
 def _c_measurement_to_measurement(object measurement
   ) -> Mapping[str, Union[enum, Mapping[str, Union[float, int]]]]:
-  """
+  """Convert Cython Measurement to Python measurement.
+
   Args:
-    measurement: Actual measurement repesented by Cython type Measurement, using object here
-      since Cython refuse to automatically convert a union with unsafe type combinations.
+  measurement: Actual measurement repesented by Cython type Measurement, using object here
+   since Cython refuse to automatically convert a union with unsafe type combinations.
+
   Returns:
-    A mapping object with keys and values as following:
-      name -> cMetricsName
-      type -> MeasurementType
-      value -> {value_double: float | value_int: int}
+   A mapping object with keys and values as following:
+    name -> cMetricsName
+    type -> MeasurementType
+    value -> {value_double: float | value_int: int}
   """
   measurement: Measurement
 
@@ -200,20 +204,21 @@ def observability_deinit() -> None:
 @functools.lru_cache(maxsize=None)
 def _cy_metric_name_to_py_metric_name(cMetricsName metric_name) -> MetricsName:
   try:
-      return _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING[metric_name]
+    return _CY_METRICS_NAME_TO_PY_METRICS_NAME_MAPPING[metric_name]
   except KeyError:
-      raise ValueError('Invalid metric name %s' % metric_name)
+    raise ValueError('Invalid metric name %s' % metric_name)
 
 
 def _get_stats_data(object measurement, object labels) -> _observability.StatsData:
-  """
+  """Convert a Python measurement to StatsData.
+
   Args:
-    measurement: A dict of type Mapping[str, Union[enum, Mapping[str, Union[float, int]]]]
-      with keys and values as following:
-        name -> cMetricsName
-        type -> MeasurementType
-        value -> {value_double: float | value_int: int}
-    labels: Labels assciociated with stats data with type of dict[str, str].
+  measurement: A dict of type Mapping[str, Union[enum, Mapping[str, Union[float, int]]]]
+    with keys and values as following:
+      name -> cMetricsName
+      type -> MeasurementType
+      value -> {value_double: float | value_int: int}
+  labels: Labels assciociated with stats data with type of dict[str, str].
   """
   measurement: Measurement
   labels: Mapping[str, str]
@@ -263,6 +268,7 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 
 
 cdef void _export_census_data(object exporter):
+  """Main function running in export thread."""
   exporter: _observability.Exporter
 
   cdef int export_interval_ms = CENSUS_EXPORT_BATCH_INTERVAL_SECS * 1000
@@ -326,11 +332,11 @@ cdef void _shutdown_exporting_thread():
 
 
 cdef str _decode(bytes bytestring):
-    if isinstance(bytestring, (str,)):
-        return <str>bytestring
-    else:
-        try:
-            return bytestring.decode('utf8')
-        except UnicodeDecodeError:
-            _LOGGER.exception('Invalid encoding on %s', bytestring)
-            return bytestring.decode('latin1')
+  if isinstance(bytestring, (str,)):
+    return <str>bytestring
+  else:
+    try:
+      return bytestring.decode('utf8')
+    except UnicodeDecodeError:
+      _LOGGER.exception('Invalid encoding on %s', bytestring)
+      return bytestring.decode('latin1')
