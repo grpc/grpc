@@ -66,7 +66,7 @@ class GrpcClientHelper:
 
     def _log_rpc_request(self, rpc, req, call_kwargs, log_level=logging.DEBUG):
         logger.log(logging.DEBUG if log_level is None else log_level,
-                   '[%s] RPC %s.%s(request=%s(%r), %s)', self.log_target,
+                   '[%s] >> RPC %s.%s(request=%s(%r), %s)', self.log_target,
                    self.log_service_name, rpc, req.__class__.__name__,
                    json_format.MessageToDict(req),
                    ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
