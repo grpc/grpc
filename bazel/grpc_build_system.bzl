@@ -387,9 +387,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # Nor on arm64
         "no_arm64",
     ]
-    experiment_config = list(poller_config)
-    for mode, config in mode_config.items():
-        enabled_tags, disabled_tags = config
+    generated_experiment_configs = list(poller_config)
+    for mode, (enabled_tags, disabled_tags) in mode_config.items():
         if enabled_tags != None:
             for experiment in experiments[mode]:
                 for config in poller_config:
@@ -404,7 +403,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                             tags = tags + [tag]
                     config["tags"] = tags
                     config["flaky"] = True
-                    experiment_config.append(config)
+                    generated_experiment_configs.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode]:
                 for config in poller_config:
@@ -418,8 +417,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                         if tag not in tags:
                             tags = tags + [tag]
                     config["tags"] = tags
-                    experiment_config.append(config)
-    return experiment_config
+                    generated_experiment_configs.append(config)
+    return generated_experiment_configs
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.

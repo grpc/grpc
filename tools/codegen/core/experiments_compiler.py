@@ -141,6 +141,7 @@ class ExperimentDefinition(object):
         self._default = None
         self._additional_constraints = {}
         self._test_tags = []
+        self._platforms = attributes.get("platforms", [])
 
         if 'allow_in_fuzzing_config' in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -205,6 +206,10 @@ class ExperimentDefinition(object):
     @property
     def test_tags(self):
         return self._test_tags
+
+    @property
+    def platforms(self):
+        return self._platforms
 
     @property
     def allow_in_fuzzing_config(self):
@@ -355,14 +360,16 @@ class ExperimentsCompiler(object):
         if self._bzl_list_for_defaults is None:
             return
 
+        # format: {mode: {tag: {experiment: platforms}}}
         bzl_to_tags_to_experiments = dict(
-            (key, collections.defaultdict(list))
+            (key, collections.defaultdict(lambda: collections.defaultdict(list)))
             for key in self._bzl_list_for_defaults.keys()
             if key is not None)
 
         for _, exp in self._experiment_definitions.items():
             for tag in exp.test_tags:
-                bzl_to_tags_to_experiments[exp.default][tag].append(exp.name)
+                print(exp.name, exp.platforms)
+                bzl_to_tags_to_experiments[exp.default][tag][exp.name] = exp.platforms
 
         with open(output_file, 'w') as B:
             PutCopyright(B, "#")
@@ -372,7 +379,7 @@ class ExperimentsCompiler(object):
                 "#")
 
             print(
-                "\"\"\"Dictionary of tags to experiments so we know when to test different experiments.\"\"\"",
+                "\"\"\"Bazel configuration that associates experiments with their respective test tags, platforms, and operation mode.\"\"\"",
                 file=B)
 
             bzl_to_tags_to_experiments = sorted(
@@ -383,12 +390,12 @@ class ExperimentsCompiler(object):
 
             print(file=B)
             print("EXPERIMENTS = {", file=B)
-            for key, tags_to_experiments in bzl_to_tags_to_experiments:
-                print("    \"%s\": {" % key, file=B)
+            for mode, tags_to_experiments in bzl_to_tags_to_experiments:
+                print(f"    \"{mode}\": {{", file=B)
                 for tag, experiments in sorted(tags_to_experiments.items()):
-                    print("        \"%s\": [" % tag, file=B)
-                    for experiment in sorted(experiments):
-                        print("            \"%s\"," % experiment, file=B)
-                    print("        ],", file=B)
+                    print(f"        \"{tag}\": {{", file=B)
+                    for experiment_name, platforms in sorted(experiments.items()):
+                        print(f"            \"{experiment_name}\": {platforms},", file=B)
+                    print("        },", file=B)
                 print("    },", file=B)
             print("}", file=B)
