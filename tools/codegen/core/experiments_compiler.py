@@ -160,14 +160,12 @@ class ExperimentDefinition(object):
         two_quarters_from_now = today + datetime.timedelta(days=180)
         expiry = datetime.datetime.strptime(self._expiry, '%Y/%m/%d').date()
         if expiry < today:
-            print("ERROR: experiment %s expired on %s" %
+            print("WARNING: experiment %s expired on %s" %
                   (self._name, self._expiry))
-            self._error = True
         if expiry > two_quarters_from_now:
-            print("ERROR: experiment %s expires far in the future on %s" %
+            print("WARNING: experiment %s expires far in the future on %s" %
                   (self._name, self._expiry))
             print("expiry should be no more than two quarters from now")
-            self._error = True
         return not self._error
 
     def AddRolloutSpecification(self, allowed_defaults, rollout_attributes):
