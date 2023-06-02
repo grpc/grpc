@@ -362,14 +362,16 @@ class ExperimentsCompiler(object):
 
         # format: {mode: {tag: {experiment: platforms}}}
         bzl_to_tags_to_experiments = dict(
-            (key, collections.defaultdict(lambda: collections.defaultdict(list)))
+            (key,
+             collections.defaultdict(lambda: collections.defaultdict(list)))
             for key in self._bzl_list_for_defaults.keys()
             if key is not None)
 
         for _, exp in self._experiment_definitions.items():
             for tag in exp.test_tags:
                 print(exp.name, exp.platforms)
-                bzl_to_tags_to_experiments[exp.default][tag][exp.name] = exp.platforms
+                bzl_to_tags_to_experiments[exp.default][tag][
+                    exp.name] = exp.platforms
 
         with open(output_file, 'w') as B:
             PutCopyright(B, "#")
@@ -394,8 +396,11 @@ class ExperimentsCompiler(object):
                 print(f"    \"{mode}\": {{", file=B)
                 for tag, experiments in sorted(tags_to_experiments.items()):
                     print(f"        \"{tag}\": {{", file=B)
-                    for experiment_name, platforms in sorted(experiments.items()):
-                        print(f"            \"{experiment_name}\": {platforms},", file=B)
+                    for experiment_name, platforms in sorted(
+                            experiments.items()):
+                        print(
+                            f"            \"{experiment_name}\": {platforms},",
+                            file=B)
                     print("        },", file=B)
                 print("    },", file=B)
             print("}", file=B)
