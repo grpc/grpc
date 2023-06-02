@@ -398,7 +398,7 @@ class ExperimentsCompiler(object):
                     for experiment_name, platforms in sorted(
                             experiments.items()):
                         print(
-                            f"            \"{experiment_name}\": {platforms},",
+                            f"            \"{experiment_name}\": {json.dumps(platforms)},",
                             file=B)
                     print("        },", file=B)
                 print("    },", file=B)
