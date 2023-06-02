@@ -21,6 +21,9 @@
 
 #include <stdint.h>  // for uint32_t
 
+#include <memory>
+#include <string>
+
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -28,6 +31,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
@@ -87,6 +91,23 @@ struct OutlierDetectionConfig {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
+};
+
+// TODO(roth): This is a horrible hack used to disable outlier detection
+// when used with the pick_first policy.  Remove this as part of
+// implementing the dualstack backend design.
+class DisableOutlierDetectionAttribute
+    : public ServerAddress::AttributeInterface {
+ public:
+  static const char* Name() { return "disable_outlier_detection"; }
+
+  std::unique_ptr<AttributeInterface> Copy() const override {
+    return std::make_unique<DisableOutlierDetectionAttribute>();
+  }
+
+  int Cmp(const AttributeInterface*) const override { return true; }
+
+  std::string ToString() const override { return Name(); }
 };
 
 }  // namespace grpc_core
