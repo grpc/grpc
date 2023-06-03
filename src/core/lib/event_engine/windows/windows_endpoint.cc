@@ -144,8 +144,9 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   auto status = DoTcpRead(buffer);
   if (!status.ok()) {
     // The read could not be completed.
-    thread_pool_->Run([cb = io_state_->handle_read_event.ResetAndReturnCallback(),
-                       status]() mutable { cb(status); });
+    thread_pool_->Run(
+        [cb = io_state_->handle_read_event.ResetAndReturnCallback(),
+         status]() mutable { cb(status); });
   }
   return false;
 }
