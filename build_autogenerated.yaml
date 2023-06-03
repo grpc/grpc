@@ -6928,6 +6928,16 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: experiments_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/experiments/experiments_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: factory_test
   gtest: true
   build: test
