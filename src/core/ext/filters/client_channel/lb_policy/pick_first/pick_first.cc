@@ -226,7 +226,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(
+      latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {

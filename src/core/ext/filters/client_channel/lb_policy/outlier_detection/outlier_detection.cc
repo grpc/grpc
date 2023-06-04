@@ -43,11 +43,14 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -147,14 +150,27 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
+
     RefCountedPtr<SubchannelState> subchannel_state() const {
       return subchannel_state_;
     }
 
    private:
+    // TODO(roth): As a temporary hack, this needs to handle watchers
+    // stored as both unique_ptr<> and shared_ptr<>, since the former is
+    // used for raw connectivity state watches and the latter is used
+    // for health watches.  This hack will go away as part of implementing
+    // dualstack backend support.
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
+      WatcherWrapper(std::shared_ptr<
+                         SubchannelInterface::ConnectivityStateWatcherInterface>
+                         health_watcher,
+                     bool ejected)
+          : watcher_(std::move(health_watcher)), ejected_(ejected) {}
+
       WatcherWrapper(std::unique_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          watcher,
@@ -164,7 +180,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       void Eject() {
         ejected_ = true;
         if (last_seen_state_.has_value()) {
-          watcher_->OnConnectivityStateChange(
+          watcher()->OnConnectivityStateChange(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
               absl::UnavailableError(
                   "subchannel ejected by outlier detection"));
@@ -174,8 +190,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       void Uneject() {
         ejected_ = false;
         if (last_seen_state_.has_value()) {
-          watcher_->OnConnectivityStateChange(*last_seen_state_,
-                                              last_seen_status_);
+          watcher()->OnConnectivityStateChange(*last_seen_state_,
+                                               last_seen_status_);
         }
       }
 
@@ -190,16 +206,30 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
             status = absl::UnavailableError(
                 "subchannel ejected by outlier detection");
           }
-          watcher_->OnConnectivityStateChange(new_state, status);
+          watcher()->OnConnectivityStateChange(new_state, status);
         }
       }
 
       grpc_pollset_set* interested_parties() override {
-        return watcher_->interested_parties();
+        return watcher()->interested_parties();
       }
 
      private:
-      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+      SubchannelInterface::ConnectivityStateWatcherInterface* watcher() const {
+        return Match(
+            watcher_,
+            [](const std::shared_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>&
+                   watcher) { return watcher.get(); },
+            [](const std::unique_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>&
+                   watcher) { return watcher.get(); });
+      }
+
+      absl::variant<std::shared_ptr<
+                        SubchannelInterface::ConnectivityStateWatcherInterface>,
+                    std::unique_ptr<
+                        SubchannelInterface::ConnectivityStateWatcherInterface>>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
@@ -211,6 +241,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
              WatcherWrapper*>
         watchers_;
+    WatcherWrapper* watcher_wrapper_ = nullptr;  // For health watching.
   };
 
   class SubchannelState : public RefCounted<SubchannelState> {
@@ -407,6 +438,7 @@ void OutlierDetectionLb::SubchannelWrapper::Eject() {
     ++it;
     watcher->Eject();
   }
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Eject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::Uneject() {
@@ -414,6 +446,7 @@ void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   for (auto& watcher : watchers_) {
     watcher.second->Uneject();
   }
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Uneject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
@@ -431,6 +464,19 @@ void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
   if (it == watchers_.end()) return;
   wrapped_subchannel()->CancelConnectivityStateWatch(it->second);
   watchers_.erase(it);
+}
+
+void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
+    std::unique_ptr<DataWatcherInterface> watcher) {
+  auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
+  if (w->type() == HealthProducer::Type()) {
+    auto* health_watcher = static_cast<HealthWatcher*>(watcher.get());
+    auto watcher_wrapper = std::make_shared<WatcherWrapper>(
+        health_watcher->TakeWatcher(), ejected_);
+    watcher_wrapper_ = watcher_wrapper.get();
+    health_watcher->SetWatcher(std::move(watcher_wrapper));
+  }
+  DelegatingSubchannel::AddDataWatcher(std::move(watcher));
 }
 
 //

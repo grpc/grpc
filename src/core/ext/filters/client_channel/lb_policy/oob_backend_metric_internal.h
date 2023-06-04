@@ -102,6 +102,8 @@ class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
   Duration report_interval() const { return report_interval_; }
   OobBackendMetricWatcher* watcher() const { return watcher_.get(); }
 
+  UniqueTypeName type() const override { return OrcaProducer::Type(); }
+
   // When the client channel sees this wrapper, it will pass it the real
   // subchannel to use.
   void SetSubchannel(Subchannel* subchannel) override;

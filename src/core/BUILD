@@ -4519,6 +4519,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "closure",
         "error",
         "iomgr_fwd",
@@ -4773,11 +4774,13 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_outlier_detection_header",
+        "health_check_client",
         "iomgr_fwd",
         "json",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",
