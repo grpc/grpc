@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/_metadata.py.template`!!!
 
-__version__ = """1.56.0rc1"""
+__version__ = """1.56.0rc2"""
