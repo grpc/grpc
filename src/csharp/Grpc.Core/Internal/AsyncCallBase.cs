@@ -38,8 +38,7 @@ namespace Grpc.Core.Internal
     internal abstract class AsyncCallBase<TWrite, TRead> : IReceivedMessageCallback, ISendCompletionCallback
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
-        protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
-
+       
         readonly Action<TWrite, SerializationContext> serializer;
         readonly Func<DeserializationContext, TRead> deserializer;
 
@@ -68,6 +67,20 @@ namespace Grpc.Core.Internal
         {
             this.serializer = GrpcPreconditions.CheckNotNull(serializer);
             this.deserializer = GrpcPreconditions.CheckNotNull(deserializer);
+        }
+
+        protected static Status CreateDeserializeResponseFailureStatus(Exception ex)
+        {
+            // https://github.com/grpc/grpc/issues/24784
+            // Create a new Status to encapsulate the deserialization exception.
+            // As only the status code and  description are passed to the native API
+            // a simple string representation of the DebugException is also provided
+            // as part of the description so that the information from the exception
+            // is not lost. In some situations the DebugException may be retained,
+            // such as a blocking unary call, so it is also included here.
+            return new Status(StatusCode.Internal,
+                "Failed to deserialize response message. " +
+                $"Failure reason: {ex.GetType()}: {ex.Message}", ex);
         }
 
         /// <summary>
@@ -387,7 +400,7 @@ namespace Grpc.Core.Internal
                     readingDone = true;
 
                     // TODO(jtattermusch): it might be too late to set the status
-                    CancelWithStatus(DeserializeResponseFailureStatus);
+                    CancelWithStatus(CreateDeserializeResponseFailureStatus(deserializeException));
                 }
 
                 if (!readingDone)
