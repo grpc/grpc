@@ -86,14 +86,21 @@ class WorkStealingThreadPool final : public ThreadPool {
   class ThreadCount {
    public:
     // Adds 1 to the thread count for that counter type.
-    void Add(CounterType counter_type);
+    void Add(CounterType counter_type)
+        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
     // Subtracts 1 from the thread count for that counter type.
-    void Remove(CounterType counter_type);
+    void Remove(CounterType counter_type)
+        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
     // Blocks until the thread count for that type reaches `desired_threads`.
-    void BlockUntilThreadCount(CounterType counter_type, int desired_threads,
-                               const char* why, WorkSignal* work_signal);
+    void BlockUntilThreadCount(CounterType counter_type, size_t desired_threads,
+                               const char* why, WorkSignal* work_signal)
+        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
     // Returns the current thread count for the tracked type.
-    size_t GetCount(CounterType counter_type);
+    size_t GetCount(CounterType counter_type)
+        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
+    // Returns the current thread count for the tracked type.
+    size_t GetCountLocked(CounterType counter_type)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(wait_mu_[counter_type]);
 
     // Adds and removes thread counts on construction and destruction
     class AutoThreadCount {
@@ -107,7 +114,15 @@ class WorkStealingThreadPool final : public ThreadPool {
     };
 
    private:
-    std::atomic<size_t> thread_counts_[2]{{0}, {0}};
+    // Wait for the desired count to be reached.
+    // Returns the current thread count either when the desired count is
+    // reached, or when the deadline has passed, whichever happens first.
+    size_t WaitForCountChange(CounterType counter_type, size_t desired_threads,
+                              grpc_core::Duration timeout);
+
+    grpc_core::Mutex wait_mu_[2];
+    grpc_core::CondVar wait_cv_[2];
+    size_t thread_counts_[2]{0, 0};
   };
 
   // A pool of WorkQueues that participate in work stealing.
@@ -152,8 +167,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     // This method is safe to call from within a ThreadPool thread.
     void Quiesce();
     // Sets a throttled state.
-    // After the initial pool has been created, if the pool is backlogged when a
-    // new thread has started, it is rate limited.
+    // After the initial pool has been created, if the pool is backlogged when
+    // a new thread has started, it is rate limited.
     // Returns the previous throttling state.
     bool SetThrottled(bool throttle);
     // Set the shutdown flag.
@@ -183,9 +198,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     //    and there are threads that can accept work.
     class Lifeguard {
      public:
-      Lifeguard();
+      explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
       // Start the lifeguard thread.
-      void Start(std::shared_ptr<WorkStealingThreadPoolImpl> pool);
+      void Start();
       // Block until the lifeguard thread is shut down.
       void BlockUntilShutdown();
 
@@ -194,9 +209,14 @@ class WorkStealingThreadPool final : public ThreadPool {
       void LifeguardMain();
       // Starts a new thread if the pool is backlogged
       void MaybeStartNewThread();
-      std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
+
+      WorkStealingThreadPoolImpl* pool_;
       grpc_core::BackOff backoff_;
-      std::atomic<bool> thread_running_{false};
+      // Used for signaling that the lifeguard thread has stopped running.
+      grpc_core::Mutex lifeguard_shutdown_mu_;
+      bool lifeguard_running_ ABSL_GUARDED_BY(lifeguard_shutdown_mu_) = false;
+      grpc_core::CondVar lifeguard_shutdown_cv_
+          ABSL_GUARDED_BY(lifeguard_shutdown_mu_);
     };
 
     const size_t reserve_threads_;

@@ -240,21 +240,28 @@ def ios_cc_test(
       tags: The tags to apply to the test.
       **kwargs: All other arguments to apply.
     """
+    test_lib_cc = name + "_test_lib_cc"
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
     test_runner = "ios_x86_64_sim_runner_" + name
     ios_test_runner(
         name = test_runner,
-        device_type = "iPhone X",
+        device_type = "iPhone 12",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
-        native.objc_library(
-            name = test_lib_ios,
+        native.cc_library(
+            name = test_lib_cc,
             srcs = kwargs.get("srcs"),
             deps = kwargs.get("deps"),
             copts = kwargs.get("copts"),
             data = kwargs.get("data"),
             tags = ios_tags,
+            alwayslink = 1,
+            testonly = 1,
+        )
+        native.objc_library(
+            name = test_lib_ios,
+            deps = [":" + test_lib_cc],
             alwayslink = 1,
             testonly = 1,
         )
@@ -264,7 +271,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "9.0",
+            minimum_os_version = "11.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
@@ -538,6 +545,9 @@ def grpc_generate_one_off_targets():
     )
 
 def grpc_generate_objc_one_off_targets():
+    pass
+
+def grpc_generate_one_off_internal_targets():
     pass
 
 def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):

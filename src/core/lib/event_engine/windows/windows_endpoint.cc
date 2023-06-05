@@ -144,9 +144,9 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   auto status = DoTcpRead(buffer);
   if (!status.ok()) {
     // The read could not be completed.
-    io_state_->endpoint->thread_pool_->Run([this, status]() {
-      io_state_->handle_read_event.ExecuteCallbackAndReset(status);
-    });
+    thread_pool_->Run(
+        [cb = io_state_->handle_read_event.ResetAndReturnCallback(),
+         status]() mutable { cb(status); });
   }
   return false;
 }
@@ -246,16 +246,22 @@ void AbortOnEvent(absl::Status) {
 }
 }  // namespace
 
-void WindowsEndpoint::HandleReadClosure::Reset() {
+absl::AnyInvocable<void(absl::Status)>
+WindowsEndpoint::HandleReadClosure::ResetAndReturnCallback() {
+  auto cb = std::move(cb_);
   io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
+  return cb;
 }
 
-void WindowsEndpoint::HandleWriteClosure::Reset() {
+absl::AnyInvocable<void(absl::Status)>
+WindowsEndpoint::HandleWriteClosure::ResetAndReturnCallback() {
+  auto cb = std::move(cb_);
   io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
+  return cb;
 }
 
 void WindowsEndpoint::HandleReadClosure::Prime(
@@ -284,7 +290,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "Async Read Error");
     buffer_->Clear();
-    return ExecuteCallbackAndReset(status);
+    return ResetAndReturnCallback()(status);
   }
   if (result.bytes_transferred == 0) {
     // Either the endpoint is shut down or we've seen the end of the stream
@@ -298,7 +304,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
                             GRPC_STATUS_UNAVAILABLE);
     buffer_->Swap(last_read_buffer_);
-    return ExecuteCallbackAndReset(status);
+    return ResetAndReturnCallback()(status);
   }
   GPR_DEBUG_ASSERT(result.bytes_transferred > 0);
   GPR_DEBUG_ASSERT(result.bytes_transferred <= buffer_->Length());
@@ -306,32 +312,25 @@ void WindowsEndpoint::HandleReadClosure::Run() {
                                           last_read_buffer_);
   if (buffer_->Length() == 0) {
     buffer_->Swap(last_read_buffer_);
-    return ExecuteCallbackAndReset(status);
+    return ResetAndReturnCallback()(status);
   }
   // Doing another read. Let's keep the AsyncIOState alive a bit longer.
   io_state_ = std::move(io_state);
   status = io_state_->endpoint->DoTcpRead(buffer_);
   if (!status.ok()) {
-    io_state_.reset();
-    ExecuteCallbackAndReset(status);
+    return ResetAndReturnCallback()(status);
   }
 }
 
 bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
   if (last_read_buffer_.Length() > 0) {
     buffer_->Swap(last_read_buffer_);
+    // Captures io_state_ to ensure it remains alive until the callback is run.
     io_state_->endpoint->thread_pool_->Run(
-        [this]() { ExecuteCallbackAndReset(absl::OkStatus()); });
+        [cb = ResetAndReturnCallback()]() mutable { cb(absl::OkStatus()); });
     return true;
   }
   return false;
-}
-
-void WindowsEndpoint::HandleReadClosure::ExecuteCallbackAndReset(
-    absl::Status status) {
-  auto cb = std::move(cb_);
-  Reset();
-  cb(status);
 }
 
 void WindowsEndpoint::HandleReadClosure::DonateSpareSlices(
@@ -348,7 +347,6 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   auto io_state = std::move(io_state_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
                                    io_state->endpoint);
-  auto cb = std::move(cb_);
   const auto result = io_state->socket->write_info()->result();
   absl::Status status;
   if (result.wsa_error != 0) {
@@ -356,8 +354,7 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   } else {
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
   }
-  Reset();
-  cb(status);
+  return ResetAndReturnCallback()(status);
 }
 
 // ---- AsyncIOState ----

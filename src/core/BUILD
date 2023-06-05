@@ -15,6 +15,7 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_generate_one_off_internal_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -4582,6 +4583,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_lb_subchannel_list",
+        "grpc_outlier_detection_header",
         "json",
         "lb_policy",
         "lb_policy_factory",
@@ -4753,6 +4755,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:server_address",
     ],
 )
 
@@ -5987,3 +5990,5 @@ WELL_KNOWN_PROTO_TARGETS = [
     name = "protobuf_" + target + "_upbdefs",
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
+
+grpc_generate_one_off_internal_targets()
