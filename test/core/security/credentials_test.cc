@@ -131,8 +131,10 @@ const char test_external_account_credentials_psc_sts_str[] =
     "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
     "token_type\":\"subject_token_type\",\"service_account_impersonation_"
     "url\":\"https://sts-xyz.p.googleapis.com:5555/"
-    "service_account_impersonation_url\",\"token_url\":\"https://"
-    "sts-xyz-123.p.googleapis.com:5555/token\",\"token_info_url\":\"https://"
+    "service_account_impersonation_url\","
+    "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+    "\"token_url\":\"https://sts-xyz-123.p.googleapis.com:5555/"
+    "token\",\"token_info_url\":\"https://"
     "sts-xyz.p.googleapis.com:5555/introspect"
     "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
     "\"quota_project_id\":\"quota_"
@@ -143,8 +145,9 @@ const char test_external_account_credentials_psc_iam_str[] =
     "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
     "token_type\":\"subject_token_type\",\"service_account_impersonation_"
     "url\":\"https://iamcredentials-xyz.p.googleapis.com:5555/"
-    "service_account_impersonation_url\",\"token_url\":\"https://"
-    "iamcredentials-xyz-123.p.googleapis.com:5555/"
+    "service_account_impersonation_url\","
+    "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+    "\"token_url\":\"https://iamcredentials-xyz-123.p.googleapis.com:5555/"
     "token\",\"token_info_url\":\"https://"
     "iamcredentials-xyz-123.p.googleapis.com:5555/introspect"
     "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
@@ -2164,7 +2167,7 @@ void validate_external_account_creds_service_account_impersonation_request(
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
-  GPR_ASSERT(strcmp(body, "scope=scope_1 scope_2") == 0);
+  GPR_ASSERT(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s") == 0);
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(path, "/service_account_impersonation") == 0);
@@ -2175,6 +2178,45 @@ void validate_external_account_creds_service_account_impersonation_request(
   GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
   GPR_ASSERT(strcmp(request->hdrs[1].value,
                     "Bearer token_exchange_access_token") == 0);
+}
+
+void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
+    const grpc_http_request* request, const char* host, const char* path,
+    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+  // Check that the body is constructed properly.
+  GPR_ASSERT(body != nullptr);
+  GPR_ASSERT(body_size != 0);
+  GPR_ASSERT(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s") == 0);
+  // Check the rest of the request.
+  GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
+  GPR_ASSERT(strcmp(path, "/service_account_impersonation") == 0);
+  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(
+      strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value,
+                    "Bearer token_exchange_access_token") == 0);
+}
+
+int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
+    const grpc_http_request* request, const char* host, const char* path,
+    const char* body, size_t body_size, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  if (strcmp(path, "/token") == 0) {
+    validate_external_account_creds_token_exchage_request(
+        request, host, path, body, body_size, true);
+    *response = http_response(
+        200, valid_external_account_creds_token_exchange_response);
+  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+    validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
+        request, host, path, body, body_size, true);
+    *response = http_response(
+        200,
+        valid_external_account_creds_service_account_impersonation_response);
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
 }
 
 int external_account_creds_httpcli_post_success(
@@ -2351,11 +2393,15 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
 TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       credential_source,                  // credential_source;
@@ -2393,11 +2439,15 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
-      "external_account",         // type;
-      "audience_!@#$",            // audience;
-      "subject_token_type_!@#$",  // subject_token_type;
-      "",                         // service_account_impersonation_url;
+      "external_account",             // type;
+      "audience_!@#$",                // audience;
+      "subject_token_type_!@#$",      // subject_token_type;
+      "",                             // service_account_impersonation_url;
+      service_account_impersonation,  // service_account_impersonation;
       "https://foo.com:5555/token_url_encode",  // token_url;
       "https://foo.com:5555/token_info",        // token_info_url;
       credential_source,                        // credential_source;
@@ -2422,18 +2472,22 @@ TEST(CredentialsTest,
      TestExternalAccountCredsSuccessWithServiceAccountImpersonation) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
       "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
-      "https://foo.com:5555/token",                          // token_url;
-      "https://foo.com:5555/token_info",                     // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-      "",                  // workforce_pool_user_project;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
   // Check security level.
@@ -2451,21 +2505,113 @@ TEST(CredentialsTest,
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
+TEST(
+    CredentialsTest,
+    TestExternalAccountCredsSuccessWithServiceAccountImpersonationAndCustomTokenLifetime) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 1800;
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
       "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
-      "invalid_token_url",                                   // token_url;
-      "https://foo.com:5555/token_info",                     // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-      "",                  // workforce_pool_user_project;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
+  // Check security level.
+  GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  // First request: http put should be called.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(),
+      "authorization: Bearer service_account_impersonation_access_token");
+  HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success,
+      httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST(
+    CredentialsTest,
+    TestExternalAccountCredsFailureWithServiceAccountImpersonationAndInvalidCustomTokenLifetime) {
+  char* options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"service_account_impersonation\":"
+      "{\"token_lifetime_seconds\":599},"
+      "\"token_url\":\"https://foo.com:5555/token\","
+      "\"token_info_url\":\"https://foo.com:5555/token_info\","
+      "\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\","
+      "\"headers\":{\"Metadata-Flavor\":\"Google\"},"
+      "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
+      "token\"}},\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
+  grpc_error_handle error1, error2;
+  auto json = JsonParse(options_string);
+  std::vector<std::string> scopes = {"scope1", "scope2"};
+  auto creds =
+      ExternalAccountCredentials::Create(*json, std::move(scopes), &error1);
+  std::string actual_error;
+  std::string expected_error = "token_lifetime_seconds must be more than 600s";
+  grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+
+  options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"service_account_impersonation\":"
+      "{\"token_lifetime_seconds\":43201},"
+      "\"token_url\":\"https://foo.com:5555/token\","
+      "\"token_info_url\":\"https://foo.com:5555/token_info\","
+      "\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\","
+      "\"headers\":{\"Metadata-Flavor\":\"Google\"},"
+      "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
+      "token\"}},\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
+  json = JsonParse(options_string);
+  creds = ExternalAccountCredentials::Create(*json, std::move(scopes), &error2);
+  actual_error = "";
+  expected_error = "token_lifetime_seconds must be less than 43200s";
+  grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+}
+
+TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
+  ExecCtx exec_ctx;
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "invalid_token_url",                // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -2486,18 +2632,22 @@ TEST(CredentialsTest,
      TestExternalAccountCredsFailureInvalidServiceAccountImpersonationUrl) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
       "external_account",                           // type;
       "audience",                                   // audience;
       "subject_token_type",                         // subject_token_type;
       "invalid_service_account_impersonation_url",  // service_account_impersonation_url;
-      "https://foo.com:5555/token",                 // token_url;
-      "https://foo.com:5555/token_info",            // token_info_url;
-      credential_source,                            // credential_source;
-      "quota_project_id",                           // quota_project_id;
-      "client_id",                                  // client_id;
-      "client_secret",                              // client_secret;
-      "",  // workforce_pool_user_project;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -2519,18 +2669,22 @@ TEST(CredentialsTest,
      TestExternalAccountCredsFailureTokenExchangeResponseMissingAccessToken) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
       "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
-      "https://foo.com:5555/token",                          // token_url;
-      "https://foo.com:5555/token_info",                     // token_info_url;
-      credential_source,   // credential_source;
-      "quota_project_id",  // quota_project_id;
-      "client_id",         // client_id;
-      "client_secret",     // client_secret;
-      "",                  // workforce_pool_user_project;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   HttpRequest::SetOverride(
@@ -2555,11 +2709,15 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_text);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2592,11 +2750,15 @@ TEST(CredentialsTest,
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2626,11 +2788,15 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_json);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2660,11 +2826,15 @@ TEST(CredentialsTest,
   auto credential_source =
       JsonParse(invalid_url_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2689,11 +2859,15 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
       "{\"file\":\"%s\"}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2734,11 +2908,15 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
       "}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2768,11 +2946,15 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse("{\"file\":\"non_exisiting_file\"}");
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2812,11 +2994,15 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
       "}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2849,11 +3035,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2883,11 +3073,15 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2923,11 +3117,15 @@ TEST(CredentialsTest,
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -2966,11 +3164,15 @@ TEST(
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3003,11 +3205,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
   auto credential_source = JsonParse(
       valid_aws_external_account_creds_options_credential_source_ipv6);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3039,11 +3245,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3076,11 +3286,15 @@ TEST(CredentialsTest,
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3115,11 +3329,15 @@ TEST(CredentialsTest,
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3154,11 +3372,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3195,11 +3417,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3240,11 +3466,15 @@ TEST(CredentialsTest,
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3285,11 +3515,15 @@ TEST(CredentialsTest,
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3324,8 +3558,10 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
-      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://foo.com:5555/"
+      "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
       "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
       "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
@@ -3341,8 +3577,10 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* file_options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
-      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://foo.com:5555/"
+      "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
       "\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
@@ -3356,7 +3594,9 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* aws_options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
       "\"region_url\":\"https://169.254.169.254:5555/"
@@ -3378,11 +3618,15 @@ TEST(CredentialsTest,
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3407,11 +3651,15 @@ TEST(CredentialsTest,
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3443,11 +3691,15 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_missing_role_name);
   GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
       "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
       *credential_source,                 // credential_source;
@@ -3496,8 +3748,10 @@ TEST(
   const char* options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
-      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://foo.com:5555/"
+      "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"random_key\":\"random_value\"},"
       "\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
@@ -3513,8 +3767,10 @@ TEST(CredentialsTest,
       "{\"type\":\"external_account\",\"audience\":\"//iam.googleapis.com/"
       "locations/location/workforcePools/pool/providers/provider\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
-      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://foo.com:5555/"
+      "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
       "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
       "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
@@ -3535,8 +3791,10 @@ TEST(CredentialsTest,
       "{\"type\":\"external_account\",\"audience\":\"invalid_workforce_pool_"
       "audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
-      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "url\":\"service_account_impersonation_url\","
+      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
+      "\"token_url\":\"https://foo.com:5555/"
+      "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
       "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
       "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"

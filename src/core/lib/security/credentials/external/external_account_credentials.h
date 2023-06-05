@@ -45,12 +45,16 @@ namespace grpc_core {
 class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
+  struct ServiceAccountImpersonation {
+    int32_t token_lifetime_seconds;
+  };
   // External account credentials json interface.
   struct Options {
     std::string type;
     std::string audience;
     std::string subject_token_type;
     std::string service_account_impersonation_url;
+    ServiceAccountImpersonation service_account_impersonation;
     std::string token_url;
     std::string token_info_url;
     Json credential_source;
