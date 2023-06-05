@@ -129,6 +129,10 @@ class MyTestServiceImpl : public TestServiceImpl {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
       // Do not record when zero since it indicates no test per-call report.
+      if (request_metrics.application_utilization() > 0) {
+        recorder->RecordApplicationUtilizationMetric(
+            request_metrics.application_utilization());
+      }
       if (request_metrics.cpu_utilization() > 0) {
         recorder->RecordCpuUtilizationMetric(request_metrics.cpu_utilization());
       }
@@ -2350,6 +2354,10 @@ class OrcaLoadReportBuilder {
   OrcaLoadReportBuilder() = default;
   explicit OrcaLoadReportBuilder(const OrcaLoadReport& report)
       : report_(report) {}
+  OrcaLoadReportBuilder& SetApplicationUtilization(double v) {
+    report_.set_application_utilization(v);
+    return *this;
+  }
   OrcaLoadReportBuilder& SetCpuUtilization(double v) {
     report_.set_cpu_utilization(v);
     return *this;
@@ -2391,6 +2399,8 @@ class OrcaLoadReportBuilder {
 OrcaLoadReport BackendMetricDataToOrcaLoadReport(
     const grpc_core::BackendMetricData& backend_metric_data) {
   auto builder = OrcaLoadReportBuilder()
+                     .SetApplicationUtilization(
+                         backend_metric_data.application_utilization)
                      .SetCpuUtilization(backend_metric_data.cpu_utilization)
                      .SetMemUtilization(backend_metric_data.mem_utilization)
                      .SetQps(backend_metric_data.qps)
@@ -2411,6 +2421,8 @@ OrcaLoadReport BackendMetricDataToOrcaLoadReport(
 // OSS.
 void CheckLoadReportAsExpected(const OrcaLoadReport& actual,
                                const OrcaLoadReport& expected) {
+  EXPECT_EQ(actual.application_utilization(),
+            expected.application_utilization());
   EXPECT_EQ(actual.cpu_utilization(), expected.cpu_utilization());
   EXPECT_EQ(actual.mem_utilization(), expected.mem_utilization());
   EXPECT_EQ(actual.rps_fractional(), expected.rps_fractional());
@@ -2671,6 +2683,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
                                    .SetMemUtilization(0.75)
                                    .SetQps(0.25)
@@ -2683,6 +2696,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
                                    .SetNamedMetrics("metric1", -1.0)
                                    .Build(),
                                OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
                                    .SetMemUtilization(0.75)
                                    .SetQps(0.25)
@@ -2698,6 +2712,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(-0.3)
                                    .SetCpuUtilization(-0.1)
                                    .SetMemUtilization(-0.2)
                                    .SetQps(-3)
@@ -2714,6 +2729,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
                                    .SetMemUtilization(2)
                                    .SetQps(3)
@@ -2721,6 +2737,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
                                    .SetUtilization("foo", 5)
                                    .Build(),
                                OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
                                    .SetQps(3)
                                    .SetEps(4)
@@ -2731,6 +2748,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetQps(0.99);
@@ -2738,6 +2756,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   servers_[0]->server_metric_recorder_->SetNamedUtilization("foo", 0.99);
   servers_[0]->server_metric_recorder_->SetNamedUtilization("bar", 0.1);
   OrcaLoadReport per_server_load = OrcaLoadReportBuilder()
+                                       .SetApplicationUtilization(0.99)
                                        .SetCpuUtilization(0.99)
                                        .SetMemUtilization(0.99)
                                        .SetQps(0.99)
@@ -2753,9 +2772,10 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   size_t total_num_rpcs = 0;
   {
     OrcaLoadReport load_report =
-        OrcaLoadReportBuilder().SetCpuUtilization(0.5).Build();
-    OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetCpuUtilization(0.5).Build();
+        OrcaLoadReportBuilder().SetApplicationUtilization(0.5).Build();
+    OrcaLoadReport expected = OrcaLoadReportBuilder(per_server_load)
+                                  .SetApplicationUtilization(0.5)
+                                  .Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2974,6 +2994,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.3);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.1);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.2);
   servers_[0]->server_metric_recorder_->SetEps(0.3);
@@ -2995,6 +3016,7 @@ TEST_F(OobBackendMetricTest, Basic) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
+      EXPECT_EQ(report->second.application_utilization(), 0.3);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
       EXPECT_EQ(report->second.eps(), 0.3);
@@ -3011,20 +3033,20 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Now update the utilization data on the server.
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
-  // data once we see a report with the new CPU utilization value.
+  // data once we see a report with the new app utilization value.
   servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.7);
   servers_[0]->server_metric_recorder_->SetEps(0.6);
   servers_[0]->server_metric_recorder_->SetQps(0.8);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.5);
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(2.4);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(2.4);
   // Wait for client to see new report.
   report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
-      if (report->second.cpu_utilization() != 0.1) {
-        EXPECT_EQ(report->second.cpu_utilization(), 2.4);
+      if (report->second.application_utilization() != 0.1) {
+        EXPECT_EQ(report->second.application_utilization(), 2.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
         EXPECT_EQ(report->second.eps(), 0.6);
         EXPECT_EQ(report->second.rps_fractional(), 0.8);
@@ -3194,15 +3216,16 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 6:4:3 WRR picks.
-  // weights = qps / (cpu_util + (eps/qps)) =
+  // weights = qps / (util + (eps/qps)) =
   //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.2);
+  // where util is app_util if set, or cpu_util.
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.2);
   servers_[0]->server_metric_recorder_->SetEps(20);
   servers_[0]->server_metric_recorder_->SetQps(100);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetApplicationUtilization(0.3);
   servers_[1]->server_metric_recorder_->SetEps(30);
   servers_[1]->server_metric_recorder_->SetQps(100);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(1.5);
+  servers_[2]->server_metric_recorder_->SetApplicationUtilization(1.5);
   servers_[2]->server_metric_recorder_->SetEps(20);
   servers_[2]->server_metric_recorder_->SetQps(200);
   // Create channel.
@@ -3241,15 +3264,16 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
-  // weights = qps / (cpu_util + (eps/qps)) =
+  // weights = qps / (util + (eps/qps)) =
   //   1/(0.4+0.4) : 1/(0.2+0.2) : 2/(0.3+0.1) = 1:2:4
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
+  // where util is app_util if set, or cpu_util.
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.4);
   servers_[0]->server_metric_recorder_->SetEps(40);
   servers_[0]->server_metric_recorder_->SetQps(100);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.2);
+  servers_[1]->server_metric_recorder_->SetApplicationUtilization(0.2);
   servers_[1]->server_metric_recorder_->SetEps(20);
   servers_[1]->server_metric_recorder_->SetQps(100);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetApplicationUtilization(0.3);
   servers_[2]->server_metric_recorder_->SetEps(5);
   servers_[2]->server_metric_recorder_->SetQps(200);
   // Create channel.

@@ -48,19 +48,19 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, WrrTest, ::testing::Values(XdsTestType()),
                          &XdsTestType::Name);
 
 TEST_P(WrrTest, Basic) {
-  ScopedExperimentalEnvVar env_var2("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   CreateAndStartBackends(3);
-  // Expected weights = qps / (cpu_util + (eps/qps)) =
+  // Expected weights = qps / (util + (eps/qps)) =
   //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
+  // where util is app_utilization if set, or cpu_utilization.
   backends_[0]->server_metric_recorder()->SetQps(100);
   backends_[0]->server_metric_recorder()->SetEps(20);
-  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.2);
+  backends_[0]->server_metric_recorder()->SetApplicationUtilization(0.2);
   backends_[1]->server_metric_recorder()->SetQps(100);
   backends_[1]->server_metric_recorder()->SetEps(30);
-  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.3);
+  backends_[1]->server_metric_recorder()->SetApplicationUtilization(0.3);
   backends_[2]->server_metric_recorder()->SetQps(200);
   backends_[2]->server_metric_recorder()->SetEps(20);
-  backends_[2]->server_metric_recorder()->SetCpuUtilization(1.5);
+  backends_[2]->server_metric_recorder()->SetApplicationUtilization(1.5);
   auto cluster = default_cluster_;
   WrrLocality wrr_locality;
   wrr_locality.mutable_endpoint_picking_policy()

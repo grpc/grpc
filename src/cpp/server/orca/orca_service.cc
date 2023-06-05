@@ -203,6 +203,10 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
       xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                           data.mem_utilization);
     }
+//    if (data.application_utilization != -1) {
+//      xds_data_orca_v3_OrcaLoadReport_set_application_utilization(
+//          response, data.application_utilization);
+//    }
     if (data.qps != -1) {
       xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
     }
