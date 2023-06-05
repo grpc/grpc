@@ -172,7 +172,7 @@ class FuzzingEventEngine : public EventEngine {
     // Address of each side of the endpoint.
     const ResolvedAddress addrs[2];
     // Is the endpoint closed?
-    bool closed ABSL_GUARDED_BY(mu_) = false;
+    bool closed[2] ABSL_GUARDED_BY(mu_) = {false, false};
     // Bytes written into each endpoint and awaiting a read.
     std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_);
     // The sizes of each accepted write, as determined by the fuzzer actions.

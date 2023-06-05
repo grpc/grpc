@@ -4623,6 +4623,7 @@ grpc_cc_library(
         "channel_args",
         "health_check_client",
         "iomgr_fwd",
+        "grpc_outlier_detection_header",
         "json",
         "lb_policy",
         "lb_policy_factory",
@@ -4793,6 +4794,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:server_address",
     ],
 )
 
