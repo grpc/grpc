@@ -347,7 +347,6 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   auto io_state = std::move(io_state_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
                                    io_state->endpoint);
-  auto cb = std::move(cb_);
   const auto result = io_state->socket->write_info()->result();
   absl::Status status;
   if (result.wsa_error != 0) {
@@ -355,8 +354,7 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   } else {
     GPR_ASSERT(result.bytes_transferred == buffer_->Length());
   }
-  std::ignore = ResetAndReturnCallback();
-  cb(status);
+  return ResetAndReturnCallback()(status);
 }
 
 // ---- AsyncIOState ----
