@@ -81,7 +81,7 @@ struct GcpObservabilityConfig {
         is_valid(true) {}
 };
 
-// extern is requeired for Cython
+// extern is required for Cython
 extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;

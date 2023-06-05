@@ -128,7 +128,7 @@ struct SpanCensusData {
 
 // SpanContext is associated with span to help manage the current context of a
 // span. It's created when creating a new Span and will be destroyed together
-// with assoicated Span.
+// with associated Span.
 class SpanContext final {
  public:
   SpanContext() : is_valid_(false) {}
@@ -159,7 +159,7 @@ class SpanContext final {
 
 // Span is associated with PythonCensusContext to help manage tracing related
 // data. It's created by calling StartSpan and will be destroyed together with
-// assoicated PythonCensusContext.
+// associated PythonCensusContext.
 class Span final {
  public:
   explicit Span(const std::string& name, const std::string& parent_span_id,

@@ -322,7 +322,7 @@ class ObservabilityTest(unittest.TestCase):
     def testConfigFileOverEnvVar(self):
         # env var have only stats enabled
         os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_STATS_ONLY_STR
-        # cofig_file have only tracing enabled
+        # config_file have only tracing enabled
         self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
 
         with grpc_observability.GCPOpenCensusObservability(
@@ -335,7 +335,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_spans(self.all_span)
 
     def _set_config_file(self, config: Dict[str, Any]) -> None:
-        # Using random name here so multiple tests can run with differnt config files.
+        # Using random name here so multiple tests can run with different config files.
         config_file_path = '/tmp/' + str(random.randint(0, 100000))
         with open(config_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(config))

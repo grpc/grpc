@@ -117,7 +117,7 @@ void AddCensusDataToBuffer(const CensusData& data) {
   std::unique_lock<std::mutex> lk(g_census_data_buffer_mutex);
   if (g_census_data_buffer->size() >= GetMaxExportBufferSize()) {
     gpr_log(GPR_DEBUG,
-            "Reached maximum sensus data buffer size, discarding this "
+            "Reached maximum census data buffer size, discarding this "
             "CensusData entry");
   } else {
     g_census_data_buffer->push(data);
