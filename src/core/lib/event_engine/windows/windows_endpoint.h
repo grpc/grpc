@@ -48,15 +48,15 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
     // Run the callback with whatever data is available, and reset state.
     //
     // Returns true if the callback has been called with some data. Returns
     // false if no data has been read.
     bool MaybeFinishIfDataHasAlreadyBeenRead();
-    // Execute the callback and reset.
-    void ExecuteCallbackAndReset(absl::Status status);
     // Swap any leftover slices into the provided buffer
     void DonateSpareSlices(SliceBuffer* buffer);
 
@@ -73,8 +73,10 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
