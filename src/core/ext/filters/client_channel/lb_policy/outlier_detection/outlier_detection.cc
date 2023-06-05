@@ -68,6 +68,9 @@ namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
+const char* DisableOutlierDetectionAttribute::kName =
+    "disable_outlier_detection";
+
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -554,7 +557,7 @@ std::string OutlierDetectionLb::MakeKeyForAddress(
   // working with pick_first, as per discussion in
   // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
   // implementing dualstack backend support.
-  if (address.GetAttribute(DisableOutlierDetectionAttribute::Name()) !=
+  if (address.GetAttribute(DisableOutlierDetectionAttribute::kName) !=
       nullptr) {
     return "";
   }
@@ -739,6 +742,12 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   if (outlier_detection_policy_->shutting_down_) return nullptr;
   RefCountedPtr<SubchannelState> subchannel_state;
   std::string key = MakeKeyForAddress(address);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] using key %s for subchannel address %s",
+            outlier_detection_policy_.get(), key.c_str(),
+            address.ToString().c_str());
+  }
   if (!key.empty()) {
     auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
     if (it != outlier_detection_policy_->subchannel_state_map_.end()) {

@@ -99,7 +99,7 @@ struct OutlierDetectionConfig {
 class DisableOutlierDetectionAttribute
     : public ServerAddress::AttributeInterface {
  public:
-  static const char* Name() { return "disable_outlier_detection"; }
+  static const char* kName;
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return std::make_unique<DisableOutlierDetectionAttribute>();
@@ -107,7 +107,7 @@ class DisableOutlierDetectionAttribute
 
   int Cmp(const AttributeInterface*) const override { return true; }
 
-  std::string ToString() const override { return Name(); }
+  std::string ToString() const override { return "true"; }
 };
 
 }  // namespace grpc_core

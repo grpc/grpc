@@ -283,7 +283,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     ServerAddressList addresses;
     for (const auto& address : *args.addresses) {
       addresses.emplace_back(address.WithAttribute(
-          DisableOutlierDetectionAttribute::Name(),
+          DisableOutlierDetectionAttribute::kName,
           std::make_unique<DisableOutlierDetectionAttribute>()));
     }
     args.addresses = std::move(addresses);
