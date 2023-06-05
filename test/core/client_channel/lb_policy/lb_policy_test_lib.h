@@ -333,9 +333,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // unexpected events in the queue.
     void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      EXPECT_TRUE(queue_.empty())
-          << location.file() << ":" << location.line() << "\n"
-          << QueueString();
+      EXPECT_TRUE(queue_.empty()) << location.file() << ":" << location.line();
+      for (const Event& event : queue_) {
+        gpr_log(GPR_ERROR, "UNEXPECTED EVENT LEFT IN QUEUE: %s",
+                EventString(event).c_str());
+      }
     }
 
     // Returns the next event in the queue if it is a state update.
@@ -390,14 +392,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           [](const ReresolutionRequested& reresolution) {
             return reresolution.ToString();
           });
-    }
-
-    std::string QueueString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
-      std::vector<std::string> parts = {"Queue:"};
-      for (const Event& event : queue_) {
-        parts.push_back(EventString(event));
-      }
-      return absl::StrJoin(parts, "\n  ");
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
