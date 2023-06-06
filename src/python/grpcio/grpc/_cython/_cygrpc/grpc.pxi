@@ -57,9 +57,6 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
     void notify_all()
     void wait(unique_lock[mutex]&)
 
-cdef extern from "inttypes.h":
-  pass
-
 # gRPC Core Declarations
 
 cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":

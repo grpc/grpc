@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
