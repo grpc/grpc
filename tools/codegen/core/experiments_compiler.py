@@ -343,7 +343,7 @@ class ExperimentsCompiler(object):
                 print(
                     "  {%s, description_%s, additional_constraints_%s, %s, %s},"
                     % (ToCStr(exp.name), exp.name, exp.name,
-                       'true' if exp.default else 'false',
+                       self._defaults[exp.default],
                        'true' if exp.allow_in_fuzzing_config else 'false'),
                     file=C)
             print("};", file=C)
