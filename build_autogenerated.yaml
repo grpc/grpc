@@ -733,6 +733,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -749,6 +750,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -2112,6 +2114,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -2128,6 +2131,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -3608,6 +3612,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -3623,6 +3628,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -7552,6 +7558,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -7567,6 +7574,7 @@ targets:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -8911,6 +8919,16 @@ targets:
   src:
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - test/core/client_idle/idle_filter_state_test.cc
+  deps: []
+  uses_polling: false
+- name: if_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/if_list.h
+  src:
+  - test/core/gprpp/if_list_test.cc
   deps: []
   uses_polling: false
 - name: if_test
@@ -11318,6 +11336,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/sorted_pack.h
+  - src/core/lib/gprpp/type_list.h
   src:
   - test/core/gprpp/sorted_pack_test.cc
   deps: []
