@@ -18,6 +18,8 @@ from absl import logging
 from bin.lib import common
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.helpers import grpc as helpers_grpc
+import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.rpc import grpc_channelz
@@ -59,8 +61,10 @@ LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 def get_client_rpc_stats(test_client: _XdsTestClient,
                          num_rpcs: int) -> LoadBalancerStatsResponse:
     lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
-    logger.info('Received LoadBalancerStatsResponse from test client %s:\n%s',
-                test_client.hostname, lb_stats)
+    hl = framework.helpers.highlighter.HighlighterYaml()
+    logger.info('[%s] Received LoadBalancerStatsResponse:\n%s',
+                test_client.hostname,
+                hl.highlight(helpers_grpc.lb_stats_pretty(lb_stats)))
     return lb_stats
 
 

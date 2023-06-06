@@ -29,6 +29,7 @@
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -44,8 +45,20 @@ class GrpcXdsClient : public XdsClient {
       const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
+  // TODO(roth): The transport factory is injectable here to support
+  // tests that want to use a fake transport factory with code that
+  // expects a GrpcXdsClient instead of an XdsClient, typically because
+  // it needs to call the interested_parties() method.  Once we
+  // finish the EventEngine migration and remove the interested_parties()
+  // method, consider instead changing callers to an approach where the
+  // production code uses XdsClient instead of GrpcXdsClient, and then
+  // passing in a fake XdsClient impl in the tests.  Note that this will
+  // work for callers that use interested_parties() but not for callers
+  // that also use certificate_provider_store(), but we should consider
+  // alternatives for that case as well.
   GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
-                const ChannelArgs& args);
+                const ChannelArgs& args,
+                OrphanablePtr<XdsTransportFactory> transport_factory);
   ~GrpcXdsClient() override;
 
   // Helpers for encoding the XdsClient object in channel args.
