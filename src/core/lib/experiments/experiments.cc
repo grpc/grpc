@@ -130,7 +130,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
+     additional_constraints_work_stealing, kDefaultForDebugOnly, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
