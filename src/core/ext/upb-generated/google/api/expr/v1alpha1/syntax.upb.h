@@ -628,6 +628,23 @@ UPB_INLINE const google_api_expr_v1alpha1_Expr* const* google_api_expr_v1alpha1_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _google_api_expr_v1alpha1_Expr_Call_args_upb_array(const google_api_expr_v1alpha1_Expr_Call* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_expr_v1alpha1_Expr_Call_args_mutable_upb_array(const google_api_expr_v1alpha1_Expr_Call* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool google_api_expr_v1alpha1_Expr_Call_has_args(const google_api_expr_v1alpha1_Expr_Call* msg) {
   size_t size;
   google_api_expr_v1alpha1_Expr_Call_args(msg, &size);
@@ -727,6 +744,23 @@ UPB_INLINE const google_api_expr_v1alpha1_Expr* const* google_api_expr_v1alpha1_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _google_api_expr_v1alpha1_Expr_CreateList_elements_upb_array(const google_api_expr_v1alpha1_Expr_CreateList* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_expr_v1alpha1_Expr_CreateList_elements_mutable_upb_array(const google_api_expr_v1alpha1_Expr_CreateList* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateList_has_elements(const google_api_expr_v1alpha1_Expr_CreateList* msg) {
   size_t size;
   google_api_expr_v1alpha1_Expr_CreateList_elements(msg, &size);
@@ -820,6 +854,23 @@ UPB_INLINE const google_api_expr_v1alpha1_Expr_CreateStruct_Entry* const* google
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _google_api_expr_v1alpha1_Expr_CreateStruct_entries_upb_array(const google_api_expr_v1alpha1_Expr_CreateStruct* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(0, 16), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_expr_v1alpha1_Expr_CreateStruct_entries_mutable_upb_array(const google_api_expr_v1alpha1_Expr_CreateStruct* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(0, 16), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_has_entries(const google_api_expr_v1alpha1_Expr_CreateStruct* msg) {
   size_t size;
@@ -1506,6 +1557,23 @@ UPB_INLINE int32_t const* google_api_expr_v1alpha1_SourceInfo_line_offsets(const
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _google_api_expr_v1alpha1_SourceInfo_line_offsets_upb_array(const google_api_expr_v1alpha1_SourceInfo* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _google_api_expr_v1alpha1_SourceInfo_line_offsets_mutable_upb_array(const google_api_expr_v1alpha1_SourceInfo* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(0, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_has_line_offsets(const google_api_expr_v1alpha1_SourceInfo* msg) {
   size_t size;
   google_api_expr_v1alpha1_SourceInfo_line_offsets(msg, &size);
@@ -1532,9 +1600,6 @@ UPB_INLINE const google_api_expr_v1alpha1_SourceInfo_PositionsEntry* google_api_
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_SourceInfo_PositionsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_has_positions(const google_api_expr_v1alpha1_SourceInfo* msg) {
-  return google_api_expr_v1alpha1_SourceInfo_positions_size(msg) != 0;
-}
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_clear_macro_calls(google_api_expr_v1alpha1_SourceInfo* msg) {
   const upb_MiniTableField field = {5, UPB_SIZE(8, 48), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
@@ -1555,9 +1620,6 @@ UPB_INLINE const google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry* google_api
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_has_macro_calls(const google_api_expr_v1alpha1_SourceInfo* msg) {
-  return google_api_expr_v1alpha1_SourceInfo_macro_calls_size(msg) != 0;
 }
 
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_set_syntax_version(google_api_expr_v1alpha1_SourceInfo *msg, upb_StringView value) {

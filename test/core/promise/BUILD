@@ -156,6 +156,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "prioritized_race_test",
+    srcs = ["prioritized_race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:poll",
+        "//src/core:prioritized_race",
+    ],
+)
+
+grpc_cc_test(
     name = "promise_factory_test",
     srcs = ["promise_factory_test.cc"],
     external_deps = [

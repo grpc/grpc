@@ -243,9 +243,6 @@ UPB_INLINE const grpc_gcp_Identity_AttributesEntry* grpc_gcp_Identity_attributes
   if (!map) return NULL;
   return (const grpc_gcp_Identity_AttributesEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool grpc_gcp_Identity_has_attributes(const grpc_gcp_Identity* msg) {
-  return grpc_gcp_Identity_attributes_size(msg) != 0;
-}
 
 UPB_INLINE void grpc_gcp_Identity_set_service_account(grpc_gcp_Identity *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, -1, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -358,6 +355,23 @@ UPB_INLINE upb_StringView const* grpc_gcp_StartClientHandshakeReq_application_pr
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_gcp_StartClientHandshakeReq_application_protocols_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_StartClientHandshakeReq_application_protocols_mutable_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_gcp_StartClientHandshakeReq_has_application_protocols(const grpc_gcp_StartClientHandshakeReq* msg) {
   size_t size;
   grpc_gcp_StartClientHandshakeReq_application_protocols(msg, &size);
@@ -378,6 +392,23 @@ UPB_INLINE upb_StringView const* grpc_gcp_StartClientHandshakeReq_record_protoco
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_gcp_StartClientHandshakeReq_record_protocols_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_StartClientHandshakeReq_record_protocols_mutable_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_gcp_StartClientHandshakeReq_has_record_protocols(const grpc_gcp_StartClientHandshakeReq* msg) {
   size_t size;
   grpc_gcp_StartClientHandshakeReq_record_protocols(msg, &size);
@@ -397,6 +428,23 @@ UPB_INLINE const grpc_gcp_Identity* const* grpc_gcp_StartClientHandshakeReq_targ
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _grpc_gcp_StartClientHandshakeReq_target_identities_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_StartClientHandshakeReq_target_identities_mutable_upb_array(const grpc_gcp_StartClientHandshakeReq* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool grpc_gcp_StartClientHandshakeReq_has_target_identities(const grpc_gcp_StartClientHandshakeReq* msg) {
   size_t size;
@@ -671,6 +719,23 @@ UPB_INLINE upb_StringView const* grpc_gcp_ServerHandshakeParameters_record_proto
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_gcp_ServerHandshakeParameters_record_protocols_upb_array(const grpc_gcp_ServerHandshakeParameters* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_ServerHandshakeParameters_record_protocols_mutable_upb_array(const grpc_gcp_ServerHandshakeParameters* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_gcp_ServerHandshakeParameters_has_record_protocols(const grpc_gcp_ServerHandshakeParameters* msg) {
   size_t size;
   grpc_gcp_ServerHandshakeParameters_record_protocols(msg, &size);
@@ -690,6 +755,23 @@ UPB_INLINE const grpc_gcp_Identity* const* grpc_gcp_ServerHandshakeParameters_lo
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _grpc_gcp_ServerHandshakeParameters_local_identities_upb_array(const grpc_gcp_ServerHandshakeParameters* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_ServerHandshakeParameters_local_identities_mutable_upb_array(const grpc_gcp_ServerHandshakeParameters* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool grpc_gcp_ServerHandshakeParameters_has_local_identities(const grpc_gcp_ServerHandshakeParameters* msg) {
   size_t size;
@@ -798,6 +880,23 @@ UPB_INLINE upb_StringView const* grpc_gcp_StartServerHandshakeReq_application_pr
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _grpc_gcp_StartServerHandshakeReq_application_protocols_upb_array(const grpc_gcp_StartServerHandshakeReq* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _grpc_gcp_StartServerHandshakeReq_application_protocols_mutable_upb_array(const grpc_gcp_StartServerHandshakeReq* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_has_application_protocols(const grpc_gcp_StartServerHandshakeReq* msg) {
   size_t size;
   grpc_gcp_StartServerHandshakeReq_application_protocols(msg, &size);
@@ -823,9 +922,6 @@ UPB_INLINE const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry* grpc
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool grpc_gcp_StartServerHandshakeReq_has_handshake_parameters(const grpc_gcp_StartServerHandshakeReq* msg) {
-  return grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(msg) != 0;
 }
 UPB_INLINE void grpc_gcp_StartServerHandshakeReq_clear_in_bytes(grpc_gcp_StartServerHandshakeReq* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(28, 24), 0, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

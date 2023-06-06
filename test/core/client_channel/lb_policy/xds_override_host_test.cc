@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <map>
@@ -31,6 +29,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -51,40 +50,30 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"},
+      absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
+                                                                  "HEALTHY"},
       std::string child_policy = "round_robin") {
-    Json::Object child_policy_config = {{child_policy, Json::Object()}};
-    return MakeConfig(Json::Array{Json::Object{
-        {"xds_override_host_experimental",
-         Json::Object{{"childPolicy", Json::Array{{child_policy_config}}},
-                      {"overrideHostStatus", override_host_status}}}}});
+    Json child_policy_config =
+        Json::FromObject({{child_policy, Json::FromObject({})}});
+    Json::Array override_host_status_array;
+    for (const absl::string_view host_status : override_host_status) {
+      override_host_status_array.push_back(
+          Json::FromString(std::string(host_status)));
+    }
+    return MakeConfig(Json::FromArray({Json::FromObject(
+        {{"xds_override_host_experimental",
+          Json::FromObject(
+              {{"childPolicy", Json::FromArray({child_policy_config})},
+               {"overrideHostStatus",
+                Json::FromArray(override_host_status_array)}})}})}));
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses,
-                              RefCountedPtr<LoadBalancingPolicy::Config>
-                                  config = MakeXdsOverrideHostConfig()) {
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config), policy_.get()),
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
+                          policy_.get()),
               absl::OkStatus());
-    ExpectConnectingUpdate();
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      auto* subchannel = FindSubchannel(addresses[i]);
-      EXPECT_NE(subchannel, nullptr);
-      if (subchannel == nullptr) return nullptr;
-      EXPECT_TRUE(subchannel->ConnectionRequested());
-      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-      if (i == 0) {
-        picker = WaitForConnected();
-        ExpectRoundRobinPicks(picker.get(), {addresses[0]});
-      } else {
-        picker = WaitForRoundRobinListChange(
-            absl::MakeSpan(addresses).subspan(0, i),
-            absl::MakeSpan(addresses).subspan(0, i + 1));
-      }
-    }
-    return picker;
+    return ExpectRoundRobinStartup(addresses);
   }
 
   ServerAddress MakeAddressWithHealthStatus(
@@ -101,9 +90,10 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const std::pair<const absl::string_view,
                                  XdsHealthStatus::HealthStatus>>
           addresses_and_statuses,
-      Json::Array override_host_status = {"UNKNOWN", "HEALTHY"}) {
+      absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
+                                                                  "HEALTHY"}) {
     LoadBalancingPolicy::UpdateArgs update;
-    update.config = MakeXdsOverrideHostConfig(std::move(override_host_status));
+    update.config = MakeXdsOverrideHostConfig(override_host_status);
     update.addresses.emplace();
     for (auto address_and_status : addresses_and_statuses) {
       update.addresses->push_back(MakeAddressWithHealthStatus(

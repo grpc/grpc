@@ -42,6 +42,8 @@ from ._metadata import Metadata
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
@@ -121,14 +123,14 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable,
 
     def __call__(
         self,
-        request: Any,
+        request: RequestType,
         *,
         timeout: Optional[float] = None,
         metadata: Optional[Metadata] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
-    ) -> _base_call.UnaryUnaryCall:
+    ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
 
         metadata = self._init_metadata(metadata, compression)
         if not self._interceptors:
@@ -152,14 +154,14 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
 
     def __call__(
         self,
-        request: Any,
+        request: RequestType,
         *,
         timeout: Optional[float] = None,
         metadata: Optional[Metadata] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
-    ) -> _base_call.UnaryStreamCall:
+    ) -> _base_call.UnaryStreamCall[RequestType, ResponseType]:
 
         metadata = self._init_metadata(metadata, compression)
         deadline = _timeout_to_deadline(timeout)

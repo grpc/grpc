@@ -112,6 +112,23 @@ UPB_INLINE const struct envoy_config_accesslog_v3_AccessLog* const* envoy_extens
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_extensions_filters_http_router_v3_Router_upstream_log_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_extensions_filters_http_router_v3_Router_upstream_log_mutable_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_upstream_log(const envoy_extensions_filters_http_router_v3_Router* msg) {
   size_t size;
   envoy_extensions_filters_http_router_v3_Router_upstream_log(msg, &size);
@@ -142,6 +159,23 @@ UPB_INLINE upb_StringView const* envoy_extensions_filters_http_router_v3_Router_
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_extensions_filters_http_router_v3_Router_strict_check_headers_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_extensions_filters_http_router_v3_Router_strict_check_headers_mutable_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_strict_check_headers(const envoy_extensions_filters_http_router_v3_Router* msg) {
   size_t size;
@@ -184,6 +218,23 @@ UPB_INLINE const struct envoy_extensions_filters_network_http_connection_manager
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_extensions_filters_http_router_v3_Router_upstream_http_filters_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 32), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_extensions_filters_http_router_v3_Router_upstream_http_filters_mutable_upb_array(const envoy_extensions_filters_http_router_v3_Router* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 32), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_upstream_http_filters(const envoy_extensions_filters_http_router_v3_Router* msg) {
   size_t size;

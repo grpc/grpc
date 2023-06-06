@@ -90,6 +90,23 @@ UPB_INLINE const envoy_admin_v3_Certificate* const* envoy_admin_v3_Certificates_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_admin_v3_Certificates_certificates_upb_array(const envoy_admin_v3_Certificates* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_Certificates_certificates_mutable_upb_array(const envoy_admin_v3_Certificates* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_admin_v3_Certificates_has_certificates(const envoy_admin_v3_Certificates* msg) {
   size_t size;
   envoy_admin_v3_Certificates_certificates(msg, &size);
@@ -173,6 +190,23 @@ UPB_INLINE const envoy_admin_v3_CertificateDetails* const* envoy_admin_v3_Certif
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_admin_v3_Certificate_ca_cert_upb_array(const envoy_admin_v3_Certificate* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_Certificate_ca_cert_mutable_upb_array(const envoy_admin_v3_Certificate* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_admin_v3_Certificate_has_ca_cert(const envoy_admin_v3_Certificate* msg) {
   size_t size;
   envoy_admin_v3_Certificate_ca_cert(msg, &size);
@@ -192,6 +226,23 @@ UPB_INLINE const envoy_admin_v3_CertificateDetails* const* envoy_admin_v3_Certif
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_admin_v3_Certificate_cert_chain_upb_array(const envoy_admin_v3_Certificate* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_Certificate_cert_chain_mutable_upb_array(const envoy_admin_v3_Certificate* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_admin_v3_Certificate_has_cert_chain(const envoy_admin_v3_Certificate* msg) {
   size_t size;
@@ -323,6 +374,23 @@ UPB_INLINE const envoy_admin_v3_SubjectAlternateName* const* envoy_admin_v3_Cert
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_admin_v3_CertificateDetails_subject_alt_names_upb_array(const envoy_admin_v3_CertificateDetails* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_CertificateDetails_subject_alt_names_mutable_upb_array(const envoy_admin_v3_CertificateDetails* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_admin_v3_CertificateDetails_has_subject_alt_names(const envoy_admin_v3_CertificateDetails* msg) {
   size_t size;

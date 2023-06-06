@@ -108,35 +108,39 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterInvoke6) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke6) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   CancelAfterInvoke6(*this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterInvoke5) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke5) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   CancelAfterInvoke5(*this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterInvoke4) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke4) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   CancelAfterInvoke4(*this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterInvoke3) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke3) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   CancelAfterInvoke3(*this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterInvoke6) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke6) {
   CancelAfterInvoke6(*this, std::make_unique<DeadlineCancellationMode>());
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterInvoke5) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke5) {
   CancelAfterInvoke5(*this, std::make_unique<DeadlineCancellationMode>());
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterInvoke4) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke4) {
   CancelAfterInvoke4(*this, std::make_unique<DeadlineCancellationMode>());
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterInvoke3) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke3) {
   CancelAfterInvoke3(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

@@ -105,7 +105,9 @@ class HPackParser {
   class String;
 
   grpc_error_handle ParseInput(Input input, bool is_last);
-  bool ParseInputInner(Input* input, bool is_last);
+  void ParseInputInner(Input* input);
+  GPR_ATTRIBUTE_NOINLINE
+  void HandleMetadataSoftSizeLimitExceeded(Input* input);
 
   // Target metadata buffer
   grpc_metadata_batch* metadata_buffer_ = nullptr;

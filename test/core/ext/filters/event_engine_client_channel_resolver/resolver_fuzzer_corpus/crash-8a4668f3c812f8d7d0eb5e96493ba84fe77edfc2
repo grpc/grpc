@@ -1,0 +1,11 @@
+channel_args {
+  args {
+    key: "grpc.service_config_disable_resolution"
+    i: 0
+  }
+}
+txt_response {
+  txt_records {
+    enumerated_value: TXT_RANDOM_PREFIXED_CONFIG
+  }
+}

@@ -35,6 +35,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -240,12 +241,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         MakeRefCounted<TransientFailurePicker>(status));
     channel_control_helper()->RequestReresolution();
   }
-  // Otherwise, if this is the initial update, report CONNECTING.
-  else if (subchannel_list_.get() == nullptr) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
-  }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
   if (latest_pending_subchannel_list_->num_subchannels() == 0 ||
@@ -279,6 +274,19 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     status = args.addresses.status();
   } else if (args.addresses->empty()) {
     status = absl::UnavailableError("address list must not be empty");
+  }
+  // TODO(roth): This is a hack to disable outlier_detection when used
+  // with pick_first, for the reasons described in
+  // https://github.com/grpc/grpc/issues/32967.  Remove this when
+  // implementing the dualstack design.
+  if (args.addresses.ok()) {
+    ServerAddressList addresses;
+    for (const auto& address : *args.addresses) {
+      addresses.emplace_back(address.WithAttribute(
+          DisableOutlierDetectionAttribute::kName,
+          std::make_unique<DisableOutlierDetectionAttribute>()));
+    }
+    args.addresses = std::move(addresses);
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.

@@ -61,6 +61,7 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -356,7 +357,7 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<LoadBalancingPolicy::Config> pending_config_;
 
     grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-        GRPC_CHANNEL_IDLE;
+        GRPC_CHANNEL_CONNECTING;
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
         ABSL_GUARDED_BY(&RlsLb::mu_);
   };
@@ -731,9 +732,9 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
     : DualRefCounted<ChildPolicyWrapper>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "ChildPolicyWrapper"
                                                      : nullptr),
-      lb_policy_(lb_policy),
+      lb_policy_(std::move(lb_policy)),
       target_(std::move(target)),
-      picker_(MakeRefCounted<QueuePicker>(std::move(lb_policy))) {
+      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -780,15 +781,15 @@ absl::optional<Json> InsertOrUpdateChildPolicyField(const std::string& field,
           errors->AddError("child policy config is not an object");
         } else {
           Json::Object child_config = child_config_json.object();
-          child_config[field] = Json(value);
-          array.emplace_back(
-              Json::Object{{child_name, std::move(child_config)}});
+          child_config[field] = Json::FromString(value);
+          array.emplace_back(Json::FromObject(
+              {{child_name, Json::FromObject(std::move(child_config))}}));
         }
       }
     }
   }
   if (errors->size() != original_num_errors) return absl::nullopt;
-  return array;
+  return Json::FromArray(std::move(array));
 }
 
 void RlsLb::ChildPolicyWrapper::StartUpdate() {
@@ -894,6 +895,8 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   {
     MutexLock lock(&wrapper_->lb_policy_->mu_);
     if (wrapper_->is_shutdown_) return;
+    // TODO(roth): It looks like this ignores subsequent TF updates that
+    // might change the status used to fail picks, which seems wrong.
     if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
         state != GRPC_CHANNEL_READY) {
       return;
@@ -2472,7 +2475,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
           // a child policy for a given target.
           for (const Json& config : child_policy_config_.array()) {
             if (config.object().begin()->first == (*parsed_config)->name()) {
-              child_policy_config_ = Json::Array{config};
+              child_policy_config_ = Json::FromArray({config});
               break;
             }
           }
@@ -2497,7 +2500,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<RlsLbConfig>(
+    return LoadFromJson<RefCountedPtr<RlsLbConfig>>(
         json, JsonArgs(), "errors validing RLS LB policy config");
   }
 };

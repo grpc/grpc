@@ -20,6 +20,10 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/json.h>
+
 #include "src/core/lib/transport/connectivity_state.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -49,13 +53,11 @@ Json SubchannelNode::RenderJson() {
   grpc_connectivity_state state =
       connectivity_state_.load(std::memory_order_relaxed);
   Json::Object data = {
-      {"state",
-       Json::Object{
-           {"state", ConnectivityStateName(state)},
-       }},
-      {"target", target_},
+      {"state", Json::FromObject({
+                    {"state", Json::FromString(ConnectivityStateName(state))},
+                })},
+      {"target", Json::FromString(target_)},
   };
-
   // Fill in the channel trace if applicable
   Json trace_json = trace_.RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
@@ -65,11 +67,10 @@ Json SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(&data);
   // Construct top-level object.
   Json::Object object{
-      {"ref",
-       Json::Object{
-           {"subchannelId", std::to_string(uuid())},
-       }},
-      {"data", std::move(data)},
+      {"ref", Json::FromObject({
+                  {"subchannelId", Json::FromString(absl::StrCat(uuid()))},
+              })},
+      {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
   RefCountedPtr<SocketNode> child_socket;
@@ -78,14 +79,14 @@ Json SubchannelNode::RenderJson() {
     child_socket = child_socket_;
   }
   if (child_socket != nullptr && child_socket->uuid() != 0) {
-    object["socketRef"] = Json::Array{
-        Json::Object{
-            {"socketId", std::to_string(child_socket->uuid())},
-            {"name", child_socket->name()},
-        },
-    };
+    object["socketRef"] = Json::FromArray({
+        Json::FromObject({
+            {"socketId", Json::FromString(absl::StrCat(child_socket->uuid()))},
+            {"name", Json::FromString(child_socket->name())},
+        }),
+    });
   }
-  return object;
+  return Json::FromObject(object);
 }
 
 }  // namespace channelz

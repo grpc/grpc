@@ -46,6 +46,7 @@
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
@@ -102,8 +103,8 @@ std::string XdsClusterResource::ToString() const {
             "prioritized_cluster_names=[",
             absl::StrJoin(aggregate.prioritized_cluster_names, ", "), "]"));
       });
-  contents.push_back(
-      absl::StrCat("lb_policy_config=", JsonDump(Json{lb_policy_config})));
+  contents.push_back(absl::StrCat("lb_policy_config=",
+                                  JsonDump(Json::FromArray(lb_policy_config))));
   if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
@@ -329,7 +330,8 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
     if (original_error_count == errors->size()) {
       auto config = CoreConfiguration::Get()
                         .lb_policy_registry()
-                        .ParseLoadBalancingConfig(cds_update->lb_policy_config);
+                        .ParseLoadBalancingConfig(
+                            Json::FromArray(cds_update->lb_policy_config));
       if (!config.ok()) errors->AddError(config.status().message());
     }
     return;
@@ -339,17 +341,16 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
   if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
       envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
     cds_update->lb_policy_config = {
-        Json::Object{
+        Json::FromObject({
             {"xds_wrr_locality_experimental",
-             Json::Object{
-                 {"childPolicy",
-                  Json::Array{
-                      Json::Object{
-                          {"round_robin", Json::Object()},
-                      },
-                  }},
-             }},
-        },
+             Json::FromObject({
+                 {"childPolicy", Json::FromArray({
+                                     Json::FromObject({
+                                         {"round_robin", Json::FromObject({})},
+                                     }),
+                                 })},
+             })},
+        }),
     };
   } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
              envoy_config_cluster_v3_Cluster_RING_HASH) {
@@ -391,13 +392,13 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
       }
     }
     cds_update->lb_policy_config = {
-        Json::Object{
+        Json::FromObject({
             {"ring_hash_experimental",
-             Json::Object{
-                 {"minRingSize", min_ring_size},
-                 {"maxRingSize", max_ring_size},
-             }},
-        },
+             Json::FromObject({
+                 {"minRingSize", Json::FromNumber(min_ring_size)},
+                 {"maxRingSize", Json::FromNumber(max_ring_size)},
+             })},
+        }),
     };
   } else {
     ValidationErrors::ScopedField field(errors, ".lb_policy");

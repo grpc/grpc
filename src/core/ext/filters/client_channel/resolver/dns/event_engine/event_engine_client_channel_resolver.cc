@@ -31,6 +31,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
@@ -128,7 +129,7 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     void OnBalancerHostnamesResolved(
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
-    void OnTXTResolved(absl::StatusOr<std::string> service_config);
+    void OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config);
     // Returns a Result if resolution is complete.
     // callers must release the lock and call OnRequestComplete if a Result is
     // returned. This is because OnRequestComplete may Orphan the resolver,
@@ -251,7 +252,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         resolver_.get(), resolver_->name_to_resolve().c_str());
     txt_handle_ = event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
-            absl::StatusOr<std::string> service_config) {
+            absl::StatusOr<std::vector<std::string>> service_config) {
           self->OnTXTResolved(std::move(service_config));
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
@@ -333,6 +334,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
+  if (srv_records->empty()) {
+    result = OnResolvedLocked();
+    return;
+  }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -388,7 +393,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
-    OnTXTResolved(absl::StatusOr<std::string> service_config) {
+    OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
   ValidationErrors::ScopedField field(&errors_, "txt lookup");
   absl::optional<Resolver::Result> result;
   {
@@ -400,7 +405,22 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
     } else {
-      service_config_json_ = absl::StrCat("grpc_config=", *service_config);
+      static constexpr absl::string_view kServiceConfigAttributePrefix =
+          "grpc_config=";
+      auto result = std::find_if(service_config->begin(), service_config->end(),
+                                 [&](absl::string_view s) {
+                                   return absl::StartsWith(
+                                       s, kServiceConfigAttributePrefix);
+                                 });
+      if (result != service_config->end()) {
+        service_config_json_ =
+            result->substr(kServiceConfigAttributePrefix.size());
+      } else {
+        service_config_json_ = absl::UnavailableError(absl::StrCat(
+            "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
+            " in TXT records"));
+        errors_.AddError(service_config_json_.status().message());
+      }
     }
     result = OnResolvedLocked();
   }
@@ -480,6 +500,11 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     absl::Status status = errors_.status(
         absl::StatusCode::kUnavailable,
         absl::StrCat("errors resolving ", resolver_->name_to_resolve()));
+    if (status.ok()) {
+      // If no errors were returned, but the results are empty, we still need to
+      // return an error. Validation errors may be empty.
+      status = absl::UnavailableError("No results from DNS queries");
+    }
     GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
     result.addresses = status;
     result.service_config = status;

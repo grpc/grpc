@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/json.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"

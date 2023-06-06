@@ -349,10 +349,14 @@ struct cq_callback_data {
 struct grpc_completion_queue {
   /// Once owning_refs drops to zero, we will destroy the cq
   grpc_core::RefCount owning_refs;
-
+  /// Add the paddings to fix the false sharing
+  char padding_1[GPR_CACHELINE_SIZE];
   gpr_mu* mu;
 
+  char padding_2[GPR_CACHELINE_SIZE];
   const cq_vtable* vtable;
+
+  char padding_3[GPR_CACHELINE_SIZE];
   const cq_poller_vtable* poller_vtable;
 
 #ifndef NDEBUG
@@ -1231,7 +1235,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     prev = &cqd->completed_head;
     while ((c = reinterpret_cast<grpc_cq_completion*>(
                 prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
-      if (c->tag == tag) {
+      if (GPR_LIKELY(c->tag == tag)) {
         prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
         if (c == cqd->completed_tail) {
           cqd->completed_tail = prev;

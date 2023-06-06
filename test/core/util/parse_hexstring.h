@@ -19,8 +19,12 @@
 #ifndef GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
 #define GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
 
-#include <grpc/slice.h>
+#include "absl/strings/string_view.h"
 
-grpc_slice parse_hexstring(const char* hexstring);
+#include "src/core/lib/slice/slice.h"
+
+namespace grpc_core {
+Slice ParseHexstring(absl::string_view hexstring);
+}
 
 #endif  // GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.56.0-dev
+PROJECT_NUMBER         = 1.57.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -931,6 +931,7 @@ include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
 include/grpc/support/cpu.h \
+include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -2051,6 +2052,11 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
+src/core/lib/event_engine/cf_engine/cf_engine.cc \
+src/core/lib/event_engine/cf_engine/cf_engine.h \
+src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
+src/core/lib/event_engine/cf_engine/cfstream_endpoint.h \
+src/core/lib/event_engine/cf_engine/cftype_unique_ref.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/common_closures.h \
@@ -2059,7 +2065,6 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/executor/executor.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
@@ -2114,8 +2119,14 @@ src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_local.cc \
 src/core/lib/event_engine/thread_local.h \
-src/core/lib/event_engine/thread_pool.cc \
-src/core/lib/event_engine/thread_pool.h \
+src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+src/core/lib/event_engine/thread_pool/original_thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
+src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
@@ -2132,6 +2143,9 @@ src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/event_engine/windows/windows_listener.cc \
 src/core/lib/event_engine/windows/windows_listener.h \
+src/core/lib/event_engine/work_queue/basic_work_queue.cc \
+src/core/lib/event_engine/work_queue/basic_work_queue.h \
+src/core/lib/event_engine/work_queue/work_queue.h \
 src/core/lib/experiments/config.cc \
 src/core/lib/experiments/config.h \
 src/core/lib/experiments/experiments.cc \
@@ -2144,6 +2158,7 @@ src/core/lib/gpr/iphone/cpu.cc \
 src/core/lib/gpr/linux/cpu.cc \
 src/core/lib/gpr/linux/log.cc \
 src/core/lib/gpr/log.cc \
+src/core/lib/gpr/log_internal.h \
 src/core/lib/gpr/msys/tmpfile.cc \
 src/core/lib/gpr/posix/cpu.cc \
 src/core/lib/gpr/posix/log.cc \
@@ -2198,6 +2213,7 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
@@ -2424,6 +2440,7 @@ src/core/lib/promise/party.cc \
 src/core/lib/promise/party.h \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
+src/core/lib/promise/prioritized_race.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
@@ -2469,6 +2486,8 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/authorization/stdout_logger.cc \
+src/core/lib/security/authorization/stdout_logger.h \
 src/core/lib/security/certificate_provider/certificate_provider_factory.h \
 src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
 src/core/lib/security/certificate_provider/certificate_provider_registry.h \

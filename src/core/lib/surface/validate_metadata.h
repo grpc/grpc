@@ -25,10 +25,19 @@
 
 #include <cstring>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/error.h"
+
+namespace grpc_core {
+
+absl::Status ValidateHeaderKeyIsLegal(absl::string_view key);
+
+}
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice);
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(

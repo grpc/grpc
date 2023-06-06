@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
+static bool g_is_shutdown = true;
 
 //******************************************************************************
 // Singleton epoll set related fields
@@ -1239,6 +1240,7 @@ static void shutdown_engine(void) {
     gpr_mu_destroy(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
   }
+  g_is_shutdown = true;
 }
 
 static bool init_epoll1_linux();
@@ -1278,10 +1280,13 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
 
     is_any_background_poller_thread,
     /* name = */ "epoll1",
-    /* check_engine_available = */ [](bool) { return init_epoll1_linux(); },
-    /* init_engine = */ []() {},
+    /* check_engine_available = */
+    [](bool) { return init_epoll1_linux(); },
+    /* init_engine = */
+    []() { GPR_ASSERT(init_epoll1_linux()); },
     shutdown_background_closure,
-    /* shutdown_engine = */ []() {},
+    /* shutdown_engine = */
+    []() { shutdown_engine(); },
     add_closure_to_background_poller,
 
     fd_set_pre_allocated,
@@ -1306,6 +1311,7 @@ static void reset_event_manager_on_fork() {
 // Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
 // support is available
 static bool init_epoll1_linux() {
+  if (!g_is_shutdown) return true;
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
     return false;
@@ -1328,6 +1334,7 @@ static bool init_epoll1_linux() {
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);
   }
+  g_is_shutdown = false;
   return true;
 }
 

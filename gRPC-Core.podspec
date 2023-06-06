@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.56.0-dev'
+  version = '1.57.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -38,15 +38,15 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.10'
-  s.tvos.deployment_target = '10.0'
-  s.watchos.deployment_target = '4.0'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target = '10.12'
+  s.tvos.deployment_target = '12.0'
+  s.watchos.deployment_target = '6.0'
 
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20230125.0'
+  abseil_version = '1.20230125.3'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -163,6 +163,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/atm_gcc_sync.h',
                       'include/grpc/support/atm_windows.h',
                       'include/grpc/support/cpu.h',
+                      'include/grpc/support/json.h',
                       'include/grpc/support/log.h',
                       'include/grpc/support/log_windows.h',
                       'include/grpc/support/port_platform.h',
@@ -181,7 +182,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.28'
+    ss.dependency 'BoringSSL-GRPC', '0.0.29'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -1149,6 +1150,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/cf_engine/cf_engine.cc',
+                      'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                      'src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc',
+                      'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
+                      'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.cc',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/common_closures.h',
@@ -1157,7 +1163,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
-                      'src/core/lib/event_engine/executor/executor.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
@@ -1212,8 +1217,14 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_local.cc',
                       'src/core/lib/event_engine/thread_local.h',
-                      'src/core/lib/event_engine/thread_pool.cc',
-                      'src/core/lib/event_engine/thread_pool.h',
+                      'src/core/lib/event_engine/thread_pool/original_thread_pool.cc',
+                      'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
+                      'src/core/lib/event_engine/thread_pool/thread_pool.h',
+                      'src/core/lib/event_engine/thread_pool/thread_pool_factory.cc',
+                      'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc',
+                      'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                      'src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc',
+                      'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                       'src/core/lib/event_engine/time_util.cc',
                       'src/core/lib/event_engine/time_util.h',
                       'src/core/lib/event_engine/trace.cc',
@@ -1230,6 +1241,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/windows/windows_engine.h',
                       'src/core/lib/event_engine/windows/windows_listener.cc',
                       'src/core/lib/event_engine/windows/windows_listener.h',
+                      'src/core/lib/event_engine/work_queue/basic_work_queue.cc',
+                      'src/core/lib/event_engine/work_queue/basic_work_queue.h',
+                      'src/core/lib/event_engine/work_queue/work_queue.h',
                       'src/core/lib/experiments/config.cc',
                       'src/core/lib/experiments/config.h',
                       'src/core/lib/experiments/experiments.cc',
@@ -1242,6 +1256,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/linux/cpu.cc',
                       'src/core/lib/gpr/linux/log.cc',
                       'src/core/lib/gpr/log.cc',
+                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/msys/tmpfile.cc',
                       'src/core/lib/gpr/posix/cpu.cc',
                       'src/core/lib/gpr/posix/log.cc',
@@ -1296,6 +1311,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/packed_table.h',
+                      'src/core/lib/gprpp/per_cpu.cc',
                       'src/core/lib/gprpp/per_cpu.h',
                       'src/core/lib/gprpp/posix/env.cc',
                       'src/core/lib/gprpp/posix/stat.cc',
@@ -1522,6 +1538,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/party.h',
                       'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
+                      'src/core/lib/promise/prioritized_race.h',
                       'src/core/lib/promise/promise.h',
                       'src/core/lib/promise/race.h',
                       'src/core/lib/promise/seq.h',
@@ -1552,6 +1569,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/thread_quota.h',
                       'src/core/lib/resource_quota/trace.cc',
                       'src/core/lib/resource_quota/trace.h',
+                      'src/core/lib/security/authorization/audit_logging.cc',
+                      'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
                       'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
@@ -1565,6 +1584,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/matchers.h',
                       'src/core/lib/security/authorization/rbac_policy.cc',
                       'src/core/lib/security/authorization/rbac_policy.h',
+                      'src/core/lib/security/authorization/stdout_logger.cc',
+                      'src/core/lib/security/authorization/stdout_logger.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                       'src/core/lib/security/certificate_provider/certificate_provider_registry.cc',
                       'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
@@ -1920,6 +1941,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/mem/arena_internal.h',
                       'third_party/upb/upb/message/accessors.c',
                       'third_party/upb/upb/message/accessors.h',
+                      'third_party/upb/upb/message/accessors_internal.h',
                       'third_party/upb/upb/message/extension_internal.h',
                       'third_party/upb/upb/message/internal.h',
                       'third_party/upb/upb/message/message.c',
@@ -1943,6 +1965,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/mini_table/sub_internal.h',
                       'third_party/upb/upb/mini_table/types.h',
                       'third_party/upb/upb/msg.h',
+                      'third_party/upb/upb/port/atomic.h',
                       'third_party/upb/upb/port/def.inc',
                       'third_party/upb/upb/port/undef.inc',
                       'third_party/upb/upb/port/vsnprintf_compat.h',
@@ -1996,7 +2019,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/reflection/service_def.c',
                       'third_party/upb/upb/reflection/service_def.h',
                       'third_party/upb/upb/reflection/service_def_internal.h',
-                      'third_party/upb/upb/reflection/stage0/google/protobuf/descriptor.upb.h',
                       'third_party/upb/upb/status.h',
                       'third_party/upb/upb/string_view.h',
                       'third_party/upb/upb/text/encode.c',
@@ -2004,6 +2026,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/wire/common.h',
                       'third_party/upb/upb/wire/common_internal.h',
                       'third_party/upb/upb/wire/decode.c',
                       'third_party/upb/upb/wire/decode.h',
@@ -2489,11 +2512,13 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                              'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
+                              'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
-                              'src/core/lib/event_engine/executor/executor.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/memory_allocator_factory.h',
@@ -2523,7 +2548,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/shim.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_local.h',
-                              'src/core/lib/event_engine/thread_pool.h',
+                              'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
+                              'src/core/lib/event_engine/thread_pool/thread_pool.h',
+                              'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
+                              'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
                               'src/core/lib/event_engine/time_util.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/event_engine/utils.h',
@@ -2532,9 +2560,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/windows/windows_endpoint.h',
                               'src/core/lib/event_engine/windows/windows_engine.h',
                               'src/core/lib/event_engine/windows/windows_listener.h',
+                              'src/core/lib/event_engine/work_queue/basic_work_queue.h',
+                              'src/core/lib/event_engine/work_queue/work_queue.h',
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
                               'src/core/lib/gpr/alloc.h',
+                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',
@@ -2683,6 +2714,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/party.h',
                               'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
+                              'src/core/lib/promise/prioritized_race.h',
                               'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
@@ -2701,6 +2733,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/resource_quota/resource_quota.h',
                               'src/core/lib/resource_quota/thread_quota.h',
                               'src/core/lib/resource_quota/trace.h',
+                              'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/authorization_policy_provider.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
@@ -2708,6 +2741,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/grpc_server_authz_filter.h',
                               'src/core/lib/security/authorization/matchers.h',
                               'src/core/lib/security/authorization/rbac_policy.h',
+                              'src/core/lib/security/authorization/stdout_logger.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_factory.h',
                               'src/core/lib/security/certificate_provider/certificate_provider_registry.h',
                               'src/core/lib/security/context/security_context.h',
@@ -2895,6 +2929,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/mem/arena.h',
                               'third_party/upb/upb/mem/arena_internal.h',
                               'third_party/upb/upb/message/accessors.h',
+                              'third_party/upb/upb/message/accessors_internal.h',
                               'third_party/upb/upb/message/extension_internal.h',
                               'third_party/upb/upb/message/internal.h',
                               'third_party/upb/upb/message/message.h',
@@ -2913,6 +2948,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/mini_table/sub_internal.h',
                               'third_party/upb/upb/mini_table/types.h',
                               'third_party/upb/upb/msg.h',
+                              'third_party/upb/upb/port/atomic.h',
                               'third_party/upb/upb/port/def.inc',
                               'third_party/upb/upb/port/undef.inc',
                               'third_party/upb/upb/port/vsnprintf_compat.h',
@@ -2950,13 +2986,13 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/reflection/oneof_def_internal.h',
                               'third_party/upb/upb/reflection/service_def.h',
                               'third_party/upb/upb/reflection/service_def_internal.h',
-                              'third_party/upb/upb/reflection/stage0/google/protobuf/descriptor.upb.h',
                               'third_party/upb/upb/status.h',
                               'third_party/upb/upb/string_view.h',
                               'third_party/upb/upb/text/encode.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/wire/common.h',
                               'third_party/upb/upb/wire/common_internal.h',
                               'third_party/upb/upb/wire/decode.h',
                               'third_party/upb/upb/wire/decode_fast.h',

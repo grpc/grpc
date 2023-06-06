@@ -100,6 +100,22 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
                 return server_socket
         return None
 
+    @staticmethod
+    def channel_repr(channel: Channel) -> str:
+        result = f'<Channel channel_id={channel.ref.channel_id}'
+        if channel.data.target:
+            result += f' target={channel.data.target}'
+        result += f' state={ChannelState.Name(channel.data.state.state)}>'
+        return result
+
+    @staticmethod
+    def subchannel_repr(subchannel: Subchannel) -> str:
+        result = f'<Subchannel subchannel_id={subchannel.ref.subchannel_id}'
+        if subchannel.data.target:
+            result += f' target={subchannel.data.target}'
+        result += f' state={ChannelState.Name(subchannel.data.state.state)}>'
+        return result
+
     def find_channels_for_target(self, target: str,
                                  **kwargs) -> Iterator[Channel]:
         return (channel for channel in self.list_channels(**kwargs)

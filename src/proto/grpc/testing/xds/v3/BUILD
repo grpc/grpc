@@ -237,6 +237,7 @@ grpc_proto_library(
         "percent_proto",
         "range_proto",
         "regex_proto",
+        "string_proto",
     ],
 )
 

@@ -152,9 +152,14 @@ class ParsedMetadata {
     value_.slice = value.TakeCSlice();
   }
   // Construct metadata from a string key, slice value pair.
-  ParsedMetadata(Slice key, Slice value)
+  // FromSlicePair() is used to adjust the overload set so that we don't
+  // inadvertently match against any of the previous overloads.
+  // TODO(ctiller): re-evaluate the overload functions here so and maybe
+  // introduce some factory functions?
+  struct FromSlicePair {};
+  ParsedMetadata(FromSlicePair, Slice key, Slice value, uint32_t transport_size)
       : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
-        transport_size_(static_cast<uint32_t>(key.size() + value.size() + 32)) {
+        transport_size_(transport_size) {
     value_.pointer =
         new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
@@ -188,14 +193,13 @@ class ParsedMetadata {
   // HTTP2 defined storage size of this metadatum.
   uint32_t transport_size() const { return transport_size_; }
   // Create a new parsed metadata with the same key but a different value.
-  ParsedMetadata WithNewValue(Slice value,
+  ParsedMetadata WithNewValue(Slice value, uint32_t value_wire_size,
                               MetadataParseErrorFn on_error) const {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
     result.transport_size_ =
-        TransportSize(static_cast<uint32_t>(key().length()),
-                      static_cast<uint32_t>(value.length()));
+        TransportSize(static_cast<uint32_t>(key().length()), value_wire_size);
     vtable_->with_new_value(&value, on_error, &result);
     return result;
   }

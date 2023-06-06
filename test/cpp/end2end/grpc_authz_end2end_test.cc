@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/audit_logging.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/audit_logging_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -40,10 +45,16 @@ namespace {
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+constexpr char kClientCertPath[] =
+    "src/core/tsi/test_creds/client-with-spiffe.pem";
+constexpr char kClientKeyPath[] =
+    "src/core/tsi/test_creds/client-with-spiffe.key";
 
 constexpr char kMessage[] = "Hello";
+
+using experimental::RegisterAuditLoggerFactory;
+using grpc_core::experimental::AuditLoggerRegistry;
+using grpc_core::testing::TestAuditLoggerFactory;
 
 std::string ReadFile(const char* file_path) {
   grpc_slice slice;
@@ -82,9 +93,14 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     channel_options.watch_identity_key_cert_pairs();
     channel_options.watch_root_certs();
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
+    RegisterAuditLoggerFactory(
+        std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
   }
 
-  ~GrpcAuthzEnd2EndTest() override { server_->Shutdown(); }
+  ~GrpcAuthzEnd2EndTest() override {
+    AuditLoggerRegistry::TestOnlyResetRegistry();
+    server_->Shutdown();
+  }
 
   // Replaces existing credentials with insecure credentials.
   void UseInsecureCredentials() {
@@ -144,6 +160,7 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   std::shared_ptr<ServerCredentials> server_creds_;
   std::shared_ptr<ChannelCredentials> channel_creds_;
+  std::vector<std::string> audit_logs_;
 };
 
 TEST_F(GrpcAuthzEnd2EndTest,
@@ -413,6 +430,658 @@ TEST_F(GrpcAuthzEnd2EndTest,
   grpc::Status status = SendRpc(channel, &context, &resp);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInAllowWithAuditLoggingNone) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"NONE\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the allow rule.
+  context.AddMetadata("key-foo", "foo");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitNoMatchWithAuditLoggingNone) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"NONE\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Does not match the allow rule or deny rule.
+  context.AddMetadata("key-foo", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInDenyWithAuditLoggingNone) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"NONE\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the deny rule.
+  context.AddMetadata("key-bar", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInAllowWithAuditLoggingOnDeny) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the allow rule.
+  context.AddMetadata("key-foo", "foo");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitNoMatchWithAuditLoggingOnDeny) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Does not match the allow rule or deny rule.
+  context.AddMetadata("key-foo", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_name\":"
+          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInDenyWithAuditLoggingOnDeny) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the deny rule.
+  context.AddMetadata("key-bar", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_name\":"
+          "\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInAllowWithAuditLoggingOnAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the allow rule.
+  context.AddMetadata("key-foo", "foo");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitNoMatchWithAuditLoggingOnAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Does not match the allow rule. No audit log emitted.
+  context.AddMetadata("key-foo", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitMatchInDenyWithAuditLoggingOnAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the deny rule. No audit log emitted.
+  context.AddMetadata("key-bar", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_EQ(audit_logs_.size(), 0);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitMatchInAllowWithAuditLoggingOnDenyAndAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY_AND_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the allow rule.
+  context.AddMetadata("key-foo", "foo");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_foo\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+}
+
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitNoMatchWithAuditLoggingOnDenyAndAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY_AND_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Does not match the allow rule.
+  context.AddMetadata("key-foo", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+}
+
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitMatchInDenyWithAuditLoggingOnDenyAndAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY_AND_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  grpc::testing::EchoResponse resp;
+  grpc::Status status;
+  ClientContext context;
+  // Matches the deny rule.
+  context.AddMetadata("key-bar", "bar");
+  status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"deny_bar\",\"policy_"
+          "name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
 }
 
 TEST_F(GrpcAuthzEnd2EndTest,
@@ -774,7 +1443,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
       ->SetCallbackForTesting(nullptr);
 }
 
-TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherWithAuditLoggingRecoversFromFailure) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -787,7 +1456,15 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "        ]"
       "      }"
       "    }"
-      "  ]"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_ALLOW\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
@@ -798,6 +1475,13 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_echo\","
+          "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+  audit_logs_.clear();
   gpr_event on_first_reload_done;
   gpr_event_init(&on_first_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback1 =
@@ -823,6 +1507,13 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":true,\"matched_rule\":\"allow_echo\","
+          "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
+  audit_logs_.clear();
   gpr_event on_second_reload_done;
   gpr_event_init(&on_second_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback2 =
@@ -835,7 +1526,8 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
       ->SetCallbackForTesting(std::move(callback2));
-  // Replace the existing invalid policy with a valid authorization policy.
+  // Replace the existing invalid policy with a valid authorization
+  // policy.
   policy =
       "{"
       "  \"name\": \"authz\","
@@ -858,7 +1550,15 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "        ]"
       "      }"
       "    }"
-      "  ]"
+      "  ],"
+      "  \"audit_logging_options\": {"
+      "    \"audit_condition\": \"ON_DENY\","
+      "    \"audit_loggers\": ["
+      "      {"
+      "        \"name\": \"test_logger\""
+      "      }"
+      "    ]"
+      "  }"
       "}";
   tmp_policy.RewriteFile(policy);
   // Wait for the provider's refresh thread to read the updated files.
@@ -871,6 +1571,12 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp3.message().empty());
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          "{\"authorized\":false,\"matched_rule\":\"deny_echo\","
+          "\"policy_name\":\"authz\",\"principal\":\"spiffe://foo.com/bar/"
+          "baz\",\"rpc_method\":\"/grpc.testing.EchoTestService/Echo\"}"));
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
       ->SetCallbackForTesting(nullptr);

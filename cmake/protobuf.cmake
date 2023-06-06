@@ -55,12 +55,8 @@ if(gRPC_PROTOBUF_PROVIDER STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_PROTOBUF_PROVIDER STREQUAL "package")
-  find_package(Protobuf REQUIRED ${gRPC_PROTOBUF_PACKAGE_TYPE})
+  find_package(Protobuf REQUIRED CONFIG)
 
-  # {Protobuf,PROTOBUF}_FOUND is defined based on find_package type ("MODULE" vs "CONFIG").
-  # For "MODULE", the case has also changed between cmake 3.5 and 3.6.
-  # We use the legacy uppercase version for *_LIBRARIES AND *_INCLUDE_DIRS variables
-  # as newer cmake versions provide them too for backward compatibility.
   if(Protobuf_FOUND OR PROTOBUF_FOUND)
     if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
       set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
@@ -90,6 +86,6 @@ elseif(gRPC_PROTOBUF_PROVIDER STREQUAL "package")
         set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
       endif()
     endif()
-    set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf ${gRPC_PROTOBUF_PACKAGE_TYPE})\nendif()")
+    set(_gRPC_FIND_PROTOBUF "find_dependency(Protobuf CONFIG)")
   endif()
 endif()

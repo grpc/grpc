@@ -131,7 +131,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 };
 
 // Tests transparent retries when the call was never sent out on the wire.
-TEST_P(RetryTest, RetryTransparentNotSentOnWire) {
+CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,

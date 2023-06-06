@@ -18,6 +18,7 @@ from absl import flags
 from absl.testing import absltest
 import grpc
 
+from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
 from framework.helpers import skips
 
@@ -34,14 +35,31 @@ _EXPECTED_STATUS = grpc.StatusCode.DATA_LOSS
 
 class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
-    # As of 2022-07-06 custom load balancer configuration via xDS is only supported by
-    # Java clients v1.47.x and above.
+    @classmethod
+    def setUpClass(cls):
+        """Force the java test server for languages not yet supporting
+        the `rpc-behavior` feature.
+        https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#server
+        """
+        super().setUpClass()
+        # gRPC Java implemented server "error-code-" rpc-behavior in v1.47.x.
+        # gRPC CPP implemented rpc-behavior in the same version, as custom_lb.
+        if cls.lang_spec.client_lang in _Lang.JAVA | _Lang.CPP:
+            return
+
+        # gRPC go, python and node fallback to the gRPC Java.
+        # TODO(https://github.com/grpc/grpc-go/issues/6288): use go server.
+        # TODO(https://github.com/grpc/grpc/issues/33134): use python server.
+        cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
+
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang == _Lang.JAVA:
             return config.version_gte('v1.47.x')
         if config.client_lang == _Lang.CPP:
             return config.version_gte('v1.55.x')
+        if config.client_lang == _Lang.GO:
+            return config.version_gte('v1.56.x')
         return False
 
     def test_custom_lb_config(self):
@@ -93,7 +111,7 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # Verify status codes from the servers have the configured one.
         with self.subTest('9_test_server_returned_configured_status_code'):
             self.assertRpcStatusCodes(test_client,
-                                      status_code=_EXPECTED_STATUS,
+                                      expected_status=_EXPECTED_STATUS,
                                       duration=datetime.timedelta(seconds=10),
                                       method='UNARY_CALL')
 

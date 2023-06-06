@@ -305,8 +305,8 @@ class ServerContextBase {
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
-  /// TODO(vjpai): Fix this so that the tag is returned even if the call never
-  /// starts (https://github.com/grpc/grpc/issues/10136).
+  /// Note: the tag will only be returned if call starts.
+  /// If the call never starts, this tag will not be returned.
   void AsyncNotifyWhenDone(void* tag) {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;

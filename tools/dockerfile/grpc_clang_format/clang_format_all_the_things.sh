@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python"
+DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc *.m *.mm"

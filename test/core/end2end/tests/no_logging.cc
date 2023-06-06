@@ -115,7 +115,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(NoLoggingTest, NoLoggingTest) {
+CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
   Verifier verifier;
   verifier.FailOnNonErrorLog();
   for (int i = 0; i < 10; i++) {
