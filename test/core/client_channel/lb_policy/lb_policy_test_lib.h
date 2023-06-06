@@ -160,15 +160,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return Match(
               watcher_,
               [](const std::unique_ptr<
-                     SubchannelInterface::ConnectivityStateWatcherInterface>&
-                     watcher) {
-                return watcher.get();
-              },
+                  SubchannelInterface::ConnectivityStateWatcherInterface>&
+                     watcher) { return watcher.get(); },
               [](const std::shared_ptr<
-                     SubchannelInterface::ConnectivityStateWatcherInterface>&
-                     watcher) {
-                return watcher.get();
-              });
+                  SubchannelInterface::ConnectivityStateWatcherInterface>&
+                     watcher) { return watcher.get(); });
         }
 
         absl::variant<
@@ -206,9 +202,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->requested_connection_ = true;
       }
 
-      void AddDataWatcher(
-          std::unique_ptr<DataWatcherInterface> watcher) override
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+      void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher)
+          override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());

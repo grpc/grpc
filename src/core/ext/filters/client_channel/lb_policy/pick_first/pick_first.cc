@@ -737,10 +737,9 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
       enable_health_watch_(
           args.GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
               .value_or(false)),
-      args_(
-          args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
-              .Remove(
-                  GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
+      args_(args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+                .Remove(
+                    GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
             "[PF %p] Creating subchannel list %p for %" PRIuPTR
