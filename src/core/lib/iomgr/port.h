@@ -37,10 +37,10 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
-#if defined(LINUX_VERSION_CODE) &&                   \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && \
-    defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 18)
+#if defined(LINUX_VERSION_CODE) && defined(__GLIBC_PREREQ)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __GLIBC_PREREQ(2, 18)
 #define GRPC_HAVE_VSOCK 1
+#endif
 #endif
 #define GRPC_LINUX_EVENTFD 1
 #define GRPC_POSIX_SOCKET 1
@@ -61,10 +61,10 @@
 #define GRPC_LINUX_ERRQUEUE 1
 #endif  // LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 #endif  // LINUX_VERSION_CODE
-#if defined(LINUX_VERSION_CODE) &&                   \
-    LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && \
-    defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 18)
+#if defined(LINUX_VERSION_CODE) && defined(__GLIBC_PREREQ)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __GLIBC_PREREQ(2, 18)
 #define GRPC_HAVE_VSOCK 1
+#endif
 #endif
 #define GRPC_LINUX_MULTIPOLL_WITH_EPOLL 1
 #define GRPC_POSIX_FORK 1
