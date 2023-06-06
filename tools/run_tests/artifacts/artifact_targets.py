@@ -164,7 +164,6 @@ class PythonArtifact:
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ['LDFLAGS'] = '-s'
-                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
