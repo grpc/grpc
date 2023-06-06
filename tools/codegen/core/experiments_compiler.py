@@ -325,7 +325,14 @@ class ExperimentsCompiler(object):
                     (exp.name, ToCStr(json.dumps(exp.additional_constraints))),
                     file=C)
                 have_defaults.add(self._defaults[exp.default])
-            # TODO(vigneshbabu): fix the kDefaultForDebugOnly logic
+            if 'kDefaultForDebugOnly' in have_defaults:
+                print("#ifdef NDEBUG", file=C)
+                if 'kDefaultForDebugOnly' in have_defaults:
+                    print("const bool kDefaultForDebugOnly = false;", file=C)
+                print("#else", file=C)
+                if 'kDefaultForDebugOnly' in have_defaults:
+                    print("const bool kDefaultForDebugOnly = true;", file=C)
+                print("#endif", file=C)
             print("}", file=C)
             print(file=C)
             print("namespace grpc_core {", file=C)
