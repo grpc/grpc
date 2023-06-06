@@ -15,6 +15,9 @@
 #ifndef GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 #define GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <stdint.h>
 
 #include <string>
@@ -24,9 +27,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/sync.h"

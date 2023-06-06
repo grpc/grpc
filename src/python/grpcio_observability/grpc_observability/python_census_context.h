@@ -15,6 +15,8 @@
 #ifndef GRPC_PYRHON_OPENCENSUS_H
 #define GRPC_PYRHON_OPENCENSUS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
