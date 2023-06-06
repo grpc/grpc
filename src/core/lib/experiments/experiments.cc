@@ -86,6 +86,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
