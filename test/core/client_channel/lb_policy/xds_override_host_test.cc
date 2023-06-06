@@ -309,6 +309,12 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
+  // Send an update that marks the endpoints with different EDS health
+  // states, but those states are present in override_host_status.
+  // The picker should use the DRAINING host when a call's override
+  // points to that hose, but the host should not be used if there is no
+  // override pointing to it.
+  gpr_log(GPR_INFO, "### sending update with DRAINING host");
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
@@ -316,23 +322,35 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
       {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
-  // There are two notifications - one from child policy and one from the parent
-  // policy due to draining channel update
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // Now the connection to the draining host gets dropped.
+  // The picker should queue picks where the override host is IDLE.
+  // All picks without an override host should not use this host.
+  gpr_log(GPR_INFO, "### closing connection to DRAINING host");
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), MakeOverrideHostAttribute(kAddresses[1]));
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // The subchannel should have been asked to reconnect as a result of the
+  // queued pick above.  It will therefore transition into state CONNECTING.
+  // The pick behavior is the same as above: The picker should queue
+  // picks where the override host is CONNECTING.  All picks without an
+  // override host should not use this host.
+  gpr_log(GPR_INFO, "### subchannel starts reconnecting");
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), MakeOverrideHostAttribute(kAddresses[1]));
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // The subchannel now becomes connected again.
+  // Now picks with this override host can be completed again.
+  // Picks without an override host still don't use the draining host.
+  gpr_log(GPR_INFO, "### subchannel becomes reconnected");
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
