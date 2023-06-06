@@ -424,7 +424,12 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
           GRPC_CHANNEL_READY, absl::OkStatus(),
           MakeRefCounted<Picker>(policy_->selected_->subchannel()));
       break;
-    case GRPC_CHANNEL_IDLE:  // IDLE shouldn't happen, but just in case.
+    case GRPC_CHANNEL_IDLE:
+      // If the subchannel becomes disconnected, the health watcher
+      // might happen to see the change before the raw connectivity
+      // state watcher does.  In this case, ignore it, since the raw
+      // connectivity state watcher will handle it shortly.
+      break;
     case GRPC_CHANNEL_CONNECTING:
       policy_->channel_control_helper()->UpdateState(
           new_state, absl::OkStatus(),
