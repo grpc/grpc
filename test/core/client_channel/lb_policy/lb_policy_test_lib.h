@@ -214,22 +214,44 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         } else if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          auto connectivity_watcher =
-              static_cast<HealthWatcher*>(watcher.get())->TakeWatcher();
+          GPR_ASSERT(health_watcher_ == nullptr);
+          GPR_ASSERT(health_watcher_wrapper_ == nullptr);
+          health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
+          auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
               work_serializer_, std::move(connectivity_watcher));
-          watcher_map_[connectivity_watcher_ptr] = watcher_wrapper.get();
+          health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
+          gpr_log(GPR_INFO,
+                  "AddDataWatcher(): added HealthWatch=%p "
+                  "connectivity_watcher=%p watcher_wrapper=%p",
+                  health_watcher_.get(), connectivity_watcher_ptr,
+                  health_watcher_wrapper_);
         }
       }
 
-      void CancelDataWatcher(DataWatcherInterface* watcher) override {
+      void CancelDataWatcher(DataWatcherInterface* watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
-        if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
-        state_->orca_watchers_.erase(orca_watcher_.get());
-        orca_watcher_.reset();
+        auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
+        if (w->type() == OrcaProducer::Type()) {
+          if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
+          state_->orca_watchers_.erase(orca_watcher_.get());
+          orca_watcher_.reset();
+        } else if (w->type() == HealthProducer::Type()) {
+          if (health_watcher_.get() != static_cast<HealthWatcher*>(watcher)) {
+            return;
+          }
+          gpr_log(GPR_INFO,
+                  "CancelDataWatcher(): cancelling HealthWatch=%p "
+                  "watcher_wrapper=%p",
+                  health_watcher_.get(), health_watcher_wrapper_);
+          state_->state_tracker_.RemoveWatcher(health_watcher_wrapper_);
+          health_watcher_wrapper_ = nullptr;
+          health_watcher_.reset();
+        }
       }
 
       // Don't need this method, so it's a no-op.
@@ -240,6 +262,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
+      std::unique_ptr<HealthWatcher> health_watcher_;
+      WatcherWrapper* health_watcher_wrapper_ = nullptr;
       std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 

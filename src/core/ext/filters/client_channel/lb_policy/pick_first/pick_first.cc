@@ -87,8 +87,8 @@ class PickFirst : public LoadBalancingPolicy {
       SubchannelData(SubchannelList* subchannel_list,
                      RefCountedPtr<SubchannelInterface> subchannel);
 
-      RefCountedPtr<SubchannelInterface> subchannel() const {
-        return subchannel_;
+      SubchannelInterface* subchannel() const {
+        return subchannel_.get();
       }
       absl::optional<grpc_connectivity_state> connectivity_state() const {
         return connectivity_state_;
@@ -262,6 +262,7 @@ class PickFirst : public LoadBalancingPolicy {
   // Health watcher for the selected subchannel.
   SubchannelInterface::ConnectivityStateWatcherInterface* health_watcher_ =
       nullptr;
+  SubchannelInterface::DataWatcherInterface* health_data_watcher_ = nullptr;
   // Are we in IDLE state?
   bool idle_ = false;
   // Are we shut down?
@@ -292,6 +293,7 @@ void PickFirst::ShutdownLocked() {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
   }
   shutdown_ = true;
+  UnsetSelectedSubchannel();
   subchannel_list_.reset();
   latest_pending_subchannel_list_.reset();
 }
@@ -402,8 +404,12 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
 }
 
 void PickFirst::UnsetSelectedSubchannel() {
+  if (selected_ != nullptr && health_data_watcher_ != nullptr) {
+    selected_->subchannel()->CancelDataWatcher(health_data_watcher_);
+  }
   selected_ = nullptr;
   health_watcher_ = nullptr;
+  health_data_watcher_ = nullptr;
 }
 
 //
@@ -422,7 +428,7 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
     case GRPC_CHANNEL_READY:
       policy_->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_READY, absl::OkStatus(),
-          MakeRefCounted<Picker>(policy_->selected_->subchannel()));
+          MakeRefCounted<Picker>(policy_->selected_->subchannel()->Ref()));
       break;
     case GRPC_CHANNEL_IDLE:
       // If the subchannel becomes disconnected, the health watcher
@@ -713,8 +719,10 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
     auto watcher = std::make_unique<HealthWatcher>(
         p->Ref(DEBUG_LOCATION, "HealthWatcher"));
     p->health_watcher_ = watcher.get();
-    subchannel_->AddDataWatcher(MakeHealthCheckWatcher(
-        p->work_serializer(), subchannel_list_->args_, std::move(watcher)));
+    auto health_data_watcher = MakeHealthCheckWatcher(
+        p->work_serializer(), subchannel_list_->args_, std::move(watcher));
+    p->health_data_watcher_ = health_data_watcher.get();
+    subchannel_->AddDataWatcher(std::move(health_data_watcher));
   } else {
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
