@@ -816,7 +816,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<RingHashSubchannelList>(
       this, std::move(addresses), args.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the
