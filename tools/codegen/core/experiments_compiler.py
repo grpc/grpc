@@ -398,8 +398,8 @@ class ExperimentsCompiler(object):
             defs = ""
             test_body = ""
             for _, exp in self._experiment_definitions.items():
-                defs += _EXPERIMENTS_EXPECTED_VALUE(SnakeToPascal(exp.name),
-                                                    self._final_return[exp.default])
+                defs += _EXPERIMENTS_EXPECTED_VALUE(
+                    SnakeToPascal(exp.name), self._final_return[exp.default])
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
