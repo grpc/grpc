@@ -161,6 +161,7 @@ std::string ServerAddress::ToString() const {
     for (const auto& p : attributes_) {
       attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
     }
+    std::sort(attrs.begin(), attrs.end());
     parts.emplace_back(
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }
