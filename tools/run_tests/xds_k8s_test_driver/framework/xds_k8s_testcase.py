@@ -301,6 +301,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
+        # pylint: disable=too-many-locals
         expected_status_int: int = expected_status.value[0]
         expected_status_fmt: str = helpers_grpc.status_pretty(expected_status)
 
@@ -353,7 +354,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         if not stats.result[expected_status_int]:
             logger.error(
                 "Expected non-zero RPCs with status %s for method %s."
-                f"\nDiff stats:\n%s"
+                "\nDiff stats:\n%s"
                 "\n(Stats below are for debugging purposes only)"
                 "\nStats before:\n%s"
                 "\nStats after:\n%s", expected_status_fmt, method,
