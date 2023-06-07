@@ -186,9 +186,12 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             cls,
             accumulated_stats: _LoadBalancerAccumulatedStatsResponse,
             *,
-            ignore_empty: bool = False) -> str:
+            ignore_empty: bool = False,
+            highlight: bool = True) -> str:
         stats_yaml = helpers_grpc.accumulated_stats_pretty(
             accumulated_stats, ignore_empty=ignore_empty)
+        if not highlight:
+            return stats_yaml
         return cls.yaml_highlighter.highlight(stats_yaml)
 
     @classmethod
@@ -307,28 +310,31 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
-        before_stats_fmt: str = self._pretty_accumulated_stats(before_stats)
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse initial measurement:'
-            '\n%s', test_client.hostname, before_stats_fmt)
+            '\n%s', test_client.hostname,
+            self._pretty_accumulated_stats(before_stats))
 
         time.sleep(duration.total_seconds())
 
         after_stats = test_client.get_load_balancer_accumulated_stats()
-        after_stats_fmt: str = self._pretty_accumulated_stats(after_stats)
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse after %s seconds:'
             '\n%s', test_client.hostname, duration.total_seconds(),
-            after_stats_fmt)
+            self._pretty_accumulated_stats(after_stats))
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
-        diff_stats_fmt: str = self._pretty_accumulated_stats(diff_stats,
-                                                             ignore_empty=True)
         logger.info(
             '[%s] << Received accumulated stats difference.'
             ' Expecting RPCs with status %s for method %s:\n%s',
-            test_client.hostname, expected_status_fmt, method, diff_stats_fmt)
+            test_client.hostname, expected_status_fmt, method,
+            self._pretty_accumulated_stats(diff_stats, ignore_empty=True))
+
+        # Used in stack traces. Don't highlight for better compatibility.
+        diff_stats_fmt: str = self._pretty_accumulated_stats(diff_stats,
+                                                             ignore_empty=True,
+                                                             highlight=False)
 
         # 1. Verify the completed RPCs of the given method has no statuses
         #    other than the expected_status,
