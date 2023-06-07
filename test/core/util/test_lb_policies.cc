@@ -28,6 +28,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
@@ -78,6 +79,13 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
   ~ForwardingLoadBalancingPolicy() override = default;
 
   absl::Status UpdateLocked(UpdateArgs args) override {
+    // Use correct config for the delegate load balancing policy
+    auto config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            Json::FromArray({Json::FromObject(
+                {{std::string(delegate_->name()), Json::FromObject({})}})}));
+    GPR_ASSERT(config.ok());
+    args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
 
