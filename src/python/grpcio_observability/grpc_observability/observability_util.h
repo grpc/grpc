@@ -29,8 +29,8 @@
 
 #include <grpc/status.h>
 
-#include "src/python/grpcio_observability/grpc_observability/constants.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+#include "constants.h"
+#include "python_census_context.h"
 
 namespace grpc_observability {
 

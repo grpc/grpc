@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
+#include "client_call_tracer.h"
 
-#include <constants.h>
-#include <observability_util.h>
-#include <python_census_context.h>
+#include <grpc/slice.h>
 #include <stddef.h>
-
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
-
-#include <grpc/slice.h>
-
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice.h"
+
+#include "observability_util.h"
+#include "constants.h"
+#include "python_census_context.h"
 
 namespace grpc_observability {
 
@@ -56,7 +51,7 @@ void PythonOpenCensusCallTracer::GenerateContext() {}
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  if (!context_.SpanContext().IsSampled()) {
+  if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
   context_.AddSpanAnnotation(annotation);
@@ -64,7 +59,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     const Annotation& annotation) {
-  if (!context_.SpanContext().IsSampled()) {
+  if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
 
@@ -95,7 +90,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (tracing_enabled_) {
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 }
@@ -103,7 +98,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
 PythonCensusContext
 PythonOpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   auto context = PythonCensusContext(absl::StrCat("Attempt.", method_),
-                                     &(context_.Span()), context_.Labels());
+                                     &(context_.GetSpan()), context_.Labels());
   return context;
 }
 
@@ -271,11 +266,11 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
   if (parent_->tracing_enabled_) {
     if (status_code_ != absl::StatusCode::kOk) {
-      context_.Span().SetStatus(StatusCodeToString(status_code_));
+      context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     }
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 
@@ -286,7 +281,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
-  if (!context_.SpanContext().IsSampled()) {
+  if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
   context_.AddSpanAnnotation(annotation);
@@ -294,7 +289,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(const Annotation& annotation) {
-  if (!context_.SpanContext().IsSampled()) {
+  if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
 

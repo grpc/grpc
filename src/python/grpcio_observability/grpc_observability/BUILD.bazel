@@ -15,7 +15,7 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:cython_library.bzl", "pyx_library")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 # TODO(xuanwn): We also need support Python-native build
 
@@ -27,6 +27,7 @@ cc_library(
         "python_census_context.cc",
         "rpc_encoding.cc",
         "sampler.cc",
+        "rpc_encoding.cc",
         "server_call_tracer.cc",
     ],
     hdrs = [
@@ -36,12 +37,16 @@ cc_library(
         "python_census_context.h",
         "rpc_encoding.h",
         "sampler.h",
+        "rpc_encoding.h",
         "server_call_tracer.h",
     ],
     includes = ["."],
     deps = [
         #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
-        "//:grpc",
+        # "//:grpc_rpc_encoding",
+        # "//src/cpp/ext/gcp:observability_config",
+        "//:grpc_base",
+        "//src/core:slice",
     ],
 )
 

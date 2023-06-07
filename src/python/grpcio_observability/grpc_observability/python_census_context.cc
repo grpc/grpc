@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+#include "python_census_context.h"
 
 #include <string.h>
 
@@ -90,10 +90,10 @@ void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out) {
   uint8_t trace_options_rep_[kSizeTraceOptions];
 
   std::string trace_id =
-      absl::HexStringToBytes(absl::string_view(ctx.SpanContext().TraceId()));
+      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().TraceId()));
   std::string span_id =
-      absl::HexStringToBytes(absl::string_view(ctx.SpanContext().SpanId()));
-  trace_options_rep_[0] = ctx.SpanContext().IsSampled() ? 1 : 0;
+      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().SpanId()));
+  trace_options_rep_[0] = ctx.GetSpanContext().IsSampled() ? 1 : 0;
 
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceIdOfs + 1]), trace_id.c_str(),
          kSizeTraceID);

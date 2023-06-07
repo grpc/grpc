@@ -1,5 +1,5 @@
 build/
-include/
+grpc_root/
 *.c
 *.cpp
 *.egg-info

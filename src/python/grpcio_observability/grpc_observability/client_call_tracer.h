@@ -28,12 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+#include "python_census_context.h"
 
 namespace grpc_observability {
 
@@ -46,15 +41,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
                                       bool is_transparent_retry);
     std::string TraceId() override {
       return absl::BytesToHexString(
-          absl::string_view(context_.SpanContext().TraceId()));
+          absl::string_view(context_.GetSpanContext().TraceId()));
     }
 
     std::string SpanId() override {
       return absl::BytesToHexString(
-          absl::string_view(context_.SpanContext().SpanId()));
+          absl::string_view(context_.GetSpanContext().SpanId()));
     }
 
-    bool IsSampled() override { return context_.SpanContext().IsSampled(); }
+    bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
@@ -101,15 +96,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
 
   std::string TraceId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().TraceId()));
+        absl::string_view(context_.GetSpanContext().TraceId()));
   }
 
   std::string SpanId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().SpanId()));
+        absl::string_view(context_.GetSpanContext().SpanId()));
   }
 
-  bool IsSampled() override { return context_.SpanContext().IsSampled(); }
+  bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
   void GenerateContext();
   PythonOpenCensusCallAttemptTracer* StartNewAttempt(
