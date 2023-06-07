@@ -422,6 +422,8 @@ DEFINE_MACROS += (('GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER', 1),)
 # <inttypes.h> was included in core/lib/channel/call_tracer.h.
 # This macro should already be defined in grpc/grpc.h through port_platform.h,
 # but we're still having issue in aarch64, so we manually define the macro here.
+# TODO(xuanwn): Figure out what's going on in the aarch64 build so we can support
+# gcc + Bazel.
 DEFINE_MACROS += (('__STDC_FORMAT_MACROS', None),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
