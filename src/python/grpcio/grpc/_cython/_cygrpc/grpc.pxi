@@ -29,9 +29,6 @@ ctypedef unsigned long long uint64_t
 
 # C++ Utilities
 
-cdef extern from "<cinttypes>" nogil:
-  pass
-
 # NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
 # links it with exception handling. It introduces new dependencies.
 cdef extern from "<queue>" namespace "std" nogil:

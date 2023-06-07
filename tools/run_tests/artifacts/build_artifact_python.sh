@@ -89,7 +89,7 @@ ${SETARCH_CMD} "${PYTHON}" setup.py sdist
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 # shellcheck disable=SC2086
-${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
+${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG || { cat cygrpc.cpp; exit 1 }
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
