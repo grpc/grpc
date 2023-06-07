@@ -301,28 +301,33 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
+        expected_status_int: int = expected_status.value[0]
+        expected_status_fmt: str = helpers_grpc.status_pretty(expected_status)
+
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
+        before_stats_fmt: str = self._pretty_accumulated_stats(before_stats)
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse initial measurement:'
-            '\n%s', test_client.hostname,
-            self._pretty_accumulated_stats(before_stats))
+            '\n%s', test_client.hostname, before_stats_fmt)
+
         time.sleep(duration.total_seconds())
+
         after_stats = test_client.get_load_balancer_accumulated_stats()
+        after_stats_fmt: str = self._pretty_accumulated_stats(after_stats)
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse after %s seconds:'
             '\n%s', test_client.hostname, duration.total_seconds(),
-            self._pretty_accumulated_stats(after_stats))
+            after_stats_fmt)
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
-
+        diff_stats_fmt: str = self._pretty_accumulated_stats(diff_stats,
+                                                             ignore_empty=True)
         logger.info(
             '[%s] << Received accumulated stats difference.'
             ' Expecting RPCs with status %s for method %s:\n%s',
-            test_client.hostname, helpers_grpc.status_pretty(expected_status),
-            method, self._pretty_accumulated_stats(diff_stats,
-                                                   ignore_empty=True))
+            test_client.hostname, expected_status_fmt, method, diff_stats_fmt)
 
         # 1. Verify the completed RPCs of the given method has no statuses
         #    other than the expected_status,
@@ -330,12 +335,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
-                expected_status_fmt = helpers_grpc.status_pretty(
-                    expected_status)
                 found_status_fmt = helpers_grpc.status_pretty(found_status)
-                diff_stats_fmt = self._pretty_accumulated_stats(diff_stats)
-                before_stats_fmt = self._pretty_accumulated_stats(before_stats)
-                after_stats_fmt = self._pretty_accumulated_stats(after_stats)
                 logger.error(
                     "Expected only status %s, but found status %s"
                     " for method %s.\nDiff stats:\n%s"
@@ -350,12 +350,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # 2. Verify there are completed RPCs of the given method with
         #    the expected_status.
-        expected_status_int: int = expected_status.value[0]
         if not stats.result[expected_status_int]:
-            expected_status_fmt = helpers_grpc.status_pretty(expected_status)
-            diff_stats_fmt = self._pretty_accumulated_stats(diff_stats)
-            before_stats_fmt = self._pretty_accumulated_stats(before_stats)
-            after_stats_fmt = self._pretty_accumulated_stats(after_stats)
             logger.error(
                 "Expected non-zero RPCs with status %s for method %s."
                 f"\nDiff stats:\n%s"
