@@ -92,53 +92,6 @@ TEST_P(WrrTest, Basic) {
   });
 }
 
-TEST_P(WrrTest, CpuUtilWithNoAppUtil) {
-  CreateAndStartBackends(3);
-  // Expected weights = qps / (util + (eps/qps)) =
-  //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
-  backends_[0]->server_metric_recorder()->SetQps(100);
-  backends_[0]->server_metric_recorder()->SetEps(20);
-  backends_[0]->server_metric_recorder()->SetCpuUtilization(0.2);
-  backends_[1]->server_metric_recorder()->SetQps(100);
-  backends_[1]->server_metric_recorder()->SetEps(30);
-  backends_[1]->server_metric_recorder()->SetCpuUtilization(0.3);
-  backends_[2]->server_metric_recorder()->SetQps(200);
-  backends_[2]->server_metric_recorder()->SetEps(20);
-  backends_[2]->server_metric_recorder()->SetCpuUtilization(1.5);
-  auto cluster = default_cluster_;
-  WrrLocality wrr_locality;
-  wrr_locality.mutable_endpoint_picking_policy()
-      ->add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(ClientSideWeightedRoundRobin());
-  cluster.mutable_load_balancing_policy()
-      ->add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr_locality);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  size_t num_picks = 0;
-  SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
-    if (++num_picks == 13) {
-      gpr_log(GPR_INFO, "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
-              backends_[0]->backend_service()->request_count(),
-              backends_[1]->backend_service()->request_count(),
-              backends_[2]->backend_service()->request_count());
-      if (backends_[0]->backend_service()->request_count() == 6 &&
-          backends_[1]->backend_service()->request_count() == 4 &&
-          backends_[2]->backend_service()->request_count() == 3) {
-        return false;
-      }
-      num_picks = 0;
-      ResetBackendCounters();
-    }
-    return true;
-  });
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
