@@ -184,7 +184,7 @@ grpc_cc_library(
     ],
 )
 
-END2END_TEST_SRCS = [
+END2END_SHARD1_TEST_SRCS = [
     "end2end_test_suites.cc",
     "tests/bad_ping.cc",
     "tests/binary_metadata.cc",
@@ -230,6 +230,9 @@ END2END_TEST_SRCS = [
     "tests/request_with_flags.cc",
     "tests/request_with_payload.cc",
     "tests/resource_quota_server.cc",
+]
+
+END2END_SHARD2_TEST_SRCS = [
     "tests/retry.cc",
     "tests/retry_cancel_after_first_attempt_starts.cc",
     "tests/retry_cancel_during_delay.cc",
@@ -284,11 +287,77 @@ END2END_TEST_DATA = [
 ]
 
 grpc_cc_test(
-    name = "core_end2end_tests",
+    name = "core_end2end_shard1_tests",
     timeout = "long",
     srcs = [
         "end2end_test_main.cc",
-    ] + END2END_TEST_SRCS,
+    ] + END2END_SHARD1_TEST_SRCS,
+    data = END2END_TEST_DATA,
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "gtest",
+    ],
+    shard_count = 50,
+    tags = ["core_end2end_test"],
+    deps = [
+        "cq_verifier",
+        "end2end_test_lib",
+        "fixture_support",
+        "http_proxy",
+        "proxy",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:config_vars",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_authorization_provider",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:grpc_unsecure",
+        "//:legacy_context",
+        "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//:stats",
+        "//src/core:arena_promise",
+        "//src/core:bitset",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:channel_init",
+        "//src/core:channel_stack_type",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:experiments",
+        "//src/core:grpc_authorization_base",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:iomgr_port",
+        "//src/core:json",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_factory",
+        "//src/core:no_destruct",
+        "//src/core:notification",
+        "//src/core:slice",
+        "//src/core:stats_data",
+        "//src/core:status_helper",
+        "//src/core:time",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:test_lb_policies",
+    ],
+)
+
+grpc_cc_test(
+    name = "core_end2end_shard2_tests",
+    timeout = "long",
+    srcs = [
+        "end2end_test_main.cc",
+    ] + END2END_SHARD2_TEST_SRCS,
     data = END2END_TEST_DATA,
     external_deps = [
         "absl/functional:any_invocable",
@@ -583,7 +652,9 @@ grpc_proto_library(
 grpc_proto_fuzzer(
     name = "core_end2end_test_fuzzer",
     size = "enormous",
-    srcs = ["end2end_test_fuzzer.cc"] + END2END_TEST_SRCS,
+    srcs = ["end2end_test_fuzzer.cc"]
+        + END2END_SHARD1_TEST_SRCS
+        + END2END_SHARD2_TEST_SRCS,
     corpus = "end2end_test_corpus",
     data = END2END_TEST_DATA,
     external_deps = [
