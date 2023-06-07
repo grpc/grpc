@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:cython_library.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -59,14 +60,11 @@ py_library(
     name = "pyobservability",
     srcs = [
         "__init__.py",
-        "_observability.py",
         "_gcp_observability.py",
+        "_measures.py",
+        "_observability.py",
         "_open_census_exporter.py",
-        # The fllowing files are used only for OC stackdriver extension.
-        # TODO(xuanwn): Uncomment after those files are implemented.
-        # "_measures.py",
-        # "_open_census.py",
-        # "_views.py",
+        "_views.py",
     ],
     imports = [
         ".",
@@ -76,5 +74,7 @@ py_library(
     deps = [
         ":cyobservability",
         "//src/python/grpcio/grpc:grpcio",
+        requirement("opencensus"),
+        requirement("opencensus-ext-stackdriver"),
     ],
 )

@@ -35,6 +35,7 @@ typedef enum {
   kRpcClientReceivedMessagesPerRpcMeasureName,
   kRpcClientReceivedBytesPerRpcMeasureName,
   kRpcClientRoundtripLatencyMeasureName,
+  kRpcClientCompletedRpcMeasureName,
   kRpcClientServerLatencyMeasureName,
   kRpcClientStartedRpcsMeasureName,
   kRpcClientRetriesPerCallMeasureName,
@@ -46,6 +47,7 @@ typedef enum {
   kRpcServerReceivedMessagesPerRpcMeasureName,
   kRpcServerReceivedBytesPerRpcMeasureName,
   kRpcServerServerLatencyMeasureName,
+  kRpcServerCompletedRpcMeasureName,
   kRpcServerStartedRpcsMeasureName
 } MetricsName;
 
