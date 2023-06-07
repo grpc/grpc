@@ -2994,7 +2994,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
-  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.3);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.5);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.1);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.2);
   servers_[0]->server_metric_recorder_->SetEps(0.3);
@@ -3016,7 +3016,7 @@ TEST_F(OobBackendMetricTest, Basic) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
-      EXPECT_EQ(report->second.application_utilization(), 0.3);
+      EXPECT_EQ(report->second.application_utilization(), 0.5);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
       EXPECT_EQ(report->second.eps(), 0.3);
@@ -3035,18 +3035,20 @@ TEST_F(OobBackendMetricTest, Basic) {
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new app utilization value.
   servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.7);
-  servers_[0]->server_metric_recorder_->SetEps(0.6);
   servers_[0]->server_metric_recorder_->SetQps(0.8);
+  servers_[0]->server_metric_recorder_->SetEps(0.6);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.5);
-  servers_[0]->server_metric_recorder_->SetApplicationUtilization(2.4);
+  servers_[0]->server_metric_recorder_->SetCpuUtilization(2.4);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(1.2);
   // Wait for client to see new report.
   report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
-      if (report->second.application_utilization() != 0.1) {
-        EXPECT_EQ(report->second.application_utilization(), 2.4);
+      if (report->second.application_utilization() != 0.5) {
+        EXPECT_EQ(report->second.application_utilization(), 1.2);
+        EXPECT_EQ(report->second.cpu_utilization(), 2.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
         EXPECT_EQ(report->second.eps(), 0.6);
         EXPECT_EQ(report->second.rps_fractional(), 0.8);
