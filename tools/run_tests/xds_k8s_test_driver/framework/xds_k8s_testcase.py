@@ -336,32 +336,19 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
-                found_status_fmt = helpers_grpc.status_pretty(found_status)
-                logger.error(
-                    "Expected only status %s, but found status %s"
-                    " for method %s.\nDiff stats:\n%s"
-                    "\n(Stats below are for debugging purposes only)"
-                    "\nStats before:\n%s"
-                    "\nStats after:\n%s", expected_status_fmt, found_status_fmt,
-                    method, diff_stats_fmt, before_stats_fmt, after_stats_fmt)
                 self.fail(f"Expected only status {expected_status_fmt},"
-                          f" but found status {found_status_fmt}"
+                          f" but found status"
+                          f" {helpers_grpc.status_pretty(found_status)}"
                           f" for method {method}."
                           f"\nDiff stats:\n{diff_stats_fmt}")
 
         # 2. Verify there are completed RPCs of the given method with
         #    the expected_status.
-        if not stats.result[expected_status_int]:
-            logger.error(
-                "Expected non-zero RPCs with status %s for method %s."
-                "\nDiff stats:\n%s"
-                "\n(Stats below are for debugging purposes only)"
-                "\nStats before:\n%s"
-                "\nStats after:\n%s", expected_status_fmt, method,
-                diff_stats_fmt, before_stats_fmt, after_stats_fmt)
-            self.fail("Expected non-zero RPCs with status"
-                      f" {expected_status_fmt} for method {method}."
-                      f"\nDiff stats:\n{diff_stats_fmt}")
+        self.assertGreater(stats.result[expected_status_int],
+                           0,
+                           msg=("Expected non-zero RPCs with status"
+                                f" {expected_status_fmt} for method {method}."
+                                f"\nDiff stats:\n{diff_stats_fmt}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
