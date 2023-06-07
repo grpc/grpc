@@ -1381,6 +1381,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />
