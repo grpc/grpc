@@ -57,6 +57,30 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
     void notify_all()
     void wait(unique_lock[mutex]&)
 
+# gRPC Core Declarations
+
+cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
+    cdef cppclass ClientCallTracer:
+        pass
+
+    cdef cppclass ServerCallTracer:
+        string TraceId() nogil
+        string SpanId() nogil
+        bint IsSampled() nogil
+
+    cdef cppclass ServerCallTracerFactory:
+        @staticmethod
+        void RegisterGlobal(ServerCallTracerFactory* factory) nogil
+
+cdef extern from "src/core/lib/channel/context.h":
+  ctypedef enum grpc_context_index:
+    GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE
+
+cdef extern from "src/core/lib/surface/call.h":
+  void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
+                             void* value, void (*destroy)(void* value)) nogil
+  void *grpc_call_context_get(grpc_call* call, grpc_context_index elem) nogil
+
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
@@ -728,32 +752,7 @@ cdef extern from "grpc/grpc_security_constants.h":
     UDS
     LOCAL_TCP
 
-# gRPC Core Declarations
-
 cdef extern from "src/core/lib/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()
-
-
-cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
-    cdef cppclass ClientCallTracer:
-        pass
-
-    cdef cppclass ServerCallTracer:
-        string TraceId() nogil
-        string SpanId() nogil
-        bint IsSampled() nogil
-
-    cdef cppclass ServerCallTracerFactory:
-        @staticmethod
-        void RegisterGlobal(ServerCallTracerFactory* factory) nogil
-
-cdef extern from "src/core/lib/channel/context.h":
-  ctypedef enum grpc_context_index:
-    GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE
-
-cdef extern from "src/core/lib/surface/call.h":
-  void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                             void* value, void (*destroy)(void* value)) nogil
-  void *grpc_call_context_get(grpc_call* call, grpc_context_index elem) nogil

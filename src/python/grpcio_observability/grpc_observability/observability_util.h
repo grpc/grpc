@@ -15,8 +15,6 @@
 #ifndef OBSERVABILITY_MAIN_H
 #define OBSERVABILITY_MAIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>

@@ -15,8 +15,6 @@
 #ifndef GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 #define GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
