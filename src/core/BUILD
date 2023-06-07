@@ -3789,6 +3789,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "grpc_resolver_xds_header",
         "grpc_service_config",
         "json",
         "json_args",
