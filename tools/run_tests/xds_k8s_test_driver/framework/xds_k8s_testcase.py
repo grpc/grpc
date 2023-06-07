@@ -337,7 +337,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
                 self.fail(f"Expected only status {expected_status_fmt},"
-                          f" but found status"
+                          " but found status"
                           f" {helpers_grpc.status_pretty(found_status)}"
                           f" for method {method}."
                           f"\nDiff stats:\n{diff_stats_fmt}")
