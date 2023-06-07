@@ -69,8 +69,8 @@ const BackendMetricData* ParseBackendMetricData(
       xds_data_orca_v3_OrcaLoadReport_cpu_utilization(msg);
   backend_metric_data->mem_utilization =
       xds_data_orca_v3_OrcaLoadReport_mem_utilization(msg);
-//  backend_metric_data->application_utilization =
-//      xds_data_orca_v3_OrcaLoadReport_application_utilization(msg);
+  backend_metric_data->application_utilization =
+      xds_data_orca_v3_OrcaLoadReport_application_utilization(msg);
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
   backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
