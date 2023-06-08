@@ -93,11 +93,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
                      test.make_test(test.config));
                }});
     }
+    GPR_ASSERT(!tests.empty());
     std::sort(tests.begin(), tests.end(),
               [](const Test& a, const Test& b) { return a.name < b.name; });
     return tests;
   }();
-  if (tests.empty()) return;
   static const auto only_experiment =
       grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 

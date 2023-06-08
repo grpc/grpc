@@ -338,12 +338,21 @@ std::vector<absl::string_view> KeysFrom(const Map& map) {
 }  // namespace
 
 std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
+  if (tests_by_suite_.size() != suites_.size()) {
+    CrashWithStdio(absl::StrCat(
+        "ERROR: Some suites are not registered:\n",
+        "TESTS use suites: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\nSUITES have: ", absl::StrJoin(KeysFrom(tests_by_suite_), ", "),
+        "\n"));
+  }
+  GPR_ASSERT(tests_by_suite_.size() == suites_.size());
   std::vector<Test> tests;
   for (const auto& suite_configs : suites_) {
     if (suite_configs.second.empty()) {
       CrashWithStdio(
           absl::StrCat("Suite ", suite_configs.first, " has no tests"));
     }
+    GPR_ASSERT(tests_by_suite_.count(suite_configs.first) == 1);
     for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
       for (const auto* config : suite_configs.second) {
         tests.push_back(Test{suite_configs.first, test_factory.first, config,
