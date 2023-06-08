@@ -1054,4 +1054,6 @@ CORE_END2END_TEST_SUITE(
 CORE_END2END_TEST_SUITE(ProxyAuthTest,
                         ConfigQuery().AllowName("Chttp2HttpProxy").Run());
 
+void EnsureSuitesLinked() {}
+
 }  // namespace grpc_core
