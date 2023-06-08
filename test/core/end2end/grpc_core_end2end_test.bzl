@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Generate one e2e test & associated fuzzer
+"""
+
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
