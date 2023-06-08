@@ -12429,7 +12429,7 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
-- name: retry_non_retriable_status_before_recv_trailing_metadata_started_test
+- name: retry_non_retriable_status_before_trailers_test
   gtest: true
   build: test
   language: c++
@@ -12457,7 +12457,7 @@ targets:
   - test/core/end2end/fixtures/http_proxy_fixture.cc
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/test_lb_policies.cc
   deps:

@@ -211,7 +211,7 @@ grpc_cc_library(
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
         "//src/core:no_destruct",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/util:grpc_test_util",
     ],
     alwayslink = 1,
 )
@@ -234,7 +234,7 @@ grpc_cc_library(
         "end2end_test_suites",
         "fixture_support",
         "//:config_vars",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

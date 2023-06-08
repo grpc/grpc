@@ -1198,7 +1198,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx retry_exceeds_buffer_size_in_subsequent_batch_test)
   add_dependencies(buildtests_cxx retry_lb_drop_test)
   add_dependencies(buildtests_cxx retry_lb_fail_test)
-  add_dependencies(buildtests_cxx retry_non_retriable_status_before_recv_trailing_metadata_started_test)
+  add_dependencies(buildtests_cxx retry_non_retriable_status_before_trailers_test)
   add_dependencies(buildtests_cxx retry_non_retriable_status_test)
   add_dependencies(buildtests_cxx retry_per_attempt_recv_timeout_on_last_attempt_test)
   add_dependencies(buildtests_cxx retry_per_attempt_recv_timeout_test)
@@ -20401,7 +20401,7 @@ target_link_libraries(retry_lb_fail_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(retry_non_retriable_status_before_recv_trailing_metadata_started_test
+add_executable(retry_non_retriable_status_before_trailers_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20409,14 +20409,14 @@ add_executable(retry_non_retriable_status_before_recv_trailing_metadata_started_
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-target_compile_features(retry_non_retriable_status_before_recv_trailing_metadata_started_test PUBLIC cxx_std_14)
-target_include_directories(retry_non_retriable_status_before_recv_trailing_metadata_started_test
+target_compile_features(retry_non_retriable_status_before_trailers_test PUBLIC cxx_std_14)
+target_include_directories(retry_non_retriable_status_before_trailers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -20435,7 +20435,7 @@ target_include_directories(retry_non_retriable_status_before_recv_trailing_metad
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(retry_non_retriable_status_before_recv_trailing_metadata_started_test
+target_link_libraries(retry_non_retriable_status_before_trailers_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}

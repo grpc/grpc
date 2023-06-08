@@ -7392,7 +7392,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "retry_non_retriable_status_before_recv_trailing_metadata_started_test",
+    "name": "retry_non_retriable_status_before_trailers_test",
     "platforms": [
       "linux",
       "mac",
