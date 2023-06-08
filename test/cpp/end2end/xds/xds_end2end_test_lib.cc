@@ -631,7 +631,7 @@ XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
 }
 
 ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
-    const EdsResourceArgs& args, absl::string_view eds_service_name) {
+    const EdsResourceArgs& args, const char* eds_service_name) {
   ClusterLoadAssignment assignment;
   assignment.set_cluster_name(eds_service_name);
   for (const auto& locality : args.locality_list) {
