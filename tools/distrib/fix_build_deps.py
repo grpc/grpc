@@ -477,6 +477,7 @@ for dirname in [
             'grpc_cc_binary': grpc_cc_library,
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
+            'grpc_core_end2end_test': lambda **kwargs: None,
             'grpc_fuzzer': grpc_cc_library,
             'grpc_fuzz_test': grpc_cc_library,
             'grpc_proto_fuzzer': grpc_cc_library,
