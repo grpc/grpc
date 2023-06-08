@@ -214,8 +214,6 @@ class RingHash : public LoadBalancingPolicy {
     // Starts watching the subchannels in this list.
     void StartWatchingLocked();
 
-    const std::vector<RingEntry>& ring() const { return ring_; }
-
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
     void UpdateStateCountersLocked(grpc_connectivity_state old_state,
@@ -230,9 +228,6 @@ class RingHash : public LoadBalancingPolicy {
     // finished a connection attempt.
     void UpdateRingHashConnectivityStateLocked(
         size_t index, bool connection_attempt_complete);
-
-    // Create a new ring from this subchannel list.
-    RefCountedPtr<Ring> MakeRing();
 
    private:
     size_t num_idle_ = 0;
@@ -300,6 +295,8 @@ class RingHash : public LoadBalancingPolicy {
       absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
     };
 
+    // A fire-and-forget class that schedules subchannel connection attempts
+    // on the control plane WorkSerializer.
     class SubchannelConnectionAttempter : public WorkSerializerRunner {
      public:
       explicit SubchannelConnectionAttempter(
