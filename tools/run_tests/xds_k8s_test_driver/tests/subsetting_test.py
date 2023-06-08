@@ -70,8 +70,11 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         rpc_distribution = collections.defaultdict(int)
         with self.subTest('07_start_test_client'):
             for i in range(_NUM_CLIENTS):
-                # Clean created client pods if there is any
-                self.client_runner.cleanup(force=True)
+                # Clean created client pods if there is any.
+                if self.client_runner.time_start_requested:
+                    # TODO(sergiitk): Speed up by reusing the namespace.
+                    self.client_runner.cleanup()
+
                 # Create a test client
                 test_client: _XdsTestClient = self.startTestClient(
                     test_servers[0])

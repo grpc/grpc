@@ -733,6 +733,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -749,6 +750,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -821,6 +823,7 @@ libs:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
@@ -1527,6 +1530,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1610,6 +1614,7 @@ libs:
   - src/core/lib/iomgr/timer_manager.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1953,7 +1958,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
-  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
@@ -2112,6 +2116,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -2128,6 +2133,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -2199,6 +2205,7 @@ libs:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
@@ -2332,7 +2339,6 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
-  - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
@@ -2362,7 +2368,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
-  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
@@ -2517,6 +2522,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -2599,6 +2605,7 @@ libs:
   - src/core/lib/iomgr/timer_manager.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -3609,6 +3616,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -3624,6 +3632,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -3692,9 +3701,11 @@ libs:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
@@ -3894,6 +3905,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -3973,6 +3985,7 @@ libs:
   - src/core/lib/iomgr/timer_manager.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -5850,6 +5863,7 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -7569,6 +7583,7 @@ targets:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: filter_causes_close_test
   gtest: true
   build: test
@@ -8148,6 +8163,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
@@ -8163,6 +8179,7 @@ targets:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
@@ -8231,9 +8248,11 @@ targets:
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
   - src/core/lib/json/json_writer.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
@@ -8414,6 +8433,7 @@ targets:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -8493,6 +8513,7 @@ targets:
   - src/core/lib/iomgr/timer_manager.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -8638,17 +8659,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++_test_util
-- name: google_mesh_ca_certificate_provider_factory_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
-  src:
-  - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
-  - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
-  deps:
-  - grpc_test_util
 - name: graceful_server_shutdown_test
   gtest: true
   build: test
@@ -8743,6 +8753,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -8758,6 +8769,7 @@ targets:
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
+  - test/core/util/audit_logging_utils.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -8812,6 +8824,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -8819,6 +8832,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/cpp/server/authorization_policy_provider.cc
+  - test/core/util/audit_logging_utils.cc
   - test/cpp/end2end/grpc_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -9652,6 +9666,16 @@ targets:
   src:
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - test/core/client_idle/idle_filter_state_test.cc
+  deps: []
+  uses_polling: false
+- name: if_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/if_list.h
+  src:
+  - test/core/gprpp/if_list_test.cc
   deps: []
   uses_polling: false
 - name: if_test
@@ -14124,6 +14148,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/sorted_pack.h
+  - src/core/lib/gprpp/type_list.h
   src:
   - test/core/gprpp/sorted_pack_test.cc
   deps: []
@@ -15987,6 +16012,7 @@ targets:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -15996,6 +16022,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
@@ -16352,6 +16379,8 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/audit_logging_utils.h
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -16393,6 +16422,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
+  - src/proto/grpc/testing/xds/v3/typed_struct.proto
+  - test/core/util/audit_logging_utils.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -17080,10 +17111,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: aef36c29bd0ef95509f7f52693dbdafe4a2c2c5d1eb406bf68e6364a0d12e11b
+  hash: 0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
   proto_prefix: third_party/xds/
-  strip_prefix: xds-4003588d1b747e37e911baa5a9c1c07fde4ca518
+  strip_prefix: xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
-  - https://github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
+  - https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
 tests: []

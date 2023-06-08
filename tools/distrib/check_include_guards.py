@@ -44,11 +44,11 @@ def save(fpath, contents):
 class GuardValidator(object):
 
     def __init__(self):
-        self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
-        self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
+        self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_0-9]*)')
+        self.define_re = re.compile(r'#define ([A-Z][A-Z_0-9]*)')
         self.endif_c_core_re = re.compile(
-            r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_1-9]*) (?:\\\n *)?\*/$')
-        self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
+            r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_0-9]*) (?:\\\n *)?\*/$')
+        self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_0-9]*)')
         self.comments_then_includes_re = re.compile(
             r'^((//.*?$|/\*.*?\*/|[ \r\n\t])*)(([ \r\n\t]|#include .*)*)(#ifndef [^\n]*\n#define [^\n]*\n)',
             re.DOTALL | re.MULTILINE)

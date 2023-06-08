@@ -27,6 +27,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -455,12 +456,14 @@ class Party : public Activity, private Wakeable {
 
   // Wakeable implementation
   void Wakeup(WakeupMask wakeup_mask) final;
+  void WakeupAsync(WakeupMask wakeup_mask) final;
   void Drop(WakeupMask wakeup_mask) final;
 
-  // Organize to wake up some participants.
-  void ScheduleWakeup(WakeupMask mask);
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;

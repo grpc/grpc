@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+from grpc_observability._gcp_observability import GCPOpenCensusObservability
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_bazel.sh"
-timeout_mins: 30
-env_vars {
-  key: "BAZEL_SCRIPT"
-  value: "tools/internal_ci/linux/grpc_feature_example_tests_in_docker.sh"
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+__all__ = ('GCPOpenCensusObservability',)

@@ -294,7 +294,7 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20 http2_send_message_size;
     HistogramCollector_65536_26 http2_metadata_size;
   };
-  PerCpu<Data> data_;
+  PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
 };
 }  // namespace grpc_core
 

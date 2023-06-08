@@ -300,7 +300,11 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc7', 'gcc10.2_openssl102', 'gcc12', 'gcc_musl', 'clang6',
+            'gcc7',
+            # 'gcc10.2_openssl102', // TODO(b/283304471): Enable this later
+            'gcc12',
+            'gcc_musl',
+            'clang6',
             'clang15'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],

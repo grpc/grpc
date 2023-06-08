@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.56.0-dev'
+  v = '1.57.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -103,15 +103,11 @@ Pod::Spec.new do |s|
 
   # Restrict the protoc version to the one supported by this plugin.
   s.dependency '!ProtoCompiler', '3.23.1'
-  # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.10'
-  s.tvos.deployment_target = '10.0'
 
-  # watchOS is disabled due to #20258.
-  # TODO (mxyan): Enable watchos when !ProtoCompiler.podspec is updated for
-  # support of watchos in the next release
-  # s.watchos.deployment_target = '4.0'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target = '10.12'
+  s.tvos.deployment_target = '12.0'
+  s.watchos.deployment_target = '6.0'
 
   # Restrict the gRPC runtime version to the one supported by this plugin.
   s.dependency 'gRPC-ProtoRPC', v

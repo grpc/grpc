@@ -15,6 +15,7 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_generate_one_off_internal_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -120,7 +121,10 @@ grpc_cc_library(
         "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
         "//conditions:default": [],
     }),
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "no_destruct",
@@ -434,6 +438,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_trace",
         "ref_counted",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
@@ -2395,10 +2400,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "per_cpu",
+    srcs = [
+        "lib/gprpp/per_cpu.cc",
+    ],
     hdrs = [
         "lib/gprpp/per_cpu.h",
     ],
     deps = [
+        "useful",
         "//:exec_ctx",
         "//:gpr",
     ],
@@ -2755,6 +2764,26 @@ grpc_cc_library(
         "lib/gprpp/sorted_pack.h",
     ],
     language = "c++",
+    deps = [
+        "type_list",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "type_list",
+    hdrs = [
+        "lib/gprpp/type_list.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "if_list",
+    hdrs = [
+        "lib/gprpp/if_list.h",
+    ],
+    language = "c++",
     deps = ["//:gpr_platform"],
 )
 
@@ -2763,10 +2792,12 @@ grpc_cc_library(
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_factory.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
-        "error",
         "json",
+        "json_args",
         "ref_counted",
+        "validation_errors",
         "//:alts_util",
         "//:gpr",
         "//:ref_counted_ptr",
@@ -4238,28 +4269,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_google_mesh_ca_certificate_provider_factory",
-    srcs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.cc",
-    ],
-    hdrs = [
-        "ext/xds/google_mesh_ca_certificate_provider_factory.h",
-    ],
-    language = "c++",
-    deps = [
-        "certificate_provider_factory",
-        "error",
-        "grpc_tls_credentials",
-        "json",
-        "json_util",
-        "time",
-        "//:alts_util",
-        "//:gpr_platform",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_cds",
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/cds.cc",
@@ -4594,6 +4603,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_lb_subchannel_list",
+        "grpc_outlier_detection_header",
         "json",
         "lb_policy",
         "lb_policy_factory",
@@ -4765,6 +4775,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:server_address",
     ],
 )
 
@@ -5583,7 +5594,6 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
-        "context",
         "no_destruct",
         "slice",
         "slice_buffer",
@@ -6000,3 +6010,5 @@ WELL_KNOWN_PROTO_TARGETS = [
     name = "protobuf_" + target + "_upbdefs",
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
+
+grpc_generate_one_off_internal_targets()
