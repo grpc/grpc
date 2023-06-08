@@ -6233,7 +6233,7 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: core_end2end_tests
+- name: core_end2end_shard1_tests
   gtest: true
   build: test
   language: c++
@@ -6252,7 +6252,6 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
-  - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
@@ -6305,6 +6304,34 @@ targets:
   - test/core/end2end/tests/request_with_flags.cc
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/end2end/tests/resource_quota_server.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: core_end2end_shard2_tests
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/tests/retry.cc
   - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
@@ -6353,7 +6380,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/test_lb_policies.cc
   deps:
-  - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
 - name: cpp_impl_of_test
