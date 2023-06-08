@@ -184,6 +184,60 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "end2end_test_suites",
+    testonly = 1,
+    srcs = [
+        "end2end_test_suites.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "gtest",
+    ],
+    deps = [
+        "end2end_test_lib",
+        "fixture_support",
+        "http_proxy",
+        "proxy",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:iomgr_port",
+        "//src/core:no_destruct",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "end2end_test_main",
+    testonly = 1,
+    srcs = [
+        "end2end_test_main.cc",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "end2end_test_lib",
+        "end2end_test_suites",
+        "fixture_support",
+        "//:config_vars",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
 grpc_core_end2end_test(name = "bad_ping")
 
 grpc_core_end2end_test(name = "binary_metadata")
@@ -296,7 +350,7 @@ grpc_core_end2end_test(name = "retry_lb_fail")
 
 grpc_core_end2end_test(name = "retry_non_retriable_status")
 
-grpc_core_end2end_test(name = "retry_non_retriable_status_before_recv_trailing_metadata_started")
+grpc_core_end2end_test(name = "retry_non_retriable_status_before_trailers")
 
 grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout")
 

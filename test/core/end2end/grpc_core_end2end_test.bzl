@@ -26,12 +26,13 @@ END2END_TEST_DATA = [
 ]
 
 def grpc_core_end2end_test(name):
+    if len(name) > 60:
+        fail("test name %s too long" % name)
+
     grpc_cc_test(
         name = "%s_test" % name,
         timeout = "long",
         srcs = [
-            "end2end_test_main.cc",
-            "end2end_test_suites.cc",
             "tests/%s.cc" % name,
         ],
         data = END2END_TEST_DATA,
@@ -46,6 +47,7 @@ def grpc_core_end2end_test(name):
         ],
         tags = ["core_end2end_test"],
         deps = [
+            "end2end_test_main",
             "cq_verifier",
             "end2end_test_lib",
             "fixture_support",
@@ -97,7 +99,6 @@ def grpc_core_end2end_test(name):
         name = "%s_fuzzer" % name,
         srcs = [
             "end2end_test_fuzzer.cc",
-            "end2end_test_suites.cc",
             "tests/%s.cc" % name,
         ],
         corpus = "end2end_test_corpus/%s" % name,
@@ -121,6 +122,7 @@ def grpc_core_end2end_test(name):
         uses_polling = False,
         deps = [
             "cq_verifier",
+            "end2end_test_suites",
             "end2end_test_fuzzer_proto",
             "end2end_test_lib",
             "fixture_support",
