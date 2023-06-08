@@ -383,6 +383,18 @@ def _create_portability_test_jobs(extra_args=[],
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
+    # Ruby tests on all supported ruby versions
+    for ruby_version in ['ruby2.7', 'ruby3.0', 'ruby3.1', 'ruby3.2']:
+        test_jobs += _generate_jobs(languages=['ruby'],
+                                    configs=['opt'],
+                                    platforms=['linux'],
+                                    arch='default',
+                                    compiler=ruby_version,
+                                    labels=['portability', 'multilang'],
+                                    extra_args=extra_args +
+                                    ['--report_multi_target'],
+                                    inner_jobs=inner_jobs)
+
     return test_jobs
 
 
