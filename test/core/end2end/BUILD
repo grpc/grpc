@@ -185,93 +185,181 @@ grpc_cc_library(
 )
 
 grpc_core_end2end_test(name = "bad_ping")
+
 grpc_core_end2end_test(name = "binary_metadata")
+
 grpc_core_end2end_test(name = "call_creds")
+
 grpc_core_end2end_test(name = "call_host_override")
+
 grpc_core_end2end_test(name = "cancel_after_accept")
+
 grpc_core_end2end_test(name = "cancel_after_client_done")
+
 grpc_core_end2end_test(name = "cancel_after_invoke")
+
 grpc_core_end2end_test(name = "cancel_after_round_trip")
+
 grpc_core_end2end_test(name = "cancel_before_invoke")
+
 grpc_core_end2end_test(name = "cancel_in_a_vacuum")
+
 grpc_core_end2end_test(name = "cancel_with_status")
+
 grpc_core_end2end_test(name = "channelz")
+
 grpc_core_end2end_test(name = "client_streaming")
+
 grpc_core_end2end_test(name = "compressed_payload")
+
 grpc_core_end2end_test(name = "connectivity")
+
 grpc_core_end2end_test(name = "default_host")
+
 grpc_core_end2end_test(name = "disappearing_server")
+
 grpc_core_end2end_test(name = "empty_batch")
+
 grpc_core_end2end_test(name = "filter_causes_close")
+
 grpc_core_end2end_test(name = "filter_context")
+
 grpc_core_end2end_test(name = "filter_init_fails")
+
 grpc_core_end2end_test(name = "filtered_metadata")
+
 grpc_core_end2end_test(name = "graceful_server_shutdown")
+
 grpc_core_end2end_test(name = "grpc_authz")
+
 grpc_core_end2end_test(name = "high_initial_seqno")
+
 grpc_core_end2end_test(name = "hpack_size")
+
 grpc_core_end2end_test(name = "invoke_large_request")
+
 grpc_core_end2end_test(name = "keepalive_timeout")
+
 grpc_core_end2end_test(name = "large_metadata")
+
 grpc_core_end2end_test(name = "max_concurrent_streams")
+
 grpc_core_end2end_test(name = "max_connection_age")
+
 grpc_core_end2end_test(name = "max_connection_idle")
+
 grpc_core_end2end_test(name = "max_message_length")
+
 grpc_core_end2end_test(name = "negative_deadline")
+
 grpc_core_end2end_test(name = "no_logging")
+
 grpc_core_end2end_test(name = "no_op")
+
 grpc_core_end2end_test(name = "payload")
+
 grpc_core_end2end_test(name = "ping")
+
 grpc_core_end2end_test(name = "ping_pong_streaming")
+
 grpc_core_end2end_test(name = "proxy_auth")
+
 grpc_core_end2end_test(name = "registered_call")
+
 grpc_core_end2end_test(name = "request_with_flags")
+
 grpc_core_end2end_test(name = "request_with_payload")
+
 grpc_core_end2end_test(name = "resource_quota_server")
+
 grpc_core_end2end_test(name = "retry")
+
 grpc_core_end2end_test(name = "retry_cancel_after_first_attempt_starts")
+
 grpc_core_end2end_test(name = "retry_cancel_during_delay")
+
 grpc_core_end2end_test(name = "retry_cancel_with_multiple_send_batches")
+
 grpc_core_end2end_test(name = "retry_cancellation")
+
 grpc_core_end2end_test(name = "retry_disabled")
+
 grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_delay")
+
 grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_initial_batch")
+
 grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_subsequent_batch")
+
 grpc_core_end2end_test(name = "retry_lb_drop")
+
 grpc_core_end2end_test(name = "retry_lb_fail")
+
 grpc_core_end2end_test(name = "retry_non_retriable_status")
+
 grpc_core_end2end_test(name = "retry_non_retriable_status_before_recv_trailing_metadata_started")
+
 grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout")
+
 grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout_on_last_attempt")
+
 grpc_core_end2end_test(name = "retry_recv_initial_metadata")
+
 grpc_core_end2end_test(name = "retry_recv_message")
+
 grpc_core_end2end_test(name = "retry_recv_message_replay")
+
 grpc_core_end2end_test(name = "retry_recv_trailing_metadata_error")
+
 grpc_core_end2end_test(name = "retry_send_initial_metadata_refs")
+
 grpc_core_end2end_test(name = "retry_send_op_fails")
+
 grpc_core_end2end_test(name = "retry_send_recv_batch")
+
 grpc_core_end2end_test(name = "retry_server_pushback_delay")
+
 grpc_core_end2end_test(name = "retry_server_pushback_disabled")
+
 grpc_core_end2end_test(name = "retry_streaming")
+
 grpc_core_end2end_test(name = "retry_streaming_after_commit")
+
 grpc_core_end2end_test(name = "retry_streaming_succeeds_before_replay_finished")
+
 grpc_core_end2end_test(name = "retry_throttled")
+
 grpc_core_end2end_test(name = "retry_too_many_attempts")
+
 grpc_core_end2end_test(name = "retry_transparent_goaway")
+
 grpc_core_end2end_test(name = "retry_transparent_max_concurrent_streams")
+
 grpc_core_end2end_test(name = "retry_transparent_not_sent_on_wire")
+
 grpc_core_end2end_test(name = "retry_unref_before_finish")
+
 grpc_core_end2end_test(name = "retry_unref_before_recv")
+
 grpc_core_end2end_test(name = "server_finishes_request")
+
 grpc_core_end2end_test(name = "server_streaming")
+
 grpc_core_end2end_test(name = "shutdown_finishes_calls")
+
 grpc_core_end2end_test(name = "shutdown_finishes_tags")
+
 grpc_core_end2end_test(name = "simple_delayed_request")
+
 grpc_core_end2end_test(name = "simple_metadata")
+
 grpc_core_end2end_test(name = "simple_request")
+
 grpc_core_end2end_test(name = "streaming_error_response")
+
 grpc_core_end2end_test(name = "trailing_metadata")
+
 grpc_core_end2end_test(name = "write_buffering")
+
 grpc_core_end2end_test(name = "write_buffering_at_end")
 
 grpc_cc_test(
@@ -504,4 +592,3 @@ grpc_proto_library(
         "//test/core/util:fuzz_config_vars_proto",
     ],
 )
-
