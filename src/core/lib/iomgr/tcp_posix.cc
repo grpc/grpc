@@ -729,6 +729,9 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, why);
+  tcp->read_mu.Lock();
+  tcp->memory_owner.Reset();
+  tcp->read_mu.Unlock();
 }
 
 static void tcp_free(grpc_tcp* tcp) {
@@ -795,11 +798,14 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (!tcp->has_posted_reclaimer) {
     tcp->has_posted_reclaimer = true;
+    TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
-          if (!sweep.has_value()) return;
-          perform_reclamation(tcp);
+          if (sweep.has_value()) {
+            perform_reclamation(tcp);
+          }
+          TCP_UNREF(tcp, "posted_reclaimer");
         });
   }
 }
@@ -1088,7 +1094,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(error.ok())) {
+  if (GPR_LIKELY(error.ok()) && tcp->memory_owner.is_valid()) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       // Maybe update rcv lowat value based on the number of bytes read in this
@@ -1101,7 +1107,12 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     }
     tcp_trace_read(tcp, tcp_read_error);
   } else {
-    tcp_read_error = error;
+    if (!tcp->memory_owner.is_valid() && error.ok()) {
+      tcp_read_error =
+          tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+    } else {
+      tcp_read_error = error;
+    }
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   }

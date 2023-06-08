@@ -15,6 +15,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -197,15 +198,35 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
             absl::StrCat("endpoint-tcp-server-connection: ", *peer_name)),
         /*options=*/listener_->options_);
-    // Call on_accept_ and then resume accepting new connections by continuing
-    // the parent for-loop.
-    listener_->on_accept_(
-        /*listener_fd=*/handle_->WrappedFd(), /*endpoint=*/std::move(endpoint),
-        /*is_external=*/false,
-        /*memory_allocator=*/
-        listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("on-accept-tcp-server-connection: ", *peer_name)),
-        /*pending_data=*/nullptr);
+
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      // TODO(vigneshbabu): CreateMemoryAllocator requires an ExecCtx to be
+      // present. Clean this up once the Resource Quota system no longer relies
+      // on ExecCtx.
+      grpc_core::ApplicationCallbackExecCtx app_ctx;
+      grpc_core::ExecCtx exec_ctx;
+      // Call on_accept_ and then resume accepting new connections by continuing
+      // the parent for-loop.
+      listener_->on_accept_(
+          /*listener_fd=*/handle_->WrappedFd(),
+          /*endpoint=*/std::move(endpoint),
+          /*is_external=*/false,
+          /*memory_allocator=*/
+          listener_->memory_allocator_factory_->CreateMemoryAllocator(
+              absl::StrCat("on-accept-tcp-server-connection: ", *peer_name)),
+          /*pending_data=*/nullptr);
+    } else {
+      // Call on_accept_ and then resume accepting new connections by continuing
+      // the parent for-loop.
+      listener_->on_accept_(
+          /*listener_fd=*/handle_->WrappedFd(),
+          /*endpoint=*/std::move(endpoint),
+          /*is_external=*/false,
+          /*memory_allocator=*/
+          listener_->memory_allocator_factory_->CreateMemoryAllocator(
+              absl::StrCat("on-accept-tcp-server-connection: ", *peer_name)),
+          /*pending_data=*/nullptr);
+    }
   }
   GPR_UNREACHABLE_CODE(return);
 }
@@ -228,21 +249,44 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
-  auto endpoint = CreatePosixEndpoint(
-      /*handle=*/poller_->CreateHandle(fd, *peer_name,
-                                       poller_->CanTrackErrors()),
-      /*on_shutdown=*/nullptr, /*engine=*/engine_,
-      /*allocator=*/
-      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-          "external:endpoint-tcp-server-connection: ", *peer_name)),
-      /*options=*/options_);
-  on_accept_(
-      /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
-      /*is_external=*/true,
-      /*memory_allocator=*/
-      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-          "external:on-accept-tcp-server-connection: ", *peer_name)),
-      /*pending_data=*/pending_data);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    // TODO(vigneshbabu): CreateMemoryAllocator requires an ExecCtx to be
+    // present. Clean this up once the Resource Quota system no longer relies
+    // on ExecCtx.
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    auto endpoint = CreatePosixEndpoint(
+        /*handle=*/poller_->CreateHandle(fd, *peer_name,
+                                         poller_->CanTrackErrors()),
+        /*on_shutdown=*/nullptr, /*engine=*/engine_,
+        /*allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:endpoint-tcp-server-connection: ", *peer_name)),
+        /*options=*/options_);
+    on_accept_(
+        /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
+        /*is_external=*/true,
+        /*memory_allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:on-accept-tcp-server-connection: ", *peer_name)),
+        /*pending_data=*/pending_data);
+  } else {
+    auto endpoint = CreatePosixEndpoint(
+        /*handle=*/poller_->CreateHandle(fd, *peer_name,
+                                         poller_->CanTrackErrors()),
+        /*on_shutdown=*/nullptr, /*engine=*/engine_,
+        /*allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:endpoint-tcp-server-connection: ", *peer_name)),
+        /*options=*/options_);
+    on_accept_(
+        /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
+        /*is_external=*/true,
+        /*memory_allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:on-accept-tcp-server-connection: ", *peer_name)),
+        /*pending_data=*/pending_data);
+  }
   return absl::OkStatus();
 }
 
