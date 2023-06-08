@@ -31,10 +31,10 @@ def grpc_core_end2end_test(name):
 
     grpc_cc_test(
         name = "%s_test" % name,
-        timeout = "long",
         srcs = [
             "tests/%s.cc" % name,
         ],
+        shard_count = 10,
         data = END2END_TEST_DATA,
         external_deps = [
             "absl/functional:any_invocable",
