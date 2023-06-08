@@ -4831,6 +4831,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: bad_ping_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/bad_ping.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: bad_server_response_test
   gtest: true
   build: test
@@ -4991,6 +5026,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: binary_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/binary_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: binder_resolver_test
   gtest: true
   build: test
@@ -5191,6 +5261,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: call_creds_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/call_creds.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: call_finalization_test
   gtest: true
   build: test
@@ -5200,6 +5305,181 @@ targets:
   src:
   - test/core/channel/call_finalization_test.cc
   deps:
+  - grpc_test_util
+- name: call_host_override_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/call_host_override.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: cancel_after_accept_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_after_accept.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: cancel_after_client_done_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_after_client_done.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: cancel_after_invoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_after_invoke.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: cancel_after_round_trip_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_after_round_trip.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
   - grpc_test_util
 - name: cancel_ares_query_test
   gtest: true
@@ -5215,6 +5495,41 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cancel_before_invoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_before_invoke.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: cancel_callback_test
   gtest: true
   build: test
@@ -5229,6 +5544,76 @@ targets:
   - absl/meta:type_traits
   - gpr
   uses_polling: false
+- name: cancel_in_a_vacuum_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_in_a_vacuum.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: cancel_with_status_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_with_status.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -5643,19 +6028,6 @@ targets:
   deps:
   - grpcpp_channelz
   - grpc++_test_util
-- name: channelz_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/cpp/util/channel_trace_proto_helper.h
-  src:
-  - src/proto/grpc/channelz/channelz.proto
-  - test/core/channel/channelz_test.cc
-  - test/cpp/util/channel_trace_proto_helper.cc
-  deps:
-  - grpc++
-  - grpc_test_util
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -5995,6 +6367,41 @@ targets:
   - linux
   - posix
   - mac
+- name: client_streaming_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/client_streaming.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: cmdline_test
   gtest: true
   build: test
@@ -6112,6 +6519,41 @@ targets:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
+- name: compressed_payload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/compressed_payload.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: compression_test
   gtest: true
   build: test
@@ -6189,6 +6631,41 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: connectivity_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/connectivity.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: context_allocator_end2end_test
   gtest: true
   build: test
@@ -6225,129 +6702,6 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: core_end2end_tests
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/util/test_lb_policies.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_context.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/util/test_lb_policies.cc
-  deps:
-  - grpc_authorization_provider
-  - grpc_unsecure
-  - grpc_test_util
 - name: cpp_impl_of_test
   gtest: true
   build: test
@@ -6392,6 +6746,41 @@ targets:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
   - grpc_test_util
+- name: default_host_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/default_host.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -6416,6 +6805,41 @@ targets:
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - grpc++_test_util
+- name: disappearing_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/disappearing_server.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test
@@ -6470,6 +6894,41 @@ targets:
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - grpc_test_util
+- name: empty_batch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/empty_batch.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
   - grpc_test_util
 - name: end2end_binder_transport_test
   gtest: true
@@ -7110,6 +7569,76 @@ targets:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+- name: filter_causes_close_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/filter_causes_close.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: filter_context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/filter_context.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -7124,6 +7653,41 @@ targets:
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: filter_init_fails_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/filter_init_fails.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: filter_test_test
   gtest: true
   build: test
@@ -7140,6 +7704,41 @@ targets:
   - grpc_unsecure
   - grpc_test_util
   uses_polling: false
+- name: filtered_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/filtered_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: flaky_network_test
   gtest: true
   build: test
@@ -8050,6 +8649,41 @@ targets:
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+- name: graceful_server_shutdown_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/graceful_server_shutdown.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -8190,6 +8824,41 @@ targets:
   deps:
   - grpc_authorization_provider
   - grpc++_test_util
+- name: grpc_authz_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/grpc_authz.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: grpc_byte_buffer_reader_test
   gtest: true
   build: test
@@ -8681,6 +9350,41 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: high_initial_seqno_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/high_initial_seqno.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: histogram_test
   gtest: true
   build: test
@@ -8831,6 +9535,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: hpack_size_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/hpack_size.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: http2_client
   build: test
   run: false
@@ -9128,6 +9867,41 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
+- name: invoke_large_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/invoke_large_request.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: iocp_test
   gtest: true
   build: test
@@ -9265,6 +10039,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: keepalive_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/keepalive_timeout.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: lame_client_test
   gtest: true
   build: test
@@ -9275,6 +10084,41 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
   deps:
+  - grpc_test_util
+- name: large_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/large_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
   - grpc_test_util
 - name: latch_test
   gtest: true
@@ -9553,6 +10397,146 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: max_concurrent_streams_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/max_concurrent_streams.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: max_connection_age_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/max_connection_age.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: max_connection_idle_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/max_connection_idle.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: max_message_length_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/max_message_length.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: memory_quota_stress_test
   gtest: true
   build: test
@@ -9760,6 +10744,41 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: negative_deadline_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/negative_deadline.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: no_destruct_test
   gtest: true
   build: test
@@ -9771,6 +10790,76 @@ targets:
   - test/core/gprpp/no_destruct_test.cc
   deps: []
   uses_polling: false
+- name: no_logging_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/no_logging.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: no_op_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/no_op.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: no_server_test
   gtest: true
   build: test
@@ -9999,6 +11088,41 @@ targets:
   deps:
   - grpc_unsecure
   uses_polling: false
+- name: payload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/payload.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: percent_encoding_test
   gtest: true
   build: test
@@ -10105,6 +11229,76 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
+  - grpc_test_util
+- name: ping_pong_streaming_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/ping_pong_streaming.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: ping_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/ping.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
   - grpc_test_util
 - name: pipe_test
   gtest: true
@@ -10329,6 +11523,41 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: proxy_auth_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/proxy_auth.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: qps_json_driver
   build: test
   run: false
@@ -10507,6 +11736,41 @@ targets:
   - test/core/gprpp/ref_counted_test.cc
   deps:
   - grpc_test_util
+- name: registered_call_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/registered_call.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: remove_stream_from_stalled_lists_test
   gtest: true
   build: test
@@ -10520,6 +11784,76 @@ targets:
   - linux
   - posix
   - mac
+- name: request_with_flags_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/request_with_flags.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: request_with_payload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/request_with_payload.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: resolve_address_using_ares_resolver_posix_test
   gtest: true
   build: test
@@ -10676,6 +12010,41 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resource_quota_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/resource_quota_server.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: resource_quota_test
   gtest: true
   build: test
@@ -10686,6 +12055,811 @@ targets:
   deps:
   - grpc_test_util_unsecure
   uses_polling: false
+- name: retry_cancel_after_first_attempt_starts_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_cancel_during_delay_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_cancel_with_multiple_send_batches_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_cancellation_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_cancellation.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_disabled_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_disabled.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_exceeds_buffer_size_in_delay_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_exceeds_buffer_size_in_initial_batch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_exceeds_buffer_size_in_subsequent_batch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_lb_drop_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_lb_fail_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_lb_fail.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_non_retriable_status_before_recv_trailing_metadata_started_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_non_retriable_status_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_non_retriable_status.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_per_attempt_recv_timeout_on_last_attempt_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_per_attempt_recv_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_recv_initial_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_recv_initial_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_recv_message_replay_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_recv_message_replay.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_recv_message_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_recv_message.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_recv_trailing_metadata_error_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_send_initial_metadata_refs_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_send_op_fails_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_send_op_fails.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_send_recv_batch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_send_recv_batch.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_server_pushback_delay_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_server_pushback_delay.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_server_pushback_disabled_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_server_pushback_disabled.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: retry_service_config_test
   gtest: true
   build: test
@@ -10696,6 +12870,146 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: retry_streaming_after_commit_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_streaming_after_commit.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_streaming_succeeds_before_replay_finished_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_streaming_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_streaming.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -10706,6 +13020,251 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: retry_throttled_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_throttled.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_too_many_attempts_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_too_many_attempts.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_transparent_goaway_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_transparent_goaway.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_transparent_max_concurrent_streams_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_transparent_not_sent_on_wire_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_unref_before_finish_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_unref_before_finish.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: retry_unref_before_recv_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/retry_unref_before_recv.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: rls_end2end_test
   gtest: true
   build: test
@@ -11022,6 +13581,41 @@ targets:
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
+- name: server_finishes_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: server_interceptors_end2end_test
   gtest: true
   build: test
@@ -11110,6 +13704,41 @@ targets:
   - linux
   - posix
   - mac
+- name: server_streaming_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/server_streaming.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: server_test
   gtest: true
   build: test
@@ -11178,6 +13807,76 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: shutdown_finishes_calls_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/shutdown_finishes_calls.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: shutdown_finishes_tags_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/shutdown_finishes_tags.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: shutdown_test
   gtest: true
   build: test
@@ -11192,6 +13891,76 @@ targets:
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - grpc++_test_util
+- name: simple_delayed_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/simple_delayed_request.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: simple_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/simple_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: simple_request_bad_client_test
   gtest: true
   build: test
@@ -11204,6 +13973,41 @@ targets:
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - grpc_test_util
+- name: simple_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/simple_request.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
   - grpc_test_util
 - name: single_set_ptr_test
   gtest: true
@@ -11581,6 +14385,41 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: streaming_error_response_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/streaming_error_response.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -11817,6 +14656,54 @@ targets:
   deps:
   - grpc
   uses_polling: false
+- name: test_core_channel_channelz_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/channel_trace_proto_helper.h
+  src:
+  - src/proto/grpc/channelz/channelz.proto
+  - test/core/channel/channelz_test.cc
+  - test/cpp/util/channel_trace_proto_helper.cc
+  deps:
+  - grpc++
+  - grpc_test_util
+- name: test_core_end2end_channelz_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/channelz.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -12347,6 +15234,41 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: trailing_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/trailing_metadata.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: transport_security_common_api_test
   gtest: true
   build: test
@@ -12906,6 +15828,76 @@ targets:
   - linux
   - posix
   - mac
+- name: write_buffering_at_end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
+- name: write_buffering_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/write_buffering.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: writes_per_rpc_test
   gtest: true
   build: test
