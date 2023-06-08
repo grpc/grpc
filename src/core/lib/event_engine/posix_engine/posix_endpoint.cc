@@ -570,9 +570,7 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status status) {
 }
 
 void PosixEndpointImpl::HandleRead(absl::Status status) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ApplicationCallbackExecCtx app_ctx;
-    grpc_core::ExecCtx exec_ctx;
+  grpc_core::EnsureRunInExecCtx([this, status] {
     grpc_core::ReleasableMutexLock lock(&read_mu_);
     if (!HandleReadLocked(status)) {
       lock.Release();
@@ -584,20 +582,8 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
     incoming_buffer_ = nullptr;
     lock.Release();
     cb(status);
-  } else {
-    grpc_core::ReleasableMutexLock lock(&read_mu_);
-    if (!HandleReadLocked(status)) {
-      lock.Release();
-      handle_->NotifyOnRead(on_read_);
-      return;
-    }
-    absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
-    read_cb_ = nullptr;
-    incoming_buffer_ = nullptr;
-    lock.Release();
-    cb(status);
-  }
-  Unref();
+    Unref();
+  });
 }
 
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
