@@ -147,9 +147,9 @@ class PickFirst : public LoadBalancingPolicy {
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
-  OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
-  OrphanablePtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   PickFirstSubchannelData* selected_ = nullptr;
   // Are we in IDLE state?
@@ -205,7 +205,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   if (latest_update_args_.addresses.ok()) {
     addresses = *latest_update_args_.addresses;
   }
-  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
+  auto subchannel_list = MakeRefCounted<PickFirstSubchannelList>(
       this, std::move(addresses), *latest_update_args_.args);
   // Empty update or no valid subchannels.
   if (subchannel_list->num_subchannels() == 0) {

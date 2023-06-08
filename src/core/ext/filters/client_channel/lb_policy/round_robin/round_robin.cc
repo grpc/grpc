@@ -178,12 +178,12 @@ class RoundRobin : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // List of subchannels.
-  OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
   // When we get an updated address list, we create a new subchannel list
   // for it here, and we wait to swap it into subchannel_list_ until the new
   // list becomes READY.
-  OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
 };
@@ -283,7 +283,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[RR %p] replacing previous pending subchannel list %p",
             this, latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
+  latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
       this, std::move(addresses), *args.args);
   // Start watching the new list.  If appropriate, this will cause it to be
   // immediately promoted to subchannel_list_ and to generate a new picker.
