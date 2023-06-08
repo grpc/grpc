@@ -24,7 +24,7 @@
 // A stress test which spins up a server with a small configured resource quota
 // value. It then creates many channels which exchange large payloads with the
 // server. This would drive the server to reach resource quota limits and
-// trigger reclamations.
+// trigger reclamation.
 
 namespace grpc {
 namespace testing {

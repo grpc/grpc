@@ -582,6 +582,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
     absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
     read_cb_ = nullptr;
     incoming_buffer_ = nullptr;
+    lock.Release();
     cb(status);
   } else {
     grpc_core::ReleasableMutexLock lock(&read_mu_);
@@ -593,6 +594,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
     absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
     read_cb_ = nullptr;
     incoming_buffer_ = nullptr;
+    lock.Release();
     cb(status);
   }
   Unref();
