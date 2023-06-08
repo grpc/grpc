@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("grpc_core_end2end_test.bzl", "grpc_core_end2end_test")
 
 licenses(["notice"])
 
@@ -184,170 +184,95 @@ grpc_cc_library(
     ],
 )
 
-END2END_TEST_SRCS = [
-    "end2end_test_suites.cc",
-    "tests/bad_ping.cc",
-    "tests/binary_metadata.cc",
-    "tests/call_creds.cc",
-    "tests/call_host_override.cc",
-    "tests/cancel_after_accept.cc",
-    "tests/cancel_after_client_done.cc",
-    "tests/cancel_after_invoke.cc",
-    "tests/cancel_after_round_trip.cc",
-    "tests/cancel_before_invoke.cc",
-    "tests/cancel_in_a_vacuum.cc",
-    "tests/cancel_with_status.cc",
-    "tests/channelz.cc",
-    "tests/client_streaming.cc",
-    "tests/compressed_payload.cc",
-    "tests/connectivity.cc",
-    "tests/default_host.cc",
-    "tests/disappearing_server.cc",
-    "tests/empty_batch.cc",
-    "tests/filter_causes_close.cc",
-    "tests/filter_context.cc",
-    "tests/filter_init_fails.cc",
-    "tests/filtered_metadata.cc",
-    "tests/graceful_server_shutdown.cc",
-    "tests/grpc_authz.cc",
-    "tests/high_initial_seqno.cc",
-    "tests/hpack_size.cc",
-    "tests/invoke_large_request.cc",
-    "tests/keepalive_timeout.cc",
-    "tests/large_metadata.cc",
-    "tests/max_concurrent_streams.cc",
-    "tests/max_connection_age.cc",
-    "tests/max_connection_idle.cc",
-    "tests/max_message_length.cc",
-    "tests/negative_deadline.cc",
-    "tests/no_logging.cc",
-    "tests/no_op.cc",
-    "tests/payload.cc",
-    "tests/ping.cc",
-    "tests/ping_pong_streaming.cc",
-    "tests/proxy_auth.cc",
-    "tests/registered_call.cc",
-    "tests/request_with_flags.cc",
-    "tests/request_with_payload.cc",
-    "tests/resource_quota_server.cc",
-    "tests/retry.cc",
-    "tests/retry_cancel_after_first_attempt_starts.cc",
-    "tests/retry_cancel_during_delay.cc",
-    "tests/retry_cancel_with_multiple_send_batches.cc",
-    "tests/retry_cancellation.cc",
-    "tests/retry_disabled.cc",
-    "tests/retry_exceeds_buffer_size_in_delay.cc",
-    "tests/retry_exceeds_buffer_size_in_initial_batch.cc",
-    "tests/retry_exceeds_buffer_size_in_subsequent_batch.cc",
-    "tests/retry_lb_drop.cc",
-    "tests/retry_lb_fail.cc",
-    "tests/retry_non_retriable_status.cc",
-    "tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc",
-    "tests/retry_per_attempt_recv_timeout.cc",
-    "tests/retry_per_attempt_recv_timeout_on_last_attempt.cc",
-    "tests/retry_recv_initial_metadata.cc",
-    "tests/retry_recv_message.cc",
-    "tests/retry_recv_message_replay.cc",
-    "tests/retry_recv_trailing_metadata_error.cc",
-    "tests/retry_send_initial_metadata_refs.cc",
-    "tests/retry_send_op_fails.cc",
-    "tests/retry_send_recv_batch.cc",
-    "tests/retry_server_pushback_delay.cc",
-    "tests/retry_server_pushback_disabled.cc",
-    "tests/retry_streaming.cc",
-    "tests/retry_streaming_after_commit.cc",
-    "tests/retry_streaming_succeeds_before_replay_finished.cc",
-    "tests/retry_throttled.cc",
-    "tests/retry_too_many_attempts.cc",
-    "tests/retry_transparent_goaway.cc",
-    "tests/retry_transparent_max_concurrent_streams.cc",
-    "tests/retry_transparent_not_sent_on_wire.cc",
-    "tests/retry_unref_before_finish.cc",
-    "tests/retry_unref_before_recv.cc",
-    "tests/server_finishes_request.cc",
-    "tests/server_streaming.cc",
-    "tests/shutdown_finishes_calls.cc",
-    "tests/shutdown_finishes_tags.cc",
-    "tests/simple_delayed_request.cc",
-    "tests/simple_metadata.cc",
-    "tests/simple_request.cc",
-    "tests/streaming_error_response.cc",
-    "tests/trailing_metadata.cc",
-    "tests/write_buffering.cc",
-    "tests/write_buffering_at_end.cc",
-]
-
-END2END_TEST_DATA = [
-    "//src/core/tsi/test_creds:ca.pem",
-    "//src/core/tsi/test_creds:server1.key",
-    "//src/core/tsi/test_creds:server1.pem",
-]
-
-grpc_cc_test(
-    name = "core_end2end_tests",
-    timeout = "long",
-    srcs = [
-        "end2end_test_main.cc",
-    ] + END2END_TEST_SRCS,
-    data = END2END_TEST_DATA,
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "gtest",
-    ],
-    shard_count = 50,
-    tags = ["core_end2end_test"],
-    deps = [
-        "cq_verifier",
-        "end2end_test_lib",
-        "fixture_support",
-        "http_proxy",
-        "proxy",
-        "//:channel_stack_builder",
-        "//:config",
-        "//:config_vars",
-        "//:debug_location",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_authorization_provider",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_trace",
-        "//:grpc_unsecure",
-        "//:legacy_context",
-        "//:orphanable",
-        "//:promise",
-        "//:ref_counted_ptr",
-        "//:stats",
-        "//src/core:arena_promise",
-        "//src/core:bitset",
-        "//src/core:channel_args",
-        "//src/core:channel_fwd",
-        "//src/core:channel_init",
-        "//src/core:channel_stack_type",
-        "//src/core:closure",
-        "//src/core:error",
-        "//src/core:experiments",
-        "//src/core:grpc_authorization_base",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
-        "//src/core:json",
-        "//src/core:lb_policy",
-        "//src/core:lb_policy_factory",
-        "//src/core:no_destruct",
-        "//src/core:notification",
-        "//src/core:slice",
-        "//src/core:stats_data",
-        "//src/core:status_helper",
-        "//src/core:time",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:test_lb_policies",
-    ],
-)
+grpc_core_end2end_test(name = "bad_ping")
+grpc_core_end2end_test(name = "binary_metadata")
+grpc_core_end2end_test(name = "call_creds")
+grpc_core_end2end_test(name = "call_host_override")
+grpc_core_end2end_test(name = "cancel_after_accept")
+grpc_core_end2end_test(name = "cancel_after_client_done")
+grpc_core_end2end_test(name = "cancel_after_invoke")
+grpc_core_end2end_test(name = "cancel_after_round_trip")
+grpc_core_end2end_test(name = "cancel_before_invoke")
+grpc_core_end2end_test(name = "cancel_in_a_vacuum")
+grpc_core_end2end_test(name = "cancel_with_status")
+grpc_core_end2end_test(name = "channelz")
+grpc_core_end2end_test(name = "client_streaming")
+grpc_core_end2end_test(name = "compressed_payload")
+grpc_core_end2end_test(name = "connectivity")
+grpc_core_end2end_test(name = "default_host")
+grpc_core_end2end_test(name = "disappearing_server")
+grpc_core_end2end_test(name = "empty_batch")
+grpc_core_end2end_test(name = "filter_causes_close")
+grpc_core_end2end_test(name = "filter_context")
+grpc_core_end2end_test(name = "filter_init_fails")
+grpc_core_end2end_test(name = "filtered_metadata")
+grpc_core_end2end_test(name = "graceful_server_shutdown")
+grpc_core_end2end_test(name = "grpc_authz")
+grpc_core_end2end_test(name = "high_initial_seqno")
+grpc_core_end2end_test(name = "hpack_size")
+grpc_core_end2end_test(name = "invoke_large_request")
+grpc_core_end2end_test(name = "keepalive_timeout")
+grpc_core_end2end_test(name = "large_metadata")
+grpc_core_end2end_test(name = "max_concurrent_streams")
+grpc_core_end2end_test(name = "max_connection_age")
+grpc_core_end2end_test(name = "max_connection_idle")
+grpc_core_end2end_test(name = "max_message_length")
+grpc_core_end2end_test(name = "negative_deadline")
+grpc_core_end2end_test(name = "no_logging")
+grpc_core_end2end_test(name = "no_op")
+grpc_core_end2end_test(name = "payload")
+grpc_core_end2end_test(name = "ping")
+grpc_core_end2end_test(name = "ping_pong_streaming")
+grpc_core_end2end_test(name = "proxy_auth")
+grpc_core_end2end_test(name = "registered_call")
+grpc_core_end2end_test(name = "request_with_flags")
+grpc_core_end2end_test(name = "request_with_payload")
+grpc_core_end2end_test(name = "resource_quota_server")
+grpc_core_end2end_test(name = "retry")
+grpc_core_end2end_test(name = "retry_cancel_after_first_attempt_starts")
+grpc_core_end2end_test(name = "retry_cancel_during_delay")
+grpc_core_end2end_test(name = "retry_cancel_with_multiple_send_batches")
+grpc_core_end2end_test(name = "retry_cancellation")
+grpc_core_end2end_test(name = "retry_disabled")
+grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_delay")
+grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_initial_batch")
+grpc_core_end2end_test(name = "retry_exceeds_buffer_size_in_subsequent_batch")
+grpc_core_end2end_test(name = "retry_lb_drop")
+grpc_core_end2end_test(name = "retry_lb_fail")
+grpc_core_end2end_test(name = "retry_non_retriable_status")
+grpc_core_end2end_test(name = "retry_non_retriable_status_before_recv_trailing_metadata_started")
+grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout")
+grpc_core_end2end_test(name = "retry_per_attempt_recv_timeout_on_last_attempt")
+grpc_core_end2end_test(name = "retry_recv_initial_metadata")
+grpc_core_end2end_test(name = "retry_recv_message")
+grpc_core_end2end_test(name = "retry_recv_message_replay")
+grpc_core_end2end_test(name = "retry_recv_trailing_metadata_error")
+grpc_core_end2end_test(name = "retry_send_initial_metadata_refs")
+grpc_core_end2end_test(name = "retry_send_op_fails")
+grpc_core_end2end_test(name = "retry_send_recv_batch")
+grpc_core_end2end_test(name = "retry_server_pushback_delay")
+grpc_core_end2end_test(name = "retry_server_pushback_disabled")
+grpc_core_end2end_test(name = "retry_streaming")
+grpc_core_end2end_test(name = "retry_streaming_after_commit")
+grpc_core_end2end_test(name = "retry_streaming_succeeds_before_replay_finished")
+grpc_core_end2end_test(name = "retry_throttled")
+grpc_core_end2end_test(name = "retry_too_many_attempts")
+grpc_core_end2end_test(name = "retry_transparent_goaway")
+grpc_core_end2end_test(name = "retry_transparent_max_concurrent_streams")
+grpc_core_end2end_test(name = "retry_transparent_not_sent_on_wire")
+grpc_core_end2end_test(name = "retry_unref_before_finish")
+grpc_core_end2end_test(name = "retry_unref_before_recv")
+grpc_core_end2end_test(name = "server_finishes_request")
+grpc_core_end2end_test(name = "server_streaming")
+grpc_core_end2end_test(name = "shutdown_finishes_calls")
+grpc_core_end2end_test(name = "shutdown_finishes_tags")
+grpc_core_end2end_test(name = "simple_delayed_request")
+grpc_core_end2end_test(name = "simple_metadata")
+grpc_core_end2end_test(name = "simple_request")
+grpc_core_end2end_test(name = "streaming_error_response")
+grpc_core_end2end_test(name = "trailing_metadata")
+grpc_core_end2end_test(name = "write_buffering")
+grpc_core_end2end_test(name = "write_buffering_at_end")
 
 grpc_cc_test(
     name = "bad_server_response_test",
@@ -580,81 +505,3 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_fuzzer(
-    name = "core_end2end_test_fuzzer",
-    size = "enormous",
-    srcs = ["end2end_test_fuzzer.cc"] + END2END_TEST_SRCS,
-    corpus = "end2end_test_corpus",
-    data = END2END_TEST_DATA,
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "gtest",
-    ],
-    language = "C++",
-    proto = None,
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "cq_verifier",
-        "end2end_test_fuzzer_proto",
-        "end2end_test_lib",
-        "fixture_support",
-        "http_proxy",
-        "proxy",
-        "//:channel_stack_builder",
-        "//:config",
-        "//:config_vars",
-        "//:debug_location",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_authorization_provider",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-        "//:grpc_trace",
-        "//:iomgr_timer",
-        "//:legacy_context",
-        "//:orphanable",
-        "//:promise",
-        "//:ref_counted_ptr",
-        "//:stats",
-        "//src/core:arena_promise",
-        "//src/core:bitset",
-        "//src/core:channel_args",
-        "//src/core:channel_fwd",
-        "//src/core:channel_init",
-        "//src/core:channel_stack_type",
-        "//src/core:closure",
-        "//src/core:default_event_engine",
-        "//src/core:env",
-        "//src/core:error",
-        "//src/core:experiments",
-        "//src/core:grpc_authorization_base",
-        "//src/core:grpc_fake_credentials",
-        "//src/core:iomgr_port",
-        "//src/core:json",
-        "//src/core:lb_policy",
-        "//src/core:lb_policy_factory",
-        "//src/core:no_destruct",
-        "//src/core:notification",
-        "//src/core:slice",
-        "//src/core:stats_data",
-        "//src/core:status_helper",
-        "//src/core:time",
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/util:fuzz_config_vars",
-        "//test/core/util:fuzz_config_vars_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:test_lb_policies",
-    ],
-)
