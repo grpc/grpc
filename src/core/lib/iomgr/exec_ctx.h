@@ -331,9 +331,9 @@ class ApplicationCallbackExecCtx {
 
 template <typename F>
 void EnsureRunInExecCtx(F f) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ApplicationCallbackExecCtx app_ctx;
-    grpc_core::ExecCtx exec_ctx;
+  if (ExecCtx::Get() == nullptr) {
+    ApplicationCallbackExecCtx app_ctx;
+    ExecCtx exec_ctx;
     f();
   } else {
     f();

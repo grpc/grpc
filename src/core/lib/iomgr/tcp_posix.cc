@@ -2042,6 +2042,9 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
+  tcp->read_mu.Lock();
+  tcp->memory_owner.Reset();
+  tcp->read_mu.Unlock();
   TCP_UNREF(tcp, "destroy");
 }
 

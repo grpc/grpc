@@ -551,7 +551,7 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
   }
 }
 
-bool PosixEndpointImpl::HandleReadLocked(absl::Status status) {
+bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
   if (status.ok() && memory_owner_.is_valid()) {
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
@@ -570,20 +570,21 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status status) {
 }
 
 void PosixEndpointImpl::HandleRead(absl::Status status) {
-  grpc_core::EnsureRunInExecCtx([this, status] {
-    grpc_core::ReleasableMutexLock lock(&read_mu_);
-    if (!HandleReadLocked(status)) {
-      lock.Release();
-      handle_->NotifyOnRead(on_read_);
-      return;
-    }
-    absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
-    read_cb_ = nullptr;
-    incoming_buffer_ = nullptr;
+  grpc_core::ReleasableMutexLock lock(&read_mu_);
+  bool ret = false;
+  grpc_core::EnsureRunInExecCtx(
+      [this, &status, &ret]() mutable { ret = HandleReadLocked(status); });
+  if (!ret) {
     lock.Release();
-    cb(status);
-    Unref();
-  });
+    handle_->NotifyOnRead(on_read_);
+    return;
+  }
+  absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
+  read_cb_ = nullptr;
+  incoming_buffer_ = nullptr;
+  lock.Release();
+  cb(status);
+  Unref();
 }
 
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,

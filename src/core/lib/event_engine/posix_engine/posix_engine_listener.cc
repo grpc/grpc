@@ -25,6 +25,7 @@
 #include <unistd.h>      // IWYU pragma: keep
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
