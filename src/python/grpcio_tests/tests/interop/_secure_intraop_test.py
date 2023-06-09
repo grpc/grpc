@@ -24,34 +24,43 @@ from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
 
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+_SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 
 
-@unittest.skipIf(sys.version_info[0] < 3,
-                 'ProtoBuf descriptor has moved on from Python2')
+@unittest.skipIf(
+    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
+)
 class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
-
     def setUp(self):
         self.server = test_common.test_server()
-        test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
-                                                        self.server)
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
         port = self.server.add_secure_port(
-            '[::]:0',
-            grpc.ssl_server_credentials([(resources.private_key(),
-                                          resources.certificate_chain())]))
+            "[::]:0",
+            grpc.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())]
+            ),
+        )
         self.server.start()
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
-                'localhost:{}'.format(port),
+                "localhost:{}".format(port),
                 grpc.ssl_channel_credentials(
-                    resources.test_root_certificates()), ((
-                        'grpc.ssl_target_name_override',
+                    resources.test_root_certificates()
+                ),
+                (
+                    (
+                        "grpc.ssl_target_name_override",
                         _SERVER_HOST_OVERRIDE,
-                    ),)))
+                    ),
+                ),
+            )
+        )
 
     def tearDown(self):
         self.server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

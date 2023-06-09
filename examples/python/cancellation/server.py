@@ -29,13 +29,12 @@ from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
-_SERVER_HOST = 'localhost'
+_SERVER_HOST = "localhost"
 
 _DESCRIPTION = "A server for finding hashes similar to names."
 
 
 class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
-
     def __init__(self, maximum_hashes):
         super(HashFinder, self).__init__()
         self._maximum_hashes = maximum_hashes
@@ -51,9 +50,13 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
         candidates = []
         try:
             candidates = list(
-                search.search(request.desired_name,
-                              request.ideal_hamming_distance, stop_event,
-                              self._maximum_hashes))
+                search.search(
+                    request.desired_name,
+                    request.ideal_hamming_distance,
+                    stop_event,
+                    self._maximum_hashes,
+                )
+            )
         except search.ResourceLimitExceededError:
             _LOGGER.info("Cancelling RPC due to exhausted resources.")
             context.cancel()
@@ -75,7 +78,8 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
             request.ideal_hamming_distance,
             stop_event,
             self._maximum_hashes,
-            interesting_hamming_distance=request.interesting_hamming_distance)
+            interesting_hamming_distance=request.interesting_hamming_distance,
+        )
         try:
             for candidate in secret_generator:
                 yield candidate
@@ -89,11 +93,13 @@ def _running_server(port, maximum_hashes):
     # We use only a single servicer thread here to demonstrate that, if managed
     # carefully, cancelled RPCs can need not continue occupying servicers
     # threads.
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1),
-                         maximum_concurrent_rpcs=1)
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=1), maximum_concurrent_rpcs=1
+    )
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
-        HashFinder(maximum_hashes), server)
-    address = '{}:{}'.format(_SERVER_HOST, port)
+        HashFinder(maximum_hashes), server
+    )
+    address = "{}:{}".format(_SERVER_HOST, port)
     actual_port = server.add_insecure_port(address)
     server.start()
     print("Server listening at '{}'".format(address))
@@ -102,17 +108,20 @@ def _running_server(port, maximum_hashes):
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument('--port',
-                        type=int,
-                        default=50051,
-                        nargs='?',
-                        help='The port on which the server will listen.')
     parser.add_argument(
-        '--maximum-hashes',
+        "--port",
+        type=int,
+        default=50051,
+        nargs="?",
+        help="The port on which the server will listen.",
+    )
+    parser.add_argument(
+        "--maximum-hashes",
         type=int,
         default=1000000,
-        nargs='?',
-        help='The maximum number of hashes to search before cancelling.')
+        nargs="?",
+        help="The maximum number of hashes to search before cancelling.",
+    )
     args = parser.parse_args()
     server = _running_server(args.port, args.maximum_hashes)
     server.wait_for_termination()

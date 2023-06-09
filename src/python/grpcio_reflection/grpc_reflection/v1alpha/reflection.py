@@ -21,7 +21,8 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 from grpc_reflection.v1alpha._base import BaseReflectionServicer
 
 SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[
-    'ServerReflection'].full_name
+    "ServerReflection"
+].full_name
 
 
 class ReflectionServicer(BaseReflectionServicer):
@@ -30,27 +31,32 @@ class ReflectionServicer(BaseReflectionServicer):
     def ServerReflectionInfo(self, request_iterator, context):
         # pylint: disable=unused-argument
         for request in request_iterator:
-            if request.HasField('file_by_filename'):
+            if request.HasField("file_by_filename"):
                 yield self._file_by_filename(request.file_by_filename)
-            elif request.HasField('file_containing_symbol'):
+            elif request.HasField("file_containing_symbol"):
                 yield self._file_containing_symbol(
-                    request.file_containing_symbol)
-            elif request.HasField('file_containing_extension'):
+                    request.file_containing_symbol
+                )
+            elif request.HasField("file_containing_extension"):
                 yield self._file_containing_extension(
                     request.file_containing_extension.containing_type,
-                    request.file_containing_extension.extension_number)
-            elif request.HasField('all_extension_numbers_of_type'):
+                    request.file_containing_extension.extension_number,
+                )
+            elif request.HasField("all_extension_numbers_of_type"):
                 yield self._all_extension_numbers_of_type(
-                    request.all_extension_numbers_of_type)
-            elif request.HasField('list_services'):
+                    request.all_extension_numbers_of_type
+                )
+            elif request.HasField("list_services"):
                 yield self._list_services()
             else:
                 yield _reflection_pb2.ServerReflectionResponse(
                     error_response=_reflection_pb2.ErrorResponse(
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
-                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1].
-                        encode(),
-                    ))
+                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[
+                            1
+                        ].encode(),
+                    )
+                )
 
 
 _enable_server_reflection_doc = """Enables server reflection on a server.
@@ -65,17 +71,19 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     # Exposes AsyncReflectionServicer as public API.
     # pylint: disable=ungrouped-imports
     from grpc.experimental import aio as grpc_aio
-    # pylint: enable=ungrouped-imports
 
+    # pylint: enable=ungrouped-imports
     from . import _async as aio
 
     def enable_server_reflection(service_names, server, pool=None):
         if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-                aio.ReflectionServicer(service_names, pool=pool), server)
+                aio.ReflectionServicer(service_names, pool=pool), server
+            )
         else:
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-                ReflectionServicer(service_names, pool=pool), server)
+                ReflectionServicer(service_names, pool=pool), server
+            )
 
     enable_server_reflection.__doc__ = _enable_server_reflection_doc
 
@@ -89,7 +97,8 @@ else:
 
     def enable_server_reflection(service_names, server, pool=None):
         _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
-            ReflectionServicer(service_names, pool=pool), server)
+            ReflectionServicer(service_names, pool=pool), server
+        )
 
     enable_server_reflection.__doc__ = _enable_server_reflection_doc
 

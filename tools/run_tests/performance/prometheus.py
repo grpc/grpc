@@ -59,19 +59,15 @@ class Prometheus:
         a time series.
         """
         resp = requests.get(
-            self.url + '/api/v1/query_range',
-            {
-                'query': query,
-                'start': self.start,
-                'end': self.end,
-                'step': 5
-            },
+            self.url + "/api/v1/query_range",
+            {"query": query, "start": self.start, "end": self.end, "step": 5},
         )
         resp.raise_for_status()
         return resp.json()
 
-    def _fetch_cpu_for_pod(self, container_matcher: str,
-                           pod_name: str) -> Dict[str, List[float]]:
+    def _fetch_cpu_for_pod(
+        self, container_matcher: str, pod_name: str
+    ) -> Dict[str, List[float]]:
         """Fetches the cpu data for each pod.
 
         Fetch total cpu seconds during the time range specified in the Prometheus instance
@@ -83,16 +79,22 @@ class Prometheus:
         """
         query = (
             'container_cpu_usage_seconds_total{job="kubernetes-cadvisor",pod="'
-            + pod_name + '",container=' + container_matcher + '}')
-        logging.debug('running prometheus query for cpu: %s', query)
+            + pod_name
+            + '",container='
+            + container_matcher
+            + "}"
+        )
+        logging.debug("running prometheus query for cpu: %s", query)
         cpu_data = self._fetch_by_query(query)
-        logging.debug('raw cpu data: %s', str(cpu_data))
+        logging.debug("raw cpu data: %s", str(cpu_data))
         cpu_container_name_to_data_list = get_data_list_from_timeseries(
-            cpu_data)
+            cpu_data
+        )
         return cpu_container_name_to_data_list
 
-    def _fetch_memory_for_pod(self, container_matcher: str,
-                              pod_name: str) -> Dict[str, List[float]]:
+    def _fetch_memory_for_pod(
+        self, container_matcher: str, pod_name: str
+    ) -> Dict[str, List[float]]:
         """Fetches memory data for each pod.
 
         Fetch total memory data during the time range specified in the Prometheus instance
@@ -103,21 +105,26 @@ class Prometheus:
             container_matcher:  A string consist one or more container name separated by |.
         """
         query = (
-            'container_memory_usage_bytes{job="kubernetes-cadvisor",pod="' +
-            pod_name + '",container=' + container_matcher + "}")
+            'container_memory_usage_bytes{job="kubernetes-cadvisor",pod="'
+            + pod_name
+            + '",container='
+            + container_matcher
+            + "}"
+        )
 
-        logging.debug('running prometheus query for memory: %s', query)
+        logging.debug("running prometheus query for memory: %s", query)
         memory_data = self._fetch_by_query(query)
 
-        logging.debug('raw memory data: %s', str(memory_data))
+        logging.debug("raw memory data: %s", str(memory_data))
         memory_container_name_to_data_list = get_data_list_from_timeseries(
-            memory_data)
+            memory_data
+        )
 
         return memory_container_name_to_data_list
 
     def fetch_cpu_and_memory_data(
-            self, container_list: List[str],
-            pod_dict: Dict[str, List[str]]) -> Dict[str, Any]:
+        self, container_list: List[str], pod_dict: Dict[str, List[str]]
+    ) -> Dict[str, Any]:
         """Fetch total cpu seconds and memory data for multiple pods.
 
         Args:
@@ -134,15 +141,19 @@ class Prometheus:
             for pod in pod_names:
                 container_data = {}
                 for container, data in self._fetch_cpu_for_pod(
-                        container_matcher, pod).items():
+                    container_matcher, pod
+                ).items():
                     container_data[container] = {}
                     container_data[container][
-                        'cpuSeconds'] = compute_total_cpu_seconds(data)
+                        "cpuSeconds"
+                    ] = compute_total_cpu_seconds(data)
 
                 for container, data in self._fetch_memory_for_pod(
-                        container_matcher, pod).items():
+                    container_matcher, pod
+                ).items():
                     container_data[container][
-                        'memoryMean'] = compute_average_memory_usage(data)
+                        "memoryMean"
+                    ] = compute_average_memory_usage(data)
 
                 pod_data[pod] = container_data
             processed_data[role] = pod_data
@@ -153,7 +164,7 @@ def construct_container_matcher(container_list: List[str]) -> str:
     """Constructs the container matching string used in the
     prometheus query."""
     if len(container_list) == 0:
-        raise Exception('no container name provided')
+        raise Exception("no container name provided")
 
     containers_to_fetch = '"'
     if len(container_list) == 1:
@@ -161,7 +172,7 @@ def construct_container_matcher(container_list: List[str]) -> str:
     else:
         containers_to_fetch = '~"' + container_list[0]
         for container in container_list[1:]:
-            containers_to_fetch = containers_to_fetch + '|' + container
+            containers_to_fetch = containers_to_fetch + "|" + container
         containers_to_fetch = containers_to_fetch + '"'
     return containers_to_fetch
 
@@ -169,11 +180,12 @@ def construct_container_matcher(container_list: List[str]) -> str:
 def get_data_list_from_timeseries(data: Any) -> Dict[str, List[float]]:
     """Constructs a Dict as keys are the container names and
     values are a list of data taken from given timeseries data."""
-    if data['status'] != 'success':
-        raise Exception('command failed: ' + data['status'] + str(data))
-    if data['data']['resultType'] != 'matrix':
-        raise Exception('resultType is not matrix: ' +
-                        data['data']['resultType'])
+    if data["status"] != "success":
+        raise Exception("command failed: " + data["status"] + str(data))
+    if data["data"]["resultType"] != "matrix":
+        raise Exception(
+            "resultType is not matrix: " + data["data"]["resultType"]
+        )
 
     container_name_to_data_list = {}
     for res in data["data"]["result"]:
@@ -197,25 +209,26 @@ def compute_average_memory_usage(memory_data_list: List[float]) -> float:
     return statistics.mean(memory_data_list)
 
 
-def construct_pod_dict(node_info_file: str,
-                       pod_types: List[str]) -> Dict[str, List[str]]:
+def construct_pod_dict(
+    node_info_file: str, pod_types: List[str]
+) -> Dict[str, List[str]]:
     """Constructs a dict of pod names to be queried.
 
     Args:
         node_info_file: The file path contains the pod names to query.
-            The pods' names are put into a Dict of list that keyed by the 
+            The pods' names are put into a Dict of list that keyed by the
             role name: clients, servers and driver.
     """
-    with open(node_info_file, 'r') as f:
+    with open(node_info_file, "r") as f:
         pod_names = json.load(f)
-        pod_type_to_name = {'clients': [], 'driver': [], 'servers': []}
+        pod_type_to_name = {"clients": [], "driver": [], "servers": []}
 
-        for client in pod_names['Clients']:
-            pod_type_to_name['clients'].append(client['Name'])
-        for server in pod_names['Servers']:
-            pod_type_to_name['servers'].append(server['Name'])
+        for client in pod_names["Clients"]:
+            pod_type_to_name["clients"].append(client["Name"])
+        for server in pod_names["Servers"]:
+            pod_type_to_name["servers"].append(server["Name"])
 
-        pod_type_to_name["driver"].append(pod_names['Driver']['Name'])
+        pod_type_to_name["driver"].append(pod_names["Driver"]["Name"])
 
     pod_names_to_query = {}
     for pod_type in pod_types:
@@ -226,67 +239,73 @@ def construct_pod_dict(node_info_file: str,
 def convert_UTC_to_epoch(utc_timestamp: str) -> str:
     """Converts a utc timestamp string to epoch time string."""
     parsed_time = parser.parse(utc_timestamp)
-    epoch = parsed_time.strftime('%s')
+    epoch = parsed_time.strftime("%s")
     return epoch
 
 
 def main() -> None:
     argp = argparse.ArgumentParser(
-        description='Fetch cpu and memory stats from prometheus')
-    argp.add_argument('--url', help='Prometheus base url', required=True)
+        description="Fetch cpu and memory stats from prometheus"
+    )
+    argp.add_argument("--url", help="Prometheus base url", required=True)
     argp.add_argument(
-        '--scenario_result_file',
-        default='scenario_result.json',
+        "--scenario_result_file",
+        default="scenario_result.json",
         type=str,
-        help='File contains epoch seconds for start and end time',
+        help="File contains epoch seconds for start and end time",
     )
     argp.add_argument(
-        '--node_info_file',
-        default='/var/data/qps_workers/node_info.json',
-        help='File contains pod name to query the metrics for',
+        "--node_info_file",
+        default="/var/data/qps_workers/node_info.json",
+        help="File contains pod name to query the metrics for",
     )
     argp.add_argument(
-        '--pod_type',
-        action='append',
-        help=
-        'Pod type to query the metrics for, the options are driver, client and server',
-        choices=['driver', 'clients', 'servers'],
+        "--pod_type",
+        action="append",
+        help=(
+            "Pod type to query the metrics for, the options are driver, client"
+            " and server"
+        ),
+        choices=["driver", "clients", "servers"],
         required=True,
     )
     argp.add_argument(
-        '--container_name',
-        action='append',
-        help='The container names to query the metrics for',
+        "--container_name",
+        action="append",
+        help="The container names to query the metrics for",
         required=True,
     )
     argp.add_argument(
-        '--export_file_name',
-        default='prometheus_query_result.json',
+        "--export_file_name",
+        default="prometheus_query_result.json",
         type=str,
-        help='Name of exported JSON file.',
+        help="Name of exported JSON file.",
     )
     argp.add_argument(
-        '--quiet',
+        "--quiet",
         default=False,
-        help='Suppress informative output',
+        help="Suppress informative output",
     )
     argp.add_argument(
-        '--delay_seconds',
+        "--delay_seconds",
         default=0,
         type=int,
-        help=
-        'Configure delay in seconds to perform Prometheus queries, default is 0',
+        help=(
+            "Configure delay in seconds to perform Prometheus queries, default"
+            " is 0"
+        ),
     )
     args = argp.parse_args()
 
     if not args.quiet:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    with open(args.scenario_result_file, 'r') as q:
+    with open(args.scenario_result_file, "r") as q:
         scenario_result = json.load(q)
         start_time = convert_UTC_to_epoch(
-            scenario_result['summary']['startTime'])
-        end_time = convert_UTC_to_epoch(scenario_result['summary']['endTime'])
+            scenario_result["summary"]["startTime"]
+        )
+        end_time = convert_UTC_to_epoch(scenario_result["summary"]["endTime"])
         p = Prometheus(
             url=args.url,
             start=start_time,
@@ -297,14 +316,15 @@ def main() -> None:
 
     pod_dict = construct_pod_dict(args.node_info_file, args.pod_type)
     processed_data = p.fetch_cpu_and_memory_data(
-        container_list=args.container_name, pod_dict=pod_dict)
-    processed_data['testDurationSeconds'] = float(end_time) - float(start_time)
+        container_list=args.container_name, pod_dict=pod_dict
+    )
+    processed_data["testDurationSeconds"] = float(end_time) - float(start_time)
 
     logging.debug(json.dumps(processed_data, sort_keys=True, indent=4))
 
-    with open(args.export_file_name, 'w', encoding='utf8') as export_file:
+    with open(args.export_file_name, "w", encoding="utf8") as export_file:
         json.dump(processed_data, export_file, sort_keys=True, indent=4)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -26,17 +26,17 @@ from grpc_csds import csds_pb2
 from grpc_csds import csds_pb2_grpc
 
 
-@unittest.skipIf(sys.version_info[0] < 3,
-                 'ProtoBuf descriptor has moved on from Python2')
+@unittest.skipIf(
+    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
+)
 class TestAdmin(unittest.TestCase):
-
     def setUp(self):
         self._server = grpc.server(ThreadPoolExecutor())
-        port = self._server.add_insecure_port('localhost:0')
+        port = self._server.add_insecure_port("localhost:0")
         grpc_admin.add_admin_servicers(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel('localhost:%s' % port)
+        self._channel = grpc.insecure_channel("localhost:%s" % port)
 
     def tearDown(self):
         self._channel.close()
