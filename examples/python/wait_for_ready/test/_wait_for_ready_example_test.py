@@ -22,17 +22,17 @@ from examples.python.wait_for_ready import wait_for_ready_example
 
 
 class WaitForReadyExampleTest(unittest.TestCase):
-
     def test_wait_for_ready_example(self):
         wait_for_ready_example.main()
         # No unhandled exception raised, no deadlock, test passed!
 
     def test_asyncio_wait_for_ready_example(self):
         asyncio.get_event_loop().run_until_complete(
-            asyncio_wait_for_ready_example.main())
+            asyncio_wait_for_ready_example.main()
+        )
         # No unhandled exception raised, no deadlock, test passed!
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

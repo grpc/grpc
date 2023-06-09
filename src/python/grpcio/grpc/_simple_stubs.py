@@ -18,27 +18,43 @@ import datetime
 import logging
 import os
 import threading
-from typing import (Any, AnyStr, Callable, Dict, Iterator, Optional, Sequence,
-                    Tuple, TypeVar, Union)
+from typing import (
+    Any,
+    AnyStr,
+    Callable,
+    Dict,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import grpc
 from grpc.experimental import experimental_api
 
-RequestType = TypeVar('RequestType')
-ResponseType = TypeVar('ResponseType')
+RequestType = TypeVar("RequestType")
+ResponseType = TypeVar("ResponseType")
 
 OptionsType = Sequence[Tuple[str, str]]
-CacheKey = Tuple[str, OptionsType, Optional[grpc.ChannelCredentials],
-                 Optional[grpc.Compression]]
+CacheKey = Tuple[
+    str,
+    OptionsType,
+    Optional[grpc.ChannelCredentials],
+    Optional[grpc.Compression],
+]
 
 _LOGGER = logging.getLogger(__name__)
 
 _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
 if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
-        seconds=float(os.environ[_EVICTION_PERIOD_KEY]))
-    _LOGGER.debug("Setting managed channel eviction period to %s",
-                  _EVICTION_PERIOD)
+        seconds=float(os.environ[_EVICTION_PERIOD_KEY])
+    )
+    _LOGGER.debug(
+        "Setting managed channel eviction period to %s", _EVICTION_PERIOD
+    )
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
 
@@ -57,16 +73,22 @@ else:
     _DEFAULT_TIMEOUT = 60.0
 
 
-def _create_channel(target: str, options: Sequence[Tuple[str, str]],
-                    channel_credentials: Optional[grpc.ChannelCredentials],
-                    compression: Optional[grpc.Compression]) -> grpc.Channel:
+def _create_channel(
+    target: str,
+    options: Sequence[Tuple[str, str]],
+    channel_credentials: Optional[grpc.ChannelCredentials],
+    compression: Optional[grpc.Compression],
+) -> grpc.Channel:
     _LOGGER.debug(
-        f"Creating secure channel with credentials '{channel_credentials}', " +
-        f"options '{options}' and compression '{compression}'")
-    return grpc.secure_channel(target,
-                               credentials=channel_credentials,
-                               options=options,
-                               compression=compression)
+        f"Creating secure channel with credentials '{channel_credentials}', "
+        + f"options '{options}' and compression '{compression}'"
+    )
+    return grpc.secure_channel(
+        target,
+        credentials=channel_credentials,
+        options=options,
+        compression=compression,
+    )
 
 
 class ChannelCache:
@@ -82,7 +104,8 @@ class ChannelCache:
     def __init__(self):
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
-            target=ChannelCache._perform_evictions, daemon=True)
+            target=ChannelCache._perform_evictions, daemon=True
+        )
         self._eviction_thread.start()
 
     @staticmethod
@@ -95,8 +118,9 @@ class ChannelCache:
 
     def _evict_locked(self, key: CacheKey):
         channel, _ = self._mapping.pop(key)
-        _LOGGER.debug("Evicting channel %s with configuration %s.", channel,
-                      key)
+        _LOGGER.debug(
+            "Evicting channel %s with configuration %s.", channel, key
+        )
         channel.close()
         del channel
 
@@ -113,7 +137,8 @@ class ChannelCache:
                     # And immediately reevaluate.
                 else:
                     key, (_, eviction_time) = next(
-                        iter(ChannelCache._singleton._mapping.items()))
+                        iter(ChannelCache._singleton._mapping.items())
+                    )
                     now = datetime.datetime.now()
                     if eviction_time <= now:
                         ChannelCache._singleton._evict_locked(key)
@@ -127,16 +152,23 @@ class ChannelCache:
                         # criteria are not met.
                         ChannelCache._condition.wait(timeout=time_to_eviction)
 
-    def get_channel(self, target: str, options: Sequence[Tuple[str, str]],
-                    channel_credentials: Optional[grpc.ChannelCredentials],
-                    insecure: bool,
-                    compression: Optional[grpc.Compression]) -> grpc.Channel:
+    def get_channel(
+        self,
+        target: str,
+        options: Sequence[Tuple[str, str]],
+        channel_credentials: Optional[grpc.ChannelCredentials],
+        insecure: bool,
+        compression: Optional[grpc.Compression],
+    ) -> grpc.Channel:
         if insecure and channel_credentials:
-            raise ValueError("The insecure option is mutually exclusive with " +
-                             "the channel_credentials option. Please use one " +
-                             "or the other.")
+            raise ValueError(
+                "The insecure option is mutually exclusive with "
+                + "the channel_credentials option. Please use one "
+                + "or the other."
+            )
         if insecure:
-            channel_credentials = grpc.experimental.insecure_channel_credentials(
+            channel_credentials = (
+                grpc.experimental.insecure_channel_credentials()
             )
         elif channel_credentials is None:
             _LOGGER.debug("Defaulting to SSL channel credentials.")
@@ -147,16 +179,23 @@ class ChannelCache:
             if channel_data is not None:
                 channel = channel_data[0]
                 self._mapping.pop(key)
-                self._mapping[key] = (channel, datetime.datetime.now() +
-                                      _EVICTION_PERIOD)
+                self._mapping[key] = (
+                    channel,
+                    datetime.datetime.now() + _EVICTION_PERIOD,
+                )
                 return channel
             else:
-                channel = _create_channel(target, options, channel_credentials,
-                                          compression)
-                self._mapping[key] = (channel, datetime.datetime.now() +
-                                      _EVICTION_PERIOD)
-                if len(self._mapping) == 1 or len(
-                        self._mapping) >= _MAXIMUM_CHANNELS:
+                channel = _create_channel(
+                    target, options, channel_credentials, compression
+                )
+                self._mapping[key] = (
+                    channel,
+                    datetime.datetime.now() + _EVICTION_PERIOD,
+                )
+                if (
+                    len(self._mapping) == 1
+                    or len(self._mapping) >= _MAXIMUM_CHANNELS
+                ):
                     self._condition.notify()
                 return channel
 
@@ -179,7 +218,7 @@ def unary_unary(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
 
@@ -233,17 +272,20 @@ def unary_unary(
     Returns:
       The response to the RPC.
     """
-    channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, insecure,
-                                             compression)
-    multicallable = channel.unary_unary(method, request_serializer,
-                                        response_deserializer)
+    channel = ChannelCache.get().get_channel(
+        target, options, channel_credentials, insecure, compression
+    )
+    multicallable = channel.unary_unary(
+        method, request_serializer, response_deserializer
+    )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(request,
-                         metadata=metadata,
-                         wait_for_ready=wait_for_ready,
-                         credentials=call_credentials,
-                         timeout=timeout)
+    return multicallable(
+        request,
+        metadata=metadata,
+        wait_for_ready=wait_for_ready,
+        credentials=call_credentials,
+        timeout=timeout,
+    )
 
 
 @experimental_api
@@ -260,7 +302,7 @@ def unary_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
@@ -313,17 +355,20 @@ def unary_stream(
     Returns:
       An iterator of responses.
     """
-    channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, insecure,
-                                             compression)
-    multicallable = channel.unary_stream(method, request_serializer,
-                                         response_deserializer)
+    channel = ChannelCache.get().get_channel(
+        target, options, channel_credentials, insecure, compression
+    )
+    multicallable = channel.unary_stream(
+        method, request_serializer, response_deserializer
+    )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(request,
-                         metadata=metadata,
-                         wait_for_ready=wait_for_ready,
-                         credentials=call_credentials,
-                         timeout=timeout)
+    return multicallable(
+        request,
+        metadata=metadata,
+        wait_for_ready=wait_for_ready,
+        credentials=call_credentials,
+        timeout=timeout,
+    )
 
 
 @experimental_api
@@ -340,7 +385,7 @@ def stream_unary(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
 
@@ -393,17 +438,20 @@ def stream_unary(
     Returns:
       The response to the RPC.
     """
-    channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, insecure,
-                                             compression)
-    multicallable = channel.stream_unary(method, request_serializer,
-                                         response_deserializer)
+    channel = ChannelCache.get().get_channel(
+        target, options, channel_credentials, insecure, compression
+    )
+    multicallable = channel.stream_unary(
+        method, request_serializer, response_deserializer
+    )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(request_iterator,
-                         metadata=metadata,
-                         wait_for_ready=wait_for_ready,
-                         credentials=call_credentials,
-                         timeout=timeout)
+    return multicallable(
+        request_iterator,
+        metadata=metadata,
+        wait_for_ready=wait_for_ready,
+        credentials=call_credentials,
+        timeout=timeout,
+    )
 
 
 @experimental_api
@@ -420,7 +468,7 @@ def stream_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
@@ -473,14 +521,17 @@ def stream_stream(
     Returns:
       An iterator of responses.
     """
-    channel = ChannelCache.get().get_channel(target, options,
-                                             channel_credentials, insecure,
-                                             compression)
-    multicallable = channel.stream_stream(method, request_serializer,
-                                          response_deserializer)
+    channel = ChannelCache.get().get_channel(
+        target, options, channel_credentials, insecure, compression
+    )
+    multicallable = channel.stream_stream(
+        method, request_serializer, response_deserializer
+    )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(request_iterator,
-                         metadata=metadata,
-                         wait_for_ready=wait_for_ready,
-                         credentials=call_credentials,
-                         timeout=timeout)
+    return multicallable(
+        request_iterator,
+        metadata=metadata,
+        wait_for_ready=wait_for_ready,
+        credentials=call_credentials,
+        timeout=timeout,
+    )

@@ -21,23 +21,23 @@ import sys
 def put_banner(files, banner):
     for f in files:
         for line in banner:
-            print('// %s' % line, file=f)
-        print('', file=f)
+            print("// %s" % line, file=f)
+        print("", file=f)
 
 
-with open('src/core/lib/gprpp/if_list.h', 'w') as H:
+with open("src/core/lib/gprpp/if_list.h", "w") as H:
     # copy-paste copyright notice from this file
     with open(sys.argv[0]) as my_source:
         copyright = []
         for line in my_source:
-            if line[0] != '#':
+            if line[0] != "#":
                 break
         for line in my_source:
-            if line[0] == '#':
+            if line[0] == "#":
                 copyright.append(line)
                 break
         for line in my_source:
-            if line[0] != '#':
+            if line[0] != "#":
                 break
             copyright.append(line)
         put_banner([H], [line[2:].rstrip() for line in copyright])
@@ -46,31 +46,36 @@ with open('src/core/lib/gprpp/if_list.h', 'w') as H:
 
     print("#ifndef GRPC_CORE_LIB_GPRPP_IF_LIST_H", file=H)
     print("#define GRPC_CORE_LIB_GPRPP_IF_LIST_H", file=H)
-    print('', file=H)
-    print('#include <grpc/support/port_platform.h>', file=H)
-    print('', file=H)
+    print("", file=H)
+    print("#include <grpc/support/port_platform.h>", file=H)
+    print("", file=H)
     print("#include <stdlib.h>", file=H)
-    print('', file=H)
+    print("", file=H)
     print("namespace grpc_core {", file=H)
 
     for n in range(1, 64):
-        print('', file=H)
+        print("", file=H)
         print(
-            "template <typename CheckArg, typename ActionArg, typename ActionFail, %s, %s> auto IfList(CheckArg input, ActionArg action_arg, ActionFail action_fail, %s, %s) {"
+            "template <typename CheckArg, typename ActionArg, typename"
+            " ActionFail, %s, %s> auto IfList(CheckArg input, ActionArg"
+            " action_arg, ActionFail action_fail, %s, %s) {"
             % (
                 ", ".join("typename Check%d" % (i) for i in range(0, n)),
                 ", ".join("typename Action%d" % (i) for i in range(0, n)),
                 ", ".join("Check%d check%d" % (i, i) for i in range(0, n)),
                 ", ".join("Action%d action%d" % (i, i) for i in range(0, n)),
             ),
-            file=H)
+            file=H,
+        )
         for i in range(0, n):
-            print("  if (check%d(input)) return action%d(action_arg);" % (i, i),
-                  file=H)
+            print(
+                "  if (check%d(input)) return action%d(action_arg);" % (i, i),
+                file=H,
+            )
         print("  return action_fail(action_arg);", file=H)
         print("}", file=H)
 
-    print('', file=H)
+    print("", file=H)
     print("}", file=H)
-    print('', file=H)
+    print("", file=H)
     print("#endif // GRPC_CORE_LIB_GPRPP_IF_LIST_H", file=H)

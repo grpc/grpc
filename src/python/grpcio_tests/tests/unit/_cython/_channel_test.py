@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 
 def _channel():
-    return cygrpc.Channel(b'localhost:54321', (), None)
+    return cygrpc.Channel(b"localhost:54321", (), None)
 
 
 def _connectivity_loop(channel):
@@ -34,13 +34,14 @@ def _connectivity_loop(channel):
 def _create_loop_destroy():
     channel = _channel()
     _connectivity_loop(channel)
-    channel.close(cygrpc.StatusCode.ok, 'Channel close!')
+    channel.close(cygrpc.StatusCode.ok, "Channel close!")
 
 
 def _in_parallel(behavior, arguments):
     threads = tuple(
         threading.Thread(target=behavior, args=arguments)
-        for _ in range(test_constants.THREAD_CONCURRENCY))
+        for _ in range(test_constants.THREAD_CONCURRENCY)
+    )
     for thread in threads:
         thread.start()
     for thread in threads:
@@ -48,11 +49,10 @@ def _in_parallel(behavior, arguments):
 
 
 class ChannelTest(unittest.TestCase):
-
     def test_single_channel_lonely_connectivity(self):
         channel = _channel()
         _connectivity_loop(channel)
-        channel.close(cygrpc.StatusCode.ok, 'Channel close!')
+        channel.close(cygrpc.StatusCode.ok, "Channel close!")
 
     def test_multiple_channels_lonely_connectivity(self):
         _in_parallel(_create_loop_destroy, ())
@@ -61,10 +61,10 @@ class ChannelTest(unittest.TestCase):
         channel = _channel()
         connectivity = channel.check_connectivity_state(True)
         channel.watch_connectivity_state(connectivity, -3.14)
-        channel.close(cygrpc.StatusCode.ok, 'Channel close!')
+        channel.close(cygrpc.StatusCode.ok, "Channel close!")
         # NOTE(lidiz) The negative timeout should not trigger SIGABRT.
         # Bug report: https://github.com/grpc/grpc/issues/18244
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

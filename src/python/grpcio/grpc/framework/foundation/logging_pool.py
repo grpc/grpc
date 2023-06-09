@@ -27,8 +27,9 @@ def _wrap(behavior):
             return behavior(*args, **kwargs)
         except Exception:
             _LOGGER.exception(
-                'Unexpected exception from %s executed in logging pool!',
-                behavior)
+                "Unexpected exception from %s executed in logging pool!",
+                behavior,
+            )
             raise
 
     return _wrapping
@@ -50,9 +51,9 @@ class _LoggingPool(object):
         return self._backing_pool.submit(_wrap(fn), *args, **kwargs)
 
     def map(self, func, *iterables, **kwargs):
-        return self._backing_pool.map(_wrap(func),
-                                      *iterables,
-                                      timeout=kwargs.get('timeout', None))
+        return self._backing_pool.map(
+            _wrap(func), *iterables, timeout=kwargs.get("timeout", None)
+        )
 
     def shutdown(self, wait=True):
         self._backing_pool.shutdown(wait=wait)
@@ -61,11 +62,11 @@ class _LoggingPool(object):
 def pool(max_workers):
     """Creates a thread pool that logs exceptions raised by the tasks within it.
 
-  Args:
-    max_workers: The maximum number of worker threads to allow the pool.
+    Args:
+      max_workers: The maximum number of worker threads to allow the pool.
 
-  Returns:
-    A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
-      raised by the tasks executed within it.
-  """
+    Returns:
+      A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
+        raised by the tasks executed within it.
+    """
     return _LoggingPool(futures.ThreadPoolExecutor(max_workers))
