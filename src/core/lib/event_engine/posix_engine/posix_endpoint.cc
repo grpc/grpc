@@ -572,8 +572,13 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
 void PosixEndpointImpl::HandleRead(absl::Status status) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   bool ret = false;
-  grpc_core::EnsureRunInExecCtx(
-      [this, &status, &ret]() mutable { ret = HandleReadLocked(status); });
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ApplicationCallbackExecCtx app_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    ret = HandleReadLocked(status);
+  } else {
+    ret = HandleReadLocked(status);
+  }
   if (!ret) {
     lock.Release();
     handle_->NotifyOnRead(on_read_);
