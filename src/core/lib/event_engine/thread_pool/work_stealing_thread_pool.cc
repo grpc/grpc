@@ -191,6 +191,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
   auto was_shutdown = shutdown_.exchange(is_shutdown);
   GPR_ASSERT(is_shutdown != was_shutdown);
   work_signal_.SignalAll();
+  lifeguard_.SignalShutdown();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
@@ -237,7 +238,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
   // lifeguard_running_ is set early to avoid a quiesce race while the
   // lifeguard is still starting up.
   grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
-  lifeguard_running_ = true;
   grpc_core::Thread(
       "lifeguard",
       [](void* arg) {
@@ -251,7 +251,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
-  grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
+  grpc_core::ReleasableMutexLock lock(&lifeguard_shutdown_mu_);
   while (true) {
     if (pool_->IsForking()) break;
     // If the pool is shut down, loop quickly until quiesced. Otherwise,
@@ -267,20 +267,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     }
     MaybeStartNewThread();
   }
-  lifeguard_running_ = false;
-  lifeguard_shutdown_cv_.Signal();
+  lock.Release();
+  lifeguard_done_.Notify();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     BlockUntilShutdown() {
-  grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
-  while (lifeguard_running_) {
-    lifeguard_shutdown_cv_.Signal();
-    lifeguard_shutdown_cv_.WaitWithTimeout(
-        &lifeguard_shutdown_mu_, absl::Seconds(kBlockingQuiesceLogRateSeconds));
-    GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
-                                 "%s",
-                                 "Waiting for lifeguard thread to shut down");
+  while (!lifeguard_done_.WaitForNotificationWithTimeout(
+      absl::Seconds(kBlockingQuiesceLogRateSeconds))) {
+    gpr_log(GPR_DEBUG, "Waiting for lifeguard thread to shut down");
   }
 }
 

@@ -36,6 +36,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -203,6 +204,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       void Start();
       // Block until the lifeguard thread is shut down.
       void BlockUntilShutdown();
+      // Signal that the lifeguard thread should shut down.
+      void SignalShutdown() { lifeguard_shutdown_cv_.Signal(); }
 
      private:
       // The main body of the lifeguard thread.
@@ -214,9 +217,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       grpc_core::BackOff backoff_;
       // Used for signaling that the lifeguard thread has stopped running.
       grpc_core::Mutex lifeguard_shutdown_mu_;
-      bool lifeguard_running_ ABSL_GUARDED_BY(lifeguard_shutdown_mu_) = false;
-      grpc_core::CondVar lifeguard_shutdown_cv_
-          ABSL_GUARDED_BY(lifeguard_shutdown_mu_);
+      grpc_core::CondVar lifeguard_shutdown_cv_;
+      grpc_core::Notification lifeguard_done_;
     };
 
     const size_t reserve_threads_;
