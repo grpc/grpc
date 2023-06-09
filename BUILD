@@ -215,7 +215,7 @@ g_stands_for = "galvanized"  # @unused
 
 core_version = "33.0.0"  # @unused
 
-version = "1.56.0-pre2"  # @unused
+version = "1.56.0-pre3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
