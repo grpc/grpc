@@ -267,7 +267,7 @@ absl::Status FuzzingEventEngine::FuzzingListener::Start() {
 }
 
 bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
-  GPR_ASSERT(!closed);
+  GPR_ASSERT(!closed[index]);
   const int peer_index = 1 - index;
   if (data->Length() == 0) return true;
   size_t write_len = std::numeric_limits<size_t>::max();
@@ -308,7 +308,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
     const WriteArgs*) {
   grpc_core::MutexLock lock(&*mu_);
   // If the endpoint is closed, then we fail the write.
-  if (middle_->closed) {
+  if (middle_->closed[my_index()]) {
     g_fuzzing_event_engine->RunLocked(
         [on_writable = std::move(on_writable)]() mutable {
           on_writable(absl::InternalError("Endpoint closed"));
@@ -328,7 +328,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
       [middle = std::move(middle), index, data,
        on_writable = std::move(on_writable)]() mutable {
         grpc_core::MutexLock lock(&*mu_);
-        if (middle->closed) {
+        if (middle->closed[index]) {
           g_fuzzing_event_engine->RunLocked(
               [on_writable = std::move(on_writable)]() mutable {
                 on_writable(absl::InternalError("Endpoint closed"));
@@ -346,15 +346,13 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
 
 FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
   grpc_core::MutexLock lock(&*mu_);
-  middle_->closed = true;
-  for (int i = 0; i < 2; i++) {
-    if (middle_->pending_read[i].has_value()) {
-      g_fuzzing_event_engine->RunLocked(
-          [cb = std::move(middle_->pending_read[i]->on_read)]() mutable {
-            cb(absl::InternalError("Endpoint closed"));
-          });
-      middle_->pending_read[i].reset();
-    }
+  middle_->closed[my_index()] = true;
+  if (middle_->pending_read[my_index()].has_value()) {
+    g_fuzzing_event_engine->RunLocked(
+        [cb = std::move(middle_->pending_read[my_index()]->on_read)]() mutable {
+          cb(absl::InternalError("Endpoint closed"));
+        });
+    middle_->pending_read[my_index()].reset();
   }
 }
 
@@ -363,14 +361,16 @@ bool FuzzingEventEngine::FuzzingEndpoint::Read(
     const ReadArgs*) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
-  // If the endpoint is closed, fail asynchronously.
-  if (middle_->closed) {
-    g_fuzzing_event_engine->RunLocked([on_read = std::move(on_read)]() mutable {
-      on_read(absl::InternalError("Endpoint closed"));
-    });
-    return false;
-  }
+  GPR_ASSERT(!middle_->closed[my_index()]);
   if (middle_->pending[peer_index()].empty()) {
+    // If the endpoint is closed, fail asynchronously.
+    if (middle_->closed[peer_index()]) {
+      g_fuzzing_event_engine->RunLocked(
+          [on_read = std::move(on_read)]() mutable {
+            on_read(absl::InternalError("Endpoint closed"));
+          });
+      return false;
+    }
     // If the endpoint has no pending data, then we need to wait for a write.
     middle_->pending_read[my_index()] = PendingRead{std::move(on_read), buffer};
     return false;

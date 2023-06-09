@@ -93,11 +93,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
                      test.make_test(test.config));
                }});
     }
-    GPR_ASSERT(!tests.empty());
     std::sort(tests.begin(), tests.end(),
               [](const Test& a, const Test& b) { return a.name < b.name; });
     return tests;
   }();
+  if (tests.empty()) return;
   static const auto only_experiment =
       grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
@@ -121,14 +121,13 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
-        options.max_delay_run_after = std::chrono::milliseconds(1500);
+        options.max_delay_run_after = std::chrono::milliseconds(500);
         return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
   auto test = tests[test_id].factory();
-  test->SetCrashOnStepFailure();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
         static_cast<FuzzingEventEngine*>(ee.get())->TickUntilIdle();

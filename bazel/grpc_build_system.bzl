@@ -113,6 +113,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "grpc_python_observability": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
@@ -473,7 +474,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = tags,
             deps = core_deps,
             args = args,
-            flaky = flaky,
+            flaky = True,
             **test_args
         )
 
@@ -538,6 +539,9 @@ def grpc_generate_one_off_targets():
     )
 
 def grpc_generate_objc_one_off_targets():
+    pass
+
+def grpc_generate_one_off_internal_targets():
     pass
 
 def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):

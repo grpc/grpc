@@ -48,7 +48,10 @@ def _gen_py_aspect_impl(target, context):
     # Early return for well-known protos.
     if is_well_known(str(context.label)):
         return [
-            PyProtoInfo(py_info = context.attr._protobuf_library[PyInfo]),
+            PyProtoInfo(
+                py_info = context.attr._protobuf_library[PyInfo],
+                generated_py_srcs = [],
+            ),
         ]
 
     protos = []

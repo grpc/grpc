@@ -619,6 +619,7 @@ def _unary_response_in_pool(
         request_deserializer: Optional[SerializingFunction],
         response_serializer: Optional[SerializingFunction]) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
+
     try:
         argument = argument_thunk()
         if argument is not None:

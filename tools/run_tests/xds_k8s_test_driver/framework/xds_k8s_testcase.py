@@ -35,6 +35,7 @@ from framework.helpers import grpc as helpers_grpc
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
 from framework.helpers import skips
+import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -64,7 +65,8 @@ XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
-LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
+_LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
+_LoadBalancerAccumulatedStatsResponse = grpc_testing.LoadBalancerAccumulatedStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
@@ -105,6 +107,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     td_bootstrap_image: str
     _prev_sigint_handler: Optional[_SignalHandler] = None
     _handling_sigint: bool = False
+    yaml_highlighter: framework.helpers.highlighter.HighlighterYaml = None
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
@@ -174,6 +177,27 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value)
         cls.gcp_api_manager = gcp.api.GcpApiManager()
+
+        # Other
+        cls.yaml_highlighter = framework.helpers.highlighter.HighlighterYaml()
+
+    @classmethod
+    def _pretty_accumulated_stats(
+            cls,
+            accumulated_stats: _LoadBalancerAccumulatedStatsResponse,
+            *,
+            ignore_empty: bool = False,
+            highlight: bool = True) -> str:
+        stats_yaml = helpers_grpc.accumulated_stats_pretty(
+            accumulated_stats, ignore_empty=ignore_empty)
+        if not highlight:
+            return stats_yaml
+        return cls.yaml_highlighter.highlight(stats_yaml)
+
+    @classmethod
+    def _pretty_lb_stats(cls, lb_stats: _LoadBalancerStatsResponse) -> str:
+        stats_yaml = helpers_grpc.lb_stats_pretty(lb_stats)
+        return cls.yaml_highlighter.highlight(stats_yaml)
 
     @classmethod
     def tearDownClass(cls):
@@ -253,11 +277,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
-        before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
-        after: grpc_testing.LoadBalancerAccumulatedStatsResponse
-    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
+        before: _LoadBalancerAccumulatedStatsResponse,
+        after: _LoadBalancerAccumulatedStatsResponse
+    ) -> _LoadBalancerAccumulatedStatsResponse:
         """Only diffs stats_per_method, as the other fields are deprecated."""
-        diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
+        diff = _LoadBalancerAccumulatedStatsResponse()
         for method, method_stats in after.stats_per_method.items():
             for status, count in method_stats.result.items():
                 count -= before.stats_per_method[method].result[status]
@@ -265,6 +289,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                     raise AssertionError("Diff of count shouldn't be negative")
                 if count > 0:
                     diff.stats_per_method[method].result[status] = count
+            rpcs_started = (method_stats.rpcs_started -
+                            before.stats_per_method[method].rpcs_started)
+            if rpcs_started < 0:
+                raise AssertionError("Diff of count shouldn't be negative")
+            diff.stats_per_method[method].rpcs_started = rpcs_started
         return diff
 
     def assertRpcStatusCodes(self,
@@ -275,35 +304,57 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
+        # pylint: disable=too-many-locals
+        expected_status_int: int = expected_status.value[0]
+        expected_status_fmt: str = helpers_grpc.status_pretty(expected_status)
+
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
-        response_type = 'LoadBalancerAccumulatedStatsResponse'
-        logging.info('Received %s from test client %s: before:\n%s',
-                     response_type, test_client.hostname, before_stats)
+        logging.debug(
+            '[%s] << LoadBalancerAccumulatedStatsResponse initial measurement:'
+            '\n%s', test_client.hostname,
+            self._pretty_accumulated_stats(before_stats))
+
         time.sleep(duration.total_seconds())
+
         after_stats = test_client.get_load_balancer_accumulated_stats()
-        logging.info('Received %s from test client %s: after:\n%s',
-                     response_type, test_client.hostname, after_stats)
+        logging.debug(
+            '[%s] << LoadBalancerAccumulatedStatsResponse after %s seconds:'
+            '\n%s', test_client.hostname, duration.total_seconds(),
+            self._pretty_accumulated_stats(after_stats))
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
+        logger.info(
+            '[%s] << Received accumulated stats difference.'
+            ' Expecting RPCs with status %s for method %s:\n%s',
+            test_client.hostname, expected_status_fmt, method,
+            self._pretty_accumulated_stats(diff_stats, ignore_empty=True))
+
+        # Used in stack traces. Don't highlight for better compatibility.
+        diff_stats_fmt: str = self._pretty_accumulated_stats(diff_stats,
+                                                             ignore_empty=True,
+                                                             highlight=False)
+
+        # 1. Verify the completed RPCs of the given method has no statuses
+        #    other than the expected_status,
         stats = diff_stats.stats_per_method[method]
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
-                self.fail(f"Expected only status"
-                          f" {helpers_grpc.status_pretty(expected_status)},"
+                self.fail(f"Expected only status {expected_status_fmt},"
                           " but found status"
                           f" {helpers_grpc.status_pretty(found_status)}"
-                          f" for method {method}:\n{diff_stats}")
+                          f" for method {method}."
+                          f"\nDiff stats:\n{diff_stats_fmt}")
 
-        expected_status_int: int = expected_status.value[0]
-        self.assertGreater(
-            stats.result[expected_status_int],
-            0,
-            msg=("Expected non-zero RPCs with status"
-                 f" {helpers_grpc.status_pretty(expected_status)}"
-                 f" for method {method}, got:\n{diff_stats}"))
+        # 2. Verify there are completed RPCs of the given method with
+        #    the expected_status.
+        self.assertGreater(stats.result[expected_status_int],
+                           0,
+                           msg=("Expected non-zero completed RPCs with status"
+                                f" {expected_status_fmt} for method {method}."
+                                f"\nDiff stats:\n{diff_stats_fmt}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
@@ -415,13 +466,12 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             num_rpcs,
             msg=f'Expected all RPCs to fail: {failed} of {num_rpcs} failed')
 
-    @staticmethod
-    def getClientRpcStats(test_client: XdsTestClient,
-                          num_rpcs: int) -> LoadBalancerStatsResponse:
+    @classmethod
+    def getClientRpcStats(cls, test_client: XdsTestClient,
+                          num_rpcs: int) -> _LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
-        logger.info(
-            'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.hostname, lb_stats)
+        logger.info('[%s] << Received LoadBalancerStatsResponse:\n%s',
+                    test_client.hostname, cls._pretty_lb_stats(lb_stats))
         return lb_stats
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
@@ -511,6 +561,10 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
         except retryers.RetryError:
             logger.exception('Got error during teardown')
         finally:
+            logger.info('----- Test client/server logs -----')
+            self.client_runner.logs_explorer_run_history_links()
+            self.server_runner.logs_explorer_run_history_links()
+
             # Fail if any of the pods restarted.
             self.assertEqual(
                 client_restarts,

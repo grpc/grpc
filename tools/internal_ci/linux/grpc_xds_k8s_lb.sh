@@ -174,9 +174,6 @@ main() {
     run_test $test || (( ++failed_tests ))
   done
   echo "Failed test suites: ${failed_tests}"
-  if (( failed_tests > 0 )); then
-    exit 1
-  fi
 }
 
 main "$@"

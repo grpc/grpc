@@ -249,9 +249,18 @@ void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
 }
 
 void CqVerifier::FailUsingGprCrash(const Failure& failure) {
-  Crash(absl::StrCat("[", failure.location.file(), ":", failure.location.line(),
-                     "] ", failure.message, "\nexpected:\n",
-                     absl::StrJoin(failure.expected, "\n")));
+  std::string message =
+      absl::StrCat(failure.message, "\nexpectation checked @ ",
+                   failure.location.file(), ":", failure.location.line());
+  if (!failure.expected.empty()) {
+    absl::StrAppend(&message, "\nexpected:\n");
+    for (const auto& line : failure.expected) {
+      absl::StrAppend(&message, "  ", line, "\n");
+    }
+  } else {
+    absl::StrAppend(&message, "\nexpected nothing");
+  }
+  CrashWithStdio(message);
 }
 
 void CqVerifier::FailUsingGtestFail(const Failure& failure) {
