@@ -22,6 +22,9 @@ IF "%cd%"=="T:\src" (
 )
 endlocal
 
+@rem Info on disk usage
+dir t:\
+
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
@@ -47,5 +50,8 @@ set RUNTESTS_EXITCODE=%errorlevel%
 
 @rem show ccache stats
 ccache --show-stats
+
+@rem Info on disk usage after test
+dir t:\
 
 exit /b %RUNTESTS_EXITCODE%
