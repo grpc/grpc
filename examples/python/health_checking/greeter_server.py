@@ -27,7 +27,6 @@ import helloworld_pb2_grpc
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
     def SayHello(self, request, context):
         return helloworld_pb2.HelloReply(message=request.name)
 
@@ -47,28 +46,30 @@ def _toggle_health(health_servicer: health.HealthServicer, service: str):
 def _configure_health_server(server: grpc.Server):
     health_servicer = health.HealthServicer(
         experimental_non_blocking=True,
-        experimental_thread_pool=futures.ThreadPoolExecutor(max_workers=10))
+        experimental_thread_pool=futures.ThreadPoolExecutor(max_workers=10),
+    )
     health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
 
     # Use a daemon thread to toggle health status
-    toggle_health_status_thread = threading.Thread(target=_toggle_health,
-                                                   args=(health_servicer,
-                                                         "helloworld.Greeter"),
-                                                   daemon=True)
+    toggle_health_status_thread = threading.Thread(
+        target=_toggle_health,
+        args=(health_servicer, "helloworld.Greeter"),
+        daemon=True,
+    )
     toggle_health_status_thread.start()
 
 
 def serve():
-    port = '50051'
+    port = "50051"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-    server.add_insecure_port('[::]:' + port)
+    server.add_insecure_port("[::]:" + port)
     _configure_health_server(server)
     server.start()
     print("Server started, listening on " + port)
     server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     serve()

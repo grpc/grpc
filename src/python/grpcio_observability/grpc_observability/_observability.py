@@ -55,6 +55,7 @@ class StatsData:
       labels: A dictionary that maps label tags associated with this metric to
        corresponding label value.
     """
+
     name: "grpc_observability._cyobservability.MetricsName"
     measure_double: bool
     value_int: int = 0
@@ -88,6 +89,7 @@ class TracingData:
        description. The timeStamp have a format which can be converted
        to Python datetime.datetime, e.g. 2023-05-29 17:07:09.895
     """
+
     name: str
     start_time: str
     end_time: str

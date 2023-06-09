@@ -67,8 +67,8 @@ class PrettyStatsPerMethod:
 
     @staticmethod
     def from_response(
-            method_name: str,
-            method_stats: grpc_testing.MethodStats) -> "PrettyStatsPerMethod":
+        method_name: str, method_stats: grpc_testing.MethodStats
+    ) -> "PrettyStatsPerMethod":
         stats: Dict[str, int] = dict()
         for status_int, count in method_stats.result.items():
             status: Optional[grpc.StatusCode] = status_from_int(status_int)
@@ -103,7 +103,8 @@ def accumulated_stats_pretty(
     result: List[Dict] = []
     for method_name, method_stats in accumulated_stats.stats_per_method.items():
         pretty_stats = PrettyStatsPerMethod.from_response(
-            method_name, method_stats)
+            method_name, method_stats
+        )
         # Skip methods with no RPCs reported when ignore_empty is True.
         if ignore_empty and not pretty_stats.rpcs_started:
             continue
@@ -132,7 +133,8 @@ class PrettyLoadBalancerStats:
 
     @staticmethod
     def _parse_rpcs_by_peer(
-            rpcs_by_peer: grpc_testing.RpcsByPeer) -> "RpcsByPeer":
+        rpcs_by_peer: grpc_testing.RpcsByPeer,
+    ) -> "RpcsByPeer":
         result = dict()
         for peer, count in rpcs_by_peer.items():
             result[peer] = count
@@ -146,7 +148,8 @@ class PrettyLoadBalancerStats:
         for method_name, stats in lb_stats.rpcs_by_method.items():
             if stats:
                 rpcs_by_method[method_name] = cls._parse_rpcs_by_peer(
-                    stats.rpcs_by_peer)
+                    stats.rpcs_by_peer
+                )
         return PrettyLoadBalancerStats(
             num_failures=lb_stats.num_failures,
             rpcs_by_peer=cls._parse_rpcs_by_peer(lb_stats.rpcs_by_peer),

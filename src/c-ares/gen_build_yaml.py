@@ -19,7 +19,7 @@ import os
 import sys
 import yaml
 
-os.chdir(os.path.dirname(sys.argv[0]) + '/../..')
+os.chdir(os.path.dirname(sys.argv[0]) + "/../..")
 
 out = {}
 
@@ -30,24 +30,24 @@ try:
         subprocess.call("third_party/cares/cares/configure", shell=True)
 
     def config_platform(x):
-        if 'darwin' in sys.platform:
-            return 'src/cares/cares/config_darwin/ares_config.h'
-        if 'freebsd' in sys.platform:
-            return 'src/cares/cares/config_freebsd/ares_config.h'
-        if 'linux' in sys.platform:
-            return 'src/cares/cares/config_linux/ares_config.h'
-        if 'openbsd' in sys.platform:
-            return 'src/cares/cares/config_openbsd/ares_config.h'
-        if not os.path.isfile('third_party/cares/cares/ares_config.h'):
+        if "darwin" in sys.platform:
+            return "src/cares/cares/config_darwin/ares_config.h"
+        if "freebsd" in sys.platform:
+            return "src/cares/cares/config_freebsd/ares_config.h"
+        if "linux" in sys.platform:
+            return "src/cares/cares/config_linux/ares_config.h"
+        if "openbsd" in sys.platform:
+            return "src/cares/cares/config_openbsd/ares_config.h"
+        if not os.path.isfile("third_party/cares/cares/ares_config.h"):
             gen_ares_build(x)
-        return 'third_party/cares/cares/ares_config.h'
+        return "third_party/cares/cares/ares_config.h"
 
     def ares_build(x):
-        if os.path.isfile('src/cares/cares/ares_build.h'):
-            return 'src/cares/cares/ares_build.h'
-        if not os.path.isfile('third_party/cares/cares/include/ares_build.h'):
+        if os.path.isfile("src/cares/cares/ares_build.h"):
+            return "src/cares/cares/ares_build.h"
+        if not os.path.isfile("third_party/cares/cares/include/ares_build.h"):
             gen_ares_build(x)
-        return 'third_party/cares/cares/include/ares_build.h'
+        return "third_party/cares/cares/include/ares_build.h"
 
     out['libs'] = [{
         'name':
