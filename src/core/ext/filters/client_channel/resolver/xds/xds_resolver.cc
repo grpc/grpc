@@ -102,11 +102,6 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-UniqueTypeName XdsClusterAttribute::TypeName() {
-  static UniqueTypeName::Factory kFactory("xds_cluster_name");
-  return kFactory.Create();
-}
-
 namespace {
 
 std::string GetDefaultAuthorityInternal(const URI& uri) {
@@ -1288,11 +1283,6 @@ class XdsResolverFactory : public ResolverFactory {
 void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<XdsResolverFactory>());
-}
-
-UniqueTypeName XdsRouteStateAttribute::TypeName() {
-  static UniqueTypeName::Factory factory("xds_cluster_lb_data");
-  return factory.Create();
 }
 
 }  // namespace grpc_core
