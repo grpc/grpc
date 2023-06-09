@@ -261,13 +261,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   if (latest_update_args_.addresses.ok()) {
     addresses = *latest_update_args_.addresses;
   }
-  if (latest_update_args_.config != nullptr) {
-    auto config =
-        static_cast<PickFirstConfig*>(latest_update_args_.config.get());
-    if (config->shuffle_addresses()) {
-      absl::c_shuffle(addresses, bit_gen_);
-    }
-  }
   // Replace latest_pending_subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
       latest_pending_subchannel_list_ != nullptr) {
@@ -335,6 +328,12 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       addresses.emplace_back(address.WithAttribute(
           DisableOutlierDetectionAttribute::kName,
           std::make_unique<DisableOutlierDetectionAttribute>()));
+    }
+    if (args.config != nullptr) {
+      auto config = static_cast<PickFirstConfig*>(args.config.get());
+      if (config->shuffle_addresses()) {
+        absl::c_shuffle(addresses, bit_gen_);
+      }
     }
     args.addresses = std::move(addresses);
   }

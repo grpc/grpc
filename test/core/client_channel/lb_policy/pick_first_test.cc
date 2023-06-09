@@ -63,6 +63,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
+    out_address_order->clear();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
     std::map<SubchannelState*, absl::string_view> subchannels;
@@ -254,45 +255,45 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 TEST_F(PickFirstTest, WithShuffle) {
   testing::ScopedExperimentalEnvVar env_var(
       "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  // 6 addresses have 6! = 720 permutations or 0.1% chance that the shuffle
-  // returns initial sequence
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
-  absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
-  EXPECT_TRUE(status.ok()) << status;
-  std::vector<absl::string_view> prev_attempt_connect_order;
-  GetOrderAddressesArePicked(kAddresses, &prev_attempt_connect_order);
-  // There is 0.1% chance this check fails by design. Not an assert to prevent
-  // flake
-  if (absl::MakeConstSpan(prev_attempt_connect_order) ==
-      absl::MakeConstSpan(kAddresses)) {
-    gpr_log(GPR_INFO, "Address order did not change");
-  }
-  constexpr size_t kMaxAttempts = 5;
-  bool shuffled = false;
-  for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
-    std::vector<absl::string_view> address_order;
-    GetOrderAddressesArePicked(kAddresses, &address_order);
-    if (address_order != prev_attempt_connect_order) {
-      shuffled = true;
+  // 6 addresses have 6! = 720 permutations or roughly 0.14% chance that
+  // the shuffle returns same permutation. We allow for several tries to
+  // prevent flake test.
+  constexpr size_t kMaxTries = 10;
+  std::vector<absl::string_view> addresses_after_update;
+  for (size_t i = 0; i < kMaxTries; i++) {
+    absl::Status status = ApplyUpdate(
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
+    EXPECT_TRUE(status.ok()) << status;
+    GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
+    if (absl::MakeConstSpan(addresses_after_update) !=
+        absl::MakeConstSpan(kAddresses)) {
       break;
     }
-    prev_attempt_connect_order = std::move(address_order);
   }
-  ASSERT_TRUE(shuffled) << "Addresses are not reshuffled";
+  // Same elements, different order
+  ASSERT_THAT(addresses_after_update,
+              ::testing::Not(::testing::ElementsAreArray(kAddresses)));
+  ASSERT_THAT(addresses_after_update,
+              ::testing::UnorderedElementsAreArray(kAddresses));
+  // Address order should be stable between updates
+  std::vector<absl::string_view> addresses_on_another_try;
+  GetOrderAddressesArePicked(kAddresses, &addresses_on_another_try);
+  ASSERT_THAT(addresses_on_another_try,
+              ::testing::ContainerEq(addresses_after_update));
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
-  absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
-  EXPECT_TRUE(status.ok()) << status;
   constexpr static size_t kMaxAttempts = 5;
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
+    absl::Status status = ApplyUpdate(
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
+    EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
     EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
