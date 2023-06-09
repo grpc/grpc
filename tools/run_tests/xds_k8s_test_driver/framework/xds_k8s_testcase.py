@@ -352,7 +352,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         #    the expected_status.
         self.assertGreater(stats.result[expected_status_int],
                            0,
-                           msg=("Expected non-zero RPCs with status"
+                           msg=("Expected non-zero completed RPCs with status"
                                 f" {expected_status_fmt} for method {method}."
                                 f"\nDiff stats:\n{diff_stats_fmt}"))
 
