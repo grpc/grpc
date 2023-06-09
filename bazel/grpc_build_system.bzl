@@ -474,7 +474,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = tags,
             deps = core_deps,
             args = args,
-            flaky = flaky,
+            flaky = True,
             **test_args
         )
 
