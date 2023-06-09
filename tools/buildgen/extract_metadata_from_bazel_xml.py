@@ -555,8 +555,9 @@ def _expand_upb_proto_library_rules(bazel_rules):
             protos = _get_transitive_protos(bazel_rules, deps[0])
             if len(protos) == 0:
                 raise Exception(
-                    'upb rule "{0}" should have at least one proto file.'
-                    .format(name)
+                    'upb rule "{0}" should have at least one proto file.'.format(
+                        name
+                    )
                 )
             srcs = []
             hdrs = []

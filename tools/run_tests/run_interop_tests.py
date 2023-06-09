@@ -1380,8 +1380,7 @@ argp.add_argument(
     const=True,
     help="Prepare things for running interop tests manually. "
     + "Preserve docker images after building them and skip "
-    "actually running the tests. Only print commands to run by "
-    + "hand.",
+    "actually running the tests. Only print commands to run by " + "hand.",
 )
 argp.add_argument(
     "--http2_interop",

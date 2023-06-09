@@ -509,9 +509,8 @@ def _unary_request(
                     state.condition.wait()
                     if state.request is None:
                         if state.client is _CLOSED:
-                            details = (
-                                '"{}" requires exactly one request message.'
-                                .format(rpc_event.call_details.method)
+                            details = '"{}" requires exactly one request message.'.format(
+                                rpc_event.call_details.method
                             )
                             _abort(
                                 state,

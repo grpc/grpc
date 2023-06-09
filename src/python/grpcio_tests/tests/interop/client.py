@@ -89,8 +89,7 @@ def parse_interop_client_args():
             "If non-empty, set a static service config on channels created by "
             + "grpc::CreateTestChannel, that configures the grpclb LB policy "
             + "with a child policy being the value of this flag (e.g."
-            " round_robin "
-            + "or pick_first)."
+            " round_robin " + "or pick_first)."
         ),
     )
     return parser.parse_args()
@@ -137,8 +136,7 @@ def get_secure_channel_parameters(args):
             (
                 "grpc.service_config",
                 '{"loadBalancingConfig": [{"grpclb": {"childPolicy": [{"%s":'
-                " {}}]}}]}"
-                % args.grpc_test_use_grpclb_with_child_policy,
+                " {}}]}}]}" % args.grpc_test_use_grpclb_with_child_policy,
             ),
         )
     if args.custom_credentials_type is not None:

@@ -182,8 +182,7 @@ class ExperimentDefinition(object):
         if rollout_attributes["name"] != self._name:
             print(
                 "ERROR: Rollout specification does not apply to this"
-                " experiment: %s"
-                % self._name
+                " experiment: %s" % self._name
             )
             return False
         if "default" not in rollout_attributes:

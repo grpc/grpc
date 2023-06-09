@@ -90,8 +90,7 @@ class Version:
             else:
                 raise Exception(
                     'Don\'t know how to translate version tag "%s" to PECL'
-                    " version"
-                    % self.tag
+                    " version" % self.tag
                 )
         return s
 
