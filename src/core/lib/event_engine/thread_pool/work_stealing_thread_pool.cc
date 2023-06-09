@@ -259,7 +259,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown()) {
       if (pool_->IsQuiesced()) break;
     } else {
-      lifeguard_shutdown_cv_.WaitWithTimeout(
+      lifeguard_should_shut_down_cv_.WaitWithTimeout(
           &lifeguard_shutdown_mu_,
           absl::Milliseconds(
               (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
@@ -268,15 +268,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     MaybeStartNewThread();
   }
   lifeguard_running_ = false;
-  lifeguard_shutdown_cv_.Signal();
+  lifeguard_is_shut_down_cv_.Signal();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     BlockUntilShutdown() {
   grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
   while (lifeguard_running_) {
-    lifeguard_shutdown_cv_.Signal();
-    lifeguard_shutdown_cv_.WaitWithTimeout(
+    lifeguard_should_shut_down_cv_.Signal();
+    lifeguard_is_shut_down_cv_.WaitWithTimeout(
         &lifeguard_shutdown_mu_, absl::Seconds(kBlockingQuiesceLogRateSeconds));
     GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
                                  "%s",

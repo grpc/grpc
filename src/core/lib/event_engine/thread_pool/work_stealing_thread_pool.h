@@ -215,7 +215,9 @@ class WorkStealingThreadPool final : public ThreadPool {
       // Used for signaling that the lifeguard thread has stopped running.
       grpc_core::Mutex lifeguard_shutdown_mu_;
       bool lifeguard_running_ ABSL_GUARDED_BY(lifeguard_shutdown_mu_) = false;
-      grpc_core::CondVar lifeguard_shutdown_cv_
+      grpc_core::CondVar lifeguard_should_shut_down_cv_
+          ABSL_GUARDED_BY(lifeguard_shutdown_mu_);
+      grpc_core::CondVar lifeguard_is_shut_down_cv_
           ABSL_GUARDED_BY(lifeguard_shutdown_mu_);
     };
 
