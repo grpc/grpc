@@ -114,7 +114,6 @@ try:
         ],
         'headers': [
             "third_party/cares/ares_build.h",
-            "third_party/cares/cares/ares_config.h",
             "third_party/cares/cares/include/ares_version.h",
             "third_party/cares/cares/include/ares.h",
             "third_party/cares/cares/include/ares_rules.h",
@@ -140,6 +139,10 @@ try:
             "third_party/cares/cares/src/lib/ares_setup.h",
             "third_party/cares/cares/src/lib/ares_writev.h",
             "third_party/cares/cares/src/lib/ares_nowarn.h",
+            "third_party/cares/config_darwin/ares_config.h",
+            "third_party/cares/config_freebsd/ares_config.h",
+            "third_party/cares/config_linux/ares_config.h",
+            "third_party/cares/config_openbsd/ares_config.h",
         ],
     }]
 except:
