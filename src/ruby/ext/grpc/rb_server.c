@@ -232,7 +232,7 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
                     grpc_rb_slice_to_ruby_string(args->st.details.method),
                     grpc_rb_slice_to_ruby_string(args->st.details.host),
                     rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
-                              INT2NUM(deadline.tv_nsec / 1000)),
+                               INT2NUM(deadline.tv_nsec / 1000)),
                     grpc_rb_md_ary_to_h(&args->st.md_ary),
                     grpc_rb_wrap_call(call, args->call_queue), NULL);
   args->call_queue = NULL;
