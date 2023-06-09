@@ -186,9 +186,12 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             cls,
             accumulated_stats: _LoadBalancerAccumulatedStatsResponse,
             *,
-            ignore_empty: bool = False) -> str:
+            ignore_empty: bool = False,
+            highlight: bool = True) -> str:
         stats_yaml = helpers_grpc.accumulated_stats_pretty(
             accumulated_stats, ignore_empty=ignore_empty)
+        if not highlight:
+            return stats_yaml
         return cls.yaml_highlighter.highlight(stats_yaml)
 
     @classmethod
@@ -301,13 +304,19 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
+        # pylint: disable=too-many-locals
+        expected_status_int: int = expected_status.value[0]
+        expected_status_fmt: str = helpers_grpc.status_pretty(expected_status)
+
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse initial measurement:'
             '\n%s', test_client.hostname,
             self._pretty_accumulated_stats(before_stats))
+
         time.sleep(duration.total_seconds())
+
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.debug(
             '[%s] << LoadBalancerAccumulatedStatsResponse after %s seconds:'
@@ -316,40 +325,36 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
-
         logger.info(
             '[%s] << Received accumulated stats difference.'
             ' Expecting RPCs with status %s for method %s:\n%s',
-            test_client.hostname, helpers_grpc.status_pretty(expected_status),
-            method, self._pretty_accumulated_stats(diff_stats,
-                                                   ignore_empty=True))
+            test_client.hostname, expected_status_fmt, method,
+            self._pretty_accumulated_stats(diff_stats, ignore_empty=True))
+
+        # Used in stack traces. Don't highlight for better compatibility.
+        diff_stats_fmt: str = self._pretty_accumulated_stats(diff_stats,
+                                                             ignore_empty=True,
+                                                             highlight=False)
+
+        # 1. Verify the completed RPCs of the given method has no statuses
+        #    other than the expected_status,
         stats = diff_stats.stats_per_method[method]
         for found_status_int, count in stats.result.items():
             found_status = helpers_grpc.status_from_int(found_status_int)
             if found_status != expected_status and count > stray_rpc_limit:
-                self.fail(f"Expected only status"
-                          f" {helpers_grpc.status_pretty(expected_status)},"
+                self.fail(f"Expected only status {expected_status_fmt},"
                           " but found status"
                           f" {helpers_grpc.status_pretty(found_status)}"
-                          f" for method {method}.\nStats before:"
-                          f"\n{self._pretty_accumulated_stats(before_stats)}"
-                          f"\nStats after:"
-                          f"\n{self._pretty_accumulated_stats(after_stats)}"
-                          f"\nDiff stats:"
-                          f"\n{self._pretty_accumulated_stats(diff_stats)}")
+                          f" for method {method}."
+                          f"\nDiff stats:\n{diff_stats_fmt}")
 
-        expected_status_int: int = expected_status.value[0]
-        self.assertGreater(
-            stats.result[expected_status_int],
-            0,
-            msg=("Expected non-zero RPCs with status"
-                 f" {helpers_grpc.status_pretty(expected_status)}"
-                 f" for method {method}.\nStats before:"
-                 f"\n{self._pretty_accumulated_stats(before_stats)}"
-                 f"\nStats after:"
-                 f"\n{self._pretty_accumulated_stats(after_stats)}"
-                 f"\nDiff stats:"
-                 f"\n{self._pretty_accumulated_stats(diff_stats)}"))
+        # 2. Verify there are completed RPCs of the given method with
+        #    the expected_status.
+        self.assertGreater(stats.result[expected_status_int],
+                           0,
+                           msg=("Expected non-zero completed RPCs with status"
+                                f" {expected_status_fmt} for method {method}."
+                                f"\nDiff stats:\n{diff_stats_fmt}"))
 
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
