@@ -495,14 +495,15 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
-    const ResolverOptions& options, PosixEnginePollerManager* poller_manager,
+    const ResolverOptions& options, PosixEventPoller* poller,
     std::shared_ptr<EventEngine> event_engine)
     : options_(options),
       event_engine_(std::move(event_engine)),
-      poller_manager_(poller_manager) {}
+      poller_(poller),
+      ares_resolver_(grpc_core::MakeOrphanable<AresResolver>(
+          std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine)) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
-  grpc_core::MutexLock lock(&mu_);
   // The DNSResolver is held alive by its caller (e.g.
   // event_engine_client_channel_resolver). The caller should be alive until
   // its passed-in on_resolve closure gets destroyed (usually through a
@@ -512,126 +513,50 @@ PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   // all on_resolves should have been destroyed (they may not be called when the
   // request was cancelled) and all inflight handles should have been cleared
   // regardless of the actual sequence of events.
-  GPR_ASSERT(GPR_LIKELY(inflight_requests_.empty()));
+  ares_resolver_.reset();
 }
 
-LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupHostname(
+void PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
-    absl::string_view default_port, Duration timeout) {
-  PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_ASSERT(poller != nullptr);
-  absl::StatusOr<GrpcAresHostnameRequest*> request =
-      GrpcAresHostnameRequest::Create(
-          name, default_port, options_.dns_server, timeout,
-          std::make_unique<GrpcPolledFdFactoryPosix>(poller),
-          event_engine_.get());
-  if (!request.ok()) {
-    // Report back initialization failure through on_resolve.
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = request.status()]() mutable { on_resolve(status); });
-    return LookupTaskHandle::kInvalid;
+    absl::string_view default_port) {
+  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
+  if (!status.ok()) {
+    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
+      on_resolve(status);
+    });
+    return;
   }
-  LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
-                          aba_token_.fetch_add(1)};
-  {
-    grpc_core::MutexLock lock(&mu_);
-    inflight_requests_.insert(handle);
-  }
-  (*request)->Start(
-      [on_resolve = std::move(on_resolve), handle,
-       this](absl::StatusOr<GrpcAresHostnameRequest::Result> result) mutable {
-        {
-          grpc_core::MutexLock lock(&mu_);
-          // on_resolve called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(handle) == 1);
-        }
-        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
-        on_resolve(std::move(result));
-      });
-  return handle;
+  auto hq = grpc_core::MakeRefCounted<HostnameQuery>(event_engine_.get(),
+                                                     ares_resolver_.get());
+  hq->Lookup(name, default_port, std::move(on_resolve));
 }
 
-LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupSRV(
-    LookupSRVCallback on_resolve, absl::string_view name, Duration timeout) {
-  PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_ASSERT(poller != nullptr);
-  absl::StatusOr<GrpcAresSRVRequest*> request = GrpcAresSRVRequest::Create(
-      name, timeout, options_.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_.get());
-  if (!request.ok()) {
-    // Report back initialization failure through on_resolve.
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = request.status()]() mutable { on_resolve(status); });
-    return LookupTaskHandle::kInvalid;
+void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
+                                                   absl::string_view name) {
+  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
+  if (!status.ok()) {
+    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
+      on_resolve(status);
+    });
+    return;
   }
-  LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
-                          aba_token_.fetch_add(1)};
-  {
-    grpc_core::MutexLock lock(&mu_);
-    inflight_requests_.insert(handle);
-  }
-  (*request)->Start(
-      [on_resolve = std::move(on_resolve), handle,
-       this](absl::StatusOr<GrpcAresSRVRequest::Result> result) mutable {
-        {
-          grpc_core::MutexLock lock(&mu_);
-          // on_resolve called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(handle) == 1);
-        }
-        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
-        on_resolve(std::move(result));
-      });
-  return handle;
+  auto sq = grpc_core::MakeRefCounted<SRVQuery>(event_engine_.get(),
+                                                ares_resolver_.get());
+  sq->Lookup(name, std::move(on_resolve));
 }
 
-LookupTaskHandle PosixEventEngine::PosixDNSResolver::LookupTXT(
-    LookupTXTCallback on_resolve, absl::string_view name, Duration timeout) {
-  PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_ASSERT(poller != nullptr);
-  absl::StatusOr<GrpcAresTXTRequest*> request = GrpcAresTXTRequest::Create(
-      name, timeout, options_.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine_.get());
-  if (!request.ok()) {
-    // Report back initialization failure through on_resolve.
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = request.status()]() mutable { on_resolve(status); });
-    return LookupTaskHandle::kInvalid;
+void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
+                                                   absl::string_view name) {
+  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
+  if (!status.ok()) {
+    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
+      on_resolve(status);
+    });
+    return;
   }
-  LookupTaskHandle handle{reinterpret_cast<intptr_t>(*request),
-                          aba_token_.fetch_add(1)};
-  {
-    grpc_core::MutexLock lock(&mu_);
-    inflight_requests_.insert(handle);
-  }
-  (*request)->Start(
-      [on_resolve = std::move(on_resolve), handle,
-       this](absl::StatusOr<std::vector<std::string>> result) mutable {
-        {
-          grpc_core::MutexLock lock(&mu_);
-          // on_resolve called, no longer inflight.
-          GPR_ASSERT(inflight_requests_.erase(handle) == 1);
-        }
-        reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
-        on_resolve(std::move(result));
-      });
-  return handle;
-}
-
-bool PosixEventEngine::PosixDNSResolver::CancelLookup(LookupTaskHandle handle) {
-  grpc_core::ReleasableMutexLock lock(&mu_);
-  auto iter = inflight_requests_.find(handle);
-  if (iter != inflight_requests_.end()) {
-    if (reinterpret_cast<GrpcAresRequest*>(iter->keys[0])->Cancel()) {
-      inflight_requests_.erase(iter);
-      lock.Release();
-      reinterpret_cast<GrpcAresRequest*>(handle.keys[0])->Orphan();
-      return true;
-    }
-  }
-  return false;
+  auto tq = grpc_core::MakeRefCounted<TXTQuery>(event_engine_.get(),
+                                                ares_resolver_.get());
+  tq->Lookup(name, std::move(on_resolve));
 }
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
@@ -640,7 +565,7 @@ std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      options, poller_manager_.get(), shared_from_this());
+      options, poller_manager_->Poller(), shared_from_this());
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   (void)options;
   grpc_core::Crash("unimplemented");

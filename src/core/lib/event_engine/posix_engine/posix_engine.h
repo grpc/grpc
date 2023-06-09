@@ -139,31 +139,25 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
-    PosixDNSResolver(const ResolverOptions& options,
-                     PosixEnginePollerManager* poller_manager,
+    PosixDNSResolver(const ResolverOptions& options, PosixEventPoller* poller,
                      std::shared_ptr<EventEngine> event_engine);
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     ~PosixDNSResolver() override;
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view name,
-                                    absl::string_view default_port,
-                                    Duration timeout) override;
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    bool CancelLookup(LookupTaskHandle handle) override;
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view name,
+                        absl::string_view default_port) override;
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view name) override;
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view name) override;
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
    private:
     grpc_core::Mutex mu_;
-    LookupTaskHandleSet inflight_requests_ ABSL_GUARDED_BY(mu_);
-    std::atomic<intptr_t> aba_token_{0};
     const ResolverOptions options_;
     std::shared_ptr<EventEngine> event_engine_;
-    PosixEnginePollerManager* poller_manager_;
+    PosixEventPoller* poller_;
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   };
 

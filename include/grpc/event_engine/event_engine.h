@@ -370,30 +370,21 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// NOT_FOUND.
     ///
     /// If cancelled, \a on_resolve will not be executed.
-    virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view name,
-                                            absl::string_view default_port,
-                                            Duration timeout) = 0;
+    virtual void LookupHostname(LookupHostnameCallback on_resolve,
+                                absl::string_view name,
+                                absl::string_view default_port) = 0;
     /// Asynchronously perform an SRV record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                                       absl::string_view name,
-                                       Duration timeout) = 0;
+    virtual void LookupSRV(LookupSRVCallback on_resolve,
+                           absl::string_view name) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                                       absl::string_view name,
-                                       Duration timeout) = 0;
-    /// Cancel an asynchronous lookup operation.
-    ///
-    /// This shares the same semantics with \a EventEngine::Cancel: successfully
-    /// cancelled lookups will not have their callbacks executed, and this
-    /// method returns true.
-    virtual bool CancelLookup(LookupTaskHandle handle) = 0;
+    virtual void LookupTXT(LookupTXTCallback on_resolve,
+                           absl::string_view name) = 0;
   };
 
   /// At time of destruction, the EventEngine must have no active
