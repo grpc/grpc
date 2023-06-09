@@ -52,6 +52,10 @@ class ServerMetricRecorder {
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
   void SetMemoryUtilization(double value);
+  /// Records the application specific utilization in the range [0, infy].
+  /// Values outside of the valid range are rejected.
+  /// Overrides the stored value when called again with a valid value.
+  void SetApplicationUtilization(double value);
   /// Records number of queries per second to the server in the range [0, infy).
   /// Values outside of the valid range are rejected.
   /// Overrides the stored value when called again with a valid value.
@@ -77,6 +81,8 @@ class ServerMetricRecorder {
   void ClearCpuUtilization();
   /// Clears the server memory utilization if recorded.
   void ClearMemoryUtilization();
+  /// Clears the application specific utilization if recorded.
+  void ClearApplicationUtilization();
   /// Clears number of queries per second to the server if recorded.
   void ClearQps();
   /// Clears number of errors per second to the server if recorded.

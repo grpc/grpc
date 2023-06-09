@@ -394,18 +394,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
-    aef36c29bd0ef95509f7f52693dbdafe4a2c2c5d1eb406bf68e6364a0d12e11b
-    xds-4003588d1b747e37e911baa5a9c1c07fde4ca518
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
+    0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
+    xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://github.com/cncf/xds/archive/4003588d1b747e37e911baa5a9c1c07fde4ca518.tar.gz
-    aef36c29bd0ef95509f7f52693dbdafe4a2c2c5d1eb406bf68e6364a0d12e11b
-    xds-4003588d1b747e37e911baa5a9c1c07fde4ca518
+    https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
+    0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
+    xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
   )
 endif()
 
