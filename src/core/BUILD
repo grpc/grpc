@@ -5280,7 +5280,6 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
-        "unique_type_name",
         "//:config",
         "//:debug_location",
         "//:gpr",
