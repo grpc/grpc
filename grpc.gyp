@@ -185,6 +185,7 @@
         'absl/flags:flag',
         'absl/flags:marshalling',
         'absl/functional:any_invocable',
+        'absl/log:initialize',
         'absl/memory:memory',
         'absl/random:random',
         'absl/status:status',

@@ -1921,6 +1921,12 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/initialize.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/initialize.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/globals.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/globals.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/memory/memory.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/meta/type_traits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/bits.h" role="src" />

@@ -192,6 +192,10 @@ static gpr_timespec zero_realtime;
 static gpr_timespec inf_future_realtime;
 static gpr_timespec inf_past_realtime;
 
+static void Init_grpc_logging() {
+  gpr_log_init();
+}
+
 /* Adds a module with constants that map to gpr's static timeval structs. */
 static void Init_grpc_time_consts() {
   VALUE grpc_rb_mTimeConsts =
@@ -321,6 +325,7 @@ void Init_grpc_c() {
   sym_details = ID2SYM(rb_intern("details"));
   sym_metadata = ID2SYM(rb_intern("metadata"));
 
+  Init_grpc_logging();
   Init_grpc_channel();
   Init_grpc_call();
   Init_grpc_call_credentials();

@@ -64,6 +64,9 @@ GPRAPI int gpr_should_log(gpr_log_severity severity);
 GPRAPI void gpr_log_message(const char* file, int line,
                             gpr_log_severity severity, const char* message);
 
+/** Initialize log system by making native system calls if necessary. */
+GPRAPI void gpr_log_init(void);
+
 /** Set global log verbosity */
 GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print);
 

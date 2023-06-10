@@ -120,6 +120,7 @@ static void do_basic_init(void) {
   grpc_core::IsInitializedInternally = []() {
     return grpc_is_initialized() != 0;
   };
+  gpr_log_init();
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();

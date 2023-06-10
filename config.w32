@@ -867,6 +867,9 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\hash\\internal\\city.cc " +
     "third_party\\abseil-cpp\\absl\\hash\\internal\\hash.cc " +
     "third_party\\abseil-cpp\\absl\\hash\\internal\\low_level_hash.cc " +
+    "third_party\\abseil-cpp\\absl\\log\\globals.cc " +
+    "third_party\\abseil-cpp\\absl\\log\\initialize.cc " +
+    "third_party\\abseil-cpp\\absl\\log\\internal\\globals.cc " +
     "third_party\\abseil-cpp\\absl\\numeric\\int128.cc " +
     "third_party\\abseil-cpp\\absl\\profiling\\internal\\exponential_biased.cc " +
     "third_party\\abseil-cpp\\absl\\random\\discrete_distribution.cc " +
@@ -1688,6 +1691,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\flags\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\hash");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\hash\\internal");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\log");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\log\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\numeric");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl\\profiling\\internal");

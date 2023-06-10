@@ -21,12 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/initialize.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
@@ -36,6 +38,7 @@
 #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
+static gpr_once g_log_init = GPR_ONCE_INIT;
 static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
@@ -106,6 +109,14 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
   if (absl::EqualsIgnoreCase(str, "ERROR")) return GPR_LOG_SEVERITY_ERROR;
   if (absl::EqualsIgnoreCase(str, "NONE")) return GPR_LOG_SEVERITY_NONE;
   return error_value;
+}
+
+static void do_log_init() {
+  absl::InitializeLog();
+}
+
+void gpr_log_init() {
+  gpr_once_init(&g_log_init, do_log_init);
 }
 
 void gpr_log_verbosity_init() {

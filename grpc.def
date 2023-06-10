@@ -230,6 +230,7 @@ EXPORTS
     gpr_log
     gpr_should_log
     gpr_log_message
+    gpr_log_init
     gpr_set_log_verbosity
     gpr_log_verbosity_init
     gpr_set_log_function

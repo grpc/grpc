@@ -733,6 +733,7 @@ grpc_cc_library(
         "absl/base",
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/log:initialize",
         "absl/memory",
         "absl/random",
         "absl/status",
