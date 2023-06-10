@@ -20,6 +20,7 @@
 
 #include "absl/flags/marshalling.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gpr/log_internal.h"
@@ -63,6 +64,16 @@ bool LoadConfigFromEnv(absl::string_view environment_variable,
             error.c_str());
   }
   return default_value;
+}
+
+std::string LoadConfig(const absl::Flag<std::vector<std::string>>& flag,
+                       absl::string_view environment_variable,
+                       const absl::optional<std::string>& override,
+                       const char* default_value) {
+  if (override.has_value()) return *override;
+  auto from_flag = absl::GetFlag(flag);
+  if (!from_flag.empty()) return absl::StrJoin(from_flag, ",");
+  return LoadConfigFromEnv(environment_variable, default_value);
 }
 
 }  // namespace grpc_core

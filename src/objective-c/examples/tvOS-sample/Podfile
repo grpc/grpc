@@ -1,4 +1,4 @@
-platform :tvos, '10.0'
+platform :tvos, '12.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 

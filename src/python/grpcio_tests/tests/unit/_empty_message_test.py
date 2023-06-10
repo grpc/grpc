@@ -20,13 +20,13 @@ import grpc
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_REQUEST = b''
-_RESPONSE = b''
+_REQUEST = b""
+_RESPONSE = b""
 
-_UNARY_UNARY = '/test/UnaryUnary'
-_UNARY_STREAM = '/test/UnaryStream'
-_STREAM_UNARY = '/test/StreamUnary'
-_STREAM_STREAM = '/test/StreamStream'
+_UNARY_UNARY = "/test/UnaryUnary"
+_UNARY_STREAM = "/test/UnaryStream"
+_STREAM_UNARY = "/test/StreamUnary"
+_STREAM_STREAM = "/test/StreamStream"
 
 
 def handle_unary_unary(request, servicer_context):
@@ -50,7 +50,6 @@ def handle_stream_stream(request_iterator, servicer_context):
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
-
     def __init__(self, request_streaming, response_streaming):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
@@ -71,7 +70,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     def service(self, handler_call_details):
         if handler_call_details.method == _UNARY_UNARY:
             return _MethodHandler(False, False)
@@ -86,13 +84,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 class EmptyMessageTest(unittest.TestCase):
-
     def setUp(self):
         self._server = test_common.test_server()
         self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        port = self._server.add_insecure_port('[::]:0')
+        port = self._server.add_insecure_port("[::]:0")
         self._server.start()
-        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
 
     def tearDown(self):
         self._server.stop(0)
@@ -104,21 +101,25 @@ class EmptyMessageTest(unittest.TestCase):
 
     def testUnaryStream(self):
         response_iterator = self._channel.unary_stream(_UNARY_STREAM)(_REQUEST)
-        self.assertSequenceEqual([_RESPONSE] * test_constants.STREAM_LENGTH,
-                                 list(response_iterator))
+        self.assertSequenceEqual(
+            [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator)
+        )
 
     def testStreamUnary(self):
-        response = self._channel.stream_unary(_STREAM_UNARY)(iter(
-            [_REQUEST] * test_constants.STREAM_LENGTH))
+        response = self._channel.stream_unary(_STREAM_UNARY)(
+            iter([_REQUEST] * test_constants.STREAM_LENGTH)
+        )
         self.assertEqual(_RESPONSE, response)
 
     def testStreamStream(self):
-        response_iterator = self._channel.stream_stream(_STREAM_STREAM)(iter(
-            [_REQUEST] * test_constants.STREAM_LENGTH))
-        self.assertSequenceEqual([_RESPONSE] * test_constants.STREAM_LENGTH,
-                                 list(response_iterator))
+        response_iterator = self._channel.stream_stream(_STREAM_STREAM)(
+            iter([_REQUEST] * test_constants.STREAM_LENGTH)
+        )
+        self.assertSequenceEqual(
+            [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator)
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

@@ -67,6 +67,11 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
                                                         data.mem_utilization);
     has_data = true;
   }
+  if (data.application_utilization != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_application_utilization(
+        response, data.application_utilization);
+    has_data = true;
+  }
   if (data.qps != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
     has_data = true;

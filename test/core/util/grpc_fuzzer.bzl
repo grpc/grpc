@@ -75,6 +75,9 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], 
     CORPUS_DIR = native.package_name() + "/" + corpus
     deps = deps + ["@com_google_libprotobuf_mutator//:libprotobuf_mutator"]
 
+    if "gtest" not in external_deps:
+        external_deps = external_deps + ["gtest"]
+
     if proto != None:
         PROTO_LIBRARY = "_%s_proto" % name
         grpc_proto_library(
@@ -94,9 +97,7 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], 
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
-        external_deps = external_deps + [
-            "gtest",
-        ],
+        external_deps = external_deps,
         size = size,
         args = select({
             "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=20000", "-max_total_time=300"],

@@ -35,7 +35,7 @@ namespace {
 // Then, before the first call finishes, the server is shut down and
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
-TEST_P(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
+CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   const auto server_args =
       ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1);
   InitServer(server_args);

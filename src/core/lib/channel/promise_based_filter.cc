@@ -245,10 +245,6 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
-    if (grpc_trace_channel.enabled()) {
-      gpr_log(GPR_INFO, "%sCANCEL BATCH REQUEST ALREADY CANCELLED",
-              Activity::current()->DebugTag().c_str());
-    }
     return;
   }
   refcnt = 0;

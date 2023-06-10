@@ -45,6 +45,7 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -79,10 +80,10 @@
 
 namespace grpc_core {
 
-// TODO(donnadionne): Remove once RLS is no longer experimental
+// TODO(apolcyn): remove this flag by the 1.58 release
 bool XdsRlsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
@@ -486,6 +487,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
     int64_t range_start = 0;
     int64_t range_end = 0;
     bool present_match = false;
+    bool case_sensitive = true;
     if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
       type = HeaderMatcher::Type::kExact;
       match_string = UpbStringToStdString(
@@ -514,11 +516,46 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
+      GPR_ASSERT(range_matcher != nullptr);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
       type = HeaderMatcher::Type::kPresent;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
+    } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+      ValidationErrors::ScopedField field(errors, ".string_match");
+      const auto* matcher =
+          envoy_config_route_v3_HeaderMatcher_string_match(header);
+      GPR_ASSERT(matcher != nullptr);
+      if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
+        type = HeaderMatcher::Type::kExact;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_exact(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
+        type = HeaderMatcher::Type::kPrefix;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_prefix(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
+        type = HeaderMatcher::Type::kSuffix;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_suffix(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
+        type = HeaderMatcher::Type::kContains;
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_StringMatcher_contains(matcher));
+      } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
+        type = HeaderMatcher::Type::kSafeRegex;
+        const auto* regex_matcher =
+            envoy_type_matcher_v3_StringMatcher_safe_regex(matcher);
+        GPR_ASSERT(regex_matcher != nullptr);
+        match_string = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+      } else {
+        errors->AddError("invalid string matcher");
+        continue;
+      }
+      case_sensitive =
+          !envoy_type_matcher_v3_StringMatcher_ignore_case(matcher);
     } else {
       errors->AddError("invalid header matcher");
       continue;
@@ -527,7 +564,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
         envoy_config_route_v3_HeaderMatcher_invert_match(header);
     absl::StatusOr<HeaderMatcher> header_matcher =
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
-                              present_match, invert_match);
+                              present_match, invert_match, case_sensitive);
     if (!header_matcher.ok()) {
       errors->AddError(absl::StrCat("cannot create header matcher: ",
                                     header_matcher.status().message()));

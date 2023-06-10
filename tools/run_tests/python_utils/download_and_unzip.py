@@ -33,13 +33,15 @@ def main():
     with tempfile.TemporaryFile() as tmp_file:
         r = requests.get(download_url)
         if r.status_code != requests.codes.ok:
-            print("Download %s failed with [%d] \"%s\"" %
-                  (download_url, r.status_code, r.text()))
+            print(
+                'Download %s failed with [%d] "%s"'
+                % (download_url, r.status_code, r.text())
+            )
             sys.exit(1)
         else:
             tmp_file.write(r.content)
             print("Successfully downloaded from %s", download_url)
-        with zipfile.ZipFile(tmp_file, 'r') as target_zip_file:
+        with zipfile.ZipFile(tmp_file, "r") as target_zip_file:
             target_zip_file.extractall(destination)
         print("Successfully unzip to %s" % destination)
 

@@ -15,7 +15,6 @@
 #include "test/core/filters/filter_test.h"
 
 #include <algorithm>
-#include <chrono>
 #include <memory>
 #include <queue>
 
@@ -280,6 +279,7 @@ class FilterTestBase::Call::ScopedContext final
         if (impl != nullptr) impl->StepLoop();
       });
     }
+    void WakeupAsync(WakeupMask) override { Wakeup(0); }
     void Drop(WakeupMask) override { delete this; }
     std::string ActivityDebugTag(WakeupMask) const override { return tag_; }
 
@@ -410,7 +410,6 @@ FilterTestBase::FilterTestBase()
             grpc_timer_manager_set_threading(false);
             grpc_event_engine::experimental::FuzzingEventEngine::Options
                 options;
-            options.final_tick_length = std::chrono::milliseconds(1);
             return options;
           }(),
           fuzzing_event_engine::Actions()) {}

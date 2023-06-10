@@ -193,13 +193,13 @@ void RegisterFilter() {
   });
 }
 
-TEST_P(RetryTest, RetryCancelWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

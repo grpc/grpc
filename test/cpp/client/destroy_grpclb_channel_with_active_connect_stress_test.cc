@@ -68,7 +68,7 @@ void TryConnectAndDestroy() {
   grpc_resolved_address address;
   ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
-  addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
+  addresses.emplace_back(address, grpc_core::ChannelArgs());
   grpc_core::Resolver::Result lb_address_result;
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(
       grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}");

@@ -1492,11 +1492,12 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
 
 void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
+    gpr_log(GPR_INFO, "chand=%p: starting name resolution for %s", this,
+            uri_to_resolve_.c_str());
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      uri_to_resolve_.c_str(), channel_args_, interested_parties_,
-      work_serializer_, std::make_unique<ResolverResultHandler>(this));
+      uri_to_resolve_, channel_args_, interested_parties_, work_serializer_,
+      std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
@@ -3016,6 +3017,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
     // recv_initial_metadata_flags is not populated for clients
     self->call_attempt_tracer()->RecordReceivedInitialMetadata(
         self->recv_initial_metadata_);
+    auto* peer_string = self->recv_initial_metadata_->get_pointer(PeerString());
+    if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                error);
@@ -3059,12 +3062,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
       }
     }
     absl::string_view peer_string;
-    if (self->recv_initial_metadata_ != nullptr) {
-      Slice* peer_string_slice =
-          self->recv_initial_metadata_->get_pointer(PeerString());
-      if (peer_string_slice != nullptr) {
-        peer_string = peer_string_slice->as_string_view();
-      }
+    if (self->peer_string_.has_value()) {
+      peer_string = self->peer_string_->as_string_view();
     }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);

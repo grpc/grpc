@@ -52,6 +52,7 @@ class TestConfig:
 
     TODO(sergiitk): rename to LangSpec and rename skips.py to lang.py.
     """
+
     client_lang: Lang
     server_lang: Lang
     version: Optional[str]
@@ -74,29 +75,32 @@ class TestConfig:
 
         3) Unspecified version (self.version is None) is treated as "master".
         """
-        if self.version in ('master', 'dev', 'dev-master', None):
+        if self.version in ("master", "dev", "dev-master", None):
             return True
-        if another == 'master':
+        if another == "master":
             return False
         return self._parse_version(self.version) >= self._parse_version(another)
 
     def __str__(self):
-        return (f"TestConfig(client_lang='{self.client_lang}', "
-                f"server_lang='{self.server_lang}', version={self.version!r})")
+        return (
+            f"TestConfig(client_lang='{self.client_lang}', "
+            f"server_lang='{self.server_lang}', version={self.version!r})"
+        )
 
     @staticmethod
     def _parse_version(version: str) -> pkg_version.Version:
-        if version.startswith('dev-'):
+        if version.startswith("dev-"):
             # Treat "dev-VERSION" as "VERSION".
             version = version[4:]
-        if version.endswith('.x'):
+        if version.endswith(".x"):
             version = version[:-2]
         return pkg_version.Version(version)
 
 
 def _get_lang(image_name: str) -> Lang:
     return Lang.from_string(
-        re.search(r'/(\w+)-(client|server):', image_name).group(1))
+        re.search(r"/(\w+)-(client|server):", image_name).group(1)
+    )
 
 
 def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
@@ -111,10 +115,11 @@ def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
     test_config = TestConfig(
         client_lang=_get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
         server_lang=_get_lang(xds_k8s_flags.SERVER_IMAGE.value),
-        version=xds_flags.TESTING_VERSION.value)
+        version=xds_flags.TESTING_VERSION.value,
+    )
     if not check(test_config):
-        logger.info('Skipping %s', test_config)
-        raise unittest.SkipTest(f'Unsupported test config: {test_config}')
+        logger.info("Skipping %s", test_config)
+        raise unittest.SkipTest(f"Unsupported test config: {test_config}")
 
-    logger.info('Detected language and version: %s', test_config)
+    logger.info("Detected language and version: %s", test_config)
     return test_config

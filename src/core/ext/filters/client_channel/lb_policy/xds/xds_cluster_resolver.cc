@@ -1150,7 +1150,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsClusterResolverLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }

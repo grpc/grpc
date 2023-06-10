@@ -35,7 +35,7 @@ namespace {
 // - buffer size set to 2 bytes
 // - client sends a 3-byte message
 // - first attempt gets ABORTED but is not retried
-TEST_P(RetryTest, RetryExceedsBufferSizeInInitialBatch) {
+CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInInitialBatch) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

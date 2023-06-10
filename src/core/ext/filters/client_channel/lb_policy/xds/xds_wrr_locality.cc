@@ -347,7 +347,7 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<XdsWrrLocalityLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsWrrLocalityLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_wrr_locality LB policy config");
   }
