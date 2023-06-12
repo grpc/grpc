@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -32,8 +33,10 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
