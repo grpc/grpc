@@ -28,7 +28,8 @@ from typing import Sequence, Tuple
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -37,8 +38,10 @@ _LOGGER.setLevel(logging.INFO)
 def wait_for_metadata(response_future, event):
     metadata: Sequence[Tuple[str, str]] = response_future.initial_metadata()
     for key, value in metadata:
-        print('Greeter client received initial metadata: key=%s value=%s' %
-              (key, value))
+        print(
+            "Greeter client received initial metadata: key=%s value=%s"
+            % (key, value)
+        )
     event.set()
 
 
@@ -55,20 +58,22 @@ def check_status(response_future, wait_success):
 
 def main():
     # Create gRPC channel
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel("localhost:50051") as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
 
         event_for_delay = threading.Event()
 
         # Server will delay send initial metadata back for this RPC
         response_future_delay = stub.SayHelloStreamReply(
-            helloworld_pb2.HelloRequest(name='you'), wait_for_ready=True)
+            helloworld_pb2.HelloRequest(name="you"), wait_for_ready=True
+        )
 
         # Fire RPC and wait for metadata
-        thread_with_delay = threading.Thread(target=wait_for_metadata,
-                                             args=(response_future_delay,
-                                                   event_for_delay),
-                                             daemon=True)
+        thread_with_delay = threading.Thread(
+            target=wait_for_metadata,
+            args=(response_future_delay, event_for_delay),
+            daemon=True,
+        )
         thread_with_delay.start()
 
         # Wait on client side with 7 seconds timeout
@@ -76,6 +81,6 @@ def main():
         check_status(response_future_delay, event_for_delay.wait(timeout))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     main()

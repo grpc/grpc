@@ -29,9 +29,10 @@ from time import sleep
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
-_INITIAL_METADATA = ((b'initial-md', 'initial-md-value'),)
+_INITIAL_METADATA = ((b"initial-md", "initial-md-value"),)
 
 
 def starting_up_server():
@@ -45,7 +46,6 @@ def do_work():
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
     def SayHelloStreamReply(self, request, servicer_context):
         # Suppose server will take some time to setup, client can set the time it willing to wait
         # for server to up and running.
@@ -60,19 +60,20 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
         # Sending actual response.
         for i in range(3):
-            yield helloworld_pb2.HelloReply(message='Hello %s times %s' %
-                                            (request.name, i))
+            yield helloworld_pb2.HelloReply(
+                message="Hello %s times %s" % (request.name, i)
+            )
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-    server.add_insecure_port('[::]:50051')
+    server.add_insecure_port("[::]:50051")
     print("starting server")
     server.start()
     server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     serve()

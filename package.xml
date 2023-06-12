@@ -1189,6 +1189,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/if_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/linux/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.h" role="src" />
@@ -1227,6 +1228,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/type_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.h" role="src" />
@@ -1382,6 +1384,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />

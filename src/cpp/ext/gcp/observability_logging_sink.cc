@@ -119,7 +119,7 @@ std::string EventTypeToString(LoggingSink::Entry::EventType type) {
       return "SERVER_TRAILER";
     case LoggingSink::Entry::EventType::kCancel:
       return "CANCEL";
-    case LoggingSink::Entry::EventType::kUnkown:
+    case LoggingSink::Entry::EventType::kUnknown:
     default:
       return "EVENT_TYPE_UNKNOWN";
   }
@@ -131,7 +131,7 @@ std::string LoggerToString(LoggingSink::Entry::Logger type) {
       return "CLIENT";
     case LoggingSink::Entry::Logger::kServer:
       return "SERVER";
-    case LoggingSink::Entry::Logger::kUnkown:
+    case LoggingSink::Entry::Logger::kUnknown:
     default:
       return "LOGGER_UNKNOWN";
   }

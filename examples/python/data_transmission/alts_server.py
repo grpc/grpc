@@ -22,18 +22,19 @@ import grpc
 import demo_pb2_grpc
 from server import DemoServer
 
-SERVER_ADDRESS = 'localhost:23333'
+SERVER_ADDRESS = "localhost:23333"
 
 
 def main():
     svr = grpc.server(futures.ThreadPoolExecutor())
     demo_pb2_grpc.add_GRPCDemoServicer_to_server(DemoServer(), svr)
-    svr.add_secure_port(SERVER_ADDRESS,
-                        server_credentials=grpc.alts_server_credentials())
+    svr.add_secure_port(
+        SERVER_ADDRESS, server_credentials=grpc.alts_server_credentials()
+    )
     print("------------------start Python GRPC server with ALTS encryption")
     svr.start()
     svr.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
