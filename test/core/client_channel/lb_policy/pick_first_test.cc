@@ -120,7 +120,8 @@ TEST_F(PickFirstTest, FirstAddressWorks) {
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  absl::Status status = ApplyUpdate(BuildUpdate(kAddresses), lb_policy_.get());
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
@@ -155,7 +156,8 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  absl::Status status = ApplyUpdate(BuildUpdate(kAddresses), lb_policy_.get());
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
@@ -168,7 +170,8 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate();
@@ -179,7 +182,8 @@ TEST_F(PickFirstTest, FirstAddressFails) {
                                    absl::UnavailableError("failed to connect"));
   // The LB policy will start a connection attempt on the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
-  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -197,7 +201,8 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  absl::Status status = ApplyUpdate(BuildUpdate(kAddresses), lb_policy_.get());
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
@@ -262,26 +267,26 @@ TEST_F(PickFirstTest, WithShuffle) {
   // prevent flake test.
   constexpr size_t kMaxTries = 10;
   std::vector<absl::string_view> addresses_after_update;
-  for (size_t i = 0; i < kMaxTries; i++) {
+  bool shuffled = false;
+  for (size_t i = 0; i < kMaxTries; ++i) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
         absl::MakeConstSpan(kAddresses)) {
+      shuffled = true;
       break;
     }
   }
-  // Same elements, different order
-  ASSERT_THAT(addresses_after_update,
-              ::testing::Not(::testing::ElementsAreArray(kAddresses)));
+  ASSERT_TRUE(shuffled);
+  // All addresses are in the list, no duplicates
   ASSERT_THAT(addresses_after_update,
               ::testing::UnorderedElementsAreArray(kAddresses));
   // Address order should be stable between updates
   std::vector<absl::string_view> addresses_on_another_try;
   GetOrderAddressesArePicked(kAddresses, &addresses_on_another_try);
-  ASSERT_THAT(addresses_on_another_try,
-              ::testing::ContainerEq(addresses_after_update));
+  EXPECT_EQ(addresses_on_another_try, addresses_after_update);
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {

@@ -317,6 +317,11 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     status = args.addresses.status();
   } else if (args.addresses->empty()) {
     status = absl::UnavailableError("address list must not be empty");
+  } else {
+    auto config = static_cast<PickFirstConfig*>(args.config.get());
+    if (config->shuffle_addresses()) {
+      absl::c_shuffle(*args.addresses, bit_gen_);
+    }
   }
   // TODO(roth): This is a hack to disable outlier_detection when used
   // with pick_first, for the reasons described in
@@ -328,12 +333,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       addresses.emplace_back(address.WithAttribute(
           DisableOutlierDetectionAttribute::kName,
           std::make_unique<DisableOutlierDetectionAttribute>()));
-    }
-    if (args.config != nullptr) {
-      auto config = static_cast<PickFirstConfig*>(args.config.get());
-      if (config->shuffle_addresses()) {
-        absl::c_shuffle(addresses, bit_gen_);
-      }
     }
     args.addresses = std::move(addresses);
   }
