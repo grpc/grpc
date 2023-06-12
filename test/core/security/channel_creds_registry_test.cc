@@ -18,10 +18,10 @@
 
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
-#include "absl/types/optional.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 
