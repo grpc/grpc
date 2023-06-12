@@ -18,6 +18,8 @@
 
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
+#include "absl/types/optional.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -26,7 +28,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "test/core/util/test_config.h"
@@ -66,8 +67,10 @@ class ChannelCredsRegistryTest : public ::testing::Test {
 
   // Run a basic test for a given credential type.
   // type is the string identifying the type in the registry.
-  // credential_type is the resulting type of the actual channel creds object.
-  void TestCreds(absl::string_view type, UniqueTypeName credential_type,
+  // credential_type is the resulting type of the actual channel creds object;
+  // if nullopt, does not attempt to instantiate the credentials.
+  void TestCreds(absl::string_view type,
+                 absl::optional<UniqueTypeName> credential_type,
                  Json json = Json::FromObject({})) {
     EXPECT_TRUE(
         CoreConfiguration::Get().channel_creds_registry().IsSupported(type));
@@ -77,34 +80,32 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     EXPECT_TRUE(errors.ok()) << errors.message("unexpected errors");
     ASSERT_NE(config, nullptr);
     EXPECT_EQ(config->type(), type);
-    auto creds =
-        CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-            std::move(config));
-    ASSERT_NE(creds, nullptr);
-    UniqueTypeName actual_type = creds->type();
-    // If we get composite creds, unwrap them.
-    // (This happens for GoogleDefaultCreds.)
-    if (creds->type() == grpc_composite_channel_credentials::Type()) {
-      actual_type =
-          static_cast<grpc_composite_channel_credentials*>(creds.get())
-              ->inner_creds()
-              ->type();
+    if (credential_type.has_value()) {
+      auto creds =
+          CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
+              std::move(config));
+      ASSERT_NE(creds, nullptr);
+      UniqueTypeName actual_type = creds->type();
+      // If we get composite creds, unwrap them.
+      // (This happens for GoogleDefaultCreds.)
+      if (creds->type() == grpc_composite_channel_credentials::Type()) {
+        actual_type =
+            static_cast<grpc_composite_channel_credentials*>(creds.get())
+                ->inner_creds()
+                ->type();
+      }
+      EXPECT_EQ(actual_type, *credential_type)
+          << "Actual: " << actual_type.name()
+          << "\nExpected: " << credential_type->name();
     }
-    EXPECT_EQ(actual_type, credential_type)
-        << "Actual: " << actual_type.name()
-        << "\nExpected: " << credential_type.name();
   }
 };
 
-// Run this test on Linux only.
-// On Windows, GoogleDefaultCreds wants to read a file that doesn't
-// exist on kokoro.
-// On Mac, GoogleDefaultCreds is unuspported.
-#if GPR_LINUX
 TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
-  TestCreds("google_default", grpc_google_default_channel_credentials::Type());
+  // Don't actually instantiate the credentials, since that fails in
+  // some environments.
+  TestCreds("google_default", absl::nullopt);
 }
-#endif  // GPR_LINUX
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {
   TestCreds("insecure", InsecureCredentials::Type());
