@@ -175,6 +175,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->watchers_.insert(orca_watcher_.get());
       }
 
+      void CancelDataWatcher(DataWatcherInterface* watcher) override {
+        MutexLock lock(&state_->backend_metric_watcher_mu_);
+        if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
+        state_->watchers_.erase(orca_watcher_.get());
+        orca_watcher_.reset();
+      }
+
       // Don't need this method, so it's a no-op.
       void ResetBackoff() override {}
 

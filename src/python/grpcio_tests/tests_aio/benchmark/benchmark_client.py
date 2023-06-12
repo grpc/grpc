@@ -30,59 +30,78 @@ from tests.unit import resources
 
 
 class GenericStub(object):
-
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
-            '/grpc.testing.BenchmarkService/UnaryCall')
+            "/grpc.testing.BenchmarkService/UnaryCall"
+        )
         self.StreamingFromServer = channel.unary_stream(
-            '/grpc.testing.BenchmarkService/StreamingFromServer')
+            "/grpc.testing.BenchmarkService/StreamingFromServer"
+        )
         self.StreamingCall = channel.stream_stream(
-            '/grpc.testing.BenchmarkService/StreamingCall')
+            "/grpc.testing.BenchmarkService/StreamingCall"
+        )
 
 
 class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
 
-    def __init__(self, address: str, config: control_pb2.ClientConfig,
-                 hist: histogram.Histogram):
+    def __init__(
+        self,
+        address: str,
+        config: control_pb2.ClientConfig,
+        hist: histogram.Histogram,
+    ):
         # Disables underlying reuse of subchannels
-        unique_option = (('iv', random.random()),)
+        unique_option = (("iv", random.random()),)
 
         # Parses the channel argument from config
         channel_args = tuple(
-            (arg.name, arg.str_value) if arg.HasField('str_value') else (
-                arg.name, int(arg.int_value)) for arg in config.channel_args)
+            (arg.name, arg.str_value)
+            if arg.HasField("str_value")
+            else (arg.name, int(arg.int_value))
+            for arg in config.channel_args
+        )
 
         # Creates the channel
-        if config.HasField('security_params'):
+        if config.HasField("security_params"):
             channel_credentials = grpc.ssl_channel_credentials(
-                resources.test_root_certificates(),)
-            server_host_override_option = ((
-                'grpc.ssl_target_name_override',
-                config.security_params.server_host_override,
-            ),)
+                resources.test_root_certificates(),
+            )
+            server_host_override_option = (
+                (
+                    "grpc.ssl_target_name_override",
+                    config.security_params.server_host_override,
+                ),
+            )
             self._channel = aio.secure_channel(
-                address, channel_credentials,
-                unique_option + channel_args + server_host_override_option)
+                address,
+                channel_credentials,
+                unique_option + channel_args + server_host_override_option,
+            )
         else:
-            self._channel = aio.insecure_channel(address,
-                                                 options=unique_option +
-                                                 channel_args)
+            self._channel = aio.insecure_channel(
+                address, options=unique_option + channel_args
+            )
 
         # Creates the stub
-        if config.payload_config.WhichOneof('payload') == 'simple_params':
+        if config.payload_config.WhichOneof("payload") == "simple_params":
             self._generic = False
             self._stub = benchmark_service_pb2_grpc.BenchmarkServiceStub(
-                self._channel)
+                self._channel
+            )
             payload = messages_pb2.Payload(
-                body=b'\0' * config.payload_config.simple_params.req_size)
+                body=b"\0" * config.payload_config.simple_params.req_size
+            )
             self._request = messages_pb2.SimpleRequest(
                 payload=payload,
-                response_size=config.payload_config.simple_params.resp_size)
+                response_size=config.payload_config.simple_params.resp_size,
+            )
         else:
             self._generic = True
             self._stub = GenericStub(self._channel)
-            self._request = b'\0' * config.payload_config.bytebuf_params.req_size
+            self._request = (
+                b"\0" * config.payload_config.bytebuf_params.req_size
+            )
 
         self._hist = hist
         self._response_callbacks = []
@@ -99,9 +118,12 @@ class BenchmarkClient(abc.ABC):
 
 
 class UnaryAsyncBenchmarkClient(BenchmarkClient):
-
-    def __init__(self, address: str, config: control_pb2.ClientConfig,
-                 hist: histogram.Histogram):
+    def __init__(
+        self,
+        address: str,
+        config: control_pb2.ClientConfig,
+        hist: histogram.Histogram,
+    ):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()
@@ -129,9 +151,12 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
 
 
 class StreamingAsyncBenchmarkClient(BenchmarkClient):
-
-    def __init__(self, address: str, config: control_pb2.ClientConfig,
-                 hist: histogram.Histogram):
+    def __init__(
+        self,
+        address: str,
+        config: control_pb2.ClientConfig,
+        hist: histogram.Histogram,
+    ):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()
@@ -159,9 +184,12 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
 
 class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
-
-    def __init__(self, address: str, config: control_pb2.ClientConfig,
-                 hist: histogram.Histogram):
+    def __init__(
+        self,
+        address: str,
+        config: control_pb2.ClientConfig,
+        hist: histogram.Histogram,
+    ):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()
@@ -177,7 +205,8 @@ class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
         await super().run()
         self._running = True
         senders = (
-            self._one_server_streaming_call() for _ in range(self._concurrency))
+            self._one_server_streaming_call() for _ in range(self._concurrency)
+        )
         await asyncio.gather(*senders)
         self._stopped.set()
 

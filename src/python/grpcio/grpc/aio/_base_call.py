@@ -30,7 +30,7 @@ from ._typing import EOFType
 from ._typing import RequestType
 from ._typing import ResponseType
 
-__all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
+__all__ = "RpcContext", "Call", "UnaryUnaryCall", "UnaryStreamCall"
 
 
 class RpcContext(metaclass=ABCMeta):
@@ -135,9 +135,9 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
 
-class UnaryUnaryCall(Generic[RequestType, ResponseType],
-                     Call,
-                     metaclass=ABCMeta):
+class UnaryUnaryCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
@@ -149,10 +149,9 @@ class UnaryUnaryCall(Generic[RequestType, ResponseType],
         """
 
 
-class UnaryStreamCall(Generic[RequestType, ResponseType],
-                      Call,
-                      metaclass=ABCMeta):
-
+class UnaryStreamCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.
@@ -176,10 +175,9 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
         """
 
 
-class StreamUnaryCall(Generic[RequestType, ResponseType],
-                      Call,
-                      metaclass=ABCMeta):
-
+class StreamUnaryCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
@@ -205,10 +203,9 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
         """
 
 
-class StreamStreamCall(Generic[RequestType, ResponseType],
-                       Call,
-                       metaclass=ABCMeta):
-
+class StreamStreamCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.

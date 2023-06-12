@@ -34,9 +34,12 @@ _LOGGER = logging.getLogger(__name__)
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        future = stub.Find.future(hash_name_pb2.HashNameRequest(
-            desired_name=name, ideal_hamming_distance=ideal_distance),
-                                  wait_for_ready=True)
+        future = stub.Find.future(
+            hash_name_pb2.HashNameRequest(
+                desired_name=name, ideal_hamming_distance=ideal_distance
+            ),
+            wait_for_ready=True,
+        )
 
         def cancel_request(unused_signum, unused_frame):
             future.cancel()
@@ -47,15 +50,19 @@ def run_unary_client(server_target, name, ideal_distance):
         print(result)
 
 
-def run_streaming_client(server_target, name, ideal_distance,
-                         interesting_distance):
+def run_streaming_client(
+    server_target, name, ideal_distance, interesting_distance
+):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        result_generator = stub.FindRange(hash_name_pb2.HashNameRequest(
-            desired_name=name,
-            ideal_hamming_distance=ideal_distance,
-            interesting_hamming_distance=interesting_distance),
-                                          wait_for_ready=True)
+        result_generator = stub.FindRange(
+            hash_name_pb2.HashNameRequest(
+                desired_name=name,
+                ideal_hamming_distance=ideal_distance,
+                interesting_hamming_distance=interesting_distance,
+            ),
+            wait_for_ready=True,
+        )
 
         def cancel_request(unused_signum, unused_frame):
             result_generator.cancel()
@@ -68,29 +75,36 @@ def run_streaming_client(server_target, name, ideal_distance,
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument("name", type=str, help='The desired name.')
-    parser.add_argument("--ideal-distance",
-                        default=0,
-                        nargs='?',
-                        type=int,
-                        help="The desired Hamming distance.")
-    parser.add_argument('--server',
-                        default='localhost:50051',
-                        type=str,
-                        nargs='?',
-                        help='The host-port pair at which to reach the server.')
+    parser.add_argument("name", type=str, help="The desired name.")
     parser.add_argument(
-        '--show-inferior',
+        "--ideal-distance",
+        default=0,
+        nargs="?",
+        type=int,
+        help="The desired Hamming distance.",
+    )
+    parser.add_argument(
+        "--server",
+        default="localhost:50051",
+        type=str,
+        nargs="?",
+        help="The host-port pair at which to reach the server.",
+    )
+    parser.add_argument(
+        "--show-inferior",
         default=None,
         type=int,
-        nargs='?',
-        help='Also show candidates with a Hamming distance less than this value.'
+        nargs="?",
+        help=(
+            "Also show candidates with a Hamming distance less than this value."
+        ),
     )
 
     args = parser.parse_args()
     if args.show_inferior is not None:
-        run_streaming_client(args.server, args.name, args.ideal_distance,
-                             args.show_inferior)
+        run_streaming_client(
+            args.server, args.name, args.ideal_distance, args.show_inferior
+        )
     else:
         run_unary_client(args.server, args.name, args.ideal_distance)
 
