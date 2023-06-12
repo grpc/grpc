@@ -96,6 +96,17 @@ EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
   return std::chrono::seconds(1);
 }
 
+bool IsIpv6LoopbackAvailable() {
+#ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
+  return PosixSocketWrapper::IsIpv6LoopbackAvailable();
+#elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  // TODO(yijiem): make this portable for Windows
+  return true;
+#else
+#error "Unsupported platform"
+#endif
+}
+
 struct QueryArg {
   QueryArg(AresResolver* ar, int id, absl::string_view name)
       : ares_resolver(ar), callback_map_id(id), qname(name) {}
@@ -146,6 +157,7 @@ absl::Status AresResolver::Initialize(absl::string_view dns_server) {
         status, absl::StrCat("Failed to init ares channel. c-ares error: ",
                              ares_strerror(status)));
   }
+  event_engine_grpc_ares_test_only_inject_config(channel_);
   if (!dns_server.empty()) {
     absl::Status status = SetRequestDNSServer(dns_server);
     if (!status.ok()) {
@@ -621,22 +633,25 @@ void HostnameQuery::Lookup(
     return;
   }
   on_resolve_ = std::move(on_resolve);
-  pending_requests_ = 2;
+  pending_requests_ = 1;
+  if (IsIpv6LoopbackAvailable()) {
+    ++pending_requests_;
+    ares_resolver_->LookupHostname(
+        host, port, AF_INET6,
+        [self = Ref(DEBUG_LOCATION, "AAAA query")](
+            absl::StatusOr<AresResolver::Result> result_or) {
+          if (result_or.ok()) {
+            GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
+            auto result = absl::get<Result>(*result_or);
+            self->MaybeOnResolve(std::move(result));
+          } else {
+            self->MaybeOnResolve(result_or.status());
+          }
+        });
+  }
   ares_resolver_->LookupHostname(
       host, port, AF_INET,
       [self = Ref(DEBUG_LOCATION, "A query")](
-          absl::StatusOr<AresResolver::Result> result_or) {
-        if (result_or.ok()) {
-          GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
-          auto result = absl::get<Result>(*result_or);
-          self->MaybeOnResolve(std::move(result));
-        } else {
-          self->MaybeOnResolve(result_or.status());
-        }
-      });
-  ares_resolver_->LookupHostname(
-      host, port, AF_INET6,
-      [self = Ref(DEBUG_LOCATION, "AAAA query")](
           absl::StatusOr<AresResolver::Result> result_or) {
         if (result_or.ok()) {
           GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
@@ -805,5 +820,10 @@ void TXTQuery::Lookup(absl::string_view name,
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+void noop_inject_channel_config(ares_channel /*channel*/) {}
+
+void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel channel) =
+    noop_inject_channel_config;
 
 #endif  // GRPC_ARES == 1

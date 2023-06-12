@@ -108,7 +108,7 @@ bool IsIpv6LoopbackAvailable() {
   return PosixSocketWrapper::IsIpv6LoopbackAvailable();
 #elif defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   // TODO(yijiem): make this portable for Windows
-  return false;
+  return true;
 #else
 #error "Unsupported platform"
 #endif
