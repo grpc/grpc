@@ -504,6 +504,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
   void HandleRead(absl::Status status);
+  bool HandleReadLocked(absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void MaybeMakeReadSlices() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   bool TcpDoRead(absl::Status& status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void FinishEstimate();
