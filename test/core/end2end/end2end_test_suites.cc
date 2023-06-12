@@ -21,6 +21,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <random>
 #include <regex>
 #include <string>
 #include <utility>
@@ -85,7 +86,7 @@ namespace grpc_core {
 
 namespace {
 
-std::atomic<int> unique{0};
+std::atomic<uint64_t> unique{std::random_device()()};
 
 void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
@@ -568,7 +569,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix-abstract:grpc_fullstack_test.%%00.%d.%" PRId64
-                      ".%" PRId32 ".%d",
+                      ".%" PRId32 ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
                       unique.fetch_add(1, std::memory_order_relaxed)),
                   UDS);
@@ -611,7 +612,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix:/tmp/grpc_fullstack_test.%%25.%d.%" PRId64
-                      ".%" PRId32 ".%d",
+                      ".%" PRId32 ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
                       unique.fetch_add(1, std::memory_order_relaxed)),
                   UDS);
@@ -628,7 +629,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                      ".%d",
+                      ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
                       unique.fetch_add(1, std::memory_order_relaxed)),
                   UDS);
@@ -846,7 +847,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
               return std::make_unique<InsecureFixture>(absl::StrFormat(
                   "unix-abstract:grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                  ".%d",
+                  ".%" PRId64,
                   getpid(), now.tv_sec, now.tv_nsec,
                   unique.fetch_add(1, std::memory_order_relaxed)));
             }},
@@ -860,7 +861,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             [](const ChannelArgs&, const ChannelArgs&) {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
               return std::make_unique<InsecureFixture>(absl::StrFormat(
-                  "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d",
+                  "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
+                  ".%" PRId64,
                   getpid(), now.tv_sec, now.tv_nsec,
                   unique.fetch_add(1, std::memory_order_relaxed)));
             }},
