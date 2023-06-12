@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -63,6 +64,7 @@ class HostnameQuery : public grpc_core::RefCounted<HostnameQuery> {
               EventEngine::DNSResolver::LookupHostnameCallback on_resolve);
 
  private:
+  void MaybeOnResolve(absl::StatusOr<Result> result_or);
   void LogResolvedAddressesListLocked(absl::string_view input_output_str);
   void MaybeSortResolvedAddresses();
 
@@ -148,8 +150,10 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
 
   absl::Status SetRequestDNSServer(absl::string_view dns_server);
   void WorkLocked();
+  void MaybeStartTimerLocked();
   void OnReadable(FdNode* fd_node, absl::Status status);
   void OnWritable(FdNode* fd_node, absl::Status status);
+  void OnAresBackupPollAlarm();
 
   void LookupHostname(
       absl::string_view name, int port, int family,
@@ -175,6 +179,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   absl::flat_hash_map<
       int, absl::AnyInvocable<void(absl::StatusOr<AresResolver::Result>)>>
       callback_map_;
+  absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_;
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   EventEngine* event_engine_;
 };

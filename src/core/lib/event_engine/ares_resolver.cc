@@ -13,9 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "ares_resolver.h"
-
 #include "src/core/lib/event_engine/ares_resolver.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1
@@ -89,6 +88,14 @@ bool IsDefaultStatusOr(const absl::StatusOr<T>& status_or) {
          status_or.status().message().empty();
 }
 
+EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
+  // An alternative here could be to use ares_timeout to try to be more
+  // accurate, but that would require using "struct timeval"'s, which just
+  // makes things a bit more complicated. So just poll every second, as
+  // suggested by the c-ares code comments.
+  return std::chrono::seconds(1);
+}
+
 struct QueryArg {
   QueryArg(AresResolver* ar, int id, absl::string_view name)
       : ares_resolver(ar), callback_map_id(id), qname(name) {}
@@ -153,6 +160,10 @@ void AresResolver::Orphan() {
   {
     grpc_core::MutexLock lock(&mutex_);
     shutting_down_ = true;
+    if (ares_backup_poll_alarm_handle_.has_value()) {
+      event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
+      ares_backup_poll_alarm_handle_.reset();
+    }
     for (const auto& fd_node : fd_node_list_) {
       if (!fd_node->already_shutdown) {
         GRPC_ARES_RESOLVER_TRACE_LOG("request: %p shutdown fd: %s", this,
@@ -269,6 +280,24 @@ void AresResolver::WorkLocked() {
   fd_node_list_ = std::move(new_list);
 }
 
+void AresResolver::MaybeStartTimerLocked() {
+  if (ares_backup_poll_alarm_handle_.has_value()) {
+    return;
+  }
+  // Initialize the backup poll alarm
+  EventEngine::Duration next_ares_backup_poll_alarm_duration =
+      calculate_next_ares_backup_poll_alarm_duration();
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "request:%p StartTimers next ares process poll time in %zu ms", this,
+      Milliseconds(next_ares_backup_poll_alarm_duration));
+
+  ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
+      next_ares_backup_poll_alarm_duration,
+      [self = Ref(DEBUG_LOCATION, "MaybeStartTimerLocked")]() {
+        self->OnAresBackupPollAlarm();
+      });
+}
+
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
   GPR_ASSERT(fd_node->readable_registered);
@@ -309,6 +338,40 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
   WorkLocked();
 }
 
+// In case of non-responsive DNS servers, dropped packets, etc., c-ares has
+// intelligent timeout and retry logic, which we can take advantage of by
+// polling ares_process_fd on time intervals. Overall, the c-ares library is
+// meant to be called into and given a chance to proceed name resolution:
+//   a) when fd events happen
+//   b) when some time has passed without fd events having happened
+// For the latter, we use this backup poller. Also see
+// https://github.com/grpc/grpc/pull/17688 description for more details.
+void AresResolver::OnAresBackupPollAlarm() {
+  grpc_core::MutexLock lock(&mutex_);
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
+      shutting_down_);
+  if (!shutting_down_) {
+    for (const auto& fd_node : fd_node_list_) {
+      if (!fd_node->already_shutdown) {
+        GRPC_ARES_RESOLVER_TRACE_LOG(
+            "request:%p OnAresBackupPollAlarm; ares_process_fd. fd=%s", this,
+            fd_node->polled_fd->GetName());
+        ares_socket_t as = fd_node->polled_fd->GetWrappedAresSocketLocked();
+        ares_process_fd(channel_, as, as);
+      }
+    }
+    EventEngine::Duration next_ares_backup_poll_alarm_duration =
+        calculate_next_ares_backup_poll_alarm_duration();
+    ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
+        next_ares_backup_poll_alarm_duration,
+        [self = Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm")]() {
+          self->OnAresBackupPollAlarm();
+        });
+    WorkLocked();
+  }
+}
+
 void AresResolver::LookupHostname(
     absl::string_view name, int port, int family,
     absl::AnyInvocable<void(absl::StatusOr<AresResolver::Result>)> callback) {
@@ -320,6 +383,7 @@ void AresResolver::LookupHostname(
                      &AresResolver::OnHostbynameDoneLocked,
                      static_cast<void*>(resolver_arg));
   WorkLocked();
+  MaybeStartTimerLocked();
 }
 
 void AresResolver::LookupSRV(
@@ -333,6 +397,7 @@ void AresResolver::LookupSRV(
              &AresResolver::OnSRVQueryDoneLocked,
              static_cast<void*>(resolver_arg));
   WorkLocked();
+  MaybeStartTimerLocked();
 }
 
 void AresResolver::LookupTXT(
@@ -345,6 +410,7 @@ void AresResolver::LookupTXT(
   ares_search(channel_, std::string(name).c_str(), ns_c_in, ns_t_txt,
               &AresResolver::OnTXTDoneLocked, static_cast<void*>(resolver_arg));
   WorkLocked();
+  MaybeStartTimerLocked();
 }
 
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
@@ -560,68 +626,54 @@ void HostnameQuery::Lookup(
       host, port, AF_INET,
       [self = Ref(DEBUG_LOCATION, "A query")](
           absl::StatusOr<AresResolver::Result> result_or) {
-        bool done = false;
-        {
-          grpc_core::MutexLock lock(&self->mutex_);
-          if (--self->pending_requests_ == 0) {
-            // This is the last one.
-            done = true;
-          }
-          if (!result_or.ok()) {
-            if (IsDefaultStatusOr(self->result_)) {
-              // Sets with first error.
-              self->result_ = result_or.status();
-            }
-          } else {
-            GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
-            auto result = absl::get<Result>(*result_or);
-            if (self->result_.ok()) {
-              self->result_->insert(self->result_->end(), result.begin(),
-                                    result.end());
-            } else {
-              // Overrides the existing error.
-              self->result_ = std::move(result);
-            }
-          }
-        }
-        if (done) {
-          self->MaybeSortResolvedAddresses();
-          self->on_resolve_(std::move(self->result_));
+        if (result_or.ok()) {
+          GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
+          auto result = absl::get<Result>(*result_or);
+          self->MaybeOnResolve(std::move(result));
+        } else {
+          self->MaybeOnResolve(result_or.status());
         }
       });
   ares_resolver_->LookupHostname(
       host, port, AF_INET6,
       [self = Ref(DEBUG_LOCATION, "AAAA query")](
           absl::StatusOr<AresResolver::Result> result_or) {
-        bool done = false;
-        {
-          grpc_core::MutexLock lock(&self->mutex_);
-          if (--self->pending_requests_ == 0) {
-            // This is the last one.
-            done = true;
-          }
-          if (!result_or.ok()) {
-            if (IsDefaultStatusOr(self->result_)) {
-              // Sets with first error.
-              self->result_ = result_or.status();
-            }
-          } else {
-            GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
-            auto result = absl::get<Result>(*result_or);
-            if (self->result_.ok()) {
-              self->result_->insert(self->result_->end(), result.begin(),
-                                    result.end());
-            } else {
-              // Overrides the existing error.
-              self->result_ = std::move(result);
-            }
-          }
-        }
-        if (done) {
-          self->MaybeSortResolvedAddresses();
-          self->on_resolve_(std::move(self->result_));
+        if (result_or.ok()) {
+          GPR_ASSERT(absl::holds_alternative<Result>(*result_or));
+          auto result = absl::get<Result>(*result_or);
+          self->MaybeOnResolve(std::move(result));
+        } else {
+          self->MaybeOnResolve(result_or.status());
         }
       });
+}
+
+void HostnameQuery::MaybeOnResolve(absl::StatusOr<Result> result_or) {
+  bool done = false;
+  {
+    grpc_core::MutexLock lock(&mutex_);
+    if (--pending_requests_ == 0) {
+      // This is the last one.
+      done = true;
+    }
+    if (!result_or.ok()) {
+      if (IsDefaultStatusOr(result_)) {
+        // Sets with first error.
+        result_ = result_or.status();
+      }
+    } else {
+      if (result_.ok()) {
+        result_->insert(result_->end(), result_or->begin(), result_or->end());
+      } else {
+        // Overrides the existing error.
+        result_ = std::move(*result_or);
+      }
+    }
+  }
+  if (done) {
+    MaybeSortResolvedAddresses();
+    on_resolve_(std::move(result_));
+  }
 }
 
 void HostnameQuery::LogResolvedAddressesListLocked(
