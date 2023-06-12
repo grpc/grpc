@@ -225,14 +225,23 @@ static void Init_grpc_time_consts() {
 }
 
 #if GPR_WINDOWS
-static void grpc_ruby_set_init_pid(void) {}
+static void grpc_ruby_basic_init(void) {}
 static bool grpc_ruby_forked_after_init(void) { return false; }
 #else
 static pid_t grpc_init_pid;
+static bool enable_fork_support;
 
-static void grpc_ruby_set_init_pid(void) {
+static void grpc_ruby_basic_init(void) {
   GPR_ASSERT(grpc_init_pid == 0);
   grpc_init_pid = getpid();
+  // TODO(apolcyn): ideally, we should share logic with C-core
+  // for determining whether or not fork support is enabled, rather
+  // than parsing the environment variable ourselves.
+  const char* res = getenv("GRPC_ENABLE_FORK_SUPPORT");
+  if (res != NULL && strcmp(res, "1") == 0) {
+    enable_fork_support = true;
+  }
+  fprintf(stderr, "result of fork support check: |%s|\n", res);
 }
 
 static bool grpc_ruby_forked_after_init(void) {
@@ -260,8 +269,9 @@ VALUE sym_metadata = Qundef;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 
 void grpc_ruby_fork_guard() {
+  if (enable_fork_support) return;
   if (grpc_ruby_forked_after_init()) {
-    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking");
+    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking unless the GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the platform supports it");
   }
 }
 
@@ -285,7 +295,8 @@ static void grpc_ruby_init_threads() {
 static int64_t g_grpc_ruby_init_count;
 
 void grpc_ruby_init() {
-  gpr_once_init(&g_once_init, grpc_ruby_set_init_pid);
+  fprintf(stderr, "apolcyn in grpc ruby init\n");
+  gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   grpc_init();
   grpc_ruby_init_threads();
   // (only gpr_log after logging has been initialized)
