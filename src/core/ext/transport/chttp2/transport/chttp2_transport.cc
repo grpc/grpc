@@ -38,6 +38,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "internal.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -1167,6 +1168,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             grpc_core::StatusToString(t->goaway_error).c_str());
   }
   if (t->is_client) {
+    cancel_pings(t, t->goaway_error);
     cancel_unstarted_streams(t, t->goaway_error);
     // Cancel all unseen streams
     grpc_chttp2_stream_map_for_each(
@@ -1648,6 +1650,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
+  GRPC_CHTTP2_IF_TRACING(
+      gpr_log(GPR_INFO, "%p CANCEL PINGS: %s", t, error.ToString().c_str()));
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
@@ -2976,8 +2980,9 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const absl::Status& status,
                                    const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(
-      gpr_log(GPR_INFO, "transport %p set connectivity_state=%d", t, state));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(
+      GPR_INFO, "transport %p set connectivity_state=%d; status=%s; reason=%s",
+      t, state, status.ToString().c_str(), reason));
   t->state_tracker.SetState(state, status, reason);
 }
 
