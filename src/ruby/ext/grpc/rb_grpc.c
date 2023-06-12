@@ -303,6 +303,19 @@ void grpc_ruby_shutdown() {
       g_grpc_ruby_init_count--);
 }
 
+// fork APIs
+static VALUE grpc_rb_prefork(VALUE self) {
+  return Qnil;
+}
+
+static VALUE grpc_rb_postfork_child(VALUE self) {
+  return Qnil;
+}
+
+static VALUE grpc_rb_postfork_parent(VALUE self) {
+  return Qnil;
+}
+
 void Init_grpc_c() {
   if (!grpc_rb_load_core()) {
     rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
@@ -320,7 +333,7 @@ void Init_grpc_c() {
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));
   sym_metadata = ID2SYM(rb_intern("metadata"));
-
+  // init C-defined classes
   Init_grpc_channel();
   Init_grpc_call();
   Init_grpc_call_credentials();
@@ -331,4 +344,11 @@ void Init_grpc_c() {
   Init_grpc_xds_server_credentials();
   Init_grpc_time_consts();
   Init_grpc_compression_options();
+  // define fork APIs
+  rb_define_method(grpc_rb_mGRPC, "prefork",
+                   grpc_rb_prefork, 0);
+  rb_define_method(grpc_rb_mGRPC, "postfork_child",
+                   grpc_rb_postfork_child, 0);
+  rb_define_method(grpc_rb_mGRPC, "postfork_parent",
+                   grpc_rb_postfork_parent, 0);
 }
