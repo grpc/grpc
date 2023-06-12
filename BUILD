@@ -822,7 +822,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
-        "//src/core:grpc_resolver_dns_plugin",
+        # "//src/core:grpc_resolver_dns_plugin",
     ],
 )
 

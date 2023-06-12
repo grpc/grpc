@@ -23,19 +23,86 @@
 #include <variant>
 #include <vector>
 
+#include <ares.h>
+
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
-#include "src/core/lib/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
+
+extern grpc_core::TraceFlag grpc_trace_ares_resolver;
+
+#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                            \
+  do {                                                                       \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {                 \
+      gpr_log(GPR_INFO, "(EventEngine ares_resolver) " format, __VA_ARGS__); \
+    }                                                                        \
+  } while (0)
+
+class AresResolver;
+
+class HostnameQuery : public grpc_core::RefCounted<HostnameQuery> {
+ public:
+  using Result = std::vector<EventEngine::ResolvedAddress>;
+
+  HostnameQuery(EventEngine* event_engine, AresResolver* ares_resolver);
+
+  void Lookup(absl::string_view name, absl::string_view default_port,
+              EventEngine::DNSResolver::LookupHostnameCallback on_resolve);
+
+ private:
+  void LogResolvedAddressesListLocked(absl::string_view input_output_str);
+  void MaybeSortResolvedAddresses();
+
+  grpc_core::Mutex mutex_;
+  EventEngine* event_engine_;
+  AresResolver* ares_resolver_;
+  int pending_requests_ = 0;
+  absl::StatusOr<Result> result_;
+  EventEngine::DNSResolver::LookupHostnameCallback on_resolve_;
+};
+
+class SRVQuery : public grpc_core::RefCounted<SRVQuery> {
+ public:
+  using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
+
+  SRVQuery(EventEngine* event_engine, AresResolver* ares_resolver);
+
+  void Lookup(absl::string_view name,
+              EventEngine::DNSResolver::LookupSRVCallback on_resolve);
+
+ private:
+  EventEngine* event_engine_;
+  AresResolver* ares_resolver_;
+  EventEngine::DNSResolver::LookupSRVCallback on_resolve_;
+};
+
+class TXTQuery : public grpc_core::RefCounted<TXTQuery> {
+ public:
+  using Result = std::vector<std::string>;
+
+  TXTQuery(EventEngine* event_engine, AresResolver* ares_resolver);
+
+  void Lookup(absl::string_view name,
+              EventEngine::DNSResolver::LookupTXTCallback on_resolve);
+
+ private:
+  EventEngine* event_engine_;
+  AresResolver* ares_resolver_;
+  EventEngine::DNSResolver::LookupTXTCallback on_resolve_;
+};
 
 class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
  public:
@@ -44,17 +111,18 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                                std::vector<std::string>>;
 
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               EventEngine* event_engine)
-      : polled_fd_factory_(std::move(polled_fd_factory)),
-        event_engine_(event_engine) {}
+               EventEngine* event_engine);
 
-  bool Initialize(absl::string_view dns_server);
-  void Lookup(LookupType type, absl::string_view name,
-              absl::AnyInvocable<void(absl::StatusOr<Result>)> on_complete);
+  ~AresResolver() override;
 
+  absl::Status Initialize(absl::string_view dns_server);
   void Orphan() override;
 
  private:
+  friend class HostnameQuery;
+  friend class SRVQuery;
+  friend class TXTQuery;
+
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
   // GrpcPolledFd object which has a platform-agnostic interface to interact
   // with the poller. The liveness of the socket means that c-ares needs us to
@@ -78,13 +146,18 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   };
   using FdNodeList = std::list<std::unique_ptr<FdNode>>;
 
-  friend class GrpcPolledFdFactory;
-
   absl::Status SetRequestDNSServer(absl::string_view dns_server);
   void WorkLocked();
   void OnReadable(FdNode* fd_node, absl::Status status);
   void OnWritable(FdNode* fd_node, absl::Status status);
 
+  void LookupHostname(
+      absl::string_view name, int port, int family,
+      absl::AnyInvocable<void(absl::StatusOr<Result>)> callback);
+  void LookupSRV(absl::string_view name,
+                 absl::AnyInvocable<void(absl::StatusOr<Result>)> callback);
+  void LookupTXT(absl::string_view name,
+                 absl::AnyInvocable<void(absl::StatusOr<Result>)> callback);
   static void OnHostbynameDoneLocked(void* arg, int status, int /*timeouts*/,
                                      struct hostent* hostent);
   static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
@@ -95,60 +168,15 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
  private:
   grpc_core::Mutex mutex_;
   bool initialized_ = false;
-  bool done_ = false;
+  bool shutting_down_ = false;
   ares_channel channel_;
   FdNodeList fd_node_list_;
+  int id_ = 0;
+  absl::flat_hash_map<
+      int, absl::AnyInvocable<void(absl::StatusOr<AresResolver::Result>)>>
+      callback_map_;
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   EventEngine* event_engine_;
-};
-
-class HostnameQuery : public grpc_core::RefCounted<HostnameQuery> {
- public:
-  using Result = std::vector<EventEngine::ResolvedAddress>;
-
-  HostnameQuery(EventEngine* event_engine, AresResolver* ares_resolver)
-      : event_engine_(event_engine), ares_resolver_(ares_resolver) {}
-
-  void Lookup(absl::string_view name, absl::string_view default_port,
-              LookupHostnameCallback on_resolve);
-
- private:
-  grpc_core::Mutex mutex_;
-  EventEngine* event_engine_;
-  AresResolver* ares_resolver_;
-  int pending_requests_ = 0;
-  absl::StatusOr<Result> result_;
-  LookupHostnameCallback on_resolve_;
-};
-
-class SRVQuery : public grpc_core::RefCounted<SRVQuery> {
- public:
-  using Result = std::vector<EventEngine::DNSResolver::SRVRecord>;
-
-  SRVQuery(EventEngine* event_engine, AresResolver* ares_resolver)
-      : event_engine_(event_engine), ares_resolver_(ares_resolver) {}
-
-  void Lookup(absl::string_view name, LookupSRVCallback on_resolve);
-
- private:
-  EventEngine* event_engine_;
-  AresResolver* ares_resolver_;
-  LookupSRVCallback on_resolve_;
-};
-
-class TXTQuery : public grpc_core::RefCounted<TXTQuery> {
- public:
-  using Result = std::vector<std::string>;
-
-  TXTQuery(EventEngine* event_engine, AresResolver* ares_resolver)
-      : event_engine_(event_engine), ares_resolver_(ares_resolver) {}
-
-  void Lookup(absl::string_view name, LookupTXTCallback on_resolve);
-
- private:
-  EventEngine* event_engine_;
-  AresResolver* ares_resolver_;
-  LookupTXTCallback on_resolve_;
 };
 
 }  // namespace experimental

@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/grpc_ares_wrapper.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -499,9 +498,9 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     std::shared_ptr<EventEngine> event_engine)
     : options_(options),
       event_engine_(std::move(event_engine)),
-      poller_(poller),
       ares_resolver_(grpc_core::MakeOrphanable<AresResolver>(
-          std::make_unique<GrpcPolledFdFactoryPosix>(poller), event_engine)) {}
+          std::make_unique<GrpcPolledFdFactoryPosix>(poller),
+          event_engine_.get())) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   // The DNSResolver is held alive by its caller (e.g.

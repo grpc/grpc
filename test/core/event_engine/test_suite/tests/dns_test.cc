@@ -272,8 +272,7 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
         EXPECT_STATUS(result, kNotFound);
         dns_resolver_signal_.Notify();
       },
-      "nonexisting-target.dns-test.event-engine.", /*default_port=*/"443",
-      std::chrono::seconds(5));
+      "nonexisting-target.dns-test.event-engine.", /*default_port=*/"443");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -291,7 +290,7 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
         dns_resolver_signal_.Notify();
       },
       "4.3.2.1:1234",
-      /*default_port=*/"", std::chrono::seconds(5));
+      /*default_port=*/"");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -315,7 +314,7 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
         dns_resolver_signal_.Notify();
       },
       "ipv4-only-multi-target.dns-test.event-engine.",
-      /*default_port=*/"443", std::chrono::seconds(5));
+      /*default_port=*/"443");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -344,7 +343,7 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
         dns_resolver_signal_.Notify();
       },
       "ipv6-only-multi-target.dns-test.event-engine.:443",
-      /*default_port=*/"", std::chrono::seconds(5));
+      /*default_port=*/"");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -367,7 +366,7 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
         dns_resolver_signal_.Notify();
       },
       "ipv6-loopback-preferred-target.dns-test.event-engine.:1234",
-      /*default_port=*/"", std::chrono::seconds(5));
+      /*default_port=*/"");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -390,8 +389,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
         EXPECT_THAT(*result, Pointwise(SRVRecordEq(), kExpectedRecords));
         dns_resolver_signal_.Notify();
       },
-      "_grpclb._tcp.srv-multi-target.dns-test.event-engine.",
-      std::chrono::seconds(5));
+      "_grpclb._tcp.srv-multi-target.dns-test.event-engine.");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -403,7 +401,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
         EXPECT_STATUS(result, kUnknown);
         dns_resolver_signal_.Notify();
       },
-      "localhost:1000", std::chrono::seconds(5));
+      "localhost:1000");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -431,8 +429,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
         EXPECT_THAT(*result, ElementsAre(kExpectedRecord));
         dns_resolver_signal_.Notify();
       },
-      "_grpc_config.simple-service.dns-test.event-engine.",
-      std::chrono::seconds(5));
+      "_grpc_config.simple-service.dns-test.event-engine.");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -444,69 +441,23 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
         EXPECT_STATUS(result, kUnknown);
         dns_resolver_signal_.Notify();
       },
-      "localhost:1000", std::chrono::seconds(5));
+      "localhost:1000");
   dns_resolver_signal_.WaitForNotification();
 }
 
 TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
-  EventEngine::DNSResolver::LookupTaskHandle task_handle =
-      dns_resolver->LookupHostname(
-          [notify_on_destroy =
-               std::make_unique<NotifyOnDestroy>(dns_resolver_signal_)](auto) {
-            // Cancel should not execute on_resolve
-            FAIL() << "This should not be reached";
-          },
-          name, "1234", std::chrono::minutes(1));
-  EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
-  dns_resolver_signal_.WaitForNotification();
-}
-
-TEST_F(EventEngineDNSTest, TestQueryTimeout) {
-  const std::string name = "dont-care-since-wont-be-resolved.test.com.";
-  auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
-  dns_resolver->LookupTXT(
+  dns_resolver->LookupHostname(
       [this](auto result) {
-        EXPECT_FALSE(result.ok());
-        EXPECT_STATUS(result, kDeadlineExceeded);
+        ASSERT_FALSE(result.ok());
+        EXPECT_STATUS(result, kCancelled);
         dns_resolver_signal_.Notify();
       },
-      name, std::chrono::seconds(3));  // timeout in 3 seconds
+      name, "1234");
+  dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
-
-TEST_F(EventEngineDNSTest, MultithreadedCancel) {
-  const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
-  auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
-  constexpr int kNumOfThreads = 10;
-  constexpr int kNumOfIterationsPerThread = 100;
-  std::vector<std::thread> yarn;
-  yarn.reserve(kNumOfThreads);
-  for (int i = 0; i < kNumOfThreads; i++) {
-    yarn.emplace_back([&name, dns_resolver = dns_resolver.get()] {
-      for (int i = 0; i < kNumOfIterationsPerThread; i++) {
-        grpc_core::Notification dns_resolver_signal;
-        EventEngine::DNSResolver::LookupTaskHandle task_handle =
-            dns_resolver->LookupHostname(
-                [notify_on_destroy = std::make_unique<NotifyOnDestroy>(
-                     dns_resolver_signal)](auto) {
-                  // Cancel should not execute on_resolve
-                  FAIL() << "This should not be reached";
-                },
-                name, "1234", std::chrono::minutes(1));
-        EXPECT_TRUE(dns_resolver->CancelLookup(task_handle));
-        dns_resolver_signal.WaitForNotification();
-      }
-    });
-  }
-  for (int i = 0; i < kNumOfThreads; i++) {
-    yarn[i].join();
-  }
-}
-
-constexpr EventEngine::Duration kDefaultDNSRequestTimeout =
-    std::chrono::minutes(2);
 
 #define EXPECT_SUCCESS()           \
   do {                             \
@@ -516,7 +467,8 @@ constexpr EventEngine::Duration kDefaultDNSRequestTimeout =
 
 // The following tests are almost 1-to-1 ported from
 // test/core/iomgr/resolve_address_test.cc (except tests for the native DNS
-// resolver and test that would race under the EventEngine semantics).
+// resolver and tests that would not make sense using the
+// EventEngine::DNSResolver API).
 
 // START
 TEST_F(EventEngineDNSTest, LocalHost) {
@@ -526,7 +478,7 @@ TEST_F(EventEngineDNSTest, LocalHost) {
         EXPECT_SUCCESS();
         dns_resolver_signal_.Notify();
       },
-      "localhost:1", "", kDefaultDNSRequestTimeout);
+      "localhost:1", "");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -537,7 +489,7 @@ TEST_F(EventEngineDNSTest, DefaultPort) {
         EXPECT_SUCCESS();
         dns_resolver_signal_.Notify();
       },
-      "localhost", "1", kDefaultDNSRequestTimeout);
+      "localhost", "1");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -551,7 +503,7 @@ TEST_F(EventEngineDNSTest, LocalhostResultHasIPv6First) {
                     (*result)[0].address()->sa_family == AF_INET6);
         dns_resolver_signal_.Notify();
       },
-      "localhost:1", "", kDefaultDNSRequestTimeout);
+      "localhost:1", "");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -599,7 +551,7 @@ TEST_F(EventEngineDNSTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
                     (*result)[0].address()->sa_family == AF_INET);
         dns_resolver_signal_.Notify();
       },
-      "localhost:1", "", kDefaultDNSRequestTimeout);
+      "localhost:1", "");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -610,7 +562,7 @@ TEST_F(EventEngineDNSTest, NonNumericDefaultPort) {
         EXPECT_SUCCESS();
         dns_resolver_signal_.Notify();
       },
-      "localhost", "http", kDefaultDNSRequestTimeout);
+      "localhost", "http");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -621,7 +573,7 @@ TEST_F(EventEngineDNSTest, MissingDefaultPort) {
         EXPECT_FALSE(result.ok());
         dns_resolver_signal_.Notify();
       },
-      "localhost", "", kDefaultDNSRequestTimeout);
+      "localhost", "");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -632,7 +584,7 @@ TEST_F(EventEngineDNSTest, IPv6WithPort) {
         EXPECT_SUCCESS();
         dns_resolver_signal_.Notify();
       },
-      "[2001:db8::1]:1", "", kDefaultDNSRequestTimeout);
+      "[2001:db8::1]:1", "");
   dns_resolver_signal_.WaitForNotification();
 }
 
@@ -645,7 +597,7 @@ void TestIPv6WithoutPort(std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
         EXPECT_FALSE(result->empty());
         barrier->Notify();
       },
-      target, "80", kDefaultDNSRequestTimeout);
+      target, "80");
   barrier->WaitForNotification();
 }
 
@@ -672,7 +624,7 @@ void TestInvalidIPAddress(
         EXPECT_FALSE(result.ok());
         barrier->Notify();
       },
-      target, "", kDefaultDNSRequestTimeout);
+      target, "");
   barrier->WaitForNotification();
 }
 
@@ -694,7 +646,7 @@ void TestUnparseableHostPort(
         EXPECT_FALSE(result.ok());
         barrier->Notify();
       },
-      target, "1", kDefaultDNSRequestTimeout);
+      target, "1");
   barrier->WaitForNotification();
 }
 
@@ -726,19 +678,6 @@ TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhost) {
 TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
   TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
                           &dns_resolver_signal_, "[localhost]:1");
-}
-
-// Attempt to cancel a request after it has completed.
-TEST_F(EventEngineDNSTest, CancelDoesNotSucceed) {
-  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
-  auto handle = dns_resolver->LookupHostname(
-      [this](auto result) {
-        EXPECT_SUCCESS();
-        dns_resolver_signal_.Notify();
-      },
-      "localhost:1", "", kDefaultDNSRequestTimeout);
-  dns_resolver_signal_.WaitForNotification();
-  ASSERT_FALSE(dns_resolver->CancelLookup(handle));
 }
 // END
 
