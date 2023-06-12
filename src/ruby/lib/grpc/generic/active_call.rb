@@ -164,13 +164,7 @@ module GRPC
     end
 
     def receive_and_check_status
-      ops = { RECV_STATUS_ON_CLIENT => nil }
-      ops[RECV_INITIAL_METADATA] = nil unless @metadata_received
-      batch_result = @call.run_batch(ops)
-      unless @metadata_received
-        @call.metadata = batch_result.metadata
-        @metadata_received = true
-      end
+      batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
       set_input_stream_done
       attach_status_results_and_complete_call(batch_result)
     end
