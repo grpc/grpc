@@ -23,26 +23,34 @@ import time
 
 def main():
     argp = argparse.ArgumentParser(
-        description='Open a TCP handshake to a server')
-    argp.add_argument('-s',
-                      '--server_host',
-                      default=None,
-                      type=str,
-                      help='Server host name or IP.')
-    argp.add_argument('-p',
-                      '--server_port',
-                      default=0,
-                      type=int,
-                      help='Port that the server is listening on.')
-    argp.add_argument('-t',
-                      '--timeout',
-                      default=1,
-                      type=int,
-                      help='Force process exit after this number of seconds.')
+        description="Open a TCP handshake to a server"
+    )
+    argp.add_argument(
+        "-s",
+        "--server_host",
+        default=None,
+        type=str,
+        help="Server host name or IP.",
+    )
+    argp.add_argument(
+        "-p",
+        "--server_port",
+        default=0,
+        type=int,
+        help="Port that the server is listening on.",
+    )
+    argp.add_argument(
+        "-t",
+        "--timeout",
+        default=1,
+        type=int,
+        help="Force process exit after this number of seconds.",
+    )
     args = argp.parse_args()
-    socket.create_connection([args.server_host, args.server_port],
-                             timeout=args.timeout)
+    socket.create_connection(
+        [args.server_host, args.server_port], timeout=args.timeout
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

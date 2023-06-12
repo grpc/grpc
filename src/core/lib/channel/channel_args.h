@@ -281,7 +281,35 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
-  using Value = absl::variant<int, std::string, Pointer>;
+  class Value {
+   public:
+    explicit Value(int n) : rep_(n) {}
+    explicit Value(std::string s)
+        : rep_(std::make_shared<const std::string>(std::move(s))) {}
+    explicit Value(Pointer p) : rep_(std::move(p)) {}
+
+    const int* GetIfInt() const { return absl::get_if<int>(&rep_); }
+    const std::string* GetIfString() const {
+      auto* p = absl::get_if<std::shared_ptr<const std::string>>(&rep_);
+      if (p == nullptr) return nullptr;
+      return p->get();
+    }
+    const Pointer* GetIfPointer() const { return absl::get_if<Pointer>(&rep_); }
+
+    grpc_arg MakeCArg(const char* name) const;
+
+    bool operator<(const Value& rhs) const;
+    bool operator==(const Value& rhs) const;
+    bool operator!=(const Value& rhs) const { return !this->operator==(rhs); }
+    bool operator==(absl::string_view rhs) const {
+      auto* p = absl::get_if<std::shared_ptr<const std::string>>(&rep_);
+      if (p == nullptr) return false;
+      return **p == rhs;
+    }
+
+   private:
+    absl::variant<int, std::shared_ptr<const std::string>, Pointer> rep_;
+  };
 
   struct ChannelArgsDeleter {
     void operator()(const grpc_channel_args* p) const;
@@ -306,6 +334,11 @@ class ChannelArgs {
   // Returns the union of this channel args with other.
   // If a key is present in both, the value from this is used.
   GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
+
+  // Only used in union_with_test.cc, reference version of UnionWith for
+  // differential fuzzing.
+  GRPC_MUST_USE_RESULT ChannelArgs
+  FuzzingReferenceUnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,

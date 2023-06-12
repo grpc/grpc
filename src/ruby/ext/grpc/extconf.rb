@@ -34,24 +34,23 @@ def env_unset?(name)
   ENV[name].nil? || ENV[name].size == 0
 end
 
-def rbconfig_set?(name)
-  RbConfig::CONFIG[name] && RbConfig::CONFIG[name].size > 0
+def inherit_env_or_rbconfig(name)
+  ENV[name] = inherit_rbconfig(name) if env_unset?(name)
 end
 
 def inherit_rbconfig(name)
-  ENV[name] = RbConfig::CONFIG[name] if env_unset?(name) && rbconfig_set?(name)
+  ENV[name] = RbConfig::CONFIG[name] || ''
 end
 
 def env_append(name, string)
-  ENV[name] ||= ''
   ENV[name] += ' ' + string
 end
 
-inherit_rbconfig 'AR'
-inherit_rbconfig 'CC'
-inherit_rbconfig 'CXX'
-inherit_rbconfig 'RANLIB'
-inherit_rbconfig 'STRIP'
+inherit_env_or_rbconfig 'AR'
+inherit_env_or_rbconfig 'CC'
+inherit_env_or_rbconfig 'CXX'
+inherit_env_or_rbconfig 'RANLIB'
+inherit_env_or_rbconfig 'STRIP'
 inherit_rbconfig 'CPPFLAGS'
 inherit_rbconfig 'LDFLAGS'
 

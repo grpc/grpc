@@ -16,7 +16,6 @@ import grpc_testing
 
 
 class _UnaryUnary(grpc_testing.UnaryUnaryChannelRpc):
-
     def __init__(self, rpc_state):
         self._rpc_state = rpc_state
 
@@ -27,12 +26,12 @@ class _UnaryUnary(grpc_testing.UnaryUnaryChannelRpc):
         self._rpc_state.cancelled()
 
     def terminate(self, response, trailing_metadata, code, details):
-        self._rpc_state.terminate_with_response(response, trailing_metadata,
-                                                code, details)
+        self._rpc_state.terminate_with_response(
+            response, trailing_metadata, code, details
+        )
 
 
 class _UnaryStream(grpc_testing.UnaryStreamChannelRpc):
-
     def __init__(self, rpc_state):
         self._rpc_state = rpc_state
 
@@ -50,7 +49,6 @@ class _UnaryStream(grpc_testing.UnaryStreamChannelRpc):
 
 
 class _StreamUnary(grpc_testing.StreamUnaryChannelRpc):
-
     def __init__(self, rpc_state):
         self._rpc_state = rpc_state
 
@@ -67,12 +65,12 @@ class _StreamUnary(grpc_testing.StreamUnaryChannelRpc):
         self._rpc_state.cancelled()
 
     def terminate(self, response, trailing_metadata, code, details):
-        self._rpc_state.terminate_with_response(response, trailing_metadata,
-                                                code, details)
+        self._rpc_state.terminate_with_response(
+            response, trailing_metadata, code, details
+        )
 
 
 class _StreamStream(grpc_testing.StreamStreamChannelRpc):
-
     def __init__(self, rpc_state):
         self._rpc_state = rpc_state
 
@@ -97,15 +95,19 @@ class _StreamStream(grpc_testing.StreamStreamChannelRpc):
 
 def unary_unary(channel_state, method_descriptor):
     rpc_state = channel_state.take_rpc_state(method_descriptor)
-    invocation_metadata, request = (
-        rpc_state.take_invocation_metadata_and_request())
+    (
+        invocation_metadata,
+        request,
+    ) = rpc_state.take_invocation_metadata_and_request()
     return invocation_metadata, request, _UnaryUnary(rpc_state)
 
 
 def unary_stream(channel_state, method_descriptor):
     rpc_state = channel_state.take_rpc_state(method_descriptor)
-    invocation_metadata, request = (
-        rpc_state.take_invocation_metadata_and_request())
+    (
+        invocation_metadata,
+        request,
+    ) = rpc_state.take_invocation_metadata_and_request()
     return invocation_metadata, request, _UnaryStream(rpc_state)
 
 

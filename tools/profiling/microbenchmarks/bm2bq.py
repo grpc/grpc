@@ -27,24 +27,25 @@ import bm_json
 columns = []
 
 for row in json.loads(
-        # TODO(jtattermusch): make sure the dataset name is not hardcoded
-        subprocess.check_output(
-            ['bq', '--format=json', 'show',
-             'microbenchmarks.microbenchmarks']))['schema']['fields']:
-    columns.append((row['name'], row['type'].lower()))
+    # TODO(jtattermusch): make sure the dataset name is not hardcoded
+    subprocess.check_output(
+        ["bq", "--format=json", "show", "microbenchmarks.microbenchmarks"]
+    )
+)["schema"]["fields"]:
+    columns.append((row["name"], row["type"].lower()))
 
 SANITIZE = {
-    'integer': int,
-    'float': float,
-    'boolean': bool,
-    'string': str,
-    'timestamp': str,
+    "integer": int,
+    "float": float,
+    "boolean": bool,
+    "string": str,
+    "timestamp": str,
 }
 
 # TODO(jtattermusch): add proper argparse argument, rather than trying
 # to emulate with manual argv inspection.
-if sys.argv[1] == '--schema':
-    print(',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns))
+if sys.argv[1] == "--schema":
+    print(",\n".join("%s:%s" % (k, t.upper()) for k, t in columns))
     sys.exit(0)
 
 with open(sys.argv[1]) as f:
@@ -63,7 +64,7 @@ for row in bm_json.expand_json(js, js2):
     sane_row = {}
     for name, sql_type in columns:
         if name in row:
-            if row[name] == '':
+            if row[name] == "":
                 continue
             sane_row[name] = SANITIZE[sql_type](row[name])
     writer.writerow(sane_row)

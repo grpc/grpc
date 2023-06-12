@@ -20,43 +20,49 @@ import logging
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 
-async def process(stub: helloworld_pb2_grpc.GreeterStub,
-                  request: helloworld_pb2.HelloRequest) -> None:
+async def process(
+    stub: helloworld_pb2_grpc.GreeterStub, request: helloworld_pb2.HelloRequest
+) -> None:
     try:
         response = await stub.SayHello(request)
     except grpc.aio.AioRpcError as rpc_error:
-        print(f'Received error: {rpc_error}')
+        print(f"Received error: {rpc_error}")
     else:
-        print(f'Received message: {response}')
+        print(f"Received message: {response}")
 
 
 async def run(addr: str, n: int) -> None:
     async with grpc.aio.insecure_channel(addr) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        request = helloworld_pb2.HelloRequest(name='you')
+        request = helloworld_pb2.HelloRequest(name="you")
         for _ in range(n):
             await process(stub, request)
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--addr',
-                        nargs=1,
-                        type=str,
-                        default='[::]:50051',
-                        help='the address to request')
-    parser.add_argument('-n',
-                        nargs=1,
-                        type=int,
-                        default=10,
-                        help='an integer for number of messages to sent')
+    parser.add_argument(
+        "--addr",
+        nargs=1,
+        type=str,
+        default="[::]:50051",
+        help="the address to request",
+    )
+    parser.add_argument(
+        "-n",
+        nargs=1,
+        type=int,
+        default=10,
+        help="an integer for number of messages to sent",
+    )
     args = parser.parse_args()
     await run(addr=args.addr, n=args.n)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.get_event_loop().run_until_complete(main())

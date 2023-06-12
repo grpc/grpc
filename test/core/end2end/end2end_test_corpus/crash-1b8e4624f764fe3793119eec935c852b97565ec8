@@ -1,6 +1,0 @@
-suite: "Http2SingleHopTest"
-test: "RequestWithExceptionallyUncompressedPayloadDecompressInCore"
-config: "Chttp2SslCredReloadTls12"
-event_engine_actions {
-  assign_ports: 0
-}

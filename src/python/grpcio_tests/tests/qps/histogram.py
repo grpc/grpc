@@ -21,8 +21,8 @@ from src.proto.grpc.testing import stats_pb2
 class Histogram(object):
     """Histogram class used for recording performance testing data.
 
-  This class is thread safe.
-  """
+    This class is thread safe.
+    """
 
     def __init__(self, resolution, max_possible):
         self._lock = threading.Lock()

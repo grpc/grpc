@@ -62,6 +62,15 @@ common name which is set to testclient2.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
   -out client2.pem -days 3650
 
+client-with-spiffe is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client-with-spiffe.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client-with-spiffe.key.rsa -out client-with-spiffe.key -nocrypt
+$ openssl req -new -key client-with-spiffe.key -out client-with-spiffe.csr -config client-with-spiffe-openssl.cnf
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client-with-spiffe.csr \
+  -out client-with-spiffe.pem -extensions v3_req -extfile client-with-spiffe-openssl.cnf -days 3650
+
 server0 is issued by CA:
 ------------------------
 

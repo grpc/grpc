@@ -1,3 +1,0 @@
-suite: "SecureEnd2endTest"
-test: "FileWatcherValidPolicyReload"
-config: "Chttp2SimplSslFullstackTls12"

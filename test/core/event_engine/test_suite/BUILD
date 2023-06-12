@@ -66,12 +66,12 @@ grpc_cc_test(
     uses_polling = True,
     deps = [
         "//src/core:posix_event_engine",
+        "//src/core:thready_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
-        "//test/core/event_engine/thready_event_engine",
     ],
 )
 

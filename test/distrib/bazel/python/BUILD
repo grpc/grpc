@@ -20,6 +20,7 @@ load(
     "py_grpc_library",
     "py_proto_library",
 )
+load("//:python_rules_test.bzl", "python_rules_test_suite")
 
 package(
     default_testonly = 1,
@@ -67,11 +68,6 @@ py_test(
     srcs = ["helloworld.py"],
     main = "helloworld.py",
     python_version = "PY3",
-    tags = [
-        # TODO(jtattermusch): Remove the "manual" tag to run on CI again once
-        # https://github.com/grpc/grpc/issues/32778 is fixed.
-        "manual",
-    ],
     deps = [
         ":duration_py_pb2",
         ":helloworld_py_pb2",
@@ -113,11 +109,6 @@ py_test(
     srcs = ["helloworld_moved.py"],
     main = "helloworld_moved.py",
     python_version = "PY3",
-    tags = [
-        # TODO(jtattermusch): Remove the "manual" tag to run on CI again once
-        # https://github.com/grpc/grpc/issues/32778 is fixed.
-        "manual",
-    ],
     deps = [
         ":duration_py_pb2",
         ":helloworld_moved_py_pb2",
@@ -164,4 +155,8 @@ py_test(
     deps = [
         ":helloworld_py_pb2",
     ],
+)
+
+python_rules_test_suite(
+    name = "python_rules_test",
 )

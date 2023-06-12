@@ -22,27 +22,25 @@ from grpc import _auth
 
 
 class MockGoogleCreds(object):
-
     def get_access_token(self):
-        token = collections.namedtuple('MockAccessTokenInfo',
-                                       ('access_token', 'expires_in'))
-        token.access_token = 'token'
+        token = collections.namedtuple(
+            "MockAccessTokenInfo", ("access_token", "expires_in")
+        )
+        token.access_token = "token"
         return token
 
 
 class MockExceptionGoogleCreds(object):
-
     def get_access_token(self):
         raise Exception()
 
 
 class GoogleCallCredentialsTest(unittest.TestCase):
-
     def test_google_call_credentials_success(self):
         callback_event = threading.Event()
 
         def mock_callback(metadata, error):
-            self.assertEqual(metadata, (('authorization', 'Bearer token'),))
+            self.assertEqual(metadata, (("authorization", "Bearer token"),))
             self.assertIsNone(error)
             callback_event.set()
 
@@ -63,20 +61,19 @@ class GoogleCallCredentialsTest(unittest.TestCase):
 
 
 class AccessTokenAuthMetadataPluginTest(unittest.TestCase):
-
     def test_google_call_credentials_success(self):
         callback_event = threading.Event()
 
         def mock_callback(metadata, error):
-            self.assertEqual(metadata, (('authorization', 'Bearer token'),))
+            self.assertEqual(metadata, (("authorization", "Bearer token"),))
             self.assertIsNone(error)
             callback_event.set()
 
-        metadata_plugin = _auth.AccessTokenAuthMetadataPlugin('token')
+        metadata_plugin = _auth.AccessTokenAuthMetadataPlugin("token")
         metadata_plugin(None, mock_callback)
         self.assertTrue(callback_event.wait(1.0))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

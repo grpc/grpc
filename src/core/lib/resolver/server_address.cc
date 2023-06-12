@@ -57,14 +57,6 @@ ServerAddress::ServerAddress(
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : address_(address), args_(args), attributes_(std::move(attributes)) {}
 
-ServerAddress::ServerAddress(
-    const void* address, size_t address_len, const ChannelArgs& args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
-    : args_(args), attributes_(std::move(attributes)) {
-  memcpy(address_.addr, address, address_len);
-  address_.len = static_cast<socklen_t>(address_len);
-}
-
 ServerAddress::ServerAddress(const ServerAddress& other)
     : address_(other.address_), args_(other.args_) {
   for (const auto& p : other.attributes_) {
@@ -169,6 +161,7 @@ std::string ServerAddress::ToString() const {
     for (const auto& p : attributes_) {
       attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
     }
+    std::sort(attrs.begin(), attrs.end());
     parts.emplace_back(
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }

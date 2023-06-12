@@ -30,18 +30,21 @@ _LOGGER = logging.getLogger(__name__)
 
 def parse_interop_server_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port',
-                        type=int,
-                        required=True,
-                        help='the port on which to serve')
-    parser.add_argument('--use_tls',
-                        default=False,
-                        type=resources.parse_bool,
-                        help='require a secure connection')
-    parser.add_argument('--use_alts',
-                        default=False,
-                        type=resources.parse_bool,
-                        help='require an ALTS connection')
+    parser.add_argument(
+        "--port", type=int, required=True, help="the port on which to serve"
+    )
+    parser.add_argument(
+        "--use_tls",
+        default=False,
+        type=resources.parse_bool,
+        help="require a secure connection",
+    )
+    parser.add_argument(
+        "--use_alts",
+        default=False,
+        type=resources.parse_bool,
+        help="require an ALTS connection",
+    )
     return parser.parse_args()
 
 
@@ -58,19 +61,20 @@ def serve():
     args = parse_interop_server_arguments()
 
     server = test_common.test_server()
-    test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
-                                                    server)
+    test_pb2_grpc.add_TestServiceServicer_to_server(
+        service.TestService(), server
+    )
     if args.use_tls or args.use_alts:
         credentials = get_server_credentials(args.use_tls)
-        server.add_secure_port('[::]:{}'.format(args.port), credentials)
+        server.add_secure_port("[::]:{}".format(args.port), credentials)
     else:
-        server.add_insecure_port('[::]:{}'.format(args.port))
+        server.add_insecure_port("[::]:{}".format(args.port))
 
     server.start()
-    _LOGGER.info('Server serving.')
+    _LOGGER.info("Server serving.")
     server.wait_for_termination()
-    _LOGGER.info('Server stopped; exiting.')
+    _LOGGER.info("Server stopped; exiting.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     serve()

@@ -16,6 +16,6 @@ import grpc
 
 # This code doesn't do much but makes sure the native extension is loaded
 # which is what we are testing here.
-channel = grpc.insecure_channel('localhost:1000')
+channel = grpc.insecure_channel("localhost:1000")
 del channel
-print('Success!')
+print("Success!")
