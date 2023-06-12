@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#Copyright 2019 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ Artifact = collections.namedtuple("Artifact", ("filename", "checksum"))
 def _get_md5_checksum(filename):
     """Calculate the md5sum for a file."""
     hash_md5 = hashlib.md5()
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
         return hash_md5.hexdigest()
@@ -61,7 +61,8 @@ def _get_md5_checksum(filename):
 def _get_local_artifacts():
     """Get a set of artifacts representing all files in the cwd."""
     return set(
-        Artifact(f, _get_md5_checksum(f)) for f in os.listdir(os.getcwd()))
+        Artifact(f, _get_md5_checksum(f)) for f in os.listdir(os.getcwd())
+    )
 
 
 def _get_remote_artifacts_for_package(package, version):
@@ -71,13 +72,15 @@ def _get_remote_artifacts_for_package(package, version):
     experience, it has taken a minute on average to be fresh.
     """
     artifacts = set()
-    payload_resp = requests.get("https://pypi.org/pypi/{}/{}/json".format(
-        package, version))
+    payload_resp = requests.get(
+        "https://pypi.org/pypi/{}/{}/json".format(package, version)
+    )
     payload_resp.raise_for_status()
     payload = payload_resp.json()
-    for download_info in payload['urls']:
+    for download_info in payload["urls"]:
         artifacts.add(
-            Artifact(download_info['filename'], download_info['md5_digest']))
+            Artifact(download_info["filename"], download_info["md5_digest"])
+        )
     return artifacts
 
 
@@ -111,11 +114,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Verify a release. Run this from a directory containing only the"
         "artifacts to be uploaded. Note that PyPI may take several minutes"
-        "after the upload to reflect the proper metadata.")
+        "after the upload to reflect the proper metadata."
+    )
     parser.add_argument("version")
-    parser.add_argument("packages",
-                        nargs='*',
-                        type=str,
-                        default=_DEFAULT_PACKAGES)
+    parser.add_argument(
+        "packages", nargs="*", type=str, default=_DEFAULT_PACKAGES
+    )
     args = parser.parse_args()
     _verify_release(args.version, args.packages)

@@ -13,7 +13,6 @@ for general contribution guidelines.
 - [arjunroy](https://github.com/arjunroy), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
 - [daniel-j-born](https://github.com/daniel-j-born), Google LLC
-- [dapengzhang0](https://github.com/dapengzhang0), Google LLC
 - [dfawley](https://github.com/dfawley), Google LLC
 - [dklempner](https://github.com/dklempner), Google LLC
 - [drfloob](https://github.com/drfloob), Google LLC
@@ -25,7 +24,6 @@ for general contribution guidelines.
 - [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
-- [medinandres](https://github.com/medinandres), Google LLC
 - [murgatroid99](https://github.com/murgatroid99), Google LLC
 - [nanahpang](https://github.com/nanahpang), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
@@ -36,11 +34,8 @@ for general contribution guidelines.
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [veblush](https://github.com/veblush), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
-- [Vizerai](https://github.com/Vizerai), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
-- [yihuazhang](https://github.com/yihuazhang), Google LLC
-- [ZhenLian](https://github.com/ZhenLian), Google LLC
 - [ZhouyihaiDing](https://github.com/ZhouyihaiDing), Google LLC
 
 ## Emeritus Maintainers (in alphabetical order)
@@ -48,6 +43,7 @@ for general contribution guidelines.
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
 - [bogdandrutu](https://github.com/bogdandrutu), Google LLC
+- [dapengzhang0](https://github.com/dapengzhang0), Google LLC
 - [dgquintas](https://github.com/dgquintas), Google LLC
 - [ericgribkoff](https://github.com/ericgribkoff), Google LLC
 - [fengli79](https://github.com/fengli79), Google LLC
@@ -63,6 +59,7 @@ for general contribution guidelines.
 - [lidizheng](https://github.com/lidizheng), Google LLC
 - [lyuxuan](https://github.com/lyuxuan), Google LLC
 - [matt-kwong](https://github.com/matt-kwong), Google LLC
+- [medinandres](https://github.com/medinandres), Google LLC
 - [mehrdada](https://github.com/mehrdada), Dropbox, Inc.
 - [mhaidrygoog](https://github.com/mhaidrygoog), Google LLC
 - [mit-mit](https://github.com/mit-mit), Google LLC
@@ -81,7 +78,10 @@ for general contribution guidelines.
 - [srini100](https://github.com/srini100), Google LLC
 - [summerxyt](https://github.com/summerxyt), Google LLC
 - [vjpai](https://github.com/vjpai), Google LLC
+- [Vizerai](https://github.com/Vizerai), Google LLC
 - [wcevans](https://github.com/wcevans), Google LLC
 - [y-zeng](https://github.com/y-zeng), Google LLC
 - [yang-g](https://github.com/yang-g), Google LLC
+- [yihuazhang](https://github.com/yihuazhang), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
+- [ZhenLian](https://github.com/ZhenLian), Google LLC

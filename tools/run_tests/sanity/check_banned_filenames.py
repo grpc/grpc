@@ -18,10 +18,10 @@ import os
 import sys
 
 BANNED_FILENAMES = [
-    'BUILD.gn',
+    "BUILD.gn",
 ]
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 bad = []
 for filename in BANNED_FILENAMES:

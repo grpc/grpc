@@ -24,25 +24,24 @@ from grpc.experimental import aio
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
-_UNARY_UNARY_ABORT = '/test/UnaryUnaryAbort'
-_SUPPRESS_ABORT = '/test/SuppressAbort'
-_REPLACE_ABORT = '/test/ReplaceAbort'
-_ABORT_AFTER_REPLY = '/test/AbortAfterReply'
+_UNARY_UNARY_ABORT = "/test/UnaryUnaryAbort"
+_SUPPRESS_ABORT = "/test/SuppressAbort"
+_REPLACE_ABORT = "/test/ReplaceAbort"
+_ABORT_AFTER_REPLY = "/test/AbortAfterReply"
 
-_REQUEST = b'\x00\x00\x00'
-_RESPONSE = b'\x01\x01\x01'
+_REQUEST = b"\x00\x00\x00"
+_RESPONSE = b"\x01\x01\x01"
 _NUM_STREAM_RESPONSES = 5
 
 _ABORT_CODE = grpc.StatusCode.RESOURCE_EXHAUSTED
-_ABORT_DETAILS = 'Phony error details'
+_ABORT_DETAILS = "Phony error details"
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     @staticmethod
     async def _unary_unary_abort(unused_request, context):
         await context.abort(_ABORT_CODE, _ABORT_DETAILS)
-        raise RuntimeError('This line should not be executed')
+        raise RuntimeError("This line should not be executed")
 
     @staticmethod
     async def _suppress_abort(unused_request, context):
@@ -57,14 +56,15 @@ class _GenericHandler(grpc.GenericRpcHandler):
         try:
             await context.abort(_ABORT_CODE, _ABORT_DETAILS)
         except aio.AbortError as e:
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
-                                'Override abort!')
+            await context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT, "Override abort!"
+            )
 
     @staticmethod
     async def _abort_after_reply(unused_request, context):
         yield _RESPONSE
         await context.abort(_ABORT_CODE, _ABORT_DETAILS)
-        raise RuntimeError('This line should not be executed')
+        raise RuntimeError("This line should not be executed")
 
     def service(self, handler_details):
         if handler_details.method == _UNARY_UNARY_ABORT:
@@ -79,14 +79,13 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 async def _start_test_server():
     server = aio.server()
-    port = server.add_insecure_port('[::]:0')
+    port = server.add_insecure_port("[::]:0")
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
-    return 'localhost:%d' % port, server
+    return "localhost:%d" % port, server
 
 
 class TestAbort(AioTestBase):
-
     async def setUp(self):
         address, self._server = await _start_test_server()
         self._channel = aio.insecure_channel(address)
@@ -147,6 +146,6 @@ class TestAbort(AioTestBase):
         self.assertEqual(_ABORT_DETAILS, await call.details())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
