@@ -20,16 +20,19 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
+#include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <memory>
-#include <utility>
+#include <vector>
 
-#include <grpc/support/json.h>
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
@@ -44,42 +47,37 @@ constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
 // FileWatcherCertificateProviderFactory::Config
 //
 
-constexpr Duration
-    FileWatcherCertificateProviderFactory::Config::kDefaultRefreshInterval;
-
 absl::string_view FileWatcherCertificateProviderFactory::Config::name() const {
   return kFileWatcherPlugin;
 }
 
-Json FileWatcherCertificateProviderFactory::Config::ToJson() const {
-  Json::Object obj;
-  if (!certificate_file_.empty()) {
-    obj["certificate_file"] = Json::FromString(certificate_file_);
-  }
-  if (!private_key_file_.empty()) {
-    obj["private_key_file"] = Json::FromString(private_key_file_);
-  }
-  if (!ca_certificate_file_.empty()) {
-    obj["ca_certificate_file"] = Json::FromString(ca_certificate_file_);
-  }
-  if (refresh_interval_ != kDefaultRefreshInterval) {
-    obj["refresh_interval"] =
-        Json::FromString(refresh_interval_.ToJsonString());
-  }
-  return Json::FromObject(std::move(obj));
-}
-
 std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
-  return JsonDump(ToJson());
+  std::vector<std::string> parts;
+  parts.push_back("{");
+  if (!identity_cert_file_.empty()) {
+    parts.push_back(
+        absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
+  }
+  if (!identity_cert_file_.empty()) {
+    parts.push_back(
+        absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
+  }
+  if (!identity_cert_file_.empty()) {
+    parts.push_back(
+        absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
+  }
+  parts.push_back(
+      absl::StrFormat("refresh_interval=%ldms}", refresh_interval_.millis()));
+  return absl::StrJoin(parts, "");
 }
 
 const JsonLoaderInterface*
 FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<Config>()
-          .OptionalField("certificate_file", &Config::certificate_file_)
+          .OptionalField("certificate_file", &Config::identity_cert_file_)
           .OptionalField("private_key_file", &Config::private_key_file_)
-          .OptionalField("ca_certificate_file", &Config::ca_certificate_file_)
+          .OptionalField("ca_certificate_file", &Config::root_cert_file_)
           .OptionalField("refresh_interval", &Config::refresh_interval_)
           .Finish();
   return loader;
@@ -127,8 +125,8 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
-      file_watcher_config->certificate_file(),
-      file_watcher_config->ca_certificate_file(),
+      file_watcher_config->identity_cert_file(),
+      file_watcher_config->root_cert_file(),
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 

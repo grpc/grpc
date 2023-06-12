@@ -4264,7 +4264,6 @@ grpc_cc_library(
         "grpc_fake_credentials",
         "grpc_google_default_credentials",
         "grpc_tls_credentials",
-        "grpc_xds_client",
         "json",
         "json_args",
         "json_object_loader",

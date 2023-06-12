@@ -29,7 +29,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -79,76 +78,102 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
   RefCountedPtr<ChannelCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const override {
-    RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
-        file_watcher_config;
-    // The file watcher config generates an error if neither "certificate_file"
-    // nor "ca_certificate_file" are present.  But in this case, we want
-    // to allow that config, which means to use basic TLS with
-    // system-wide root certs.
-    if (config.object().find("certificate_file") != config.object().end() ||
-        config.object().find("ca_certificate_file") != config.object().end()) {
-      file_watcher_config = LoadFromJson<
-          RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>(
-          config, args, errors);
-    }
-    return MakeRefCounted<TlsConfig>(std::move(file_watcher_config));
+    return LoadFromJson<RefCountedPtr<TlsConfig>>(config, args, errors);
   }
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> base_config) const override {
-    auto* config = static_cast<const TlsConfig*>(base_config.get())->config();
+    auto* config = static_cast<const TlsConfig*>(base_config.get());
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
-    if (config != nullptr) {
+    if (!config->certificate_file().empty() ||
+        !config->ca_certificate_file().empty()) {
       options->set_certificate_provider(
           MakeRefCounted<FileWatcherCertificateProvider>(
               config->private_key_file(), config->certificate_file(),
               config->ca_certificate_file(),
               config->refresh_interval().millis() / GPR_MS_PER_SEC));
-      options->set_watch_root_cert(!config->ca_certificate_file().empty());
-      options->set_watch_identity_pair(!config->certificate_file().empty());
     }
+    options->set_watch_root_cert(!config->ca_certificate_file().empty());
+    options->set_watch_identity_pair(!config->certificate_file().empty());
     return MakeRefCounted<TlsCredentials>(std::move(options));
   }
 
  private:
+  // TODO(roth): It would be nice to share most of this config with the
+  // xDS file watcher cert provider factory, but that would require
+  // adding a dependency from lib to ext.
   class TlsConfig : public ChannelCredsConfig {
    public:
-    explicit TlsConfig(
-        RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
-            cert_provider_config)
-        : cert_provider_config_(std::move(cert_provider_config)) {}
-
     absl::string_view type() const override { return Type(); }
 
     bool Equals(const ChannelCredsConfig& other) const override {
       auto& o = static_cast<const TlsConfig&>(other);
-      // If one is null and the other isn't, they're not equal.
-      if ((cert_provider_config_ == nullptr) !=
-          (o.cert_provider_config_ == nullptr)) {
-        return false;
-      }
-      // If they're both null, they're equal.
-      if (cert_provider_config_ == nullptr) return true;
-      // If neither one is null, compare them.
-      return cert_provider_config_->Equals(*o.cert_provider_config_);
+      return certificate_file_ == o.certificate_file_ &&
+             private_key_file_ == o.private_key_file_ &&
+             ca_certificate_file_ == o.ca_certificate_file_ &&
+             refresh_interval_ == o.refresh_interval_;
     }
 
     Json ToJson() const override {
-      if (cert_provider_config_ == nullptr) return Json::FromObject({});
-      return cert_provider_config_->ToJson();
+      Json::Object obj;
+      if (!certificate_file_.empty()) {
+        obj["certificate_file"] = Json::FromString(certificate_file_);
+      }
+      if (!private_key_file_.empty()) {
+        obj["private_key_file"] = Json::FromString(private_key_file_);
+      }
+      if (!ca_certificate_file_.empty()) {
+        obj["ca_certificate_file"] = Json::FromString(ca_certificate_file_);
+      }
+      if (refresh_interval_ != kDefaultRefreshInterval) {
+        obj["refresh_interval"] =
+            Json::FromString(refresh_interval_.ToJsonString());
+      }
+      return Json::FromObject(std::move(obj));
     }
 
-    const FileWatcherCertificateProviderFactory::Config* config() const {
-      return cert_provider_config_.get();
+    const std::string& certificate_file() const { return certificate_file_; }
+    const std::string& private_key_file() const { return private_key_file_; }
+    const std::string& ca_certificate_file() const {
+      return ca_certificate_file_;
+    }
+    Duration refresh_interval() const { return refresh_interval_; }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<TlsConfig>()
+              .OptionalField("certificate_file", &TlsConfig::certificate_file_)
+              .OptionalField("private_key_file", &TlsConfig::private_key_file_)
+              .OptionalField("ca_certificate_file",
+                             &TlsConfig::ca_certificate_file_)
+              .OptionalField("refresh_interval", &TlsConfig::refresh_interval_)
+              .Finish();
+      return loader;
+    }
+
+    void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
+                      ValidationErrors* errors) {
+      if ((json.object().find("certificate_file") == json.object().end()) !=
+          (json.object().find("private_key_file") == json.object().end())) {
+        errors->AddError(
+            "fields \"certificate_file\" and \"private_key_file\" must be "
+            "both set or both unset");
+      }
     }
 
    private:
-    RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
-        cert_provider_config_;
+    static constexpr Duration kDefaultRefreshInterval = Duration::Minutes(10);
+
+    std::string certificate_file_;
+    std::string private_key_file_;
+    std::string ca_certificate_file_;
+    Duration refresh_interval_ = kDefaultRefreshInterval;
   };
 
   static absl::string_view Type() { return "tls"; }
 };
+
+constexpr Duration TlsChannelCredsFactory::TlsConfig::kDefaultRefreshInterval;
 
 class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
  public:

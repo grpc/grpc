@@ -46,15 +46,13 @@ class FileWatcherCertificateProviderFactory
 
     std::string ToString() const override;
 
-    Json ToJson() const;
-
-    const std::string& certificate_file() const { return certificate_file_; }
+    const std::string& identity_cert_file() const {
+      return identity_cert_file_;
+    }
 
     const std::string& private_key_file() const { return private_key_file_; }
 
-    const std::string& ca_certificate_file() const {
-      return ca_certificate_file_;
-    }
+    const std::string& root_cert_file() const { return root_cert_file_; }
 
     Duration refresh_interval() const { return refresh_interval_; }
 
@@ -62,20 +60,11 @@ class FileWatcherCertificateProviderFactory
     void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ValidationErrors* errors);
 
-    bool Equals(const Config& other) const {
-      return certificate_file_ == other.certificate_file_ &&
-             private_key_file_ == other.private_key_file_ &&
-             ca_certificate_file_ == other.ca_certificate_file_ &&
-             refresh_interval_ == other.refresh_interval_;
-    }
-
    private:
-    static constexpr Duration kDefaultRefreshInterval = Duration::Minutes(10);
-
-    std::string certificate_file_;
+    std::string identity_cert_file_;
     std::string private_key_file_;
-    std::string ca_certificate_file_;
-    Duration refresh_interval_ = kDefaultRefreshInterval;
+    std::string root_cert_file_;
+    Duration refresh_interval_ = Duration::Minutes(10);
   };
 
   absl::string_view name() const override;
