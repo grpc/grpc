@@ -272,13 +272,11 @@ class RingHash : public LoadBalancingPolicy {
 
   // Updates the aggregate policy's connectivity state based on the
   // endpoint list's state counters, creating a new picker.
-  // The index parameter indicates the index into the list of the endpoint
-  // whose status report triggered the call to
-  // UpdateAggregatedConnectivityStateLocked().
   // entered_transient_failure is true if the endpoint has just
   // entered TRANSIENT_FAILURE state.
-  void UpdateAggregatedConnectivityStateLocked(size_t index,
-                                               bool entered_transient_failure,
+  // If the call to this method is triggered by an endpoint entering
+  // TRANSIENT_FAILURE, then status is the status reported by the endpoint.
+  void UpdateAggregatedConnectivityStateLocked(bool entered_transient_failure,
                                                absl::Status status);
 
   // Current address list, channel args, and ring.
@@ -594,8 +592,8 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
   status_ = status;
   picker_ = std::move(picker);
   // Update the aggregated connectivity state.
-  ring_hash_->UpdateAggregatedConnectivityStateLocked(
-      index_, entered_transient_failure, status);
+  ring_hash_->UpdateAggregatedConnectivityStateLocked(entered_transient_failure,
+                                                      status);
 }
 
 //
@@ -678,13 +676,13 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     return status;
   }
   // Return a new picker.
-  UpdateAggregatedConnectivityStateLocked(
-      /*index=*/0, /*entered_transient_failure=*/false, absl::OkStatus());
+  UpdateAggregatedConnectivityStateLocked(/*entered_transient_failure=*/false,
+                                          absl::OkStatus());
   return absl::OkStatus();
 }
 
 void RingHash::UpdateAggregatedConnectivityStateLocked(
-    size_t index, bool entered_transient_failure, absl::Status status) {
+    bool entered_transient_failure, absl::Status status) {
   // Count the number of endpoints in each state.
   size_t num_idle = 0;
   size_t num_connecting = 0;
