@@ -34,6 +34,7 @@ def do_rpc(stub)
 end
 
 def main
+  # TODO(apolcyn): figure out how to run a server in this test
   #server_runner = ServerRunner.new(EchoServerImpl)
   #server_port = server_runner.run
   stub = Echo::EchoServer::Stub.new("localhost:443", :this_channel_is_insecure)
@@ -59,6 +60,7 @@ def main
   STDERR.puts "parent: second post-fork RPC done"
   Process.wait pid
   STDERR.puts "parent: done"
+  #server_runner.stop
 end
 
 main
