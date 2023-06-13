@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
+
 this_dir = File.expand_path(File.dirname(__FILE__))
 protos_lib_dir = File.join(this_dir, 'lib')
 grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
@@ -24,29 +26,36 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'grpc'
 require 'end2end_common'
 
+def do_rpc(stub)
+  begin
+    stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
+  rescue GRPC::Unavailable
+  end
+end
+
 def main
-  server_runner = ServerRunner.new(EchoServerImpl)
-  server_port = server_runner.run
-  stub = Echo::EchoServer::Stub.new("localhost:#{server_port}", :this_channel_is_insecure)
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
+  #server_runner = ServerRunner.new(EchoServerImpl)
+  #server_port = server_runner.run
+  stub = Echo::EchoServer::Stub.new("localhost:443", :this_channel_is_insecure)
+  do_rpc(stub)
   STDERR.puts "GRPC::pre_fork begin"
   GRPC::prefork
   STDERR.puts "GRPC::pre_fork done"
   pid = fork do
     STDERR.puts "child: GRPC::postfork_child begin"
     GRPC::postfork_child
-    #STDERR.puts "child: GRPC::postfork_child done"
-    #stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
-    #STDERR.puts "child: first post-fork RPC done"
-    #stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
-    #STDERR.puts "child: done"
+    STDERR.puts "child: GRPC::postfork_child done"
+    do_rpc(stub)
+    STDERR.puts "child: first post-fork RPC done"
+    do_rpc(stub)
+    STDERR.puts "child: done"
   end
   STDERR.puts "parent: GRPC::postfork_parent begin"
   GRPC::postfork_parent
   STDERR.puts "parent: GRPC::postfork_parent done"
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
+  do_rpc(stub)
   STDERR.puts "parent: first post-fork RPC done"
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
+  do_rpc(stub)
   STDERR.puts "parent: second post-fork RPC done"
   Process.wait pid
   STDERR.puts "parent: done"

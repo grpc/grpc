@@ -275,21 +275,22 @@ void grpc_ruby_fork_guard() {
   }
 }
 
-static VALUE bg_thread_init_rb_mu = Qundef;
-static int bg_thread_init_done = 0;
+static VALUE g_bg_thread_init_rb_mu = Qundef;
+static int g_bg_thread_init_done = 0;
 
 static void grpc_ruby_init_threads() {
   // Avoid calling into ruby library (when creating threads here)
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
-  rb_mutex_lock(bg_thread_init_rb_mu);
-  if (!bg_thread_init_done) {
+  rb_mutex_lock(g_bg_thread_init_rb_mu);
+  if (!g_bg_thread_init_done) {
+    fprintf(stderr, "apolcyn re-creating ruby threads\n");
     grpc_rb_event_queue_thread_start();
     grpc_rb_channel_polling_thread_start();
-    bg_thread_init_done = 1;
+    g_bg_thread_init_done = 1;
   }
-  rb_mutex_unlock(bg_thread_init_rb_mu);
+  rb_mutex_unlock(g_bg_thread_init_rb_mu);
 }
 
 static int64_t g_grpc_ruby_init_count;
@@ -316,25 +317,32 @@ void grpc_ruby_shutdown() {
 
 // fork APIs
 static VALUE grpc_rb_prefork(VALUE self) {
+  grpc_rb_channel_polling_thread_stop();
+  grpc_rb_event_queue_thread_stop();
+  // all ruby-level background threads joined at this point
+  g_bg_thread_init_done = 0;
   return Qnil;
 }
 
 static VALUE grpc_rb_postfork_child(VALUE self) {
+  grpc_ruby_init_threads();
   return Qnil;
 }
 
 static VALUE grpc_rb_postfork_parent(VALUE self) {
+  grpc_ruby_init_threads();
   return Qnil;
 }
 
+// One-time initialization
 void Init_grpc_c() {
   if (!grpc_rb_load_core()) {
     rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
     return;
   }
 
-  rb_global_variable(&bg_thread_init_rb_mu);
-  bg_thread_init_rb_mu = rb_mutex_new();
+  rb_global_variable(&g_bg_thread_init_rb_mu);
+  g_bg_thread_init_rb_mu = rb_mutex_new();
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");

@@ -51,6 +51,8 @@ typedef struct grpc_rb_event_queue {
 } grpc_rb_event_queue;
 
 static grpc_rb_event_queue event_queue;
+static VALUE g_event_thread = Qnil;
+static bool g_one_time_init_done = false;
 
 void grpc_rb_event_queue_enqueue(void (*callback)(void*), void* argument) {
   grpc_rb_event* event = gpr_malloc(sizeof(grpc_rb_event));
@@ -136,10 +138,25 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
 }
 
 void grpc_rb_event_queue_thread_start() {
-  event_queue.head = event_queue.tail = NULL;
-  event_queue.abort = false;
-  gpr_mu_init(&event_queue.mu);
-  gpr_cv_init(&event_queue.cv);
+  if (!g_one_time_init_done) {
+    g_one_time_init_done = true;
+    gpr_mu_init(&event_queue.mu);
+    gpr_cv_init(&event_queue.cv);
+    rb_global_variable(&g_event_thread);
+    event_queue.head = event_queue.tail = NULL;
+  }
+  event_queue.abort == false;
+  GPR_ASSERT(!RTEST(g_event_thread));
+  g_event_thread = rb_thread_create(grpc_rb_event_thread, NULL);
+}
 
-  rb_thread_create(grpc_rb_event_thread, NULL);
+void grpc_rb_event_queue_thread_stop() {
+  GPR_ASSERT(g_one_time_init_done);
+  if (!RTEST(g_event_thread)) {
+    gpr_log(GPR_ERROR, "GRPC_RUBY: call credentials thread stop: thread not running");
+    return;
+  }
+  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func, NULL, NULL, NULL);
+  rb_funcall(g_event_thread, rb_intern("join"), 0);
+  g_event_thread = Qnil;
 }
