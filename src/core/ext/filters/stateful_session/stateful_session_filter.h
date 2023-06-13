@@ -23,6 +23,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -64,6 +65,11 @@ class StatefulSessionFilter : public ChannelFilter {
 
  private:
   explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
+
+  absl::optional<absl::string_view> GetOverrideHostFromCookie(
+      const ClientMetadataHandle& initial_metadata,
+      absl::string_view cookie_name);
+
   // The relative index of instances of the same filter.
   const size_t index_;
   // Index of the service config parser.
