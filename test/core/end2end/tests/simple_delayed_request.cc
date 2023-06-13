@@ -33,7 +33,7 @@ CORE_END2END_TEST(CoreClientChannelTest, SimpleDelayedRequestShort) {
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)

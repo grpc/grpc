@@ -17,6 +17,9 @@
 import os
 import subprocess
 
+# Maximum path length for a path in the repository before we start seeing
+# problems with Windows cloning the repository. (kind of arbitrary, less than
+# Windows actual limit, but enough that we avoid problems).
 maxlen = 150
 
 errors = 0
@@ -28,4 +31,3 @@ for path in subprocess.check_output(['git', 'ls-files']).decode().splitlines():
 if errors:
     print(f'Found {errors} files with paths longer than {maxlen} characters')
     exit(1)
-    
