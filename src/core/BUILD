@@ -4614,9 +4614,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_outlier_detection_header",
         "health_check_client",
         "iomgr_fwd",
-        "grpc_outlier_detection_header",
         "json",
         "lb_policy",
         "lb_policy_factory",
@@ -4625,7 +4625,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_client_channel",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
