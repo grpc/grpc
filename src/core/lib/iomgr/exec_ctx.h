@@ -329,17 +329,6 @@ class ApplicationCallbackExecCtx {
   static thread_local ApplicationCallbackExecCtx* callback_exec_ctx_;
 };
 
-template <typename F>
-void EnsureRunInExecCtx(F f) {
-  if (ExecCtx::Get() == nullptr) {
-    ApplicationCallbackExecCtx app_ctx;
-    ExecCtx exec_ctx;
-    f();
-  } else {
-    f();
-  }
-}
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_EXEC_CTX_H
