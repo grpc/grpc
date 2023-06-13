@@ -3,17 +3,17 @@ PyYAML==6.0
 absl-py==0.15.0
 google-api-python-client==1.12.11
 google-cloud-secret-manager==2.15.1
-grpcio==1.51.1
-grpcio-health-checking==1.48.2
-grpcio-tools==1.48.2
-grpcio-channelz==1.48.2
+grpcio==1.54.2
+grpcio-health-checking==1.54.2
+grpcio-tools==1.54.2
+grpcio-channelz==1.54.2
 kubernetes==27.2.0
 six==1.16.0
 tenacity==6.3.1
 packaging==23.1
 Pygments==2.14.0
 python-dateutil==2.8.2
-protobuf==3.20.3
+protobuf==4.23.2
 xds-protos==0.0.11
 ## The following requirements were added by pip freeze:
 cachetools==5.3.0
