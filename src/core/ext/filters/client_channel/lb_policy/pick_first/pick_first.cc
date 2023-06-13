@@ -33,11 +33,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -87,9 +85,7 @@ class PickFirst : public LoadBalancingPolicy {
       SubchannelData(SubchannelList* subchannel_list,
                      RefCountedPtr<SubchannelInterface> subchannel);
 
-      SubchannelInterface* subchannel() const {
-        return subchannel_.get();
-      }
+      SubchannelInterface* subchannel() const { return subchannel_.get(); }
       absl::optional<grpc_connectivity_state> connectivity_state() const {
         return connectivity_state_;
       }
