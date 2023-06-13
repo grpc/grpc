@@ -24,6 +24,9 @@
 //
 #include <stdlib.h>
 
+#include <atomic>
+#include <random>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -33,25 +36,36 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define MIN_PORT 1025
-#define MAX_PORT 32766
+namespace {
+const int kMinAvailablePort = 1025;
+const int kMaxAvailablePort = 32766;
+const int kPortsPerShard = (kMaxAvailablePort - kMinAvailablePort) /
+                           (grpc::testing::kMaxGtestShard + 1);
+static int MinPortForShard(int shard) {
+  return kMinAvailablePort + kPortsPerShard * shard;
+}
+static int MaxPortForShard(int shard) {
+  return MinPortForShard(shard) + kPortsPerShard - 1;
+}
+const int kCurrentShard = grpc::testing::CurrentGtestShard();
+const int kMinPort = MinPortForShard(kCurrentShard);
+const int kMaxPort = MaxPortForShard(kCurrentShard);
 
-static int get_random_port_offset() {
-  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  double rnd = static_cast<double>(rand()) /
-               (static_cast<double>(RAND_MAX) + 1.0);  // values from [0,1)
-  return static_cast<int>(rnd * (MAX_PORT - MIN_PORT + 1));
+int GetRandomPortOffset() {
+  std::random_device rd;
+  std::uniform_int_distribution<> dist(kMinPort, kMaxPort);
+  return dist(rd);
 }
 
-static int s_initial_offset = get_random_port_offset();
-static gpr_atm s_pick_counter = 0;
+const int kInitialOffset = GetRandomPortOffset();
+std::atomic<int> g_pick_counter{0};
+}  // namespace
 
 static int grpc_pick_unused_port_or_die_impl(void) {
-  int orig_counter_val =
-      static_cast<int>(gpr_atm_full_fetch_add(&s_pick_counter, 1));
-  GPR_ASSERT(orig_counter_val < (MAX_PORT - MIN_PORT + 1));
-  return MIN_PORT +
-         (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
+  int orig_counter_val = g_pick_counter.fetch_add(1, std::memory_order_seq_cst);
+  GPR_ASSERT(orig_counter_val < (kMaxPort - kMinPort + 1));
+  return kMinPort +
+         (kInitialOffset + orig_counter_val) % (kMaxPort - kMinPort + 1);
 }
 
 static int isolated_pick_unused_port_or_die(void) {

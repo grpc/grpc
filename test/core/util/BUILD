@@ -139,6 +139,7 @@ grpc_cc_library(
         "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:grpc_sockaddr",
@@ -152,6 +153,21 @@ grpc_cc_library(
         "//test/core/event_engine:test_init",
     ],
     alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "test_config_sharded_test",
+    srcs = ["test_config_sharded_test.cc"],
+    external_deps = ["gtest"],
+    shard_count = 2,
+    deps = ["grpc_test_util"],
+)
+
+grpc_cc_test(
+    name = "test_config_unsharded_test",
+    srcs = ["test_config_unsharded_test.cc"],
+    external_deps = ["gtest"],
+    deps = ["grpc_test_util"],
 )
 
 grpc_cc_library(
@@ -181,6 +197,7 @@ grpc_cc_library(
         "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:grpc_sockaddr",
