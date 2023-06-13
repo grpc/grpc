@@ -16,7 +16,7 @@ import datetime
 import re
 from typing import Pattern
 
-RE_ZERO_OFFSET: Pattern[str] = re.compile(r'[+\-]00:?00$')
+RE_ZERO_OFFSET: Pattern[str] = re.compile(r"[+\-]00:?00$")
 
 
 def utc_now() -> datetime.datetime:
@@ -26,7 +26,7 @@ def utc_now() -> datetime.datetime:
 
 def shorten_utc_zone(utc_datetime_str: str) -> str:
     """Replace ±00:00 timezone designator with Z (zero offset AKA Zulu time)."""
-    return RE_ZERO_OFFSET.sub('Z', utc_datetime_str)
+    return RE_ZERO_OFFSET.sub("Z", utc_datetime_str)
 
 
 def iso8601_utc_time(time: datetime.datetime = None) -> str:
@@ -47,4 +47,4 @@ def datetime_suffix(*, seconds: bool = False) -> str:
     Hours and minutes are joined together for better readability, so time is
     visually distinct from dash-separated date.
     """
-    return utc_now().strftime('%Y%m%d-%H%M' + ('%S' if seconds else ''))
+    return utc_now().strftime("%Y%m%d-%H%M" + ("%S" if seconds else ""))

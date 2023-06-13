@@ -26,21 +26,24 @@ async def run(addr: str) -> None:
     async with grpc.aio.insecure_channel(addr) as channel:
         channelz_stub = channelz_pb2_grpc.ChannelzStub(channel)
         response = await channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0))
-        print('Info for all servers: %s' % response)
+            channelz_pb2.GetServersRequest(start_server_id=0)
+        )
+        print("Info for all servers: %s" % response)
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--addr',
-                        nargs=1,
-                        type=str,
-                        default='[::]:50051',
-                        help='the address to request')
+    parser.add_argument(
+        "--addr",
+        nargs=1,
+        type=str,
+        default="[::]:50051",
+        help="the address to request",
+    )
     args = parser.parse_args()
     run(addr=args.addr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     asyncio.get_event_loop().run_until_complete(main())

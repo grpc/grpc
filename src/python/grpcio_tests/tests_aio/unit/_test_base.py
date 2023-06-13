@@ -20,13 +20,12 @@ import unittest
 
 from grpc.experimental import aio
 
-__all__ = 'AioTestBase'
+__all__ = "AioTestBase"
 
-_COROUTINE_FUNCTION_ALLOWLIST = ['setUp', 'tearDown']
+_COROUTINE_FUNCTION_ALLOWLIST = ["setUp", "tearDown"]
 
 
 def _async_to_sync_decorator(f: Callable, loop: asyncio.AbstractEventLoop):
-
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         return loop.run_until_complete(f(*args, **kwargs))
@@ -60,7 +59,7 @@ class AioTestBase(unittest.TestCase):
         attr = super().__getattribute__(name)
 
         # If possible, converts the coroutine into a sync function.
-        if name.startswith('test_') or name in _COROUTINE_FUNCTION_ALLOWLIST:
+        if name.startswith("test_") or name in _COROUTINE_FUNCTION_ALLOWLIST:
             if asyncio.iscoroutinefunction(attr):
                 return _async_to_sync_decorator(attr, self._TEST_LOOP)
         # For other attributes, let them pass.

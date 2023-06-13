@@ -57,17 +57,16 @@ _GetServerSocketsResponse = channelz_pb2.GetServerSocketsResponse
 class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: channelz_pb2_grpc.ChannelzStub
 
-    def __init__(self,
-                 channel: grpc.Channel,
-                 *,
-                 log_target: Optional[str] = ''):
-        super().__init__(channel,
-                         channelz_pb2_grpc.ChannelzStub,
-                         log_target=log_target)
+    def __init__(
+        self, channel: grpc.Channel, *, log_target: Optional[str] = ""
+    ):
+        super().__init__(
+            channel, channelz_pb2_grpc.ChannelzStub, log_target=log_target
+        )
 
     @staticmethod
     def is_sock_tcpip_address(address: Address):
-        return address.WhichOneof('address') == 'tcpip_address'
+        return address.WhichOneof("address") == "tcpip_address"
 
     @staticmethod
     def is_ipv4(tcpip_address: Address.TcpIpAddress):
@@ -83,18 +82,21 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
                 ip = ipaddress.IPv4Address(tcpip_address.ip_address)
             else:
                 ip = ipaddress.IPv6Address(tcpip_address.ip_address)
-            return f'{ip}:{tcpip_address.port}'
+            return f"{ip}:{tcpip_address.port}"
         else:
-            raise NotImplementedError('Only tcpip_address implemented')
+            raise NotImplementedError("Only tcpip_address implemented")
 
     @classmethod
     def sock_addresses_pretty(cls, socket: Socket):
-        return (f'local={cls.sock_address_to_str(socket.local)}, '
-                f'remote={cls.sock_address_to_str(socket.remote)}')
+        return (
+            f"local={cls.sock_address_to_str(socket.local)}, "
+            f"remote={cls.sock_address_to_str(socket.remote)}"
+        )
 
     @staticmethod
-    def find_server_socket_matching_client(server_sockets: Iterator[Socket],
-                                           client_socket: Socket) -> Socket:
+    def find_server_socket_matching_client(
+        server_sockets: Iterator[Socket], client_socket: Socket
+    ) -> Socket:
         for server_socket in server_sockets:
             if server_socket.remote == client_socket.local:
                 return server_socket
@@ -102,35 +104,43 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
 
     @staticmethod
     def channel_repr(channel: Channel) -> str:
-        result = f'<Channel channel_id={channel.ref.channel_id}'
+        result = f"<Channel channel_id={channel.ref.channel_id}"
         if channel.data.target:
-            result += f' target={channel.data.target}'
-        result += f' state={ChannelState.Name(channel.data.state.state)}>'
+            result += f" target={channel.data.target}"
+        result += f" state={ChannelState.Name(channel.data.state.state)}>"
         return result
 
     @staticmethod
     def subchannel_repr(subchannel: Subchannel) -> str:
-        result = f'<Subchannel subchannel_id={subchannel.ref.subchannel_id}'
+        result = f"<Subchannel subchannel_id={subchannel.ref.subchannel_id}"
         if subchannel.data.target:
-            result += f' target={subchannel.data.target}'
-        result += f' state={ChannelState.Name(subchannel.data.state.state)}>'
+            result += f" target={subchannel.data.target}"
+        result += f" state={ChannelState.Name(subchannel.data.state.state)}>"
         return result
 
-    def find_channels_for_target(self, target: str,
-                                 **kwargs) -> Iterator[Channel]:
-        return (channel for channel in self.list_channels(**kwargs)
-                if channel.data.target == target)
+    def find_channels_for_target(
+        self, target: str, **kwargs
+    ) -> Iterator[Channel]:
+        return (
+            channel
+            for channel in self.list_channels(**kwargs)
+            if channel.data.target == target
+        )
 
-    def find_server_listening_on_port(self, port: int,
-                                      **kwargs) -> Optional[Server]:
+    def find_server_listening_on_port(
+        self, port: int, **kwargs
+    ) -> Optional[Server]:
         for server in self.list_servers(**kwargs):
             listen_socket_ref: SocketRef
             for listen_socket_ref in server.listen_socket:
-                listen_socket = self.get_socket(listen_socket_ref.socket_id,
-                                                **kwargs)
+                listen_socket = self.get_socket(
+                    listen_socket_ref.socket_id, **kwargs
+                )
                 listen_address: Address = listen_socket.local
-                if (self.is_sock_tcpip_address(listen_address) and
-                        listen_address.tcpip_address.port == port):
+                if (
+                    self.is_sock_tcpip_address(listen_address)
+                    and listen_address.tcpip_address.port == port
+                ):
                     return server
         return None
 
@@ -148,9 +158,10 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             # value by adding 1 to the highest seen result ID.
             start += 1
             response = self.call_unary_with_deadline(
-                rpc='GetTopChannels',
+                rpc="GetTopChannels",
                 req=_GetTopChannelsRequest(start_channel_id=start),
-                **kwargs)
+                **kwargs,
+            )
             for channel in response.channel:
                 start = max(start, channel.ref.channel_id)
                 yield channel
@@ -164,9 +175,10 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             # value by adding 1 to the highest seen result ID.
             start += 1
             response = self.call_unary_with_deadline(
-                rpc='GetServers',
+                rpc="GetServers",
                 req=_GetServersRequest(start_server_id=start),
-                **kwargs)
+                **kwargs,
+            )
             for server in response.server:
                 start = max(start, server.ref.server_id)
                 yield server
@@ -183,30 +195,35 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             # value by adding 1 to the highest seen result ID.
             start += 1
             response = self.call_unary_with_deadline(
-                rpc='GetServerSockets',
-                req=_GetServerSocketsRequest(server_id=server.ref.server_id,
-                                             start_socket_id=start),
-                **kwargs)
+                rpc="GetServerSockets",
+                req=_GetServerSocketsRequest(
+                    server_id=server.ref.server_id, start_socket_id=start
+                ),
+                **kwargs,
+            )
             socket_ref: SocketRef
             for socket_ref in response.socket_ref:
                 start = max(start, socket_ref.socket_id)
                 # Yield actual socket
                 yield self.get_socket(socket_ref.socket_id, **kwargs)
 
-    def list_channel_sockets(self, channel: Channel,
-                             **kwargs) -> Iterator[Socket]:
+    def list_channel_sockets(
+        self, channel: Channel, **kwargs
+    ) -> Iterator[Socket]:
         """List all sockets of all subchannels of a given channel."""
         for subchannel in self.list_channel_subchannels(channel, **kwargs):
             yield from self.list_subchannels_sockets(subchannel, **kwargs)
 
-    def list_channel_subchannels(self, channel: Channel,
-                                 **kwargs) -> Iterator[Subchannel]:
+    def list_channel_subchannels(
+        self, channel: Channel, **kwargs
+    ) -> Iterator[Subchannel]:
         """List all subchannels of a given channel."""
         for subchannel_ref in channel.subchannel_ref:
             yield self.get_subchannel(subchannel_ref.subchannel_id, **kwargs)
 
-    def list_subchannels_sockets(self, subchannel: Subchannel,
-                                 **kwargs) -> Iterator[Socket]:
+    def list_subchannels_sockets(
+        self, subchannel: Subchannel, **kwargs
+    ) -> Iterator[Socket]:
         """List all sockets of a given subchannel."""
         for socket_ref in subchannel.socket_ref:
             yield self.get_socket(socket_ref.socket_id, **kwargs)
@@ -214,15 +231,17 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
     def get_subchannel(self, subchannel_id, **kwargs) -> Subchannel:
         """Return a single Subchannel, otherwise raises RpcError."""
         response: _GetSubchannelResponse = self.call_unary_with_deadline(
-            rpc='GetSubchannel',
+            rpc="GetSubchannel",
             req=_GetSubchannelRequest(subchannel_id=subchannel_id),
-            **kwargs)
+            **kwargs,
+        )
         return response.subchannel
 
     def get_socket(self, socket_id, **kwargs) -> Socket:
         """Return a single Socket, otherwise raises RpcError."""
         response: _GetSocketResponse = self.call_unary_with_deadline(
-            rpc='GetSocket',
+            rpc="GetSocket",
             req=_GetSocketRequest(socket_id=socket_id),
-            **kwargs)
+            **kwargs,
+        )
         return response.socket

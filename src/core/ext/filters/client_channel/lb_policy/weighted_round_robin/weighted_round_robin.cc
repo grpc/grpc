@@ -159,7 +159,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
         : wrr_(std::move(wrr)), key_(std::move(key)) {}
     ~EndpointWeight() override;
 
-    void MaybeUpdateWeight(double qps, double eps, double cpu_utilization,
+    void MaybeUpdateWeight(double qps, double eps, double utilization,
                            float error_utilization_penalty);
 
     float GetWeight(Timestamp now, Duration weight_expiration_period,
@@ -375,23 +375,23 @@ WeightedRoundRobin::EndpointWeight::~EndpointWeight() {
 }
 
 void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
-    double qps, double eps, double cpu_utilization,
+    double qps, double eps, double utilization,
     float error_utilization_penalty) {
   // Compute weight.
   float weight = 0;
-  if (qps > 0 && cpu_utilization > 0) {
+  if (qps > 0 && utilization > 0) {
     double penalty = 0.0;
     if (eps > 0 && error_utilization_penalty > 0) {
       penalty = eps / qps * error_utilization_penalty;
     }
-    weight = qps / (cpu_utilization + penalty);
+    weight = qps / (utilization + penalty);
   }
   if (weight == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO,
-              "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f: "
+              "[WRR %p] subchannel %s: qps=%f, eps=%f, utilization=%f: "
               "error_util_penalty=%f, weight=%f (not updating)",
-              wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
+              wrr_.get(), key_.c_str(), qps, eps, utilization,
               error_utilization_penalty, weight);
     }
     return;
@@ -401,10 +401,10 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
-            "[WRR %p] subchannel %s: qps=%f, eps=%f, cpu_utilization=%f "
+            "[WRR %p] subchannel %s: qps=%f, eps=%f, utilization=%f "
             "error_util_penalty=%f : setting weight=%f weight_=%f now=%s "
             "last_update_time_=%s non_empty_since_=%s",
-            wrr_.get(), key_.c_str(), qps, eps, cpu_utilization,
+            wrr_.get(), key_.c_str(), qps, eps, utilization,
             error_utilization_penalty, weight, weight_, now.ToString().c_str(),
             last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
@@ -465,14 +465,16 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
       args.backend_metric_accessor->GetBackendMetricData();
   double qps = 0;
   double eps = 0;
-  double cpu_utilization = 0;
+  double utilization = 0;
   if (backend_metric_data != nullptr) {
     qps = backend_metric_data->qps;
     eps = backend_metric_data->eps;
-    cpu_utilization = backend_metric_data->cpu_utilization;
+    utilization = backend_metric_data->application_utilization;
+    if (utilization <= 0) {
+      utilization = backend_metric_data->cpu_utilization;
+    }
   }
-  weight_->MaybeUpdateWeight(qps, eps, cpu_utilization,
-                             error_utilization_penalty_);
+  weight_->MaybeUpdateWeight(qps, eps, utilization, error_utilization_penalty_);
 }
 
 //
@@ -584,6 +586,11 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] scheduling timer for %s",
+            wrr_.get(), this,
+            config_->weight_update_period().ToString().c_str());
+  }
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(), [self = std::move(self)]() mutable {
@@ -733,9 +740,12 @@ WeightedRoundRobin::GetOrCreateWeight(const grpc_resolved_address& address) {
 
 void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
+  double utilization = backend_metric_data.application_utilization;
+  if (utilization <= 0) {
+    utilization = backend_metric_data.cpu_utilization;
+  }
   weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
-                             backend_metric_data.cpu_utilization,
-                             error_utilization_penalty_);
+                             utilization, error_utilization_penalty_);
 }
 
 //

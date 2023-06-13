@@ -395,11 +395,11 @@ void HealthProducer::RemoveWatcher(
     HealthWatcher* watcher,
     const absl::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
+  grpc_pollset_set_del_pollset_set(interested_parties_,
+                                   watcher->interested_parties());
   if (!health_check_service_name.has_value()) {
     non_health_watchers_.erase(watcher);
   } else {
-    grpc_pollset_set_del_pollset_set(interested_parties_,
-                                     watcher->interested_parties());
     auto it = health_checkers_.find(*health_check_service_name);
     if (it == health_checkers_.end()) return;
     const bool empty = it->second->RemoveWatcherLocked(watcher);
@@ -435,6 +435,13 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
 //
 
 HealthWatcher::~HealthWatcher() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthWatcher %p: unregistering from producer %p "
+            "(health_check_service_name=\"%s\")",
+            this, producer_.get(),
+            health_check_service_name_.value_or("N/A").c_str());
+  }
   if (producer_ != nullptr) {
     producer_->RemoveWatcher(this, health_check_service_name_);
   }
