@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -442,10 +443,10 @@ void XdsOverrideHostLb::ResetBackoffLocked() {
 
 absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_override_host_lb %p] Received update with %" PRIuPTR " addresses",
-        this, args.addresses.ok() ? args.addresses->size() : 0);
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] Received update with %" PRIuPTR
+            " addresses",
+            this, args.addresses.ok() ? args.addresses->size() : 0);
   }
   auto old_config = std::move(config_);
   // Update config.
@@ -514,8 +515,8 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses) {
   if (!addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s",
-              this, addresses.status().ToString().c_str());
+      gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s", this,
+              addresses.status().ToString().c_str());
     }
     return addresses;
   }
@@ -545,8 +546,8 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     if (key.ok()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] address %s: adding map key %s",
-                this, address.ToString().c_str(), key->c_str());
+                "[xds_override_host_lb %p] address %s: adding map key %s", this,
+                address.ToString().c_str(), key->c_str());
       }
       addresses_for_map.emplace(std::move(*key), status);
     }
@@ -568,8 +569,8 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
       auto it = subchannel_map_.find(key_status.first);
       if (it == subchannel_map_.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-          gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s",
-                  this, key_status.first.c_str());
+          gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
+                  key_status.first.c_str());
         }
         subchannel_map_.emplace(std::piecewise_construct,
                                 std::forward_as_tuple(key_status.first),
