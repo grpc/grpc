@@ -23,11 +23,11 @@ import subprocess
 maxlen = 150
 
 errors = 0
-for path in subprocess.check_output(['git', 'ls-files']).decode().splitlines():
+for path in subprocess.check_output(["git", "ls-files"]).decode().splitlines():
     if len(path) > maxlen:
-        print(f'Path too long: {path}')
+        print(f"Path too long: {path}")
         errors += 1
 
 if errors:
-    print(f'Found {errors} files with paths longer than {maxlen} characters')
+    print(f"Found {errors} files with paths longer than {maxlen} characters")
     exit(1)
