@@ -586,6 +586,11 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+    gpr_log(GPR_INFO, "[WRR %p picker %p] scheduling timer for %s",
+            wrr_.get(), this,
+            config_->weight_update_period().ToString().c_str());
+  }
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(), [self = std::move(self)]() mutable {

@@ -435,6 +435,13 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
 //
 
 HealthWatcher::~HealthWatcher() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthWatcher %p: unregistering from producer %p "
+            "(health_check_service_name=\"%s\")",
+            this, producer_.get(),
+            health_check_service_name_.value_or("N/A").c_str());
+  }
   if (producer_ != nullptr) {
     producer_->RemoveWatcher(this, health_check_service_name_);
   }
