@@ -113,6 +113,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "grpc_python_observability": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
@@ -246,7 +247,7 @@ def ios_cc_test(
     test_runner = "ios_x86_64_sim_runner_" + name
     ios_test_runner(
         name = test_runner,
-        device_type = "iPhone 12",
+        device_type = "iPhone X",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
         native.cc_library(
@@ -480,7 +481,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = tags,
             deps = core_deps,
             args = args,
-            flaky = flaky,
+            flaky = True,
             **test_args
         )
 

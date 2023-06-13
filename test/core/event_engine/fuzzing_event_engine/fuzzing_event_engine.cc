@@ -327,7 +327,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
   g_fuzzing_event_engine->RunLocked(
       [middle = std::move(middle), index, data,
        on_writable = std::move(on_writable)]() mutable {
-        grpc_core::MutexLock lock(&*mu_);
+        grpc_core::ReleasableMutexLock lock(&*mu_);
         if (middle->closed[index]) {
           g_fuzzing_event_engine->RunLocked(
               [on_writable = std::move(on_writable)]() mutable {
@@ -336,6 +336,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
           return;
         }
         if (middle->Write(data, index)) {
+          lock.Release();
           on_writable(absl::OkStatus());
           return;
         }
