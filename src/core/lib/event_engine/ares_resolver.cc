@@ -129,12 +129,12 @@ struct HostnameQueryArg : public QueryArg {
 
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    EventEngine* event_engine)
+    std::shared_ptr<EventEngine> event_engine)
     : grpc_core::InternallyRefCounted<AresResolver>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
                                                             : nullptr),
       polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(event_engine) {}
+      event_engine_(std::move(event_engine)) {}
 
 AresResolver::~AresResolver() {
   GPR_ASSERT(fd_node_list_.empty());

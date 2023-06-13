@@ -498,10 +498,10 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     const ResolverOptions& options, PosixEventPoller* poller,
     std::shared_ptr<EventEngine> event_engine)
     : options_(options),
-      event_engine_(std::move(event_engine)),
+      event_engine_(event_engine),
       ares_resolver_(grpc_core::MakeOrphanable<AresResolver>(
           std::make_unique<GrpcPolledFdFactoryPosix>(poller),
-          event_engine_.get())) {}
+          std::move(event_engine))) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   // The DNSResolver is held alive by its caller (e.g.

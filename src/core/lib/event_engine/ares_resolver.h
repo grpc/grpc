@@ -113,7 +113,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                                std::vector<std::string>>;
 
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               EventEngine* event_engine);
+               std::shared_ptr<EventEngine> event_engine);
 
   ~AresResolver() override;
 
@@ -181,7 +181,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
       callback_map_;
   absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_;
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
-  EventEngine* event_engine_;
+  std::shared_ptr<EventEngine> event_engine_;
 };
 
 }  // namespace experimental
