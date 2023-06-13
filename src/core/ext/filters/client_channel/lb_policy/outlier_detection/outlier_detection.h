@@ -93,23 +93,6 @@ struct OutlierDetectionConfig {
                     ValidationErrors* errors);
 };
 
-// TODO(roth): This is a horrible hack used to disable outlier detection
-// when used with the pick_first policy.  Remove this as part of
-// implementing the dualstack backend design.
-class DisableOutlierDetectionAttribute
-    : public ServerAddress::AttributeInterface {
- public:
-  static const char* kName;
-
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<DisableOutlierDetectionAttribute>();
-  }
-
-  int Cmp(const AttributeInterface*) const override { return true; }
-
-  std::string ToString() const override { return "true"; }
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H

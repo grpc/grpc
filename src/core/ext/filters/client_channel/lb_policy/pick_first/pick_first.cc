@@ -37,7 +37,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -370,19 +369,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     status = args.addresses.status();
   } else if (args.addresses->empty()) {
     status = absl::UnavailableError("address list must not be empty");
-  }
-  // TODO(roth): This is a hack to disable outlier_detection when used
-  // with pick_first, for the reasons described in
-  // https://github.com/grpc/grpc/issues/32967.  Remove this when
-  // implementing the dualstack design.
-  if (args.addresses.ok()) {
-    ServerAddressList addresses;
-    for (const auto& address : *args.addresses) {
-      addresses.emplace_back(address.WithAttribute(
-          DisableOutlierDetectionAttribute::kName,
-          std::make_unique<DisableOutlierDetectionAttribute>()));
-    }
-    args.addresses = std::move(addresses);
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.

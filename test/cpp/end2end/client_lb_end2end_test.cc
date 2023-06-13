@@ -2934,7 +2934,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", port, " attributes={",
-        kAttributeKey, "=foo, disable_outlier_detection=true}"));
+        kAttributeKey, "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
