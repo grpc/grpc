@@ -569,7 +569,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get())
         ->SetSubchannel(subchannel_.get());
-    data_watchers_.insert(std::move(watcher));
+    GPR_ASSERT(data_watchers_.insert(std::move(watcher)).second);
   }
 
   void CancelDataWatcher(DataWatcherInterface* watcher) override
@@ -690,7 +690,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   // A heterogenous lookup comparator for data watchers that allows
   // unique_ptr keys to be looked up as raw pointers.
-  struct DataWatcherCompare {
+  struct DataWatcherLessThan {
     using is_transparent = void;
     bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
                     const std::unique_ptr<DataWatcherInterface>& p2) const {
@@ -715,7 +715,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherCompare>
+  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
       data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
