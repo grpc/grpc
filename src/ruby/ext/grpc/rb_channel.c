@@ -418,13 +418,15 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   return op_success ? Qtrue : Qfalse;
 }
 
-static void grpc_rb_channel_maybe_recreate_channel_after_fork(grpc_rb_channel* wrapper, VALUE target) {
+static void grpc_rb_channel_maybe_recreate_channel_after_fork(
+    grpc_rb_channel* wrapper, VALUE target) {
   // TODO(apolcyn): check if fork support is enabled here.
   // The only way we can get bg->channel_destroyed without bg itself being
   // NULL is if we destroyed the channel during GRPC::prefork.
   bg_watched_channel* bg = wrapper->bg_wrapped;
   if (bg->channel_destroyed) {
-    // There must be one ref at this point, held by the ruby-level channel object.
+    // There must be one ref at this point, held by the ruby-level channel
+    // object.
     GPR_ASSERT(bg->refcount == 1);
     // Wait for channel polling thread to re-initialize
     int stop_waiting_for_thread_start = 0;
@@ -433,12 +435,14 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(grpc_rb_channel* w
         &stop_waiting_for_thread_start,
         wait_until_channel_polling_thread_started_unblocking_func,
         &stop_waiting_for_thread_start);
-    rb_thread_call_without_gvl(channel_safe_destroy_without_gil, bg, NULL, NULL);
+    rb_thread_call_without_gvl(channel_safe_destroy_without_gil, bg, NULL,
+                               NULL);
     // re-create C-core channel
     const char* target_str = StringValueCStr(target);
     grpc_channel* channel;
     if (wrapper->credentials == Qnil) {
-      grpc_channel_credentials* insecure_creds = grpc_insecure_credentials_create();
+      grpc_channel_credentials* insecure_creds =
+          grpc_insecure_credentials_create();
       // TODO(apolcyn): plumb channel args through post-fork re-creation
       channel = grpc_channel_create(target_str, insecure_creds, NULL);
       grpc_channel_credentials_release(insecure_creds);
@@ -447,10 +451,12 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(grpc_rb_channel* w
       if (grpc_rb_is_channel_credentials(wrapper->credentials)) {
         creds = grpc_rb_get_wrapped_channel_credentials(wrapper->credentials);
       } else if (grpc_rb_is_xds_channel_credentials(wrapper->credentials)) {
-        creds = grpc_rb_get_wrapped_xds_channel_credentials(wrapper->credentials);
+        creds =
+            grpc_rb_get_wrapped_xds_channel_credentials(wrapper->credentials);
       } else {
         rb_raise(rb_eTypeError,
-                 "failed to re-create channel after fork: bad creds, want ChannelCredentials or XdsChannelCredentials");
+                 "failed to re-create channel after fork: bad creds, want "
+                 "ChannelCredentials or XdsChannelCredentials");
         return;
       }
       // TODO(apolcyn): plumb channel args through post-fork re-creation
@@ -501,7 +507,8 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     return Qnil;
   }
   // TODO(apolcyn): this needs to be synchronized
-  grpc_rb_channel_maybe_recreate_channel_after_fork(wrapper, rb_ivar_get(self, id_target));
+  grpc_rb_channel_maybe_recreate_channel_after_fork(
+      wrapper, rb_ivar_get(self, id_target));
 
   cq = grpc_completion_queue_create_for_pluck(NULL);
   method_slice =
@@ -825,11 +832,12 @@ void grpc_rb_channel_polling_thread_start() {
 
 void grpc_rb_channel_polling_thread_stop() {
   if (!RTEST(g_channel_polling_thread)) {
-    gpr_log(GPR_ERROR, "GRPC_RUBY: channel polling thread stop: thread was not started");
+    gpr_log(GPR_ERROR,
+            "GRPC_RUBY: channel polling thread stop: thread was not started");
     return;
   }
-  rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func, NULL,
-                             NULL, NULL);
+  rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func, NULL, NULL,
+                             NULL);
   rb_funcall(g_channel_polling_thread, rb_intern("join"), 0);
   // state associated with the channel polling thread is destroyed, reset so
   // we can start again later

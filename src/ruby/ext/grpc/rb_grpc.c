@@ -271,7 +271,10 @@ static gpr_once g_once_init = GPR_ONCE_INIT;
 void grpc_ruby_fork_guard() {
   if (enable_fork_support) return;
   if (grpc_ruby_forked_after_init()) {
-    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking unless the GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the platform supports it");
+    rb_raise(rb_eRuntimeError,
+             "grpc cannot be used before and after forking unless the "
+             "GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the "
+             "platform supports it");
   }
 }
 
@@ -365,6 +368,8 @@ void Init_grpc_c() {
   Init_grpc_compression_options();
   // define fork APIs
   rb_define_module_function(grpc_rb_mGRPC, "prefork", grpc_rb_prefork, 0);
-  rb_define_module_function(grpc_rb_mGRPC, "postfork_child", grpc_rb_postfork_child, 0);
-  rb_define_module_function(grpc_rb_mGRPC, "postfork_parent", grpc_rb_postfork_parent, 0);
+  rb_define_module_function(grpc_rb_mGRPC, "postfork_child",
+                            grpc_rb_postfork_child, 0);
+  rb_define_module_function(grpc_rb_mGRPC, "postfork_parent",
+                            grpc_rb_postfork_parent, 0);
 }
