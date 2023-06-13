@@ -275,10 +275,10 @@ class RingHash : public LoadBalancingPolicy {
   // The index parameter indicates the index into the list of the endpoint
   // whose status report triggered the call to
   // UpdateAggregatedConnectivityStateLocked().
-  // connection_attempt_complete is true if the endpoint has just
-  // finished a connection attempt.
+  // entered_transient_failure is true if the endpoint has just
+  // entered TRANSIENT_FAILURE state.
   void UpdateAggregatedConnectivityStateLocked(size_t index,
-                                               bool connection_attempt_complete,
+                                               bool entered_transient_failure,
                                                absl::Status status);
 
   // Current address list, channel args, and ring.
@@ -293,10 +293,6 @@ class RingHash : public LoadBalancingPolicy {
   // it's not currently actually used for anything outside of the picker),
   // then we will no longer need this data member.
   absl::Status last_failure_;
-
-  // The index of the endpoint currently doing an internally
-  // triggered connection attempt, if any.
-  absl::optional<size_t> internally_triggered_connection_index_;
 
   // indicating if we are shutting down.
   bool shutdown_ = false;
@@ -591,13 +587,15 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
   }
   if (child_policy_ == nullptr) return;  // Already orphaned.
   // Update state.
+  const bool entered_transient_failure =
+      connectivity_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      new_state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   connectivity_state_ = new_state;
   status_ = status;
   picker_ = std::move(picker);
   // Update the aggregated connectivity state.
-  const bool connection_attempt_complete = new_state != GRPC_CHANNEL_CONNECTING;
   ring_hash_->UpdateAggregatedConnectivityStateLocked(
-      index_, connection_attempt_complete, status);
+      index_, entered_transient_failure, status);
 }
 
 //
@@ -681,12 +679,12 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   // Return a new picker.
   UpdateAggregatedConnectivityStateLocked(
-      /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
+      /*index=*/0, /*entered_transient_failure=*/false, absl::OkStatus());
   return absl::OkStatus();
 }
 
 void RingHash::UpdateAggregatedConnectivityStateLocked(
-    size_t index, bool connection_attempt_complete, absl::Status status) {
+    size_t index, bool entered_transient_failure, absl::Status status) {
   // Count the number of endpoints in each state.
   size_t num_idle = 0;
   size_t num_connecting = 0;
@@ -773,37 +771,59 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   // it will need special handling to ensure that it will eventually
   // recover from TRANSIENT_FAILURE state once the problem is resolved.
   // Specifically, it will make sure that it is attempting to connect to
-  // at least one endpoint at any given time.  After a given endpoint
-  // fails a connection attempt, it will move on to the next endpoint
-  // in the ring.  It will keep doing this until one of the endpoints
-  // successfully connects, at which point it will report READY and stop
-  // proactively trying to connect.  The policy will remain in
-  // TRANSIENT_FAILURE until at least one endpoint becomes connected,
-  // even if endpoints are in state CONNECTING during that time.
+  // at least one endpoint at any given time.  But we don't want to just
+  // try to connect to only one endpoint, because if that particular
+  // endpoint happens to be down but the rest are reachable, we would
+  // incorrectly fail to recover.
+  //
+  // So, to handle this, whenever an endpoint initially enters
+  // TRANSIENT_FAILURE state (i.e., its initial connection attempt has
+  // failed), if there are no endpoints currently in CONNECTING state
+  // (i.e., they are still trying their initial connection attempt),
+  // then we will trigger a connection attempt for the first endpoint
+  // that is currently in state IDLE, if any.
+  //
+  // Note that once an endpoint enters TRANSIENT_FAILURE state, it will
+  // stay in that state and automatically retry after appropriate backoff,
+  // never stopping until it establishes a connection.  This means that
+  // if we stay in TRANSIENT_FAILURE for a long period of time, we will
+  // eventually be trying *all* endpoints, which probably isn't ideal.
+  // But it's no different than what can happen if ring_hash is the root
+  // LB policy and we keep getting picks, so it's not really a new
+  // problem.  If/when it becomes an issue, we can figure out how to
+  // address it.
   //
   // Note that we do the same thing when the policy is in state
   // CONNECTING, just to ensure that we don't remain in CONNECTING state
   // indefinitely if there are no new picks coming in.
-// FIXME: is this all still right now that we're seeing sticky-TF from PF?
-  if (internally_triggered_connection_index_.has_value() &&
-      *internally_triggered_connection_index_ == index &&
-      connection_attempt_complete) {
-    internally_triggered_connection_index_.reset();
-  }
-  if (start_connection_attempt &&
-      !internally_triggered_connection_index_.has_value()) {
-    size_t next_index = (index + 1) % addresses_.size();
-    auto it = endpoint_map_.find(addresses_[next_index].WithoutAttributes());
-    GPR_ASSERT(it != endpoint_map_.end());
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO,
-              "[RH %p] triggering internal connection attempt for endpoint "
-              "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",
-              this, it->second.get(), addresses_[next_index].ToString().c_str(),
-              next_index, addresses_.size());
+  if (start_connection_attempt && entered_transient_failure) {
+    size_t first_idle_index = addresses_.size();
+    for (size_t i = 0; i < addresses_.size(); ++i) {
+      auto it = endpoint_map_.find(addresses_[i].WithoutAttributes());
+      GPR_ASSERT(it != endpoint_map_.end());
+      if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
+        first_idle_index = addresses_.size();
+        break;
+      }
+      if (first_idle_index == addresses_.size() &&
+          it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
+        first_idle_index = i;
+      }
     }
-    it->second->RequestConnectionLocked();
-    internally_triggered_connection_index_ = next_index;
+    if (first_idle_index != addresses_.size()) {
+      auto it =
+          endpoint_map_.find(addresses_[first_idle_index].WithoutAttributes());
+      GPR_ASSERT(it != endpoint_map_.end());
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+        gpr_log(GPR_INFO,
+                "[RH %p] triggering internal connection attempt for endpoint "
+                "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",
+                this, it->second.get(),
+                addresses_[first_idle_index].ToString().c_str(),
+                first_idle_index, addresses_.size());
+      }
+      it->second->RequestConnectionLocked();
+    }
   }
 }
 
