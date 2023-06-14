@@ -50,7 +50,7 @@ def main
   STDERR.puts 'start server'
   if secure
     server_runner = ServerRunner.new(SecureEchoServerImpl)
-    server_runner.creds = create_server_creds
+    server_runner.server_creds = create_server_creds
   else
     server_runner = ServerRunner.new(EchoServerImpl)
   end

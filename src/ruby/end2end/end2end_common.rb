@@ -47,18 +47,17 @@ class EchoServerImpl < Echo::EchoServer::Service
   def echo(echo_req, _)
     Echo::EchoReply.new(response: echo_req.request)
   end
+end
 
 class SecureEchoServerImpl < Echo::EchoServer::Service
   # say_hello implements the SayHello rpc method.
-  def echo(echo_req, )
+  def echo(echo_req, call)
     unless call.metadata["authorization"] == 'test'
       fail "expected authorization header with value: test"
     end
     Echo::EchoReply.new(response: echo_req.request)
   end
 end
-
-nd
 
 # ServerRunner starts an "echo server" that test clients can make calls to
 class ServerRunner
