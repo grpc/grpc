@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
@@ -86,7 +87,17 @@ namespace grpc_core {
 
 namespace {
 
-std::atomic<uint64_t> unique{std::random_device()()};
+uint64_t Rand() {
+  struct State {
+    Mutex mu;
+    absl::BitGen gen ABSL_GUARDED_BY(mu);
+  };
+  static State* const state = new State;
+  MutexLock lock(&state->mu);
+  return absl::Uniform<uint64_t>(state->gen);
+}
+
+std::atomic<uint64_t> unique{Rand()};
 
 void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
@@ -569,9 +580,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix-abstract:grpc_fullstack_test.%%00.%d.%" PRId64
-                      ".%" PRId32 ".%" PRId64,
+                      ".%" PRId32 ".%" PRId64 ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
-                      unique.fetch_add(1, std::memory_order_relaxed)),
+                      unique.fetch_add(1, std::memory_order_relaxed), Rand()),
                   UDS);
             }},
 #endif
@@ -612,9 +623,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix:/tmp/grpc_fullstack_test.%%25.%d.%" PRId64
-                      ".%" PRId32 ".%" PRId64,
+                      ".%" PRId32 ".%" PRId64 ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
-                      unique.fetch_add(1, std::memory_order_relaxed)),
+                      unique.fetch_add(1, std::memory_order_relaxed), Rand()),
                   UDS);
             }},
         CoreTestConfiguration{
@@ -629,9 +640,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
                       "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                      ".%" PRId64,
+                      ".%" PRId64 ".%" PRId64,
                       getpid(), now.tv_sec, now.tv_nsec,
-                      unique.fetch_add(1, std::memory_order_relaxed)),
+                      unique.fetch_add(1, std::memory_order_relaxed), Rand()),
                   UDS);
             }},
 #endif
@@ -862,9 +873,9 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
               return std::make_unique<InsecureFixture>(absl::StrFormat(
                   "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                  ".%" PRId64,
+                  ".%" PRId64 ".%" PRId64,
                   getpid(), now.tv_sec, now.tv_nsec,
-                  unique.fetch_add(1, std::memory_order_relaxed)));
+                  unique.fetch_add(1, std::memory_order_relaxed), Rand()));
             }},
 #endif
 // TODO(ctiller): these got inadvertently disabled when the project
