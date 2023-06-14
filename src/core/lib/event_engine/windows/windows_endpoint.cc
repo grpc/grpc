@@ -251,18 +251,18 @@ void AbortOnEvent(absl::Status) {
 absl::AnyInvocable<void(absl::Status)>
 WindowsEndpoint::HandleReadClosure::ResetAndReturnCallback() {
   auto cb = std::move(cb_);
-  io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
+  io_state_.reset();
   return cb;
 }
 
 absl::AnyInvocable<void(absl::Status)>
 WindowsEndpoint::HandleWriteClosure::ResetAndReturnCallback() {
   auto cb = std::move(cb_);
-  io_state_.reset();
   cb_ = &AbortOnEvent;
   buffer_ = nullptr;
+  io_state_.reset();
   return cb;
 }
 
