@@ -244,7 +244,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
     }
     grpc_channel_credentials* insecure_creds =
         grpc_insecure_credentials_create();
-    ch = grpc_channel_create(target_chars, insecure_creds, &args);
+    ch = grpc_channel_create(target_chars, insecure_creds, &wrapper->args);
     grpc_channel_credentials_release(insecure_creds);
   } else {
     wrapper->credentials = credentials;
@@ -257,7 +257,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
                "bad creds, want ChannelCredentials or XdsChannelCredentials");
       return Qnil;
     }
-    ch = grpc_channel_create(target_chars, creds, &args);
+    ch = grpc_channel_create(target_chars, creds, &wrapper->args);
   }
 
   GPR_ASSERT(ch);
@@ -439,8 +439,7 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(
     if (wrapper->credentials == Qnil) {
       grpc_channel_credentials* insecure_creds =
           grpc_insecure_credentials_create();
-      // TODO(apolcyn): plumb channel args through post-fork re-creation
-      channel = grpc_channel_create(target_str, insecure_creds, NULL);
+      channel = grpc_channel_create(target_str, insecure_creds, &wrapper->args);
       grpc_channel_credentials_release(insecure_creds);
     } else {
       grpc_channel_credentials* creds;
@@ -455,8 +454,7 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(
                  "ChannelCredentials or XdsChannelCredentials");
         return;
       }
-      // TODO(apolcyn): plumb channel args through post-fork re-creation
-      channel = grpc_channel_create(target_str, creds, NULL);
+      channel = grpc_channel_create(target_str, creds, &wrapper->args);
     }
     // re-register with channel polling thread
     channel_init_try_register_stack stack;
