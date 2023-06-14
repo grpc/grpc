@@ -14681,24 +14681,6 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: test_config_sharded_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/test_config_sharded_test.cc
-  deps:
-  - grpc_test_util
-- name: test_config_unsharded_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/test_config_unsharded_test.cc
-  deps:
-  - grpc_test_util
 - name: test_core_channel_channelz_test
   gtest: true
   build: test
