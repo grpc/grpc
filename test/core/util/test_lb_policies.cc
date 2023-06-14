@@ -26,7 +26,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
