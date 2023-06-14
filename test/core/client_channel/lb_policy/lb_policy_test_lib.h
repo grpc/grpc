@@ -175,6 +175,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->watchers_.insert(orca_watcher_.get());
       }
 
+      void CancelDataWatcher(DataWatcherInterface* watcher) override {
+        MutexLock lock(&state_->backend_metric_watcher_mu_);
+        if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
+        state_->watchers_.erase(orca_watcher_.get());
+        orca_watcher_.reset();
+      }
+
       // Don't need this method, so it's a no-op.
       void ResetBackoff() override {}
 
@@ -333,11 +340,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // unexpected events in the queue.
     void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      EXPECT_TRUE(queue_.empty()) << location.file() << ":" << location.line();
-      for (const Event& event : queue_) {
-        gpr_log(GPR_ERROR, "UNEXPECTED EVENT LEFT IN QUEUE: %s",
-                EventString(event).c_str());
-      }
+      EXPECT_TRUE(queue_.empty())
+          << location.file() << ":" << location.line() << "\n"
+          << QueueString();
     }
 
     // Returns the next event in the queue if it is a state update.
@@ -392,6 +397,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           [](const ReresolutionRequested& reresolution) {
             return reresolution.ToString();
           });
+    }
+
+    std::string QueueString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
+      std::vector<std::string> parts = {"Queue:"};
+      for (const Event& event : queue_) {
+        parts.push_back(EventString(event));
+      }
+      return absl::StrJoin(parts, "\n  ");
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(

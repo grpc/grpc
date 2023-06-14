@@ -240,7 +240,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
 }
 
-TEST_F(OutlierDetectionTest, FailurePercentageWithPickFirst) {
+TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
   // Send initial update.
@@ -284,13 +284,11 @@ TEST_F(OutlierDetectionTest, FailurePercentageWithPickFirst) {
   // Advance time and run the timer callback to trigger ejection.
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();
-  gpr_log(GPR_INFO, "### ejection complete");
-  // Expect a re-resolution request.
-  ExpectReresolutionRequest();
-  // The pick_first policy should report IDLE with a queuing picker.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
-  // The queued pick should have triggered a reconnection attempt.
-  EXPECT_TRUE(subchannel->ConnectionRequested());
+  gpr_log(GPR_INFO, "### ejection timer pass complete");
+  // Subchannel should not be ejected.
+  ExpectQueueEmpty();
+  // Subchannel should not see a reconnection request.
+  EXPECT_FALSE(subchannel->ConnectionRequested());
 }
 
 }  // namespace

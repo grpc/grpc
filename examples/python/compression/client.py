@@ -25,7 +25,7 @@ import grpc
 from examples.protos import helloworld_pb2
 from examples.protos import helloworld_pb2_grpc
 
-_DESCRIPTION = 'A client capable of compression.'
+_DESCRIPTION = "A client capable of compression."
 _COMPRESSION_OPTIONS = {
     "none": grpc.Compression.NoCompression,
     "deflate": grpc.Compression.Deflate,
@@ -36,33 +36,41 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def run_client(channel_compression, call_compression, target):
-    with grpc.insecure_channel(target,
-                               compression=channel_compression) as channel:
+    with grpc.insecure_channel(
+        target, compression=channel_compression
+    ) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
-                                 compression=call_compression,
-                                 wait_for_ready=True)
+        response = stub.SayHello(
+            helloworld_pb2.HelloRequest(name="you"),
+            compression=call_compression,
+            wait_for_ready=True,
+        )
         print("Response: {}".format(response))
 
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument('--channel_compression',
-                        default='none',
-                        nargs='?',
-                        choices=_COMPRESSION_OPTIONS.keys(),
-                        help='The compression method to use for the channel.')
     parser.add_argument(
-        '--call_compression',
-        default='none',
-        nargs='?',
+        "--channel_compression",
+        default="none",
+        nargs="?",
         choices=_COMPRESSION_OPTIONS.keys(),
-        help='The compression method to use for an individual call.')
-    parser.add_argument('--server',
-                        default='localhost:50051',
-                        type=str,
-                        nargs='?',
-                        help='The host-port pair at which to reach the server.')
+        help="The compression method to use for the channel.",
+    )
+    parser.add_argument(
+        "--call_compression",
+        default="none",
+        nargs="?",
+        choices=_COMPRESSION_OPTIONS.keys(),
+        help="The compression method to use for an individual call.",
+    )
+    parser.add_argument(
+        "--server",
+        default="localhost:50051",
+        type=str,
+        nargs="?",
+        help="The host-port pair at which to reach the server.",
+    )
     args = parser.parse_args()
     channel_compression = _COMPRESSION_OPTIONS[args.channel_compression]
     call_compression = _COMPRESSION_OPTIONS[args.call_compression]

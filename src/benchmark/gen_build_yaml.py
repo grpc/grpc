@@ -19,27 +19,23 @@ import sys
 import glob
 import yaml
 
-os.chdir(os.path.dirname(sys.argv[0]) + '/../..')
+os.chdir(os.path.dirname(sys.argv[0]) + "/../..")
 
 out = {}
 
-out['libs'] = [{
-    'name':
-        'benchmark',
-    'build':
-        'private',
-    'language':
-        'c++',
-    'secure':
-        False,
-    'defaults':
-        'benchmark',
-    'src':
-        sorted(glob.glob('third_party/benchmark/src/*.cc')),
-    'headers':
-        sorted(
-            glob.glob('third_party/benchmark/src/*.h') +
-            glob.glob('third_party/benchmark/include/benchmark/*.h')),
-}]
+out["libs"] = [
+    {
+        "name": "benchmark",
+        "build": "private",
+        "language": "c++",
+        "secure": False,
+        "defaults": "benchmark",
+        "src": sorted(glob.glob("third_party/benchmark/src/*.cc")),
+        "headers": sorted(
+            glob.glob("third_party/benchmark/src/*.h")
+            + glob.glob("third_party/benchmark/include/benchmark/*.h")
+        ),
+    }
+]
 
 print(yaml.dump(out))
