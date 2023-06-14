@@ -27,14 +27,17 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -154,6 +157,16 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
 
 namespace grpc {
 namespace testing {
+
+int CurrentGtestShard() {
+  auto env = grpc_core::GetEnv("GTEST_SHARD_INDEX");
+  if (!env.has_value()) return 0;
+  int shard;
+  if (!absl::SimpleAtoi(*env, &shard)) return 0;
+  GPR_ASSERT(shard >= 0);
+  GPR_ASSERT(shard < kMaxGtestShard);
+  return shard + 1;
+}
 
 TestEnvironment::TestEnvironment(int* argc, char** argv) {
   grpc_test_init(argc, argv);

@@ -49,6 +49,12 @@ bool grpc_wait_until_shutdown(int64_t time_s);
 namespace grpc {
 namespace testing {
 
+constexpr int kMaxGtestShard = 50;
+
+// Which gtest shard are we running on?
+// Returns 0..kMaxGtestShard inclusive (0 indicates non sharded)
+int CurrentGtestShard();
+
 // A TestEnvironment object should be alive in the main function of a test. It
 // provides test init and shutdown inside.
 class TestEnvironment {
