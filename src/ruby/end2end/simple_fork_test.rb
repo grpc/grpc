@@ -34,16 +34,10 @@ def do_rpc(stub)
 end
 
 def main
-  this_dir = File.expand_path(File.dirname(__FILE__))
-  echo_server_path = File.join(this_dir, 'echo_server.rb')
-  to_child_r, to_child_w = IO.pipe
-  to_parent_r, to_parent_w = IO.pipe
-  Process.spawn(RbConfig.ruby, echo_server_path, :in => to_child_r, :out => to_parent_w)
-  to_child_r.close
-  to_parent_w.close
-  child_port = to_parent_r.gets.strip
-  STDERR.puts "child running on port: #{child_port}"
-  stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
+  # TODO(apolcyn): figure out how to run a server in this test
+  #server_runner = ServerRunner.new(EchoServerImpl)
+  #server_port = server_runner.run
+  stub = Echo::EchoServer::Stub.new("localhost:443", :this_channel_is_insecure)
   do_rpc(stub)
   STDERR.puts "GRPC::pre_fork begin"
   GRPC::prefork
@@ -66,6 +60,7 @@ def main
   STDERR.puts "parent: second post-fork RPC done"
   Process.wait pid
   STDERR.puts "parent: done"
+  #server_runner.stop
 end
 
 main
