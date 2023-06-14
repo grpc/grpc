@@ -26,18 +26,34 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'grpc'
 require 'end2end_common'
 
-def do_rpc(stub)
-  begin
-    stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
-  rescue GRPC::Unavailable
-  end
+
+def create_server_creds
+  test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
+  GRPC.logger.info("test root: #{test_root}")
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  creds = files.map { |f| File.open(File.join(test_root, f)).read }
+  GRPC::Core::ServerCredentials.new(
+    creds[0],
+    [{ private_key: creds[1], cert_chain: creds[2] }],
+    true) # force client auth
 end
 
 # Runs an echo server. Once the server is running, this writes the port of the
 # server to stdout. Terminates after reading EOF on stdin.
 def main
+  secure = false
+  OptionParser.new do |opts|
+    opts.on('--secure') do
+      secure = true
+    end
+  end.parse!
   STDERR.puts 'start server'
-  server_runner = ServerRunner.new(EchoServerImpl)
+  if secure
+    server_runner = ServerRunner.new(SecureEchoServerImpl)
+    server_runner.creds = create_server_creds
+  else
+    server_runner = ServerRunner.new(EchoServerImpl)
+  end
   server_port = server_runner.run
   p server_port
   STDIN.read

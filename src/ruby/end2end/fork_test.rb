@@ -28,10 +28,7 @@ require 'grpc'
 require 'end2end_common'
 
 def do_rpc(stub)
-  begin
-    stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
-  rescue GRPC::Unavailable
-  end
+  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
 end
 
 def main
