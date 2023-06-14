@@ -91,10 +91,12 @@ static void grpc_rb_event_queue_destroy() {
 }
 
 static void* grpc_rb_wait_for_event_no_gil(void* param) {
+  fprintf(stderr, "apolcyn top of event thread\n");
   grpc_rb_event* event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);
   while (!event_queue.abort) {
+    fprintf(stderr, "apolcyn event thread check for callbacks\n");
     if ((event = grpc_rb_event_queue_dequeue()) != NULL) {
       gpr_mu_unlock(&event_queue.mu);
       return event;
@@ -107,6 +109,7 @@ static void* grpc_rb_wait_for_event_no_gil(void* param) {
 }
 
 static void grpc_rb_event_unblocking_func(void* arg) {
+  fprintf(stderr, "apolcyn event thread unblocking func\n");
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
@@ -117,6 +120,7 @@ static void grpc_rb_event_unblocking_func(void* arg) {
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
 static VALUE grpc_rb_event_thread(VALUE arg) {
+  fprintf(stderr, "apolcyn top of event thread\n");
   grpc_rb_event* event;
   (void)arg;
   grpc_ruby_init();
@@ -138,6 +142,7 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
 }
 
 void grpc_rb_event_queue_thread_start() {
+  fprintf(stderr, "apolcyn start event queue thread\n");
   if (!g_one_time_init_done) {
     g_one_time_init_done = true;
     gpr_mu_init(&event_queue.mu);
@@ -151,6 +156,7 @@ void grpc_rb_event_queue_thread_start() {
 }
 
 void grpc_rb_event_queue_thread_stop() {
+  fprintf(stderr, "apolcyn stop event queue thread\n");
   GPR_ASSERT(g_one_time_init_done);
   if (!RTEST(g_event_thread)) {
     gpr_log(GPR_ERROR,
