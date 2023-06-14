@@ -1168,7 +1168,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             grpc_core::StatusToString(t->goaway_error).c_str());
   }
   if (t->is_client) {
-    cancel_pings(t, t->goaway_error);
     cancel_unstarted_streams(t, t->goaway_error);
     // Cancel all unseen streams
     grpc_chttp2_stream_map_for_each(
