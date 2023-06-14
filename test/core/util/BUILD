@@ -311,6 +311,7 @@ grpc_cc_library(
         "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
+        "//src/core:delegating_helper",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
         "//src/core:json",

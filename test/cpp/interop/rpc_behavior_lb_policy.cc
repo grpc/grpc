@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 
 namespace grpc {
 namespace testing {

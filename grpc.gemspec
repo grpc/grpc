@@ -1418,6 +1418,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/json/json_util.h )
   s.files += %w( src/core/lib/json/json_writer.cc )
   s.files += %w( src/core/lib/json/json_writer.h )
+  s.files += %w( src/core/lib/load_balancing/delegating_helper.h )
   s.files += %w( src/core/lib/load_balancing/lb_policy.cc )
   s.files += %w( src/core/lib/load_balancing/lb_policy.h )
   s.files += %w( src/core/lib/load_balancing/lb_policy_factory.h )

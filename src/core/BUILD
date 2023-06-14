@@ -2675,6 +2675,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "delegating_helper",
+    hdrs = ["lib/load_balancing/delegating_helper.h"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "lb_policy",
+        "subchannel_interface",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:server_address",
+    ],
+)
+
+grpc_cc_library(
     name = "proxy_mapper",
     hdrs = ["lib/handshaker/proxy_mapper.h"],
     external_deps = [
@@ -3845,6 +3865,7 @@ grpc_cc_library(
         "channel_stack_type",
         "closure",
         "context",
+        "delegating_helper",
         "error",
         "gpr_atm",
         "grpc_sockaddr",
@@ -3942,6 +3963,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "delegating_helper",
         "dual_ref_counted",
         "error",
         "grpc_fake_credentials",
@@ -4283,6 +4305,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_matchers",
         "grpc_outlier_detection_header",
         "grpc_tls_credentials",
@@ -4353,6 +4376,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_lb_address_filtering",
         "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
@@ -4399,6 +4423,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_backend_metric_data",
         "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
@@ -4440,6 +4465,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_resolver_xds_header",
         "json",
         "json_args",
@@ -4479,6 +4505,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_lb_xds_attributes",
         "json",
         "json_args",
@@ -4794,6 +4821,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",
@@ -4833,6 +4861,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4874,6 +4903,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "delegating_helper",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4919,6 +4949,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "delegating_helper",
         "error",
         "grpc_stateful_session_filter",
         "grpc_xds_client",

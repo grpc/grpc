@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 
 namespace grpc {
 namespace testing {

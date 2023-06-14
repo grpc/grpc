@@ -457,69 +457,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   ChannelArgs channel_args_;
 };
 
-/// A helper for use in parent policies.  All methods delegate to a
-/// parent policy's helper unless otherwise overridden.
-class LoadBalancingPolicy::DelegatingChannelControlHelper
-    : public LoadBalancingPolicy::ChannelControlHelper {
- public:
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return parent_helper()->CreateSubchannel(std::move(address), args);
-  }
-
-  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                   RefCountedPtr<SubchannelPicker> picker) override {
-    parent_helper()->UpdateState(state, status, std::move(picker));
-  }
-
-  void RequestReresolution() override {
-    parent_helper()->RequestReresolution();
-  }
-
-  absl::string_view GetAuthority() override {
-    return parent_helper()->GetAuthority();
-  }
-
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return parent_helper()->GetEventEngine();
-  }
-
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
-    parent_helper()->AddTraceEvent(severity, message);
-  }
-
- private:
-  /// Returns the parent helper that we should delegate to by default.
-  virtual ChannelControlHelper* parent_helper() const = 0;
-};
-
-/// A delegating helper that owns a ref to the parent policy.
-template <typename ParentPolicy>
-class LoadBalancingPolicy::ParentOwningDelegatingChannelControlHelper
-    : public LoadBalancingPolicy::DelegatingChannelControlHelper {
- public:
-  explicit ParentOwningDelegatingChannelControlHelper(
-      RefCountedPtr<ParentPolicy> parent)
-      : parent_(std::move(parent)) {}
-
-  ~ParentOwningDelegatingChannelControlHelper() override {
-    parent_.reset(DEBUG_LOCATION, "Helper");
-  }
-
- protected:
-  ParentPolicy* parent() const {
-    return static_cast<ParentPolicy*>(parent_.get());
-  }
-
-  ChannelControlHelper* parent_helper() const override {
-    return parent_->channel_control_helper();
-  }
-
- private:
-  RefCountedPtr<LoadBalancingPolicy> parent_;
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
