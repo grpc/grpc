@@ -162,25 +162,23 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    class Helper : public ChannelControlHelper {
+    class Helper : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
           : priority_(std::move(priority)) {}
 
       ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return priority_->priority_policy_->channel_control_helper();
+      }
+
       RefCountedPtr<ChildPriority> priority_;
     };
 
@@ -793,14 +791,6 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 // PriorityLb::ChildPriority::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
-                                                    const ChannelArgs& args) {
-  if (priority_->priority_policy_->shutting_down_) return nullptr;
-  return priority_->priority_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
@@ -815,22 +805,6 @@ void PriorityLb::ChildPriority::Helper::RequestReresolution() {
     return;
   }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
-  return priority_->priority_policy_->channel_control_helper()->GetAuthority();
-}
-
-EventEngine* PriorityLb::ChildPriority::Helper::GetEventEngine() {
-  return priority_->priority_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void PriorityLb::ChildPriority::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (priority_->priority_policy_->shutting_down_) return;
-  priority_->priority_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                       message);
 }
 
 //

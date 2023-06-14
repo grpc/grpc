@@ -119,26 +119,7 @@ class XdsWrrLocalityLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class Helper : public ChannelControlHelper {
-   public:
-    explicit Helper(RefCountedPtr<XdsWrrLocalityLb> xds_wrr_locality)
-        : xds_wrr_locality_(std::move(xds_wrr_locality)) {}
-
-    ~Helper() override { xds_wrr_locality_.reset(DEBUG_LOCATION, "Helper"); }
-
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     RefCountedPtr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsWrrLocalityLb> xds_wrr_locality_;
-  };
+  using Helper = ParentOwningDelegatingChannelControlHelper<XdsWrrLocalityLb>;
 
   ~XdsWrrLocalityLb() override;
 
@@ -288,48 +269,6 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
-}
-
-//
-// XdsWrrLocalityLb::Helper
-//
-
-RefCountedPtr<SubchannelInterface> XdsWrrLocalityLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  return xds_wrr_locality_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
-}
-
-void XdsWrrLocalityLb::Helper::UpdateState(
-    grpc_connectivity_state state, const absl::Status& status,
-    RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_wrr_locality_lb %p] update from child: state=%s (%s) picker=%p",
-        xds_wrr_locality_.get(), ConnectivityStateName(state),
-        status.ToString().c_str(), picker.get());
-  }
-  xds_wrr_locality_->channel_control_helper()->UpdateState(state, status,
-                                                           std::move(picker));
-}
-
-void XdsWrrLocalityLb::Helper::RequestReresolution() {
-  xds_wrr_locality_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsWrrLocalityLb::Helper::GetAuthority() {
-  return xds_wrr_locality_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsWrrLocalityLb::Helper::GetEventEngine() {
-  return xds_wrr_locality_->channel_control_helper()->GetEventEngine();
-}
-
-void XdsWrrLocalityLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                             absl::string_view message) {
-  xds_wrr_locality_->channel_control_helper()->AddTraceEvent(severity, message);
 }
 
 //

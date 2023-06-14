@@ -131,49 +131,30 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     LoadReportTracker* load_report_tracker_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     BackendMetricsLbPolicy> {
    public:
     explicit Helper(RefCountedPtr<BackendMetricsLbPolicy> parent)
-        : parent_(std::move(parent)) {}
+        : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
         grpc_core::ServerAddress address,
         const grpc_core::ChannelArgs& args) override {
-      auto subchannel = parent_->channel_control_helper()->CreateSubchannel(
-          std::move(address), args);
+      auto subchannel =
+          parent_helper()->CreateSubchannel(std::move(address), args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
           grpc_core::Duration::Seconds(1),
-          std::make_unique<OobMetricWatcher>(parent_->load_report_tracker_)));
+          std::make_unique<OobMetricWatcher>(parent()->load_report_tracker_)));
       return subchannel;
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override {
-      parent_->channel_control_helper()->UpdateState(
+      parent_helper()->UpdateState(
           state, status,
           MakeRefCounted<Picker>(std::move(picker),
-                                 parent_->load_report_tracker_));
+                                 parent()->load_report_tracker_));
     }
-
-    void RequestReresolution() override {
-      parent_->channel_control_helper()->RequestReresolution();
-    }
-
-    absl::string_view GetAuthority() override {
-      return parent_->channel_control_helper()->GetAuthority();
-    }
-
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return parent_->channel_control_helper()->GetEventEngine();
-    }
-
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {
-      parent_->channel_control_helper()->AddTraceEvent(severity, message);
-    }
-
-   private:
-    RefCountedPtr<BackendMetricsLbPolicy> parent_;
   };
 
   class SubchannelCallTracker : public SubchannelCallTrackerInterface {

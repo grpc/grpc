@@ -170,25 +170,23 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
 
    private:
-    class Helper : public ChannelControlHelper {
+    class Helper : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
           : weighted_child_(std::move(weighted_child)) {}
 
       ~Helper() override { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
-      void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return weighted_child_->weighted_target_policy_
+            ->channel_control_helper();
+      }
+
       RefCountedPtr<WeightedChild> weighted_child_;
     };
 
@@ -674,44 +672,12 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 // WeightedTargetLb::WeightedChild::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
-  return weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   weighted_child_->OnConnectivityStateUpdateLocked(state, status,
                                                    std::move(picker));
-}
-
-void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
-  if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->RequestReresolution();
-}
-
-absl::string_view WeightedTargetLb::WeightedChild::Helper::GetAuthority() {
-  return weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-WeightedTargetLb::WeightedChild::Helper::GetEventEngine() {
-  return weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (weighted_child_->weighted_target_policy_->shutting_down_) return;
-  weighted_child_->weighted_target_policy_->channel_control_helper()
-      ->AddTraceEvent(severity, message);
 }
 
 //

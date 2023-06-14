@@ -454,23 +454,16 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper : public ParentOwningDelegatingChannelControlHelper<GrpcLb> {
    public:
     explicit Helper(RefCountedPtr<GrpcLb> parent)
-        : parent_(std::move(parent)) {}
+        : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<GrpcLb> parent_;
   };
 
   class StateWatcher : public AsyncConnectivityStateWatcherInterface {
@@ -786,32 +779,32 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
-  if (parent_->shutting_down_) return nullptr;
+  if (parent()->shutting_down_) return nullptr;
   const TokenAndClientStatsAttribute* attribute =
       static_cast<const TokenAndClientStatsAttribute*>(
           address.GetAttribute(kGrpcLbAddressAttributeKey));
   if (attribute == nullptr) {
     Crash(absl::StrFormat(
-        "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
-        parent_.get(), address.ToString().c_str()));
+        "[grpclb %p] no TokenAndClientStatsAttribute for address %p", parent(),
+        address.ToString().c_str()));
   }
   std::string lb_token = attribute->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = attribute->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
-      parent_->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                          args),
-      parent_->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
+      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                           args),
+      parent()->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
       std::move(client_stats));
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
                                  const absl::Status& status,
                                  RefCountedPtr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) return;
+  if (parent()->shutting_down_) return;
   // Record whether child policy reports READY.
-  parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
+  parent()->child_policy_ready_ = state == GRPC_CHANNEL_READY;
   // Enter fallback mode if needed.
-  parent_->MaybeEnterFallbackModeAfterStartup();
+  parent()->MaybeEnterFallbackModeAfterStartup();
   // We pass the serverlist to the picker so that it can handle drops.
   // However, we don't want to handle drops in the case where the child
   // policy is reporting a state other than READY (unless we are
@@ -822,53 +815,39 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   // a null serverlist to the picker, which tells it not to do drops.
   RefCountedPtr<Serverlist> serverlist;
   if (state == GRPC_CHANNEL_READY ||
-      (parent_->serverlist_ != nullptr &&
-       parent_->serverlist_->ContainsAllDropEntries())) {
-    serverlist = parent_->serverlist_;
+      (parent()->serverlist_ != nullptr &&
+       parent()->serverlist_->ContainsAllDropEntries())) {
+    serverlist = parent()->serverlist_;
   }
   RefCountedPtr<GrpcLbClientStats> client_stats;
-  if (parent_->lb_calld_ != nullptr &&
-      parent_->lb_calld_->client_stats() != nullptr) {
-    client_stats = parent_->lb_calld_->client_stats()->Ref();
+  if (parent()->lb_calld_ != nullptr &&
+      parent()->lb_calld_->client_stats() != nullptr) {
+    client_stats = parent()->lb_calld_->client_stats()->Ref();
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p helper %p] state=%s (%s) wrapping child "
             "picker %p (serverlist=%p, client_stats=%p)",
-            parent_.get(), this, ConnectivityStateName(state),
+            parent(), this, ConnectivityStateName(state),
             status.ToString().c_str(), picker.get(), serverlist.get(),
             client_stats.get());
   }
-  parent_->channel_control_helper()->UpdateState(
+  parent()->channel_control_helper()->UpdateState(
       state, status,
       MakeRefCounted<Picker>(std::move(serverlist), std::move(picker),
                              std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
-  if (parent_->shutting_down_) return;
+  if (parent()->shutting_down_) return;
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
   // the child policy. Otherwise, pass the re-resolution request up to the
   // channel.
-  if (parent_->lb_calld_ == nullptr ||
-      !parent_->lb_calld_->seen_initial_response()) {
-    parent_->channel_control_helper()->RequestReresolution();
+  if (parent()->lb_calld_ == nullptr ||
+      !parent()->lb_calld_->seen_initial_response()) {
+    parent()->channel_control_helper()->RequestReresolution();
   }
-}
-
-absl::string_view GrpcLb::Helper::GetAuthority() {
-  return parent_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine* GrpcLb::Helper::GetEventEngine() {
-  return parent_->channel_control_helper()->GetEventEngine();
-}
-
-void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                   absl::string_view message) {
-  if (parent_->shutting_down_) return;
-  parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
 
 //
