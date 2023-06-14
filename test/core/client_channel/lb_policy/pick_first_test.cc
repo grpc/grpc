@@ -52,12 +52,13 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   PickFirstTest() : lb_policy_(MakeLbPolicy("pick_first")) {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
-      bool shuffle_address_list) {
-    return MakeConfig(Json::FromArray({Json::FromObject({{
-        "pick_first",
-        Json::FromObject(
-            {{"shuffleAddressList", Json::FromBool(shuffle_address_list)}}),
-    }})}));
+      absl::optional<bool> shuffle_address_list = absl::nullopt) {
+    return MakeConfig(Json::FromArray({Json::FromObject(
+        {{"pick_first",
+          shuffle_address_list.has_value()
+              ? Json::FromObject({{"shuffleAddressList",
+                                   Json::FromBool(*shuffle_address_list)}})
+              : Json::FromObject({})}})}));
   }
 
   // Gets order the addresses are being picked. Return type is void so
@@ -66,6 +67,8 @@ class PickFirstTest : public LoadBalancingPolicyTest {
       absl::Span<const absl::string_view> addresses,
       bool exit_idle_after_connection_fails,
       std::vector<absl::string_view>* out_address_order) {
+    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
+                          DEBUG_LOCATION);
     out_address_order->clear();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
@@ -279,8 +282,6 @@ TEST_F(PickFirstTest, WithShuffle) {
   for (size_t i = 0; i < kMaxTries; ++i) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
-    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
-                          DEBUG_LOCATION);
     EXPECT_TRUE(status.ok()) << status;
     GetOrderAddressesArePicked(kAddresses, false, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
@@ -293,8 +294,6 @@ TEST_F(PickFirstTest, WithShuffle) {
   // All addresses are in the list, no duplicates
   ASSERT_THAT(addresses_after_update,
               ::testing::UnorderedElementsAreArray(kAddresses));
-  work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
-                        DEBUG_LOCATION);
   // Address order should be stable between updates
   std::vector<absl::string_view> addresses_on_another_try;
   GetOrderAddressesArePicked(kAddresses, true, &addresses_on_another_try);
@@ -302,6 +301,8 @@ TEST_F(PickFirstTest, WithShuffle) {
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
+  testing::ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
@@ -309,8 +310,6 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
-    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
-                          DEBUG_LOCATION);
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, true, &address_order);
@@ -318,6 +317,21 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   }
 }
 
+// TODO [eugeneo]: remove when the env var no longer necessary
+TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
+  constexpr std::array<absl::string_view, 6> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
+      "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  constexpr static size_t kMaxAttempts = 5;
+  for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
+    absl::Status status = ApplyUpdate(
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
+    EXPECT_TRUE(status.ok()) << status;
+    std::vector<absl::string_view> address_order;
+    GetOrderAddressesArePicked(kAddresses, false, &address_order);
+    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
+  }
+}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
