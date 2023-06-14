@@ -45,48 +45,54 @@ _ERROR_TOLERANCE = 0.1
 
 
 class _BaseXdsTimeOutTestCase(XdsUrlMapTestCase):
-
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
-        path_matcher['routeRules'] = [{
-            'priority': 0,
-            'matchRules': [{
-                'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
-            }],
-            'service': GcpResourceManager().default_backend_service(),
-            'routeAction': {
-                'maxStreamDuration': {
-                    'seconds': 3,
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [
+            {
+                "priority": 0,
+                "matchRules": [
+                    {"fullPathMatch": "/grpc.testing.TestService/UnaryCall"}
+                ],
+                "service": GcpResourceManager().default_backend_service(),
+                "routeAction": {
+                    "maxStreamDuration": {
+                        "seconds": 3,
+                    },
                 },
-            },
-        }]
+            }
+        ]
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 1)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['route']
-            ['maxStreamDuration']['maxStreamDuration'], '3s')
+            xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+                "maxStreamDuration"
+            ]["maxStreamDuration"],
+            "3s",
+        )
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['route']
-            ['maxStreamDuration']['grpcTimeoutHeaderMax'], '3s')
+            xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+                "maxStreamDuration"
+            ]["grpcTimeoutHeaderMax"],
+            "3s",
+        )
 
     def rpc_distribution_validate(self, unused_test_client):
         raise NotImplementedError()
 
 
 class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         # TODO(lidiz) either add support for rpc-behavior to other languages, or we
         # should always use Java server as backend.
-        if config.server_lang != 'java':
+        if config.server_lang != "java":
             return False
         if config.client_lang == skips.Lang.NODE:
-            return config.version_gte('v1.4.x')
+            return config.version_gte("v1.4.x")
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -96,32 +102,36 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
             # UnaryCall and EmptyCall both sleep-4.
             # UnaryCall timeouts, EmptyCall succeeds.
             metadata=(
-                (RpcTypeUnaryCall, 'rpc-behavior', 'sleep-4'),
-                (RpcTypeEmptyCall, 'rpc-behavior', 'sleep-4'),
+                (RpcTypeUnaryCall, "rpc-behavior", "sleep-4"),
+                (RpcTypeEmptyCall, "rpc-behavior", "sleep-4"),
             ),
-            num_rpcs=_NUM_RPCS)
+            num_rpcs=_NUM_RPCS,
+        )
         self.assertRpcStatusCode(
             test_client,
             expected=(
-                ExpectedResult(rpc_type=RpcTypeUnaryCall,
-                               status_code=grpc.StatusCode.DEADLINE_EXCEEDED),
-                ExpectedResult(rpc_type=RpcTypeEmptyCall,
-                               status_code=grpc.StatusCode.OK),
+                ExpectedResult(
+                    rpc_type=RpcTypeUnaryCall,
+                    status_code=grpc.StatusCode.DEADLINE_EXCEEDED,
+                ),
+                ExpectedResult(
+                    rpc_type=RpcTypeEmptyCall, status_code=grpc.StatusCode.OK
+                ),
             ),
             length=_LENGTH_OF_RPC_SENDING_SEC,
-            tolerance=_ERROR_TOLERANCE)
+            tolerance=_ERROR_TOLERANCE,
+        )
 
 
 class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         # TODO(lidiz) either add support for rpc-behavior to other languages, or we
         # should always use Java server as backend.
-        if config.server_lang != 'java':
+        if config.server_lang != "java":
             return False
         if config.client_lang == skips.Lang.NODE:
-            return config.version_gte('v1.4.x')
+            return config.version_gte("v1.4.x")
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -129,24 +139,28 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
             test_client,
             rpc_types=(RpcTypeUnaryCall,),
             # UnaryCall only with sleep-2; timeout=1s; calls timeout.
-            metadata=((RpcTypeUnaryCall, 'rpc-behavior', 'sleep-2'),),
+            metadata=((RpcTypeUnaryCall, "rpc-behavior", "sleep-2"),),
             app_timeout=1,
-            num_rpcs=_NUM_RPCS)
+            num_rpcs=_NUM_RPCS,
+        )
         self.assertRpcStatusCode(
             test_client,
-            expected=(ExpectedResult(
-                rpc_type=RpcTypeUnaryCall,
-                status_code=grpc.StatusCode.DEADLINE_EXCEEDED),),
+            expected=(
+                ExpectedResult(
+                    rpc_type=RpcTypeUnaryCall,
+                    status_code=grpc.StatusCode.DEADLINE_EXCEEDED,
+                ),
+            ),
             length=_LENGTH_OF_RPC_SENDING_SEC,
-            tolerance=_ERROR_TOLERANCE)
+            tolerance=_ERROR_TOLERANCE,
+        )
 
 
 class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang == skips.Lang.NODE:
-            return config.version_gte('v1.4.x')
+            return config.version_gte("v1.4.x")
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -154,19 +168,26 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
             test_client,
             # UnaryCall only with no sleep; calls succeed.
             rpc_types=(RpcTypeUnaryCall,),
-            num_rpcs=_NUM_RPCS)
-        self.assertRpcStatusCode(test_client,
-                                 expected=(ExpectedResult(
-                                     rpc_type=RpcTypeUnaryCall,
-                                     status_code=grpc.StatusCode.OK),),
-                                 length=_LENGTH_OF_RPC_SENDING_SEC,
-                                 tolerance=_ERROR_TOLERANCE)
+            num_rpcs=_NUM_RPCS,
+        )
+        self.assertRpcStatusCode(
+            test_client,
+            expected=(
+                ExpectedResult(
+                    rpc_type=RpcTypeUnaryCall, status_code=grpc.StatusCode.OK
+                ),
+            ),
+            length=_LENGTH_OF_RPC_SENDING_SEC,
+            tolerance=_ERROR_TOLERANCE,
+        )
 
 
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
     suite = unittest.TestSuite()
     test_cases = [
-        TestTimeoutInRouteRule, TestTimeoutInApplication, TestTimeoutNotExceeded
+        TestTimeoutInRouteRule,
+        TestTimeoutInApplication,
+        TestTimeoutNotExceeded,
     ]
     for test_class in test_cases:
         tests = loader.loadTestsFromTestCase(test_class)
@@ -174,5 +195,5 @@ def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

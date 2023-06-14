@@ -24,9 +24,12 @@ import phone_pb2_grpc
 
 
 class CallMaker:
-
-    def __init__(self, executor: ThreadPoolExecutor, channel: grpc.Channel,
-                 phone_number: str) -> None:
+    def __init__(
+        self,
+        executor: ThreadPoolExecutor,
+        channel: grpc.Channel,
+        phone_number: str,
+    ) -> None:
         self._executor = executor
         self._channel = channel
         self._stub = phone_pb2_grpc.PhoneStub(self._channel)
@@ -39,8 +42,8 @@ class CallMaker:
         self._consumer_future = None
 
     def _response_watcher(
-            self,
-            response_iterator: Iterator[phone_pb2.StreamCallResponse]) -> None:
+        self, response_iterator: Iterator[phone_pb2.StreamCallResponse]
+    ) -> None:
         try:
             for response in response_iterator:
                 # NOTE: All fields in Proto3 are optional. This is the recommended way
@@ -52,7 +55,8 @@ class CallMaker:
                     self._on_call_state(response.call_state.state)
                 else:
                     raise RuntimeError(
-                        "Received StreamCallResponse without call_info and call_state"
+                        "Received StreamCallResponse without call_info and"
+                        " call_state"
                     )
         except Exception as e:
             self._peer_responded.set()
@@ -63,8 +67,11 @@ class CallMaker:
         self._audio_session_link = call_info.media
 
     def _on_call_state(self, call_state: phone_pb2.CallState.State) -> None:
-        logging.info("Call toward [%s] enters [%s] state", self._phone_number,
-                     phone_pb2.CallState.State.Name(call_state))
+        logging.info(
+            "Call toward [%s] enters [%s] state",
+            self._phone_number,
+            phone_pb2.CallState.State.Name(call_state),
+        )
         self._call_state = call_state
         if call_state == phone_pb2.CallState.State.ACTIVE:
             self._peer_responded.set()
@@ -77,8 +84,9 @@ class CallMaker:
         request.phone_number = self._phone_number
         response_iterator = self._stub.StreamCall(iter((request,)))
         # Instead of consuming the response on current thread, spawn a consumption thread.
-        self._consumer_future = self._executor.submit(self._response_watcher,
-                                                      response_iterator)
+        self._consumer_future = self._executor.submit(
+            self._response_watcher, response_iterator
+        )
 
     def wait_peer(self) -> bool:
         logging.info("Waiting for peer to connect [%s]...", self._phone_number)
@@ -95,8 +103,9 @@ class CallMaker:
         logging.info("Audio session finished [%s]", self._audio_session_link)
 
 
-def process_call(executor: ThreadPoolExecutor, channel: grpc.Channel,
-                 phone_number: str) -> None:
+def process_call(
+    executor: ThreadPoolExecutor, channel: grpc.Channel, phone_number: str
+) -> None:
     call_maker = CallMaker(executor, channel, phone_number)
     call_maker.call()
     if call_maker.wait_peer():
@@ -109,11 +118,12 @@ def process_call(executor: ThreadPoolExecutor, channel: grpc.Channel,
 def run():
     executor = ThreadPoolExecutor()
     with grpc.insecure_channel("localhost:50051") as channel:
-        future = executor.submit(process_call, executor, channel,
-                                 "555-0100-XXXX")
+        future = executor.submit(
+            process_call, executor, channel, "555-0100-XXXX"
+        )
         future.result()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     run()

@@ -17,10 +17,11 @@ set -eo pipefail
 
 display_usage() {
   cat <<EOF >/dev/stderr
-A helper to run yapf formatter.
+A helper to run black formatter.
 
 USAGE: $0 [--diff]
    --diff: Do not apply changes, only show the diff
+   --check: Do not apply changes, only print what files will be changed
 
 ENVIRONMENT:
    XDS_K8S_DRIVER_VENV_DIR: the path to python virtual environment directory
@@ -28,6 +29,7 @@ ENVIRONMENT:
 EXAMPLES:
 $0
 $0 --diff
+$0 --check
 EOF
   exit 1
 }
@@ -48,11 +50,11 @@ source "${XDS_K8S_DRIVER_DIR}/bin/ensure_venv.sh"
 
 if [[ "$1" == "--diff" ]]; then
   readonly MODE="--diff"
+elif [[ "$1" == "--check" ]]; then
+  readonly MODE="--check"
 else
-  readonly MODE="--in-place"
-  readonly VERBOSE="--verbose" # print out file names while processing
+  readonly MODE=""
 fi
 
-exec python -m yapf "${MODE}" ${VERBOSE:-} \
-  --parallel --recursive --style=../../../setup.cfg \
-  framework bin tests
+# shellcheck disable=SC2086
+exec python -m black --config=../../../black.toml ${MODE} .

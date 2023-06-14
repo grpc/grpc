@@ -25,8 +25,9 @@ import route_guide_pb2_grpc
 import route_guide_resources
 
 
-def get_feature(feature_db: Iterable[route_guide_pb2.Feature],
-                point: route_guide_pb2.Point) -> route_guide_pb2.Feature:
+def get_feature(
+    feature_db: Iterable[route_guide_pb2.Feature], point: route_guide_pb2.Point
+) -> route_guide_pb2.Feature:
     """Returns Feature at given location or None."""
     for feature in feature_db:
         if feature.location == point:
@@ -34,8 +35,9 @@ def get_feature(feature_db: Iterable[route_guide_pb2.Feature],
     return None
 
 
-def get_distance(start: route_guide_pb2.Point,
-                 end: route_guide_pb2.Point) -> float:
+def get_distance(
+    start: route_guide_pb2.Point, end: route_guide_pb2.Point
+) -> float:
     """Distance between two points."""
     coord_factor = 10000000.0
     lat_1 = start.latitude / coord_factor
@@ -48,9 +50,11 @@ def get_distance(start: route_guide_pb2.Point,
     delta_lon_rad = math.radians(lon_2 - lon_1)
 
     # Formula is based on http://mathforum.org/library/drmath/view/51879.html
-    a = (pow(math.sin(delta_lat_rad / 2), 2) +
-         (math.cos(lat_rad_1) * math.cos(lat_rad_2) *
-          pow(math.sin(delta_lon_rad / 2), 2)))
+    a = pow(math.sin(delta_lat_rad / 2), 2) + (
+        math.cos(lat_rad_1)
+        * math.cos(lat_rad_2)
+        * pow(math.sin(delta_lon_rad / 2), 2)
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     R = 6371000
     # metres
@@ -63,8 +67,9 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     def __init__(self) -> None:
         self.db = route_guide_resources.read_route_guide_database()
 
-    def GetFeature(self, request: route_guide_pb2.Point,
-                   unused_context) -> route_guide_pb2.Feature:
+    def GetFeature(
+        self, request: route_guide_pb2.Point, unused_context
+    ) -> route_guide_pb2.Feature:
         feature = get_feature(self.db, request)
         if feature is None:
             return route_guide_pb2.Feature(name="", location=request)
@@ -72,21 +77,26 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             return feature
 
     async def ListFeatures(
-            self, request: route_guide_pb2.Rectangle,
-            unused_context) -> AsyncIterable[route_guide_pb2.Feature]:
+        self, request: route_guide_pb2.Rectangle, unused_context
+    ) -> AsyncIterable[route_guide_pb2.Feature]:
         left = min(request.lo.longitude, request.hi.longitude)
         right = max(request.lo.longitude, request.hi.longitude)
         top = max(request.lo.latitude, request.hi.latitude)
         bottom = min(request.lo.latitude, request.hi.latitude)
         for feature in self.db:
-            if (feature.location.longitude >= left and
-                    feature.location.longitude <= right and
-                    feature.location.latitude >= bottom and
-                    feature.location.latitude <= top):
+            if (
+                feature.location.longitude >= left
+                and feature.location.longitude <= right
+                and feature.location.latitude >= bottom
+                and feature.location.latitude <= top
+            ):
                 yield feature
 
-    async def RecordRoute(self, request_iterator: AsyncIterable[
-        route_guide_pb2.Point], unused_context) -> route_guide_pb2.RouteSummary:
+    async def RecordRoute(
+        self,
+        request_iterator: AsyncIterable[route_guide_pb2.Point],
+        unused_context,
+    ) -> route_guide_pb2.RouteSummary:
         point_count = 0
         feature_count = 0
         distance = 0.0
@@ -102,14 +112,18 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             prev_point = point
 
         elapsed_time = time.time() - start_time
-        return route_guide_pb2.RouteSummary(point_count=point_count,
-                                            feature_count=feature_count,
-                                            distance=int(distance),
-                                            elapsed_time=int(elapsed_time))
+        return route_guide_pb2.RouteSummary(
+            point_count=point_count,
+            feature_count=feature_count,
+            distance=int(distance),
+            elapsed_time=int(elapsed_time),
+        )
 
     async def RouteChat(
-            self, request_iterator: AsyncIterable[route_guide_pb2.RouteNote],
-            unused_context) -> AsyncIterable[route_guide_pb2.RouteNote]:
+        self,
+        request_iterator: AsyncIterable[route_guide_pb2.RouteNote],
+        unused_context,
+    ) -> AsyncIterable[route_guide_pb2.RouteNote]:
         prev_notes = []
         async for new_note in request_iterator:
             for prev_note in prev_notes:
@@ -121,12 +135,13 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
 async def serve() -> None:
     server = grpc.aio.server()
     route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
-        RouteGuideServicer(), server)
-    server.add_insecure_port('[::]:50051')
+        RouteGuideServicer(), server
+    )
+    server.add_insecure_port("[::]:50051")
     await server.start()
     await server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.get_event_loop().run_until_complete(serve())

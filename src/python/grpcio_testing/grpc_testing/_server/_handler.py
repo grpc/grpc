@@ -22,7 +22,6 @@ _CLIENT_INACTIVE = object()
 
 
 class Handler(_common.ServerRpcHandler):
-
     @abc.abstractmethod
     def initial_metadata(self):
         raise NotImplementedError()
@@ -53,7 +52,6 @@ class Handler(_common.ServerRpcHandler):
 
 
 class _Handler(Handler):
-
     def __init__(self, requests_closed):
         self._condition = threading.Condition()
         self._requests = []
@@ -121,7 +119,8 @@ class _Handler(Handler):
                         self._condition.wait()
                     else:
                         raise ValueError(
-                            'No initial metadata despite status code!')
+                            "No initial metadata despite status code!"
+                        )
                 else:
                     return self._initial_metadata
 
@@ -140,7 +139,7 @@ class _Handler(Handler):
                 elif self._code is None:
                     self._condition.wait()
                 else:
-                    raise ValueError('No more responses!')
+                    raise ValueError("No more responses!")
 
     def requests_closed(self):
         with self._condition:
@@ -163,7 +162,7 @@ class _Handler(Handler):
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
-                    raise ValueError('Huh? Cancelled but wanting status?')
+                    raise ValueError("Huh? Cancelled but wanting status?")
                 elif self._code is None:
                     self._condition.wait()
                 else:
@@ -181,7 +180,7 @@ class _Handler(Handler):
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
-                    raise ValueError('Huh? Cancelled but wanting status?')
+                    raise ValueError("Huh? Cancelled but wanting status?")
                 elif self._code is None:
                     self._condition.wait()
                 else:
@@ -194,7 +193,7 @@ class _Handler(Handler):
                     self._initial_metadata = _common.FUSSED_EMPTY_METADATA
                 self._trailing_metadata = _common.FUSSED_EMPTY_METADATA
                 self._code = grpc.StatusCode.DEADLINE_EXCEEDED
-                self._details = 'Took too much time!'
+                self._details = "Took too much time!"
                 termination_callbacks = self._termination_callbacks
                 self._termination_callbacks = None
                 self._condition.notify_all()

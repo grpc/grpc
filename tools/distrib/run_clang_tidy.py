@@ -20,21 +20,25 @@ import subprocess
 import sys
 
 sys.path.append(
-    os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests',
-                 'python_utils'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]), "..", "run_tests", "python_utils"
+    )
+)
 import jobset
 
-clang_tidy = os.environ.get('CLANG_TIDY', 'clang-tidy')
+clang_tidy = os.environ.get("CLANG_TIDY", "clang-tidy")
 
-argp = argparse.ArgumentParser(description='Run clang-tidy against core')
-argp.add_argument('files', nargs='+', help='Files to tidy')
-argp.add_argument('--fix', dest='fix', action='store_true')
-argp.add_argument('-j',
-                  '--jobs',
-                  type=int,
-                  default=multiprocessing.cpu_count(),
-                  help='Number of CPUs to use')
-argp.add_argument('--only-changed', dest='only_changed', action='store_true')
+argp = argparse.ArgumentParser(description="Run clang-tidy against core")
+argp.add_argument("files", nargs="+", help="Files to tidy")
+argp.add_argument("--fix", dest="fix", action="store_true")
+argp.add_argument(
+    "-j",
+    "--jobs",
+    type=int,
+    default=multiprocessing.cpu_count(),
+    help="Number of CPUs to use",
+)
+argp.add_argument("--only-changed", dest="only_changed", action="store_true")
 argp.set_defaults(fix=False, only_changed=False)
 args = argp.parse_args()
 
@@ -46,18 +50,19 @@ with open(".clang-tidy") as f:
     config = f.read()
 cmdline = [
     clang_tidy,
-    '--config=' + config,
+    "--config=" + config,
 ]
 
 if args.fix:
-    cmdline.append('--fix-errors')
+    cmdline.append("--fix-errors")
 
 if args.only_changed:
     orig_files = set(args.files)
     actual_files = []
     output = subprocess.check_output(
-        ['git', 'diff', 'upstream/master', 'HEAD', '--name-only'])
-    for line in output.decode('ascii').splitlines(False):
+        ["git", "diff", "upstream/master", "HEAD", "--name-only"]
+    )
+    for line in output.decode("ascii").splitlines(False):
         if line in orig_files:
             print(("check: %s" % line))
             actual_files.append(line)
@@ -72,7 +77,8 @@ for filename in args.files:
             cmdline + [filename],
             shortname=filename,
             timeout_seconds=15 * 60,
-        ))
+        )
+    )
 
 num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs, quiet_success=True)
 sys.exit(num_fails)

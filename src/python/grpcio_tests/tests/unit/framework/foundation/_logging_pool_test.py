@@ -22,7 +22,6 @@ _POOL_SIZE = 16
 
 
 class _CallableObject(object):
-
     def __init__(self):
         self._lock = threading.Lock()
         self._passed_values = []
@@ -37,7 +36,6 @@ class _CallableObject(object):
 
 
 class LoggingPoolTest(unittest.TestCase):
-
     def testUpAndDown(self):
         pool = logging_pool.pool(_POOL_SIZE)
         pool.shutdown(wait=True)
@@ -65,9 +63,10 @@ class LoggingPoolTest(unittest.TestCase):
         with logging_pool.pool(_POOL_SIZE) as pool:
             future = pool.submit(callable_object, passed_object)
         self.assertIsNone(future.result())
-        self.assertSequenceEqual((passed_object,),
-                                 callable_object.passed_values())
+        self.assertSequenceEqual(
+            (passed_object,), callable_object.passed_values()
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

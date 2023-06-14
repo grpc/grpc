@@ -22,34 +22,35 @@ import _credentials
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_LISTEN_ADDRESS_TEMPLATE = 'localhost:%d'
-_SIGNATURE_HEADER_KEY = 'x-signature'
+_LISTEN_ADDRESS_TEMPLATE = "localhost:%d"
+_SIGNATURE_HEADER_KEY = "x-signature"
 
 
 class SignatureValidationInterceptor(grpc.aio.ServerInterceptor):
-
     def __init__(self):
-
         def abort(ignored_request, context: grpc.aio.ServicerContext) -> None:
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid signature')
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid signature")
 
         self._abort_handler = grpc.unary_unary_rpc_method_handler(abort)
 
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails],
-                                         Awaitable[grpc.RpcMethodHandler]],
-            handler_call_details: grpc.HandlerCallDetails
+        self,
+        continuation: Callable[
+            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler]
+        ],
+        handler_call_details: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
         # Example HandlerCallDetails object:
         #     _HandlerCallDetails(
         #       method=u'/helloworld.Greeter/SayHello',
         #       invocation_metadata=...)
-        method_name = handler_call_details.method.split('/')[-1]
+        method_name = handler_call_details.method.split("/")[-1]
         expected_metadata = (_SIGNATURE_HEADER_KEY, method_name[::-1])
         if expected_metadata in handler_call_details.invocation_metadata:
             return await continuation(handler_call_details)
@@ -58,10 +59,10 @@ class SignatureValidationInterceptor(grpc.aio.ServerInterceptor):
 
 
 class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
-
-    async def SayHello(self, request: helloworld_pb2.HelloRequest,
-                       unused_context) -> helloworld_pb2.HelloReply:
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+    async def SayHello(
+        self, request: helloworld_pb2.HelloRequest, unused_context
+    ) -> helloworld_pb2.HelloReply:
+        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
 
 
 async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
@@ -70,14 +71,19 @@ async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials
-    server_credentials = grpc.ssl_server_credentials(((
-        _credentials.SERVER_CERTIFICATE_KEY,
-        _credentials.SERVER_CERTIFICATE,
-    ),))
+    server_credentials = grpc.ssl_server_credentials(
+        (
+            (
+                _credentials.SERVER_CERTIFICATE_KEY,
+                _credentials.SERVER_CERTIFICATE,
+            ),
+        )
+    )
 
     # Pass down credentials
-    port = server.add_secure_port(_LISTEN_ADDRESS_TEMPLATE % port,
-                                  server_credentials)
+    port = server.add_secure_port(
+        _LISTEN_ADDRESS_TEMPLATE % port, server_credentials
+    )
 
     await server.start()
     return server, port
@@ -85,18 +91,16 @@ async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port',
-                        nargs='?',
-                        type=int,
-                        default=50051,
-                        help='the listening port')
+    parser.add_argument(
+        "--port", nargs="?", type=int, default=50051, help="the listening port"
+    )
     args = parser.parse_args()
 
     server, port = await run_server(args.port)
-    logging.info('Server is listening at port :%d', port)
+    logging.info("Server is listening at port :%d", port)
     await server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
