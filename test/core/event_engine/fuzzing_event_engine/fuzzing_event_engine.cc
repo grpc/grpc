@@ -348,12 +348,13 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
 FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
   grpc_core::MutexLock lock(&*mu_);
   middle_->closed[my_index()] = true;
-  if (middle_->pending_read[my_index()].has_value()) {
+  if (middle_->pending_read[peer_index()].has_value()) {
     g_fuzzing_event_engine->RunLocked(
-        [cb = std::move(middle_->pending_read[my_index()]->on_read)]() mutable {
+        [cb = std::move(
+             middle_->pending_read[peer_index()]->on_read)]() mutable {
           cb(absl::InternalError("Endpoint closed"));
         });
-    middle_->pending_read[my_index()].reset();
+    middle_->pending_read[peer_index()].reset();
   }
 }
 
