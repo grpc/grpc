@@ -67,6 +67,7 @@ typedef struct bg_watched_channel {
 /* grpc_rb_channel wraps a grpc_channel. */
 typedef struct grpc_rb_channel {
   VALUE credentials;
+  grpc_channel_args args;
   /* The actual channel (protected in a wrapper to tell when it's safe to
    * destroy) */
   bg_watched_channel* bg_wrapped;
@@ -160,6 +161,7 @@ static void grpc_rb_channel_free_internal(void* p) {
      * yield the gil. */
     grpc_rb_channel_safe_destroy(ch->bg_wrapped);
     ch->bg_wrapped = NULL;
+    grpc_rb_channel_args_destroy(&ch->args);
   }
   xfree(p);
 }
@@ -200,6 +202,7 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_rb_channel* wrapper = ALLOC(grpc_rb_channel);
   wrapper->bg_wrapped = NULL;
   wrapper->credentials = Qnil;
+  MEMZERO(&wrapper->args, grpc_channel_args, 1);
   return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
@@ -220,8 +223,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   grpc_channel_credentials* creds = NULL;
   char* target_chars = NULL;
   channel_init_try_register_stack stack;
-  grpc_channel_args args;
-  MEMZERO(&args, grpc_channel_args, 1);
 
   grpc_ruby_fork_guard();
   int stop_waiting_for_thread_start = 0;
@@ -235,7 +236,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
-  grpc_rb_hash_convert_to_channel_args(channel_args, &args);
+  grpc_rb_hash_convert_to_channel_args(channel_args, &wrapper->args);
   if (TYPE(credentials) == T_SYMBOL) {
     if (id_insecure_channel != SYM2ID(credentials)) {
       rb_raise(rb_eTypeError,
@@ -266,10 +267,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   rb_thread_call_without_gvl(
       channel_init_try_register_connection_polling_without_gil, &stack, NULL,
       NULL);
-
-  if (args.args != NULL) {
-    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
-  }
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
              target_chars);

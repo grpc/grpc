@@ -155,10 +155,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(&args, NULL);
-
-  if (args.args != NULL) {
-    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
-  }
+  grpc_rb_channel_args_destroy(&args);
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
   }
