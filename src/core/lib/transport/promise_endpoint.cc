@@ -31,14 +31,12 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
-namespace grpc {
-
-namespace internal {
+namespace grpc_core {
 
 PromiseEndpoint::PromiseEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint,
-    grpc_core::SliceBuffer already_received)
+    SliceBuffer already_received)
     : endpoint_(std::move(endpoint)),
       write_buffer_(),
       write_result_(),
@@ -70,7 +68,7 @@ PromiseEndpoint::GetLocalAddress() const {
 }
 
 void PromiseEndpoint::WriteCallback(absl::Status status) {
-  grpc_core::MutexLock lock(&write_mutex_);
+  MutexLock lock(&write_mutex_);
   write_result_ = status;
   write_waker_.Wakeup();
 }
@@ -85,7 +83,7 @@ void PromiseEndpoint::ReadCallback(
     pending_read_buffer_.Clear();
     read_buffer_.Clear();
 
-    grpc_core::MutexLock lock(&read_mutex_);
+    MutexLock lock(&read_mutex_);
     read_result_ = status;
     read_waker_.Wakeup();
   } else {
@@ -110,7 +108,7 @@ void PromiseEndpoint::ReadCallback(
                      requested_read_args);
       }
     } else {
-      grpc_core::MutexLock lock(&read_mutex_);
+      MutexLock lock(&read_mutex_);
       read_result_ = status;
       read_waker_.Wakeup();
     }
@@ -126,11 +124,9 @@ void PromiseEndpoint::ReadByteCallback(absl::Status status) {
     pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
         pending_read_buffer_.Length(), read_buffer_);
   }
-  grpc_core::MutexLock lock(&read_mutex_);
+  MutexLock lock(&read_mutex_);
   read_result_ = status;
   read_waker_.Wakeup();
 }
 
-}  // namespace internal
-
-}  // namespace grpc
+}  // namespace grpc_core

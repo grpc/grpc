@@ -279,7 +279,7 @@ class PromiseEndpointTest : public ::testing::Test {
 
  protected:
   MockEndpoint& mock_endpoint_;
-  grpc::internal::PromiseEndpoint promise_endpoint_;
+  PromiseEndpoint promise_endpoint_;
 
   const absl::Status kDummyErrorStatus =
       absl::ErrnoToStatus(5566, "just an error");
@@ -1204,8 +1204,8 @@ class MultiplePromiseEndpointTest : public ::testing::Test {
  protected:
   MockEndpoint& first_mock_endpoint_;
   MockEndpoint& second_mock_endpoint_;
-  grpc::internal::PromiseEndpoint first_promise_endpoint_;
-  grpc::internal::PromiseEndpoint second_promise_endpoint_;
+  PromiseEndpoint first_promise_endpoint_;
+  PromiseEndpoint second_promise_endpoint_;
 
   const absl::Status kDummyErrorStatus =
       absl::ErrnoToStatus(5566, "just an error");
