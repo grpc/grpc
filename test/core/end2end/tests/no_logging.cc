@@ -19,6 +19,7 @@
 #include <atomic>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
