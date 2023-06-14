@@ -654,7 +654,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Constructs an EDS resource.
   ClusterLoadAssignment BuildEdsResource(
       const EdsResourceArgs& args,
-      const char* eds_service_name = kDefaultEdsServiceName);
+      absl::string_view eds_service_name = kDefaultEdsServiceName);
 
   //
   // Backend management
