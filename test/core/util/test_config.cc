@@ -42,7 +42,6 @@
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
-#include "test/core/util/test_config.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
