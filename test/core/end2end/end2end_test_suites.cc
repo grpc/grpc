@@ -21,12 +21,12 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
-#include <random>
 #include <regex>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -47,6 +47,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"

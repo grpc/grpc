@@ -191,6 +191,8 @@ grpc_cc_library(
         "end2end_test_suites.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
         "absl/status",
         "absl/strings:str_format",
         "absl/types:optional",
