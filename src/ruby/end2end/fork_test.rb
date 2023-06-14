@@ -15,6 +15,7 @@
 # limitations under the License.
 
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
+fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
 
 this_dir = File.expand_path(File.dirname(__FILE__))
 protos_lib_dir = File.join(this_dir, 'lib')

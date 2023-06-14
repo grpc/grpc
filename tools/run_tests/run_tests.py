@@ -942,6 +942,7 @@ class RubyLanguage(object):
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
+            "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/sig_handling_test.rb",
             "src/ruby/end2end/channel_closing_test.rb",
