@@ -69,6 +69,7 @@ using grpc::testing::XdsUpdateHealthService;
 namespace {
 constexpr absl::string_view kRpcBehaviorMetadataKey = "rpc-behavior";
 constexpr absl::string_view kErrorCodeRpcBehavior = "error-code-";
+constexpr absl::string_view kHostnameRpcBehaviorFilter = "hostname=";
 
 std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
   std::set<std::string> rpc_behaviors;
@@ -87,22 +88,40 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
 }
 
 absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
-    absl::string_view header_value) {
-  if (absl::StartsWith(header_value, kErrorCodeRpcBehavior)) {
-    grpc::StatusCode code;
-    if (absl::SimpleAtoi(header_value.substr(kErrorCodeRpcBehavior.length()),
-                         &code)) {
-      std::string message = absl::StrCat(
-          "Rpc failed as per the rpc-behavior header value: ", header_value);
-      return Status(code, message);
+    absl::string_view header_value, absl::string_view hostname) {
+  for (auto part : absl::StrSplit(header_value, " ")) {
+    if (absl::ConsumePrefix(&part, kHostnameRpcBehaviorFilter)) {
+      if (part.empty()) {
+        return Status(
+            grpc::StatusCode::INVALID_ARGUMENT,
+            absl::StrCat("Empty host name in the RPC behavior header: ",
+                         header_value));
+      }
+      if (part != hostname) {
+        gpr_log(
+            GPR_DEBUG,
+            "RPC behavior for a different host: \"%s\", this one is: \"%s\"",
+            std::string(part).c_str(), std::string(hostname).c_str());
+        return absl::nullopt;
+      }
+    } else if (absl::ConsumePrefix(&part, kErrorCodeRpcBehavior)) {
+      grpc::StatusCode code;
+      if (absl::SimpleAtoi(part, &code)) {
+        return Status(
+            code,
+            absl::StrCat("Rpc failed as per the rpc-behavior header value: ",
+                         header_value));
+      } else {
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      absl::StrCat("Invalid format for rpc-behavior header: ",
+                                   header_value));
+      }
     } else {
-      std::string message = absl::StrCat(
-          "Invalid format for rpc-behavior header: ", header_value);
-      return Status(grpc::StatusCode::INVALID_ARGUMENT, message);
+      gpr_log(GPR_ERROR, "Unimplemented RPC behavior: \"%s\"",
+              std::string(part).c_str());
     }
-  } else {
-    return absl::nullopt;
   }
+  return absl::nullopt;
 }
 }  // namespace
 
@@ -114,7 +133,8 @@ class TestServiceImpl : public TestService::Service {
                    SimpleResponse* response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
     for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
-      auto maybe_status = GetStatusForRpcBehaviorMetadata(rpc_behavior);
+      auto maybe_status =
+          GetStatusForRpcBehaviorMetadata(rpc_behavior, hostname_);
       if (maybe_status.has_value()) {
         return *maybe_status;
       }
