@@ -143,7 +143,7 @@ XdsClusterLocalityStats::GetSnapshotAndReset() {
         {}};
     {
       MutexLock lock(&percpu_stats.backend_metrics_mu);
-      percpu_snapshot.backend_metrics = std::move(percpu_stats.backend_metrics);
+      percpu_snapshot.backend_metrics.swap(percpu_stats.backend_metrics);
     }
     snapshot += percpu_snapshot;
   }

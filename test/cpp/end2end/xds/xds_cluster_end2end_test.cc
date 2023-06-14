@@ -1494,65 +1494,73 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
-  // Send kNumRpcsPerAddress RPCs per server.
-  xds::data::orca::v3::OrcaLoadReport backend_metrics;
-  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
-  named_metrics["foo"] = 1.0;
-  named_metrics["bar"] = 2.0;
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
-                 RpcOptions().set_backend_metrics(backend_metrics));
-  named_metrics["foo"] = 0.3;
-  named_metrics["bar"] = 0.4;
-  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
-    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
-                        RpcOptions().set_server_fail(true).set_backend_metrics(
-                            backend_metrics));
+  for (int report = 0; report < 3; ++report) {
+    for (size_t i = 0; i < backends_.size(); ++i) {
+      backends_[i]->backend_service()->ResetCounters();
+    }
+    // Send kNumRpcsPerAddress RPCs per server.
+    xds::data::orca::v3::OrcaLoadReport backend_metrics;
+    auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+    named_metrics["foo"] = 1.0;
+    named_metrics["bar"] = 2.0;
+    CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
+                   RpcOptions().set_backend_metrics(backend_metrics));
+    named_metrics["foo"] = 0.3;
+    named_metrics["bar"] = 0.4;
+    for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+      CheckRpcSendFailure(
+          DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+          RpcOptions().set_server_fail(true).set_backend_metrics(
+              backend_metrics));
+    }
+    // Check that each backend got the right number of requests.
+    for (size_t i = 0; i < backends_.size(); ++i) {
+      EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
+                backends_[i]->backend_service()->request_count());
+    }
+    // The load report received at the balancer should be correct.
+    std::vector<ClientStats> load_report =
+        balancer_->lrs_service()->WaitForLoadReport();
+    ASSERT_EQ(load_report.size(), 1UL);
+    ClientStats& client_stats = load_report.front();
+    EXPECT_EQ(kNumRpcsPerAddress * backends_.size() + num_warmup_rpcs,
+              client_stats.total_successful_requests());
+    EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+    EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size() +
+                  num_warmup_rpcs,
+              client_stats.total_issued_requests());
+    EXPECT_EQ(kNumFailuresPerAddress * backends_.size(),
+              client_stats.total_error_requests());
+    EXPECT_EQ(0U, client_stats.total_dropped_requests());
+    EXPECT_THAT(
+        client_stats.locality_stats(),
+        ::testing::ElementsAre(::testing::Pair(
+            "locality0",
+            ::testing::Field(
+                &ClientStats::LocalityStats::load_metrics,
+                ::testing::UnorderedElementsAre(
+                    ::testing::Pair(
+                        "foo",
+                        LoadMetricEq(
+                            (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                                backends_.size(),
+                            (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                                (kNumFailuresPerAddress * backends_.size()) *
+                                    0.3)),
+                    ::testing::Pair(
+                        "bar",
+                        LoadMetricEq(
+                            (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                                backends_.size(),
+                            (kNumRpcsPerAddress * backends_.size()) * 2.0 +
+                                (kNumFailuresPerAddress * backends_.size()) *
+                                    0.4)))))));
+    // The LRS service got a single request, and sent a single response.
+    EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+    EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+    // Warmup RPCs only count in the first report.
+    num_warmup_rpcs = 0;
   }
-  // Check that each backend got the right number of requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
-              backends_[i]->backend_service()->request_count());
-  }
-  // The load report received at the balancer should be correct.
-  std::vector<ClientStats> load_report =
-      balancer_->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(kNumRpcsPerAddress * backends_.size() + num_warmup_rpcs,
-            client_stats.total_successful_requests());
-  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size() +
-                num_warmup_rpcs,
-            client_stats.total_issued_requests());
-  EXPECT_EQ(kNumFailuresPerAddress * backends_.size(),
-            client_stats.total_error_requests());
-  EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  EXPECT_THAT(
-      client_stats.locality_stats(),
-      ::testing::ElementsAre(::testing::Pair(
-          "locality0",
-          ::testing::Field(
-              &ClientStats::LocalityStats::load_metrics,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(
-                      "foo",
-                      LoadMetricEq(
-                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                              backends_.size(),
-                          (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                              (kNumFailuresPerAddress * backends_.size()) *
-                                  0.3)),
-                  ::testing::Pair(
-                      "bar",
-                      LoadMetricEq(
-                          (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                              backends_.size(),
-                          (kNumRpcsPerAddress * backends_.size()) * 2.0 +
-                              (kNumFailuresPerAddress * backends_.size()) *
-                                  0.4)))))));
-  // The LRS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
 }
 
 // Tests that we don't include stats for clusters that are not requested
