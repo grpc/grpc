@@ -10238,7 +10238,9 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/promise/join.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/transport/promise_endpoint_test.cc

@@ -46,12 +46,8 @@ PromiseEndpoint::PromiseEndpoint(
       read_result_() {
   GPR_ASSERT(endpoint_ != nullptr);
 
-  // TODO(ralphchung): Replace this with `SliceBufferCast<>` when it is
-  // available. It should be something like the following.
-  //
-  // read_buffer_ = std::move(
-  //     SliceBufferCast<grpc_event_engine::experimental::SliceBuffer&>(
-  //         already_received));
+  // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
+  // available.
   grpc_slice_buffer_swap(read_buffer_.c_slice_buffer(),
                          already_received.c_slice_buffer());
 }

@@ -118,7 +118,11 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:grpc",
+        "//src/core:activity",
         "//src/core:grpc_promise_endpoint",
+        "//src/core:join",
+        "//src/core:seq",
+        "//test/core/promise:test_wakeup_schedulers",
     ],
 )
 

@@ -22,6 +22,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <tuple>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
@@ -33,15 +34,19 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
-namespace grpc {
+using testing::MockFunction;
+using testing::StrictMock;
 
-namespace internal {
-
+namespace grpc_core {
 namespace testing {
 
 class MockEndpoint
@@ -230,27 +235,19 @@ class MockEndpoint
   }
 };
 
-class MockActivity : public grpc_core::Activity, public grpc_core::Wakeable {
+class MockActivity : public Activity, public Wakeable {
  public:
   MOCK_METHOD(void, WakeupRequested, ());
 
-  void ForceImmediateRepoll(grpc_core::WakeupMask /*mask*/) override {
-    WakeupRequested();
-  }
+  void ForceImmediateRepoll(WakeupMask /*mask*/) override { WakeupRequested(); }
   void Orphan() override {}
-  grpc_core::Waker MakeOwningWaker() override {
-    return grpc_core::Waker(this, 0);
-  }
-  grpc_core::Waker MakeNonOwningWaker() override {
-    return grpc_core::Waker(this, 0);
-  }
-  void Wakeup(grpc_core::WakeupMask /*mask*/) override { WakeupRequested(); }
-  void WakeupAsync(grpc_core::WakeupMask /*mask*/) override {
-    WakeupRequested();
-  }
-  void Drop(grpc_core::WakeupMask /*mask*/) override {}
+  Waker MakeOwningWaker() override { return Waker(this, 0); }
+  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
+  void Wakeup(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void Drop(WakeupMask /*mask*/) override {}
   std::string DebugTag() const override { return "MockActivity"; }
-  std::string ActivityDebugTag(grpc_core::WakeupMask /*mask*/) const override {
+  std::string ActivityDebugTag(WakeupMask /*mask*/) const override {
     return DebugTag();
   }
 
@@ -275,7 +272,7 @@ class PromiseEndpointTest : public ::testing::Test {
             std::unique_ptr<
                 grpc_event_engine::experimental::EventEngine::Endpoint>(
                 mock_endpoint_ptr_),
-            grpc_core::SliceBuffer()) {}
+            SliceBuffer()) {}
 
  private:
   MockEndpoint* mock_endpoint_ptr_;
@@ -1091,7 +1088,7 @@ TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  auto promise = promise_endpoint_.Write(SliceBuffer());
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(absl::OkStatus(), poll.value());
@@ -1105,7 +1102,7 @@ TEST_F(PromiseEndpointTest, OneWriteFailed) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  auto promise = promise_endpoint_.Write(SliceBuffer());
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(kDummyErrorStatus, poll.value());
@@ -1119,7 +1116,7 @@ TEST_F(PromiseEndpointTest, WriteAndWaitSuccessful) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  auto promise = promise_endpoint_.Write(SliceBuffer());
   EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
@@ -1137,7 +1134,7 @@ TEST_F(PromiseEndpointTest, WriteAndWaitFailed) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(1);
-  auto promise = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  auto promise = promise_endpoint_.Write(SliceBuffer());
   EXPECT_TRUE(promise().pending());
 
   EXPECT_CALL(activity, WakeupRequested).Times(1);
@@ -1182,11 +1179,69 @@ TEST_F(PromiseEndpointTest, GetLocalAddress) {
   EXPECT_EQ(local_address.size(), promise_endpoint_.GetLocalAddress().size());
 }
 
+class MultiplePromiseEndpointTest : public ::testing::Test {
+ public:
+  MultiplePromiseEndpointTest()
+      : first_mock_endpoint_ptr_(new ::testing::NiceMock<MockEndpoint>()),
+        second_mock_endpoint_ptr_(new ::testing::NiceMock<MockEndpoint>()),
+        first_mock_endpoint_(*first_mock_endpoint_ptr_),
+        second_mock_endpoint_(*second_mock_endpoint_ptr_),
+        first_promise_endpoint_(
+            std::unique_ptr<
+                grpc_event_engine::experimental::EventEngine::Endpoint>(
+                first_mock_endpoint_ptr_),
+            SliceBuffer()),
+        second_promise_endpoint_(
+            std::unique_ptr<
+                grpc_event_engine::experimental::EventEngine::Endpoint>(
+                second_mock_endpoint_ptr_),
+            SliceBuffer()) {}
+
+ private:
+  MockEndpoint* first_mock_endpoint_ptr_;
+  MockEndpoint* second_mock_endpoint_ptr_;
+
+ protected:
+  MockEndpoint& first_mock_endpoint_;
+  MockEndpoint& second_mock_endpoint_;
+  grpc::internal::PromiseEndpoint first_promise_endpoint_;
+  grpc::internal::PromiseEndpoint second_promise_endpoint_;
+
+  const absl::Status kDummyErrorStatus =
+      absl::ErrnoToStatus(5566, "just an error");
+  static constexpr size_t kDummyRequestSize = 5566u;
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinPromiseOneReadSuccessful) {
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  first_mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+  second_mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Read).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Read).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+
+  auto activity = MakeActivity(
+      [this, &kBuffer] {
+        return Seq(Join(this->first_promise_endpoint_.Read(kBuffer.size()),
+                        this->second_promise_endpoint_.Read(kBuffer.size())),
+                   [](std::tuple<absl::StatusOr<SliceBuffer>,
+                                 absl::StatusOr<SliceBuffer>>
+                          ret) {
+                     // Both reads are finished with `absl::OkStatus`.
+                     EXPECT_TRUE(std::get<0>(ret).ok());
+                     EXPECT_TRUE(std::get<1>(ret).ok());
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
 }  // namespace testing
-
-}  // namespace internal
-
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

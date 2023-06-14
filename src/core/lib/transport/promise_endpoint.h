@@ -69,12 +69,8 @@ class PromiseEndpoint {
       // Previous write result has not been polled.
       GPR_ASSERT(!write_result_.has_value());
 
-      // TODO(ralphchung): Replace this with `SliceBufferCast<>` when it is
-      // available. It should be something like the following.
-      //
-      // write_result_ = std::move(
-      //     SliceBufferCast<grpc_event_engine::experimental::SliceBuffer&>(
-      //         data));
+      // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
+      // available.
       grpc_slice_buffer_swap(write_buffer_.c_slice_buffer(),
                              data.c_slice_buffer());
     }
