@@ -95,7 +95,7 @@ class PromiseEndpoint {
     };
   }
 
-  // Returns a promise that resolves to `grpc_core::SliceBuffer` with
+  // Returns a promise that resolves to `SliceBuffer` with
   // `num_bytes` bytes.
   //
   // Concurrent reads are not supported, which means callers should not call
@@ -146,7 +146,7 @@ class PromiseEndpoint {
     };
   }
 
-  // Returns a promise that resolves to `grpc_core::Slice` with at least
+  // Returns a promise that resolves to `Slice` with at least
   // `num_bytes` bytes which should be less than INT64_MAX bytes.
   //
   // Concurrent reads are not supported, which means callers should not call
