@@ -89,7 +89,7 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
 
 absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     absl::string_view header_value, absl::string_view hostname) {
-  for (auto part : absl::StrSplit(header_value, " ")) {
+  for (auto part : absl::StrSplit(header_value, ' ')) {
     if (absl::ConsumePrefix(&part, kHostnameRpcBehaviorFilter)) {
       if (part.empty()) {
         return Status(
