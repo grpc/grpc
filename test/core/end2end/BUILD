@@ -314,7 +314,7 @@ grpc_core_end2end_test(name = "keepalive_timeout")
 
 grpc_core_end2end_test(
     name = "large_metadata",
-    shard_count = 50
+    shard_count = 50,
 )
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
@@ -426,7 +426,10 @@ grpc_core_end2end_test(name = "shutdown_finishes_calls")
 
 grpc_core_end2end_test(name = "shutdown_finishes_tags")
 
-grpc_core_end2end_test(name = "simple_delayed_request")
+grpc_core_end2end_test(
+    name = "simple_delayed_request",
+    shard_count = 50,
+)
 
 grpc_core_end2end_test(name = "simple_metadata")
 
