@@ -16,11 +16,14 @@
 //
 //
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
