@@ -1212,7 +1212,7 @@ class MultiplePromiseEndpointTest : public ::testing::Test {
   static constexpr size_t kDummyRequestSize = 5566u;
 };
 
-TEST_F(MultiplePromiseEndpointTest, JoinPromiseOneReadSuccessful) {
+TEST_F(MultiplePromiseEndpointTest, JoinReadsSuccessful) {
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
   first_mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
   second_mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
@@ -1230,10 +1230,150 @@ TEST_F(MultiplePromiseEndpointTest, JoinPromiseOneReadSuccessful) {
                    [](std::tuple<absl::StatusOr<SliceBuffer>,
                                  absl::StatusOr<SliceBuffer>>
                           ret) {
-                     // Both reads are finished with `absl::OkStatus`.
+                     // Both reads finish with `absl::OkStatus`.
                      EXPECT_TRUE(std::get<0>(ret).ok());
                      EXPECT_TRUE(std::get<1>(ret).ok());
                      return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinOneReadSuccessfulOneReadFailed) {
+  const std::string kBuffer = {0x01, 0x02, 0x03, 0x04};
+  first_mock_endpoint_.ScheduleReadTask(kBuffer, /*ready=*/true);
+  second_mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Read).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Read).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(kDummyErrorStatus));
+
+  auto activity = MakeActivity(
+      [this, &kBuffer] {
+        return Seq(
+            Join(this->first_promise_endpoint_.Read(kBuffer.size()),
+                 this->second_promise_endpoint_.Read(this->kDummyRequestSize)),
+            [this](std::tuple<absl::StatusOr<SliceBuffer>,
+                              absl::StatusOr<SliceBuffer>>
+                       ret) {
+              // One read finishes with `absl::OkStatus` and the other read
+              // fails.
+              EXPECT_TRUE(std::get<0>(ret).ok());
+              EXPECT_FALSE(std::get<1>(ret).ok());
+              EXPECT_EQ(std::get<1>(ret).status(), this->kDummyErrorStatus);
+              return this->kDummyErrorStatus;
+            });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinReadsFailed) {
+  first_mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+  second_mock_endpoint_.ScheduleReadTask(kDummyErrorStatus, /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Read).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Read).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(kDummyErrorStatus));
+
+  auto activity = MakeActivity(
+      [this] {
+        return Seq(
+            Join(this->first_promise_endpoint_.Read(this->kDummyRequestSize),
+                 this->second_promise_endpoint_.Read(this->kDummyRequestSize)),
+            [this](std::tuple<absl::StatusOr<SliceBuffer>,
+                              absl::StatusOr<SliceBuffer>>
+                       ret) {
+              // Both reads finish with errors.
+              EXPECT_FALSE(std::get<0>(ret).ok());
+              EXPECT_FALSE(std::get<1>(ret).ok());
+              EXPECT_EQ(std::get<0>(ret).status(), this->kDummyErrorStatus);
+              EXPECT_EQ(std::get<1>(ret).status(), this->kDummyErrorStatus);
+              return this->kDummyErrorStatus;
+            });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinWritesSuccessful) {
+  first_mock_endpoint_.ScheduleWriteTask(absl::OkStatus(), /*ready=*/true);
+  second_mock_endpoint_.ScheduleWriteTask(absl::OkStatus(), /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Write).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Write).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+
+  auto activity = MakeActivity(
+      [this] {
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
+                        this->second_promise_endpoint_.Write(SliceBuffer())),
+                   [](std::tuple<absl::Status, absl::Status> ret) {
+                     // Both writes finish with `absl::OkStatus`.
+                     EXPECT_TRUE(std::get<0>(ret).ok());
+                     EXPECT_TRUE(std::get<1>(ret).ok());
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinOneWriteSuccessfulOneWriteFailed) {
+  first_mock_endpoint_.ScheduleWriteTask(absl::OkStatus(), /*ready=*/true);
+  second_mock_endpoint_.ScheduleWriteTask(kDummyErrorStatus, /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Write).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Write).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(kDummyErrorStatus));
+
+  auto activity = MakeActivity(
+      [this] {
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
+                        this->second_promise_endpoint_.Write(SliceBuffer())),
+                   [this](std::tuple<absl::Status, absl::Status> ret) {
+                     // One write finish with `absl::OkStatus` and the other
+                     // write fails.
+                     EXPECT_TRUE(std::get<0>(ret).ok());
+                     EXPECT_FALSE(std::get<1>(ret).ok());
+                     EXPECT_EQ(std::get<1>(ret), this->kDummyErrorStatus);
+                     return this->kDummyErrorStatus;
+                   });
+      },
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+};
+
+TEST_F(MultiplePromiseEndpointTest, JoinWritesFailed) {
+  first_mock_endpoint_.ScheduleWriteTask(kDummyErrorStatus, /*ready=*/true);
+  second_mock_endpoint_.ScheduleWriteTask(kDummyErrorStatus, /*ready=*/true);
+
+  EXPECT_CALL(first_mock_endpoint_, Write).Times(1);
+  EXPECT_CALL(second_mock_endpoint_, Write).Times(1);
+
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(kDummyErrorStatus));
+
+  auto activity = MakeActivity(
+      [this] {
+        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer()),
+                        this->second_promise_endpoint_.Write(SliceBuffer())),
+                   [this](std::tuple<absl::Status, absl::Status> ret) {
+                     // Both writes fail with errors.
+                     EXPECT_FALSE(std::get<0>(ret).ok());
+                     EXPECT_FALSE(std::get<1>(ret).ok());
+                     EXPECT_EQ(std::get<0>(ret), this->kDummyErrorStatus);
+                     EXPECT_EQ(std::get<1>(ret), this->kDummyErrorStatus);
+                     return this->kDummyErrorStatus;
                    });
       },
       InlineWakeupScheduler(),
