@@ -312,7 +312,10 @@ grpc_core_end2end_test(name = "invoke_large_request")
 
 grpc_core_end2end_test(name = "keepalive_timeout")
 
-grpc_core_end2end_test(name = "large_metadata")
+grpc_core_end2end_test(
+    name = "large_metadata",
+    shard_count = 50
+)
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
 
