@@ -31,6 +31,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
 
@@ -55,6 +56,15 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
 
   absl::string_view GetAuthority() override {
     return parent_helper()->GetAuthority();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+    return parent_helper()->GetChannelCredentials();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+      override {
+    return parent_helper()->GetUnsafeChannelCredentials();
   }
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {

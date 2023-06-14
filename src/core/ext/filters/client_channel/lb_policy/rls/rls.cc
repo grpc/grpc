@@ -1517,11 +1517,13 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
   // Get channel creds from parent channel.
-  // TODO(roth): Once we eliminate insecure builds, get this via a
-  // method on the helper instead of digging through channel args.
-  auto* creds = lb_policy_->channel_args_.GetObject<grpc_channel_credentials>();
+  // Note that we are using the "unsafe" channel creds here, which do
+  // include any associated call creds.  This is safe in this case,
+  // because we are using the parent channel's authority on the RLS channel.
+  auto creds =
+      lb_policy_->channel_control_helper()->GetUnsafeChannelCredentials();
   // Use the parent channel's authority.
-  std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
+  auto authority = lb_policy_->channel_control_helper()->GetAuthority();
   ChannelArgs args = ChannelArgs()
                          .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
                          .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
@@ -1544,7 +1546,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
                .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 1);
   }
   channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
-                                 creds, args.ToC().get());
+                                 creds.get(), args.ToC().get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_,

@@ -83,6 +83,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -974,6 +975,14 @@ class ClientChannel::ClientChannelControlHelper
 
   absl::string_view GetAuthority() override {
     return chand_->default_authority_;
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->duplicate_without_call_credentials();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials() override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->Ref();
   }
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {

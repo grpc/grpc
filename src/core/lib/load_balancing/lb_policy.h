@@ -297,6 +297,20 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
 
+    /// Returns the channel credentials from the parent channel.  This can
+    /// be used to create a control-plane channel inside an LB policy.
+    virtual RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() = 0;
+
+    /// Returns the UNSAFE ChannelCredentials used to construct the channel,
+    /// including bearer tokens.  LB policies should generally have no use for
+    /// these credentials, and use of them is heavily discouraged.  These must
+    /// be used VERY carefully to avoid sending bearer tokens to untrusted
+    /// servers, as the server could then impersonate the client.  Generally,
+    /// it is safe to use these credentials only when communicating with the
+    /// backends.
+    virtual RefCountedPtr<grpc_channel_credentials>
+    GetUnsafeChannelCredentials() = 0;
+
     /// Returns the EventEngine to use for timers and async work.
     virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
 
