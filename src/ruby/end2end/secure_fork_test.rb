@@ -52,9 +52,9 @@ end
 def main
   this_dir = File.expand_path(File.dirname(__FILE__))
   echo_server_path = File.join(this_dir, 'echo_server.rb')
-  to_child_r, to_child_w = IO.pipe
+  to_child_r, _to_child_w = IO.pipe
   to_parent_r, to_parent_w = IO.pipe
-  Process.spawn(RbConfig.ruby, echo_server_path, "--secure", :in => to_child_r, :out => to_parent_w)
+  Process.spawn(RbConfig.ruby, echo_server_path, "--secure", in: to_child_r, out: to_parent_w)
   to_child_r.close
   to_parent_w.close
   child_port = to_parent_r.gets.strip
@@ -63,16 +63,16 @@ def main
     GRPC::Core::CallCredentials.new(proc do |args|
       { 'authorization' => 'test' }.merge(args)
     end))
-  stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", channel_creds, channel_args: {
-    GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
-  })
+  stub = Echo::EchoServer::Stub.new(
+    "localhost:#{child_port}", channel_creds,
+    channel_args: { GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr' })
   do_rpc(stub)
   STDERR.puts "GRPC::pre_fork begin"
-  GRPC::prefork
+  GRPC.prefork
   STDERR.puts "GRPC::pre_fork done"
   pid = fork do
     STDERR.puts "child: GRPC::postfork_child begin"
-    GRPC::postfork_child
+    GRPC.postfork_child
     STDERR.puts "child: GRPC::postfork_child done"
     do_rpc(stub)
     STDERR.puts "child: first post-fork RPC done"
@@ -80,7 +80,7 @@ def main
     STDERR.puts "child: done"
   end
   STDERR.puts "parent: GRPC::postfork_parent begin"
-  GRPC::postfork_parent
+  GRPC.postfork_parent
   STDERR.puts "parent: GRPC::postfork_parent done"
   do_rpc(stub)
   STDERR.puts "parent: first post-fork RPC done"

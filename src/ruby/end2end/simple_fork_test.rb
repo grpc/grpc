@@ -28,24 +28,21 @@ require 'grpc'
 require 'end2end_common'
 
 def do_rpc(stub)
-  begin
-    stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
-  rescue GRPC::Unavailable
-  end
+  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
+rescue GRPC::Unavailable => e
+  STDERR.puts "RPC terminated with unavailable as expected: #{e}"
 end
 
 def main
-  # TODO(apolcyn): figure out how to run a server in this test
-  #server_runner = ServerRunner.new(EchoServerImpl)
-  #server_port = server_runner.run
+  # TODO(apolcyn): point this to a guaranteed-non-listening port
   stub = Echo::EchoServer::Stub.new("localhost:443", :this_channel_is_insecure)
   do_rpc(stub)
   STDERR.puts "GRPC::pre_fork begin"
-  GRPC::prefork
+  GRPC.prefork
   STDERR.puts "GRPC::pre_fork done"
   pid = fork do
     STDERR.puts "child: GRPC::postfork_child begin"
-    GRPC::postfork_child
+    GRPC.postfork_child
     STDERR.puts "child: GRPC::postfork_child done"
     do_rpc(stub)
     STDERR.puts "child: first post-fork RPC done"
@@ -53,7 +50,7 @@ def main
     STDERR.puts "child: done"
   end
   STDERR.puts "parent: GRPC::postfork_parent begin"
-  GRPC::postfork_parent
+  GRPC.postfork_parent
   STDERR.puts "parent: GRPC::postfork_parent done"
   do_rpc(stub)
   STDERR.puts "parent: first post-fork RPC done"
@@ -61,7 +58,6 @@ def main
   STDERR.puts "parent: second post-fork RPC done"
   Process.wait pid
   STDERR.puts "parent: done"
-  #server_runner.stop
 end
 
 main

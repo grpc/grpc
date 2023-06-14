@@ -26,7 +26,6 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'grpc'
 require 'end2end_common'
 
-
 def create_server_creds
   test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
   GRPC.logger.info("test root: #{test_root}")
