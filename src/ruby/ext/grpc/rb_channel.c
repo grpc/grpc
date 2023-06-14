@@ -160,7 +160,6 @@ static void grpc_rb_channel_free_internal(void* p) {
      * and we can count on this thread to not be interrupted or
      * yield the gil. */
     grpc_rb_channel_safe_destroy(ch->bg_wrapped);
-    ch->bg_wrapped = NULL;
     grpc_rb_channel_args_destroy(&ch->args);
   }
   xfree(p);
