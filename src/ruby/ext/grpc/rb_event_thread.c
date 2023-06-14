@@ -91,7 +91,7 @@ static void grpc_rb_event_queue_destroy() {
 }
 
 static void* grpc_rb_wait_for_event_no_gil(void* param) {
-  fprintf(stderr, "apolcyn top of event thread\n");
+  fprintf(stderr, "apolcyn top of event thread no gil abort=%d\n", event_queue.abort);
   grpc_rb_event* event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);
@@ -150,7 +150,7 @@ void grpc_rb_event_queue_thread_start() {
     rb_global_variable(&g_event_thread);
     event_queue.head = event_queue.tail = NULL;
   }
-  event_queue.abort == false;
+  event_queue.abort = false;
   GPR_ASSERT(!RTEST(g_event_thread));
   g_event_thread = rb_thread_create(grpc_rb_event_thread, NULL);
 }
