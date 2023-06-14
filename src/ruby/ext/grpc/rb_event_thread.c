@@ -109,7 +109,6 @@ static void* grpc_rb_wait_for_event_no_gil(void* param) {
 }
 
 static void grpc_rb_event_unblocking_func(void* arg) {
-  fprintf(stderr, "apolcyn event thread unblocking func\n");
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
