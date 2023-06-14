@@ -17,6 +17,7 @@
 //
 
 #include <atomic>
+#include <regex>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -67,6 +68,11 @@ class Verifier {
   static void DispatchLog(gpr_log_func_args* args) { g_log_func_.load()(args); }
 
   static void NoLog(gpr_log_func_args* args) {
+    static const auto* const re = new std::regex("^Verify .* for [0-9]+ms");
+    if (std::regex_match(args->message, *re)) {
+      gpr_default_log(args);
+      return;
+    }
     std::string message = absl::StrCat("Unwanted log: ", args->message);
     args->message = message.c_str();
     gpr_default_log(args);
