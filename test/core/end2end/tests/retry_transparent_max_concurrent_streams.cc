@@ -77,6 +77,8 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server handles the first call.
   IncomingMessage client_message;
   s.NewBatch(103).RecvMessage(client_message);
+  Expect(103, true);
+  Step();
   IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .RecvCloseOnServer(client_close)
@@ -86,7 +88,6 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server completes first call and shutdown.
   // Client completes first call.
   Expect(104, true);
-  Expect(103, true);
   Expect(102, true);
   Expect(1, true);
   Step();
