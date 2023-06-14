@@ -315,6 +315,12 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     return ResetAndReturnCallback()(status);
   }
   // Doing another read. Let's keep the AsyncIOState alive a bit longer.
+  if (io_state_->socket->IsShutdown()) {
+    // Return early if the socket is shut down, since the endpoint may have been
+    // destroyed already.
+    return ResetAndReturnCallback()(
+        absl::UnavailableError("Socket is shutting down."));
+  }
   io_state_ = std::move(io_state);
   status = io_state_->endpoint->DoTcpRead(buffer_);
   if (!status.ok()) {
