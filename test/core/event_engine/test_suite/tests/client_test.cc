@@ -337,7 +337,7 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
         },
         &read_buffer, &read_args);
     // Destroy the client endpoint with an outstanding read.
-    endpoints->client.release();
+    endpoints->client.reset();
     SliceBuffer write_buffer;
     AppendStringToSliceBuffer(
         &write_buffer,
