@@ -224,12 +224,13 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
+static bool g_enable_fork_support;
+
 #if GPR_WINDOWS
 static void grpc_ruby_basic_init(void) {}
 static bool grpc_ruby_forked_after_init(void) { return false; }
 #else
 static pid_t grpc_init_pid;
-static bool enable_fork_support;
 
 static void grpc_ruby_basic_init(void) {
   GPR_ASSERT(grpc_init_pid == 0);
@@ -239,7 +240,7 @@ static void grpc_ruby_basic_init(void) {
   // than parsing the environment variable ourselves.
   const char* res = getenv("GRPC_ENABLE_FORK_SUPPORT");
   if (res != NULL && strcmp(res, "1") == 0) {
-    enable_fork_support = true;
+    g_enable_fork_support = true;
   }
   fprintf(stderr, "result of fork support check: |%s|\n", res);
 }
@@ -269,7 +270,7 @@ VALUE sym_metadata = Qundef;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 
 void grpc_ruby_fork_guard() {
-  if (enable_fork_support) return;
+  if (g_enable_fork_support) return;
   if (grpc_ruby_forked_after_init()) {
     rb_raise(rb_eRuntimeError,
              "grpc cannot be used before and after forking unless the "
