@@ -328,16 +328,17 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
     ASSERT_TRUE(endpoints.ok()) << "Could not create connected endpoints: "
                                 << endpoints.status().ToString();
     grpc_core::Notification read_done;
-    endpoints->client->Read(
-        [&](absl::Status) {
-          if (read_callback_run_count.fetch_add(1) + +1 == iterations) {
-            iterations_complete.Notify();
-          }
-          read_done.Notify();
-        },
-        &read_buffer, &read_args);
+    auto read_cb = [&](absl::Status) {
+      if (read_callback_run_count.fetch_add(1) + 1 == iterations) {
+        iterations_complete.Notify();
+      }
+      read_done.Notify();
+    };
+    bool completed_immediately =
+        endpoints->client->Read(read_cb, &read_buffer, &read_args);
     // Destroy the client endpoint with an outstanding read.
     endpoints->client.reset();
+    if (completed_immediately) read_cb(absl::OkStatus());
     SliceBuffer write_buffer;
     AppendStringToSliceBuffer(
         &write_buffer,
