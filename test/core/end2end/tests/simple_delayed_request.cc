@@ -16,34 +16,46 @@
 //
 //
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreClientChannelTest, SimpleDelayedRequestShort) {
+CORE_END2END_TEST(Http2SingleHopTest, SimpleDelayedRequestShort) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
+  gpr_log(GPR_ERROR, "Create client side call");
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
+  gpr_log(GPR_ERROR, "Start initial batch");
   c.NewBatch(1)
       .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
+  gpr_log(GPR_ERROR, "Start server");
   InitServer(ChannelArgs());
   auto s = RequestCall(101);
   Expect(101, true);
+  Expect(1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
+           Crash(absl::StrCat(
+               "Unexpected completion of client side call: success=",
+               success ? "true" : "false", " status=", server_status.ToString(),
+               " initial_md=", server_initial_metadata.ToString()));
+         }});
   Step();
   IncomingCloseOnServer client_close;
   s.NewBatch(102)

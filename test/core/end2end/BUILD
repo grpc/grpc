@@ -430,7 +430,7 @@ grpc_core_end2end_test(name = "shutdown_finishes_tags")
 
 grpc_core_end2end_test(
     name = "simple_delayed_request",
-    shard_count = 50,
+    shard_count = 3,
 )
 
 grpc_core_end2end_test(name = "simple_metadata")
