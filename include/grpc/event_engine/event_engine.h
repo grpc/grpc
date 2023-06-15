@@ -167,6 +167,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
+  ///
+  /// Endpoint destruction semantics are akin to read and write cancellation: if
+  /// there are outstanding read or write operations when the \a Endpoint is
+  /// destroyed, the respective read and write callbacks will eventually be
+  /// called with failure statuses.
   class Endpoint {
    public:
     /// Shuts down all connections and invokes all pending read or write
@@ -204,6 +209,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
+    ///
+    /// If the Endpoint is destroyed before the \a on_read callback is called,
+    /// the implementation must call the \a on_read callback with some failure
+    /// status.
     virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
@@ -240,6 +249,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
+    ///
+    /// If the Endpoint is destroyed before the \a on_writable callback is
+    /// called, the implementation must call the \a on_writable callback with
+    /// some failure status.
     virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                        SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned

@@ -38,8 +38,10 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -47,29 +49,40 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-constexpr int kMinMessageSize = 1024;
-constexpr int kMaxMessageSize = 4096;
+constexpr size_t kMinMessageSize = 1024;
+constexpr size_t kMaxMessageSize = 4096;
+
+using namespace std::chrono_literals;
+
 }  // namespace
 
 // Returns a random message with bounded length.
 std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
+  return GetRandomBoundedMessage(kMinMessageSize, kMaxMessageSize);
+}
+
+std::string GetRandomBoundedMessage(size_t min_length, size_t max_length) {
   static std::random_device rd;
   static std::seed_seq seed{rd()};
   static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static std::uniform_real_distribution<> dis(min_length, max_length);
   static grpc_core::Mutex g_mu;
-  std::string tmp_s;
   int len;
   {
     grpc_core::MutexLock lock(&g_mu);
     len = dis(gen);
   }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
+  return GetRandomMessage(len);
+}
+
+std::string GetRandomMessage(size_t message_length) {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  std::string tmp_s;
+  tmp_s.reserve(message_length);
+  for (int i = 0; i < message_length; ++i) {
     tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
   }
   return tmp_s;
@@ -160,93 +173,53 @@ absl::Status SendValidatePayload(absl::string_view data,
   return absl::OkStatus();
 }
 
-absl::Status ConnectionManager::BindAndStartListener(
-    const std::vector<std::string>& addrs, bool listener_type_oracle) {
-  grpc_core::MutexLock lock(&mu_);
-  if (addrs.empty()) {
-    return absl::InvalidArgumentError(
-        "Atleast one bind address must be specified");
-  }
-  for (auto& addr : addrs) {
-    if (listeners_.find(addr) != listeners_.end()) {
-      // There is already a listener at this address. Return error.
-      return absl::AlreadyExistsError(
-          absl::StrCat("Listener already existis for address: ", addr));
-    }
-  }
+absl::StatusOr<SimpleConnectionFactory::Endpoints>
+SimpleConnectionFactory::Connect(EventEngine* client_engine,
+                                 EventEngine* listener_engine,
+                                 absl::string_view target_addr) {
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("foo");
+  auto resolved_addr = URIToResolvedAddress(std::string(target_addr));
+  GRPC_RETURN_IF_ERROR(resolved_addr.status());
+  absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> client_endpoint;
+  std::unique_ptr<EventEngine::Endpoint> listener_endpoint;
+  grpc_core::Notification client_signal;
+  grpc_core::Notification listener_signal;
+  // Create and bind a listener
   EventEngine::Listener::AcceptCallback accept_cb =
-      [this](std::unique_ptr<EventEngine::Endpoint> ep,
-             MemoryAllocator /*memory_allocator*/) {
-        last_in_progress_connection_.SetServerEndpoint(std::move(ep));
+      [&listener_endpoint, &listener_signal](
+          std::unique_ptr<EventEngine::Endpoint> ep,
+          grpc_core::MemoryAllocator /*memory_allocator*/) {
+        listener_endpoint = std::move(ep);
+        listener_signal.Notify();
       };
-
-  EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
-                                                   : test_event_engine_.get();
-
-  ChannelArgsEndpointConfig config;
-  auto status = event_engine->CreateListener(
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+  ChannelArgsEndpointConfig config(args);
+  auto listener = listener_engine->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  if (!status.ok()) {
-    return status.status();
-  }
-
-  std::shared_ptr<EventEngine::Listener> listener((*status).release());
-  for (auto& addr : addrs) {
-    auto bind_status = listener->Bind(*URIToResolvedAddress(addr));
-    if (!bind_status.ok()) {
-      gpr_log(GPR_ERROR, "Binding listener failed: %s",
-              bind_status.status().ToString().c_str());
-      return bind_status.status();
-    }
-  }
-  GPR_ASSERT(listener->Start().ok());
-  // Insert same listener pointer for all bind addresses after the listener
-  // has started successfully.
-  for (auto& addr : addrs) {
-    listeners_.insert(std::make_pair(addr, listener));
-  }
-  return absl::OkStatus();
-}
-
-absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
-                          std::unique_ptr<EventEngine::Endpoint>>>
-ConnectionManager::CreateConnection(std::string target_addr,
-                                    EventEngine::Duration timeout,
-                                    bool client_type_oracle) {
-  // Only allow one CreateConnection call to proceed at a time.
-  grpc_core::MutexLock lock(&mu_);
-  std::string conn_name =
-      absl::StrCat("connection-", std::to_string(num_processed_connections_++));
-  EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
-                                                 : test_event_engine_.get();
-  ChannelArgsEndpointConfig config;
-  event_engine->Connect(
-      [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
-        if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Connect failed: %s",
-                  status.status().ToString().c_str());
-          last_in_progress_connection_.SetClientEndpoint(nullptr);
-        } else {
-          last_in_progress_connection_.SetClientEndpoint(std::move(*status));
-        }
+  GRPC_RETURN_IF_ERROR(listener.status());
+  GRPC_RETURN_IF_ERROR((*listener)->Bind(*resolved_addr).status());
+  GRPC_RETURN_IF_ERROR((*listener)->Start());
+  // Connect a client from the EventEngine under test
+  client_engine->Connect(
+      [&client_endpoint, &client_signal](
+          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+        client_endpoint = std::move(endpoint);
+        client_signal.Notify();
       },
-      *URIToResolvedAddress(target_addr), config,
-      memory_quota_->CreateMemoryAllocator(conn_name), timeout);
-
-  auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();
-  if (client_endpoint != nullptr &&
-      listeners_.find(target_addr) != listeners_.end()) {
-    // There is a listener for the specified address. Wait until it
-    // creates a ServerEndpoint after accepting the connection.
-    auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
-    GPR_ASSERT(server_endpoint != nullptr);
-    // Set last_in_progress_connection_ to nullptr
-    return std::make_tuple(std::move(client_endpoint),
-                           std::move(server_endpoint));
-  }
-  return absl::CancelledError("Failed to create connection.");
+      *resolved_addr, config,
+      memory_quota->CreateMemoryAllocator("simple_conn"), 1h);
+  // Wait for the connection to become established
+  client_signal.WaitForNotification();
+  listener_signal.WaitForNotification();
+  GRPC_RETURN_IF_ERROR(client_endpoint.status());
+  GPR_ASSERT(client_endpoint->get() != nullptr);
+  GPR_ASSERT(listener_endpoint.get() != nullptr);
+  return Endpoints{/*client=*/std::move(*client_endpoint),
+                   /*listener=*/std::move(listener_endpoint)};
 }
 
 }  // namespace experimental

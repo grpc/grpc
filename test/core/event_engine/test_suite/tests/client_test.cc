@@ -68,7 +68,9 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
+using ::grpc_event_engine::experimental::GetRandomBoundedMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -295,6 +297,60 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     t.join();
   }
   server_endpoint.reset();
+}
+
+// It's valid usage for an Endpoint to be destroyed immediately after a Read
+// request was issued. The Engine must handle this scenario. Unfortunately, this
+// test is non-deterministic since it's up to the implementation to determine
+// the correct status to issue after the endpoint is destroyed.
+TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
+  constexpr size_t iterations = 1000;
+  constexpr size_t min_message_length = 1024;
+  // A significant payload to hopefuly force the endpoint to do multiple TCP
+  // reads.
+  constexpr size_t max_message_length = 1024 * 1024 * 10;
+  auto test_ee = this->NewEventEngine();
+  auto oracle_ee = this->NewOracleEventEngine();
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  Endpoint::ReadArgs read_args;
+  Endpoint::WriteArgs write_args;
+  std::atomic<size_t> ok_count{0};
+  std::atomic<size_t> non_ok_count{0};
+  grpc_core::Notification iterations_complete;
+  for (size_t i = 0; i < iterations; i++) {
+    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: %d", i);
+    SliceBuffer read_buffer;
+    auto endpoints =
+        grpc_event_engine::experimental::SimpleConnectionFactory::Connect(
+            test_ee.get(), oracle_ee.get(), target_addr);
+    ASSERT_TRUE(endpoints.ok()) << "Could not create connected endpoints: "
+                                << endpoints.status().ToString();
+    grpc_core::Notification write_done;
+    endpoints->client->Read(
+        [&](absl::Status status) {
+          if (ok_count.fetch_add(status.ok() ? 1 : 0) +
+                  non_ok_count.fetch_add(status.ok() ? 0 : 1) + 1 ==
+              iterations) {
+            iterations_complete.Notify();
+          }
+        },
+        &read_buffer, &read_args);
+    // Destroy the client endpoint with an outstanding read.
+    endpoints->client.release();
+    SliceBuffer write_buffer;
+    AppendStringToSliceBuffer(
+        &write_buffer,
+        GetRandomBoundedMessage(min_message_length, max_message_length));
+    endpoints->listener->Write([&](absl::Status) { write_done.Notify(); },
+                               &write_buffer, &write_args);
+    write_done.WaitForNotification();
+  }
+  iterations_complete.WaitForNotification();
+  ASSERT_GT(non_ok_count.load(), 0)
+      << "Some read callbacks should have received error statuses";
+  grpc_event_engine::experimental::WaitForSingleOwner(std::move(test_ee));
+  grpc_event_engine::experimental::WaitForSingleOwner(std::move(oracle_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix
