@@ -210,6 +210,17 @@ ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
   return ChannelArgs(args_.Remove(key));
 }
 
+ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(absl::string_view prefix)
+    const {
+  ChannelArgs result;
+  args_.ForEach([&](const std::string& key, const Value& value) {
+    if (!absl::StartsWith(key, prefix)) {
+      result.args_ = result.args_.Add(key, value);
+    }
+  });
+  return result;
+}
+
 absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;

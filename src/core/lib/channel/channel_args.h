@@ -395,6 +395,9 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
 
+  GRPC_MUST_USE_RESULT ChannelArgs RemoveAllKeysWithPrefix(
+      absl::string_view prefix) const;
+
   template <typename T>
   bool ContainsObject() const {
     return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
