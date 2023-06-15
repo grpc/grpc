@@ -28,11 +28,13 @@
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
+  gpr_log(GPR_ERROR, "Create client side call");
   auto c = test.NewClientCall("/service/method")
-               .Timeout(Duration::Seconds(5))
+               .Timeout(Duration::Seconds(30))
                .Create();
   CoreEnd2endTest::IncomingMetadata server_initial_md;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
+  gpr_log(GPR_ERROR, "Start initial batch");
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -40,6 +42,13 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
       .RecvStatusOnClient(server_status);
   auto s = test.RequestCall(101);
   test.Expect(101, true);
+  test.Expect(
+      1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
+        Crash(absl::StrCat(
+            "Unexpected completion of client side call: success=",
+            success ? "true" : "false", " status=", server_status.ToString(),
+            " initial_md=", server_initial_md.ToString()));
+      }});
   test.Step();
   test.ShutdownServerAndNotify(1000);
   CoreEnd2endTest::IncomingCloseOnServer client_closed;
