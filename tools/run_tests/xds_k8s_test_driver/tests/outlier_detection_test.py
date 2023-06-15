@@ -55,16 +55,10 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#server
         """
         super().setUpClass()
-        if cls.lang_spec.server_lang == _Lang.JAVA:
-            return
-        if (
-            cls.lang_spec.server_lang == _Lang.CPP
-            and cls.lang_spec.version_gte("1.56.x")
-        ):
-            return
-        # TODO(mlumish): Once rpc-behavior supported by a language, make the
-        #                override version-conditional.
-        cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
+        if cls.lang_spec.client_lang != _Lang.JAVA:
+            # TODO(mlumish): Once rpc-behavior supported by a language, make the
+            #                override version-conditional.
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
