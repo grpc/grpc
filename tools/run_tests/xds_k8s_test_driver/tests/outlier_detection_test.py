@@ -57,7 +57,10 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         super().setUpClass()
         if cls.lang_spec.server_lang == _Lang.JAVA:
             return
-        if cls.lang_spec.server_lang == _Lang.CPP and cls.lang_spec.version_gte("1.56.x"):
+        if (
+            cls.lang_spec.server_lang == _Lang.CPP
+            and cls.lang_spec.version_gte("1.56.x")
+        ):
             return
         # TODO(mlumish): Once rpc-behavior supported by a language, make the
         #                override version-conditional.
