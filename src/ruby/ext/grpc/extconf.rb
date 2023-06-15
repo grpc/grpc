@@ -88,6 +88,7 @@ env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
+# TODO(apolcyn): should this be platform-specific, e.g. only set on linux?
 env_append 'CPPFLAGS', '-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
