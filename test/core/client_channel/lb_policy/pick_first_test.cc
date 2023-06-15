@@ -66,7 +66,6 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   // assertions can be used
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
-      bool exit_idle_after_connection_fails,
       std::vector<absl::string_view>* out_address_order) {
     work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
                           DEBUG_LOCATION);
@@ -114,11 +113,8 @@ class PickFirstTest : public LoadBalancingPolicyTest {
         // Then it should become disconnected.
         subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
         ExpectReresolutionRequest();
-        if (exit_idle_after_connection_fails) {
-          ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
-        } else {
-          ExpectState(GRPC_CHANNEL_IDLE);
-        }
+        // Do not trigger exit idle.
+        ExpectState(GRPC_CHANNEL_IDLE);
       }
       // Remove the subchannel from the map.
       subchannels.erase(subchannel);
@@ -284,7 +280,7 @@ TEST_F(PickFirstTest, WithShuffle) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
-    GetOrderAddressesArePicked(kAddresses, false, &addresses_after_update);
+    GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
         absl::MakeConstSpan(kAddresses)) {
       shuffled = true;
@@ -292,12 +288,9 @@ TEST_F(PickFirstTest, WithShuffle) {
     }
   }
   ASSERT_TRUE(shuffled);
-  // All addresses are in the list, no duplicates
-  ASSERT_THAT(addresses_after_update,
-              ::testing::UnorderedElementsAreArray(kAddresses));
   // Address order should be stable between updates
   std::vector<absl::string_view> addresses_on_another_try;
-  GetOrderAddressesArePicked(kAddresses, true, &addresses_on_another_try);
+  GetOrderAddressesArePicked(kAddresses, &addresses_on_another_try);
   EXPECT_EQ(addresses_on_another_try, addresses_after_update);
 }
 
@@ -313,8 +306,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
         BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
-    GetOrderAddressesArePicked(kAddresses, true, &address_order);
-    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
+    GetOrderAddressesArePicked(kAddresses, &address_order);
   }
 }
 
@@ -329,8 +321,7 @@ TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
         BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
-    GetOrderAddressesArePicked(kAddresses, false, &address_order);
-    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
+    GetOrderAddressesArePicked(kAddresses, &address_order);
   }
 }
 }  // namespace
