@@ -71,6 +71,7 @@ class CqVerifier {
   };
 
   static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGprCrashWithStdio(const Failure& failure);
   static void FailUsingGtestFail(const Failure& failure);
 
   // Allow customizing the failure handler
@@ -106,6 +107,8 @@ class CqVerifier {
 
   std::string ToString() const;
   std::vector<std::string> ToStrings() const;
+  std::string ToShortString() const;
+  std::vector<std::string> ToShortStrings() const;
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -116,6 +119,7 @@ class CqVerifier {
     ExpectedResult result;
 
     std::string ToString() const;
+    std::string ToShortString() const;
   };
 
   void FailNoEventReceived(const SourceLocation& location) const;

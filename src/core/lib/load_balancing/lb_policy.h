@@ -306,6 +306,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
                                absl::string_view message) = 0;
   };
 
+  class DelegatingChannelControlHelper;
+
+  template <typename ParentPolicy>
+  class ParentOwningDelegatingChannelControlHelper;
+
   /// Interface for configuration data used by an LB policy implementation.
   /// Individual implementations will create a subclass that adds methods to
   /// return the parameters they need.

@@ -833,6 +833,7 @@ libs:
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/load_balancing/delegating_helper.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -2214,6 +2215,7 @@ libs:
   - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/load_balancing/delegating_helper.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -14681,24 +14683,6 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: test_config_sharded_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/test_config_sharded_test.cc
-  deps:
-  - grpc_test_util
-- name: test_config_unsharded_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/test_config_unsharded_test.cc
-  deps:
-  - grpc_test_util
 - name: test_core_channel_channelz_test
   gtest: true
   build: test
