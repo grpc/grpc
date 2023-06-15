@@ -280,21 +280,19 @@ void grpc_ruby_fork_guard() {
 }
 
 static VALUE g_bg_thread_init_rb_mu = Qundef;
-static int g_bg_thread_init_done = 0;
+static bool g_bg_thread_init_done;
 
 static void grpc_ruby_init_threads() {
   // Avoid calling into ruby library (when creating threads here)
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
-  rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     fprintf(stderr, "apolcyn re-creating ruby threads\n");
     grpc_rb_event_queue_thread_start();
     grpc_rb_channel_polling_thread_start();
-    g_bg_thread_init_done = 1;
+    g_bg_thread_init_done = true;
   }
-  rb_mutex_unlock(g_bg_thread_init_rb_mu);
 }
 
 static int64_t g_grpc_ruby_init_count;
@@ -303,7 +301,11 @@ void grpc_ruby_init() {
   fprintf(stderr, "apolcyn in grpc ruby init\n");
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   grpc_init();
+  rb_mutex_lock(g_bg_thread_init_rb_mu);
+  // Hold g_bg_thread_init_rb_mu because the first grpc objects
+  // can be initialized concurrently.
   grpc_ruby_init_threads();
+  rb_mutex_unlock(g_bg_thread_init_rb_mu);
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
           "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
@@ -320,11 +322,20 @@ void grpc_ruby_shutdown() {
 }
 
 // fork APIs
+//
+// Note we don't need to acquire g_bg_thread_init_rb_mu when managing background
+// threads in these APIs, because GRPC fork APIs are not thread safe.
+// In order to avoid undefined behavior, the caller anyways needs to guarantee
+// that the gRPC library is not being called into from *any* thread before calling
+// GRPC::prefork, and this needs to remain until after the subsequent call to
+// GRPC::postfork_{parent,child} completes.
 static VALUE grpc_rb_prefork(VALUE self) {
-  grpc_rb_channel_polling_thread_stop();
-  grpc_rb_event_queue_thread_stop();
-  // all ruby-level background threads joined at this point
-  g_bg_thread_init_done = 0;
+  if (!g_background_thread_init_done) {
+    grpc_rb_channel_polling_thread_stop();
+    grpc_rb_event_queue_thread_stop();
+    // all ruby-level background threads joined at this point
+    g_bg_thread_init_done = false;
+  }
   return Qnil;
 }
 
