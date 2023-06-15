@@ -47,6 +47,9 @@ static ID id_channel;
  * GCed before the channel */
 static ID id_target;
 
+/* hidden ivar that synchronizes post-fork channel re-creation */
+static ID id_channel_recreation_mu;
+
 /* id_insecure_channel is used to indicate that a channel is insecure */
 static VALUE id_insecure_channel;
 
@@ -272,6 +275,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
     return Qnil;
   }
   rb_ivar_set(self, id_target, target);
+  rb_ivar_set(self, id_channel_recreation_mu, rb_mutex_new());
   return self;
 }
 
@@ -500,9 +504,11 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
   }
-  // TODO(apolcyn): this needs to be synchronized
+  // TODO(apolcyn): only do this check if fork support is enabled
+  rb_mutex_lock(rb_ivar_get(self, id_channel_recreation_mu));
   grpc_rb_channel_maybe_recreate_channel_after_fork(
       wrapper, rb_ivar_get(self, id_target));
+  rb_mutex_unlock(rb_ivar_get(self, id_channel_recreation_mu));
 
   cq = grpc_completion_queue_create_for_pluck(NULL);
   method_slice =
@@ -901,6 +907,7 @@ void Init_grpc_channel() {
 
   id_channel = rb_intern("__channel");
   id_target = rb_intern("__target");
+  id_channel_recreation_mu = rb_intern("__channel_recreation_mu");
   rb_define_const(grpc_rb_cChannel, "SSL_TARGET",
                   ID2SYM(rb_intern(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
   rb_define_const(grpc_rb_cChannel, "ENABLE_CENSUS",
