@@ -80,7 +80,8 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
 
     case T_STRING:
       args->args[args->num_args - 1].type = GRPC_ARG_STRING;
-      args->args[args->num_args - 1].value.string = strdup(StringValueCStr(val));
+      args->args[args->num_args - 1].value.string =
+          strdup(StringValueCStr(val));
       --args->num_args;
       return ST_CONTINUE;
 

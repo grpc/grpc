@@ -91,7 +91,8 @@ static void grpc_rb_event_queue_destroy() {
 }
 
 static void* grpc_rb_wait_for_event_no_gil(void* param) {
-  fprintf(stderr, "apolcyn top of event thread no gil abort=%d\n", event_queue.abort);
+  fprintf(stderr, "apolcyn top of event thread no gil abort=%d\n",
+          event_queue.abort);
   grpc_rb_event* event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);

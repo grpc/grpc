@@ -326,19 +326,25 @@ void grpc_ruby_shutdown() {
 // Note we don't need to acquire g_bg_thread_init_rb_mu when managing background
 // threads in these APIs, because GRPC fork APIs are not thread safe.
 // In order to avoid undefined behavior, the caller anyways needs to guarantee
-// that the gRPC library is not being called into from *any* thread before calling
-// GRPC::prefork, and this needs to remain until after the subsequent call to
-// GRPC::postfork_{parent,child} completes.
+// that the gRPC library is not being called into from *any* thread before
+// calling GRPC::prefork, and this needs to remain until after the subsequent
+// call to GRPC::postfork_{parent,child} completes.
 static bool g_grpc_rb_prefork_pending = false;
 
 static VALUE grpc_rb_prefork(VALUE self) {
   // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
-  gpr_once_init(&g_once_init, grpc_ruby_basic_init);  // maybe be the first time called into gRPC
+  gpr_once_init(
+      &g_once_init,
+      grpc_ruby_basic_init);  // maybe be the first time called into gRPC
   if (!g_enable_fork_support) {
-    rb_raise(rb_eRuntimeError, "forking with gRPC/Ruby is only supported on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1");
+    rb_raise(rb_eRuntimeError,
+             "forking with gRPC/Ruby is only supported on linux with env var: "
+             "GRPC_ENABLE_FORK_SUPPORT=1");
   }
   if (g_grpc_rb_prefork_pending) {
-    rb_raise(rb_eRuntimeError, "GRPC::prefork already called without a matching GRPC::postfork_{parent,child}");
+    rb_raise(rb_eRuntimeError,
+             "GRPC::prefork already called without a matching "
+             "GRPC::postfork_{parent,child}");
   }
   g_grpc_rb_prefork_pending = true;
   if (g_bg_thread_init_done) {
@@ -352,7 +358,8 @@ static VALUE grpc_rb_prefork(VALUE self) {
 
 static VALUE grpc_rb_postfork_child(VALUE self) {
   if (!g_grpc_rb_prefork_pending) {
-    rb_raise(rb_eRuntimeError, "GRPC::postfork_child can only be called after GRPC::prefork");
+    rb_raise(rb_eRuntimeError,
+             "GRPC::postfork_child can only be called after GRPC::prefork");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();
@@ -362,7 +369,8 @@ static VALUE grpc_rb_postfork_child(VALUE self) {
 static VALUE grpc_rb_postfork_parent(VALUE self) {
   // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
   if (!g_grpc_rb_prefork_pending) {
-    rb_raise(rb_eRuntimeError, "GRPC::postfork_parent can only be called after GRPC::prefork");
+    rb_raise(rb_eRuntimeError,
+             "GRPC::postfork_parent can only be called after GRPC::prefork");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();
