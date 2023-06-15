@@ -82,7 +82,7 @@ std::string GetRandomMessage(size_t message_length) {
       "abcdefghijklmnopqrstuvwxyz";
   std::string tmp_s;
   tmp_s.reserve(message_length);
-  for (int i = 0; i < message_length; ++i) {
+  for (size_t i = 0; i < message_length; ++i) {
     tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
   }
   return tmp_s;
