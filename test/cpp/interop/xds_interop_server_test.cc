@@ -29,21 +29,21 @@ namespace testing {
 namespace {
 
 TEST(GetRpcBehaviorMetadataTest, ErrorCodeNoFilter) {
-  auto status = GetStatusForRpcBehaviorMetadata("error-code-42", "hostname");
+  auto status = GetStatusForRpcBehaviorMetadata("error-code-16", "hostname");
   ASSERT_TRUE(status.has_value());
-  ASSERT_EQ(status->error_code(), 42) << status->error_message();
+  ASSERT_EQ(status->error_code(), 16) << status->error_message();
 }
 
 TEST(GetRpcBehaviorMetadataTest, ErrorCodeThisHost) {
   auto status = GetStatusForRpcBehaviorMetadata(
-      "hostname=hostname error-code-42", "hostname");
+      "hostname=hostname error-code-16", "hostname");
   ASSERT_TRUE(status.has_value());
-  ASSERT_EQ(status->error_code(), 42) << status->error_message();
+  ASSERT_EQ(status->error_code(), 16) << status->error_message();
 }
 
 TEST(GetRpcBehaviorMetadataTest, ErrorCodeOtherHost) {
   auto status = GetStatusForRpcBehaviorMetadata(
-      "hostname=hostname2 error-code-42", "hostname");
+      "hostname=hostname2 error-code-16", "hostname");
   ASSERT_FALSE(status.has_value());
 }
 
@@ -56,7 +56,7 @@ TEST(GetRpcBehaviorMetadataTest, MalformedErrorCode) {
 
 TEST(GetRpcBehaviorMetadataTest, MalformedHostName) {
   auto status =
-      GetStatusForRpcBehaviorMetadata("hostname= error-code-42", "hostname");
+      GetStatusForRpcBehaviorMetadata("hostname= error-code-16", "hostname");
   ASSERT_TRUE(status.has_value());
   ASSERT_EQ(status->error_code(), grpc::StatusCode::INVALID_ARGUMENT)
       << status->error_message();
