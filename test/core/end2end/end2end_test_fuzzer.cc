@@ -122,6 +122,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
         options.max_delay_run_after = std::chrono::milliseconds(500);
+        options.max_delay_write = std::chrono::milliseconds(50);
         return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =
