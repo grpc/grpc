@@ -319,7 +319,6 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
   std::atomic<size_t> non_ok_count{0};
   grpc_core::Notification iterations_complete;
   for (size_t i = 0; i < iterations; i++) {
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: %d", i);
     SliceBuffer read_buffer;
     auto endpoints =
         grpc_event_engine::experimental::SimpleConnectionFactory::Connect(
