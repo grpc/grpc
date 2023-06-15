@@ -562,7 +562,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
 absl::Status CdsLb::UpdateXdsCertificateProvider(
     const std::string& cluster_name, const XdsClusterResource& cluster_data) {
   // Early out if channel is not configured to use xds security.
-  auto* channel_credentials = args_.GetObject<grpc_channel_credentials>();
+  auto channel_credentials = channel_control_helper()->GetChannelCredentials();
   if (channel_credentials == nullptr ||
       channel_credentials->type() != XdsCredentials::Type()) {
     xds_certificate_provider_ = nullptr;
