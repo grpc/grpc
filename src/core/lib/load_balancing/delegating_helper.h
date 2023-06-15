@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
 #include "src/core/lib/channel/channel_args.h"

@@ -978,10 +978,12 @@ class ClientChannel::ClientChannelControlHelper
   }
 
   RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
-    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->duplicate_without_call_credentials();
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()
+        ->duplicate_without_call_credentials();
   }
 
-  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials() override {
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+      override {
     return chand_->channel_args_.GetObject<grpc_channel_credentials>()->Ref();
   }
 
