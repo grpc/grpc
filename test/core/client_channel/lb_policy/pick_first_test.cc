@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -317,7 +318,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   }
 }
 
-// TODO [eugeneo]: remove when the env var no longer necessary
+// TODO(unknown): [eugeneo]: remove when the env var no longer necessary
 TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
