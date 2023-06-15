@@ -372,7 +372,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.is_supported)
+        xds_k8s_testcase.evaluate_test_config(cls.is_supported)
 
         # Configure cleanup to run after all tests regardless of
         # whether setUpClass failed.
