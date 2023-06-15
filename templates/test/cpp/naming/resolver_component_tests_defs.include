@@ -60,7 +60,7 @@ if cur_resolver and cur_resolver != 'ares':
 os.environ.update({'GRPC_TRACE': 'cares_resolver,cares_address_sorting'})
 experiments = os.environ.get('GRPC_EXPERIMENTS')
 if experiments is not None and 'event_engine_dns' in experiments:
-  os.environ.update({'GRPC_TRACE': 'event_engine_ares_wrapper,ares_wrapper_address_sorting'})
+  os.environ.update({'GRPC_TRACE': 'event_engine_client_channel_resolver,event_engine_ares_resolver,ares_resolver_address_sorting'})
 
 def wait_until_dns_server_is_up(args,
                                 dns_server_subprocess,

@@ -526,9 +526,8 @@ void PosixEventEngine::PosixDNSResolver::LookupHostname(
     });
     return;
   }
-  auto hq = grpc_core::MakeRefCounted<HostnameQuery>(event_engine_.get(),
-                                                     ares_resolver_.get());
-  hq->Lookup(name, default_port, std::move(on_resolve));
+  HostnameQuery::Start(event_engine_.get(), ares_resolver_.get(), name,
+                       default_port, std::move(on_resolve));
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
@@ -540,9 +539,11 @@ void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
     });
     return;
   }
-  auto sq = grpc_core::MakeRefCounted<SRVQuery>(event_engine_.get(),
-                                                ares_resolver_.get());
-  sq->Lookup(name, std::move(on_resolve));
+  ares_resolver_->LookupSRV(
+      name, [on_resolve = std::move(on_resolve)](
+                absl::StatusOr<std::vector<SRVRecord>> result) mutable {
+        on_resolve(std::move(result));
+      });
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
@@ -554,9 +555,11 @@ void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
     });
     return;
   }
-  auto tq = grpc_core::MakeRefCounted<TXTQuery>(event_engine_.get(),
-                                                ares_resolver_.get());
-  tq->Lookup(name, std::move(on_resolve));
+  ares_resolver_->LookupTXT(
+      name, [on_resolve = std::move(on_resolve)](
+                absl::StatusOr<std::vector<std::string>> result) mutable {
+        on_resolve(std::move(result));
+      });
 }
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
