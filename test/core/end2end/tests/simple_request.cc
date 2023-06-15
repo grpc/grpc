@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -32,6 +33,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
