@@ -325,7 +325,7 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
             test_ee.get(), oracle_ee.get(), target_addr);
     ASSERT_TRUE(endpoints.ok()) << "Could not create connected endpoints: "
                                 << endpoints.status().ToString();
-    grpc_core::Notification write_done;
+    grpc_core::Notification read_done;
     endpoints->client->Read(
         [&](absl::Status status) {
           if (ok_count.fetch_add(status.ok() ? 1 : 0) +
@@ -333,6 +333,7 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
               iterations) {
             iterations_complete.Notify();
           }
+          read_done.Notify();
         },
         &read_buffer, &read_args);
     // Destroy the client endpoint with an outstanding read.
@@ -341,9 +342,11 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
     AppendStringToSliceBuffer(
         &write_buffer,
         GetRandomBoundedMessage(min_message_length, max_message_length));
+    grpc_core::Notification write_done;
     endpoints->listener->Write([&](absl::Status) { write_done.Notify(); },
                                &write_buffer, &write_args);
     write_done.WaitForNotification();
+    read_done.WaitForNotification();
   }
   iterations_complete.WaitForNotification();
   ASSERT_GT(non_ok_count.load(), 0)
