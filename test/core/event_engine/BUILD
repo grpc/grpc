@@ -221,10 +221,13 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_unsecure",
+        "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:memory_quota",
         "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:status_helper",
         "//src/core:time",
     ],
 )
