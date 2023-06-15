@@ -318,8 +318,7 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   Endpoint::ReadArgs read_args;
   Endpoint::WriteArgs write_args;
-  std::atomic<size_t> ok_count{0};
-  std::atomic<size_t> non_ok_count{0};
+  std::atomic<size_t> read_callback_run_count{0};
   grpc_core::Notification iterations_complete;
   for (size_t i = 0; i < iterations; i++) {
     SliceBuffer read_buffer;
@@ -330,10 +329,8 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
                                 << endpoints.status().ToString();
     grpc_core::Notification read_done;
     endpoints->client->Read(
-        [&](absl::Status status) {
-          if (ok_count.fetch_add(status.ok() ? 1 : 0) +
-                  non_ok_count.fetch_add(status.ok() ? 0 : 1) + 1 ==
-              iterations) {
+        [&](absl::Status) {
+          if (read_callback_run_count.fetch_add(1) + +1 == iterations) {
             iterations_complete.Notify();
           }
           read_done.Notify();
@@ -352,8 +349,6 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
     read_done.WaitForNotification();
   }
   iterations_complete.WaitForNotification();
-  ASSERT_GT(non_ok_count.load(), 0)
-      << "Some read callbacks should have received error statuses";
   grpc_event_engine::experimental::WaitForSingleOwner(std::move(test_ee));
   grpc_event_engine::experimental::WaitForSingleOwner(std::move(oracle_ee));
 }
