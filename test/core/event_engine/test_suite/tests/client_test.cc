@@ -344,8 +344,10 @@ TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
         &write_buffer,
         GetRandomBoundedMessage(min_message_length, max_message_length));
     grpc_core::Notification write_done;
-    endpoints->listener->Write([&](absl::Status) { write_done.Notify(); },
-                               &write_buffer, &write_args);
+    auto write_cb = [&](absl::Status) { write_done.Notify(); };
+    bool write_completed_immediately =
+        endpoints->listener->Write(write_cb, &write_buffer, &write_args);
+    if (write_completed_immediately) write_cb(absl::OkStatus());
     write_done.WaitForNotification();
     read_done.WaitForNotification();
   }
