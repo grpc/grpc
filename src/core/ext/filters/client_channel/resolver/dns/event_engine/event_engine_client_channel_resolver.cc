@@ -73,7 +73,6 @@ namespace {
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::HandleToString;
 using grpc_event_engine::experimental::LookupTaskHandleSet;
 
 // TODO(hork): Investigate adding a resolver test scenario where the first
@@ -121,6 +120,7 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
    private:
+    void OnTimeout() ABSL_LOCKS_EXCLUDED(on_resolved_mu_);
     void OnHostnameResolved(
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
     void OnSRVResolved(
@@ -149,14 +149,9 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     RefCountedPtr<EventEngineClientChannelDNSResolver> resolver_;
     Mutex on_resolved_mu_;
     // Lookup callbacks
-    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> hostname_handle_
-        ABSL_GUARDED_BY(on_resolved_mu_);
-    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> srv_handle_
-        ABSL_GUARDED_BY(on_resolved_mu_);
-    absl::optional<EventEngine::DNSResolver::LookupTaskHandle> txt_handle_
-        ABSL_GUARDED_BY(on_resolved_mu_);
-    LookupTaskHandleSet balancer_hostname_handles_
-        ABSL_GUARDED_BY(on_resolved_mu_);
+    bool is_hostname_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
+    bool is_srv_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
+    bool is_txt_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
     // Output fields from requests.
     ServerAddressList addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
     ServerAddressList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
@@ -164,9 +159,14 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     absl::StatusOr<std::string> service_config_json_
         ABSL_GUARDED_BY(on_resolved_mu_);
     // Other internal state
+    size_t number_of_balancer_hostnames_initiated_
+        ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
+    bool timed_out_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
+    absl::optional<EventEngine::TaskHandle> timeout_handle_
+        ABSL_GUARDED_BY(on_resolved_mu_);
     std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
   };
 
@@ -225,22 +225,21 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
       "DNSResolver::%p Starting hostname resolution for %s", resolver_.get(),
       resolver_->name_to_resolve().c_str());
-  hostname_handle_ = event_engine_resolver_->LookupHostname(
+  is_hostname_inflight_ = true;
+  event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
       },
-      resolver_->name_to_resolve(), kDefaultSecurePort,
-      resolver_->query_timeout_ms_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE("hostname lookup handle: %s",
-                                   HandleToString(*hostname_handle_).c_str());
+      resolver_->name_to_resolve(), kDefaultSecurePort);
   if (resolver_->enable_srv_queries_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting SRV record resolution for %s",
         resolver_.get(), resolver_->name_to_resolve().c_str());
-    srv_handle_ = event_engine_resolver_->LookupSRV(
+    is_srv_inflight_ = true;
+    event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) {
@@ -248,27 +247,29 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
           ExecCtx exec_ctx;
           self->OnSRVResolved(std::move(srv_records));
         },
-        absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()),
-        resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
-                                     HandleToString(*srv_handle_).c_str());
+        absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting TXT record resolution for %s",
         resolver_.get(), resolver_->name_to_resolve().c_str());
-    txt_handle_ = event_engine_resolver_->LookupTXT(
+    is_txt_inflight_ = true;
+    event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::vector<std::string>> service_config) {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
         },
-        absl::StrCat("_grpc_config.", resolver_->name_to_resolve()),
-        resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("txt lookup handle: %s",
-                                     HandleToString(*txt_handle_).c_str());
+        absl::StrCat("_grpc_config.", resolver_->name_to_resolve()));
   }
+  // Initialize overall DNS resolution timeout alarm.
+  auto timeout = resolver_->query_timeout_ms_.count() == 0
+                     ? EventEngine::Duration::max()
+                     : resolver_->query_timeout_ms_;
+  timeout_handle_ = resolver_->event_engine_->RunAfter(
+      timeout,
+      [self = Ref(DEBUG_LOCATION, "OnTimeout")]() { self->OnTimeout(); });
 }
 
 EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -283,22 +284,25 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   {
     MutexLock lock(&on_resolved_mu_);
     orphaned_ = true;
-    // Event if cancellation fails here, OnResolvedLocked will return early, and
+    if (timeout_handle_.has_value()) {
+      resolver_->event_engine_->Cancel(*timeout_handle_);
+      timeout_handle_.reset();
+    }
+    // Even if cancellation fails here, OnResolvedLocked will return early, and
     // the resolver will never see a completed request.
-    if (hostname_handle_.has_value()) {
-      event_engine_resolver_->CancelLookup(*hostname_handle_);
-    }
-    if (srv_handle_.has_value()) {
-      event_engine_resolver_->CancelLookup(*srv_handle_);
-    }
-    for (const auto& handle : balancer_hostname_handles_) {
-      event_engine_resolver_->CancelLookup(handle);
-    }
-    if (txt_handle_.has_value()) {
-      event_engine_resolver_->CancelLookup(*txt_handle_);
-    }
+    event_engine_resolver_.reset();
   }
   Unref(DEBUG_LOCATION, "Orphan");
+}
+
+void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
+    OnTimeout() {
+  MutexLock lock(&on_resolved_mu_);
+  GRPC_EVENT_ENGINE_RESOLVER_TRACE("DNSResolver::%p OnTimeout",
+                                   resolver_.get());
+  timed_out_ = true;
+  timeout_handle_.reset();
+  event_engine_resolver_.reset();
 }
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -310,7 +314,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "hostname lookup");
     if (orphaned_) return;
-    hostname_handle_.reset();
+    is_hostname_inflight_ = false;
     if (!new_addresses.ok()) {
       errors_.AddError(new_addresses.status().message());
     } else {
@@ -340,7 +344,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   // Make sure field destroys before cleanup.
   ValidationErrors::ScopedField field(&errors_, "srv lookup");
   if (orphaned_) return;
-  srv_handle_.reset();
+  is_srv_inflight_ = false;
   if (!srv_records.ok()) {
     // An error has occurred, finish resolving.
     errors_.AddError(srv_records.status().message());
@@ -351,12 +355,19 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
+  if (timed_out_) {
+    // We could reach here if timeout happened while an SRV query was finishing.
+    errors_.AddError(
+        "timed out - not initiating subsequent balancer hostname requests");
+    result = OnResolvedLocked();
+    return;
+  }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
-    auto handle = event_engine_resolver_->LookupHostname(
+    event_engine_resolver_->LookupHostname(
         [host = srv_record.host,
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -364,11 +375,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
           self->OnBalancerHostnamesResolved(std::move(host),
                                             std::move(new_balancer_addresses));
         },
-        srv_record.host, std::to_string(srv_record.port),
-        resolver_->query_timeout_ms_);
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("balancer hostname lookup handle: %s",
-                                     HandleToString(handle).c_str());
-    balancer_hostname_handles_.insert(handle);
+        srv_record.host, std::to_string(srv_record.port));
+    ++number_of_balancer_hostnames_initiated_;
   }
 }
 
@@ -414,8 +422,8 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
-    GPR_ASSERT(txt_handle_.has_value());
-    txt_handle_.reset();
+    GPR_ASSERT(is_txt_inflight_);
+    is_txt_inflight_ = false;
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());
       service_config_json_ = service_config.status();
@@ -493,20 +501,19 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     EventEngineDNSRequestWrapper::OnResolvedLocked() {
   if (orphaned_) return absl::nullopt;
   // Wait for all requested queries to return.
-  if (hostname_handle_.has_value() || srv_handle_.has_value() ||
-      txt_handle_.has_value() ||
+  if (is_hostname_inflight_ || is_srv_inflight_ || is_txt_inflight_ ||
       number_of_balancer_hostnames_resolved_ !=
-          balancer_hostname_handles_.size()) {
+          number_of_balancer_hostnames_initiated_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p OnResolved() waiting for results (hostname: %s, "
         "srv: %s, "
         "txt: %s, "
         "balancer addresses: %" PRIuPTR "/%" PRIuPTR " complete",
-        this, hostname_handle_.has_value() ? "waiting" : "done",
-        srv_handle_.has_value() ? "waiting" : "done",
-        txt_handle_.has_value() ? "waiting" : "done",
+        this, is_hostname_inflight_ ? "waiting" : "done",
+        is_srv_inflight_ ? "waiting" : "done",
+        is_txt_inflight_ ? "waiting" : "done",
         number_of_balancer_hostnames_resolved_,
-        balancer_hostname_handles_.size());
+        number_of_balancer_hostnames_initiated_);
     return absl::nullopt;
   }
   GRPC_EVENT_ENGINE_RESOLVER_TRACE(
