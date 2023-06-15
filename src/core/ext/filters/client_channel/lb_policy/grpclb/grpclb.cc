@@ -1409,21 +1409,11 @@ ChannelArgs BuildBalancerChannelArgs(
             // credentials.
             .Remove(GRPC_ARG_CHANNEL_CREDENTIALS);
   }
-  // Create channel args for channel credentials that does not contain bearer
-  // token credentials.
-  auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
-  GPR_ASSERT(channel_credentials != nullptr);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
-      channel_credentials->duplicate_without_call_credentials();
-  GPR_ASSERT(creds_sans_call_creds != nullptr);
   return grpclb_channel_args
       // A channel arg indicating the target is a grpclb load balancer.
       .Set(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, 1)
       // Tells channelz that this is an internal channel.
       .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1)
-      // A channel args for new channel credentials that does not contain bearer
-      // tokens.
-      .SetObject(creds_sans_call_creds)
       // The fake resolver response generator, which we use to inject
       // address updates into the LB channel.
       .SetObject(response_generator->Ref());
@@ -1597,17 +1587,17 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");
   }
+  // Create channel credentials that do not contain call credentials.
+  auto channel_credentials = channel_control_helper()->GetChannelCredentials();
   // Construct args for balancer channel.
   ChannelArgs lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), args);
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
     std::string uri_str = absl::StrCat("fake:///", server_name_);
-    auto* creds = lb_channel_args.GetObject<grpc_channel_credentials>();
-    GPR_ASSERT(creds != nullptr);
-    lb_channel_ = grpc_channel_create(
-        uri_str.c_str(), creds,
-        lb_channel_args.Remove(GRPC_ARG_CHANNEL_CREDENTIALS).ToC().get());
+    lb_channel_ =
+        grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
+                            lb_channel_args.ToC().get());
     GPR_ASSERT(lb_channel_ != nullptr);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
@@ -1623,7 +1613,9 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // resolver.
   Resolver::Result result;
   result.addresses = std::move(balancer_addresses);
-  result.args = lb_channel_args;
+  // Pass channel creds via channel args, since the fake resolver won't
+  // do this automatically.
+  result.args = lb_channel_args.SetObject(std::move(channel_credentials));
   response_generator_->SetResponse(std::move(result));
   // Return status.
   return status;
