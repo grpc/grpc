@@ -322,10 +322,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   ///
-  /// gRPC requires this object to have a destruction-is-cancellation semantic.
+  /// This object has a destruction-is-cancellation semantic.
   /// Implementations should make sure that all pending requests are cancelled
-  /// when the object is destroyed and all pending callbacks will eventually be
-  /// called.
+  /// when the object is destroyed and all pending callbacks will be called
+  /// shortly.
   class DNSResolver {
    public:
     /// Task handle for DNS Resolution requests.
@@ -361,8 +361,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     using LookupTXTCallback =
         absl::AnyInvocable<void(absl::StatusOr<std::vector<std::string>>)>;
 
-    /// Implementations should make sure that all pending requests are cancelled
-    /// in the destructor and all pending callbacks will eventually be called.
     virtual ~DNSResolver() = default;
 
     /// Asynchronously resolve an address.
