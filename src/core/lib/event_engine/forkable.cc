@@ -22,9 +22,9 @@
 
 #include "absl/container/flat_hash_set.h"
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/config/config_vars.h"
 
 namespace grpc_event_engine {
 namespace experimental {
