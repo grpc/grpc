@@ -150,12 +150,6 @@ void PollingResolver::OnRequestComplete(Result result) {
       DEBUG_LOCATION);
 }
 
-void PollingResolver::RequestReresolution() {
-  Ref(DEBUG_LOCATION, "RequestReresolution").release();
-  work_serializer_->Run([this]() mutable { RequestReresolutionLocked(); },
-                        DEBUG_LOCATION);
-}
-
 void PollingResolver::OnRequestCompleteLocked(Result result) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] request complete", this);
