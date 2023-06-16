@@ -3787,6 +3787,7 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:legacy_context",
+        "//:promise",
     ],
 )
 
