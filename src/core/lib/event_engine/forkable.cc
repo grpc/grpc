@@ -24,6 +24,7 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/config/config_vars.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -43,6 +44,9 @@ Forkable::~Forkable() { StopManagingForkable(this); }
 
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(g_mu.get());
+#ifdef GRPC_ONLY_REGISTER_PTHREAD_ATFORK_WITH_ENV_VAR
+  if (!grpc_core::ConfigVars::Get().EnableForkSupport()) return;
+#endif
   if (!std::exchange(g_registered, true)) {
     pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
   }
