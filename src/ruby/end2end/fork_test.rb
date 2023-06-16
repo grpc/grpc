@@ -75,18 +75,18 @@ def main
       STDERR.puts "#{Process.pid} child1: postfork_parent begin"
       GRPC.postfork_parent
       STDERR.puts "#{Process.pid} child1: postfork_parent done"
-      #do_rpc(stub)
-      #STDERR.puts "#{Process.pid} child1: second post-fork RPC done"
+      do_rpc(stub)
+      STDERR.puts "#{Process.pid} child1: second post-fork RPC done"
       Process.wait(pid2)
       STDERR.puts "#{Process.pid} child1: done"
     end
     STDERR.puts "parent: postfork_parent begin"
     GRPC.postfork_parent
     STDERR.puts "parent: postfork_parent done"
-    #do_rpc(stub)
-    #STDERR.puts "parent: first post-fork RPC done"
-    #do_rpc(stub)
-    #STDERR.puts "parent: second post-fork RPC done"
+    do_rpc(stub)
+    STDERR.puts "parent: first post-fork RPC done"
+    do_rpc(stub)
+    STDERR.puts "parent: second post-fork RPC done"
     Process.wait pid
     STDERR.puts "parent: done"
   end
