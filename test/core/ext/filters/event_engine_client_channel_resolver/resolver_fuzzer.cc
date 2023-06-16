@@ -161,8 +161,8 @@ class FuzzingResolverEventEngine
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_HOSTNAME);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          cb(engine_->hostname_responses_);
           CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
+          cb(engine_->hostname_responses_);
         });
       }
     }
@@ -171,8 +171,8 @@ class FuzzingResolverEventEngine
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_SRV);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          cb(engine_->srv_responses_);
           CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
+          cb(engine_->srv_responses_);
         });
       }
     }
@@ -181,8 +181,8 @@ class FuzzingResolverEventEngine
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_TXT);
       if (!engine_->has_been_orphaned_) {
         engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          cb(engine_->txt_responses_);
           CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
+          cb(engine_->txt_responses_);
         });
       }
     }
