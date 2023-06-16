@@ -16,13 +16,12 @@
 //
 //
 
+#ifndef GRPC_TEST_CPP_INTEROP_XDS_INTEROP_SERVER_LIB_H
+#define GRPC_TEST_CPP_INTEROP_XDS_INTEROP_SERVER_LIB_H
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpcpp/server.h>
-
-#ifndef GRPC_TEST_CPP_INTEROP_XDS_INTEROP_SERVER_LIB_H
-#define GRPC_TEST_CPP_INTEROP_XDS_INTEROP_SERVER_LIB_H
 
 namespace grpc {
 namespace testing {
