@@ -32,6 +32,51 @@ def do_rpc(stub)
   stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 3)
 end
 
+def run_client(stub)
+  do_rpc(stub)
+  STDERR.puts "#{Process.pid} pre_fork begin"
+  GRPC.prefork
+  STDERR.puts "#{Process.pid} pre_fork done"
+  pid = fork do
+    $stderr.reopen("child1_log", "w")
+    STDERR.puts "#{Process.pid} child1: postfork_child begin"
+    GRPC.postfork_child
+    STDERR.puts "#{Process.pid} child1: postfork_child done"
+    do_rpc(stub)
+    STDERR.puts "#{Process.pid} child1: first post-fork RPC done"
+    STDERR.puts "#{Process.pid} child1: prefork begin"
+    GRPC.prefork
+    STDERR.puts "#{Process.pid} child1: prefork done"
+    pid2 = fork do
+      $stderr.reopen("child2_log", "w")
+      STDERR.puts "#{Process.pid} child2: postfork_child begin"
+      GRPC.postfork_child
+      STDERR.puts "#{Process.pid} child2: postfork_child done"
+      do_rpc(stub)
+      STDERR.puts "#{Process.pid} child2: first post-fork RPC done"
+      do_rpc(stub)
+      STDERR.puts "#{Process.pid} child2: second post-fork RPC done"
+      STDERR.puts "#{Process.pid} child2: done"
+    end
+    STDERR.puts "#{Process.pid} child1: postfork_parent begin"
+    GRPC.postfork_parent
+    STDERR.puts "#{Process.pid} child1: postfork_parent done"
+    do_rpc(stub)
+    STDERR.puts "#{Process.pid} child1: second post-fork RPC done"
+    Process.wait(pid2)
+    STDERR.puts "#{Process.pid} child1: done"
+  end
+  STDERR.puts "parent: postfork_parent begin"
+  GRPC.postfork_parent
+  STDERR.puts "parent: postfork_parent done"
+  do_rpc(stub)
+  STDERR.puts "parent: first post-fork RPC done"
+  do_rpc(stub)
+  STDERR.puts "parent: second post-fork RPC done"
+  Process.wait pid
+  STDERR.puts "parent: done"
+end
+
 def main
   this_dir = File.expand_path(File.dirname(__FILE__))
   echo_server_path = File.join(this_dir, 'echo_server.rb')
@@ -45,50 +90,9 @@ def main
   to_parent_w.close
   child_port = to_parent_r.gets.strip
   STDERR.puts "server running on port: #{child_port}"
+  stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
   2.times do
-    stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
-    do_rpc(stub)
-    STDERR.puts "#{Process.pid} pre_fork begin"
-    GRPC.prefork
-    STDERR.puts "#{Process.pid} pre_fork done"
-    pid = fork do
-      $stderr.reopen("child1_log", "w")
-      STDERR.puts "#{Process.pid} child1: postfork_child begin"
-      GRPC.postfork_child
-      STDERR.puts "#{Process.pid} child1: postfork_child done"
-      do_rpc(stub)
-      STDERR.puts "#{Process.pid} child1: first post-fork RPC done"
-      STDERR.puts "#{Process.pid} child1: prefork begin"
-      GRPC.prefork
-      STDERR.puts "#{Process.pid} child1: prefork done"
-      pid2 = fork do
-        $stderr.reopen("child2_log", "w")
-        STDERR.puts "#{Process.pid} child2: postfork_child begin"
-        GRPC.postfork_child
-        STDERR.puts "#{Process.pid} child2: postfork_child done"
-        do_rpc(stub)
-        STDERR.puts "#{Process.pid} child2: first post-fork RPC done"
-        do_rpc(stub)
-        STDERR.puts "#{Process.pid} child2: second post-fork RPC done"
-        STDERR.puts "#{Process.pid} child2: done"
-      end
-      STDERR.puts "#{Process.pid} child1: postfork_parent begin"
-      GRPC.postfork_parent
-      STDERR.puts "#{Process.pid} child1: postfork_parent done"
-      do_rpc(stub)
-      STDERR.puts "#{Process.pid} child1: second post-fork RPC done"
-      Process.wait(pid2)
-      STDERR.puts "#{Process.pid} child1: done"
-    end
-    STDERR.puts "parent: postfork_parent begin"
-    GRPC.postfork_parent
-    STDERR.puts "parent: postfork_parent done"
-    do_rpc(stub)
-    STDERR.puts "parent: first post-fork RPC done"
-    do_rpc(stub)
-    STDERR.puts "parent: second post-fork RPC done"
-    Process.wait pid
-    STDERR.puts "parent: done"
+    run_client(stub)
   end
 end
 
