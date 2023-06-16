@@ -304,9 +304,13 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
+  gpr_log(GPR_ERROR, "Verify start timeout = %ld", timeout.millis());
   while (!expectations_.empty()) {
     grpc_event ev = Step(deadline);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) break;
+    if (ev.type == GRPC_QUEUE_TIMEOUT) {
+      gpr_log(GPR_ERROR, "timed out");
+      break;
+    }
     if (ev.type != GRPC_OP_COMPLETE) {
       FailUnexpectedEvent(&ev, location);
     }
