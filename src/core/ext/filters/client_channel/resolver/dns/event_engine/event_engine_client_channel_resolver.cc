@@ -353,6 +353,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
+    ++number_of_balancer_hostnames_initiated_;
     event_engine_resolver_->LookupHostname(
         [host = std::move(srv_record.host),
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
@@ -362,7 +363,6 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                             std::move(new_balancer_addresses));
         },
         srv_record.host, std::to_string(srv_record.port));
-    ++number_of_balancer_hostnames_initiated_;
   }
 }
 
