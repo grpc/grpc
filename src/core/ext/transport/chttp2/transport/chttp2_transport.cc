@@ -2706,8 +2706,12 @@ static void next_bdp_ping_timer_expired_locked(
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client) {
-  const grpc_core::ChannelArgs channel_args =
-      grpc_core::ChannelArgs::FromC(args);
+  grpc_chttp2_config_default_keepalive_args(grpc_core::ChannelArgs::FromC(args),
+                                            is_client);
+}
+
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, bool is_client) {
   const auto keepalive_time =
       std::max(grpc_core::Duration::Milliseconds(1),
                channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
