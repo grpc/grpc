@@ -17,13 +17,12 @@ This is intended as a tool to delete leaked resources from old tests.
 
 Typical usage examples:
 
-python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
-    --project=grpc-testing\
-    --network=default-vpc\
+python3 -m bin.cleanup.cleanup \
+    --project=grpc-testing \
+    --network=default-vpc \
     --kube_context=gke_grpc-testing_us-central1-a_psm-interop-security
-    --resource_prefix='required-but-does-not-matter'\
-    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 """
+import dataclasses
 import datetime
 import functools
 import json
@@ -31,7 +30,8 @@ import logging
 import os
 import re
 import subprocess
-from typing import Any, List
+import sys
+from typing import Any, Callable, List, Optional
 
 from absl import app
 from absl import flags
@@ -39,6 +39,7 @@ import dateutil
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.helpers import retryers
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -52,21 +53,29 @@ _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 GCLOUD = os.environ.get("GCLOUD", "gcloud")
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
-ZONE = "us-central1-a"
-SECONDARY_ZONE = "us-west1-b"
 
-PSM_SECURITY_PREFIX = "psm-interop"  # Prefix for gke resources to delete.
-URL_MAP_TEST_PREFIX = (  # Prefix for url-map test resources to delete.
-    "interop-psm-url-map"
+# Skip known k8s system namespaces.
+K8S_PROTECTED_NAMESPACES = {
+    "default",
+    "gke-managed-system",
+    "kube-node-lease",
+    "kube-public",
+    "kube-system",
+}
+
+# TODO(sergiitk): these should be flags.
+LEGACY_DRIVER_ZONE = "us-central1-a"
+LEGACY_DRIVER_SECONDARY_ZONE = "us-west1-b"
+
+PSM_INTEROP_PREFIX = "psm-interop"  # Prefix for gke resources to delete.
+URL_MAP_TEST_PREFIX = (
+    "interop-psm-url-map"  # Prefix for url-map test resources to delete.
 )
 
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(
     "keep_hours",
     default=168,
-    help=(
-        "number of hours for a resource to keep. Resources older than this will"
-        " be deleted. Default is 168 (7 days)"
-    ),
+    help="number of hours for a resource to keep. Resources older than this will be deleted. Default is 168 (7 days)",
 )
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
@@ -75,28 +84,60 @@ DRY_RUN = flags.DEFINE_bool(
 )
 TD_RESOURCE_PREFIXES = flags.DEFINE_list(
     "td_resource_prefixes",
-    default=[PSM_SECURITY_PREFIX],
-    help=(
-        "a comma-separated list of prefixes for which the leaked TD resources"
-        " will be deleted"
-    ),
+    default=[PSM_INTEROP_PREFIX],
+    help="a comma-separated list of `prefixes for which the leaked TD resources will be deleted",
 )
 SERVER_PREFIXES = flags.DEFINE_list(
     "server_prefixes",
-    default=[PSM_SECURITY_PREFIX],
-    help=(
-        "a comma-separated list of prefixes for which the leaked servers will"
-        " be deleted"
-    ),
+    default=[PSM_INTEROP_PREFIX],
+    help="a comma-separated list of prefixes for which the leaked servers will be deleted",
 )
 CLIENT_PREFIXES = flags.DEFINE_list(
     "client_prefixes",
-    default=[PSM_SECURITY_PREFIX, URL_MAP_TEST_PREFIX],
-    help=(
-        "a comma-separated list of prefixes for which the leaked clients will"
-        " be deleted"
-    ),
+    default=[PSM_INTEROP_PREFIX, URL_MAP_TEST_PREFIX],
+    help="a comma-separated list of prefixes for which the leaked clients will be deleted",
 )
+MODE = flags.DEFINE_enum(
+    "mode",
+    default="td",
+    enum_values=["k8s", "td", "td_no_legacy"],
+    help="Mode: Kubernetes or Traffic Director",
+)
+SECONDARY = flags.DEFINE_bool(
+    "secondary", default=False, help="Cleanup secondary (alternative) resources"
+)
+
+# The cleanup script performs some API calls directly, so some flags normally
+# required to configure framework properly, are not needed here.
+flags.FLAGS.set_default("resource_prefix", "ignored-by-cleanup")
+flags.FLAGS.set_default("td_bootstrap_image", "ignored-by-cleanup")
+flags.FLAGS.set_default("server_image", "ignored-by-cleanup")
+flags.FLAGS.set_default("client_image", "ignored-by-cleanup")
+
+
+@dataclasses.dataclass(eq=False)
+class CleanupResult:
+    error_count: int = 0
+    error_messages: List[str] = dataclasses.field(default_factory=list)
+
+    def add_error(self, msg: str):
+        self.error_count += 1
+        self.error_messages.append(f"  {self.error_count}. {msg}")
+
+    def format_messages(self):
+        return "\n".join(self.error_messages)
+
+
+@dataclasses.dataclass(frozen=True)
+class K8sResourceRule:
+    # regex to match
+    expression: str
+    # function to delete the resource
+    cleanup_ns_fn: Callable
+
+
+# Global state, holding the result of the whole operation.
+_CLEANUP_RESULT = CleanupResult()
 
 
 def load_keep_config() -> None:
@@ -129,7 +170,7 @@ def get_expire_timestamp() -> datetime.datetime:
     )
 
 
-def exec_gcloud(project: str, *cmds: List[str]) -> Json:
+def exec_gcloud(project: str, *cmds: str) -> Json:
     cmds = [GCLOUD, "--project", project, "--quiet"] + list(cmds)
     if "list" in cmds:
         # Add arguments to shape the list output
@@ -167,10 +208,10 @@ def exec_gcloud(project: str, *cmds: List[str]) -> Json:
     return None
 
 
-def remove_relative_resources_run_xds_tests(
-    project: str, network: str, prefix: str, suffix: str
-):
+def cleanup_legacy_driver_resources(*, project: str, suffix: str, **kwargs):
     """Removing GCP resources created by run_xds_tests.py."""
+    # Unused, but kept for compatibility with cleanup_td_for_gke.
+    del kwargs
     logging.info(
         "----- Removing run_xds_tests.py resources with suffix [%s]", suffix
     )
@@ -244,7 +285,7 @@ def remove_relative_resources_run_xds_tests(
         "delete",
         f"test-ig{suffix}",
         "--zone",
-        ZONE,
+        LEGACY_DRIVER_ZONE,
     )
     exec_gcloud(
         project,
@@ -254,7 +295,7 @@ def remove_relative_resources_run_xds_tests(
         "delete",
         f"test-ig-same-zone{suffix}",
         "--zone",
-        ZONE,
+        LEGACY_DRIVER_ZONE,
     )
     exec_gcloud(
         project,
@@ -264,7 +305,7 @@ def remove_relative_resources_run_xds_tests(
         "delete",
         f"test-ig-secondary-zone{suffix}",
         "--zone",
-        SECONDARY_ZONE,
+        LEGACY_DRIVER_SECONDARY_ZONE,
     )
     exec_gcloud(
         project,
@@ -281,21 +322,21 @@ def remove_relative_resources_run_xds_tests(
 # Note that the varients are all based on the basic TrafficDirectorManager, so
 # their `cleanup()` might do duplicate work. But deleting an non-exist resource
 # returns 404, and is OK.
-def cleanup_td_for_gke(project, network, resource_prefix, resource_suffix):
+def cleanup_td_for_gke(*, project, prefix, suffix, network):
     gcp_api_manager = gcp.api.GcpApiManager()
     plain_td = traffic_director.TrafficDirectorManager(
         gcp_api_manager,
         project=project,
         network=network,
-        resource_prefix=resource_prefix,
-        resource_suffix=resource_suffix,
+        resource_prefix=prefix,
+        resource_suffix=suffix,
     )
     security_td = traffic_director.TrafficDirectorSecureManager(
         gcp_api_manager,
         project=project,
         network=network,
-        resource_prefix=resource_prefix,
-        resource_suffix=resource_suffix,
+        resource_prefix=prefix,
+        resource_suffix=suffix,
     )
     # TODO: cleanup appnet resources.
     # appnet_td = traffic_director.TrafficDirectorAppNetManager(
@@ -307,8 +348,8 @@ def cleanup_td_for_gke(project, network, resource_prefix, resource_suffix):
 
     logger.info(
         "----- Removing traffic director for gke, prefix %s, suffix %s",
-        resource_prefix,
-        resource_suffix,
+        prefix,
+        suffix,
     )
     security_td.cleanup(force=True)
     # appnet_td.cleanup(force=True)
@@ -320,32 +361,42 @@ def cleanup_client(
     project,
     network,
     k8s_api_manager,
-    resource_prefix,
-    resource_suffix,
+    client_namespace,
+    gcp_api_manager,
     gcp_service_account,
+    *,
+    suffix: Optional[str] = "",
 ):
-    runner_kwargs = dict(
-        deployment_name=xds_flags.CLIENT_NAME.value,
-        image_name=xds_k8s_flags.CLIENT_IMAGE.value,
-        td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-        gcp_project=project,
-        gcp_api_manager=gcp.api.GcpApiManager(),
-        gcp_service_account=gcp_service_account,
-        xds_server_uri=xds_flags.XDS_SERVER_URI.value,
-        network=network,
-        stats_port=xds_flags.CLIENT_PORT.value,
-    )
+    deployment_name = xds_flags.CLIENT_NAME.value
+    if suffix:
+        deployment_name = f"{deployment_name}-{suffix}"
 
-    client_namespace = _KubernetesClientRunner.make_namespace_name(
-        resource_prefix, resource_suffix
-    )
+    ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
+    # Shorten the timeout to avoid waiting for the stuck namespaces.
+    # Normal ns deletion during the cleanup takes less two minutes.
+    ns.wait_for_namespace_deleted_timeout_sec = 5 * 60
     client_runner = _KubernetesClientRunner(
-        k8s.KubernetesNamespace(k8s_api_manager, client_namespace),
-        **runner_kwargs,
+        k8s_namespace=ns,
+        deployment_name=deployment_name,
+        gcp_project=project,
+        network=network,
+        gcp_service_account=gcp_service_account,
+        gcp_api_manager=gcp_api_manager,
+        image_name="",
+        td_bootstrap_image="",
     )
 
     logger.info("Cleanup client")
-    client_runner.cleanup(force=True, force_namespace=True)
+    try:
+        client_runner.cleanup(force=True, force_namespace=True)
+    except retryers.RetryError as err:
+        logger.error(
+            "Timeout waiting for namespace %s deletion. "
+            "Failed resource status:\n\n%s",
+            ns.name,
+            ns.pretty_format_status(err.result()),
+        )
+        raise
 
 
 # cleanup_server creates a server runner, and calls its cleanup() method.
@@ -353,30 +404,42 @@ def cleanup_server(
     project,
     network,
     k8s_api_manager,
-    resource_prefix,
-    resource_suffix,
+    server_namespace,
+    gcp_api_manager,
     gcp_service_account,
+    *,
+    suffix: Optional[str] = "",
 ):
-    runner_kwargs = dict(
-        deployment_name=xds_flags.SERVER_NAME.value,
-        image_name=xds_k8s_flags.SERVER_IMAGE.value,
-        td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-        gcp_project=project,
-        gcp_api_manager=gcp.api.GcpApiManager(),
-        gcp_service_account=gcp_service_account,
-        network=network,
-    )
+    deployment_name = xds_flags.SERVER_NAME.value
+    if suffix:
+        deployment_name = f"{deployment_name}-{suffix}"
 
-    server_namespace = _KubernetesServerRunner.make_namespace_name(
-        resource_prefix, resource_suffix
-    )
+    ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
+    # Shorten the timeout to avoid waiting for the stuck namespaces.
+    # Normal ns deletion during the cleanup takes less two minutes.
+    ns.wait_for_namespace_deleted_timeout_sec = 5 * 60
     server_runner = _KubernetesServerRunner(
-        k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
-        **runner_kwargs,
+        k8s_namespace=ns,
+        deployment_name=deployment_name,
+        gcp_project=project,
+        network=network,
+        gcp_service_account=gcp_service_account,
+        gcp_api_manager=gcp_api_manager,
+        image_name="",
+        td_bootstrap_image="",
     )
 
     logger.info("Cleanup server")
-    server_runner.cleanup(force=True, force_namespace=True)
+    try:
+        server_runner.cleanup(force=True, force_namespace=True)
+    except retryers.RetryError as err:
+        logger.error(
+            "Timeout waiting for namespace %s deletion. "
+            "Failed resource status:\n\n%s",
+            ns.name,
+            ns.pretty_format_status(err.result()),
+        )
+        raise
 
 
 def delete_leaked_td_resources(
@@ -390,14 +453,19 @@ def delete_leaked_td_resources(
             logging.info("----- Skipped [Dry Run]: %s", resource["name"])
             continue
         matched = False
-        for regex, resource_prefix, keep, remove in td_resource_rules:
+        for regex, resource_prefix, keep, remove_fn in td_resource_rules:
             result = re.search(regex, resource["name"])
             if result is not None:
                 matched = True
                 if keep(result.group(1)):
                     logging.info("Skipped [keep]:")
                     break  # break inner loop, continue outer loop
-                remove(project, network, resource_prefix, result.group(1))
+                remove_fn(
+                    project=project,
+                    prefix=resource_prefix,
+                    suffix=result.group(1),
+                    network=network,
+                )
                 break
         if not matched:
             logging.info(
@@ -414,58 +482,97 @@ def delete_k8s_resources(
     gcp_service_account,
     namespaces,
 ):
+    gcp_api_manager = gcp.api.GcpApiManager()
     for ns in namespaces:
-        logger.info("-----")
-        logger.info("----- Cleaning up k8s namespaces %s", ns.metadata.name)
-        if ns.metadata.creation_timestamp <= get_expire_timestamp():
-            if dry_run:
-                # Skip deletion for dry-runs
-                logging.info("----- Skipped [Dry Run]: %s", ns.metadata.name)
-                continue
+        namespace_name: str = ns.metadata.name
+        if namespace_name in K8S_PROTECTED_NAMESPACES:
+            continue
 
-            matched = False
-            for regex, resource_prefix, remove in k8s_resource_rules:
-                result = re.search(regex, ns.metadata.name)
-                if result is not None:
-                    matched = True
-                    remove(
-                        project,
-                        network,
-                        k8s_api_manager,
-                        resource_prefix,
-                        result.group(1),
-                        gcp_service_account,
-                    )
-                    break
-            if not matched:
-                logging.info(
-                    "----- Skipped [does not matching resource name templates]"
-                )
-        else:
-            logging.info("----- Skipped [resource is within expiry date]")
+        logger.info("-----")
+        logger.info("----- Cleaning up k8s namespaces %s", namespace_name)
+
+        if ns.metadata.creation_timestamp > get_expire_timestamp():
+            logging.info(
+                "----- Skipped [resource is within expiry date]: %s",
+                namespace_name,
+            )
+            continue
+
+        if dry_run:
+            # Skip deletion for dry-runs
+            logging.info("----- Skipped [Dry Run]: %s", ns.metadata.name)
+            continue
+
+        rule: K8sResourceRule = _rule_match_k8s_namespace(
+            namespace_name, k8s_resource_rules
+        )
+        if not rule:
+            logging.info(
+                "----- Skipped [does not matching resource name templates]: %s",
+                namespace_name,
+            )
+            continue
+
+        # Cleaning up.
+        try:
+            rule.cleanup_ns_fn(
+                project,
+                network,
+                k8s_api_manager,
+                namespace_name,
+                gcp_api_manager,
+                gcp_service_account,
+                suffix=("alt" if SECONDARY.value else None),
+            )
+        except k8s.NotFound:
+            logging.warning("----- Skipped [not found]: %s", namespace_name)
+        except retryers.RetryError as err:
+            _CLEANUP_RESULT.add_error(
+                "Retries exhausted while waiting for the "
+                f"deletion of namespace {namespace_name}: "
+                f"{err}"
+            )
+            logging.exception(
+                "----- Skipped [cleanup timed out]: %s", namespace_name
+            )
+        except Exception as err:  # noqa pylint: disable=broad-except
+            _CLEANUP_RESULT.add_error(
+                "Unexpected error while deleting "
+                f"namespace {namespace_name}: {err}"
+            )
+            logging.exception(
+                "----- Skipped [cleanup unexpected error]: %s", namespace_name
+            )
+
+    logger.info("-----")
+
+
+def _rule_match_k8s_namespace(
+    namespace_name: str, k8s_resource_rules: List[K8sResourceRule]
+) -> Optional[K8sResourceRule]:
+    for rule in k8s_resource_rules:
+        result = re.search(rule.expression, namespace_name)
+        if result is not None:
+            return rule
+    return None
 
 
 def find_and_remove_leaked_k8s_resources(
-    dry_run, project, network, gcp_service_account
+    dry_run, project, network, gcp_service_account, k8s_context
 ):
-    k8s_resource_rules = [
-        # items in each tuple, in order
-        # - regex to match
-        # - prefix of the resources
-        # - function to delete the resource
-    ]
+    k8s_resource_rules: List[K8sResourceRule] = []
     for prefix in CLIENT_PREFIXES.value:
         k8s_resource_rules.append(
-            (f"{prefix}-client-(.*)", prefix, cleanup_client),
+            K8sResourceRule(f"{prefix}-client-(.*)", cleanup_client)
         )
     for prefix in SERVER_PREFIXES.value:
         k8s_resource_rules.append(
-            (f"{prefix}-server-(.*)", prefix, cleanup_server),
+            K8sResourceRule(f"{prefix}-server-(.*)", cleanup_server)
         )
 
     # Delete leaked k8s namespaces, those usually mean there are leaked testing
     # client/servers from the gke framework.
-    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
+    k8s_api_manager = k8s.KubernetesApiManager(k8s_context)
     nss = k8s_api_manager.core.list_namespace()
     delete_k8s_resources(
         dry_run,
@@ -476,6 +583,80 @@ def find_and_remove_leaked_k8s_resources(
         gcp_service_account,
         nss.items,
     )
+
+
+def find_and_remove_leaked_td_resources(dry_run, project, network):
+    cleanup_legacy: bool = MODE.value != "td_no_legacy"
+    td_resource_rules = [
+        # itmes in each tuple, in order
+        # - regex to match
+        # - prefix of the resource (only used by gke resources)
+        # - function to check of the resource should be kept
+        # - function to delete the resource
+    ]
+
+    if cleanup_legacy:
+        td_resource_rules += [
+            (
+                r"test-hc(.*)",
+                "",
+                is_marked_as_keep_gce,
+                cleanup_legacy_driver_resources,
+            ),
+            (
+                r"test-template(.*)",
+                "",
+                is_marked_as_keep_gce,
+                cleanup_legacy_driver_resources,
+            ),
+        ]
+
+    for prefix in TD_RESOURCE_PREFIXES.value:
+        td_resource_rules.append(
+            (
+                f"{prefix}-health-check-(.*)",
+                prefix,
+                is_marked_as_keep_gke,
+                cleanup_td_for_gke,
+            ),
+        )
+
+    # List resources older than KEEP_PERIOD. We only list health-checks and
+    # instance templates because these are leaves in the resource dependency
+    # tree.
+    #
+    # E.g. forwarding-rule depends on the target-proxy. So leaked
+    # forwarding-rule indicates there's a leaked target-proxy (because this
+    # target proxy cannot deleted unless the forwarding rule is deleted). The
+    # leaked target-proxy is guaranteed to be a super set of leaked
+    # forwarding-rule.
+    compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
+    leaked_health_checks = []
+    for item in compute.list_health_check()["items"]:
+        if (
+            dateutil.parser.isoparse(item["creationTimestamp"])
+            <= get_expire_timestamp()
+        ):
+            leaked_health_checks.append(item)
+
+    delete_leaked_td_resources(
+        dry_run, td_resource_rules, project, network, leaked_health_checks
+    )
+
+    # Delete leaked instance templates, those usually mean there are leaked VMs
+    # from the gce framework. Also note that this is only needed for the gce
+    # resources.
+    if cleanup_legacy:
+        leaked_instance_templates = exec_gcloud(
+            project, "compute", "instance-templates", "list"
+        )
+        delete_leaked_td_resources(
+            dry_run,
+            td_resource_rules,
+            project,
+            network,
+            leaked_instance_templates,
+        )
 
 
 def main(argv):
@@ -490,70 +671,28 @@ def main(argv):
     network: str = xds_flags.NETWORK.value
     gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
     dry_run: bool = DRY_RUN.value
+    k8s_context: str = xds_k8s_flags.KUBE_CONTEXT.value
 
-    td_resource_rules = [
-        # itmes in each tuple, in order
-        # - regex to match
-        # - prefix of the resource (only used by gke resources)
-        # - function to check of the resource should be kept
-        # - function to delete the resource
-        (
-            r"test-hc(.*)",
-            "",
-            is_marked_as_keep_gce,
-            remove_relative_resources_run_xds_tests,
-        ),
-        (
-            r"test-template(.*)",
-            "",
-            is_marked_as_keep_gce,
-            remove_relative_resources_run_xds_tests,
-        ),
-    ]
-    for prefix in TD_RESOURCE_PREFIXES.value:
-        td_resource_rules.append(
-            (
-                f"{prefix}-health-check-(.*)",
-                prefix,
-                is_marked_as_keep_gke,
-                cleanup_td_for_gke,
-            ),
+    if MODE.value == "td" or MODE.value == "td_no_legacy":
+        find_and_remove_leaked_td_resources(dry_run, project, network)
+    elif MODE.value == "k8s":
+        # 'unset' value is used in td-only mode to bypass the validation
+        # for the required  flag.
+        assert k8s_context != "unset"
+        find_and_remove_leaked_k8s_resources(
+            dry_run, project, network, gcp_service_account, k8s_context
         )
 
-    # List resources older than KEEP_PERIOD. We only list health-checks and
-    # instance templates because these are leaves in the resource dependency tree.
-    #
-    # E.g. forwarding-rule depends on the target-proxy. So leaked
-    # forwarding-rule indicates there's a leaked target-proxy (because this
-    # target proxy cannot deleted unless the forwarding rule is deleted). The
-    # leaked target-proxy is guaranteed to be a super set of leaked
-    # forwarding-rule.
-    compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
-    leakedHealthChecks = []
-    for item in compute.list_health_check()["items"]:
-        if (
-            dateutil.parser.isoparse(item["creationTimestamp"])
-            <= get_expire_timestamp()
-        ):
-            leakedHealthChecks.append(item)
-
-    delete_leaked_td_resources(
-        dry_run, td_resource_rules, project, network, leakedHealthChecks
-    )
-
-    # Delete leaked instance templates, those usually mean there are leaked VMs
-    # from the gce framework. Also note that this is only needed for the gce
-    # resources.
-    leakedInstanceTemplates = exec_gcloud(
-        project, "compute", "instance-templates", "list"
-    )
-    delete_leaked_td_resources(
-        dry_run, td_resource_rules, project, network, leakedInstanceTemplates
-    )
-
-    find_and_remove_leaked_k8s_resources(
-        dry_run, project, network, gcp_service_account
-    )
+    logger.info("##################### Done cleaning up #####################")
+    if _CLEANUP_RESULT.error_count > 0:
+        logger.error(
+            "Cleanup failed for %i resource(s). Errors: [\n%s\n].\n"
+            "Please inspect the log files for stack traces corresponding "
+            "to these errors.",
+            _CLEANUP_RESULT.error_count,
+            _CLEANUP_RESULT.format_messages(),
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

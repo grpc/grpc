@@ -14,7 +14,9 @@
 """This contains common helpers for working with dates and time."""
 import datetime
 import re
-from typing import Pattern
+from typing import Optional, Pattern
+
+import dateutil.parser
 
 RE_ZERO_OFFSET: Pattern[str] = re.compile(r"[+\-]00:?00$")
 
@@ -35,6 +37,11 @@ def iso8601_utc_time(time: datetime.datetime = None) -> str:
     return shorten_utc_zone(utc_time.isoformat())
 
 
+def iso8601_to_datetime(date_str: str) -> datetime.datetime:
+    # TODO(sergiitk): use regular datetime.datetime when upgraded to py3.11.
+    return dateutil.parser.isoparse(date_str)
+
+
 def datetime_suffix(*, seconds: bool = False) -> str:
     """Return current UTC date, and time in a format useful for resource naming.
 
@@ -48,3 +55,25 @@ def datetime_suffix(*, seconds: bool = False) -> str:
     visually distinct from dash-separated date.
     """
     return utc_now().strftime("%Y%m%d-%H%M" + ("%S" if seconds else ""))
+
+
+def ago(date_from: datetime.datetime, now: Optional[datetime.datetime] = None):
+    if not now:
+        now = utc_now()
+
+    # Round down microseconds.
+    date_from = date_from.replace(microsecond=0)
+    now = now.replace(microsecond=0)
+
+    # Calculate the diff.
+    delta: datetime.timedelta = now - date_from
+
+    if delta.days > 1:
+        result = f"{delta.days} days"
+    elif delta.days > 0:
+        result = f"{delta.days} day"
+    else:
+        # This case covers negative deltas too.
+        result = f"{delta} (h:mm:ss)"
+
+    return f"{result} ago"
