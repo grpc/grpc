@@ -112,7 +112,12 @@ class PickFirstTest : public LoadBalancingPolicyTest {
         // Then it should become disconnected.
         subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
         ExpectReresolutionRequest();
-        // Do not trigger exit idle.
+        // We would normally call ExpectStateAndQueueingPicker() here instead of
+        // just ExpectState(). However, calling the picker would also trigger
+        // exiting IDLE, which we don't want here, because if the test is going
+        // to send an address list update and call GetOrderAddressesArePicked()
+        // again, we don't want to trigger a connection attempt on any
+        // subchannel until after that next address list update is processed.
         ExpectState(GRPC_CHANNEL_IDLE);
       }
       // Remove the subchannel from the map.
@@ -306,6 +311,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
+    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
   }
 }
 
@@ -321,6 +327,7 @@ TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
+    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
   }
 }
 }  // namespace
