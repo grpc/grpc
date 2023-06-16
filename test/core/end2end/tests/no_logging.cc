@@ -17,8 +17,10 @@
 //
 
 #include <atomic>
+#include <map>
 #include <regex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
