@@ -1373,6 +1373,7 @@ grpc_cc_library(
     external_deps = ["absl/container:flat_hash_set"],
     deps = [
         "no_destruct",
+        "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
     ],
