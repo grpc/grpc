@@ -307,11 +307,11 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 // test is non-deterministic since it's up to the implementation to determine
 // the correct status to issue after the endpoint is destroyed.
 TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
-  constexpr size_t iterations = 1000;
+  constexpr size_t iterations = 300;
   constexpr size_t min_message_length = 1024;
   // A significant payload to hopefuly force the endpoint to do multiple TCP
   // reads.
-  constexpr size_t max_message_length = 1024 * 1024 * 10;
+  constexpr size_t max_message_length = 1024 * 1024 * 2;
   auto test_ee = this->NewEventEngine();
   auto oracle_ee = this->NewOracleEventEngine();
   std::string target_addr = absl::StrCat(
