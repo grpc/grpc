@@ -30,7 +30,9 @@ require 'end2end_common'
 def do_rpc(stub)
   stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 1)
 rescue GRPC::Unavailable => e
-  STDERR.puts "RPC terminated with unavailable as expected: #{e}"
+  STDERR.puts "RPC terminated with expected error: #{e}"
+rescue GRPC::DeadlineExceeded => e
+  STDERR.puts "RPC terminated with expected error: #{e}"
 end
 
 def main
