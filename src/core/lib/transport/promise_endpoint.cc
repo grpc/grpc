@@ -37,13 +37,8 @@ PromiseEndpoint::PromiseEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint,
     SliceBuffer already_received)
-    : endpoint_(std::move(endpoint)),
-      write_buffer_(),
-      write_result_(),
-      pending_read_buffer_(),
-      read_result_() {
+    : endpoint_(std::move(endpoint)) {
   GPR_ASSERT(endpoint_ != nullptr);
-
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
   grpc_slice_buffer_swap(read_buffer_.c_slice_buffer(),
@@ -91,7 +86,6 @@ void PromiseEndpoint::ReadCallback(
     pending_read_buffer_.MoveFirstNBytesIntoSliceBuffer(
         pending_read_buffer_.Length(), read_buffer_);
     GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
-
     if (read_buffer_.Length() < num_bytes_requested) {
       // A further read is needed.
       // If `Read()` returns true immediately, the callback will not be
