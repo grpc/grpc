@@ -23,6 +23,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/thread_local.h"
@@ -192,16 +193,23 @@ void Fork::DoDecExecCtxCount() {
 void Fork::SetResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
   if (reset_child_polling_engine_ == nullptr) {
-    reset_child_polling_engine_ = new std::vector<Fork::child_postfork_func>();
+    gpr_log(GPR_INFO, "apolcyn SetResetChildPollingEngineFunc create new callback list");
+    reset_child_polling_engine_ = new std::set<Fork::child_postfork_func>();
   }
-  if (reset_child_polling_engine == nullptr) {
-    reset_child_polling_engine_->clear();
-  } else {
-    reset_child_polling_engine_->emplace_back(reset_child_polling_engine);
-  }
+  // TODO(apolcyn): should we allow removal of a callback?
+  GPR_ASSERT(reset_child_polling_engine != nullptr);
+  gpr_log(GPR_INFO, "apolcyn SetResetChildPollingEngineFunc set callback; %p", reset_child_polling_engine);
+  reset_child_polling_engine_->insert(reset_child_polling_engine);
+  //if (reset_child_polling_engine == nullptr) {
+  //  gpr_log(GPR_INFO, "apolcyn SetResetChildPollingEngineFunc clear callbacks");
+  //  reset_child_polling_engine_->clear();
+  //} else {
+  //  gpr_log(GPR_INFO, "apolcyn SetResetChildPollingEngineFunc add new callback; %p", reset_child_polling_engine);
+  //  reset_child_polling_engine_->emplace_back(reset_child_polling_engine);
+  //}
 }
 
-const std::vector<Fork::child_postfork_func>&
+const std::set<Fork::child_postfork_func>&
 Fork::GetResetChildPollingEngineFunc() {
   return *reset_child_polling_engine_;
 }
@@ -238,6 +246,6 @@ void Fork::AwaitThreads() {
 
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
-std::vector<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
+std::set<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
     nullptr;
 }  // namespace grpc_core

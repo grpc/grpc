@@ -128,6 +128,7 @@ static bool epoll_set_init() {
 
 // epoll_set_init() MUST be called before calling this.
 static void epoll_set_shutdown() {
+  gpr_log(GPR_INFO, "apolcyn epoll_set_shutdown g_epoll_set.epfd", g_epoll_set.epfd);
   if (g_epoll_set.epfd >= 0) {
     close(g_epoll_set.epfd);
     g_epoll_set.epfd = -1;
@@ -525,6 +526,7 @@ static size_t choose_neighborhood(void) {
 }
 
 static grpc_error_handle pollset_global_init(void) {
+  gpr_log(GPR_INFO, "apolcyn pollset global init");
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
   grpc_error_handle err = grpc_wakeup_fd_init(&global_wakeup_fd);
@@ -547,6 +549,7 @@ static grpc_error_handle pollset_global_init(void) {
 }
 
 static void pollset_global_shutdown(void) {
+  gpr_log(GPR_INFO, "apolcyn pollset_global_shutdown global_wakeup_fd.read_fd=%d", global_wakeup_fd.read_fd);
   if (global_wakeup_fd.read_fd != -1) grpc_wakeup_fd_destroy(&global_wakeup_fd);
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_destroy(&g_neighborhoods[i].mu);
@@ -1233,12 +1236,14 @@ static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
 }
 
 static void shutdown_engine(void) {
+  gpr_log(GPR_INFO, "apolcyn non-EE shutdown_engine");
   fd_global_shutdown();
   pollset_global_shutdown();
   epoll_set_shutdown();
   if (grpc_core::Fork::Enabled()) {
     gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+    //gpr_log(GPR_INFO, "apolcyn non-EE shutdown_engine SetResetChildPollingEngineFunc(nullptr)");
+    //grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
   }
   g_is_shutdown = true;
 }
@@ -1296,6 +1301,10 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
 // the global epoll fd. This allows gRPC to shutdown in the child process
 // without interfering with connections or RPCs ongoing in the parent.
 static void reset_event_manager_on_fork() {
+  gpr_log(GPR_INFO, "apolcyn reset_event_manager_on_fork");
+  // TODO(apolcyn): should we just run this unconditionally, and change
+  // things so that fork_fd_list_mu is never destroyed?
+  if (g_is_shutdown) return;
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
     close(fork_fd_list_head->fd);
@@ -1311,6 +1320,7 @@ static void reset_event_manager_on_fork() {
 // Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
 // support is available
 static bool init_epoll1_linux() {
+  gpr_log(GPR_INFO, "apolcyn init_epoll1_linux g_is_shutdown=%d", g_is_shutdown);
   if (!g_is_shutdown) return true;
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
@@ -1318,6 +1328,7 @@ static bool init_epoll1_linux() {
   }
 
   if (!epoll_set_init()) {
+    gpr_log(GPR_INFO, "apolcyn init_epoll1_linux early out because epoll_set_init failed");
     return false;
   }
 
@@ -1330,7 +1341,9 @@ static bool init_epoll1_linux() {
   }
 
   if (grpc_core::Fork::Enabled()) {
+    gpr_log(GPR_INFO, "apolcyn init_epoll1_linux reset child polling engine func");
     gpr_mu_init(&fork_fd_list_mu);
+    gpr_log(GPR_INFO, "apolcyn non-EE init_epoll1_linux SetResetChildPollingEngineFunc(%p)", reset_event_manager_on_fork);
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);
   }

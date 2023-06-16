@@ -505,9 +505,12 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     return Qnil;
   }
   // TODO(apolcyn): only do this check if fork support is enabled
+  fprintf(stderr, "apolcyn grpc_rb_channel_create_call acquire lock\n");
   rb_mutex_lock(rb_ivar_get(self, id_channel_recreation_mu));
+  fprintf(stderr, "apolcyn grpc_rb_channel_create_call maybe recreate channel\n");
   grpc_rb_channel_maybe_recreate_channel_after_fork(
       wrapper, rb_ivar_get(self, id_target));
+  fprintf(stderr, "apolcyn grpc_rb_channel_create_call release lock\n");
   rb_mutex_unlock(rb_ivar_get(self, id_channel_recreation_mu));
 
   cq = grpc_completion_queue_create_for_pluck(NULL);
@@ -681,6 +684,7 @@ static void* run_poll_channels_loop_no_gil(void* arg) {
   gpr_log(GPR_DEBUG, "GRPC_RUBY: run_poll_channels_loop_no_gil - begin");
 
   gpr_mu_lock(&global_connection_polling_mu);
+  GPR_ASSERT(!g_abort_channel_polling);
   GPR_ASSERT(!g_channel_polling_thread_started);
   g_channel_polling_thread_started = 1;
   gpr_cv_broadcast(&global_connection_polling_cv);
@@ -742,6 +746,9 @@ static void run_poll_channels_loop_unblocking_func(void* arg) {
     bg = bg->next;
   }
 
+  
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: cq shutdown on global polling cq. pid: %d", getpid());
   grpc_completion_queue_shutdown(g_channel_polling_cq);
   gpr_cv_broadcast(&global_connection_polling_cv);
   gpr_mu_unlock(&global_connection_polling_mu);

@@ -257,7 +257,9 @@ void ResetEventManagerOnFork() {
   gpr_mu_unlock(&fork_fd_list_mu);
   if (grpc_core::Fork::Enabled()) {
     gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+    // TODO(apolcyn): is this right?
+    //gpr_log(GPR_INFO, "apolcyn EE ResetEventManagerOnFork SetResetChildPollingEngineFunc(nullptr)");
+    //grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
   }
   InitEpoll1PollerLinux();
 }
@@ -274,6 +276,7 @@ bool InitEpoll1PollerLinux() {
   }
   if (grpc_core::Fork::Enabled()) {
     gpr_mu_init(&fork_fd_list_mu);
+    gpr_log(GPR_INFO, "apolcyn EE InitEpoll1PollerLinux SetResetChildPollingEngineFunc(%p)", ResetEventManagerOnFork);
     grpc_core::Fork::SetResetChildPollingEngineFunc(ResetEventManagerOnFork);
   }
   close(fd);
