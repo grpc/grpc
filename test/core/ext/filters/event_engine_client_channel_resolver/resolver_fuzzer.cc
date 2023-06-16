@@ -13,8 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -23,9 +21,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"

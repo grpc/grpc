@@ -5115,7 +5115,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
-        "absl/container:flat_hash_set",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5125,7 +5124,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "event_engine_common",
-        "event_engine_utils",
         "grpc_service_config",
         "polling_resolver",
         "service_config_helper",
