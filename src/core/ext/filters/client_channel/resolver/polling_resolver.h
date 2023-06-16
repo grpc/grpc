@@ -64,11 +64,6 @@ class PollingResolver : public Resolver {
   // To be invoked by the subclass when a request is complete.
   void OnRequestComplete(Result result);
 
-  // Can be used by the subclass to request a re-resolution.
-  // Subclasses might not be able to RequestReresolution if they don't have
-  // access to the work_serializer, so this provides a clean alternative.
-  void RequestReresolution();
-
   // Convenient accessor methods for subclasses.
   const std::string& authority() const { return authority_; }
   const std::string& name_to_resolve() const { return name_to_resolve_; }
