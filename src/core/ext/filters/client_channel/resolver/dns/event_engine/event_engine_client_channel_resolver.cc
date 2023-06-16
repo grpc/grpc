@@ -242,8 +242,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) { self->OnSRVResolved(std::move(srv_records)); },
         resolver_->name_to_resolve());
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("srv lookup handle: %s",
-                                     HandleToString(*srv_handle_).c_str());
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
