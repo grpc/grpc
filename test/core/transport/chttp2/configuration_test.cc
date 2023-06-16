@@ -112,7 +112,7 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
 
 // This test modifies the defaults of the client side settings, so it would
 // affect any test that is run after this.
-// TODO(yashykt): If adding more client side tests after this, add a rest to
+// TODO(yashykt): If adding more client side tests after this, add a reset to
 // defaults function.
 TEST_F(ConfigurationTest, ModifyClientDefaults) {
   ExecCtx exec_ctx;
@@ -135,7 +135,7 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
 
 // This test modifies the defaults of the client side settings, so it would
 // affect any test that is run after this.
-// TODO(yashykt): If adding more server side tests after this, add a rest to
+// TODO(yashykt): If adding more server side tests after this, add a reset to
 // defaults function.
 TEST_F(ConfigurationTest, ModifyServerDefaults) {
   ExecCtx exec_ctx;
