@@ -21,15 +21,12 @@
 #include <stdint.h>
 
 #include <functional>
-#include <initializer_list>
-#include <limits>
 #include <memory>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -46,6 +43,7 @@
 
 namespace grpc_core {
 
+// Wrapper around event engine endpoint that provides a promise like API.
 class PromiseEndpoint {
  public:
   PromiseEndpoint(
@@ -63,16 +61,13 @@ class PromiseEndpoint {
   auto Write(SliceBuffer data) {
     {
       MutexLock lock(&write_mutex_);
-
       // Previous write result has not been polled.
       GPR_ASSERT(!write_result_.has_value());
-
       // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
       // available.
       grpc_slice_buffer_swap(write_buffer_.c_slice_buffer(),
                              data.c_slice_buffer());
     }
-
     // If `Write()` returns true immediately, the callback will not be called.
     // We still need to call our callback to pick up the result.
     if (endpoint_->Write(std::bind(&PromiseEndpoint::WriteCallback, this,
@@ -81,7 +76,6 @@ class PromiseEndpoint {
                          nullptr /* uses default arguments */)) {
       WriteCallback(absl::OkStatus());
     }
-
     return [this]() -> Poll<absl::Status> {
       MutexLock lock(&write_mutex_);
       if (!write_result_.has_value()) {
@@ -103,13 +97,10 @@ class PromiseEndpoint {
   // undefined behavior.
   auto Read(size_t num_bytes) {
     ReleasableMutexLock lock(&read_mutex_);
-
     // Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
-
     // Should not have pending reads.
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
-
     if (read_buffer_.Length() < num_bytes) {
       lock.Release();
       // If `Read()` returns true immediately, the callback will not be
@@ -125,7 +116,6 @@ class PromiseEndpoint {
     } else {
       read_result_ = absl::OkStatus();
     }
-
     return [this, num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
@@ -139,7 +129,6 @@ class PromiseEndpoint {
         SliceBuffer ret;
         grpc_slice_buffer_move_first(read_buffer_.c_slice_buffer(), num_bytes,
                                      ret.c_slice_buffer());
-
         read_result_.reset();
         return std::move(ret);
       }
@@ -154,38 +143,27 @@ class PromiseEndpoint {
   // undefined behavior.
   auto ReadSlice(size_t num_bytes) {
     ReleasableMutexLock lock(&read_mutex_);
-    if (num_bytes >= static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
-      read_result_ = absl::Status(
-          absl::StatusCode::kInvalidArgument,
-          absl::StrFormat(
-              "Requested size is bigger than the maximum supported size %lld.",
-              std::numeric_limits<int64_t>::max()));
-    } else {
-      // Previous read result has not been polled.
-      GPR_ASSERT(!read_result_.has_value());
+    // Previous read result has not been polled.
+    GPR_ASSERT(!read_result_.has_value());
+    // Should not have pending reads.
+    GPR_ASSERT(pending_read_buffer_.Count() == 0u);
+    if (read_buffer_.Length() < num_bytes) {
+      lock.Release();
+      const struct grpc_event_engine::experimental::EventEngine::Endpoint::
+          ReadArgs read_args = {static_cast<int64_t>(num_bytes)};
 
-      // Should not have pending reads.
-      GPR_ASSERT(pending_read_buffer_.Count() == 0u);
-
-      if (read_buffer_.Length() < num_bytes) {
-        lock.Release();
-        const struct grpc_event_engine::experimental::EventEngine::Endpoint::
-            ReadArgs read_args = {static_cast<int64_t>(num_bytes)};
-
-        // If `Read()` returns true immediately, the callback will not be
-        // called. We still need to call our callback to pick up the result
-        // and maybe do further reads.
-        if (endpoint_->Read(
-                std::bind(&PromiseEndpoint::ReadCallback, this,
-                          std::placeholders::_1, num_bytes, read_args),
-                &pending_read_buffer_, &read_args)) {
-          ReadCallback(absl::OkStatus(), num_bytes, read_args);
-        }
-      } else {
-        read_result_ = absl::OkStatus();
+      // If `Read()` returns true immediately, the callback will not be
+      // called. We still need to call our callback to pick up the result
+      // and maybe do further reads.
+      if (endpoint_->Read(
+              std::bind(&PromiseEndpoint::ReadCallback, this,
+                        std::placeholders::_1, num_bytes, read_args),
+              &pending_read_buffer_, &read_args)) {
+        ReadCallback(absl::OkStatus(), num_bytes, read_args);
       }
+    } else {
+      read_result_ = absl::OkStatus();
     }
-
     return [this, num_bytes]() -> Poll<absl::StatusOr<Slice>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
@@ -211,16 +189,12 @@ class PromiseEndpoint {
   // Returns a promise that resolves to a byte with type `uint8_t`.
   auto ReadByte() {
     ReleasableMutexLock lock(&read_mutex_);
-
     // Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
-
     // Should not have pending reads.
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
-
     if (read_buffer_.Length() == 0u) {
       lock.Release();
-
       // If `Read()` returns true immediately, the callback will not be called.
       // We still need to call our callback to pick up the result and maybe do
       // further reads.
@@ -232,7 +206,6 @@ class PromiseEndpoint {
     } else {
       read_result_ = absl::OkStatus();
     }
-
     return [this]() -> Poll<absl::StatusOr<uint8_t>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
@@ -262,6 +235,8 @@ class PromiseEndpoint {
       endpoint_;
 
   // Data used for writes.
+  // TODO(ladynana): Remove this write_mutex_ and use `atomic<bool>
+  // write_complete_` as write guard.
   Mutex write_mutex_;
   // Write buffer used for `EventEngine::Endpoint::Write()` to ensure the
   // memory behind the buffer is not lost.
@@ -276,6 +251,8 @@ class PromiseEndpoint {
   void WriteCallback(absl::Status status);
 
   // Data used for reads
+  // TODO(ladynana): Remove this read_mutex_ and use `atomic<bool>
+  // read_complete_` as read guard.
   Mutex read_mutex_;
   // Read buffer used for storing successful reads given by
   // `EventEngine::Endpoint` but not yet requested by the caller.
