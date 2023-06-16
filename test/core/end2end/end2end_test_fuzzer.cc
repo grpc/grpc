@@ -128,6 +128,9 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
+  if (!squelch) {
+    fprintf(stderr, "RUN TEST: %s\n", tests[test_id].name.c_str());
+  }
   auto test = tests[test_id].factory();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
