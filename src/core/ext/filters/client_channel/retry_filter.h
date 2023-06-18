@@ -19,12 +19,79 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
+#include <stddef.h>
+
+#include <new>
+
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/retry_service_config.h"
+#include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
-extern const grpc_channel_filter kRetryFilterVtable;
+class RetryFilter {
+ public:
+  static const grpc_channel_filter kVtable;
+
+  class CallData;
+
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args) {
+    GPR_ASSERT(args->is_last);
+    GPR_ASSERT(elem->filter == &kVtable);
+    grpc_error_handle error;
+    new (elem->channel_data) RetryFilter(args->channel_args, &error);
+    return error;
+  }
+
+  static void Destroy(grpc_channel_element* elem) {
+    auto* chand = static_cast<RetryFilter*>(elem->channel_data);
+    chand->~RetryFilter();
+  }
+
+  // Will never be called.
+  static void StartTransportOp(grpc_channel_element* /*elem*/,
+                               grpc_transport_op* /*op*/) {}
+  static void GetChannelInfo(grpc_channel_element* /*elem*/,
+                             const grpc_channel_info* /*info*/) {}
+
+ private:
+  static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
+    // By default, we buffer 256 KiB per RPC for retries.
+    // TODO(roth): Do we have any data to suggest a better value?
+    static constexpr int kDefaultPerRpcRetryBufferSize = (256 << 10);
+
+    return Clamp(args.GetInt(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE)
+                     .value_or(kDefaultPerRpcRetryBufferSize),
+                 0, INT_MAX);
+  }
+
+  RetryFilter(const ChannelArgs& args, grpc_error_handle* error);
+
+  const internal::RetryMethodConfig* GetRetryPolicy(
+      const grpc_call_context_element* context);
+
+  ClientChannel* client_channel_;
+  grpc_event_engine::experimental::EventEngine* const event_engine_;
+  size_t per_rpc_retry_buffer_size_;
+  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  const size_t service_config_parser_index_;
+};
 
 }  // namespace grpc_core
 

@@ -19,7 +19,6 @@
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stddef.h>
 
 #include <memory>
@@ -37,7 +36,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -120,105 +118,60 @@
 // TODO(roth): In subsequent PRs:
 // - implement hedging
 
-// By default, we buffer 256 KiB per RPC for retries.
-// TODO(roth): Do we have any data to suggest a better value?
-#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (256 << 10)
-
 // This value was picked arbitrarily.  It can be changed if there is
 // any even moderately compelling reason to do so.
 #define RETRY_BACKOFF_JITTER 0.2
+
+using grpc_core::internal::RetryGlobalConfig;
+using grpc_core::internal::RetryMethodConfig;
+using grpc_core::internal::RetryServiceConfigParser;
+using grpc_core::internal::ServerRetryThrottleData;
+using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
 
 namespace {
 
-using grpc_event_engine::experimental::EventEngine;
-using internal::RetryGlobalConfig;
-using internal::RetryMethodConfig;
-using internal::RetryServiceConfigParser;
-using internal::ServerRetryThrottleData;
-
 TraceFlag grpc_retry_trace(false, "retry");
+
+}  // namespace
 
 //
 // RetryFilter
 //
 
-class RetryFilter {
- public:
-  class CallData;
-
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args) {
-    GPR_ASSERT(args->is_last);
-    GPR_ASSERT(elem->filter == &kRetryFilterVtable);
-    grpc_error_handle error;
-    new (elem->channel_data) RetryFilter(args->channel_args, &error);
-    return error;
+RetryFilter::RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
+    : client_channel_(args.GetObject<ClientChannel>()),
+      event_engine_(args.GetObject<EventEngine>()),
+      per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
+      service_config_parser_index_(
+          internal::RetryServiceConfigParser::ParserIndex()) {
+  // Get retry throttling parameters from service config.
+  auto* service_config = args.GetObject<ServiceConfig>();
+  if (service_config == nullptr) return;
+  const auto* config = static_cast<const RetryGlobalConfig*>(
+      service_config->GetGlobalParsedConfig(
+          RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) return;
+  // Get server name from target URI.
+  auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
+  if (!server_uri.has_value()) {
+    *error = GRPC_ERROR_CREATE(
+        "server URI channel arg missing or wrong type in client channel "
+        "filter");
+    return;
   }
-
-  static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<RetryFilter*>(elem->channel_data);
-    chand->~RetryFilter();
+  absl::StatusOr<URI> uri = URI::Parse(*server_uri);
+  if (!uri.ok() || uri->path().empty()) {
+    *error = GRPC_ERROR_CREATE("could not extract server name from target URI");
+    return;
   }
-
-  // Will never be called.
-  static void StartTransportOp(grpc_channel_element* /*elem*/,
-                               grpc_transport_op* /*op*/) {}
-  static void GetChannelInfo(grpc_channel_element* /*elem*/,
-                             const grpc_channel_info* /*info*/) {}
-
- private:
-  static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
-    return Clamp(args.GetInt(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE)
-                     .value_or(DEFAULT_PER_RPC_RETRY_BUFFER_SIZE),
-                 0, INT_MAX);
-  }
-
-  RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
-      : client_channel_(args.GetObject<ClientChannel>()),
-        event_engine_(args.GetObject<EventEngine>()),
-        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
-        service_config_parser_index_(
-            internal::RetryServiceConfigParser::ParserIndex()) {
-    // Get retry throttling parameters from service config.
-    auto* service_config = args.GetObject<ServiceConfig>();
-    if (service_config == nullptr) return;
-    const auto* config = static_cast<const RetryGlobalConfig*>(
-        service_config->GetGlobalParsedConfig(
-            RetryServiceConfigParser::ParserIndex()));
-    if (config == nullptr) return;
-    // Get server name from target URI.
-    auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
-    if (!server_uri.has_value()) {
-      *error = GRPC_ERROR_CREATE(
-          "server URI channel arg missing or wrong type in client channel "
-          "filter");
-      return;
-    }
-    absl::StatusOr<URI> uri = URI::Parse(*server_uri);
-    if (!uri.ok() || uri->path().empty()) {
-      *error =
-          GRPC_ERROR_CREATE("could not extract server name from target URI");
-      return;
-    }
-    std::string server_name(absl::StripPrefix(uri->path(), "/"));
-    // Get throttling config for server_name.
-    retry_throttle_data_ =
-        internal::ServerRetryThrottleMap::Get()->GetDataForServer(
-            server_name, config->max_milli_tokens(),
-            config->milli_token_ratio());
-  }
-
-  const RetryMethodConfig* GetRetryPolicy(
-      const grpc_call_context_element* context);
-
-  ClientChannel* client_channel_;
-  EventEngine* const event_engine_;
-  size_t per_rpc_retry_buffer_size_;
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  const size_t service_config_parser_index_;
-};
+  std::string server_name(absl::StripPrefix(uri->path(), "/"));
+  // Get throttling config for server_name.
+  retry_throttle_data_ =
+      internal::ServerRetryThrottleMap::Get()->GetDataForServer(
+          server_name, config->max_milli_tokens(), config->milli_token_ratio());
+}
 
 //
 // RetryFilter::CallData
@@ -2598,9 +2551,7 @@ void RetryFilter::CallData::StartTransparentRetry(void* arg,
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
 
-}  // namespace
-
-const grpc_channel_filter kRetryFilterVtable = {
+const grpc_channel_filter RetryFilter::kVtable = {
     RetryFilter::CallData::StartTransportStreamOpBatch,
     nullptr,
     RetryFilter::StartTransportOp,
