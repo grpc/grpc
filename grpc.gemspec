@@ -223,6 +223,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/retry_filter.cc )
   s.files += %w( src/core/ext/filters/client_channel/retry_filter.h )
+  s.files += %w( src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc )
+  s.files += %w( src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h )
   s.files += %w( src/core/ext/filters/client_channel/retry_service_config.cc )
   s.files += %w( src/core/ext/filters/client_channel/retry_service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.cc )

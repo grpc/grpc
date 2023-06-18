@@ -1021,6 +1021,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -1902,6 +1903,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
