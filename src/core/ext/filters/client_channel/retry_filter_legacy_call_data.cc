@@ -1551,7 +1551,7 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
 RetryFilterLegacyCallData::RetryFilterLegacyCallData(
     RetryFilter* chand, const grpc_call_element_args& args)
     : chand_(chand),
-      retry_throttle_data_(chand->retry_throttle_data()->Ref()),
+      retry_throttle_data_(chand->retry_throttle_data()),
       retry_policy_(chand->GetRetryPolicy(args.context)),
       retry_backoff_(
           BackOff::Options()

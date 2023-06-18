@@ -82,8 +82,8 @@ class RetryFilter {
   const internal::RetryMethodConfig* GetRetryPolicy(
       const grpc_call_context_element* context);
 
-  internal::ServerRetryThrottleData* retry_throttle_data() const {
-    return retry_throttle_data_.get();
+  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data() const {
+    return retry_throttle_data_;
   }
 
   ClientChannel* client_channel() const { return client_channel_; }
