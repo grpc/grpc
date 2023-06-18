@@ -37,18 +37,19 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+
+extern grpc_core::TraceFlag grpc_retry_trace;
 
 namespace grpc_core {
 
 class RetryFilter {
  public:
   static const grpc_channel_filter kVtable;
-
-  class CallData;
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
@@ -70,6 +71,27 @@ class RetryFilter {
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
 
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return event_engine_;
+  }
+
+  // This value was picked arbitrarily.  It can be changed if there is
+  // any even moderately compelling reason to do so.
+  static double BackoffJitter() { return 0.2; }
+
+  const internal::RetryMethodConfig* GetRetryPolicy(
+      const grpc_call_context_element* context);
+
+  internal::ServerRetryThrottleData* retry_throttle_data() const {
+    return retry_throttle_data_.get();
+  }
+
+  ClientChannel* client_channel() const { return client_channel_; }
+
+  size_t per_rpc_retry_buffer_size() const {
+    return per_rpc_retry_buffer_size_;
+  }
+
  private:
   static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
     // By default, we buffer 256 KiB per RPC for retries.
@@ -82,9 +104,6 @@ class RetryFilter {
   }
 
   RetryFilter(const ChannelArgs& args, grpc_error_handle* error);
-
-  const internal::RetryMethodConfig* GetRetryPolicy(
-      const grpc_call_context_element* context);
 
   ClientChannel* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;
