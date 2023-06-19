@@ -637,8 +637,6 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type);
     }
-    gpr_log(GPR_ERROR, "%p %s: LAST_NEW_STREAM_ID=%d", t,
-            t->is_client ? "CLIENT" : "SERVER", t->incoming_stream_id);
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(t, t->incoming_stream_id);
