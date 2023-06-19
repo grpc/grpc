@@ -22,6 +22,8 @@
 
 #include <inttypes.h>
 
+#include <string>
+
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>

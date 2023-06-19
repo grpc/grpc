@@ -18,8 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 
-#include <inttypes.h>
-
 #include <functional>
 #include <type_traits>
 #include <utility>
