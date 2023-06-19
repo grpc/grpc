@@ -30,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "internal.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
