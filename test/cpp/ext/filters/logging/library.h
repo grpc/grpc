@@ -44,14 +44,6 @@
 namespace grpc {
 namespace testing {
 
-class MyTestServiceImpl : public TestServiceImpl {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    return TestServiceImpl::Echo(context, request, response);
-  }
-};
-
 class TestLoggingSink : public grpc_core::LoggingSink {
  public:
   Config FindMatch(bool /* is_client */, absl::string_view /* service */,
