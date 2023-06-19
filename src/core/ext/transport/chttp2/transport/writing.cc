@@ -153,9 +153,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
           " Last ping %" PRId64 ": Next ping %" PRId64 ": Now %" PRId64,
           t->is_client ? "CLIENT" : "SERVER",
           std::string(t->peer_string.as_string_view()).c_str(),
-          t->ping_state.last_ping_sent_time.milliseconds_after_process_epoch(),
-          next_allowed_ping.milliseconds_after_process_epoch(),
-          now.milliseconds_after_process_epoch());
+          t->ping_state.last_ping_sent_time.nanoseconds_after_process_epoch(),
+          next_allowed_ping.nanoseconds_after_process_epoch(),
+          now.nanoseconds_after_process_epoch());
     }
     if (!t->ping_state.delayed_ping_timer_handle.has_value()) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");

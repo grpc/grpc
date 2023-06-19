@@ -211,8 +211,8 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     GPR_ASSERT(!next_resolution_timer_handle_.has_value());
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       if (timeout > Duration::Zero()) {
-        gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",
-                this, timeout.millis());
+        gpr_log(GPR_INFO, "[polling resolver %p] retrying in %s", this,
+                timeout.ToString().c_str());
       } else {
         gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
       }
@@ -244,10 +244,9 @@ void PollingResolver::MaybeStartResolvingLocked() {
             Timestamp::Now() - *last_resolution_timestamp_;
         gpr_log(GPR_INFO,
                 "[polling resolver %p] in cooldown from last resolution "
-                "(from %" PRId64 " ms ago); will resolve again in %" PRId64
-                " ms",
-                this, last_resolution_ago.millis(),
-                time_until_next_resolution.millis());
+                "(from %s ago); will resolve again in %s",
+                this, last_resolution_ago.ToString().c_str(),
+                time_until_next_resolution.ToString().c_str());
       }
       ScheduleNextResolutionTimer(time_until_next_resolution);
       return;

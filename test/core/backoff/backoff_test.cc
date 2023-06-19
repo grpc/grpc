@@ -88,48 +88,56 @@ TEST(BackOffTest, NoJitterBackOff) {
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0));
+      grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(0));
   grpc_core::Timestamp next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      2 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(6));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      6 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(14));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      14 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(30));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      30 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(62));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      62 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(126));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      126 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(254));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      254 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next, grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(510));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      510 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next,
-            grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(1022));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      1022 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
-  EXPECT_EQ(next,
-            grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(1535));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      1535 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next,
-            grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2048));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      2048 * GPR_NS_PER_MS));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
   next = backoff.NextAttemptTime();
-  EXPECT_EQ(next,
-            grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2561));
+  EXPECT_EQ(next, grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
+                      2561 * GPR_NS_PER_MS));
 }
 
 TEST(BackOffTest, JitterBackOff) {
@@ -149,10 +157,8 @@ TEST(BackOffTest, JitterBackOff) {
   grpc_core::Timestamp next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::Timestamp::Now(), initial_backoff);
 
-  auto expected_next_lower_bound = grpc_core::Duration::Milliseconds(
-      static_cast<double>(current_backoff.millis()) * (1 - jitter));
-  auto expected_next_upper_bound = grpc_core::Duration::Milliseconds(
-      static_cast<double>(current_backoff.millis()) * (1 + jitter));
+  auto expected_next_lower_bound = current_backoff * (1 - jitter);
+  auto expected_next_upper_bound = current_backoff * (1 + jitter);
 
   for (int i = 0; i < 10000; i++) {
     next = backoff.NextAttemptTime();
@@ -162,14 +168,9 @@ TEST(BackOffTest, JitterBackOff) {
         next - grpc_core::Timestamp::Now();
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
-    current_backoff = std::min(
-        grpc_core::Duration::Milliseconds(
-            static_cast<double>(current_backoff.millis()) * multiplier),
-        max_backoff);
-    expected_next_lower_bound = grpc_core::Duration::Milliseconds(
-        static_cast<double>(current_backoff.millis()) * (1 - jitter));
-    expected_next_upper_bound = grpc_core::Duration::Milliseconds(
-        static_cast<double>(current_backoff.millis()) * (1 + jitter));
+    current_backoff = std::min(current_backoff * multiplier, max_backoff);
+    expected_next_lower_bound = current_backoff * (1 - jitter);
+    expected_next_upper_bound = current_backoff * (1 + jitter);
   }
 }
 

@@ -975,7 +975,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   for (auto& state : parent_->subchannel_state_map_) {
     auto* subchannel_state = state.second.get();
     const bool unejected = subchannel_state->MaybeUneject(
-        config.base_ejection_time.millis(), config.max_ejection_time.millis());
+        config.base_ejection_time.MillisRoundUp(),
+        config.max_ejection_time.MillisRoundUp());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected address %s (%p)",
               parent_.get(), state.first.c_str(), subchannel_state);

@@ -74,8 +74,8 @@ Timestamp BdpEstimator::CompletePing() {
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %" PRId64 "ms",
-              std::string(name_).c_str(), inter_ping_delay_.millis());
+      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %s",
+              std::string(name_).c_str(), inter_ping_delay_.ToString().c_str());
     }
   }
   ping_state_ = PingState::UNSCHEDULED;

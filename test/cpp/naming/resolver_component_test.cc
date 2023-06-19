@@ -255,11 +255,10 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(
-            args->pollset, &worker,
-            grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_core::Timestamp::FromTimespec(
+                                            NSecondDeadline(1))));
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }

@@ -34,10 +34,7 @@ std::string HandleToStringInternal(uintptr_t a, uintptr_t b) {
 
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
                                  EventEngine::Duration delta) {
-  return now +
-         std::max(grpc_core::Duration::Milliseconds(1),
-                  grpc_core::Duration::NanosecondsRoundUp(delta.count())) +
-         grpc_core::Duration::Milliseconds(1);
+  return now + grpc_core::Duration::Nanoseconds(delta.count());
 }
 
 }  // namespace experimental

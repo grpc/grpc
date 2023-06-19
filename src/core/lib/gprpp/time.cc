@@ -42,7 +42,7 @@ std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 class GprNowTimeSource final : public Timestamp::Source {
  public:
   Timestamp Now() override {
-    return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
+    return Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
   }
 };
 
@@ -103,49 +103,27 @@ gpr_cycle_counter StartCycleCounter() {
   return cycles;
 }
 
-gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
+gpr_timespec NanosAsTimespec(int64_t nanos, gpr_clock_type clock_type) {
   // special-case infinities as Timestamp can be 32bit on some
-  // platforms while gpr_time_from_millis always takes an int64_t.
-  if (millis == std::numeric_limits<int64_t>::max()) {
+  // platforms while gpr_time_from_nanos always takes an int64_t.
+  if (nanos == std::numeric_limits<int64_t>::max()) {
     return gpr_inf_future(clock_type);
   }
-  if (millis == std::numeric_limits<int64_t>::min()) {
+  if (nanos == std::numeric_limits<int64_t>::min()) {
     return gpr_inf_past(clock_type);
   }
 
+  gpr_timespec ts = gpr_time_from_nanos(nanos, GPR_TIMESPAN);
   if (clock_type == GPR_TIMESPAN) {
-    return gpr_time_from_millis(millis, GPR_TIMESPAN);
+    return ts;
   }
-  return gpr_time_add(gpr_convert_clock_type(StartTime(), clock_type),
-                      gpr_time_from_millis(millis, GPR_TIMESPAN));
+  return gpr_time_add(gpr_convert_clock_type(StartTime(), clock_type), ts);
 }
 
-int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
+int64_t TimespanToNanos(gpr_timespec ts) {
   GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
-  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
-             static_cast<double>(GPR_NS_PER_SEC - 1) /
-                 static_cast<double>(GPR_NS_PER_SEC);
-  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
-    return std::numeric_limits<int64_t>::min();
-  }
-  if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
-    return std::numeric_limits<int64_t>::max();
-  }
-  return static_cast<int64_t>(x);
-}
-
-int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
-  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
-  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
-  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
-    return std::numeric_limits<int64_t>::min();
-  }
-  if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
-    return std::numeric_limits<int64_t>::max();
-  }
-  return static_cast<int64_t>(x);
+  return Duration::FromNanosecondsAsDouble(1.0e9 * ts.tv_sec + ts.tv_nsec)
+      .nanos();
 }
 
 }  // namespace
@@ -161,57 +139,46 @@ Timestamp ScopedTimeCache::Now() {
   return cached_time_.value();
 }
 
-Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
-  return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(
+Timestamp Timestamp::FromTimespec(gpr_timespec ts) {
+  return FromNanosecondsAfterProcessEpoch(TimespanToNanos(gpr_time_sub(
       gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
 }
 
-Timestamp Timestamp::FromTimespecRoundDown(gpr_timespec ts) {
-  return FromMillisecondsAfterProcessEpoch(
-      TimespanToMillisRoundDown(gpr_time_sub(
-          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
-}
-
-Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(
-      TimespanToMillisRoundUp(gpr_cycle_counter_sub(c, StartCycleCounter())));
-}
-
-Timestamp Timestamp::FromCycleCounterRoundDown(gpr_cycle_counter c) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(
-      TimespanToMillisRoundDown(gpr_cycle_counter_sub(c, StartCycleCounter())));
+Timestamp Timestamp::FromCycleCounter(gpr_cycle_counter c) {
+  return Timestamp::FromNanosecondsAfterProcessEpoch(
+      TimespanToNanos(gpr_cycle_counter_sub(c, StartCycleCounter())));
 }
 
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
-  return MillisecondsAsTimespec(millis_, clock_type);
+  return NanosAsTimespec(nanos_, clock_type);
 }
 
 std::string Timestamp::ToString() const {
-  if (millis_ == std::numeric_limits<int64_t>::max()) {
+  if (nanos_ == std::numeric_limits<int64_t>::max()) {
     return "@∞";
   }
-  if (millis_ == std::numeric_limits<int64_t>::min()) {
+  if (nanos_ == std::numeric_limits<int64_t>::min()) {
     return "@-∞";
   }
-  return "@" + std::to_string(millis_) + "ms";
+  return "@" + std::to_string(nanos_) + "ns";
 }
 
 gpr_timespec Duration::as_timespec() const {
-  return MillisecondsAsTimespec(millis_, GPR_TIMESPAN);
+  return NanosAsTimespec(nanos_, GPR_TIMESPAN);
 }
 
 Duration Duration::FromTimespec(gpr_timespec t) {
-  return Duration::Milliseconds(TimespanToMillisRoundUp(t));
+  return Duration::Nanoseconds(TimespanToNanos(t));
 }
 
 std::string Duration::ToString() const {
-  if (millis_ == std::numeric_limits<int64_t>::max()) {
+  if (nanos_ == std::numeric_limits<int64_t>::max()) {
     return "∞";
   }
-  if (millis_ == std::numeric_limits<int64_t>::min()) {
+  if (nanos_ == std::numeric_limits<int64_t>::min()) {
     return "-∞";
   }
-  return std::to_string(millis_) + "ms";
+  return std::to_string(nanos_) + "ns";
 }
 
 std::string Duration::ToJsonString() const {
@@ -221,9 +188,7 @@ std::string Duration::ToJsonString() const {
 
 Duration::operator grpc_event_engine::experimental::EventEngine::Duration()
     const {
-  return std::chrono::milliseconds(
-      Clamp(millis_, std::numeric_limits<int64_t>::min() / GPR_NS_PER_MS,
-            std::numeric_limits<int64_t>::max() / GPR_NS_PER_MS));
+  return std::chrono::nanoseconds(nanos_);
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {

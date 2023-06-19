@@ -43,7 +43,7 @@ void OriginalThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
   switch (reason) {
     case StartThreadReason::kNoWaitersWhenScheduling: {
       auto time_since_last_start =
-          now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+          now - grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
                     state->last_started_thread.load(std::memory_order_relaxed));
       if (time_since_last_start < grpc_core::Duration::Seconds(1)) {
         state->thread_count.Remove();
@@ -57,7 +57,7 @@ void OriginalThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
         state->thread_count.Remove();
         return;
       }
-      state->last_started_thread.store(now.milliseconds_after_process_epoch(),
+      state->last_started_thread.store(now.nanoseconds_after_process_epoch(),
                                        std::memory_order_relaxed);
       break;
     case StartThreadReason::kInitialPool:
@@ -189,7 +189,7 @@ void OriginalThreadPool::Queue::SleepIfRunning() {
   while (true) {
     grpc_core::Timestamp now = grpc_core::Timestamp::Now();
     if (now >= end || forking_) return;
-    cv_.WaitWithTimeout(&queue_mu_, absl::Milliseconds((end - now).millis()));
+    cv_.WaitWithTimeout(&queue_mu_, (end - now).as_absl_duration());
   }
 }
 

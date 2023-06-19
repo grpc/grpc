@@ -198,7 +198,8 @@ class CoreEnd2endTest : public ::testing::Test {
         deadline_ = gpr_inf_future(GPR_CLOCK_REALTIME);
         return *this;
       }
-      deadline_ = grpc_timeout_milliseconds_to_deadline(timeout.millis());
+      deadline_ =
+          grpc_timeout_milliseconds_to_deadline(timeout.MillisRoundUp());
       return *this;
     }
     // Finally create the call.
@@ -646,7 +647,7 @@ class CoreEnd2endTest : public ::testing::Test {
                               Duration deadline, int tag) {
     grpc_channel_watch_connectivity_state(
         client_, last_observed_state,
-        grpc_timeout_milliseconds_to_deadline(deadline.millis()), cq_,
+        grpc_timeout_milliseconds_to_deadline(deadline.MillisRoundUp()), cq_,
         CqVerifier::tag(tag));
   }
 
@@ -670,8 +671,8 @@ class CoreEnd2endTest : public ::testing::Test {
   // Given a duration, return a timestamp that is that duration in the future -
   // with dilation according to test environment (eg sanitizers)
   Timestamp TimestampAfterDuration(Duration duration) {
-    return Timestamp::FromTimespecRoundUp(
-        grpc_timeout_milliseconds_to_deadline(duration.millis()));
+    return Timestamp::FromTimespec(
+        grpc_timeout_milliseconds_to_deadline(duration.MillisRoundUp()));
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {

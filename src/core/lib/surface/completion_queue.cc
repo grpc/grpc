@@ -967,7 +967,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   GRPC_CQ_INTERNAL_REF(cq, "next");
 
   grpc_core::Timestamp deadline_millis =
-      grpc_core::Timestamp::FromTimespecRoundUp(deadline);
+      grpc_core::Timestamp::FromTimespec(deadline);
   cq_is_finished_arg is_finished_arg = {
       cqd->things_queued_ever.load(std::memory_order_relaxed),
       cq,
@@ -1212,7 +1212,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   GRPC_CQ_INTERNAL_REF(cq, "pluck");
   gpr_mu_lock(cq->mu);
   grpc_core::Timestamp deadline_millis =
-      grpc_core::Timestamp::FromTimespecRoundUp(deadline);
+      grpc_core::Timestamp::FromTimespec(deadline);
   cq_is_finished_arg is_finished_arg = {
       cqd->things_queued_ever.load(std::memory_order_relaxed),
       cq,

@@ -125,7 +125,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // watch, but we are hiding that fact from the application.
       if (IsLameChannel(channel_.get())) {
         // A ref is held by the timer callback.
-        StartTimer(Timestamp::FromTimespecRoundUp(deadline));
+        StartTimer(Timestamp::FromTimespec(deadline));
         // Ref from object creation needs to be freed here since lame channel
         // does not have a watcher.
         Unref();
@@ -136,8 +136,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
           "not a client channel");
     }
     // Ref from object creation is held by the watcher callback.
-    auto* watcher_timer_init_state = new WatcherTimerInitState(
-        this, Timestamp::FromTimespecRoundUp(deadline));
+    auto* watcher_timer_init_state =
+        new WatcherTimerInitState(this, Timestamp::FromTimespec(deadline));
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
         &on_complete_, watcher_timer_init_state->closure());

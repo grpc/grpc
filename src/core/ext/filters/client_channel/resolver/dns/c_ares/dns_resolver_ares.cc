@@ -508,7 +508,7 @@ class AresDNSResolver : public DNSResolver {
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_hostname_ares(
               name_server().c_str(), name().c_str(), default_port_.c_str(),
               pollset_set(), on_dns_lookup_done(), &addresses_,
-              timeout().millis()));
+              timeout().MillisRoundUp()));
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p Start ares_request_:%p",
                            this, ares_request.get());
       return ares_request;
@@ -558,7 +558,8 @@ class AresDNSResolver : public DNSResolver {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_srv_ares(
               name_server().c_str(), name().c_str(), pollset_set(),
-              on_dns_lookup_done(), &balancer_addresses_, timeout().millis()));
+              on_dns_lookup_done(), &balancer_addresses_,
+              timeout().MillisRoundUp()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;
@@ -606,7 +607,8 @@ class AresDNSResolver : public DNSResolver {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_txt_ares(
               name_server().c_str(), name().c_str(), pollset_set(),
-              on_dns_lookup_done(), &service_config_json_, timeout().millis()));
+              on_dns_lookup_done(), &service_config_json_,
+              timeout().MillisRoundUp()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;

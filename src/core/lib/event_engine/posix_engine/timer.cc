@@ -42,7 +42,7 @@ static const double kMaxQueueWindowDuration = 1.0;
 grpc_core::Timestamp TimerList::Shard::ComputeMinDeadline() {
   return heap.is_empty()
              ? queue_deadline_cap + grpc_core::Duration::Epsilon()
-             : grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+             : grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
                    heap.Top()->deadline);
 }
 
@@ -51,13 +51,13 @@ TimerList::Shard::Shard() : stats(1.0 / kAddDeadlineScale, 0.1, 0.5) {}
 TimerList::TimerList(TimerListHost* host)
     : host_(host),
       num_shards_(grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u)),
-      min_timer_(host_->Now().milliseconds_after_process_epoch()),
+      min_timer_(host_->Now().nanoseconds_after_process_epoch()),
       shards_(new Shard[num_shards_]),
       shard_queue_(new Shard*[num_shards_]) {
   for (size_t i = 0; i < num_shards_; i++) {
     Shard& shard = shards_[i];
     shard.queue_deadline_cap =
-        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+        grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
             min_timer_.load(std::memory_order_relaxed));
     shard.shard_queue_index = i;
     shard.list.next = shard.list.prev = &shard.list;
@@ -110,7 +110,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
   bool is_first_timer = false;
   Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
   timer->closure = closure;
-  timer->deadline = deadline.milliseconds_after_process_epoch();
+  timer->deadline = deadline.nanoseconds_after_process_epoch();
 
 #ifndef NDEBUG
   timer->hash_table_next = nullptr;
@@ -124,7 +124,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
       deadline = now;
     }
 
-    shard->stats.AddSample((deadline - now).millis() / 1000.0);
+    shard->stats.AddSample((deadline - now).seconds());
 
     if (deadline < shard->queue_deadline_cap) {
       is_first_timer = shard->heap.Add(timer);
@@ -152,7 +152,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
       shard->min_deadline = deadline;
       NoteDeadlineChange(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
-        min_timer_.store(deadline.milliseconds_after_process_epoch(),
+        min_timer_.store(deadline.nanoseconds_after_process_epoch(),
                          std::memory_order_relaxed);
         host_->Kick();
       }
@@ -196,8 +196,7 @@ bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
   for (timer = list.next; timer != &list; timer = next) {
     next = timer->next;
     auto timer_deadline =
-        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
-            timer->deadline);
+        grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(timer->deadline);
 
     if (timer_deadline < queue_deadline_cap) {
       ListRemove(timer);
@@ -218,8 +217,7 @@ Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
     }
     timer = heap.Top();
     auto timer_deadline =
-        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
-            timer->deadline);
+        grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(timer->deadline);
     if (timer_deadline > now) return nullptr;
     timer->pending = false;
     heap.Pop();
@@ -240,7 +238,7 @@ void TimerList::Shard::PopTimers(
 std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
     grpc_core::Timestamp now, grpc_core::Timestamp* next) {
   grpc_core::Timestamp min_timer =
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+      grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
           min_timer_.load(std::memory_order_relaxed));
 
   std::vector<experimental::EventEngine::Closure*> done;
@@ -275,7 +273,7 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
   }
 
   min_timer_.store(
-      shard_queue_[0]->min_deadline.milliseconds_after_process_epoch(),
+      shard_queue_[0]->min_deadline.nanoseconds_after_process_epoch(),
       std::memory_order_relaxed);
 
   return done;
@@ -289,7 +287,7 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   // fetch from a thread-local first: this avoids contention on a globally
   // mutable cacheline in the common case
   grpc_core::Timestamp min_timer =
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+      grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
           min_timer_.load(std::memory_order_relaxed));
 
   if (now < min_timer) {

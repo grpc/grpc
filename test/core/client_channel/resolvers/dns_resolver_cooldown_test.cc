@@ -108,16 +108,12 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     ++g_resolution_count;
     static grpc_core::Timestamp last_resolution_time =
         grpc_core::Timestamp::ProcessEpoch();
-    if (last_resolution_time == grpc_core::Timestamp::ProcessEpoch()) {
-      last_resolution_time = grpc_core::Timestamp::FromTimespecRoundUp(
-          gpr_now(GPR_CLOCK_MONOTONIC));
-    } else {
-      auto now = grpc_core::Timestamp::FromTimespecRoundUp(
-          gpr_now(GPR_CLOCK_MONOTONIC));
+    auto now = grpc_core::Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
+    if (last_resolution_time != grpc_core::Timestamp::ProcessEpoch()) {
       EXPECT_GE(now - last_resolution_time,
                 grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
-      last_resolution_time = now;
     }
+    last_resolution_time = now;
     // For correct time diff comparisons, make sure that any subsequent calls
     // to grpc_core::Timestamp::Now() on this thread don't return a time
     // which is earlier than that returned by the call(s) to
@@ -184,13 +180,10 @@ static grpc_ares_request* test_dns_lookup_ares(
       addresses, query_timeout_ms);
   ++g_resolution_count;
   static auto last_resolution_time = grpc_core::Timestamp::ProcessEpoch();
-  auto now =
-      grpc_core::Timestamp::FromTimespecRoundUp(gpr_now(GPR_CLOCK_MONOTONIC));
-  gpr_log(GPR_DEBUG,
-          "last_resolution_time:%" PRId64 " now:%" PRId64
-          " min_time_between:%d",
-          last_resolution_time.milliseconds_after_process_epoch(),
-          now.milliseconds_after_process_epoch(), kMinResolutionPeriodMs);
+  auto now = grpc_core::Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_log(GPR_DEBUG, "last_resolution_time:%s now:%s min_time_between:%d",
+          last_resolution_time.ToString().c_str(), now.ToString().c_str(),
+          kMinResolutionPeriodMs);
   if (last_resolution_time != grpc_core::Timestamp::ProcessEpoch()) {
     EXPECT_GE(now - last_resolution_time,
               grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
@@ -238,7 +231,7 @@ static void iomgr_args_finish(iomgr_args* args) {
 }
 
 static grpc_core::Timestamp n_sec_deadline(int seconds) {
-  return grpc_core::Timestamp::FromTimespecRoundUp(
+  return grpc_core::Timestamp::FromTimespec(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
@@ -251,7 +244,8 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
       break;
     }
     grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%s", done,
+            time_left.ToString().c_str());
     ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);

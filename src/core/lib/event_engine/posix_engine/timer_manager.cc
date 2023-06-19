@@ -58,8 +58,7 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
   // is true at this point, we should quickly exit this and get the next
   // deadline from the timer system
   if (!kicked_) {
-    cv_wait_.WaitWithTimeout(&mu_,
-                             absl::Milliseconds((next - host_.Now()).millis()));
+    cv_wait_.WaitWithTimeout(&mu_, (next - host_.Now()).as_absl_duration());
     ++wakeups_;
   }
   kicked_ = false;
@@ -105,8 +104,7 @@ TimerManager::TimerManager(
 }
 
 grpc_core::Timestamp TimerManager::Host::Now() {
-  return grpc_core::Timestamp::FromTimespecRoundDown(
-      gpr_now(GPR_CLOCK_MONOTONIC));
+  return grpc_core::Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,

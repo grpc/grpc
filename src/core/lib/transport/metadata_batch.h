@@ -358,8 +358,10 @@ struct GrpcRetryPushbackMsMetadata {
   using MementoType = Duration;
   using CompressionTraits = NoCompressionCompressor;
   static ValueType MementoToValue(MementoType x) { return x; }
-  static Slice Encode(Duration x) { return Slice::FromInt64(x.millis()); }
-  static int64_t DisplayValue(Duration x) { return x.millis(); }
+  static Slice Encode(Duration x) {
+    return Slice::FromInt64(x.MillisRoundUp());
+  }
+  static int64_t DisplayValue(Duration x) { return x.MillisRoundUp(); }
   static int64_t DisplayMemento(Duration x) { return DisplayValue(x); }
   static Duration ParseMemento(Slice value, MetadataParseErrorFn on_error);
 };

@@ -39,7 +39,7 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
     // At most double the number of updates remaining until the next period.
     // At least try to estimate when we'll reach it.
     int64_t better_guess;
-    if (time_so_far.millis() == 0) {
+    if (time_so_far.nanos() == 0) {
       better_guess = expected_updates_per_period_ * 2;
     } else {
       // Determine a scaling factor that would have gotten us to the next

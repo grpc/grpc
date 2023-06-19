@@ -705,10 +705,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
     gpr_log(GPR_INFO,
-            "subchannel %p %s: connect failed (%s), backing off for %" PRId64
-            " ms",
-            this, key_.ToString().c_str(), StatusToString(error).c_str(),
-            time_until_next_attempt.millis());
+            "subchannel %p %s: connect failed (%s), backing off for %s", this,
+            key_.ToString().c_str(), StatusToString(error).c_str(),
+            time_until_next_attempt.ToString().c_str());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(

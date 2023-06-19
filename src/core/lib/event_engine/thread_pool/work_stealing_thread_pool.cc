@@ -149,7 +149,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
   last_started_thread_.store(
-      grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
+      grpc_core::Timestamp::Now().nanoseconds_after_process_epoch(),
       std::memory_order_relaxed);
   grpc_core::Thread(
       "event_engine",
@@ -261,9 +261,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     } else {
       lifeguard_shutdown_cv_.WaitWithTimeout(
           &lifeguard_shutdown_mu_,
-          absl::Milliseconds(
-              (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
-                  .millis()));
+          (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
+              .as_absl_duration());
     }
     MaybeStartNewThread();
   }
@@ -306,7 +305,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // However, all workers are busy, so the Lifeguard should be more
   // vigilant about checking whether a new thread must be started.
   if (grpc_core::Timestamp::Now() -
-          grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+          grpc_core::Timestamp::FromNanosecondsAfterProcessEpoch(
               pool_->last_started_thread_) <
       kTimeBetweenThrottledThreadStarts) {
     backoff_.Reset();
@@ -363,8 +362,7 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
 
 void WorkStealingThreadPool::ThreadState::SleepIfRunning() {
   if (pool_->IsForking()) return;
-  absl::SleepFor(
-      absl::Milliseconds(kTimeBetweenThrottledThreadStarts.millis()));
+  absl::SleepFor(kTimeBetweenThrottledThreadStarts.as_absl_duration());
 }
 
 bool WorkStealingThreadPool::ThreadState::Step() {
@@ -490,7 +488,8 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
     CounterType counter_type, size_t desired_threads,
     grpc_core::Duration timeout) {
   size_t count;
-  auto deadline = absl::Now() + absl::Milliseconds(timeout.millis());
+  // TODO(ctiller): check if this is safe around time changes
+  auto deadline = absl::Now() + timeout.as_absl_duration();
   do {
     grpc_core::MutexLock lock(&wait_mu_[counter_type]);
     count = GetCountLocked(counter_type);
@@ -535,7 +534,7 @@ void WorkStealingThreadPool::WorkSignal::SignalAll() {
 bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
     grpc_core::Duration time) {
   grpc_core::MutexLock lock(&mu_);
-  return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
+  return cv_.WaitWithTimeout(&mu_, time.as_absl_duration());
 }
 
 }  // namespace experimental

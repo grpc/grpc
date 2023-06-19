@@ -285,8 +285,8 @@ void ForkPollerListRemovePoller(PollPoller* poller) {
 int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
   if (start == grpc_core::Timestamp::InfFuture()) return -1;
   grpc_core::Timestamp now =
-      grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  int64_t delta = (now - start).millis();
+      grpc_core::Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
+  int64_t delta = (now - start).MillisRoundUp();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -660,8 +660,8 @@ Poller::WorkResult PollPoller::Work(
     struct pollfd* pfds;
     PollEventHandle** watchers;
     // Estimate start time for a poll iteration.
-    grpc_core::Timestamp start = grpc_core::Timestamp::FromTimespecRoundDown(
-        gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_core::Timestamp start =
+        grpc_core::Timestamp::FromTimespec(gpr_now(GPR_CLOCK_MONOTONIC));
     if (num_poll_handles_ + 2 <= inline_elements) {
       pfds = pollfd_space;
       watchers = watcher_space;

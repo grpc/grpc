@@ -47,12 +47,12 @@ bool IsAllSpace(const uint8_t* p, const uint8_t* end) {
 }  // namespace
 
 Timeout Timeout::FromDuration(Duration duration) {
-  return Timeout::FromMillis(duration.millis());
+  return Timeout::FromMillis(duration.MillisRoundUp());
 }
 
 double Timeout::RatioVersus(Timeout other) const {
-  double a = AsDuration().millis();
-  double b = other.AsDuration().millis();
+  double a = AsDuration().seconds();
+  double b = other.AsDuration().seconds();
   if (b == 0) {
     if (a > 0) return 100;
     if (a < 0) return -100;

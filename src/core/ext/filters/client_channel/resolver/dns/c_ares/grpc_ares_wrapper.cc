@@ -284,8 +284,9 @@ static grpc_core::Timestamp calculate_next_ares_backup_poll_alarm(
       grpc_core::Duration::Seconds(1);
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p. next ares process poll time in "
-      "%" PRId64 " ms",
-      driver->request, driver, until_next_ares_backup_poll_alarm.millis());
+      "%s",
+      driver->request, driver,
+      until_next_ares_backup_poll_alarm.ToString().c_str());
   return grpc_core::Timestamp::Now() + until_next_ares_backup_poll_alarm;
 }
 
@@ -490,8 +491,8 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
           : grpc_core::Duration::Milliseconds(ev_driver->query_timeout_ms);
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p grpc_ares_ev_driver_start_locked. timeout in "
-      "%" PRId64 " ms",
-      ev_driver->request, ev_driver, timeout.millis());
+      "%s",
+      ev_driver->request, ev_driver, timeout.ToString().c_str());
   grpc_ares_ev_driver_ref(ev_driver);
   GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
                     grpc_schedule_on_exec_ctx);
@@ -913,10 +914,8 @@ static bool inner_resolve_as_ip_literal_locked(
   }
   grpc_resolved_address addr;
   *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
-  if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
-                               false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
-                               false /* log errors */)) {
+  if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = std::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());

@@ -1151,7 +1151,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) return -1;
   if (deadline.is_process_epoch()) return 0;
-  int64_t n = (deadline - grpc_core::Timestamp::Now()).millis();
+  int64_t n = (deadline - grpc_core::Timestamp::Now()).MillisRoundUp();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return static_cast<int>(n);

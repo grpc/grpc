@@ -510,10 +510,10 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] child %s (%p): deactivating -- will remove in "
-            "%" PRId64 "ms",
+            "%s",
             child_priority_->priority_policy_.get(),
             child_priority_->name_.c_str(), child_priority_.get(),
-            kChildRetentionInterval.millis());
+            kChildRetentionInterval.ToString().c_str());
   }
   timer_handle_ =
       child_priority_->priority_policy_->channel_control_helper()
@@ -568,11 +568,11 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(
         GPR_INFO,
-        "[priority_lb %p] child %s (%p): starting failover timer for %" PRId64
-        "ms",
+        "[priority_lb %p] child %s (%p): starting failover timer for %s",
         child_priority_->priority_policy_.get(), child_priority_->name_.c_str(),
         child_priority_.get(),
-        child_priority_->priority_policy_->child_failover_timeout_.millis());
+        child_priority_->priority_policy_->child_failover_timeout_.ToString()
+            .c_str());
   }
   timer_handle_ =
       child_priority_->priority_policy_->channel_control_helper()

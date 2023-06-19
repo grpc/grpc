@@ -92,7 +92,7 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
           MakeRefCounted<FileWatcherCertificateProvider>(
               config->private_key_file(), config->certificate_file(),
               config->ca_certificate_file(),
-              config->refresh_interval().millis() / GPR_MS_PER_SEC));
+              config->refresh_interval().seconds()));
     }
     options->set_watch_root_cert(!config->ca_certificate_file().empty());
     options->set_watch_identity_pair(!config->certificate_file().empty());

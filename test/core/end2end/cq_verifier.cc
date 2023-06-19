@@ -335,7 +335,7 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
       if (r.type != GRPC_QUEUE_TIMEOUT) return r;
       auto now = gpr_now(deadline.clock_type);
       if (gpr_time_cmp(deadline, now) < 0) break;
-      step_fn_(Timestamp::FromTimespecRoundDown(deadline) - Timestamp::Now());
+      step_fn_(Timestamp::FromTimespec(deadline) - Timestamp::Now());
     }
     return grpc_event{GRPC_QUEUE_TIMEOUT, 0, nullptr};
   }
@@ -349,7 +349,7 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
             timeout.ToString().c_str());
   }
   const gpr_timespec deadline =
-      grpc_timeout_milliseconds_to_deadline(timeout.millis());
+      grpc_timeout_milliseconds_to_deadline(timeout.MillisRoundUp());
   while (!expectations_.empty()) {
     grpc_event ev = Step(deadline);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
