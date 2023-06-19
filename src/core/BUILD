@@ -1301,6 +1301,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings:str_format",
+        "absl/time",
         "absl/types:optional",
     ],
     deps = [
@@ -1535,7 +1536,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/time",
         "absl/types:optional",
     ],
     deps = [

@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
-#include <inttypes.h>
 #include <limits.h>
 
 #include <algorithm>
