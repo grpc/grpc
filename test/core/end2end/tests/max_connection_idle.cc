@@ -42,12 +42,12 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  bool saw_request_at_server = false;
-  bool finished_client = false;
   auto s = test.RequestCall(101);
   // Connection timeout may expire before we receive the request at the server,
   // in which case we'll complete the client call but not the incoming call
   // request from the server.
+  bool saw_request_at_server = false;
+  bool finished_client = false;
   test.Expect(101, CoreEnd2endTest::Maybe{&saw_request_at_server});
   test.Expect(1, CoreEnd2endTest::Maybe{&finished_client});
   test.Step();
