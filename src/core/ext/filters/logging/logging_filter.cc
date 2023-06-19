@@ -256,19 +256,21 @@ class CallData {
   void LogServerHeader(bool is_client, CallTracerAnnotationInterface* tracer,
                        const ServerMetadata* metadata) {
     LoggingSink::Entry entry;
-    if (is_client) {
-      if (auto* value = metadata->get_pointer(PeerString())) {
-        peer_ = PeerStringToAddress(*value);
+    if (metadata != nullptr) {
+      if (is_client) {
+        if (auto* value = metadata->get_pointer(PeerString())) {
+          peer_ = PeerStringToAddress(*value);
+        }
       }
     }
     SetCommonEntryFields(&entry, is_client, tracer,
                          LoggingSink::Entry::EventType::kServerHeader);
-    if (metadata->TransportSize() == 0) return;
-    seen_server_header_ = true;
-    MetadataEncoder encoder(&entry.payload, nullptr,
-                            config_.max_metadata_bytes());
-    metadata->Encode(&encoder);
-    entry.payload_truncated = encoder.truncated();
+    if (metadata != nullptr) {
+      MetadataEncoder encoder(&entry.payload, nullptr,
+                              config_.max_metadata_bytes());
+      metadata->Encode(&encoder);
+      entry.payload_truncated = encoder.truncated();
+    }
     g_logging_sink->LogEntry(std::move(entry));
   }
 
@@ -277,7 +279,6 @@ class CallData {
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client, tracer,
                          LoggingSink::Entry::EventType::kServerTrailer);
-    entry.is_trailer_only = !seen_server_header_;
     if (metadata != nullptr) {
       MetadataEncoder encoder(&entry.payload, &entry.payload.status_details,
                               config_.max_metadata_bytes());
@@ -339,7 +340,6 @@ class CallData {
   std::string authority_;
   LoggingSink::Entry::Address peer_;
   LoggingSink::Config config_;
-  bool seen_server_header_ = false;
 };
 
 class ClientLoggingFilter final : public ChannelFilter {
