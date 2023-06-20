@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h"
 
 #include <inttypes.h>

@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -438,4 +440,4 @@ class RetryFilterLegacyCallData {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
