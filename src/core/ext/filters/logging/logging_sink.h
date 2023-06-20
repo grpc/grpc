@@ -106,8 +106,7 @@ class LoggingSink {
     // Optional tracing details
     std::string trace_id;
     std::string span_id;
-    bool is_sampled;
-    bool is_trailer_only;
+    bool is_sampled = false;
   };
 
   virtual ~LoggingSink() = default;
