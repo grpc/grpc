@@ -193,17 +193,17 @@ describe 'Server Interceptors' do
     it 'each should be called in order', server: true do
       call_order = []
       expect(interceptor).to receive(:request_response)
-        .once.and_wrap_original do |m, *args| 
+        .once.and_wrap_original do |m, *args|
           m.call(*args)
           call_order << interceptor
         end
       expect(interceptor2).to receive(:request_response)
-        .once.and_wrap_original do |m, *args| 
+        .once.and_wrap_original do |m, *args|
           m.call(*args)
           call_order << interceptor2
         end
       expect(interceptor3).to receive(:request_response)
-        .once.and_wrap_original do |m, *args| 
+        .once.and_wrap_original do |m, *args|
           m.call(*args)
           call_order << interceptor3
         end
