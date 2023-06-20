@@ -23,11 +23,11 @@ from grpc.framework.foundation import callable_util
 from grpc.framework.foundation import future
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
-    'Exception calling connectivity future "done" callback!')
+    'Exception calling connectivity future "done" callback!'
+)
 
 
 class _ChannelReadyFuture(future.Future):
-
     def __init__(self, channel):
         self._condition = threading.Condition()
         self._channel = channel
@@ -56,8 +56,10 @@ class _ChannelReadyFuture(future.Future):
 
     def _update(self, connectivity):
         with self._condition:
-            if (not self._cancelled and
-                    connectivity is interfaces.ChannelConnectivity.READY):
+            if (
+                not self._cancelled
+                and connectivity is interfaces.ChannelConnectivity.READY
+            ):
                 self._matured = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
@@ -68,7 +70,8 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
+            )
 
     def cancel(self):
         with self._condition:
@@ -83,7 +86,8 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
+            )
 
         return True
 
@@ -132,18 +136,18 @@ class _ChannelReadyFuture(future.Future):
 def channel_ready_future(channel):
     """Creates a future.Future tracking when an implementations.Channel is ready.
 
-  Cancelling the returned future.Future does not tell the given
-  implementations.Channel to abandon attempts it may have been making to
-  connect; cancelling merely deactivates the return future.Future's
-  subscription to the given implementations.Channel's connectivity.
+    Cancelling the returned future.Future does not tell the given
+    implementations.Channel to abandon attempts it may have been making to
+    connect; cancelling merely deactivates the return future.Future's
+    subscription to the given implementations.Channel's connectivity.
 
-  Args:
-    channel: An implementations.Channel.
+    Args:
+      channel: An implementations.Channel.
 
-  Returns:
-    A future.Future that matures when the given Channel has connectivity
-      interfaces.ChannelConnectivity.READY.
-  """
+    Returns:
+      A future.Future that matures when the given Channel has connectivity
+        interfaces.ChannelConnectivity.READY.
+    """
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future

@@ -304,8 +304,7 @@ grpc_core::Resolver::Result BuildResolverResponse(
     }
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
-    result.addresses->emplace_back(address.addr, address.len,
-                                   grpc_core::ChannelArgs());
+    result.addresses->emplace_back(address, grpc_core::ChannelArgs());
   }
   return result;
 }

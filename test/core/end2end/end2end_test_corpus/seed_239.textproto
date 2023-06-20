@@ -1,3 +1,0 @@
-suite: "SecureEnd2endTest"
-test: "FileWatcherRecoversFromFailure"
-config: "Chttp2SimplSslFullstackTls12"

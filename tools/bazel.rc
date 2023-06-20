@@ -107,6 +107,16 @@ build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
+# a TSAN build that tries to create new threads whenever possible
+build:thready_tsan --strip=never
+build:thready_tsan --copt=-fsanitize=thread
+build:thready_tsan --copt=-fno-omit-frame-pointer
+build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:thready_tsan --copt=-DGRPC_TSAN
+build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
+build:thready_tsan --linkopt=-fsanitize=thread
+build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+
 build:tsan_macos --strip=never
 build:tsan_macos --copt=-fsanitize=thread
 build:tsan_macos --copt=-fno-omit-frame-pointer
@@ -145,3 +155,5 @@ build:compdb --build_tag_filters=-nocompdb --features=-layering_check
 
 try-import %workspace%/tools/fuzztest.bazelrc
 build:fuzztest --cxxopt=-std=c++17
+
+build:fuzztest_test --cxxopt=-std=c++17

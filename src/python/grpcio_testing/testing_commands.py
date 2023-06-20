@@ -19,13 +19,13 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
+LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
 
 
 class Preprocess(setuptools.Command):
     """Command to copy LICENSE from root directory."""
 
-    description = ''
+    description = ""
     user_options = []
 
     def initialize_options(self):
@@ -36,4 +36,4 @@ class Preprocess(setuptools.Command):
 
     def run(self):
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))

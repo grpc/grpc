@@ -44,10 +44,10 @@ template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
-  GPR_ASSERT(serialized.Length() >= 64);
-  GPR_ASSERT(serialized.Length() % 64 == 0);
-  uint8_t header_bytes[64];
-  serialized.MoveFirstNBytesIntoBuffer(64, header_bytes);
+  GPR_ASSERT(serialized.Length() >=
+             24);  // Initial output buffer size is 64 byte.
+  uint8_t header_bytes[24];
+  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   GPR_ASSERT(header.ok());
   GPR_ASSERT(header->type == expected_frame_type);
@@ -76,11 +76,11 @@ int Run(const uint8_t* data, size_t size) {
   const bool is_server = (data[0] & 1) != 0;
   size--;
   data++;
-  if (size < 64) return 0;
+  if (size < 24) return 0;
   auto r = FrameHeader::Parse(data);
   if (!r.ok()) return 0;
-  size -= 64;
-  data += 64;
+  size -= 24;
+  data += 24;
   MemoryAllocator memory_allocator = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   auto arena = MakeScopedArena(1024, &memory_allocator);

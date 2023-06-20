@@ -1,6 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2FakeSecurityFullstack"
-config_vars {
-  experiments: "tcp_frame_size_tuning"
-}

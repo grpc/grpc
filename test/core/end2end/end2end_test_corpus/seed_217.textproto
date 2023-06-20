@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryRecvInitialMetadata"
-config: "Chttp2FakeSecurityFullstack"

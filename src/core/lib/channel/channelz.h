@@ -152,13 +152,34 @@ class PerCpuCallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
+  // We want to ensure that this per-cpu data structure lands on different
+  // cachelines per cpu.
+  // With C++17 we can do so explicitly with an `alignas` specifier.
+  // Prior versions we can at best approximate it by padding the structure.
+  // It'll probably work out ok, but it's not guaranteed across allocators.
+  // (in the bad case where this gets split across cachelines we'll just have
+  // two cpus fighting over the same cacheline with a slight performance
+  // degregation).
+  // TODO(ctiller): When we move to C++17 delete the duplicate definition.
+#if __cplusplus >= 201703L
   struct alignas(GPR_CACHELINE_SIZE) PerCpuData {
     std::atomic<int64_t> calls_started{0};
     std::atomic<int64_t> calls_succeeded{0};
     std::atomic<int64_t> calls_failed{0};
     std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
   };
-  PerCpu<PerCpuData> per_cpu_data_;
+#else
+  struct PerCpuDataHeader {
+    std::atomic<int64_t> calls_started{0};
+    std::atomic<int64_t> calls_succeeded{0};
+    std::atomic<int64_t> calls_failed{0};
+    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
+  };
+  struct PerCpuData : public PerCpuDataHeader {
+    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(PerCpuDataHeader)];
+  };
+#endif
+  PerCpu<PerCpuData> per_cpu_data_{PerCpuOptions().SetCpusPerShard(4)};
 };
 
 // Handles channelz bookkeeping for channels

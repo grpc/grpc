@@ -195,7 +195,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
-  Channel* channel() {
+  Channel* channel() const {
     GPR_DEBUG_ASSERT(channel_ != nullptr);
     return channel_.get();
   }
@@ -1049,8 +1049,8 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
-    gpr_log(GPR_DEBUG, "%s", StatusToString(error).c_str());
+    gpr_log(GPR_DEBUG, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
+            StatusToString(error).c_str());
   }
   if (is_client()) {
     std::string status_details;
@@ -1297,8 +1297,9 @@ void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s", completion_data_.notify_tag.tag,
-            error.ToString().c_str());
+    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
+            completion_data_.notify_tag.tag, error.ToString().c_str(),
+            grpc_transport_stream_op_batch_string(&op_, false).c_str());
   }
 
   if (op_.send_initial_metadata) {
@@ -1316,15 +1317,15 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
   }
+  if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
+    grpc_byte_buffer_destroy(*call->receiving_buffer_);
+    *call->receiving_buffer_ = nullptr;
+  }
   if (op_.recv_trailing_metadata) {
     // propagate cancellation to any interested children
     gpr_atm_rel_store(&call->received_final_op_atm_, 1);
     call->PropagateCancellationToChildren();
     error = absl::OkStatus();
-  }
-  if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
-    grpc_byte_buffer_destroy(*call->receiving_buffer_);
-    *call->receiving_buffer_ = nullptr;
   }
   batch_error_.set(absl::OkStatus());
 
@@ -2012,6 +2013,10 @@ class PromiseBasedCall : public Call,
     return failed_before_recv_message_.load(std::memory_order_relaxed);
   }
 
+  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+    return channel()->event_engine();
+  }
+
   using Call::arena;
 
  protected:
@@ -2151,14 +2156,9 @@ class PromiseBasedCall : public Call,
                    grpc_metadata_batch* batch);
 
   // At the end of the call run any finalization actions.
-  void RunFinalization(grpc_status_code status, const char* status_details) {
-    grpc_call_final_info final_info;
-    final_info.stats = final_stats_;
-    final_info.final_status = status;
-    final_info.error_string = status_details;
-    final_info.stats.latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), start_time());
-    finalization_.Run(&final_info);
+  void SetFinalizationStatus(grpc_status_code status, Slice status_details) {
+    final_message_ = std::move(status_details);
+    final_status_ = status;
   }
 
   std::string PresentAndCompletionText(const char* caption, bool has,
@@ -2309,6 +2309,19 @@ class PromiseBasedCall : public Call,
   void PartyOver() override {
     {
       ScopedContext ctx(this);
+      std::string message;
+      grpc_call_final_info final_info;
+      final_info.stats = final_stats_;
+      final_info.final_status = final_status_;
+      // TODO(ctiller): change type here so we don't need to copy this string.
+      final_info.error_string = nullptr;
+      if (!final_message_.empty()) {
+        message = std::string(final_message_.begin(), final_message_.end());
+        final_info.error_string = message.c_str();
+      }
+      final_info.stats.latency =
+          gpr_cycle_counter_sub(gpr_get_cycle_counter(), start_time());
+      finalization_.Run(&final_info);
       CancelRemainingParticipants();
       arena()->DestroyManagedNewObjects();
     }
@@ -2322,6 +2335,8 @@ class PromiseBasedCall : public Call,
   grpc_completion_queue* cq_;
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
+  Slice final_message_;
+  grpc_status_code final_status_;
   CallFinalization finalization_;
   // Current deadline.
   Mutex deadline_mu_;
@@ -3004,20 +3019,13 @@ void ClientPromiseBasedCall::StartRecvStatusOnClient(
             trailing_metadata->get(GrpcStatusMetadata())
                 .value_or(GRPC_STATUS_UNKNOWN);
         *op_args.status = status;
-        absl::string_view message_string;
+        Slice message_slice;
         if (Slice* message =
                 trailing_metadata->get_pointer(GrpcMessageMetadata())) {
-          message_string = message->as_string_view();
-          *op_args.status_details = message->Ref().TakeCSlice();
-        } else {
-          *op_args.status_details = grpc_empty_slice();
+          message_slice = message->Ref();
         }
-        if (message_string.empty()) {
-          RunFinalization(status, nullptr);
-        } else {
-          std::string error_string(message_string);
-          RunFinalization(status, error_string.c_str());
-        }
+        SetFinalizationStatus(status, message_slice.Ref());
+        *op_args.status_details = message_slice.TakeCSlice();
         if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
           *op_args.error_string =
               gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
@@ -3240,17 +3248,12 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
   if (server_initial_metadata_ != nullptr) {
     server_initial_metadata_->Close();
   }
-  absl::string_view message_string;
+  Slice message_slice;
   if (Slice* message = result->get_pointer(GrpcMessageMetadata())) {
-    message_string = message->as_string_view();
+    message_slice = message->Ref();
   }
   AcceptTransportStatsFromContext();
-  if (message_string.empty()) {
-    RunFinalization(status, nullptr);
-  } else {
-    std::string error_string(message_string);
-    RunFinalization(status, error_string.c_str());
-  }
+  SetFinalizationStatus(status, std::move(message_slice));
   set_completed();
   ResetDeadline();
   PropagateCancellationToChildren();

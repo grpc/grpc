@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -47,7 +45,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/fuzz_config_vars.pb.h"
-#include "test/core/util/osa_distance.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
@@ -68,6 +65,10 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
         factory;
   };
 
+  static const auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
+  static const auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
+  static const auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
+
   static const auto all_tests =
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
@@ -76,9 +77,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
 
-    auto only_suite = grpc_core::GetEnv("GRPC_TEST_FUZZER_SUITE");
-    auto only_test = grpc_core::GetEnv("GRPC_TEST_FUZZER_TEST");
-    auto only_config = grpc_core::GetEnv("GRPC_TEST_FUZZER_CONFIG");
     std::vector<Test> tests;
     for (const auto& test : all_tests) {
       if (test.config->feature_mask & FEATURE_MASK_DO_NOT_FUZZ) continue;
@@ -87,31 +85,26 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       if (only_config.has_value() && test.config->name != only_config.value()) {
         continue;
       }
+      std::string test_name =
+          absl::StrCat(test.suite, ".", test.name, "/", test.config->name);
       tests.emplace_back(
-          Test{absl::StrCat(test.suite, ".", test.name, "/", test.config->name),
-               [&test]() {
+          Test{std::move(test_name), [&test]() {
                  return std::unique_ptr<grpc_core::CoreEnd2endTest>(
                      test.make_test(test.config));
                }});
     }
-    GPR_ASSERT(!tests.empty());
+    std::sort(tests.begin(), tests.end(),
+              [](const Test& a, const Test& b) { return a.name < b.name; });
     return tests;
   }();
+  if (tests.empty()) return;
   static const auto only_experiment =
       grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
+  const int test_id = msg.test_id() % tests.size();
+
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
-  }
-
-  auto test_name =
-      absl::StrCat(msg.suite(), ".", msg.test(), "/", msg.config());
-  size_t best_test = 0;
-  for (size_t i = 0; i < tests.size(); i++) {
-    if (grpc_core::OsaDistance(test_name, tests[i].name) <
-        grpc_core::OsaDistance(test_name, tests[best_test].name)) {
-      best_test = i;
-    }
   }
 
   if (only_experiment.has_value() &&
@@ -124,17 +117,18 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       grpc_core::OverridesFromFuzzConfigVars(msg.config_vars());
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
-        options.max_delay_run_after = std::chrono::milliseconds(1500);
+        options.max_delay_run_after = std::chrono::milliseconds(500);
+        options.max_delay_write = std::chrono::milliseconds(50);
         return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
-  auto test = tests[best_test].factory();
-  test->SetCrashOnStepFailure();
+  auto test = tests[test_id].factory();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {
         static_cast<FuzzingEventEngine*>(ee.get())->TickUntilIdle();

@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetrySendOpFails"
-config: "Chttp2FakeSecurityFullstack"

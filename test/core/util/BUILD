@@ -311,6 +311,7 @@ grpc_cc_library(
         "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
+        "//src/core:delegating_helper",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
         "//src/core:json",
@@ -419,5 +420,40 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//src/core:experiments",
+    ],
+)
+
+grpc_cc_library(
+    name = "audit_logging_utils",
+    srcs = ["audit_logging_utils.cc"],
+    hdrs = ["audit_logging_utils.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc",
+        "//src/core:json_writer",
+    ],
+)
+
+grpc_proto_library(
+    name = "fuzzing_channel_args_proto",
+    srcs = ["fuzzing_channel_args.proto"],
+    has_services = False,
+)
+
+grpc_cc_library(
+    name = "fuzzing_channel_args",
+    srcs = ["fuzzing_channel_args.cc"],
+    hdrs = ["fuzzing_channel_args.h"],
+    deps = [
+        "fuzzing_channel_args_proto",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:resource_quota",
     ],
 )

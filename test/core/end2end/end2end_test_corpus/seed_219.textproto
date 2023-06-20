@@ -1,3 +1,0 @@
-suite: "RetryTest"
-test: "RetryRecvMessageReplay"
-config: "Chttp2FakeSecurityFullstack"

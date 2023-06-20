@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 32.0.0
+PROJECT_NUMBER         = 33.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1903,6 +1903,8 @@ src/core/lib/event_engine/thread_pool/thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
@@ -1978,6 +1980,7 @@ src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
+src/core/lib/gprpp/if_list.h \
 src/core/lib/gprpp/linux/env.cc \
 src/core/lib/gprpp/load_file.cc \
 src/core/lib/gprpp/load_file.h \
@@ -1991,6 +1994,7 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
@@ -2015,6 +2019,7 @@ src/core/lib/gprpp/time_averaged_stats.cc \
 src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
+src/core/lib/gprpp/type_list.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/validation_errors.cc \
 src/core/lib/gprpp/validation_errors.h \
@@ -2171,6 +2176,8 @@ src/core/lib/iomgr/timer_manager.h \
 src/core/lib/iomgr/unix_sockets_posix.cc \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+src/core/lib/iomgr/vsock.cc \
+src/core/lib/iomgr/vsock.h \
 src/core/lib/iomgr/wakeup_fd_eventfd.cc \
 src/core/lib/iomgr/wakeup_fd_nospecial.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -2188,6 +2195,7 @@ src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
 src/core/lib/json/json_writer.h \
+src/core/lib/load_balancing/delegating_helper.h \
 src/core/lib/load_balancing/lb_policy.cc \
 src/core/lib/load_balancing/lb_policy.h \
 src/core/lib/load_balancing/lb_policy_factory.h \
@@ -2264,6 +2272,8 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/authorization/stdout_logger.cc \
+src/core/lib/security/authorization/stdout_logger.h \
 src/core/lib/security/certificate_provider/certificate_provider_factory.h \
 src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
 src/core/lib/security/certificate_provider/certificate_provider_registry.h \

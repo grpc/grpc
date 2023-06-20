@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 
 namespace grpc {
 namespace testing {
@@ -131,49 +132,30 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     LoadReportTracker* load_report_tracker_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     BackendMetricsLbPolicy> {
    public:
     explicit Helper(RefCountedPtr<BackendMetricsLbPolicy> parent)
-        : parent_(std::move(parent)) {}
+        : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
         grpc_core::ServerAddress address,
         const grpc_core::ChannelArgs& args) override {
-      auto subchannel = parent_->channel_control_helper()->CreateSubchannel(
-          std::move(address), args);
+      auto subchannel =
+          parent_helper()->CreateSubchannel(std::move(address), args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
           grpc_core::Duration::Seconds(1),
-          std::make_unique<OobMetricWatcher>(parent_->load_report_tracker_)));
+          std::make_unique<OobMetricWatcher>(parent()->load_report_tracker_)));
       return subchannel;
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override {
-      parent_->channel_control_helper()->UpdateState(
+      parent_helper()->UpdateState(
           state, status,
           MakeRefCounted<Picker>(std::move(picker),
-                                 parent_->load_report_tracker_));
+                                 parent()->load_report_tracker_));
     }
-
-    void RequestReresolution() override {
-      parent_->channel_control_helper()->RequestReresolution();
-    }
-
-    absl::string_view GetAuthority() override {
-      return parent_->channel_control_helper()->GetAuthority();
-    }
-
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return parent_->channel_control_helper()->GetEventEngine();
-    }
-
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {
-      parent_->channel_control_helper()->AddTraceEvent(severity, message);
-    }
-
-   private:
-    RefCountedPtr<BackendMetricsLbPolicy> parent_;
   };
 
   class SubchannelCallTracker : public SubchannelCallTrackerInterface {
@@ -236,21 +218,22 @@ void RegisterBackendMetricsLbPolicy(CoreConfiguration::Builder* builder) {
 
 void LoadReportTracker::RecordPerRpcLoadReport(
     const grpc_core::BackendMetricData* backend_metric_data) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.emplace_back(
       BackendMetricDataToOrcaLoadReport(backend_metric_data));
 }
 
 void LoadReportTracker::RecordOobLoadReport(
     const grpc_core::BackendMetricData& oob_metric_data) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   oob_load_reports_.emplace_back(
       *BackendMetricDataToOrcaLoadReport(&oob_metric_data));
+  load_reports_cv_.Signal();
 }
 
 absl::optional<LoadReportTracker::LoadReportEntry>
 LoadReportTracker::GetNextLoadReport() {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   if (per_rpc_load_reports_.empty()) {
     return absl::nullopt;
   }
@@ -262,16 +245,17 @@ LoadReportTracker::GetNextLoadReport() {
 LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     const std::function<bool(const TestOrcaReport&)>& predicate,
     absl::Duration poll_timeout, size_t max_attempts) {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   // This condition will be called under lock
-  auto condition = [&]() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    return !oob_load_reports_.empty();
-  };
   for (size_t i = 0; i < max_attempts; i++) {
-    if (!load_reports_mu_.AwaitWithTimeout(absl::Condition(&condition),
-                                           poll_timeout)) {
-      return absl::nullopt;
-    }
+    auto deadline = absl::Now() + poll_timeout;
+    // loop to handle spurious wakeups.
+    do {
+      if (absl::Now() >= deadline) {
+        return absl::nullopt;
+      }
+      load_reports_cv_.WaitWithDeadline(&load_reports_mu_, deadline);
+    } while (oob_load_reports_.empty());
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
@@ -283,7 +267,7 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
 }
 
 void LoadReportTracker::ResetCollectedLoadReports() {
-  absl::MutexLock lock(&load_reports_mu_);
+  grpc_core::MutexLock lock(&load_reports_mu_);
   per_rpc_load_reports_.clear();
   oob_load_reports_.clear();
 }

@@ -24,26 +24,32 @@ import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
 sys.path.append(
-    os.path.join(os.path.dirname(sys.argv[0]), '..', 'profiling',
-                 'microbenchmarks', 'bm_diff'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        "..",
+        "profiling",
+        "microbenchmarks",
+        "bm_diff",
+    )
+)
 import bm_constants
 
-flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
+flamegraph_dir = os.path.join(os.path.expanduser("~"), "FlameGraph")
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-if not os.path.exists('reports'):
-    os.makedirs('reports')
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
+if not os.path.exists("reports"):
+    os.makedirs("reports")
 
 start_port_server.start_port_server()
 
 
 def fnize(s):
-    out = ''
+    out = ""
     for c in s:
-        if c in '<>, /':
-            if len(out) and out[-1] == '_':
+        if c in "<>, /":
+            if len(out) and out[-1] == "_":
                 continue
-            out += '_'
+            out += "_"
         else:
             out += c
     return out
@@ -66,8 +72,10 @@ def heading(name):
 
 def link(txt, tgt):
     global index_html
-    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (html.escape(
-        tgt, quote=True), html.escape(txt))
+    index_html += '<p><a href="%s">%s</a></p>\n' % (
+        html.escape(tgt, quote=True),
+        html.escape(txt),
+    )
 
 
 def text(txt):
@@ -77,30 +85,33 @@ def text(txt):
 
 def _bazel_build_benchmark(bm_name, cfg):
     """Build given benchmark with bazel"""
-    subprocess.check_call([
-        'tools/bazel', 'build',
-        '--config=%s' % cfg,
-        '//test/cpp/microbenchmarks:%s' % bm_name
-    ])
+    subprocess.check_call(
+        [
+            "tools/bazel",
+            "build",
+            "--config=%s" % cfg,
+            "//test/cpp/microbenchmarks:%s" % bm_name,
+        ]
+    )
 
 
 def run_summary(bm_name, cfg, base_json_name):
     _bazel_build_benchmark(bm_name, cfg)
     cmd = [
-        'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
-        '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
-        '--benchmark_out_format=json'
+        "bazel-bin/test/cpp/microbenchmarks/%s" % bm_name,
+        "--benchmark_out=%s.%s.json" % (base_json_name, cfg),
+        "--benchmark_out_format=json",
     ]
     if args.summary_time is not None:
-        cmd += ['--benchmark_min_time=%d' % args.summary_time]
-    return subprocess.check_output(cmd).decode('UTF-8')
+        cmd += ["--benchmark_min_time=%d" % args.summary_time]
+    return subprocess.check_output(cmd).decode("UTF-8")
 
 
 def collect_summary(bm_name, args):
     # no counters, run microbenchmark and add summary
     # both to HTML report and to console.
-    nocounters_heading = 'Summary: %s' % bm_name
-    nocounters_summary = run_summary(bm_name, 'opt', bm_name)
+    nocounters_heading = "Summary: %s" % bm_name
+    nocounters_summary = run_summary(bm_name, "opt", bm_name)
     heading(nocounters_heading)
     text(nocounters_summary)
     print(nocounters_heading)
@@ -108,34 +119,41 @@ def collect_summary(bm_name, args):
 
 
 collectors = {
-    'summary': collect_summary,
+    "summary": collect_summary,
 }
 
-argp = argparse.ArgumentParser(description='Collect data from microbenchmarks')
-argp.add_argument('-c',
-                  '--collect',
-                  choices=sorted(collectors.keys()),
-                  nargs='*',
-                  default=sorted(collectors.keys()),
-                  help='Which collectors should be run against each benchmark')
-argp.add_argument('-b',
-                  '--benchmarks',
-                  choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-                  default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-                  nargs='+',
-                  type=str,
-                  help='Which microbenchmarks should be run')
+argp = argparse.ArgumentParser(description="Collect data from microbenchmarks")
 argp.add_argument(
-    '--bq_result_table',
-    default='',
-    type=str,
-    help='Upload results from summary collection to a specified bigquery table.'
+    "-c",
+    "--collect",
+    choices=sorted(collectors.keys()),
+    nargs="*",
+    default=sorted(collectors.keys()),
+    help="Which collectors should be run against each benchmark",
 )
 argp.add_argument(
-    '--summary_time',
+    "-b",
+    "--benchmarks",
+    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+    default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+    nargs="+",
+    type=str,
+    help="Which microbenchmarks should be run",
+)
+argp.add_argument(
+    "--bq_result_table",
+    default="",
+    type=str,
+    help=(
+        "Upload results from summary collection to a specified bigquery table."
+    ),
+)
+argp.add_argument(
+    "--summary_time",
     default=None,
     type=int,
-    help='Minimum time to run benchmarks for the summary collection')
+    help="Minimum time to run benchmarks for the summary collection",
+)
 args = argp.parse_args()
 
 try:
@@ -143,8 +161,8 @@ try:
         for bm_name in args.benchmarks:
             collectors[collect](bm_name, args)
 finally:
-    if not os.path.exists('reports'):
-        os.makedirs('reports')
+    if not os.path.exists("reports"):
+        os.makedirs("reports")
     index_html += "</body>\n</html>\n"
-    with open('reports/index.html', 'w') as f:
+    with open("reports/index.html", "w") as f:
         f.write(index_html)

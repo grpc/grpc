@@ -1,6 +1,0 @@
-suite: "CoreClientChannelTest"
-test: "CallHostOverride"
-config: "Chttp2SimpleSslWithOauth2FullstackTls13"
-config_vars {
-  experiments: "promise_based_server_call"
-}

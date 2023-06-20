@@ -28,7 +28,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -36,6 +35,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -171,7 +171,7 @@ class PosixEngineListenerImpl
   friend class AsyncConnectionAcceptor;
   // The mutex ensures thread safety when multiple threads try to call Bind
   // and Start in parallel.
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   PosixEventPoller* poller_;
   PosixTcpOptions options_;
   std::shared_ptr<EventEngine> engine_;
