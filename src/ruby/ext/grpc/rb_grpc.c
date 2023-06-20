@@ -289,14 +289,16 @@ void grpc_ruby_fork_guard() {
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   if (g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "grpc cannot be used between calls to GRPC.prefork and GRPC.postfork_child or GRPC.postfork_parent");
+             "grpc cannot be used between calls to GRPC.prefork and "
+             "GRPC.postfork_child or GRPC.postfork_parent");
   }
   if (!grpc_ruby_initial_pid()) {
     if (g_enable_fork_support) {
-      // Only way we can get here is by enabling for support and forking but not calling
-      // prefork
+      // Only way we can get here is by enabling for support and forking but not
+      // calling prefork
       rb_raise(rb_eRuntimeError,
-               "grpc is in a broken state: GRPC.prefork must be called before calling fork from a process using grpc");
+               "grpc is in a broken state: GRPC.prefork must be called before "
+               "calling fork from a process using grpc");
     } else {
       rb_raise(rb_eRuntimeError,
                "grpc cannot be used before and after forking unless the "
@@ -336,8 +338,9 @@ void grpc_ruby_init() {
   rb_mutex_unlock(g_bg_thread_init_rb_mu);
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - g_fork_support_enabled=%d prev g_grpc_ruby_init_count:%" PRId64,
-          g_fork_support_enabled, g_grpc_ruby_init_count++);
+          "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=%d prev "
+          "g_grpc_ruby_init_count:%" PRId64,
+          g_enable_fork_support, g_grpc_ruby_init_count++);
 }
 
 void grpc_ruby_shutdown() {
@@ -377,7 +380,9 @@ static VALUE grpc_rb_prefork(VALUE self) {
   }
   if (!grpc_ruby_initial_thread()) {
     rb_raise(rb_eRuntimeError,
-             "GRPC.prefork and fork need to be called from the same thread that GRPC was initialized on (GRPC lazy-initializes when when the first GRPC object is created");
+             "GRPC.prefork and fork need to be called from the same thread "
+             "that GRPC was initialized on (GRPC lazy-initializes when when "
+             "the first GRPC object is created");
   }
   g_grpc_rb_prefork_pending = true;
   if (g_bg_thread_init_done) {
@@ -392,11 +397,13 @@ static VALUE grpc_rb_prefork(VALUE self) {
 static VALUE grpc_rb_postfork_child(VALUE self) {
   if (!g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "GRPC::postfork_child can only be called once following a GRPC::prefork");
+             "GRPC::postfork_child can only be called once following a "
+             "GRPC::prefork");
   }
   if (grpc_ruby_initial_pid()) {
     rb_raise(rb_eRuntimeError,
-             "GRPC.postfork_child must be called only from the child process after a fork");
+             "GRPC.postfork_child must be called only from the child process "
+             "after a fork");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_reset_init_state();
@@ -408,15 +415,18 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
   // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
   if (!g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "GRPC::postfork_parent can only be called once following a GRPC::prefork");
+             "GRPC::postfork_parent can only be called once following a "
+             "GRPC::prefork");
   }
   if (!grpc_ruby_initial_thread()) {
     rb_raise(rb_eRuntimeError,
-             "GRPC.postfork_parent needs to be called from the same thread that GRPC.prefork (and fork) was called from");
+             "GRPC.postfork_parent needs to be called from the same thread "
+             "that GRPC.prefork (and fork) was called from");
   }
   if (!grpc_ruby_initial_pid()) {
     rb_raise(rb_eRuntimeError,
-             "GRPC.postfork_parent must be called only from the parent process after a fork");
+             "GRPC.postfork_parent must be called only from the parent process "
+             "after a fork");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();
