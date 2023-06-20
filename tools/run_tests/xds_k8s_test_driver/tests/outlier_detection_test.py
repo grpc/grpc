@@ -59,7 +59,8 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         if cls.lang_spec.client_lang == _Lang.JAVA:
             return
 
-        # gRPC CPP implemented server "error-code-" rpc-behavior in v1.55.x.
+        # gRPC CPP implemented server "hostname" rpc-behavior in v1.57.x,
+        # see https://github.com/grpc/grpc/pull/33446.
         if (
             cls.lang_spec.client_lang == _Lang.CPP
             and cls.lang_spec.version_gte("v1.57.x")
