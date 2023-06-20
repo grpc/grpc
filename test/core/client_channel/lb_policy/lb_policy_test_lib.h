@@ -598,7 +598,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Constructs an update containing a list of addresses.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
-      RefCountedPtr<LoadBalancingPolicy::Config> config) {
+      RefCountedPtr<LoadBalancingPolicy::Config> config = nullptr) {
     LoadBalancingPolicy::UpdateArgs update;
     update.addresses.emplace();
     for (const absl::string_view& address : addresses) {
