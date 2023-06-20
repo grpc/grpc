@@ -229,12 +229,17 @@ static bool g_enable_fork_support;
 #if GPR_WINDOWS
 static void grpc_ruby_basic_init(void) {}
 static bool grpc_ruby_forked_after_init(void) { return false; }
+static bool grpc_ruby_on_initial_thread(void) { return true; }
+static bool grpc_ruby_reset_initial_thread(void) {}
 #else
-static pid_t grpc_init_pid;
+static pid_t g_init_pid;
+static pid_t g_init_tid;
 
 static void grpc_ruby_basic_init(void) {
-  GPR_ASSERT(grpc_init_pid == 0);
-  grpc_init_pid = getpid();
+  GPR_ASSERT(g_init_pid == 0);
+  g_init_pid = getpid();
+  GPR_ASSERT(g_init_tid == 0);
+  g_init_tid = gettid();
   // TODO(apolcyn): ideally, we should share logic with C-core
   // for determining whether or not fork support is enabled, rather
   // than parsing the environment variable ourselves.
@@ -246,8 +251,16 @@ static void grpc_ruby_basic_init(void) {
 }
 
 static bool grpc_ruby_forked_after_init(void) {
-  GPR_ASSERT(grpc_init_pid != 0);
-  return grpc_init_pid != getpid();
+  GPR_ASSERT(g_init_pid != 0);
+  return g_init_pid != getpid();
+}
+
+static bool grpc_ruby_on_initial_thread(void) {
+  return gettid() == g_init_tid;
+}
+
+static bool grpc_ruby_reset_initial_thread(void) {
+  g_init_tid = gettid();
 }
 #endif
 
@@ -343,8 +356,12 @@ static VALUE grpc_rb_prefork(VALUE self) {
   }
   if (g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "GRPC::prefork already called without a matching "
-             "GRPC::postfork_{parent,child}");
+             "GRPC.prefork already called without a matching "
+             "GRPC.postfork_{parent,child}");
+  }
+  if (!grpc_ruby_on_initial_thread()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.prefork and fork need to be called from the same thread that GRPC was initialized on (GRPC lazy-initializes when when the first GRPC object is created");
   }
   g_grpc_rb_prefork_pending = true;
   if (g_bg_thread_init_done) {
@@ -359,9 +376,10 @@ static VALUE grpc_rb_prefork(VALUE self) {
 static VALUE grpc_rb_postfork_child(VALUE self) {
   if (!g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "GRPC::postfork_child can only be called after GRPC::prefork");
+             "GRPC::postfork_child can only be called once following a GRPC::prefork");
   }
   g_grpc_rb_prefork_pending = false;
+  grpc_ruby_reset_initial_thread();
   grpc_ruby_init_threads();
   return Qnil;
 }
@@ -370,7 +388,11 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
   // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
   if (!g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "GRPC::postfork_parent can only be called after GRPC::prefork");
+             "GRPC::postfork_parent can only be called once following a GRPC::prefork");
+  }
+  if (!grpc_ruby_on_initial_thread()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.postfork_parent needs to be called from the same thread that GRPC.prefork (and fork) was called from");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();

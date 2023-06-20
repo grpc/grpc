@@ -39,7 +39,7 @@ def expect_error_for(action)
   got_exception = false
   begin
     yield
-  rescue RuntimeException => e
+  rescue RuntimeError => e
     got_exception = true
     STDERR.puts "got (expected) error: #{e}"
     return
