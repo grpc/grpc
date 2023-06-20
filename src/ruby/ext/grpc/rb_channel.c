@@ -420,7 +420,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
 
 static void grpc_rb_channel_maybe_recreate_channel_after_fork(
     grpc_rb_channel* wrapper, VALUE target) {
-  // TODO(apolcyn): check if fork support is enabled here.
+  // TODO(apolcyn): maybe check if fork support is enabled here.
   // The only way we can get bg->channel_destroyed without bg itself being
   // NULL is if we destroyed the channel during GRPC::prefork.
   bg_watched_channel* bg = wrapper->bg_wrapped;
@@ -505,13 +505,9 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
     return Qnil;
   }
   // TODO(apolcyn): only do this check if fork support is enabled
-  fprintf(stderr, "apolcyn grpc_rb_channel_create_call acquire lock\n");
   rb_mutex_lock(rb_ivar_get(self, id_channel_recreation_mu));
-  fprintf(stderr,
-          "apolcyn grpc_rb_channel_create_call maybe recreate channel\n");
   grpc_rb_channel_maybe_recreate_channel_after_fork(
       wrapper, rb_ivar_get(self, id_target));
-  fprintf(stderr, "apolcyn grpc_rb_channel_create_call release lock\n");
   rb_mutex_unlock(rb_ivar_get(self, id_channel_recreation_mu));
 
   cq = grpc_completion_queue_create_for_pluck(NULL);

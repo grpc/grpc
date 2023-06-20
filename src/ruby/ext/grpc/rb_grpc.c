@@ -247,7 +247,6 @@ static void grpc_ruby_basic_init(void) {
   if (res != NULL && strcmp(res, "1") == 0) {
     g_enable_fork_support = true;
   }
-  fprintf(stderr, "result of fork support check: |%s|\n", res);
 }
 
 static bool grpc_ruby_initial_pid(void) {
@@ -337,14 +336,17 @@ void grpc_ruby_init() {
   rb_mutex_unlock(g_bg_thread_init_rb_mu);
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
-          g_grpc_ruby_init_count++);
+          "GRPC_RUBY: grpc_ruby_init - g_fork_support_enabled=%d prev g_grpc_ruby_init_count:%" PRId64,
+          g_fork_support_enabled, g_grpc_ruby_init_count++);
 }
 
 void grpc_ruby_shutdown() {
   GPR_ASSERT(g_grpc_ruby_init_count > 0);
   // TODO(apolcyn): call grpc_shutdown() unconditionally?
-  if (grpc_ruby_initial_pid()) grpc_shutdown();
+  // So far we've been skipping when forking without fork support enabled.
+  if (grpc_ruby_initial_pid() || g_enable_fork_support) {
+    grpc_shutdown();
+  }
   gpr_log(
       GPR_DEBUG,
       "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
@@ -360,7 +362,6 @@ void grpc_ruby_shutdown() {
 // calling GRPC::prefork, and this needs to remain until after the subsequent
 // call to GRPC::postfork_{parent,child} completes.
 static VALUE grpc_rb_prefork(VALUE self) {
-  // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
   gpr_once_init(
       &g_once_init,
       grpc_ruby_basic_init);  // maybe be the first time called into gRPC
