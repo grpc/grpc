@@ -526,8 +526,11 @@ void PosixEventEngine::PosixDNSResolver::LookupHostname(
     });
     return;
   }
-  HostnameQuery::Start(event_engine_.get(), ares_resolver_.get(), name,
-                       default_port, std::move(on_resolve));
+  ares_resolver_->LookupHostname(
+      name, default_port,
+      [on_resolve = std::move(on_resolve)](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+              result) mutable { on_resolve(std::move(result)); });
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,

@@ -15,6 +15,8 @@
 
 #include "ares_resolver.h"
 
+#include <sys/socket.h>
+
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -117,13 +119,9 @@ struct QueryArg {
 };
 
 struct HostnameQueryArg : public QueryArg {
-  HostnameQueryArg(AresResolver* ar, int id, absl::string_view name, int p,
-                   int family)
-      : QueryArg(ar, id, name),
-        port(p),
-        type(family == AF_INET ? "A" : "AAAA") {}
+  HostnameQueryArg(AresResolver* ar, int id, absl::string_view name, int p)
+      : QueryArg(ar, id, name), port(p) {}
   int port;
-  const char* type;
 };
 
 }  // namespace
@@ -386,15 +384,70 @@ void AresResolver::OnAresBackupPollAlarm() {
 }
 
 void AresResolver::LookupHostname(
-    absl::string_view name, int port, int family,
+    absl::string_view name, absl::string_view default_port,
     EventEngine::DNSResolver::LookupHostnameCallback callback) {
+  absl::string_view host;
+  absl::string_view port_s;
+  if (!grpc_core::SplitHostPort(name, &host, &port_s)) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::InvalidArgumentError(absl::StrCat(
+             "Unparseable name: ", name))]() mutable { callback(status); });
+    return;
+  }
+  GPR_ASSERT(!host.empty());
+  if (port_s.empty()) {
+    if (default_port.empty()) {
+      event_engine_->Run([callback = std::move(callback),
+                          status = absl::InvalidArgumentError(absl::StrFormat(
+                              "No port in name %s or default_port argument",
+                              name.data()))]() mutable { callback(status); });
+      return;
+    }
+    port_s = default_port;
+  }
+  int port = 0;
+  if (port_s == "http") {
+    port = 80;
+  } else if (port_s == "https") {
+    port = 443;
+  } else if (!absl::SimpleAtoi(port_s, &port)) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "Failed to parse port in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
+  // TODO(yijiem): Change this when refactoring code in
+  // src/core/lib/address_utils to use EventEngine::ResolvedAddress.
+  grpc_resolved_address addr;
+  const std::string hostport = grpc_core::JoinHostPort(host, port);
+  if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
+                               false /* log errors */) ||
+      grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
+                               false /* log errors */)) {
+    // Early out if the target is an ipv4 or ipv6 literal.
+    std::vector<EventEngine::ResolvedAddress> result;
+    result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
+    event_engine_->Run(
+        [callback = std::move(callback), result = std::move(result)]() mutable {
+          callback(std::move(result));
+        });
+    return;
+  }
   grpc_core::MutexLock lock(&mutex_);
   GPR_ASSERT(initialized_);
   callback_map_.emplace(++id_, std::move(callback));
-  auto* resolver_arg = new HostnameQueryArg(this, id_, name, port, family);
-  ares_gethostbyname(channel_, std::string(name).c_str(), family,
-                     &AresResolver::OnHostbynameDoneLocked,
-                     static_cast<void*>(resolver_arg));
+  auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
+  if (IsIpv6LoopbackAvailable()) {
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
+                       &AresResolver::OnHostbynameDoneLocked,
+                       static_cast<void*>(resolver_arg));
+  } else {
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
+                       &AresResolver::OnHostbynameDoneLocked,
+                       static_cast<void*>(resolver_arg));
+  }
   WorkLocked();
   MaybeStartTimerLocked();
 }
@@ -480,9 +533,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
       std::move(nh.mapped()));
   if (status != ARES_SUCCESS) {
-    std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=%s name=%s: %s",
-        hostname_qa->type, hostname_qa->qname.c_str(), ares_strerror(status));
+    std::string error_msg =
+        absl::StrFormat("c-ares status is not ARES_SUCCESS name=%s: %s",
+                        hostname_qa->qname.c_str(), ares_strerror(status));
     GRPC_ARES_RESOLVER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
                                  ares_resolver, error_msg.c_str());
     ares_resolver->event_engine_->Run(
@@ -640,151 +693,6 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       [callback = std::move(callback), result = std::move(result)]() mutable {
         callback(std::move(result));
       });
-}
-
-void HostnameQuery::Start(
-    EventEngine* event_engine, AresResolver* ares_resolver,
-    absl::string_view name, absl::string_view default_port,
-    EventEngine::DNSResolver::LookupHostnameCallback on_resolve) {
-  absl::string_view host;
-  absl::string_view port_s;
-  if (!grpc_core::SplitHostPort(name, &host, &port_s)) {
-    event_engine->Run(
-        [on_resolve = std::move(on_resolve),
-         status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { on_resolve(status); });
-    return;
-  }
-  GPR_ASSERT(!host.empty());
-  if (port_s.empty()) {
-    if (default_port.empty()) {
-      event_engine->Run([on_resolve = std::move(on_resolve),
-                         status = absl::InvalidArgumentError(absl::StrFormat(
-                             "No port in name %s or default_port argument",
-                             name.data()))]() mutable { on_resolve(status); });
-      return;
-    }
-    port_s = default_port;
-  }
-  int port = 0;
-  if (port_s == "http") {
-    port = 80;
-  } else if (port_s == "https") {
-    port = 443;
-  } else if (!absl::SimpleAtoi(port_s, &port)) {
-    event_engine->Run([on_resolve = std::move(on_resolve),
-                       status = absl::InvalidArgumentError(absl::StrCat(
-                           "Failed to parse port in name: ", name))]() mutable {
-      on_resolve(status);
-    });
-    return;
-  }
-  // TODO(yijiem): Change this when refactoring code in
-  // src/core/lib/address_utils to use EventEngine::ResolvedAddress.
-  grpc_resolved_address addr;
-  const std::string hostport = grpc_core::JoinHostPort(host, port);
-  if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
-                               false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
-                               false /* log errors */)) {
-    // Early out if the target is an ipv4 or ipv6 literal.
-    Result result;
-    result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
-    event_engine->Run([on_resolve = std::move(on_resolve),
-                       result = std::move(result)]() mutable {
-      on_resolve(std::move(result));
-    });
-    return;
-  }
-  // Creates a self-deleting query object.
-  auto* query = new HostnameQuery(std::move(on_resolve));
-  if (IsIpv6LoopbackAvailable()) {
-    ++query->pending_requests_;
-    ares_resolver->LookupHostname(host, port, AF_INET6,
-                                  [query](absl::StatusOr<Result> result) {
-                                    query->MaybeOnResolve(std::move(result));
-                                  });
-  }
-  ares_resolver->LookupHostname(host, port, AF_INET,
-                                [query](absl::StatusOr<Result> result) {
-                                  query->MaybeOnResolve(std::move(result));
-                                });
-}
-
-HostnameQuery::HostnameQuery(
-    EventEngine::DNSResolver::LookupHostnameCallback on_resolve)
-    : pending_requests_(1), on_resolve_(std::move(on_resolve)) {}
-
-void HostnameQuery::MaybeOnResolve(absl::StatusOr<Result> result) {
-  bool done = false;
-  {
-    grpc_core::MutexLock lock(&mutex_);
-    if (--pending_requests_ == 0) {
-      // This is the last one.
-      done = true;
-    }
-    if (!result.ok()) {
-      if (IsDefaultStatusOr(result_)) {
-        // Sets with first error.
-        result_ = result.status();
-      }
-    } else {
-      if (result_.ok()) {
-        result_->insert(result_->end(), result->begin(), result->end());
-      } else {
-        // Overrides the existing error.
-        result_ = std::move(*result);
-      }
-    }
-  }
-  if (done) {
-    MaybeSortResolvedAddresses();
-    on_resolve_(std::move(result_));
-    delete this;
-  }
-}
-
-void HostnameQuery::LogResolvedAddressesListLocked(
-    absl::string_view input_output_str) {
-  GPR_ASSERT(result_.ok());
-  for (size_t i = 0; i < result_->size(); i++) {
-    auto addr_str = ResolvedAddressToString((*result_)[i]);
-    gpr_log(GPR_INFO,
-            "(EventEngine ares_resolver) c-ares address sorting: "
-            "%s[%" PRIuPTR "]=%s",
-            input_output_str.data(), i,
-            addr_str.ok() ? addr_str->c_str()
-                          : addr_str.status().ToString().c_str());
-  }
-}
-
-void HostnameQuery::MaybeSortResolvedAddresses() {
-  if (!result_.ok()) {
-    return;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver_address_sorting)) {
-    LogResolvedAddressesListLocked("input");
-  }
-  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
-      gpr_zalloc(sizeof(address_sorting_sortable) * result_->size()));
-  for (size_t i = 0; i < result_->size(); i++) {
-    sortables[i].user_data = &(*result_)[i];
-    memcpy(&sortables[i].dest_addr.addr, (*result_)[i].address(),
-           (*result_)[i].size());
-    sortables[i].dest_addr.len = (*result_)[i].size();
-  }
-  address_sorting_rfc_6724_sort(sortables, result_->size());
-  HostnameQuery::Result sorted;
-  sorted.reserve(result_->size());
-  for (size_t i = 0; i < result_->size(); i++) {
-    sorted.emplace_back(
-        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
-  }
-  gpr_free(sortables);
-  result_ = std::move(sorted);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver_address_sorting)) {
-    LogResolvedAddressesListLocked("output");
-  }
 }
 
 }  // namespace experimental

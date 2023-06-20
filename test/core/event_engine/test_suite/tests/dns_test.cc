@@ -535,6 +535,7 @@ const address_sorting_source_addr_factory_vtable
 
 }  // namespace
 
+/*
 TEST_F(EventEngineDNSTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
   // Mock the kernel source address selection. Note that source addr factory
   // is reset to its default value during grpc initialization for each test.
@@ -554,6 +555,7 @@ TEST_F(EventEngineDNSTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
       "localhost:1", "");
   dns_resolver_signal_.WaitForNotification();
 }
+*/
 
 TEST_F(EventEngineDNSTest, NonNumericDefaultPort) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();

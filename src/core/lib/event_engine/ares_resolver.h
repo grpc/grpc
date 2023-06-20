@@ -52,30 +52,6 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
     }                                                                        \
   } while (0)
 
-class AresResolver;
-
-class HostnameQuery {
- public:
-  static void Start(
-      EventEngine* event_engine, AresResolver* ares_resolver,
-      absl::string_view name, absl::string_view default_port,
-      EventEngine::DNSResolver::LookupHostnameCallback on_resolve);
-
- private:
-  using Result = std::vector<EventEngine::ResolvedAddress>;
-
-  HostnameQuery(EventEngine::DNSResolver::LookupHostnameCallback on_resolve);
-
-  void MaybeOnResolve(absl::StatusOr<Result> result);
-  void LogResolvedAddressesListLocked(absl::string_view input_output_str);
-  void MaybeSortResolvedAddresses();
-
-  grpc_core::Mutex mutex_;
-  int pending_requests_ = 0;
-  absl::StatusOr<Result> result_;
-  EventEngine::DNSResolver::LookupHostnameCallback on_resolve_;
-};
-
 class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
  public:
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
@@ -87,7 +63,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   void Orphan() override;
 
   void LookupHostname(
-      absl::string_view name, int port, int family,
+      absl::string_view name, absl::string_view default_port,
       EventEngine::DNSResolver::LookupHostnameCallback callback);
   void LookupSRV(absl::string_view name,
                  EventEngine::DNSResolver::LookupSRVCallback callback);
