@@ -2,7 +2,7 @@
 coverage==4.5.4
 cython==0.29.21
 protobuf>=3.5.0.post1, < 4.0dev
-wheel==0.36.2
+wheel==0.38.1
 google-auth==1.24.0
 oauth2client==4.1.0
 requests==2.25.1
@@ -15,3 +15,4 @@ gevent==22.08.0
 zope.event==4.5.0
 setuptools==44.1.1
 xds-protos==0.0.11
+opencensus==0.10.0

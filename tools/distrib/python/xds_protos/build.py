@@ -22,89 +22,106 @@ import pkg_resources
 # We might not want to compile all the protos
 EXCLUDE_PROTO_PACKAGES_LIST = [
     # Requires extra dependency to Prometheus protos
-    'envoy/service/metrics/v2',
-    'envoy/service/metrics/v3',
-    'envoy/service/metrics/v4alpha',
+    "envoy/service/metrics/v2",
+    "envoy/service/metrics/v3",
+    "envoy/service/metrics/v4alpha",
 ]
 
 # Compute the pathes
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
-GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, '..', '..', '..', '..'))
-XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'envoy-api')
-UDPA_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'udpa')
-GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'googleapis')
-VALIDATE_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'protoc-gen-validate')
-OPENCENSUS_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party',
-                                     'opencensus-proto', 'src')
-OPENTELEMETRY_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party',
-                                        'opentelemetry')
+GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
+XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
+UDPA_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "udpa")
+GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
+VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
+OPENCENSUS_PROTO_ROOT = os.path.join(
+    GRPC_ROOT, "third_party", "opencensus-proto", "src"
+)
+OPENTELEMETRY_PROTO_ROOT = os.path.join(
+    GRPC_ROOT, "third_party", "opentelemetry"
+)
 WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename(
-    'grpc_tools', '_proto')
+    "grpc_tools", "_proto"
+)
 OUTPUT_PATH = WORK_DIR
 
 # Prepare the test file generation
-TEST_FILE_NAME = 'generated_file_import_test.py'
+TEST_FILE_NAME = "generated_file_import_test.py"
 TEST_IMPORTS = []
 
 # The pkgutil-style namespace packaging __init__.py
-PKGUTIL_STYLE_INIT = "__path__ = __import__('pkgutil').extend_path(__path__, __name__)\n"
+PKGUTIL_STYLE_INIT = (
+    "__path__ = __import__('pkgutil').extend_path(__path__, __name__)\n"
+)
 NAMESPACE_PACKAGES = ["google"]
 
 
-def add_test_import(proto_package_path: str,
-                    file_name: str,
-                    service: bool = False):
-    TEST_IMPORTS.append("from %s import %s\n" % (proto_package_path.replace(
-        '/', '.'), file_name.replace('.proto', '_pb2')))
+def add_test_import(
+    proto_package_path: str, file_name: str, service: bool = False
+):
+    TEST_IMPORTS.append(
+        "from %s import %s\n"
+        % (
+            proto_package_path.replace("/", "."),
+            file_name.replace(".proto", "_pb2"),
+        )
+    )
     if service:
-        TEST_IMPORTS.append("from %s import %s\n" % (proto_package_path.replace(
-            '/', '.'), file_name.replace('.proto', '_pb2_grpc')))
+        TEST_IMPORTS.append(
+            "from %s import %s\n"
+            % (
+                proto_package_path.replace("/", "."),
+                file_name.replace(".proto", "_pb2_grpc"),
+            )
+        )
 
 
 # Prepare Protoc command
 COMPILE_PROTO_ONLY = [
-    'grpc_tools.protoc',
-    '--proto_path={}'.format(XDS_PROTO_ROOT),
-    '--proto_path={}'.format(UDPA_PROTO_ROOT),
-    '--proto_path={}'.format(GOOGLEAPIS_ROOT),
-    '--proto_path={}'.format(VALIDATE_ROOT),
-    '--proto_path={}'.format(WELL_KNOWN_PROTOS_INCLUDE),
-    '--proto_path={}'.format(OPENCENSUS_PROTO_ROOT),
-    '--proto_path={}'.format(OPENTELEMETRY_PROTO_ROOT),
-    '--python_out={}'.format(OUTPUT_PATH),
+    "grpc_tools.protoc",
+    "--proto_path={}".format(XDS_PROTO_ROOT),
+    "--proto_path={}".format(UDPA_PROTO_ROOT),
+    "--proto_path={}".format(GOOGLEAPIS_ROOT),
+    "--proto_path={}".format(VALIDATE_ROOT),
+    "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
+    "--proto_path={}".format(OPENCENSUS_PROTO_ROOT),
+    "--proto_path={}".format(OPENTELEMETRY_PROTO_ROOT),
+    "--python_out={}".format(OUTPUT_PATH),
 ]
-COMPILE_BOTH = COMPILE_PROTO_ONLY + ['--grpc_python_out={}'.format(OUTPUT_PATH)]
+COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
 
 
 def has_grpc_service(proto_package_path: str) -> bool:
-    return proto_package_path.startswith('envoy/service')
+    return proto_package_path.startswith("envoy/service")
 
 
-def compile_protos(proto_root: str, sub_dir: str = '.') -> None:
+def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
     for root, _, files in os.walk(os.path.join(proto_root, sub_dir)):
         proto_package_path = os.path.relpath(root, proto_root)
         if proto_package_path in EXCLUDE_PROTO_PACKAGES_LIST:
-            print(f'Skipping package {proto_package_path}')
+            print(f"Skipping package {proto_package_path}")
             continue
         for file_name in files:
-            if file_name.endswith('.proto'):
+            if file_name.endswith(".proto"):
                 # Compile proto
                 if has_grpc_service(proto_package_path):
-                    return_code = protoc.main(COMPILE_BOTH +
-                                              [os.path.join(root, file_name)])
+                    return_code = protoc.main(
+                        COMPILE_BOTH + [os.path.join(root, file_name)]
+                    )
                     add_test_import(proto_package_path, file_name, service=True)
                 else:
-                    return_code = protoc.main(COMPILE_PROTO_ONLY +
-                                              [os.path.join(root, file_name)])
-                    add_test_import(proto_package_path,
-                                    file_name,
-                                    service=False)
+                    return_code = protoc.main(
+                        COMPILE_PROTO_ONLY + [os.path.join(root, file_name)]
+                    )
+                    add_test_import(
+                        proto_package_path, file_name, service=False
+                    )
                 if return_code != 0:
-                    raise Exception('error: {} failed'.format(COMPILE_BOTH))
+                    raise Exception("error: {} failed".format(COMPILE_BOTH))
 
 
 def create_init_file(path: str, package_path: str = "") -> None:
-    with open(os.path.join(path, "__init__.py"), 'w') as f:
+    with open(os.path.join(path, "__init__.py"), "w") as f:
         # Apply the pkgutil-style namespace packaging, which is compatible for 2
         # and 3. Here is the full table of namespace compatibility:
         # https://github.com/pypa/sample-namespace-packages/blob/master/table.md
@@ -117,27 +134,32 @@ def main():
     compile_protos(XDS_PROTO_ROOT)
     compile_protos(UDPA_PROTO_ROOT)
     # We don't want to compile the entire GCP surface API, just the essential ones
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join('google', 'api'))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join('google', 'rpc'))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join('google', 'longrunning'))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join('google', 'logging'))
-    compile_protos(GOOGLEAPIS_ROOT, os.path.join('google', 'type'))
-    compile_protos(VALIDATE_ROOT, 'validate')
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "longrunning"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
+    compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
     compile_protos(OPENTELEMETRY_PROTO_ROOT)
 
     # Generate __init__.py files for all modules
     create_init_file(WORK_DIR)
     for proto_root_module in [
-            'envoy', 'google', 'opencensus', 'udpa', 'validate', 'xds',
-            'opentelemetry'
+        "envoy",
+        "google",
+        "opencensus",
+        "udpa",
+        "validate",
+        "xds",
+        "opentelemetry",
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
             package_path = os.path.relpath(root, WORK_DIR)
             create_init_file(root, package_path)
 
     # Generate test file
-    with open(os.path.join(WORK_DIR, TEST_FILE_NAME), 'w') as f:
+    with open(os.path.join(WORK_DIR, TEST_FILE_NAME), "w") as f:
         f.writelines(TEST_IMPORTS)
 
 

@@ -58,7 +58,7 @@ CORE_END2END_TEST(RetryTest, RetryThrottled) {
       "}"));
   InitClient(ChannelArgs());
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

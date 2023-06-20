@@ -20,21 +20,22 @@ class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
     """Synchronous Server implementation for the Benchmark service."""
 
     def UnaryCall(self, request, context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+        payload = messages_pb2.Payload(body=b"\0" * request.response_size)
         return messages_pb2.SimpleResponse(payload=payload)
 
     def StreamingCall(self, request_iterator, context):
         for request in request_iterator:
-            payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+            payload = messages_pb2.Payload(body=b"\0" * request.response_size)
             yield messages_pb2.SimpleResponse(payload=payload)
 
 
-class GenericBenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer
-                            ):
+class GenericBenchmarkServer(
+    benchmark_service_pb2_grpc.BenchmarkServiceServicer
+):
     """Generic Server implementation for the Benchmark service."""
 
     def __init__(self, resp_size):
-        self._response = b'\0' * resp_size
+        self._response = b"\0" * resp_size
 
     def UnaryCall(self, request, context):
         return self._response

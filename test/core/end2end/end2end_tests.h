@@ -231,6 +231,8 @@ class CoreEnd2endTest : public ::testing::Test {
     // for tests.
     grpc_op MakeOp();
 
+    std::string ToString();
+
    private:
     std::unique_ptr<grpc_metadata_array> metadata_ =
         std::make_unique<grpc_metadata_array>(
@@ -296,6 +298,8 @@ class CoreEnd2endTest : public ::testing::Test {
     // Get a trailing metadata value by key.
     absl::optional<std::string> GetTrailingMetadata(
         absl::string_view key) const;
+
+    std::string ToString();
 
     // Make a GRPC_OP_RECV_STATUS_ON_CLIENT op - intended for the framework, not
     // for tests.
@@ -692,7 +696,10 @@ class CoreEnd2endTest : public ::testing::Test {
     if (cq_verifier_ == nullptr) {
       fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
-          cq_, CqVerifier::FailUsingGprCrash, std::move(step_fn_));
+          cq_,
+          g_is_fuzzing_core_e2e_tests ? CqVerifier::FailUsingGprCrashWithStdio
+                                      : CqVerifier::FailUsingGprCrash,
+          std::move(step_fn_));
     }
     return *cq_verifier_;
   }

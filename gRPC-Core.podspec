@@ -183,6 +183,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.29'
+    ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -1298,6 +1299,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/host_port.cc',
                       'src/core/lib/gprpp/host_port.h',
+                      'src/core/lib/gprpp/if_list.h',
                       'src/core/lib/gprpp/linux/env.cc',
                       'src/core/lib/gprpp/load_file.cc',
                       'src/core/lib/gprpp/load_file.h',
@@ -1336,6 +1338,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_averaged_stats.h',
                       'src/core/lib/gprpp/time_util.cc',
                       'src/core/lib/gprpp/time_util.h',
+                      'src/core/lib/gprpp/type_list.h',
                       'src/core/lib/gprpp/unique_type_name.h',
                       'src/core/lib/gprpp/validation_errors.cc',
                       'src/core/lib/gprpp/validation_errors.h',
@@ -1491,6 +1494,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/unix_sockets_posix.cc',
                       'src/core/lib/iomgr/unix_sockets_posix.h',
                       'src/core/lib/iomgr/unix_sockets_posix_noop.cc',
+                      'src/core/lib/iomgr/vsock.cc',
+                      'src/core/lib/iomgr/vsock.h',
                       'src/core/lib/iomgr/wakeup_fd_eventfd.cc',
                       'src/core/lib/iomgr/wakeup_fd_nospecial.cc',
                       'src/core/lib/iomgr/wakeup_fd_pipe.cc',
@@ -1508,6 +1513,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
                       'src/core/lib/json/json_writer.h',
+                      'src/core/lib/load_balancing/delegating_helper.h',
                       'src/core/lib/load_balancing/lb_policy.cc',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
@@ -2583,6 +2589,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/examine_stack.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/host_port.h',
+                              'src/core/lib/gprpp/if_list.h',
                               'src/core/lib/gprpp/load_file.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/match.h',
@@ -2608,6 +2615,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time.h',
                               'src/core/lib/gprpp/time_averaged_stats.h',
                               'src/core/lib/gprpp/time_util.h',
+                              'src/core/lib/gprpp/type_list.h',
                               'src/core/lib/gprpp/unique_type_name.h',
                               'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
@@ -2680,6 +2688,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/timer_heap.h',
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/unix_sockets_posix.h',
+                              'src/core/lib/iomgr/vsock.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/json/json.h',
@@ -2689,6 +2698,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/json/json_writer.h',
+                              'src/core/lib/load_balancing/delegating_helper.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',
