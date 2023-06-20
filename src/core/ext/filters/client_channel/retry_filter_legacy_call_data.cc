@@ -1540,16 +1540,6 @@ void RetryFilterLegacyCallData::SetPollent(grpc_call_element* elem,
 // RetryFilterLegacyCallData implementation
 //
 
-const RetryMethodConfig* RetryFilter::GetRetryPolicy(
-    const grpc_call_context_element* context) {
-  if (context == nullptr) return nullptr;
-  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  if (svc_cfg_call_data == nullptr) return nullptr;
-  return static_cast<const RetryMethodConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
-}
-
 RetryFilterLegacyCallData::RetryFilterLegacyCallData(
     RetryFilter* chand, const grpc_call_element_args& args)
     : chand_(chand),

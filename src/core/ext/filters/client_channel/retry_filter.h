@@ -51,26 +51,6 @@ class RetryFilter {
  public:
   static const grpc_channel_filter kVtable;
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args) {
-    GPR_ASSERT(args->is_last);
-    GPR_ASSERT(elem->filter == &kVtable);
-    grpc_error_handle error;
-    new (elem->channel_data) RetryFilter(args->channel_args, &error);
-    return error;
-  }
-
-  static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<RetryFilter*>(elem->channel_data);
-    chand->~RetryFilter();
-  }
-
-  // Will never be called.
-  static void StartTransportOp(grpc_channel_element* /*elem*/,
-                               grpc_transport_op* /*op*/) {}
-  static void GetChannelInfo(grpc_channel_element* /*elem*/,
-                             const grpc_channel_info* /*info*/) {}
-
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return event_engine_;
   }
@@ -104,6 +84,26 @@ class RetryFilter {
   }
 
   RetryFilter(const ChannelArgs& args, grpc_error_handle* error);
+
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args) {
+    GPR_ASSERT(args->is_last);
+    GPR_ASSERT(elem->filter == &kVtable);
+    grpc_error_handle error;
+    new (elem->channel_data) RetryFilter(args->channel_args, &error);
+    return error;
+  }
+
+  static void Destroy(grpc_channel_element* elem) {
+    auto* chand = static_cast<RetryFilter*>(elem->channel_data);
+    chand->~RetryFilter();
+  }
+
+  // Will never be called.
+  static void StartTransportOp(grpc_channel_element* /*elem*/,
+                               grpc_transport_op* /*op*/) {}
+  static void GetChannelInfo(grpc_channel_element* /*elem*/,
+                             const grpc_channel_info* /*info*/) {}
 
   ClientChannel* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;

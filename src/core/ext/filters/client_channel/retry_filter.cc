@@ -85,6 +85,7 @@
 // - implement hedging
 
 using grpc_core::internal::RetryGlobalConfig;
+using grpc_core::internal::RetryMethodConfig;
 using grpc_core::internal::RetryServiceConfigParser;
 using grpc_event_engine::experimental::EventEngine;
 
@@ -127,6 +128,16 @@ RetryFilter::RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
   retry_throttle_data_ =
       internal::ServerRetryThrottleMap::Get()->GetDataForServer(
           server_name, config->max_milli_tokens(), config->milli_token_ratio());
+}
+
+const RetryMethodConfig* RetryFilter::GetRetryPolicy(
+    const grpc_call_context_element* context) {
+  if (context == nullptr) return nullptr;
+  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
+      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  if (svc_cfg_call_data == nullptr) return nullptr;
+  return static_cast<const RetryMethodConfig*>(
+      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 
 const grpc_channel_filter RetryFilter::kVtable = {
