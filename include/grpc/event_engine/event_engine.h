@@ -326,6 +326,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// Implementations should make sure that all pending requests are cancelled
   /// when the object is destroyed and all pending callbacks will be called
   /// shortly.
+  ///
+  /// Note: in the gRPC implementation, cancellation (through destruction) is
+  /// "best effort" as if the request has completed during the cancellation, the
+  /// result might still be reported through its callback.
   class DNSResolver {
    public:
     /// Optional configuration for DNSResolvers.
@@ -364,6 +368,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// lookup. Implementations should pass the appropriate statuses to the
     /// callback. For example, callbacks might expect to receive CANCELLED or
     /// NOT_FOUND.
+    ///
     virtual void LookupHostname(LookupHostnameCallback on_resolve,
                                 absl::string_view name,
                                 absl::string_view default_port) = 0;
