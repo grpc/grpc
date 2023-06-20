@@ -37,11 +37,9 @@ end
 
 def expect_error_for(action)
   STDERR.puts "#{action}: begin (pid=#{Process.pid})"
-  got_exception = false
   begin
     yield
   rescue RuntimeError => e
-    got_exception = true
     STDERR.puts "got (expected) error: #{e}"
     STDERR.puts "#{action}: done (pid=#{Process.pid})"
     return
