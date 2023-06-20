@@ -25,8 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -42,16 +40,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
@@ -69,40 +62,6 @@ namespace {
 //
 
 constexpr absl::string_view kPickFirst = "pick_first";
-
-// TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool ShufflePickFirstEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
-class PickFirstConfig : public LoadBalancingPolicy::Config {
- public:
-  absl::string_view name() const override { return kPickFirst; }
-  bool shuffle_addresses() const { return shuffle_addresses_; }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto kJsonLoader =
-        JsonObjectLoader<PickFirstConfig>()
-            .OptionalField("shuffleAddressList",
-                           &PickFirstConfig::shuffle_addresses_)
-            .Finish();
-    return kJsonLoader;
-  }
-
-  void JsonPostLoad(const Json& /* json */, const JsonArgs& /* args */,
-                    ValidationErrors* /* errors */) {
-    if (!ShufflePickFirstEnabled()) {
-      shuffle_addresses_ = false;
-    }
-  }
-
- private:
-  bool shuffle_addresses_ = false;
-};
 
 class PickFirst : public LoadBalancingPolicy {
  public:
@@ -210,8 +169,6 @@ class PickFirst : public LoadBalancingPolicy {
   bool idle_ = false;
   // Are we shut down?
   bool shutdown_ = false;
-  // Random bit generator used for shuffling addresses if configured
-  absl::BitGen bit_gen_;
 };
 
 PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
@@ -317,11 +274,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     status = args.addresses.status();
   } else if (args.addresses->empty()) {
     status = absl::UnavailableError("address list must not be empty");
-  } else {
-    auto config = static_cast<PickFirstConfig*>(args.config.get());
-    if (config->shuffle_addresses()) {
-      absl::c_shuffle(*args.addresses, bit_gen_);
-    }
   }
   // TODO(roth): This is a hack to disable outlier_detection when used
   // with pick_first, for the reasons described in
@@ -561,6 +513,11 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   }
 }
 
+class PickFirstConfig : public LoadBalancingPolicy::Config {
+ public:
+  absl::string_view name() const override { return kPickFirst; }
+};
+
 //
 // factory
 //
@@ -575,9 +532,8 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   absl::string_view name() const override { return kPickFirst; }
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadFromJson<RefCountedPtr<PickFirstConfig>>(
-        json, JsonArgs(), "errors validating pick_first LB policy config");
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+    return MakeRefCounted<PickFirstConfig>();
   }
 };
 
