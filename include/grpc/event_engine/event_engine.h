@@ -327,9 +327,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// when the object is destroyed and all pending callbacks will be called
   /// shortly.
   ///
-  /// Note: in the gRPC implementation, cancellation (through destruction) is
-  /// "best effort" as if the request has completed during the cancellation, the
-  /// result might still be reported through its callback.
+  /// Note: in the gRPC's implementation, cancellation (through destruction) is
+  /// "best effort" in the sense that if the request has completed during the
+  /// cancellation, the result might still be reported through its callback.
   class DNSResolver {
    public:
     /// Optional configuration for DNSResolvers.
