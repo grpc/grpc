@@ -706,8 +706,7 @@ class AresDNSResolver : public DNSResolver {
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
   Mutex mu_;
-  grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
-      ABSL_GUARDED_BY(mu_);
+  TaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 

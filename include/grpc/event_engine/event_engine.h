@@ -328,15 +328,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// shortly.
   class DNSResolver {
    public:
-    /// Task handle for DNS Resolution requests.
-    struct LookupTaskHandle {
-      intptr_t keys[2];
-      static const LookupTaskHandle kInvalid;
-      friend bool operator==(const LookupTaskHandle& lhs,
-                             const LookupTaskHandle& rhs);
-      friend bool operator!=(const LookupTaskHandle& lhs,
-                             const LookupTaskHandle& rhs);
-    };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.

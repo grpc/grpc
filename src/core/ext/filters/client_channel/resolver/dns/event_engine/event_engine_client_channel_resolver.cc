@@ -71,7 +71,6 @@ namespace {
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::LookupTaskHandleSet;
 
 // TODO(hork): Investigate adding a resolver test scenario where the first
 // balancer hostname lookup result is an error, and the second contains valid
