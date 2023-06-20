@@ -20,6 +20,8 @@
 
 #include "src/core/lib/gprpp/fork.h"
 
+#include <utility>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
