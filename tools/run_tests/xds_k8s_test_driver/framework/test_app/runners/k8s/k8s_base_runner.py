@@ -439,6 +439,24 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return deployment
 
+    def _create_gamma_mesh(self, template, **kwargs):
+        gamma_mesh = self._create_from_template(template, **kwargs)
+        # if not isinstance(service, k8s.V1Service):
+        #     raise _RunnerError(
+        #         f"Expected V1Service to be created from manifest {template}"
+        #     )
+        # if service.metadata.name != kwargs["service_name"]:
+        #     raise _RunnerError(
+        #         "V1Service created with unexpected name: "
+        #         f"{service.metadata.name}"
+        #     )
+        # logger.debug(
+        #     "V1Service %s created at %s",
+        #     service.metadata.self_link,
+        #     service.metadata.creation_timestamp,
+        # )
+        return gamma_mesh
+
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
         if not isinstance(service, k8s.V1Service):

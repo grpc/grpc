@@ -64,6 +64,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         gcp_service_account: str,
         service_account_name: Optional[str] = None,
         service_name: Optional[str] = None,
+        mesh_name: Optional[str] = None,
         neg_name: Optional[str] = None,
         deployment_template: str = "server.deployment.yaml",
         service_account_template: str = "service-account.yaml",
@@ -88,6 +89,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         # Settings
         self.deployment_template = deployment_template
         self.service_name = service_name or deployment_name
+        self.mesh_name = mesh_name or deployment_name
         self.service_template = service_template
         self.reuse_service = reuse_service
         self.enable_workload_identity = enable_workload_identity
@@ -303,3 +305,140 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         deployments.
         """
         return cls._make_namespace_name(resource_prefix, resource_suffix, name)
+
+
+class KubernetesGammaServerRunner(KubernetesServerRunner):
+    def run(  # pylint: disable=arguments-differ,too-many-branches
+        self,
+        *,
+        test_port: int = KubernetesServerRunner.DEFAULT_TEST_PORT,
+        maintenance_port: Optional[int] = None,
+        secure_mode: bool = False,
+        replica_count: int = 1,
+        log_to_stdout: bool = False,
+    ) -> List[XdsTestServer]:
+        if not maintenance_port:
+            maintenance_port = self._get_default_maintenance_port(secure_mode)
+
+        # Implementation detail: in secure mode, maintenance ("backchannel")
+        # port must be different from the test port so communication with
+        # maintenance services can be reached independently of the security
+        # configuration under test.
+        if secure_mode and maintenance_port == test_port:
+            raise ValueError(
+                "port and maintenance_port must be different "
+                "when running test server in secure mode"
+            )
+        # To avoid bugs with comparing wrong types.
+        if not (
+            isinstance(test_port, int) and isinstance(maintenance_port, int)
+        ):
+            raise TypeError("Port numbers must be integer")
+
+        if secure_mode and not self.enable_workload_identity:
+            raise ValueError("Secure mode requires Workload Identity enabled.")
+
+        logger.info(
+            (
+                'Deploying xDS test server "%s" to k8s namespace %s:'
+                " test_port=%s maintenance_port=%s secure_mode=%s"
+                " replica_count=%s"
+            ),
+            self.deployment_name,
+            self.k8s_namespace.name,
+            test_port,
+            maintenance_port,
+            secure_mode,
+            replica_count,
+        )
+        # super(k8s_base_runner.KubernetesBaseRunner, self).run()
+
+        if self.reuse_namespace:
+            self.namespace = self._reuse_namespace()
+        if not self.namespace:
+            self.namespace = self._create_namespace(
+                self.namespace_template, namespace_name=self.k8s_namespace.name
+            )
+
+        # Create gamma mesh.
+        self._create_gamma_mesh(
+            template="mesh.yaml",
+            mesh_name=self.mesh_name,
+            namespace_name=self.k8s_namespace.name,
+        )
+
+        # Reuse existing if requested, create a new deployment when missing.
+        # Useful for debugging to avoid NEG loosing relation to deleted service.
+        if self.reuse_service:
+            self.service = self._reuse_service(self.service_name)
+        if not self.service:
+            self.service = self._create_service(
+                self.service_template,
+                service_name=self.service_name,
+                namespace_name=self.k8s_namespace.name,
+                deployment_name=self.deployment_name,
+                neg_name=self.gcp_neg_name,
+                test_port=test_port,
+            )
+        self._wait_service_neg(self.service_name, test_port)
+
+        if self.enable_workload_identity:
+            # Allow Kubernetes service account to use the GCP service account
+            # identity.
+            self._grant_workload_identity_user(
+                gcp_iam=self.gcp_iam,
+                gcp_service_account=self.gcp_service_account,
+                service_account_name=self.service_account_name,
+            )
+
+            # Create service account
+            self.service_account = self._create_service_account(
+                self.service_account_template,
+                service_account_name=self.service_account_name,
+                namespace_name=self.k8s_namespace.name,
+                gcp_service_account=self.gcp_service_account,
+            )
+
+        # Always create a new deployment
+        self.deployment = self._create_deployment(
+            self.deployment_template,
+            deployment_name=self.deployment_name,
+            image_name=self.image_name,
+            namespace_name=self.k8s_namespace.name,
+            service_account_name=self.service_account_name,
+            td_bootstrap_image=self.td_bootstrap_image,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
+            replica_count=replica_count,
+            test_port=test_port,
+            maintenance_port=maintenance_port,
+            secure_mode=secure_mode,
+        )
+
+        pod_names = self._wait_deployment_pod_count(
+            self.deployment, replica_count
+        )
+        pods = []
+        for pod_name in pod_names:
+            pod = self._wait_pod_started(pod_name)
+            pods.append(pod)
+            if self.should_collect_logs:
+                self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
+
+        # Verify the deployment reports all pods started as well.
+        self._wait_deployment_with_available_replicas(
+            self.deployment_name, replica_count
+        )
+        self._start_completed()
+
+        servers: List[XdsTestServer] = []
+        for pod in pods:
+            servers.append(
+                self._xds_test_server_for_pod(
+                    pod,
+                    test_port=test_port,
+                    maintenance_port=maintenance_port,
+                    secure_mode=secure_mode,
+                )
+            )
+        return servers

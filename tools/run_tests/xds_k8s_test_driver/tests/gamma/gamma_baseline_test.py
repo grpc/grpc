@@ -27,8 +27,8 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 class GammaBaselineTest(xds_k8s_testcase.GammaXdsKubernetesTestCase):
     def test_ping_pong(self):
-        with self.subTest("1_create_mesh"):
-            self.server_runner.create_gamma_mesh()
+        with self.subTest("1_run_test_server"):
+            self.startTestServers()
 
 
 if __name__ == "__main__":

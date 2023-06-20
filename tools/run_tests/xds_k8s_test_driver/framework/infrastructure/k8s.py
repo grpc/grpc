@@ -103,6 +103,7 @@ class KubernetesApiManager:
         self._client = self._new_client_from_context(context)
         self.apps = client.AppsV1Api(self.client)
         self.core = client.CoreV1Api(self.client)
+        self.custom_objects = client.CustomObjectsApi(self.client)
         self._apis = {self.apps, self.core}
 
     @property

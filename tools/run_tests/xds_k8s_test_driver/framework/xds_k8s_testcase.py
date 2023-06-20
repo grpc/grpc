@@ -66,6 +66,7 @@ TrafficDirectorGammaManager = traffic_director.TrafficDirectorGammaManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+KubernetesGammaServerRunner = k8s_xds_server_runner.KubernetesGammaServerRunner
 KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 _LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _LoadBalancerAccumulatedStatsResponse = (
@@ -797,6 +798,25 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
 
 class GammaXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
     td: TrafficDirectorGammaManager
+    server_runner: KubernetesGammaServerRunner
+
+    def initKubernetesServerRunner(self) -> KubernetesGammaServerRunner:
+        return KubernetesGammaServerRunner(
+            k8s.KubernetesNamespace(
+                self.k8s_api_manager, self.server_namespace
+            ),
+            deployment_name=self.server_name,
+            image_name=self.server_image,
+            td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
+            debug_use_port_forwarding=self.debug_use_port_forwarding,
+            enable_workload_identity=self.enable_workload_identity,
+            reuse_namespace=True,
+        )
 
     def initTrafficDirectorManager(self) -> TrafficDirectorGammaManager:
         return TrafficDirectorGammaManager(
@@ -807,9 +827,6 @@ class GammaXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             network=self.network,
             compute_api_version=self.compute_api_version,
         )
-
-    def create_gamma_mesh(self):
-        pass
 
 
 class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
