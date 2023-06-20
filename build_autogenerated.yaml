@@ -12071,6 +12071,19 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resource_quota_end2end_stress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/resource_quota_end2end_stress_test.cc
+  deps:
+  - grpc++_test_util
 - name: resource_quota_server_test
   gtest: true
   build: test
