@@ -194,7 +194,7 @@ bool Fork::RegisterResetChildPollingEngineFunc(
   if (reset_child_polling_engine_ == nullptr) {
     reset_child_polling_engine_ = new std::set<Fork::child_postfork_func>();
   }
-  auto ret = reset_child_polling_engine_->inset(reset_child_polling_engine);
+  auto ret = reset_child_polling_engine_->insert(reset_child_polling_engine);
   return ret.second;
 }
 
