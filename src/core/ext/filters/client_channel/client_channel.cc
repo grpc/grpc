@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <set>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -82,6 +83,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -570,7 +572,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         static_cast<InternalSubchannelDataWatcherInterface*>(
             watcher.release()));
     internal_watcher->SetSubchannel(subchannel_.get());
-    data_watchers_.push_back(std::move(internal_watcher));
+    data_watchers_.insert(std::move(internal_watcher));
+  }
+
+  void CancelDataWatcher(DataWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+    auto* internal_watcher =
+        static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
+    auto it = data_watchers_.find(internal_watcher);
+    if (it != data_watchers_.end()) data_watchers_.erase(it);
   }
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
@@ -683,6 +693,29 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     RefCountedPtr<SubchannelWrapper> parent_;
   };
 
+  // A heterogenous lookup comparator for data watchers that allows
+  // unique_ptr keys to be looked up as raw pointers.
+  struct DataWatcherCompare {
+    using is_transparent = void;
+    bool operator()(
+        const std::unique_ptr<InternalSubchannelDataWatcherInterface>& p1,
+        const std::unique_ptr<InternalSubchannelDataWatcherInterface>& p2)
+        const {
+      return p1 == p2;
+    }
+    bool operator()(
+        const std::unique_ptr<InternalSubchannelDataWatcherInterface>& p1,
+        const InternalSubchannelDataWatcherInterface* p2) const {
+      return p1.get() == p2;
+    }
+    bool operator()(
+        const InternalSubchannelDataWatcherInterface* p1,
+        const std::unique_ptr<InternalSubchannelDataWatcherInterface>& p2)
+        const {
+      return p1 == p2.get();
+    }
+  };
+
   ClientChannel* chand_;
   RefCountedPtr<Subchannel> subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
@@ -692,7 +725,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::vector<std::unique_ptr<InternalSubchannelDataWatcherInterface>>
+  std::set<std::unique_ptr<InternalSubchannelDataWatcherInterface>,
+           DataWatcherCompare>
       data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
@@ -941,6 +975,16 @@ class ClientChannel::ClientChannelControlHelper
 
   absl::string_view GetAuthority() override {
     return chand_->default_authority_;
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()
+        ->duplicate_without_call_credentials();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+      override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->Ref();
   }
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
