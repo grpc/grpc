@@ -52,7 +52,6 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
-  gpr_log(GPR_INFO, "prefork parent c-core");
   skipped_handler = true;
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
@@ -89,9 +88,7 @@ void grpc_prefork() {
 }
 
 void grpc_postfork_parent() {
-  gpr_log(GPR_INFO, "postfork parent c-core");
   if (!skipped_handler) {
-    gpr_log(GPR_INFO, "in postfork parent c-core");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_timer_manager_set_threading(true);
@@ -100,9 +97,7 @@ void grpc_postfork_parent() {
 }
 
 void grpc_postfork_child() {
-  gpr_log(GPR_INFO, "postfork child c-core");
   if (!skipped_handler) {
-    gpr_log(GPR_INFO, "in postfork child c-core");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     for (auto* reset_polling_engine :
