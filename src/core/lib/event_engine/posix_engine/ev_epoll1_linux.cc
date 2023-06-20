@@ -255,10 +255,6 @@ void ResetEventManagerOnFork() {
     poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
-  }
   InitEpoll1PollerLinux();
 }
 
@@ -273,8 +269,10 @@ bool InitEpoll1PollerLinux() {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
-    gpr_mu_init(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(ResetEventManagerOnFork);
+    if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+            ResetEventManagerOnFork)) {
+      gpr_mu_init(&fork_fd_list_mu);
+    }
   }
   close(fd);
   return true;
