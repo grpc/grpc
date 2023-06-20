@@ -2478,6 +2478,7 @@ target_link_libraries(grpc
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::algorithm_container
   absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
@@ -3122,6 +3123,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::algorithm_container
   absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
@@ -30869,7 +30871,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "gpr absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "openssl re2 libcares zlib"
   "-lgrpc"
   "-laddress_sorting -lupb"
@@ -30880,7 +30882,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "gpr absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "re2 libcares zlib"
   "-lgrpc_unsecure"
   "-laddress_sorting -lupb"
@@ -30891,7 +30893,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "grpc absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   ""
   "-lgrpc++"
   ""
@@ -30902,7 +30904,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "grpc_unsecure absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   ""
   "-lgrpc++_unsecure"
   ""
