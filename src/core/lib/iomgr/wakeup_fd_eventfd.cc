@@ -46,7 +46,6 @@ static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
   int err;
   do {
     err = eventfd_read(fd_info->read_fd, &value);
-    gpr_log(GPR_INFO, "apolcyn eventfd consume err=%d", err);
   } while (err < 0 && errno == EINTR);
   if (err < 0 && errno != EAGAIN) {
     return GRPC_OS_ERROR(errno, "eventfd_read");
@@ -58,7 +57,6 @@ static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
   int err;
   do {
     err = eventfd_write(fd_info->read_fd, 1);
-    gpr_log(GPR_INFO, "apolcyn eventfd write err=%d", err);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
     return GRPC_OS_ERROR(errno, "eventfd_write");
@@ -67,11 +65,7 @@ static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
 }
 
 static void eventfd_destroy(grpc_wakeup_fd* fd_info) {
-  gpr_log(GPR_INFO, "apolcyn eventfd maybe close");
-  if (fd_info->read_fd != 0) {
-    gpr_log(GPR_INFO, "apolcyn eventfd close");
-    close(fd_info->read_fd);
-  }
+  if (fd_info->read_fd != 0) close(fd_info->read_fd);
 }
 
 static int eventfd_check_availability(void) {
